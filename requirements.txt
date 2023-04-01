@@ -1,0 +1,10 @@
+numpy
+openai
+pandas
+Requests
+streamlit
+streamlit_option_menu
+xgboost
+sklearn
+matplotlib
+seaborn
