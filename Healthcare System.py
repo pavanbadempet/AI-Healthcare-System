@@ -6,22 +6,29 @@ import openai
 import pandas as pd
 import numpy as np
 
+
 st.set_page_config(
     page_title="Healthcare System",
     page_icon=":health_worker:",
     layout="centered",
     initial_sidebar_state="expanded"
 )
+hide_streamlit_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 
 # loading the saved models
+diabetes_model = pickle.load(open('Diabetes Model.pkl', 'rb'))
 
-diabetes_model = pickle.load(open("C:\\Users\\pavan\\Desktop\\A Healthcare System using Machine Learning Techniques for Disease Prediction with Chatbot Assistance\\Models\\Diabetes Model.sav", 'rb'))
+heart_disease_model = pickle.load(open("Heart Disease Model.pkl",'rb'))
 
-heart_disease_model = pickle.load(open("C:\\Users\\pavan\\Desktop\\A Healthcare System using Machine Learning Techniques for Disease Prediction with Chatbot Assistance\\Models\\Heart Disease Model.pkl",'rb'))
+liver_model = pickle.load(open("Liver Disease Model.pkl", 'rb'))
 
-liver_model = pickle.load(open("C:\\Users\\pavan\\Desktop\\A Healthcare System using Machine Learning Techniques for Disease Prediction with Chatbot Assistance\\Models\\Liver Disease Model.pkl", 'rb'))
-
-scaler = pickle.load(open("C:\\Users\\pavan\\Desktop\\A Healthcare System using Machine Learning Techniques for Disease Prediction with Chatbot Assistance\\Models\\Scaler.pkl", 'rb'))
+scaler = pickle.load(open("Scaler.pkl", 'rb'))
 
 
 
@@ -32,62 +39,69 @@ with st.sidebar:
                           
                           ['Diabetes Prediction',
                            'Heart Disease Prediction',
-                           'Liver Prediction',
+                           'Liver Disease Prediction',
                            'Healthcare Chatbot'],
                           icons=['droplet-fill','heart','person'],
                           default_index=0)
     
     
-# Diabetes Prediction Page
-if (selected == 'Diabetes Prediction'):
-    
-    # page title
-    st.title('Diabetes Prediction using ML')
-    
-    
-    # getting the input data from the user
+if selected == 'Diabetes Prediction':
+    # Page title
+    st.title('Diabetes Prediction')
+    st.markdown("Note: 1: Gender (Female: 0, Male: 1)")
+    st.markdown("Note: 2: Smoking History (never: 0, No Info: 1, current: 2, former:3, ever:4, not current: 5)")
+    st.markdown("Note: 3: Heart Disease (No: 0 , Yes: 1)")
+    # Input fields
     col1, col2, col3 = st.columns(3)
-    
+
     with col1:
-        Pregnancies = st.text_input('Number of Pregnancies')
-        
+        gender = st.text_input('Gender ')
+        gender = float(gender) if gender else 0.0
+
     with col2:
-        Glucose = st.text_input('Glucose Level')
-    
+        age = st.text_input('Age')
+        age = float(age) if age else 0.0
+
     with col3:
-        BloodPressure = st.text_input('Blood Pressure value')
-    
+        hypertension = st.text_input('Hypertension Value')
+        hypertension = float(hypertension) if hypertension else 0.0
+
     with col1:
-        SkinThickness = st.text_input('Skin Thickness value')
-    
+        heart_disease = st.text_input('Heart Disease')
+        heart_disease = float(heart_disease) if heart_disease else 0.0
+
     with col2:
-        Insulin = st.text_input('Insulin Level')
-    
+        smoking_history = st.text_input('Smoking_history Level')
+        smoking_history = float(smoking_history) if smoking_history else 0.0
+
     with col3:
         BMI = st.text_input('BMI value')
-    
-    with col1:
-        DiabetesPedigreeFunction = st.text_input('Diabetes Pedigree Function value')
-    
-    with col2:
-        Age = st.text_input('Age of the Person')
-    
-    
-    # code for Prediction
-    diab_diagnosis = ''
-    
-    # creating a button for Prediction
-    
-    if st.button('Diabetes Test Result'):
-        diab_prediction = diabetes_model.predict([[Pregnancies, Glucose, BloodPressure, SkinThickness, Insulin, BMI, DiabetesPedigreeFunction, Age]])
-        
-        if (diab_prediction[0] == 1):
-          diab_diagnosis = 'The person is diabetic'
-        else:
-          diab_diagnosis = 'The person is not diabetic'
-        
-    st.success(diab_diagnosis)
+        BMI = float(BMI) if BMI else 0.0
 
+    with col1:
+        HbA1c_level = st.text_input('HbA1c_level value')
+        HbA1c_level = float(HbA1c_level) if HbA1c_level else 0.0
+
+    with col2:
+        blood_glucose_level = st.text_input('Blood Glucose Level')
+        blood_glucose_level = float(blood_glucose_level) if blood_glucose_level else 0.0
+
+    # Perform prediction
+    diab_diagnosis = ''
+    if st.button('Diabetes Test Result'):
+        input_data = np.array([[gender, age, hypertension, heart_disease, smoking_history, BMI, HbA1c_level, blood_glucose_level]], dtype=object)
+        input_data = input_data.astype(float)
+
+        diab_prediction = diabetes_model.predict(input_data)
+
+        if diab_prediction[0] == 1:
+            diab_diagnosis = 'The person is predicted to have diabetes.'
+            st.error(diab_diagnosis)
+        else:
+            diab_diagnosis = 'The person is predicted to be healthy.'
+            st.success(diab_diagnosis)
+
+    
 
 
 
@@ -95,72 +109,89 @@ if (selected == 'Diabetes Prediction'):
 if (selected == 'Heart Disease Prediction'):
     
     # page title
-    st.title('Heart Disease Prediction using ML')
-    
+    st.title('Heart Disease Prediction')
+    st.markdown("Note: 1: Gender (Female: 0, Male: 1)")
+    st.markdown("Note: 2: Thal (Normal: 0, Fixed Defect: 1, Reversible Defect: 2)")
     col1, col2, col3 = st.columns(3)
-    
+    col4, col5, col6 = st.columns(3)
+    col7, col8, col9 = st.columns(3)
+    col10, col11, col12, col13 = st.columns(4)
+
+    # Input fields
     with col1:
         age = st.text_input('Age')
-        
+        age = float(age) if age else 0.0
+
     with col2:
-        sex = st.text_input('Sex')
-        
+        gender = st.text_input('Gender')
+        gender = float(gender) if gender else 0.0
+
     with col3:
         cp = st.text_input('Chest Pain types')
-        
-    with col1:
+        cp = float(cp) if cp else 0.0
+
+    with col4:
         trestbps = st.text_input('Resting Blood Pressure')
-        
-    with col2:
-        chol = st.text_input('Serum Cholestoral in mg/dl')
-        
-    with col3:
-        fbs = st.text_input('Fasting Blood Sugar > 120 mg/dl')
-        
-    with col1:
+        trestbps = float(trestbps) if trestbps else 0.0
+
+    with col5:
+        chol = st.text_input('Serum Cholestoral')
+        chol = float(chol) if chol else 0.0
+
+    with col6:
+        fbs = st.text_input('Fasting Blood Sugar')
+        fbs = float(fbs) if fbs else 0.0
+
+    with col7:
         restecg = st.text_input('Resting Electrocardiographic results')
-        
-    with col2:
+        restecg = float(restecg) if restecg else 0.0
+
+    with col8:
         thalach = st.text_input('Maximum Heart Rate achieved')
-        
-    with col3:
+        thalach = float(thalach) if thalach else 0.0
+
+    with col9:
         exang = st.text_input('Exercise Induced Angina')
-        
-    with col1:
+        exang = float(exang) if exang else 0.0
+
+    with col10:
         oldpeak = st.text_input('ST depression induced by exercise')
-        
-    with col2:
+        oldpeak = float(oldpeak) if oldpeak else 0.0
+
+    with col11:
         slope = st.text_input('Slope of the peak exercise ST segment')
-        
-    with col3:
-        ca = st.text_input('Major vessels colored by flourosopy')
-        
-    with col1:
-        thal = st.text_input('thal: 0 = normal; 1 = fixed defect; 2 = reversable defect')
-        
-        
-     
-     
-    # code for Prediction
+        slope = float(slope) if slope else 0.0
+
+    with col12:
+        ca = st.text_input('Major vessels colored by fluoroscopy')
+        ca = float(ca) if ca else 0.0
+
+    with col13:
+        thal = st.text_input('Thal Value')
+        thal = float(thal) if thal else 0.0
+
+    # Perform prediction
     heart_diagnosis = ''
-    
-    # creating a button for Prediction
-    
     if st.button('Heart Disease Test Result'):
-        heart_prediction = heart_disease_model.predict([[age, sex, cp, trestbps, chol, fbs, restecg,thalach,exang,oldpeak,slope,ca,thal]])                          
-        
-        if (heart_prediction[0] == 1):
-          heart_diagnosis = 'The person is having heart disease'
+        input_data = np.array([[age, gender, cp, trestbps, chol, fbs, restecg, thalach, exang, oldpeak, slope, ca, thal]], dtype=object)
+        input_data = input_data.astype(float)
+
+        heart_prediction = heart_disease_model.predict(input_data)
+
+        if heart_prediction[0] == 1:
+            heart_diagnosis = 'The person is predicted to have heart disease.'
+            st.error(heart_diagnosis)
         else:
-          heart_diagnosis = 'The person does not have any heart disease'
-        
-    st.success(heart_diagnosis)
+            heart_diagnosis = 'The person is predicted to be healthy.'
+            st.success(heart_diagnosis)
+
+    
         
     
     
 
 # Liver Prediction Page
-if (selected == "Liver Prediction"):
+if (selected == "Liver Disease Prediction"):
     
     # page title
     st.title("Liver Disease Prediction")
@@ -217,28 +248,30 @@ if (selected == "Liver Prediction"):
         
         if (prediction[0] == 0):
           liver_diagnosis = "The person does not have a Liver disease"
+          st.success(liver_diagnosis)
         else:
           liver_diagnosis = "The Person has Liver Disease"
-    st.success(liver_diagnosis)
+          st.error(liver_diagnosis)
+    
 
 #Chatbot
 if (selected == 'Healthcare Chatbot'):
 
     # Define the GPT API endpoint
-    API_ENDPOINT = "https://api.openai.com/v1/engines/davinci-codex/completions"
+    API_ENDPOINT = "https://api.pawan.krd/v1/completions"
 
     # Define your OpenAI API key
-    API_KEY = "<your_api_key>"
+    API_KEY = "pk-eAWvHQfEkRiWCiCNMDLnOGdfpqgxCQzbPtPrBvtdbmHmFktW"
 
     # Function to interact with the GPT API
-    def query_gpt(prompt):
+    def generate_response(prompt):
         headers = {
             "Content-Type": "application/json",
             "Authorization": f"Bearer {API_KEY}"
         }
         data = {
             "prompt": prompt,
-            "max_tokens": 50  # Adjust the max tokens as needed
+            "max_tokens": 1000  # Adjust the max tokens as needed
         }
         response = requests.post(API_ENDPOINT, headers=headers, json=data)
         response_json = response.json()
@@ -248,144 +281,15 @@ if (selected == 'Healthcare Chatbot'):
     def simulate_typing():
         st.text("Bot is typing...")
 
-    # CSS styling
-    st.markdown(
-        """
-        <style>
-        .sidebar .sidebar-content {
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
-        }
+    # Main code
+    st.title("Healthcare Chatbot")
+    st.markdown("Welcome to the Healthcare Chatbot! How can I assist you today?")
 
-        .sidebar .sidebar-content .stTextInput {
-            background-color: #f5f8fc;
-            color: #333;
-            border-radius: 5px;
-            box-shadow: none;
-        }
+    # User input
+    user_input = st.text_input("User:")
 
-        .sidebar .sidebar-content .stButton {
-            background-color: #0085FF;
-            color: #fff;
-            border-radius: 5px;
-            padding: 10px 15px;
-            font-weight: bold;
-            box-shadow: none;
-        }
-
-        .main {
-            padding: 20px;
-        }
-
-        .chatbox {
-            background-color: #fff;
-            border-radius: 5px;
-            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .chatbox p {
-            margin: 0;
-        }
-
-        .bot {
-            margin-bottom: 10px;
-            color: #0085FF;
-        }
-
-        .user {
-            margin-bottom: 10px;
-            text-align: right;
-            color: #333;
-        }
-
-        .typing {
-            color: #777;
-        }
-
-        .logo {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .logo img {
-            width: 60px;
-            height: 50px;
-            margin-right: 10px;
-        }
-
-        .logo h1 {
-            font-size: 24px;
-            color: #ffffff;
-            margin: 0;
-        }
-
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
-
-    # Streamlit app
-    def main():
-        st.sidebar.markdown(
-            """
-            <div class="logo">
-                <img src="https://o.remove.bg/downloads/09c3c54e-7bd8-429e-9131-e698235d906a/1000_F_589263130_DIF1U2V5x2R0VlCX2al3ZlUJAJUMAcSL-removebg-preview.png" alt="Healthcare Chatbot">
-                <h1>Healthcare Chatbot</h1>
-            </div>  
-            """,
-            unsafe_allow_html=True
-        )
-
-        st.markdown(
-            """
-            <div class="main">
-                <div class="chatbox">
-                    <p class="bot">ChatBot: Welcome! How can I assist you with your healthcare questions?</p>
-                </div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-        # User input
-        user_input = st.text_input("Enter your healthcare question")
-
-        if st.button("Send"):
-            st.markdown(
-                f"""
-                <div class="main">
-                    <div class="chatbox">
-                        <p class="user">User: {user_input}</p>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-            # Simulate bot typing effect
-            simulate_typing()
-
-            # Query GPT API
-            response = query_gpt(user_input)
-
-            # Simulate bot typing effect
-            simulate_typing()
-
-            # Display response
-            st.markdown(
-                f"""
-                <div class="main">
-                    <div class="chatbox">
-                        <p class="bot">Bot: {response}</p>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True
-            )
-
-    if __name__ == "__main__":
-        main()
+    # Generate bot response
+    if user_input:
+        bot_response = generate_response(user_input)
+        bot_response_html = f'<div style="overflow-wrap: break-word; height: auto; padding: 10px;">{bot_response}</div>'
+        st.markdown(bot_response_html, unsafe_allow_html=True)
