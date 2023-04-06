@@ -195,7 +195,7 @@ if (selected == "Liver Disease Prediction"):
     
     # page title
     st.title("Liver Disease Prediction")
-    st.markdown("Note: Male=0, Female=1")
+    st.markdown("Note: 1: Gender (Female: 0, Male: 1)")
     
     col1, col2, col3 = st.columns(3)  
     col4, col5, col6 = st.columns(3)
