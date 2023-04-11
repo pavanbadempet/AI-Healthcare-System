@@ -1,9 +1,17 @@
-from python:3.10.0
-expose 8501
-cmd mkdir -p /app
-WORKDIR /app
-copy requirements.txt ./requirements.txt
-run pip3 install -r requirements.txt
-copy . .
-ENTRYPOINT ["streamlit", "run"]
-CMD ["Healthcare System.py"]
+FROM python:3.10
+
+# Expose port you want your app on
+EXPOSE 8080
+
+# Upgrade pip and install requirements
+COPY requirements.txt requirements.txt
+RUN pip install -U pip
+RUN pip install -r requirements.txt
+
+# Copy app code and set working directory
+COPY A Healthcare System using Machine Learning Techniques for Disease Prediction with Chatbot Assistance A Healthcare System using Machine Learning Techniques for Disease Prediction with Chatbot Assistance
+COPY Healthcare-System.py Healthcare-System.py
+WORKDIR .
+
+# Run
+ENTRYPOINT [“streamlit”, “run”, “Healthcare-System.py”, “–server.port=8080”, “–server.address=0.0.0.0”]
