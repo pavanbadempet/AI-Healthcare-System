@@ -9,7 +9,6 @@ RUN pip install -U pip
 RUN pip install -r requirements.txt
 
 # Copy app code and set working directory
-COPY A Healthcare System using Machine Learning Techniques for Disease Prediction with Chatbot Assistance A Healthcare System using Machine Learning Techniques for Disease Prediction with Chatbot Assistance
 COPY Healthcare-System.py Healthcare-System.py
 WORKDIR .
 
