@@ -5,6 +5,6 @@ Requests
 streamlit
 streamlit_option_menu
 xgboost
-sklearn
+scikit-learn
 matplotlib
 seaborn
