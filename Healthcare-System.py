@@ -7,6 +7,7 @@ import pandas as pd
 import numpy as np
 import json
 
+
 st.set_page_config(
     page_title="Healthcare System",
     page_icon=":health_worker:",
@@ -16,7 +17,7 @@ st.set_page_config(
 hide_streamlit_style = """
             <style>
             #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
+            footer {visibility: hidden;, height: 0;}
             </style>
             """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
@@ -53,6 +54,8 @@ if selected == 'Diabetes Prediction':
     st.markdown("Note: 3: Heart Disease (No: 0 , Yes: 1)")
     # Input fields
     col1, col2, col3 = st.columns(3)
+    col4, col5, col6 = st.columns(3)
+    col7, col8 = st.columns(2)
 
     with col1:
         gender = st.text_input('Gender ')
@@ -66,23 +69,23 @@ if selected == 'Diabetes Prediction':
         hypertension = st.text_input('Hypertension Value')
         hypertension = float(hypertension) if hypertension else 0.0
 
-    with col1:
+    with col4:
         heart_disease = st.text_input('Heart Disease')
         heart_disease = float(heart_disease) if heart_disease else 0.0
 
-    with col2:
+    with col5:
         smoking_history = st.text_input('Smoking_history Level')
         smoking_history = float(smoking_history) if smoking_history else 0.0
 
-    with col3:
+    with col6:
         BMI = st.text_input('BMI value')
         BMI = float(BMI) if BMI else 0.0
 
-    with col1:
+    with col7:
         HbA1c_level = st.text_input('HbA1c_level value')
         HbA1c_level = float(HbA1c_level) if HbA1c_level else 0.0
 
-    with col2:
+    with col8:
         blood_glucose_level = st.text_input('Blood Glucose Level')
         blood_glucose_level = float(blood_glucose_level) if blood_glucose_level else 0.0
 
@@ -204,7 +207,7 @@ if (selected == "Liver Disease Prediction"):
         Age = st.text_input('Age')
         
     with col2:
-        Gender = st.text_input('Gender')
+        gender = st.text_input('Gender')
         
     with col3:
         Total_Bilirubin = st.text_input('Total Bilirubin')
@@ -236,7 +239,7 @@ if (selected == "Liver Disease Prediction"):
 
             return data
         
-        input_data = [Age,Gender,Total_Bilirubin,Alkaline_Phosphotase,Alamine_Aminotransferase,Albumin_and_Globulin_Ratio]  
+        input_data = [Age,gender,Total_Bilirubin,Alkaline_Phosphotase,Alamine_Aminotransferase,Albumin_and_Globulin_Ratio]  
         column_names = ['Age', 'Gender', 'Total_Bilirubin', 'Alkaline_Phosphotase','Alamine_Aminotransferase', 'Albumin_and_Globulin_Ratio']
         # Convert the user's input into a pandas DataFrame
         user_data = pd.DataFrame([input_data], columns=column_names)  
@@ -285,7 +288,6 @@ if (selected == 'Healthcare Chatbot'):
         else:
             print("Error accessing the chatbot API. Status code:", response.status_code)
             return "An error occurred while accessing the chatbot. Please try again later."
-
 
 
     # Function to simulate bot typing effect
