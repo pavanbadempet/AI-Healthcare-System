@@ -1,9 +1,10 @@
 import pickle
 import requests
-import time
 import streamlit as st
 from streamlit_option_menu import option_menu
 import openai
+import pandas as pd
+import numpy as np
 
 st.set_page_config(
     page_title="Healthcare System",
@@ -12,74 +13,15 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# CSS styling
-st.markdown(
-    """
-    <style>
-    .sidebar .sidebar-content {
-        background-color: #f5f8fc;
-        padding: 20px;
-        border-radius: 10px;
-        box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
-    }
-
-    .sidebar .sidebar-content .stTextInput {
-        background-color: #fff;
-        color: #333;
-        border-radius: 5px;
-        box-shadow: none;
-    }
-
-    .sidebar .sidebar-content .stButton {
-        background-color: #0085FF;
-        color: #fff;
-        border-radius: 5px;
-        padding: 10px 15px;
-        font-weight: bold;
-        box-shadow: none;
-    }
-
-    .main {
-        padding: 20px;
-    }
-
-    .chatbox {
-        background-color: #fff;
-        border-radius: 5px;
-        box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
-        padding: 20px;
-        margin-bottom: 20px;
-    }
-
-    .chatbox p {
-        margin: 0;
-    }
-
-    .bot {
-        margin-bottom: 10px;
-    }
-
-    .user {
-        margin-bottom: 10px;
-        text-align: right;
-    }
-
-    .typing {
-        color: #777;
-    }
-
-    </style>
-    """,
-    unsafe_allow_html=True
-)
-
 # loading the saved models
 
 diabetes_model = pickle.load(open("C:\\Users\\pavan\\Desktop\\A Healthcare System using Machine Learning Techniques for Disease Prediction with Chatbot Assistance\\Models\\Diabetes Model.sav", 'rb'))
 
 heart_disease_model = pickle.load(open("C:\\Users\\pavan\\Desktop\\A Healthcare System using Machine Learning Techniques for Disease Prediction with Chatbot Assistance\\Models\\Heart Disease Model.pkl",'rb'))
 
-liver_model = pickle.load(open("C:\\Users\\pavan\\Desktop\\A Healthcare System using Machine Learning Techniques for Disease Prediction with Chatbot Assistance\\Models\\Liver Disease Model.sav", 'rb'))
+liver_model = pickle.load(open("C:\\Users\\pavan\\Desktop\\A Healthcare System using Machine Learning Techniques for Disease Prediction with Chatbot Assistance\\Models\\Liver Disease Model.pkl", 'rb'))
+
+scaler = pickle.load(open("C:\\Users\\pavan\\Desktop\\A Healthcare System using Machine Learning Techniques for Disease Prediction with Chatbot Assistance\\Models\\Scaler.pkl", 'rb'))
 
 
 
@@ -92,7 +34,7 @@ with st.sidebar:
                            'Heart Disease Prediction',
                            'Liver Prediction',
                            'Healthcare Chatbot'],
-                          icons=['blood','heart','person'],
+                          icons=['droplet-fill','heart','person'],
                           default_index=0)
     
     
@@ -221,54 +163,29 @@ if (selected == 'Heart Disease Prediction'):
 if (selected == "Liver Prediction"):
     
     # page title
-    st.title("Liver Disease Prediction using ML")
+    st.title("Liver Disease Prediction")
+    st.markdown("Note: Male=0, Female=1")
     
-    col1, col2, col3, col4, col5 = st.columns(5)  
+    col1, col2, col3 = st.columns(3)  
+    col4, col5, col6 = st.columns(3)
     
     with col1:
-        fo = st.text_input('Age')
+        Age = st.text_input('Age')
         
     with col2:
-        fhi = st.text_input('Gender')
+        Gender = st.text_input('Gender')
         
     with col3:
-        flo = st.text_input('Total_Bilirubin')
+        Total_Bilirubin = st.text_input('Total Bilirubin')
         
     with col4:
-        Jitter_percent = st.text_input('Direct_Bilirubin')
+        Alkaline_Phosphotase = st.text_input('Alkaline Phosphotase')
         
     with col5:
-        Jitter_Abs = st.text_input('Alkaline_Phosphotase')
-        
-    with col1:
-        RAP = st.text_input('Alamine_Aminotransferase')
-        
-    with col2:
-        PPQ = st.text_input('Aspartate_Aminotransferase')
-        
-    with col3:
-        DDP = st.text_input('Total_Protiens')
-        
-    with col4:
-        Shimmer = st.text_input('Albumin')
-        
-    with col5:
-        Shimmer_dB = st.text_input('Albumin_and_Globulin_Ratio')
-        
-    with col1:
-        APQ3 = st.text_input('Shimmer:APQ3')
-        
-    with col2:
-        APQ5 = st.text_input('Shimmer:APQ5')
-        
-    with col3:
-        APQ = st.text_input('MDVP:APQ')
-        
-    with col4:
-        DDA = st.text_input('Shimmer:DDA')
-        
-    with col5:
-        NHR = st.text_input('NHR')
+        Alamine_Aminotransferase = st.text_input('Alamine Aminotransferase')
+
+    with col6:
+        Albumin_and_Globulin_Ratio = st.text_input('Albumin and Globulin Ratio')
         
     
     # code for Prediction
@@ -276,17 +193,37 @@ if (selected == "Liver Prediction"):
     
     # creating a button for Prediction    
     if st.button("Liver Test Result"):
-        liver_prediction = liver_model.predict([[fo, fhi, flo, Jitter_percent, Jitter_Abs, RAP, PPQ,DDP,Shimmer,Shimmer_dB,APQ3,APQ5,APQ,DDA,NHR]])                          
+        def preprocess_input(data):
+            # Apply log1p transformation
+            skewed = ['Total_Bilirubin', 'Alkaline_Phosphotase', 'Alamine_Aminotransferase','Albumin_and_Globulin_Ratio']
+
+            data[skewed] = np.log1p(data[skewed])
+
+            # Scale the data using the loaded scaler
+            attributes = [col for col in data.columns]
+            data[attributes] = scaler.transform(data[attributes])
+
+            return data
         
-        if (liver_prediction[0] == 1):
-          liver_diagnosis = "The person has Liver disease"
+        input_data = [Age,Gender,Total_Bilirubin,Alkaline_Phosphotase,Alamine_Aminotransferase,Albumin_and_Globulin_Ratio]  
+        column_names = ['Age', 'Gender', 'Total_Bilirubin', 'Alkaline_Phosphotase','Alamine_Aminotransferase', 'Albumin_and_Globulin_Ratio']
+        # Convert the user's input into a pandas DataFrame
+        user_data = pd.DataFrame([input_data], columns=column_names)  
+        user_data[column_names] = user_data[column_names].apply(pd.to_numeric, errors='coerce')
+        # Preprocess the user's input data
+        preprocessed_data = preprocess_input(user_data)   
+
+        prediction = liver_model.predict(preprocessed_data)                  
+        
+        if (prediction[0] == 0):
+          liver_diagnosis = "The person does not have a Liver disease"
         else:
-          liver_diagnosis = "The person does not have Liver disease"
-        
+          liver_diagnosis = "The Person has Liver Disease"
     st.success(liver_diagnosis)
 
 #Chatbot
 if (selected == 'Healthcare Chatbot'):
+
     # Define the GPT API endpoint
     API_ENDPOINT = "https://api.openai.com/v1/engines/davinci-codex/completions"
 
@@ -310,16 +247,124 @@ if (selected == 'Healthcare Chatbot'):
     # Function to simulate bot typing effect
     def simulate_typing():
         st.text("Bot is typing...")
-        time.sleep(1)
 
+    # CSS styling
+    st.markdown(
+        """
+        <style>
+        .sidebar .sidebar-content {
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar .sidebar-content .stTextInput {
+            background-color: #f5f8fc;
+            color: #333;
+            border-radius: 5px;
+            box-shadow: none;
+        }
+
+        .sidebar .sidebar-content .stButton {
+            background-color: #0085FF;
+            color: #fff;
+            border-radius: 5px;
+            padding: 10px 15px;
+            font-weight: bold;
+            box-shadow: none;
+        }
+
+        .main {
+            padding: 20px;
+        }
+
+        .chatbox {
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chatbox p {
+            margin: 0;
+        }
+
+        .bot {
+            margin-bottom: 10px;
+            color: #0085FF;
+        }
+
+        .user {
+            margin-bottom: 10px;
+            text-align: right;
+            color: #333;
+        }
+
+        .typing {
+            color: #777;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .logo img {
+            width: 60px;
+            height: 50px;
+            margin-right: 10px;
+        }
+
+        .logo h1 {
+            font-size: 24px;
+            color: #ffffff;
+            margin: 0;
+        }
+
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # Streamlit app
     def main():
-        st.sidebar.title("Healthcare Chatbot")
+        st.sidebar.markdown(
+            """
+            <div class="logo">
+                <img src="https://o.remove.bg/downloads/09c3c54e-7bd8-429e-9131-e698235d906a/1000_F_589263130_DIF1U2V5x2R0VlCX2al3ZlUJAJUMAcSL-removebg-preview.png" alt="Healthcare Chatbot">
+                <h1>Healthcare Chatbot</h1>
+            </div>  
+            """,
+            unsafe_allow_html=True
+        )
+
+        st.markdown(
+            """
+            <div class="main">
+                <div class="chatbox">
+                    <p class="bot">ChatBot: Welcome! How can I assist you with your healthcare questions?</p>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
 
         # User input
-        user_input = st.sidebar.text_input("Enter your healthcare question")
+        user_input = st.text_input("Enter your healthcare question")
 
-        if st.sidebar.button("Send"):
-            st.sidebar.text("User: " + user_input)
+        if st.button("Send"):
+            st.markdown(
+                f"""
+                <div class="main">
+                    <div class="chatbox">
+                        <p class="user">User: {user_input}</p>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
 
             # Simulate bot typing effect
             simulate_typing()
@@ -333,8 +378,10 @@ if (selected == 'Healthcare Chatbot'):
             # Display response
             st.markdown(
                 f"""
-                <div class="chatbox">
-                    <p class="bot">Bot: {response}</p>
+                <div class="main">
+                    <div class="chatbox">
+                        <p class="bot">Bot: {response}</p>
+                    </div>
                 </div>
                 """,
                 unsafe_allow_html=True
