@@ -1,2 +1,0 @@
-# Active backend requirements live in backend/requirements.txt.
--r backend/requirements.txt
