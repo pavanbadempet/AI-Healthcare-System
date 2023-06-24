@@ -5,7 +5,7 @@ from streamlit_option_menu import option_menu
 import openai
 import pandas as pd
 import numpy as np
-
+import json
 
 st.set_page_config(
     page_title="Healthcare System",
@@ -22,15 +22,15 @@ hide_streamlit_style = """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True) 
 
 # loading the saved models
-diabetes_model = pickle.load(open('Diabetes Model.pkl', 'rb'))
+
+
+diabetes_model = pickle.load(open("Diabetes Model.pkl", 'rb'))
 
 heart_disease_model = pickle.load(open("Heart Disease Model.pkl",'rb'))
 
 liver_model = pickle.load(open("Liver Disease Model.pkl", 'rb'))
 
 scaler = pickle.load(open("Scaler.pkl", 'rb'))
-
-
 
 # sidebar for navigation
 with st.sidebar:
@@ -274,8 +274,19 @@ if (selected == 'Healthcare Chatbot'):
             "max_tokens": 1000  # Adjust the max tokens as needed
         }
         response = requests.post(API_ENDPOINT, headers=headers, json=data)
-        response_json = response.json()
-        return response_json["choices"][0]["text"].strip()
+        
+        if response.ok:
+            response_json = response.json()
+            
+            if "choices" in response_json and len(response_json["choices"]) > 0:
+                return response_json["choices"][0]["text"].strip()
+            else:
+                return "No response received from the chatbot."
+        else:
+            print("Error accessing the chatbot API. Status code:", response.status_code)
+            return "An error occurred while accessing the chatbot. Please try again later."
+
+
 
     # Function to simulate bot typing effect
     def simulate_typing():
