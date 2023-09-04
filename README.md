@@ -16,6 +16,8 @@ Welcome to the repository for our Healthcare System using Machine Learning Techn
 
 - **Local Deployment**: Users can run the system locally for testing and development purposes.
 
+## Test It Online
+Hosted on GCP: ~~http://healthcare-system.tech/~~
 
 ## Getting Started
 
