@@ -22,11 +22,9 @@ Welcome to the A-Healthcare-System project! We appreciate your interest in contr
 
 ## Making Changes
 
-1. Follow the coding style and guidelines outlined in the [STYLEGUIDE.md](STYLEGUIDE.md) file.
+1. Make your changes, ensuring that they are well-tested and don't break existing functionality.
 
-2. Make your changes, ensuring that they are well-tested and don't break existing functionality.
-
-3. Update the relevant documentation if necessary.
+2. Update the relevant documentation if necessary.
 
 ## Testing
 
