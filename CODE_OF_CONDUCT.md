@@ -40,4 +40,4 @@ This Code of Conduct is adapted from the [Contributor Covenant](https://www.cont
 
 For answers to common questions about this code of conduct, see the [FAQ](https://www.contributor-covenant.org/faq).
 
-[project-email]: mailto:your-email@example.com
+[project-email]: mailto:pavan9b@gmail.com
