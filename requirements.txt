@@ -8,3 +8,14 @@ xgboost
 scikit-learn
 matplotlib
 seaborn
+streamlit-lottie
+fastapi
+uvicorn
+sqlalchemy
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+langchain
+langchain-openai
+langchain-google-genai
+python-dotenv
