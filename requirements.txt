@@ -16,6 +16,9 @@ python-jose[cryptography]
 passlib[bcrypt]
 python-multipart
 langchain
-langchain-openai
 langchain-google-genai
 python-dotenv
+pyspark
+mlflow
+loguru
+feedparser

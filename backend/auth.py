@@ -31,10 +31,15 @@ class Token(BaseModel):
 class UserCreate(BaseModel):
     username: str
     password: str
+    email: str
+    full_name: str
+    dob: str # YYYY-MM-DD
 
 class UserResponse(BaseModel):
     id: int
     username: str
+    full_name: Optional[str] = None
+    email: Optional[str] = None
     class Config:
         from_attributes = True
 
@@ -73,20 +78,30 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
     return user
 
+
 # Endpoints
 @router.post("/signup", response_model=UserResponse)
 def signup(user: UserCreate, db: Session = Depends(database.get_db)):
     try:
+        # Check Username
         db_user = db.query(models.User).filter(models.User.username == user.username).first()
         if db_user:
             raise HTTPException(status_code=400, detail="Username already registered")
+        
+        # Check Email (Optional but good practice)
+        if user.email:
+             db_email = db.query(models.User).filter(models.User.email == user.email).first()
+             if db_email:
+                 raise HTTPException(status_code=400, detail="Email already registered")
+
         hashed_password = get_password_hash(user.password)
-        # Explicitly set defaults for new fields to avoid NULL errors if schema issues exist
+        
         new_user = models.User(
             username=user.username, 
             hashed_password=hashed_password,
-            email="",
-            full_name="",
+            email=user.email,
+            full_name=user.full_name,
+            dob=user.dob,
             existing_ailments="",
             profile_picture="",
             allow_data_collection=1
@@ -132,6 +147,11 @@ class UserProfileUpdate(BaseModel):
     blood_type: Optional[str] = None
     existing_ailments: Optional[str] = None
     profile_picture: Optional[str] = None
+    about_me: Optional[str] = None
+    diet: Optional[str] = None
+    activity_level: Optional[str] = None
+    sleep_hours: Optional[float] = None
+    stress_level: Optional[str] = None
     allow_data_collection: Optional[bool] = None
 
 @router.get("/profile", response_model=dict)
@@ -147,6 +167,11 @@ def get_user_profile(current_user: models.User = Depends(get_current_user)):
         "blood_type": current_user.blood_type,
         "existing_ailments": current_user.existing_ailments,
         "profile_picture": current_user.profile_picture,
+        "about_me": current_user.about_me,
+        "diet": current_user.diet,
+        "activity_level": current_user.activity_level,
+        "sleep_hours": current_user.sleep_hours,
+        "stress_level": current_user.stress_level,
         "allow_data_collection": bool(current_user.allow_data_collection)
     }
 
@@ -161,6 +186,11 @@ def update_user_profile(profile: UserProfileUpdate, current_user: models.User = 
     if profile.blood_type is not None: current_user.blood_type = profile.blood_type
     if profile.existing_ailments is not None: current_user.existing_ailments = profile.existing_ailments
     if profile.profile_picture is not None: current_user.profile_picture = profile.profile_picture
+    if profile.about_me is not None: current_user.about_me = profile.about_me
+    if profile.diet is not None: current_user.diet = profile.diet
+    if profile.activity_level is not None: current_user.activity_level = profile.activity_level
+    if profile.sleep_hours is not None: current_user.sleep_hours = profile.sleep_hours
+    if profile.stress_level is not None: current_user.stress_level = profile.stress_level
     if profile.allow_data_collection is not None: 
         current_user.allow_data_collection = 1 if profile.allow_data_collection else 0
     
@@ -177,5 +207,10 @@ def update_user_profile(profile: UserProfileUpdate, current_user: models.User = 
         "blood_type": current_user.blood_type,
         "existing_ailments": current_user.existing_ailments,
         "profile_picture": current_user.profile_picture,
+        "about_me": current_user.about_me,
+        "diet": current_user.diet,
+        "activity_level": current_user.activity_level,
+        "sleep_hours": current_user.sleep_hours,
+        "stress_level": current_user.stress_level,
         "allow_data_collection": bool(current_user.allow_data_collection)
     }}
