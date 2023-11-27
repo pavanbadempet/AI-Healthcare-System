@@ -1,1 +1,0 @@
-streamlit run "A-Healthcare-System-using-Machine-Learning-Techniques-for-Disease-Prediction-with-Chatbot-Assistance\Healthcare-System.py"
