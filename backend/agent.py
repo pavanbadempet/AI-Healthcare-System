@@ -97,7 +97,9 @@ class AgentState(TypedDict):
     messages: Annotated[List[BaseMessage], operator.add]
     user_profile: str
     retrieved_context: str
+
     available_reports: str # New field for explicit list of existing records
+    board_discussion: str # NEW: Stores the internal debate of the medical board
 
 # --- Nodes ---
 
@@ -207,11 +209,76 @@ def predict_diabetes(gender: str, age: float, hypertension: int, heart_disease: 
     """
     return ml_service.predict_diabetes(gender, age, hypertension, heart_disease, smoking_history, bmi, hba1c_level, blood_glucose_level)
 
+@tool
+def predict_liver_disease(age: float, gender: str, total_bilirubin: float, alkaline_phosphotase: float, alamine_aminotransferase: float, albumin_globulin_ratio: float) -> str:
+    """
+    Predicts liver disease risk.
+    Args:
+        age: Age of the patient.
+        gender: "Male" or "Female".
+        total_bilirubin: Total Bilirubin (mg/dL).
+        alkaline_phosphotase: Alkaline Phosphotase (IU/L).
+        alamine_aminotransferase: Alamine Aminotransferase (IU/L).
+        albumin_globulin_ratio: Albumin/Globulin Ratio.
+    """
+    return ml_service.predict_liver_disease(age, gender, total_bilirubin, alkaline_phosphotase, alamine_aminotransferase, albumin_globulin_ratio)
+
 # List of tools
-tools = [predict_heart_disease, predict_diabetes]
+tools = [predict_heart_disease, predict_diabetes, predict_liver_disease]
 
 # --- Nodes ---
-# ... (retrieve_node remains same)
+
+def medical_board_node(state: AgentState):
+    """
+    Simulates a debate between 3 specialists (Cardiologist, Nutritionist, GP) for complex reasoning.
+    """
+    messages = state['messages']
+    profile = state.get("user_profile", "Unknown")
+    context = state.get("retrieved_context", "")
+    available_reports = state.get("available_reports", "None")
+    
+    # 1. Check if the LAST message is a simple greeting
+    last_msg = messages[-1].content.lower()
+    if len(last_msg.split()) < 4 and any(x in last_msg for x in ["hi", "hello", "hey", "thanks"]):
+        return {"board_discussion": "No debate needed."} # Skip for simple inputs
+
+    # 2. Construct Debate Prompt
+    debate_prompt = f"""You are a simulation of a Medical Board.
+    
+    Participants:
+    1. Dr. Carter (Cardiologist): Focuses on heart data, blood pressure, and vessel health.
+    2. Dr. Lee (Endocrinologist): Focuses on Glucose, Diabetes, and Metabolic health.
+    3. Dr. Patel (General Practitioner): Focuses on holistic wellness, lifestyle, and liver health.
+    
+    PATIENT PROFILE:
+    {profile}
+    
+    RECORDS:
+    {available_reports}
+    
+    MEMORY:
+    {context}
+    
+    USER QUERY:
+    "{messages[-1].content}"
+    
+    INSTRUCTIONS:
+    - Simulate a short, rapid-fire discussion between these 3 doctors about the user's query.
+    - Analyze the risk factors.
+    - If data is missing (e.g. "0.0" values), point it out.
+    - Conclude with a "Board Consensus".
+    
+    OUTPUT FORMAT:
+    Dr. Carter: [Analysis]
+    Dr. Lee: [Analysis]
+    Dr. Patel: [Analysis]
+    Consensus: [Final Recommendation to the Assistant]
+    """
+    
+    # Call LLM for Debate
+    response = llm.invoke([HumanMessage(content=debate_prompt)])
+    return {"board_discussion": response.content}
+
 
 def generate_node(state: AgentState):
     # ... (Prompt construction same as before - ensure it knows about tools)
@@ -220,28 +287,55 @@ def generate_node(state: AgentState):
     context = state.get("retrieved_context", "")
     available_reports = state.get("available_reports", "None")
 
-    system_prompt_content = f"""You are an advanced Medical AI Assistant capable of running health predictions.
+    past_conversation_memory = state.get("retrieved_context", "") # renamed for clarity
+    board_discussion = state.get("board_discussion", "No debate recorded.")
+
+    system_prompt_content = f"""You are the AIO Healthcare System Assistant.
+    
+    IDENTITY & CREATORS:
+    - You were developed by **Pavan Badempet, Prashanth Cheerala, and A Shiva Prasad** for this Healthcare System.
+    - If asked "Who built you?" or "Who created you?", you MUST answer with these names.
+    - Do NOT mention Google or DeepMind.
+    
+    MEDICAL BOARD CONSENSUS (Thought Process):
+    {board_discussion}
+    
+    SYSTEM CAPABILITIES:
+    1. **Disease Prediction**: I can predict risks for Diabetes, Heart Disease, and Liver Disease using Machine Learning models.
+    2. **Trend Analysis**: I identify patterns (improvement/decline) in your health records over time.
+    3. **GenAI Explainer**: I can explain prediction results in plain English.
+    4. **Health Advisor**: I provide general diet, lifestyle, and wellness tips.
     
     USER PROFILE:
     {profile}
     
-    AVAILABLE MEDICAL REPORTS (Verified):
+    HEALTH RECORD TIMELINE (Context):
     {available_reports}
     
-    RELEVANT MEDICAL HISTORY (Memory):
-    {context}
+    PAST CONVERSATION MEMORY:
+    {past_conversation_memory}
     
     INSTRUCTIONS:
-    1. Answer naturally.
-    2. TOOLS: You have tools to predict 'Heart Disease' and 'Diabetes'.
-       - If the user asks to "check my heart" or "run a prediction", ask for the missing parameters one by one or all together.
+    1. Answer naturally. **You ARE allowed to give general health/diet advice** even without running a prediction.
+       - If asked for "liver diet tips", give them! Do not refuse.
+    2. **PATTERN RECOGNITION**: Look at the "HEALTH RECORD TIMELINE".
+       - If you see multiple records, analyze the **trend**. (e.g., "Your Diabetes risk has stabilized after the high risk result last week.")
+       - If the latest result is better than previous ones, congratulate the user!
+    3. TOOLS: You have tools to predict 'Heart Disease', 'Diabetes', and 'Liver Disease'.
+       - If the user asks to "check my liver" or "run a prediction", ask for the missing parameters one by one or all together.
        - Once you have the data, USE THE TOOL.
        - Do NOT hallucinate a result; run the function.
-    3. TRUTHFULNESS: If the user asks about a past report (e.g., "Do I have heart disease?") and it's NOT in "AVAILABLE MEDICAL REPORTS", say "I don't have a record." BUT then immediately offer: "However, I can verify that right now if you provide your details."
+    4. TRUTHFULNESS: If the user asks about a past report (e.g., "Do I have heart disease?") and it's NOT in "HEALTH RECORD TIMELINE", say "I don't have a record." BUT then immediately offer: "However, I can verify that right now if you provide your details."
        - **Priority Rule**: If you see multiple records in the context, ALWAYS use the one with the most recent "Date".
-       - **Data Validation**: If a record has values that are clearly invalid (e.g., glucose < 10, hba1c < 2), treat it as invalid/missing data, even if it's not exactly 0. Ask the user for clarification.
+       - **GHOST RECORD RULE**: If a record shows values like '0.0' for blood pressure, cholesterol, or glucose, IT IS A SYSTEM ERROR.
+         - Do NOT report it as a medical fact.
+         - Instead, say: "I see some incomplete test data in your history. Let's run a fresh prediction to be sure."
+       - **Data Validation**: If a record has values that are clearly invalid (e.g., glucose < 10, hba1c < 2), treat it as invalid/missing data.
        - Only say "Low Risk" if the record has REALISTIC values (e.g., glucose > 50).
-    4. Be empathetic and professional.
+    5. **NAVIGATION & MISSING DATA**:
+       - If the user has missing data or doesn't want to type it all, SUGGEST: "You can also visit the specific **Prediction Page** in the sidebar (e.g., 'Liver Disease Prediction') to use the interactive form."
+       - If the user provides data here, YOU MUST USE THE PREDICTION TOOLS (`predict_liver_disease`, etc.). Do not guess.
+    6. Be empathetic and professional.
     """
     
     # We need to bind tools to the LLM if using a model that supports it (Gemini 2.0 Flash)
@@ -267,13 +361,15 @@ def generate_node(state: AgentState):
 
 # Add Nodes
 workflow.add_node("retrieve", retrieve_node)
+workflow.add_node("medical_board", medical_board_node) # New Step
 workflow.add_node("generate", generate_node)
 
 # Set Entry Point
 workflow.set_entry_point("retrieve")
 
 # Add Edges
-workflow.add_edge("retrieve", "generate")
+workflow.add_edge("retrieve", "medical_board") # Retrieve -> Board
+workflow.add_edge("medical_board", "generate") # Board -> Generate
 workflow.add_edge("generate", END)
 
 # Compile

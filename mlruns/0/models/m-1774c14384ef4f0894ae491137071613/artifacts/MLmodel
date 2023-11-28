@@ -1,0 +1,32 @@
+artifact_path: file:C:/Users/pavan/Documents/GitHub/A-Healthcare-System-using-Machine-Learning-Techniques-for-Disease-Prediction-with-Chatbot-Assistance/mlruns/0/models/m-1774c14384ef4f0894ae491137071613/artifacts
+flavors:
+  python_function:
+    data: model.ubj
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.xgboost
+    python_version: 3.14.0
+  xgboost:
+    code: null
+    data: model.ubj
+    model_class: xgboost.sklearn.XGBClassifier
+    model_format: ubj
+    xgb_version: 3.1.2
+is_signature_from_type_hint: false
+mlflow_version: 3.7.0
+model_id: m-1774c14384ef4f0894ae491137071613
+model_size_bytes: 70092
+model_uuid: m-1774c14384ef4f0894ae491137071613
+prompts: null
+run_id: 64b8eea4b5c9419db97858f4bd1913f5
+signature:
+  inputs: '[{"type": "double", "name": "age", "required": false}, {"type": "double",
+    "name": "bmi", "required": true}, {"type": "long", "name": "hypertension", "required":
+    true}, {"type": "long", "name": "heart_disease", "required": true}, {"type": "double",
+    "name": "HbA1c_level", "required": true}, {"type": "long", "name": "blood_glucose_level",
+    "required": true}]'
+  outputs: '[{"type": "tensor", "tensor-spec": {"dtype": "int64", "shape": [-1]}}]'
+  params: null
+type_hint_from_example: false
+utc_time_created: '2025-12-06 08:39:56.457104'

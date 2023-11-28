@@ -12,8 +12,14 @@ echo ========================================
 start cmd /k "uvicorn backend.main:app --reload"
 
 echo.
-echo Waiting 5 seconds for backend to start...
-timeout /t 5
+echo ========================================
+echo      Starting MLflow Dashboard...
+echo ========================================
+start cmd /k "mlflow ui"
+
+echo.
+echo Waiting 3 seconds for backend to start...
+timeout /t 3
 
 echo.
 echo ========================================
