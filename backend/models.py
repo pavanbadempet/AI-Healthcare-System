@@ -58,3 +58,13 @@ class ChatLog(Base):
     timestamp = Column(DateTime, default=datetime.utcnow)
 
     owner = relationship("User", back_populates="chat_logs")
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    admin_id = Column(Integer, ForeignKey("users.id"))
+    target_user_id = Column(Integer) # Keep generic or link, but generic is safer if user deleted
+    action = Column(String) # VIEW_FULL, DELETE, BAN
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    details = Column(String, nullable=True)

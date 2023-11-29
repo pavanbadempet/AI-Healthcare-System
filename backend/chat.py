@@ -77,7 +77,7 @@ def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth
             db.refresh(user_log)
             
             # RAG
-            rag.add_interaction_to_db(str(user_log.id), "user", request.message, str(user_log.timestamp))
+            rag.add_interaction_to_db(str(current_user.id), str(user_log.id), "user", request.message, str(user_log.timestamp))
         except Exception as e:
             print(f"Error saving user log: {e}")
 
@@ -144,6 +144,7 @@ def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth
         inputs = {
             "messages": graph_messages,
             "user_profile": profile_str,
+            "user_id": current_user.id, # NEW SECURITY FIELD
             "available_reports": available_reports_str
         }
         
@@ -164,7 +165,7 @@ def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth
                 db.refresh(ai_log)
                 
                 # RAG
-                rag.add_interaction_to_db(str(ai_log.id), "assistant", response_text, str(ai_log.timestamp))
+                rag.add_interaction_to_db(str(current_user.id), str(ai_log.id), "assistant", response_text, str(ai_log.timestamp))
             except Exception as e:
                 print(f"Error saving AI log: {e}")
 
@@ -195,6 +196,7 @@ def save_health_record(record: RecordCreate, current_user: models.User = Depends
     
     # Sync to Chroma
     rag.add_checkup_to_db(
+        user_id=str(current_user.id),
         record_id=str(db_record.id),
         record_type=db_record.record_type,
         data=record.data,
