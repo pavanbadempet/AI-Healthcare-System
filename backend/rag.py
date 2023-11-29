@@ -84,9 +84,15 @@ class SimpleVectorStore:
             return True
         return False
 
-    def search(self, query, k=3):
+    def search(self, query, filter_meta=None, k=3):
         if not self.vectors:
             return []
+        
+        # 1. Filter indices FIRST (Optimization: Reduce search space)
+        # Note: Since this is simple list-based, we'll search all then filter results, 
+        # or filter indices then embed. Embedding is the bottleneck if caching isn't perfect,
+        # but here we already have vectors. 
+        # Better: Compute all similarities, then filter top results.
         
         model = get_embedding_model()
         query_vector = model.embed_query(query)
@@ -95,30 +101,40 @@ class SimpleVectorStore:
         q_vec = np.array([query_vector])
         
         sim_scores = cosine_similarity(q_vec, vec_matrix)[0]
-        top_k_indices = sim_scores.argsort()[::-1][:k]
+        # Get sort indices (descending)
+        sorted_indices = sim_scores.argsort()[::-1]
         
         results = []
-        for idx in top_k_indices:
-            if sim_scores[idx] > 0.0: 
+        count = 0
+        
+        for idx in sorted_indices:
+            if sim_scores[idx] <= 0.0: break # No more relevance
+            
+            # Metadata Filter Check
+            match = True
+            if filter_meta:
+                for k_filter, v_filter in filter_meta.items():
+                    if self.metadatas[idx].get(k_filter) != v_filter:
+                        match = False
+                        break
+            
+            if match:
                 results.append(self.documents[idx])
+                count += 1
+                if count >= k:
+                    break
         
         return results
 
 store = SimpleVectorStore()
 
-def add_checkup_to_db(record_id: str, record_type: str, data: dict, prediction: str, timestamp: str):
+def add_checkup_to_db(user_id: str, record_id: str, record_type: str, data: dict, prediction: str, timestamp: str):
     try:
-        # Use simple string representation for readability, but also keep raw keys visible
-        # Preferred: "age: 45, bmi: 22.0"
-        # The agent needs to see "hba1c" clearly.
+        # Use simple string representation
         data_str = ", ".join([f"{k}: {v}" for k,v in data.items()])
         
-        # We also append a JSON block for "Machine Reading" if needed, 
-        # but text-davinci/gemini are good at parsing "key: value" lists.
-        # Let's clean the keys to match expected tool inputs if possible, 
-        # OR just ensure the tool docstring (updated above) guides the mapping.
-        
         document_text = (
+            f"User: {user_id}\n"
             f"Date: {timestamp}\n"
             f"Checkup Type: {record_type}\n"
             f"Result: {prediction}\n"
@@ -126,6 +142,7 @@ def add_checkup_to_db(record_id: str, record_type: str, data: dict, prediction: 
         )
         
         store.add(document_text, {
+            "user_id": str(user_id),
             "record_id": str(record_id),
             "type": record_type,
             "timestamp": timestamp,
@@ -137,7 +154,7 @@ def add_checkup_to_db(record_id: str, record_type: str, data: dict, prediction: 
         logger.error(f"Error saving to SimpleStore: {e}")
         return False
 
-def add_interaction_to_db(interaction_id: str, role: str, content: str, timestamp: str):
+def add_interaction_to_db(user_id: str, interaction_id: str, role: str, content: str, timestamp: str):
     """
     Index a chat interaction (User or Assistant).
     """
@@ -148,6 +165,7 @@ def add_interaction_to_db(interaction_id: str, role: str, content: str, timestam
         )
         
         store.add(document_text, {
+            "user_id": str(user_id),
             "interaction_id": str(interaction_id),
             "type": "chat_log",
             "timestamp": timestamp,
@@ -159,9 +177,9 @@ def add_interaction_to_db(interaction_id: str, role: str, content: str, timestam
         logger.error(f"Error saving interaction to SimpleStore: {e}")
         return False
 
-def search_similar_records(query: str, n_results: int = 3):
+def search_similar_records(user_id: str, query: str, n_results: int = 3):
     try:
-        return store.search(query, k=n_results)
+        return store.search(query, filter_meta={"user_id": str(user_id)}, k=n_results)
     except Exception as e:
         logger.error(f"Error querying SimpleStore: {e}")
         return []

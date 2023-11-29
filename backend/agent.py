@@ -96,10 +96,11 @@ llm = CustomGeminiWrapper(
 class AgentState(TypedDict):
     messages: Annotated[List[BaseMessage], operator.add]
     user_profile: str
+    user_id: int # NEW: For security filtering
     retrieved_context: str
 
-    available_reports: str # New field for explicit list of existing records
-    board_discussion: str # NEW: Stores the internal debate of the medical board
+    available_reports: str 
+    board_discussion: str 
 
 # --- Nodes ---
 
@@ -110,9 +111,13 @@ def retrieve_node(state: AgentState):
     messages = state['messages']
     last_message = messages[-1]
     query = last_message.content
+    user_id = state.get('user_id')
     
-    # Simple semantic search
-    docs = rag.search_similar_records(query, n_results=3)
+    if not user_id:
+        return {"retrieved_context": "Error: User ID missing for context retrieval."}
+
+    # Semantic search with User Isolation
+    docs = rag.search_similar_records(user_id=str(user_id), query=query, n_results=3)
     
     # Format context
     context_str = "\n\n".join(docs) if docs else "No specific past records found relevant to this query."
