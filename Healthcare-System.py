@@ -27,7 +27,7 @@ st.set_page_config(
 BACKEND_URL = "http://127.0.0.1:8000"
 
 # --- Load Custom CSS ---
-@st.cache_data
+# @st.cache_data removed to ensure CSS is injected every re-run
 def local_css(file_name):
     try:
         with open(file_name) as f:
@@ -163,18 +163,15 @@ def clear_session():
 def login(username, password):
     try:
         url = f"{BACKEND_URL}/token"
-        print(f"DEBUG: Posting to {url} with user={username}") # DEBUG
         res = requests.post(url, data={"username": username, "password": password})
         
         if res.status_code == 200:
             data = res.json()
-            save_session(data["access_token"], username) # Auto-save on login
+            save_session(data["access_token"], username)
             return data
         
-        print(f"DEBUG: Login Failed. Status: {res.status_code}, Response: {res.text}") # DEBUG
         return None
-    except Exception as e:
-        print(f"DEBUG: Login Exception: {e}") # DEBUG
+    except:
         return None
 
 def signup(username, password, email, full_name, dob):
@@ -313,70 +310,82 @@ def main_app():
 
     if not st.session_state.auth_token:
         # LOGIN / SIGNUP SCREEN
-        if 'auth_mode' not in st.session_state:
-            st.session_state.auth_mode = 'login'
+        # PREMIUM SPLIT LAYOUT
+        hero_col, auth_col = st.columns([1.4, 1], gap="large")
+        
+        with hero_col:
+            st.markdown("""
+            <div style="padding-top: 50px; padding-right: 20px; border-right: 1px solid #333;">
+                <h1 style="font-size: 3.5rem; font-weight: 800; background: -webkit-linear-gradient(0deg, #00d2ff, #3a7bd5); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                    Future Health<br>Is Here.
+                </h1>
+                <p style="font-size: 1.2rem; color: #a0aab9; margin-top: 20px; line-height: 1.6;">
+                    Experience the power of <strong>AI-driven diagnostics</strong>. 
+                    Monitor your vitals, predict potential risks, and safeguard your future with our 
+                    enterprise-grade healthcare system.
+                </p>
+                <div style="display: flex; gap: 15px; margin-top: 30px;">
+                    <span style="background: #1e232b; padding: 10px 20px; border-radius: 20px; color: #00d2ff; border: 1px solid #00d2ff33;">🛡️ Secure</span>
+                    <span style="background: #1e232b; padding: 10px 20px; border-radius: 20px; color: #00d2ff; border: 1px solid #00d2ff33;">⚡ Real-time</span>
+                    <span style="background: #1e232b; padding: 10px 20px; border-radius: 20px; color: #00d2ff; border: 1px solid #00d2ff33;">🤖 AI Powered</span>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
 
-        def toggle_auth_mode():
-            st.session_state.auth_mode = 'signup' if st.session_state.auth_mode == 'login' else 'login'
-
-        # Centered Container for Auth
-        col1, col2, col3 = st.columns([1, 2, 1])
-        with col2:
-            if st.session_state.auth_mode == 'login':
-                st.markdown("<h1 style='text-align: center; color: #00d2ff; margin-bottom: 10px;'>AIO Healthcare System</h1>", unsafe_allow_html=True)
-                st.markdown("<p style='text-align: center; color: #ccc; margin-bottom: 30px;'>Secure Login</p>", unsafe_allow_html=True)
-                
-                username = st.text_input("Username", key="login_user")
-                password = st.text_input("Password", type="password", key="login_pass")
-                
-                st.markdown("<br>", unsafe_allow_html=True)
-                if st.button("Login", use_container_width=True):
-                    if username and password:
-                        token_data = login(username, password)
-                        if token_data:
-                            st.session_state.auth_token = token_data["access_token"]
-                            st.session_state.username = username
-                            fetch_profile() # Fetch profile on login
-                            st.rerun()
+        with auth_col:
+            st.markdown("<br><br>", unsafe_allow_html=True)
+            auth_tabs = st.tabs(["🔐 Login", "📝 Sign Up"])
+            
+            with auth_tabs[0]:
+                st.markdown("### Welcome Back")
+                with st.form("login_form", border=False):
+                    username = st.text_input("Username", placeholder="Enter your username")
+                    password = st.text_input("Password", type="password", placeholder="Enter your password")
+                    
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    if st.form_submit_button("Access Portal", type="primary", use_container_width=True):
+                        if username and password:
+                            with st.spinner("Authenticating..."):
+                                token_data = login(username, password)
+                                if token_data:
+                                    st.session_state.auth_token = token_data["access_token"]
+                                    st.session_state.username = username
+                                    fetch_profile()
+                                    st.rerun()
+                                else:
+                                    st.error("Invalid credentials")
                         else:
-                            st.error("Invalid credentials")
-                    else:
-                        st.warning("Please fill in all fields")
-                
-                st.markdown("<div style='text-align: center; margin-top: 20px; color: #888;'>New here? <a href='#' id='signup_link'>Create an account</a></div>", unsafe_allow_html=True)
-                if st.button("Create Account", key="goto_signup"):
-                    toggle_auth_mode()
-                    st.rerun()
+                            st.warning("Please enter both username and password.")
 
-            else:
-                st.markdown("<h1 style='text-align: center; color: #00d2ff; margin-bottom: 10px;'>Join AIO Healthcare System</h1>", unsafe_allow_html=True)
-                st.markdown("<p style='text-align: center; color: #ccc; margin-bottom: 30px;'>Create your account</p>", unsafe_allow_html=True)
-                
-                new_fullname = st.text_input("Full Name", key="signup_name")
-                new_email = st.text_input("Email Address", key="signup_email")
-                new_dob = st.date_input("Date of Birth", value=None, min_value=pd.to_datetime("1900-01-01"), max_value=pd.to_datetime("today"), key="signup_dob")
-                
-                st.warning("Username is required for login")
-                new_user = st.text_input("Choose Username", key="signup_user")
-                new_pass = st.text_input("Choose Password", type="password", key="signup_pass")
-                
-                st.markdown("<br>", unsafe_allow_html=True)
-                if st.button("Sign Up", use_container_width=True):
-                    if new_user and new_pass and new_fullname and new_email and new_dob:
-                        success, error_msg = signup(new_user, new_pass, new_email, new_fullname, new_dob)
-                        if success:
-                            st.success("Account created! Please login.")
-                            st.session_state.auth_mode = 'login'
-                            st.rerun()
+            with auth_tabs[1]:
+                st.markdown("### Create Account")
+                with st.form("signup_form", border=False):
+                    new_fullname = st.text_input("Full Name")
+                    new_email = st.text_input("Email Address")
+                    new_dob = st.date_input("Date of Birth", value=None, min_value=pd.to_datetime("1900-01-01"), max_value=pd.to_datetime("today"))
+                    
+                    st.caption("Secure Credentials")
+                    new_user = st.text_input("Username")
+                    new_pass = st.text_input("Password", type="password", help="Must be 8+ chars (letters & numbers).")
+                    
+                    st.markdown("<br>", unsafe_allow_html=True)
+                    if st.form_submit_button("Register Account", use_container_width=True):
+                        missing = []
+                        if not new_user: missing.append("Username")
+                        if not new_pass: missing.append("Password")
+                        if not new_fullname: missing.append("Full Name")
+                        if not new_email: missing.append("Email")
+                        if not new_dob: missing.append("Date of Birth")
+                        
+                        if not missing:
+                            with st.spinner("Creating secure profile..."):
+                                success, error_msg = signup(new_user, new_pass, new_email, new_fullname, new_dob)
+                                if success:
+                                    st.success("Account created successfully! Please switch to Login tab.")
+                                else:
+                                    st.error(f"Signup Failed: {error_msg}")
                         else:
-                            st.error(f"Signup Failed: {error_msg}")
-                    else:
-                        st.warning("Please fill in all fields")
-                
-                st.markdown("<div style='text-align: center; margin-top: 20px; color: #888;'>Already have an account?</div>", unsafe_allow_html=True)
-                if st.button("Back to Login", key="goto_login"):
-                    toggle_auth_mode()
-                    st.rerun()
+                            st.warning(f"Missing fields: {', '.join(missing)}")
 
     else:
         # LOGGED IN VIEW
@@ -397,28 +406,58 @@ def main_app():
             st.markdown(f"<h2 style='text-align: center;'>{p.get('full_name', st.session_state.username)}</h2>", unsafe_allow_html=True)
             st.markdown(f"<p style='text-align: center; color: #888;'>@{st.session_state.username}</p>", unsafe_allow_html=True)
         
+            # Define Menu Options based on Role
+            menu_options = ['Profile', 'Smart Lab Analyzer', 'Diabetes Prediction', 'Heart Disease Prediction', 'Liver Disease Prediction', 'Healthcare Chatbot', 'Monitoring Dashboard']
+            menu_icons = ['person', 'file-earmark-medical', 'droplet-fill', 'heart-pulse', 'activity', 'robot', 'graph-up-arrow']
+            
+            if st.session_state.username == "admin":
+                menu_options.append("Admin Panel")
+                menu_icons.append("shield-lock")
+
+            # Hide Default Streamlit Chrome
+            st.markdown("""
+            <style>
+                #MainMenu {visibility: hidden;}
+                footer {visibility: hidden;}
+                header {visibility: hidden;}
+                [data-testid="stSidebar"] {
+                    background-color: #1a1e26;
+                    border-right: 1px solid #333;
+                }
+            </style>
+            """, unsafe_allow_html=True)
+            
             selected = option_menu(
                 menu_title=None,
-                options=['Profile', 'Smart Lab Analyzer', 'Diabetes Prediction', 'Heart Disease Prediction', 'Liver Disease Prediction', 'Healthcare Chatbot', 'Monitoring Dashboard'],
-                icons=['person', 'file-earmark-medical', 'droplet-fill', 'heart-pulse', 'activity', 'robot', 'graph-up-arrow'],
+                options=menu_options,
+                icons=menu_icons,
                 default_index=0,
                 styles={
-                    "container": {"padding": "0!important", "background-color": "transparent"},
-                    "icon": {"color": "#00d2ff", "font-size": "18px"}, 
-                    "nav-link": {"font-size": "16px", "text-align": "left", "margin":"5px", "--hover-color": "#262730"},
-                    "nav-link-selected": {"background-color": "#00d2ff"},
+                    "container": {"padding": "5px", "background-color": "#1a1e26"},
+                    "icon": {"color": "#00d2ff", "font-size": "20px"}, 
+                    "nav-link": {
+                        "font-size": "16px", 
+                        "text-align": "left", 
+                        "margin":"5px", 
+                        "color": "#e0e0e0",
+                        "--hover-color": "#2d333b"
+                    },
+                    "nav-link-selected": {
+                        "background-color": "#00d2ff", 
+                        "color": "white",
+                        "font-weight": "600"
+                    },
                 }
             )
         
-            if st.button("Logout"):
+            if st.button("Logout", type="secondary"):
                 clear_session()
                 st.session_state.auth_token = None
                 st.session_state.username = None
                 st.session_state.profile = {}
                 st.rerun()
             
-            st.markdown("---")
-            st.markdown("<div style='text-align: center; color: #888;'>AIO Healthcare System</div>", unsafe_allow_html=True)
+            st.markdown("<div style='text-align: center; color: #555; font-size: 0.8rem; margin-top: 20px;'>AIO Security Active 🛡️</div>", unsafe_allow_html=True)
 
 
         # --- User Profile Page ---
@@ -1228,6 +1267,138 @@ def main_app():
                 "Message": ["User Login Success", "Prediction Request Served", "Model Schema Warning", "Ingestion Job Completed", "System Startup"]
             })
             st.dataframe(logs_df)
+
+        # --- Admin Panel (Protected) ---
+        if selected == 'Admin Panel':
+            st.title("Admin Command Center 🛡️")
+            
+            # Dashboard Tabs
+            admin_tabs = st.tabs(["📊 System Overview", "👥 User Management"])
+            
+            with admin_tabs[0]:
+                st.subheader("System Health & KPIs")
+                # Fetch basic user list for aggregation
+                headers = {"Authorization": f"Bearer {st.session_state.auth_token}"}
+                try:
+                    res = requests.get(f"{BACKEND_URL}/users", headers=headers)
+                    if res.status_code == 200:
+                        all_users = res.json()
+                        
+                        kpi1, kpi2, kpi3 = st.columns(3)
+                        kpi1.metric("Total Users", len(all_users), delta="+1 Today")
+                        kpi2.metric("Models Active", "3 (Diabetes, Heart, Liver)", delta="All Online")
+                        kpi3.metric("System Status", "Healthy", delta="Uptime 99.9%")
+                        
+                        st.markdown("### 📈 Activity Trends")
+                        # Simulated Chart for visual appeal
+                        chart_data = pd.DataFrame(
+                            np.random.randn(20, 3),
+                            columns=['Users', 'Predictions', 'Errors'])
+                        st.line_chart(chart_data)
+                    else:
+                        st.error("Could not load system stats.")
+                except Exception as e:
+                    st.error(f"Connection error: {e}")
+
+            with admin_tabs[1]:
+                st.subheader("User Database")
+                
+                # Fetch Users Again (or reuse)
+                if 'all_users' in locals():
+                    df = pd.DataFrame(all_users)
+                    if not df.empty:
+                        # Display main table
+                        st.dataframe(
+                            df[['id', 'username', 'full_name', 'email', 'joined_date'] if 'joined_date' in df.columns else ['id', 'username', 'full_name', 'email']], 
+                            use_container_width=True,
+                            hide_index=True
+                        )
+                        
+                        st.markdown("---")
+                        st.subheader("🕵️ User Dossier Inspector")
+                        
+                        # Selection Mechanism
+                        selected_user_id = st.selectbox("Select User ID to Inspect", df['id'])
+                        
+                        if st.button("View Full Dossier", type="primary"):
+                             with st.spinner(f"Retrieving confidential records for User ID {selected_user_id}..."):
+                                try:
+                                    res_full = requests.get(f"{BACKEND_URL}/users/{selected_user_id}/full", headers=headers)
+                                    if res_full.status_code == 200:
+                                        full_data = res_full.json()
+                                        
+                                        # Check for Redaction
+                                        is_redacted = "[REDACTED" in str(full_data.get('about_me', ''))
+
+                                        # --- THE DOSSIER VIEW ---
+                                        import html
+                                        safe_name = html.escape(full_data.get('full_name', 'Unknown'))
+                                        safe_user = html.escape(full_data.get('username', 'Unknown'))
+                                        
+                                        if is_redacted:
+                                            st.warning("🔒 PRIVACY PROTECTED: User has opted out of data collection. Sensitive records are hidden.")
+                                        
+                                        st.markdown(f"""
+                                        <div style="background: rgba(0, 210, 255, 0.1); padding: 20px; border-radius: 10px; border: 1px solid #00d2ff;">
+                                            <h2>📂 Use Dossier: {safe_name}</h2>
+                                            <p><strong>ID:</strong> {full_data.get('id')} | <strong>Username:</strong> {safe_user}</p>
+                                        </div>
+                                        <br>
+                                        """, unsafe_allow_html=True)
+                                        
+                                        dos_col1, dos_col2 = st.columns([1, 2])
+                                        
+                                        with dos_col1:
+                                            st.markdown("### 👤 Profile")
+                                            st.write(f"**Email:** {full_data.get('email')}")
+                                            st.write(f"**DOB:** {full_data.get('dob')}")
+                                            st.write(f"**Gender:** {full_data.get('gender')}")
+                                            st.write(f"**Blood Type:** {full_data.get('blood_type')}")
+                                            st.markdown("#### Lifestyle Pillars")
+                                            st.write(f"**Diet:** {full_data.get('diet')}")
+                                            st.write(f"**Activity:** {full_data.get('activity_level')}")
+                                            st.write(f"**Sleep:** {full_data.get('sleep_hours')} hrs")
+                                        
+                                        with dos_col2:
+                                            dos_tabs = st.tabs(["🏥 Medical History", "💬 Chat Logs"])
+                                            
+                                            with dos_tabs[0]:
+                                                if full_data.get("health_records"):
+                                                    recs = full_data["health_records"]
+                                                    st.success(f"{len(recs)} Medical Records Found")
+                                                    for r in recs:
+                                                        icon = "🩸" if "diabetes" in r['record_type'] else "❤️" if "heart" in r['record_type'] else "🥦"
+                                                        with st.expander(f"{icon} {r['record_type'].title()} - {r['timestamp'].split('T')[0]}"):
+                                                            st.write(f"**Result:** {r['prediction']}")
+                                                            st.code(r['data'], language='json')
+                                                else:
+                                                    st.info("No medical records.")
+
+                                            with dos_tabs[1]:
+                                                if full_data.get("chat_logs"):
+                                                    logs = full_data["chat_logs"]
+                                                    st.info(f"{len(logs)} Messages Logged")
+                                                    for log in logs:
+                                                        align = "right" if log['role'] == 'user' else "left"
+                                                        color = "#00d2ff33" if log['role'] == 'user' else "#ffffff11"
+                                                        st.markdown(f"""
+                                                        <div style="text-align: {align}; margin-bottom: 5px;">
+                                                            <span style="background: {color}; padding: 8px; border-radius: 10px; display: inline-block;">
+                                                                <small>{log['role'].upper()}</small><br>
+                                                                {log['content']}
+                                                            </span>
+                                                        </div>
+                                                        """, unsafe_allow_html=True)
+                                                else:
+                                                    st.warning("No chat history.")
+                                        
+                                    else:
+                                        st.error(f"Failed to load details: {res_full.text}")
+                                except Exception as ex:
+                                    st.error(f"Error: {ex}")
+
+                    else:
+                        st.info("No users found.")
 
 if __name__ == '__main__':
     try:
