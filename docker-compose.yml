@@ -1,7 +1,47 @@
+version: '3.8'
+
 services:
-  streamlit:
-    build:
-      dockerfile: ./Dockerfile
-      context: ./
+  backend:
+    build: .
+    container_name: healthcare_backend
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000
     ports:
-      - "8081:8501"
+      - "8000:8000"
+    volumes:
+      - ./.env:/app/.env
+      - ./healthcare.db:/app/healthcare.db
+      - ./vector_store.pkl:/app/vector_store.pkl
+      - ./mlruns:/app/mlruns
+      - ./Datasets:/app/Datasets
+      - ./Testing:/app/Testing
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build: .
+    container_name: healthcare_frontend
+    command: streamlit run Healthcare-System.py --server.port 8501 --server.address 0.0.0.0
+    ports:
+      - "8501:8501"
+    environment:
+      - BACKEND_URL=http://backend:8000
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+       - ./.streamlit:/app/.streamlit
+    restart: always
+
+  mlflow:
+    build: .
+    container_name: healthcare_mlflow
+    command: mlflow ui --host 0.0.0.0 --port 5000
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/app/mlruns
+    restart: always

@@ -1,22 +1,12 @@
-from sqlalchemy.orm import Session
-from backend.database import SessionLocal, engine
-from backend import models, auth
+import sqlite3
+from passlib.context import CryptContext
 
-models.Base.metadata.create_all(bind=engine)
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+hashed = pwd_context.hash("password123")
 
-def reset_password():
-    db = SessionLocal()
-    username = "pavansofts"
-    new_password = "Admin123!"
-    
-    user = db.query(models.User).filter(models.User.username == username).first()
-    if user:
-        user.hashed_password = auth.get_password_hash(new_password)
-        db.commit()
-        print(f"Password for '{username}' updated successfully to '{new_password}'.")
-    else:
-        print(f"User '{username}' not found.")
-    db.close()
+conn = sqlite3.connect("healthcare.db")
+cursor = conn.cursor()
 
-if __name__ == "__main__":
-    reset_password()
+cursor.execute("UPDATE users SET hashed_password = ? WHERE username = ?", (hashed, "pavansofts"))
+conn.commit()
+print("PASSWORD_RESET_SUCCESS")
