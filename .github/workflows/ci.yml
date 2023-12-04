@@ -30,9 +30,10 @@ jobs:
     - name: Install Playwright Browsers (Minimal)
       run: playwright install chromium
         
-    - name: Run Backend & Pipeline Tests
+    - name: Run All Tests (Unit, Integration, MLOps, Strict)
       run: |
-        pytest tests/unit tests/integration tests/unit/test_mlops.py --cov=backend
+        # Run everything in tests/ folder with backend coverage, excluding E2E (requires running app)
+        pytest tests/ --ignore=tests/e2e --cov=backend --cov-report=term-missing
         
     # Optional: Run E2E if we start the app in background
     # - name: Start App & Run E2E

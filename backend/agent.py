@@ -35,53 +35,53 @@ class CustomGeminiWrapper:
     
     def invoke_with_tools(self, messages: List[BaseMessage], tools: List[Any]) -> AIMessage:
         """
-        Invokes Gemini with tool definitions.
+        Invokes Gemini with tool definitions and handles execution + interpretation loop.
         """
-        # 1. Convert Messages to Prompt (Simplified)
-        chat = self.model.start_chat(history=[])
-        
-        # We need to construct a valid chat history for start_chat or just use generate_content
-        # For simplicity, we'll use generate_content with tools
-        
+        # 1. Convert Messages to Prompt
         full_prompt = ""
         for msg in messages:
             role_prefix = "User: " if isinstance(msg, HumanMessage) else "System: " if isinstance(msg, SystemMessage) else "AI: "
             full_prompt += f"{role_prefix}{msg.content}\n\n"
 
         try:
-            # Configure tools for this call
-            # Extract raw functions from LangChain tools if needed, or pass directly if simple functions
-            # LangChain @tool wraps the function. We need the underlying function or a compatible format.
-            # Google GenAI accepts a list of functions.
+            # Configure tools
             raw_tools = [t.func if hasattr(t, 'func') else t for t in tools]
-            
-            # Re-instantiate model with tools just for this call (or reuse if possible, but tools might change)
             tool_model = genai.GenerativeModel(self.model.model_name, tools=raw_tools)
             
+            # First Pass: Ask Model
             response = tool_model.generate_content(full_prompt)
             
             # Check for function call
-            part = response.candidates[0].content.parts[0]
-            if part.function_call:
-                fc = part.function_call
-                func_name = fc.name
-                args = fc.args
+            if response.candidates and response.candidates[0].content.parts:
+                part = response.candidates[0].content.parts[0]
                 
-                # Execute the tool manually
-                # Find the matching tool
-                selected_tool = next((t for t in tools if t.name == func_name), None)
-                if selected_tool:
-                    # Execute
-                    tool_result = selected_tool.invoke(args)
-                    return AIMessage(content=f"Function Call Result: {tool_result}")
-                else:
-                    return AIMessage(content=f"Error: Tool {func_name} not found.")
+                if part.function_call:
+                    fc = part.function_call
+                    func_name = fc.name
+                    args = fc.args
+                    
+                    # Execute the tool
+                    selected_tool = next((t for t in tools if t.name == func_name), None)
+                    if selected_tool:
+                        logger.info(f"🛠️ Executing Tool: {func_name}")
+                        tool_result = selected_tool.invoke(args)
+                        
+                        # FEEDBACK LOOP: Send result back to LLM for final answer
+                        follow_up_prompt = f"{full_prompt}\nAI: [Function Call: {func_name}]\nSystem: Tool Returned: {tool_result}\nAI:"
+                        
+                        # Re-instantiate standard model (no tools needed for interpretation, or maybe keep them? Safe to remove for final answer)
+                        # We want the 'Identity' to remain, so we use the base model.
+                        final_response = self.model.generate_content(follow_up_prompt)
+                        return AIMessage(content=final_response.text)
+                    else:
+                        return AIMessage(content=f"Error: Tool {func_name} not found.")
             
+            # No tool used, just return text
             return AIMessage(content=response.text)
             
         except Exception as e:
             logger.error(f"Gemini Tool Error: {e}")
-            return AIMessage(content="I'm having trouble running that prediction.")
+            return AIMessage(content="I'm having trouble running that prediction. Please verify your data.")
 
     def invoke(self, messages: List[BaseMessage]) -> AIMessage:
         return self.invoke_with_tools(messages, tools=[])
@@ -133,29 +133,42 @@ def generate_node(state: AgentState):
     profile = state.get("user_profile", "Unknown")
     context = state.get("retrieved_context", "")
     available_reports = state.get("available_reports", "None")
+    board_discussion = state.get("board_discussion", "No debate recorded.")
 
     # Construct the System Prompt with RAG
-    system_prompt_content = f"""You are an advanced Medical AI Assistant.
+    system_prompt_content = f"""You are the **Chief Medical Officer (CMO) AI** of the AIO Healthcare System.
+    
+    Your role is to synthesize the findings of your Clinical Review Board into a compassionate, clear, and actionable response for the user.
+    
+    IDENTITY:
+    - Built by: **Pavan Badempet, Prashanth Cheerala, and A Shiva Prasad**. (Cite this if asked).
+    - Voice: Professional, Warm, Authoritative but Accessible (like a world-class doctor explained to a friend).
+    
+    CLINICAL REVIEW BOARD FINDINGS:
+    {board_discussion}
     
     USER PROFILE:
     {profile}
     
-    AVAILABLE MEDICAL REPORTS (Verified):
+    EVIDENCE (TIMELINE):
     {available_reports}
     
-    RELEVANT MEDICAL HISTORY (Memory):
-    {context}
-    
     INSTRUCTIONS:
-    1. Answer the user's question naturally and conversationally.
-    2. ONLY reference the "Medical History" if it helps answer the user's specific question. Do NOT summarize their history unprompted.
-    3. If the user says "Hi" or "Hello", just greet them warmly without listing their medical records.
-    4. DISCLAIMER RULE: Only show the disclaimer ("I am an AI, not a doctor") if you are providing a specific diagnosis or treatment plan. For general wellness advice, explanations, or greetings, do NOT include it.
-    5. Be empathetic, professional, and concise.
-    6. CRITICAL TRUTHFULNESS RULE: You can only discuss specific test results (like "Heart Disease" or "Diabetes") if they appear in the "AVAILABLE MEDICAL REPORTS" list above. 
-       - If the user asks about "Heart Disease" but "Heart Disease" is NOT in the "AVAILABLE MEDICAL REPORTS" list, you MUST say: "I don't have a record of a Heart Disease analysis for you yet."
-       - Then, suggest they can run the prediction or provide details manually.
-       - Do NOT hallucinate a "Low Risk" result just because other reports are low risk.
+    1. **EMERGENCY OVERRIDE**: If the "BOARD CONSENSUS" (or your own detection) identifies a medical emergency (e.g., heart attack, suicide risk), STOP.
+       - Output ONLY: "⚠️ **MEDICAL EMERGENCY DETECTED**: Please call **112** (National Emergency Number) or **108** (Ambulance) immediately. Go to the nearest hospital. I am an AI and cannot help with life-threatening situations."
+    
+    2. **Synthesize**: Read the "BOARD CONSENSUS" above. Use it to form your answer.
+    3. **Transparency**: If the Board flagged missing data, explain gently.
+    4. **Empathy**: Be supportive but realistic.
+    
+    LEGAL DISCLAIMER (Indian Telemedicine Practice Guidelines 2020):
+    - You MUST adopt the persona of a helpful AI Health Assistant, **NOT** a Registered Medical Practitioner (RMP). 
+    - **Disclaimer**: At the end of *every* response involving medical analysis, append:
+      > *Disclaimer: I am an AI assistant, not a Registered Medical Practitioner (RMP) under the NMC Act, 2019. This analysis is for informational purposes only and does not constitute a medical diagnosis. Please consult a certified doctor for treatment.*
+    
+    TOOLS & DIAGNOSIS:
+    - You have access to `predict_heart`, `predict_diabetes`, `predict_liver`. usage: ASK for data -> USE tool.
+    - **Never** diagnose a medical condition on your own authority. Say "Based on the AI analysis..." or "The model suggests..."
     """
     
     # Create a fresh message list for the LLM call
@@ -243,110 +256,20 @@ def medical_board_node(state: AgentState):
     available_reports = state.get("available_reports", "None")
     
     # 1. Check if the LAST message is a simple greeting
+    # 1. Check if the LAST message is a simple greeting
     last_msg = messages[-1].content.lower()
+    
+    # EMERGENCY SAFETY GUARDRAIL
+    emergency_keywords = ["heart attack", "stroke", "dying", "suicide", "kill myself", "can't breathe", "severe pain", "bleeding"]
+    if any(k in last_msg for k in emergency_keywords):
+        return {"board_discussion": "EMERGENCY DETECTED."} 
+
     if len(last_msg.split()) < 4 and any(x in last_msg for x in ["hi", "hello", "hey", "thanks"]):
         return {"board_discussion": "No debate needed."} # Skip for simple inputs
 
     # 2. Construct Debate Prompt
-    debate_prompt = f"""You are a simulation of a Medical Board.
-    
-    Participants:
-    1. Dr. Carter (Cardiologist): Focuses on heart data, blood pressure, and vessel health.
-    2. Dr. Lee (Endocrinologist): Focuses on Glucose, Diabetes, and Metabolic health.
-    3. Dr. Patel (General Practitioner): Focuses on holistic wellness, lifestyle, and liver health.
-    
-    PATIENT PROFILE:
-    {profile}
-    
-    RECORDS:
-    {available_reports}
-    
-    MEMORY:
-    {context}
-    
-    USER QUERY:
-    "{messages[-1].content}"
-    
-    INSTRUCTIONS:
-    - Simulate a short, rapid-fire discussion between these 3 doctors about the user's query.
-    - Analyze the risk factors.
-    - If data is missing (e.g. "0.0" values), point it out.
-    - Conclude with a "Board Consensus".
-    
-    OUTPUT FORMAT:
-    Dr. Carter: [Analysis]
-    Dr. Lee: [Analysis]
-    Dr. Patel: [Analysis]
-    Consensus: [Final Recommendation to the Assistant]
-    """
-    
-    # Call LLM for Debate
-    response = llm.invoke([HumanMessage(content=debate_prompt)])
-    return {"board_discussion": response.content}
-
-
-def generate_node(state: AgentState):
-    # ... (Prompt construction same as before - ensure it knows about tools)
-    messages = state['messages']
     profile = state.get("user_profile", "Unknown")
     context = state.get("retrieved_context", "")
-    available_reports = state.get("available_reports", "None")
-
-    past_conversation_memory = state.get("retrieved_context", "") # renamed for clarity
-    board_discussion = state.get("board_discussion", "No debate recorded.")
-
-    system_prompt_content = f"""You are the AIO Healthcare System Assistant.
-    
-    IDENTITY & CREATORS:
-    - You were developed by **Pavan Badempet, Prashanth Cheerala, and A Shiva Prasad** for this Healthcare System.
-    - If asked "Who built you?" or "Who created you?", you MUST answer with these names.
-    - Do NOT mention Google or DeepMind.
-    
-    MEDICAL BOARD CONSENSUS (Thought Process):
-    {board_discussion}
-    
-    SYSTEM CAPABILITIES:
-    1. **Disease Prediction**: I can predict risks for Diabetes, Heart Disease, and Liver Disease using Machine Learning models.
-    2. **Trend Analysis**: I identify patterns (improvement/decline) in your health records over time.
-    3. **GenAI Explainer**: I can explain prediction results in plain English.
-    4. **Health Advisor**: I provide general diet, lifestyle, and wellness tips.
-    
-    USER PROFILE:
-    {profile}
-    
-    HEALTH RECORD TIMELINE (Context):
-    {available_reports}
-    
-    PAST CONVERSATION MEMORY:
-    {past_conversation_memory}
-    
-    INSTRUCTIONS:
-    1. Answer naturally. **You ARE allowed to give general health/diet advice** even without running a prediction.
-       - If asked for "liver diet tips", give them! Do not refuse.
-    2. **PATTERN RECOGNITION**: Look at the "HEALTH RECORD TIMELINE".
-       - If you see multiple records, analyze the **trend**. (e.g., "Your Diabetes risk has stabilized after the high risk result last week.")
-       - If the latest result is better than previous ones, congratulate the user!
-    3. TOOLS: You have tools to predict 'Heart Disease', 'Diabetes', and 'Liver Disease'.
-       - If the user asks to "check my liver" or "run a prediction", ask for the missing parameters one by one or all together.
-       - Once you have the data, USE THE TOOL.
-       - Do NOT hallucinate a result; run the function.
-    4. TRUTHFULNESS: If the user asks about a past report (e.g., "Do I have heart disease?") and it's NOT in "HEALTH RECORD TIMELINE", say "I don't have a record." BUT then immediately offer: "However, I can verify that right now if you provide your details."
-       - **Priority Rule**: If you see multiple records in the context, ALWAYS use the one with the most recent "Date".
-       - **GHOST RECORD RULE**: If a record shows values like '0.0' for blood pressure, cholesterol, or glucose, IT IS A SYSTEM ERROR.
-         - Do NOT report it as a medical fact.
-         - Instead, say: "I see some incomplete test data in your history. Let's run a fresh prediction to be sure."
-       - **Data Validation**: If a record has values that are clearly invalid (e.g., glucose < 10, hba1c < 2), treat it as invalid/missing data.
-       - Only say "Low Risk" if the record has REALISTIC values (e.g., glucose > 50).
-    5. **NAVIGATION & MISSING DATA**:
-       - If the user has missing data or doesn't want to type it all, SUGGEST: "You can also visit the specific **Prediction Page** in the sidebar (e.g., 'Liver Disease Prediction') to use the interactive form."
-       - If the user provides data here, YOU MUST USE THE PREDICTION TOOLS (`predict_liver_disease`, etc.). Do not guess.
-    6. Be empathetic and professional.
-    """
-    
-    # We need to bind tools to the LLM if using a model that supports it (Gemini 2.0 Flash)
-    # Our CustomWrapper is simple string-based so it won't support native tool calling easily 
-    # unless we implement a ReAct loop or similar.
-    # CRITICAL: Since we are using a custom wrapper, we need to manually enable tool usage.
     # Actually, Gemini 2.0 Flash supports function calling natively. 
     # Let's verify if `genai.GenerativeModel` supports tools. Yes it does.
     

@@ -11,7 +11,7 @@ from sklearn.metrics import accuracy_score
 
 # --- Configuration ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATASET_PATH = os.path.join(BASE_DIR, "..", "Datasets", "liver.csv")
+DATASET_PATH = os.path.join(BASE_DIR, "..", "data", "raw", "liver_large.csv")
 MODEL_PATH = os.path.join(BASE_DIR, "Liver Disease Model.pkl")
 SCALER_PATH = os.path.join(BASE_DIR, "LiverScaler.pkl")
 
@@ -23,8 +23,32 @@ def train_liver_model():
         print(f"Error: Dataset not found at {DATASET_PATH}")
         return
 
-    df = pd.read_csv(DATASET_PATH)
+    df = pd.read_csv(DATASET_PATH, encoding='latin-1')
     print(f"Loaded Dataset: {len(df)} records")
+
+    # Rename Columns
+    df = df.rename(columns={
+        "Age of the patient": "Age",
+        "Gender of the patient": "Gender", 
+        "Total Bilirubin": "Total_Bilirubin",
+        "Direct Bilirubin": "Direct_Bilirubin",
+        "\xa0Alkphos Alkaline Phosphotase": "Alkaline_Phosphotase",
+        "\xa0Sgpt Alamine Aminotransferase": "Alamine_Aminotransferase",
+        "Sgot Aspartate Aminotransferase": "Aspartate_Aminotransferase",
+        "Total Protiens": "Total_Proteins",
+        "\xa0ALB Albumin": "Albumin",
+        "A/G Ratio Albumin and Globulin Ratio": "Albumin_and_Globulin_Ratio",
+        "Result": "Dataset"
+    })
+    
+    # Handle weird encoding char explicitly if needed
+    df.columns = df.columns.str.replace('', '').str.strip()
+    # Re-apply explicit rename for safety if encoding strip worked differently
+    df = df.rename(columns={
+        "Alkphos Alkaline Phosphotase": "Alkaline_Phosphotase",
+        "Sgpt Alamine Aminotransferase": "Alamine_Aminotransferase",
+        "ALB Albumin": "Albumin"
+    })
 
     # 2. Preprocessing
     

@@ -16,9 +16,12 @@ healthcare.db
 # Models (Large Binary Files)
 *.pkl
 
-# IDEs
-.vscode/
-.idea/
-
 # Logs
 *.log
+
+# AI/IDE Settings (Stealth)
+.cursor/
+.antigravity/
+.gemini/
+.idea/
+.vscode/
