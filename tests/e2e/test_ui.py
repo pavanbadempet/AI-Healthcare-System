@@ -5,6 +5,14 @@ import pytest
 BASE_URL = "http://localhost:8501"
 
 @pytest.mark.e2e
+def test_ui_smoke(page: Page):
+    try:
+        page.goto(BASE_URL)
+    except:
+        pytest.skip("App not running")
+
+    expect(page).to_have_title("AIO Healthcare System")
+    
     # OR if session persisted, it shows Dashboard.
     # We can check for "Login" button OR "Logout" button.
     
