@@ -1,5 +1,24 @@
 import pytest
 from fastapi.testclient import TestClient
+from backend import auth
+
+@pytest.fixture
+def auth_header(client):
+    # Setup - Create User
+    client.post("/signup", json={
+        "username": "test_user_unique",
+        "password": "Password123!",
+        "email": "unique@example.com",
+        "full_name": "Unique User",
+        "dob": "1995-05-05"
+    })
+    # Login to get token
+    response = client.post("/token", data={
+        "username": "test_user_unique",
+        "password": "Password123!"
+    })
+    token = response.json()["access_token"]
+    return {"Authorization": f"Bearer {token}"}
 
 def test_signup_success(client):
     response = client.post("/signup", json={

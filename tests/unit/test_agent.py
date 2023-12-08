@@ -9,6 +9,7 @@ def mock_agent_env():
          patch("backend.agent.llm") as mock_llm_instance: # This patches the already-instantiated object
         
         mock_llm_instance.invoke_with_tools.return_value = AIMessage(content="Mocked AI Response")
+        mock_llm_instance.invoke.return_value = AIMessage(content="Mocked AI Response")
         
         yield {
             "rag": mock_rag,
@@ -46,6 +47,6 @@ def test_generate_node(mock_agent_env):
     result = call_model(state)
          
     mock_instance = mock_agent_env["gemini"]
-    assert mock_instance.invoke_with_tools.called
+    assert mock_instance.invoke.called
     assert isinstance(result["messages"][-1], AIMessage)
     assert result["messages"][-1].content == "Mocked AI Response"

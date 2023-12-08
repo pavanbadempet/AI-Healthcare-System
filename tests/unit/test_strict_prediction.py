@@ -26,7 +26,7 @@ def test_predict_diabetes_success():
     with patch("backend.prediction.diabetes_model", mock_model):
         resp = client.post("/predict/diabetes", json={
             "gender": 1, "age": 50, "hypertension": 0, "heart_disease": 0,
-            "smoking": 1, "bmi": 25.0, "hba1c": 6.5, "glucose": 150
+            "smoking_history": 1, "bmi": 25.0, "high_chol": 0, "physical_activity": 1, "general_health": 2
         })
         assert resp.status_code == 200
         assert resp.json()["prediction"] == "High Risk"
@@ -36,7 +36,7 @@ def test_predict_diabetes_model_unavailable():
     with patch("backend.prediction.diabetes_model", None):
         resp = client.post("/predict/diabetes", json={
             "gender": 1, "age": 50, "hypertension": 0, "heart_disease": 0,
-            "smoking": 1, "bmi": 25.0, "hba1c": 6.5, "glucose": 150
+            "smoking_history": 1, "bmi": 25.0, "high_chol": 0, "physical_activity": 1, "general_health": 2
         })
         assert resp.status_code == 503
         assert "not available" in resp.json()["detail"]
@@ -49,7 +49,7 @@ def test_predict_diabetes_exception():
     with patch("backend.prediction.diabetes_model", mock_model):
         resp = client.post("/predict/diabetes", json={
             "gender": 1, "age": 50, "hypertension": 0, "heart_disease": 0,
-            "smoking": 1, "bmi": 25.0, "hba1c": 6.5, "glucose": 150
+            "smoking_history": 1, "bmi": 25.0, "high_chol": 0, "physical_activity": 1, "general_health": 2
         })
         assert resp.status_code == 500
         assert "Model Failure" in resp.json()["detail"]
@@ -62,9 +62,8 @@ def test_predict_heart_success():
     
     with patch("backend.prediction.heart_model", mock_model):
         resp = client.post("/predict/heart", json={
-            "age": 50, "gender": 1, "cp": 0, "trestbps": 120, "chol": 200, "fbs": 0,
-            "restecg": 0, "thalach": 150, "exang": 0, "oldpeak": 1.0, "slope": 1,
-            "ca": 0, "thal": 2
+            "age": 50, "gender": 1, "high_bp": 0, "high_chol": 200, "bmi": 25.0, 
+            "smoker": 0, "stroke": 0, "diabetes": 0, "phys_activity": 1, "hvy_alcohol": 0, "gen_hlth": 2
         })
         assert resp.status_code == 200
         assert resp.json()["prediction"] == "Heart Disease Detected"
@@ -72,9 +71,8 @@ def test_predict_heart_success():
 def test_predict_heart_model_unavailable():
     with patch("backend.prediction.heart_model", None):
         resp = client.post("/predict/heart", json={
-            "age": 50, "gender": 1, "cp": 0, "trestbps": 120, "chol": 200, "fbs": 0,
-            "restecg": 0, "thalach": 150, "exang": 0, "oldpeak": 1.0, "slope": 1,
-            "ca": 0, "thal": 2
+            "age": 50, "gender": 1, "high_bp": 0, "high_chol": 200, "bmi": 25.0, 
+            "smoker": 0, "stroke": 0, "diabetes": 0, "phys_activity": 1, "hvy_alcohol": 0, "gen_hlth": 2
         })
         assert resp.status_code == 503
 
@@ -84,9 +82,8 @@ def test_predict_heart_exception():
     
     with patch("backend.prediction.heart_model", mock_model):
         resp = client.post("/predict/heart", json={
-            "age": 50, "gender": 1, "cp": 0, "trestbps": 120, "chol": 200, "fbs": 0,
-            "restecg": 0, "thalach": 150, "exang": 0, "oldpeak": 1.0, "slope": 1,
-            "ca": 0, "thal": 2
+            "age": 50, "gender": 1, "high_bp": 0, "high_chol": 200, "bmi": 25.0, 
+            "smoker": 0, "stroke": 0, "diabetes": 0, "phys_activity": 1, "hvy_alcohol": 0, "gen_hlth": 2
         })
         assert resp.status_code == 500
 
@@ -99,12 +96,13 @@ def test_predict_liver_success():
     mock_scaler.transform.return_value = np.array([[1,2,3,4,5,6]])
     
     with patch("backend.prediction.liver_model", mock_model), \
-         patch("backend.prediction.scaler", mock_scaler):
+         patch("backend.prediction.liver_scaler", mock_scaler):
         
         resp = client.post("/predict/liver", json={
             "age": 45, "gender": 1, "total_bilirubin": 1.0,
             "alkaline_phosphotase": 100, "alamine_aminotransferase": 30,
-            "albumin_globulin_ratio": 1.0
+            "albumin_and_globulin_ratio": 1.0, "direct_bilirubin": 0.5,
+            "aspartate_aminotransferase": 30, "total_proteins": 6.0, "albumin": 3.0
         })
         assert resp.status_code == 200
         assert resp.json()["prediction"] == "Healthy Liver"
@@ -115,7 +113,8 @@ def test_predict_liver_unavailable():
         resp = client.post("/predict/liver", json={
             "age": 45, "gender": 1, "total_bilirubin": 1.0,
             "alkaline_phosphotase": 100, "alamine_aminotransferase": 30,
-            "albumin_globulin_ratio": 1.0
+            "albumin_and_globulin_ratio": 1.0, "direct_bilirubin": 0.5,
+            "aspartate_aminotransferase": 30, "total_proteins": 6.0, "albumin": 3.0
         })
         assert resp.status_code == 503
 
@@ -126,12 +125,13 @@ def test_predict_liver_exception():
     mock_scaler.transform.return_value = np.array([[1,2,3,4,5,6]])
     
     with patch("backend.prediction.liver_model", mock_model), \
-         patch("backend.prediction.scaler", mock_scaler):
+         patch("backend.prediction.liver_scaler", mock_scaler):
          
         resp = client.post("/predict/liver", json={
             "age": 45, "gender": 1, "total_bilirubin": 1.0,
             "alkaline_phosphotase": 100, "alamine_aminotransferase": 30,
-            "albumin_globulin_ratio": 1.0
+            "albumin_and_globulin_ratio": 1.0, "direct_bilirubin": 0.5,
+            "aspartate_aminotransferase": 30, "total_proteins": 6.0, "albumin": 3.0
         })
         assert resp.status_code == 500
         assert "Liver Fail" in resp.json()["detail"]
@@ -147,9 +147,11 @@ def test_model_loading_failure():
         # Reload module
         importlib.reload(backend.prediction)
         
-        # Check globals are None
-        assert backend.prediction.diabetes_model is None
-        assert backend.prediction.heart_model is None
+        # Check globals are DummyModel instances (not None)
+        assert backend.prediction.diabetes_model is not None
+        assert type(backend.prediction.diabetes_model).__name__ == "DummyModel"
+        assert backend.prediction.heart_model is not None
+        assert type(backend.prediction.heart_model).__name__ == "DummyModel"
         
     # Restore module (reload again without patch) to fix state for other tests?
     # Actually, other tests rely on patching the GLOBAL variable, so if it is None, strict patching works fine.

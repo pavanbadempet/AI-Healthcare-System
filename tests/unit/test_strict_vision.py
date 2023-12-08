@@ -4,6 +4,7 @@ import os
 import importlib
 import backend.vision_service
 from backend.vision_service import analyze_lab_report
+from fastapi import HTTPException
 
 def test_analyze_image_success():
     # Mock genai model response
@@ -12,7 +13,8 @@ def test_analyze_image_success():
     mock_resp.text = '{"extracted_data": {"glucose": 100}, "summary": "Healthy"}'
     
     with patch("backend.vision_service.model.generate_content", return_value=mock_resp) as mock_gen, \
-         patch("backend.vision_service.Image.open") as mock_open:
+         patch("backend.vision_service.Image.open") as mock_open, \
+         patch("backend.vision_service.GOOGLE_API_KEY", "dummy_key"):
          
         result = analyze_lab_report(b"fake_image_bytes")
         
@@ -27,7 +29,9 @@ def test_analyze_image_success():
 
 def test_analyze_image_exception():
     # Force exception
-    with patch("backend.vision_service.model.generate_content", side_effect=Exception("API Error")):
+    # Force exception
+    with patch("backend.vision_service.model.generate_content", side_effect=Exception("API Error")), \
+         patch("backend.vision_service.GOOGLE_API_KEY", "dummy_key"):
         result = analyze_lab_report(b"bytes")
         # Should return error stricture
         assert result["extracted_data"] == {}
@@ -37,18 +41,17 @@ def test_analyze_image_malformed_json():
     mock_resp = MagicMock()
     mock_resp.text = "Not JSON"
     
-    with patch("backend.vision_service.model.generate_content", return_value=mock_resp):
+    with patch("backend.vision_service.model.generate_content", return_value=mock_resp), \
+         patch("backend.vision_service.GOOGLE_API_KEY", "dummy_key"):
         result = analyze_lab_report(b"bytes")
         # Should fall into exception block (json.loads fails)
         assert result["extracted_data"] == {}
 
 def test_missing_api_key():
-    # Force os.getenv to return None for anything
-    with patch("os.getenv", return_value=None):
-        # We also need to prevent load_dotenv from circumventing our mock (unlikely but safe)
-        with patch("backend.vision_service.load_dotenv"):
-             with pytest.raises(ValueError, match="GOOGLE_API_KEY not found"):
-                 importlib.reload(backend.vision_service)
-    
-    # Restore module
-    importlib.reload(backend.vision_service)
+    # Patch GOOGLE_API_KEY to be None/Empty
+    with patch("backend.vision_service.GOOGLE_API_KEY", None):
+        with pytest.raises(HTTPException) as excinfo:
+            analyze_lab_report(b"fake_image_bytes")
+        
+        assert excinfo.value.status_code == 503
+        assert "Vision API Key not configured" in excinfo.value.detail
