@@ -2,7 +2,7 @@ import pytest
 from fastapi.testclient import TestClient
 from backend.main import app
 import logging
-from backend.prediction import HeartInput, LiverInput, DiabetesInput
+from backend.schemas import HeartInput, LiverInput, DiabetesInput
 
 # Fix: TrustedHostMiddleware requires a valid host
 client = TestClient(app, base_url="http://localhost")
