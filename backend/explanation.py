@@ -14,9 +14,13 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 if not GOOGLE_API_KEY:
     logger.error("GOOGLE_API_KEY not found for Explanation Service")
 
-genai.configure(api_key=GOOGLE_API_KEY)
-# Align with agent.py model verson
-model = genai.GenerativeModel("gemini-2.0-flash") 
+try:
+    genai.configure(api_key=GOOGLE_API_KEY)
+    # Align with agent.py model verson
+    model = genai.GenerativeModel("gemini-2.0-flash") 
+except Exception as e:
+    logger.error(f"GenAI Init Failed (Explanation Service Disabled): {e}")
+    model = None 
 
 router = APIRouter(prefix="/explain", tags=["Explanation"])
 
@@ -35,6 +39,9 @@ async def explain_prediction(req: ExplanationRequest):
     Uses Gemini to explain WHY a prediction was made in plain English.
     """
     try:
+        if not model:
+            raise HTTPException(status_code=503, detail="Explanation Service Unavailable (Model not loaded)")
+            
         # Construct Prompt
         prompt = f"""
         You are an expert Medical AI. I have just run a Machine Learning prediction for **{req.prediction_type}**.

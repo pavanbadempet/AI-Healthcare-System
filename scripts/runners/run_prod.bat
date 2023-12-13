@@ -14,7 +14,7 @@ echo Waiting for backend (Model Loading)...
 timeout /t 15 /nobreak >nul
 
 echo [3/3] Launching Client Dashboard...
-start "Healthcare Interface" cmd /c "streamlit run app.py --server.port 8501 --server.address 127.0.0.1 --server.headless false --ui.hideTopBar true --theme.base dark"
+start "Healthcare Interface" cmd /c "streamlit run frontend/main.py --server.port 8501 --server.address 127.0.0.1 --server.headless false --ui.hideTopBar true --theme.base dark"
 
 echo.
 echo ---------------------------------------------------

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage
-from . import models, database, auth, rag, agent
+from . import models, database, auth, rag, agent, schemas
 import json
 import datetime
 from typing import List, Dict, Any, Optional
@@ -21,6 +21,8 @@ class ChatRequest(BaseModel):
     """Schema for incoming chat messages."""
     message: str
     history: List[Message] = []
+    current_context: Dict[str, Any] = {}
+
 
 class RecordCreate(BaseModel):
     """Schema for saving a health record."""
@@ -94,7 +96,7 @@ def chat_endpoint(
     # Save User Message to DB
     if save_data:
         try:
-            user_log = models.ChatLog(user_id=current_user.id, role="user", content=request.message, timestamp=datetime.datetime.utcnow())
+            user_log = models.ChatLog(user_id=current_user.id, role="user", content=request.message, timestamp=datetime.datetime.now(datetime.timezone.utc))
             db.add(user_log)
             db.commit()
             db.refresh(user_log)
@@ -158,7 +160,7 @@ def chat_endpoint(
         # Save AI Response
         if save_data:
             try:
-                ai_log = models.ChatLog(user_id=current_user.id, role="assistant", content=response_text, timestamp=datetime.datetime.utcnow())
+                ai_log = models.ChatLog(user_id=current_user.id, role="assistant", content=response_text, timestamp=datetime.datetime.now(datetime.timezone.utc))
                 db.add(ai_log)
                 db.commit()
                 db.refresh(ai_log)
@@ -205,12 +207,12 @@ def save_health_record(
     
     return {"status": "success", "message": "Health record saved."}
 
-@router.get("/records")
+@router.get("/records", response_model=List[schemas.HealthRecordResponse])
 def get_health_records(
     record_type: Optional[str] = None, 
     current_user: models.User = Depends(auth.get_current_user), 
     db: Session = Depends(database.get_db)
-) -> List[Any]:
+) -> List[schemas.HealthRecordResponse]:
     """Retrieve health records, optionally filtered by type."""
     query = db.query(models.HealthRecord).filter(models.HealthRecord.user_id == current_user.id)
     if record_type:
