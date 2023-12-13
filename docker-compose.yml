@@ -24,7 +24,7 @@ services:
   frontend:
     build: .
     container_name: healthcare_frontend
-    command: streamlit run Healthcare-System.py --server.port 8501 --server.address 0.0.0.0
+    command: streamlit run frontend/main.py --server.port 8501 --server.address 0.0.0.0
     ports:
       - "8501:8501"
     environment:

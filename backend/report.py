@@ -49,6 +49,8 @@ async def analyze_report(file: UploadFile = File(...)) -> Dict[str, Any]:
         
         return result
         
+    except HTTPException as he:
+        raise he
     except Exception as e:
         logger.error(f"Report Analysis Failed: {e}")
         raise HTTPException(status_code=500, detail="Failed to analyze report")

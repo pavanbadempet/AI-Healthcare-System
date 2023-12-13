@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: aio-health-backend
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.12 # Standard stable version
+      - key: GOOGLE_API_KEY
+        sync: false # User must enter this in dashboard
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        value: sqlite:///./health.db # Note: Ephemeral on Free Tier
