@@ -38,6 +38,7 @@ jobs:
     # Optional: Run E2E if we start the app in background
     # - name: Start App & Run E2E
     #   run: |
-    #     streamlit run Healthcare-System.py &
+    #     uvicorn backend.main:app &
+    #     streamlit run frontend/main.py &
     #     sleep 10
-    #     pytest tests/e2e/test_ui.py
+    #     pytest tests/e2e/

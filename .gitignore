@@ -18,6 +18,9 @@ healthcare.db
 
 # Logs
 *.log
+session.json
+.coverage
+htmlcov/
 
 # AI/IDE Settings (Stealth)
 .cursor/

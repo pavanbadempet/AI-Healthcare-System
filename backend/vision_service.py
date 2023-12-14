@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 from PIL import Image
 import io
 from typing import Dict, Any, Union
+from fastapi import HTTPException
 
 # --- Logging ---
 # logging.basicConfig(level=logging.INFO)
@@ -37,7 +38,7 @@ def analyze_lab_report(image_bytes: bytes) -> Dict[str, Any]:
     """
     try:
         if not GOOGLE_API_KEY:
-            raise ValueError("API Key missing")
+            raise HTTPException(status_code=503, detail="Vision API Key not configured")
 
         # Load Image
         image = Image.open(io.BytesIO(image_bytes))
@@ -76,6 +77,8 @@ def analyze_lab_report(image_bytes: bytes) -> Dict[str, Any]:
         result = json.loads(text)
         return result
 
+    except HTTPException as he:
+        raise he
     except Exception as e:
         logger.error(f"Vision Analysis Failed: {e}")
         return {
