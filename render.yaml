@@ -7,7 +7,7 @@ services:
     startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
-        value: 3.10.12 # Standard stable version
+        value: 3.11.9 # Standard stable version
       - key: GOOGLE_API_KEY
         sync: false # User must enter this in dashboard
       - key: TAVILY_API_KEY
