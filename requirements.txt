@@ -20,3 +20,4 @@ python-multipart==0.0.9
 passlib[bcrypt]==1.7.4
 pyjwt==2.8.0
 orjson
+plotly==5.22.0
