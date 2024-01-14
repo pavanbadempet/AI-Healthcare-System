@@ -12,7 +12,12 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger(__name__)
-    
+def process_diabetes():
+    logger.info("Processing Diabetes Dataset...")
+    # Paths
+    input_path = os.path.join(RAW_DIR, "diabetes_binary_5050split_health_indicators_BRFSS2015.csv")
+    output_path = os.path.join(PROCESSED_DIR, "diabetes.parquet")
+
     if not os.path.exists(input_path):
         logger.warning(f"Input file not found: {input_path}")
         return
