@@ -24,3 +24,8 @@ plotly==5.22.0
 python-jose[cryptography]==3.3.0
 fpdf
 pillow
+python-dotenv
+sqlalchemy
+langgraph
+pydantic
+starlette
