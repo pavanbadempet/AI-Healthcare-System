@@ -26,6 +26,7 @@ fpdf
 pillow
 python-dotenv
 sqlalchemy
-langgraph
-pydantic
+langchain-core
+langgraph>=0.0.10
+pydantic>=2.0.0
 starlette
