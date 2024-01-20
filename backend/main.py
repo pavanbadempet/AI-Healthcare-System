@@ -88,6 +88,9 @@ app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1
 origins = [
     "http://localhost:8501",
     "http://127.0.0.1:8501",
+    "https://aiohealthcare.streamlit.app",
+    "https://share.streamlit.io",
+    "*", 
 ]
 app.add_middleware(
     CORSMiddleware,
