@@ -195,7 +195,7 @@ workflow.add_conditional_edges(
     route_step,
     {
         "research": "researcher",
-        "analyze": "generate", # For now, let Generate handle tool prompts or just chat
+        "analyze": "analyst",
         "respond": "generate",
         "off_topic": "guardrail"
     }
