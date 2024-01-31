@@ -82,7 +82,7 @@ app = FastAPI(title="AIO Healthcare System API", default_response_class=ORJSONRe
 # --- Middleware ---
 
 # 1. Trusted Host
-app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "::1"])
+app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "::1", "aio-health-backend.onrender.com"])
 
 # 2. CORS
 origins = [

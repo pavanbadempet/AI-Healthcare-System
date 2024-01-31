@@ -18,28 +18,49 @@ def test_signup_and_dashboard_flow(page: Page):
     signup_tab.click()
     
     # 3. Fill Form
-    # New UI uses simpler labels
-    page.get_by_label("Full Name").fill("Playwright User")
+    # Using locator.all() or filter to distinguish between Login and Signup tokens if they are identical
+    # However, unique labels are best.
+    # Assuming Username/Password are ambiguous, we'll try to find the one visible in the active tab context.
+    # We can assume the Signup fields are the ones appearing APART from the login ones.
+    
+    # Alternatively, focus on placeholder text if available
+    # page.get_by_placeholder("Create a username").fill("pw_bot")
+    
+    # For now, let's try the 'last' occurrence if it's the second tab
+    # Or strict indexing on the inputs themselves
+    
+    inputs = page.get_by_label("Username").all()
+    # 2nd one should be signup if 1st is login
+    if len(inputs) > 1:
+        inputs[1].fill("pw_bot")
+    else:
+        # Fallback if only one is found (e.g. dynamic rendering)
+        page.get_by_label("Username").fill("pw_bot")
+
+    pw_inputs = page.get_by_label("Password").all()
+    if len(pw_inputs) > 1:
+        pw_inputs[1].fill("SecurePwd123")
+    else:
+        page.get_by_label("Password").fill("SecurePwd123")
+        
     page.get_by_label("Email").fill("pw_user@bot.com")
-    
-    
-    # Locate specific inputs for Signup (Tab 2, so likely index 1)
-    page.get_by_label("Username").nth(1).fill("pw_bot")
-    page.locator("input[type='password']").nth(1).fill("SecurePwd123")
+    page.get_by_label("Full Name").fill("Playwright User")
     
     # 4. Submit
-    page.get_by_role("button", name="Sign Up").click()
+    # 'Sign Up' button might also be ambiguous if text matches tab
+    page.get_by_role("button", name="Sign Up", exact=True).click()
     
     # 5. Expect Success
     expect(page.get_by_text("Account Created!")).to_be_visible(timeout=15000)
     
     # 6. Login
-    # Switch to Login Tab
-    page.get_by_role("tab", name="Login").click()
+    page.get_by_text("Login", exact=True).click()
     
-    page.get_by_label("Username").nth(0).fill("pw_bot")
-    page.locator("input[type='password']").nth(0).fill("SecurePwd123")
-    page.get_by_role("button", name="Login").click()
+    # Re-fetch inputs as DOM might have shifted? mostly same
+    # Login is usually first
+    page.get_by_label("Username").first.fill("pw_bot")
+    page.get_by_label("Password").first.fill("SecurePwd123")
+    page.get_by_role("button", name="Login", exact=True).click()
     
     # 7. Verify Dashboard
     expect(page.get_by_text(f"Hello, pw_bot")).to_be_visible(timeout=15000)
