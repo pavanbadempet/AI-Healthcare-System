@@ -18,6 +18,8 @@ requests>=2.32.3
 feedparser>=6.0.10
 python-multipart>=0.0.9
 passlib[bcrypt]>=1.7.4
+bcrypt<4.0
+sentence-transformers
 pyjwt>=2.8.0
 orjson
 plotly>=5.22.0
