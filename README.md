@@ -2,7 +2,7 @@
 # 🏥 AIO Healthcare System
 ### *Intelligent Disease Prediction & AI-Powered Medical Assistance*
 
-![CI Status](https://img.shields.io/github/actions/workflow/status/pavanbadempet/A-Healthcare-System-using-Machine-Learning-Techniques-for-Disease-Prediction-with-Chatbot-Assistance/ci.yml?branch=main)
+![CI Status](https://img.shields.io/github/actions/workflow/status/pavanbadempet/AIO-Healthcare-System/ci.yml?branch=main)
 ![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
@@ -14,7 +14,7 @@
 
 The **AIO Healthcare System** is a production-grade, microservices-ready platform designed to democratize access to preliminary medical insights. By combining **Gradient Boosting Machines (XGBoost)** for high-accuracy disease prediction with **Generative AI (Gemini Pro & RAG)** for personalized medical consultation, we bridge the gap between raw data and actionable health advice.
 
-Unlike traditional health apps, this system implements **Retrieval Augmented Generation (RAG)** to "remember" user health records, ensuring that the AI chat assistant provides context-aware, verifiable answers, minimizing hallucinations and maximizing trust.
+Unlike traditional health apps, this system implements **Retrieval Augmented Generation (RAG)** to "remember" user health records, ensuring that the AI chat assistant provides context-aware, verifiable answers—minimizing hallucinations and maximizing trust.
 
 ---
 

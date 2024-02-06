@@ -33,4 +33,4 @@ jobs:
 
     - name: Run the container
       run: |
-        docker-compose up -d
+        docker compose up -d

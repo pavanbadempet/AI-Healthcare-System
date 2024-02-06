@@ -184,7 +184,7 @@ app.include_router(report.router, tags=["Smart Lab Analyzer"])
 
 @app.get("/")
 def read_root():
-    return {"message": "Healthcare System API is running"}
+    return {"message": "AIO Healthcare System API is running"}
 
 @app.post("/generate_report")
 async def get_medical_report(request: Request):
