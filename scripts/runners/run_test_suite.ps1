@@ -2,7 +2,7 @@
 $ErrorActionPreference = "Stop"
 
 Write-Host "==========================================" -ForegroundColor Cyan
-Write-Host "    AIO HEALTHCARE - AUTOMATED QA SUITE    " -ForegroundColor Cyan
+Write-Host "    AI HEALTHCARE - AUTOMATED QA SUITE    " -ForegroundColor Cyan
 Write-Host "==========================================" -ForegroundColor Cyan
 
 # 1. Run Unit Tests (Backend Logic)

@@ -8,7 +8,7 @@
 
 ## ABSTRACT
 
-The rapid evolution of Artificial Intelligence (AI) has opened new frontiers in medical diagnostics. This project presents a holistic **"AIO Healthcare System"** designed to predict five critical diseases—**Diabetes, Heart Disease, Liver Disease, Kidney Disease, and Lung Cancer**—with high precision. Addressing the limitations of existing manual diagnostic processes, we leverage **XGBoost (eXtreme Gradient Boosting)**, a state-of-the-art ensemble learning algorithm known for its superior performance on tabular clinical data. 
+The rapid evolution of Artificial Intelligence (AI) has opened new frontiers in medical diagnostics. This project presents a holistic **"AI Healthcare System"** designed to predict five critical diseases—**Diabetes, Heart Disease, Liver Disease, Kidney Disease, and Lung Cancer**—with high precision. Addressing the limitations of existing manual diagnostic processes, we leverage **XGBoost (eXtreme Gradient Boosting)**, a state-of-the-art ensemble learning algorithm known for its superior performance on tabular clinical data. 
 
 To bridge the gap between technical diagnostics and patient understanding, the system features a **Generative AI Chatbot ("Dr. AI")** powered by **Google Gemini Pro** and **Retrieval Augmented Generation (RAG)**. This chatbot interprets prediction results, recalls past medical history from a Vector Database, and provides personalized lifestyle recommendations.
 
@@ -190,7 +190,7 @@ graph TD
 ```mermaid
 flowchart LR
     User((User))
-    System[AIO Healthcare System]
+    System[AI Healthcare System]
     
     User -->|Provides Vitals| System
     System -->|Returns Diagnosis| User
@@ -352,7 +352,7 @@ Quality Assurance (QA) was integral to the lifecycle. We utilized the **Pytest**
 ## CHAPTER 9: CONCLUSION & FUTURE ENHANCEMENT
 
 ### 9.1 CONCLUSION
-The **AIO Healthcare System** successfully meets the objective of providing an accessible, accurate, and intelligent healthcare assistant. By modernizing the stack to use **XGBoost** and **FastAPI**, we achieved significantly lower latency and higher reliability compared to legacy systems. The integration of **Generative AI** transforms the application from a simple calculator into a proactive health partner.
+The **AI Healthcare System** successfully meets the objective of providing an accessible, accurate, and intelligent healthcare assistant. By modernizing the stack to use **XGBoost** and **FastAPI**, we achieved significantly lower latency and higher reliability compared to legacy systems. The integration of **Generative AI** transforms the application from a simple calculator into a proactive health partner.
 
 ### 9.2 FUTURE ENHANCEMENT
 1.  **Mobile Application**: Utilizing React Native to deploy the system as an Android/iOS app.
