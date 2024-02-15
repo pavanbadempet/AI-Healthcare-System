@@ -1,5 +1,5 @@
 """
-AIO Healthcare System - Backend API Entrypoint
+AI Healthcare System - Backend API Entrypoint
 ==============================================
 
 Orchestrates the FastAPI application.
@@ -77,7 +77,7 @@ def run_migrations():
 run_migrations()
 
 # --- App Definition ---
-app = FastAPI(title="AIO Healthcare System API", default_response_class=ORJSONResponse)
+app = FastAPI(title="AI Healthcare System API", default_response_class=ORJSONResponse)
 
 # --- Middleware ---
 
@@ -184,7 +184,7 @@ app.include_router(report.router, tags=["Smart Lab Analyzer"])
 
 @app.get("/")
 def read_root():
-    return {"message": "AIO Healthcare System API is running"}
+    return {"message": "AI Healthcare System API is running"}
 
 @app.post("/generate_report")
 async def get_medical_report(request: Request):

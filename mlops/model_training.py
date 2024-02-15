@@ -1,5 +1,5 @@
 """
-AIO Healthcare System - Training Pipeline
+AI Healthcare System - Training Pipeline
 """
 
 import sys
