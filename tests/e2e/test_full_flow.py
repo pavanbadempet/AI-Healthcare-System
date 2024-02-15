@@ -5,7 +5,7 @@ def test_landing_page(page: Page):
     page.goto("http://localhost:8501")
     # Streamlit loading can be slow, wait for main container
     page.wait_for_selector("div[data-testid='stAppViewContainer']", timeout=10000)
-    expect(page).to_have_title(re.compile("AIO Healthcare"))
+    expect(page).to_have_title(re.compile("AI Healthcare"))
 
 def test_signup_and_dashboard_flow(page: Page):
     # 1. Navigate
