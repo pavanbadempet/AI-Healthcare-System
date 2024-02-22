@@ -13,6 +13,12 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Clean up disk space
+      run: |
+        sudo apt-get clean
+        sudo rm -rf /var/lib/apt/lists/*
+        docker system prune -af || true
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
