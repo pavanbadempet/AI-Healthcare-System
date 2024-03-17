@@ -1,101 +1,152 @@
-/* --- GLOBAL THEME --- */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+/* --- GLOBAL DARK THEME --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Outfit:wght@400;500;700&display=swap');
 
-html, body, [class*="css"] {
-    font-family: 'Inter', sans-serif;
-    color: #1E293B; /* Slate 800 */
+html,
+body,
+[class*="css"] {
+    font-family: 'Outfit', 'Inter', sans-serif;
+    color: #E2E8F0;
+    /* Slate 200 */
+    background-color: #0F172A;
+    /* Ensure base is dark */
 }
 
-/* Background Gradients (Subtle) */
+/* Background Gradients (Deep Space / Neural) */
 .stApp {
-    background: linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%);
+    background: radial-gradient(circle at top left, #1e293b 0%, #0f172a 100%);
+    background-attachment: fixed;
 }
 
 /* --- COMPONENTS --- */
 
-/* Cards (Glassmorphism) */
-div[data-testid="stMetric"], div.stDataFrame, div.stForm {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+/* Cards (Dark Glassmorphism) */
+div[data-testid="stMetric"],
+div.stDataFrame,
+div.stForm {
+    background: rgba(30, 41, 59, 0.7);
+    /* Dark Slate with opacity */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(148, 163, 184, 0.1);
     border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    transition: transform 0.2s ease;
+    padding: 24px;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
-div[data-testid="stMetric"]:hover {
+div[data-testid="stMetric"]:hover,
+div.stForm:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    border-color: rgba(56, 189, 248, 0.3);
+    /* Light Blue Glow */
+    box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.5);
 }
 
-/* Buttons (Modern Gradient) */
-div.stButton > button {
-    background: linear-gradient(to right, #2563EB, #4F46E5); /* Blue to Indigo */
+/* Buttons (Neon / Gradient) */
+div.stButton>button {
+    background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
+    /* Blue Core */
     color: white;
     border: none;
-    border-radius: 8px;
-    padding: 0.5rem 1.5rem;
+    border-radius: 10px;
+    padding: 0.6rem 1.8rem;
     font-weight: 600;
-    transition: all 0.3s ease;
+    letter-spacing: 0.5px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
 }
 
-div.stButton > button:hover {
-    transform: scale(1.02);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+div.stButton>button:hover {
+    background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 100%);
+    transform: translateY(-1px) scale(1.02);
+    box-shadow: 0 10px 20px -5px rgba(37, 99, 235, 0.4);
 }
 
-/* Inputs (Clean) */
-div[data-testid="stTextInput"] input, div[data-testid="stNumberInput"] input {
-    border-radius: 8px;
-    border: 1px solid #E2E8F0;
-    background: white;
-    padding: 0.5rem;
+div[data-testid="stFormSubmitButton"]>button {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+    /* Emerald for Actions */
+    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
 }
 
-div[data-testid="stTextInput"] input:focus, div[data-testid="stNumberInput"] input:focus {
-    border-color: #3B82F6;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+/* Inputs (Dark & Sleek) */
+div[data-testid="stTextInput"] input,
+div[data-testid="stNumberInput"] input,
+div[data-testid="stPasswordInput"] input,
+div[data-testid="stDateInput"] input {
+    color: #F8FAFC !important;
+    background-color: rgba(15, 23, 42, 0.6) !important;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 10px;
+    padding: 0.8rem 1rem;
+    transition: all 0.2s ease;
+}
+
+div[data-testid="stTextInput"] input:focus,
+div[data-testid="stNumberInput"] input:focus,
+div[data-testid="stPasswordInput"] input:focus {
+    border-color: #38BDF8;
+    background-color: rgba(15, 23, 42, 0.9) !important;
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
 }
 
 /* --- SIDEBAR --- */
 section[data-testid="stSidebar"] {
-    background-color: #FFFFFF;
-    border-right: 1px solid #E2E8F0;
+    background-color: #0B1121;
+    /* Very dark slate */
+    border-right: 1px solid rgba(148, 163, 184, 0.05);
 }
 
-/* Navigation Menu */
-div.stRadio > div[role="radiogroup"] > label {
-    background: transparent;
-    border-radius: 8px;
-    padding: 10px;
-    margin-bottom: 5px;
-    border: 1px solid transparent;
-    transition: background 0.2s;
+/* Remove default sidebar top padding */
+section[data-testid="stSidebar"]>div:first-child {
+    padding-top: 2rem;
 }
 
-div.stRadio > div[role="radiogroup"] > label:hover {
-    background: #F1F5F9;
+/* Hide default navigation if any remains */
+div[data-testid="stSidebarNav"] {
+    display: none;
 }
 
-/* Active Nav Item */
-div.stRadio > div[role="radiogroup"] > label[data-checked="true"] {
-    background: #EFF6FF;
-    border-color: #BFDBFE;
-    color: #1D4ED8;
-    font-weight: 600;
+/* --- TEXT & HEADERS --- */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    color: #F8FAFC !important;
+    letter-spacing: -0.02em;
 }
 
-/* --- HIDE DEFAULT STREAMLIT CRUFT --- */
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
-header {visibility: hidden;}
-
-/* --- TYPOGRAPHY --- */
-h1, h2, h3 {
-    letter-spacing: -0.025em;
-    color: #0F172A; /* Slate 900 */
+h1 {
+    background: linear-gradient(135deg, #FFFFFF 0%, #94A3B8 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-h1 { font-weight: 800; }
-h2 { font-weight: 700; color: #334155; }
+p,
+label,
+span {
+    color: #CBD5E1;
+    /* Slate 300 */
+}
+
+/* --- ALERTS --- */
+div[data-baseweb="notification"] {
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* --- HIDE CRUFT --- */
+#MainMenu {
+    visibility: hidden;
+}
+
+footer {
+    visibility: hidden;
+}
+
+header {
+    visibility: hidden;
+}

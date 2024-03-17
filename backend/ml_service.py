@@ -8,7 +8,8 @@ class MLService:
     def __init__(self):
         # We rely on backend.prediction's global state
         # Ensure they are initialized (idempotent)
-        prediction.initialize_models()
+        # prediction.initialize_models() # REMOVED: Managed by lifespan in main.py
+        pass
 
     def predict_diabetes(self, gender, age, hypertension, heart_disease, smoking_history, bmi, hba1c_level, blood_glucose_level):
         try:

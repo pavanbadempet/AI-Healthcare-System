@@ -15,18 +15,16 @@ async def test_explain_prediction():
         prediction_result="High Risk"
     )
     
-    # Patch the global 'model' object in backend.explanation
-    with patch("backend.explanation.model") as mock_model_instance:
-        mock_resp = MagicMock()
-        mock_resp.text = "EXPLANATION: Valid Explanation\nTIPS:\n- Tip 1"
-        
-        # FIX: The code uses synchronous generate_content, NOT async
-        # We Mock the synchronous method
-        mock_model_instance.generate_content.return_value = mock_resp
-        
-        # No json.loads patching needed as per code inspection (custom text parsing)
-        
-        res = await explain_prediction(req)
-         
-        assert res.explanation == "Valid Explanation"
-        assert len(res.lifestyle_tips) == 1
+    # Create a MagicMock for the model
+    mock_model = MagicMock()
+    mock_resp = MagicMock()
+    mock_resp.text = "EXPLANATION: Valid Explanation\nTIPS:\n- Tip 1"
+    
+    # Mock synchronous generate_content
+    mock_model.generate_content.return_value = mock_resp
+    
+    # Inject the mock model directly
+    res = await explain_prediction(req, injected_model=mock_model)
+     
+    assert res.explanation == "Valid Explanation"
+    assert len(res.lifestyle_tips) == 1

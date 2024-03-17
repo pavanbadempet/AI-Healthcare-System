@@ -1,16 +1,7 @@
 """
 AI Healthcare System - Backend API Entrypoint
 ==============================================
-
-Orchestrates the FastAPI application.
-
-Modules:
-- Database Connection
-- Security Middleware (CORS, TrustedHost, Headers)
-- Global Exception Handling
-- API Router Inclusion
-
-Author: Pavan Badempet
+Orchestrates the FastAPI application, middleware, and database connections.
 """
 import sys
 import os
@@ -30,6 +21,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # --- Logging Configuration ---
+# --- Logging Configuration ---
 logging.basicConfig(
     level=logging.DEBUG, 
     format='%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s',
@@ -40,8 +32,30 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-from . import app_warnings, models, database, auth, chat, explanation, prediction, report
+# Suppress Deprecation Warnings (e.g. google.generativeai)
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning)
+
+logger.info("[STARTUP] Importing Modules...")
+logger.info("--> Importing app_warnings...")
+from . import app_warnings
+logger.info("--> Importing models...")
+from . import models
+logger.info("--> Importing database...")
+from . import database
+logger.info("--> Importing auth...")
+from . import auth
+logger.info("--> Importing chat...")
+from . import chat
+logger.info("--> Importing explanation...")
+from . import explanation
+logger.info("--> Importing prediction...")
+from . import prediction
+logger.info("--> Importing report...")
+from . import report
+logger.info("--> Importing pdf_service...")
 from .pdf_service import generate_medical_report
+logger.info("[SUCCESS] All Modules Imported Successfully.")
 
 # --- Database Initialization ---
 models.Base.metadata.create_all(bind=database.engine)
@@ -77,7 +91,22 @@ def run_migrations():
 run_migrations()
 
 # --- App Definition ---
-app = FastAPI(title="AI Healthcare System API", default_response_class=ORJSONResponse)
+from contextlib import asynccontextmanager
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup: Load models
+    logger.info("[STARTUP] Loading AI Models...")
+    prediction.initialize_models()
+    yield
+    # Shutdown: Clean resources if needed
+    logger.info("[SHUTDOWN] Cleaning up...")
+
+app = FastAPI(
+    title="AI Healthcare System API", 
+    default_response_class=ORJSONResponse,
+    lifespan=lifespan
+)
 
 # --- Middleware ---
 

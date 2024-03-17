@@ -25,7 +25,7 @@ def render_auth_page():
         st.markdown(hero_html, unsafe_allow_html=True)
 
     with auth_col:
-        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("<div style='margin-top: 20px;'></div>", unsafe_allow_html=True)
         # Using emoji titles as requested in original design
         auth_tabs = st.tabs(["🔐 Login", "📝 Sign Up"])
         
@@ -54,7 +54,7 @@ def render_auth_page():
                 
                 st.caption("Secure Credentials")
                 new_user = st.text_input("Username")
-                new_pass = st.text_input("Password", type="password", help="Must be 8+ chars (letters & numbers).")
+                new_pass = st.text_input("Password", type="password")
                 
                 st.markdown("<br>", unsafe_allow_html=True)
                 

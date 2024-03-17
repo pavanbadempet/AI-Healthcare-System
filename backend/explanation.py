@@ -14,13 +14,32 @@ GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 if not GOOGLE_API_KEY:
     logger.error("GOOGLE_API_KEY not found for Explanation Service")
 
-try:
-    genai.configure(api_key=GOOGLE_API_KEY)
-    # Align with agent.py model verson
-    model = genai.GenerativeModel("gemini-2.0-flash") 
-except Exception as e:
-    logger.error(f"GenAI Init Failed (Explanation Service Disabled): {e}")
-    model = None 
+# Global lazy model holder
+_model = None
+
+def get_model():
+    global _model
+    if _model:
+        return _model
+    
+    if not GOOGLE_API_KEY:
+        logger.error("GOOGLE_API_KEY not found for Explanation Service")
+        return None
+        
+    try:
+        genai.configure(api_key=GOOGLE_API_KEY)
+        _model = genai.GenerativeModel("gemini-2.0-flash")
+    except Exception as e:
+        logger.error(f"GenAI Init Failed (Explanation Service Disabled): {e}")
+        _model = None
+    return _model
+
+# Removed module-level initialization:
+# try:
+#     genai.configure(api_key=GOOGLE_API_KEY)
+#     ...
+# except ...
+model = None # Placeholder to satisfy static checks if needed, but we use get_model() 
 
 router = APIRouter(prefix="/explain", tags=["Explanation"])
 
@@ -33,12 +52,15 @@ class ExplanationResponse(BaseModel):
     explanation: str
     lifestyle_tips: list[str]
 
+from typing import Optional, Any
+
 @router.post("/", response_model=ExplanationResponse)
-async def explain_prediction(req: ExplanationRequest):
+async def explain_prediction(req: ExplanationRequest, injected_model: Optional[Any] = None):
     """
     Uses Gemini to explain WHY a prediction was made in plain English.
     """
     try:
+        model = injected_model or get_model()
         if not model:
             raise HTTPException(status_code=503, detail="Explanation Service Unavailable (Model not loaded)")
             
