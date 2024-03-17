@@ -57,6 +57,7 @@ def login(username, password) -> bool:
 
 def signup(username, password, email, full_name, dob) -> bool:
     try:
+        print(f"DEBUG: Attempting signup for user: {username}")
         payload = {
             "username": username, 
             "password": password,

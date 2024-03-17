@@ -19,9 +19,7 @@ def render_dashboard():
 
     st.markdown("---")
     st.subheader("Latest Health News")
-    # For now, placeholder or fetch logic from original main.py if critical.
-    # Original main.py had 'fetch_news_feed'. 
-    # To keep it simple for optimization, we can display static helpful tips or implement the fetcher if needed.
+    # Display static health tips
     st.markdown("""
     - **Stay Hydrated**: Drinking water is crucial for liver function.
     - **Regular Exercise**: 30 mins a day lowers diabetes risk.
