@@ -27,17 +27,32 @@ if not GOOGLE_API_KEY:
     GOOGLE_API_KEY = "dummy"
 
 # --- 1. Custom Gemini Wrapper ---
+
 class CustomGeminiWrapper:
     def __init__(self, model_name: str, api_key: str):
         self.api_key = api_key
-        if api_key != "dummy":
-            genai.configure(api_key=api_key)
-            self.model = genai.GenerativeModel(model_name)
-        else:
-            self.model = None
+        self.model_name = model_name
+        self.model = None
+
+    def _get_model(self):
+        if self.model:
+            return self.model
+            
+        if self.api_key == "dummy":
+            return None
+            
+        try:
+            # Configure only when needed
+            genai.configure(api_key=self.api_key)
+            self.model = genai.GenerativeModel(self.model_name)
+            return self.model
+        except Exception as e:
+            logger.error(f"Failed to initialize Gemini: {e}")
+            return None
     
     def invoke(self, messages: List[BaseMessage]) -> AIMessage:
-        if self.model is None:
+        model = self._get_model()
+        if model is None:
             return AIMessage(content="AI Unavailable.")
             
         full_prompt = ""
@@ -46,11 +61,12 @@ class CustomGeminiWrapper:
             full_prompt += f"{role}: {msg.content}\n\n"
             
         try:
-            response = self.model.generate_content(full_prompt)
+            response = model.generate_content(full_prompt)
             return AIMessage(content=response.text)
         except Exception as e:
             return AIMessage(content=f"Error: {str(e)}")
 
+# Global instance, but effectively lazy due to internal check
 llm = CustomGeminiWrapper("gemini-2.0-flash", GOOGLE_API_KEY)
 
 # --- 2. State Definition ---
@@ -96,7 +112,7 @@ def tavily_search(query: str):
 
 def supervisor_node(state: AgentState):
     """
-    The Brain. Decides if we need Web Search, Data Analysis, or just a Response.
+    Decides if we need Web Search, Data Analysis, or just a Response.
     Also handles OFF-TOPIC Guardrail.
     """
     messages = state['messages']
@@ -118,21 +134,20 @@ def supervisor_node(state: AgentState):
     return {"next_step": "respond"}
 
 def research_node(state: AgentState):
-    """The Researcher Agent."""
+    """Executes general web search."""
     query = state['messages'][-1].content
     logger.info(f"🔎 Researching: {query}")
     results = tavily_search(query)
     return {"tavily_results": results}
 
 def analyst_node(state: AgentState):
-    """The Analyst Agent (Access to ML)."""
+    """Verifies access to ML tools."""
     # In a full super-agent, this would parse arguments and call ml_service.
     # For now, we simulate the 'Board' recognizing the need for tools.
     return {"analysis_results": "ML Models (Heart, Diabetes, Liver) are available for invocation."}
 
 def profiler_node(state: AgentState):
     """
-    The Memory System. 
     Updates the 'psych_profile' in the DB based on the interaction.
     (In a real app, this runs async after response, here we mock it or update state).
     """
@@ -141,7 +156,7 @@ def profiler_node(state: AgentState):
     return {} 
 
 def generation_node(state: AgentState):
-    """The Dr. AI Persona."""
+    """Generates the final response."""
     messages = state['messages']
     profile = state.get("user_profile", "Unknown")
     psych = state.get("psych_profile", "No long-term memory yet.")
@@ -164,7 +179,7 @@ def generation_node(state: AgentState):
        - "MEDICAL EMERGENCY" -> Tell them to call 112/108.
        - Disclaimer: You are an AI, not a doctor.
        
-    Be concise, warm, and hyper-intelligent.
+    Be concise and professional.
     """
     
     final_msgs = [SystemMessage(content=system_prompt)] + messages

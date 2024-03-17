@@ -5,6 +5,7 @@ AI Healthcare System - Training Pipeline
 import sys
 import os
 import pickle
+import joblib
 import pandas as pd
 import numpy as np
 import logging
@@ -28,8 +29,8 @@ logger = logging.getLogger(__name__)
 
 DATA_DIR = 'data'
 PROCESSED_DIR = os.path.join(DATA_DIR, 'processed')
-# Robust Path: Resolves to project_root/models regardless of where script is run
-MODEL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'models')
+# Robust Path: Resolves to project_root/backend regardless of where script is run
+MODEL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'backend')
 
 # --- SOTA Hyperparameters (Targeting 80%+) ---
 xgb_params = {'n_estimators': 500, 'max_depth': 6, 'learning_rate': 0.03, 'eval_metric': 'logloss', 'random_state': 42, 'tree_method': 'hist'}
@@ -63,7 +64,7 @@ def train_diabetes():
     
     acc = accuracy_score(y_test, eclf.predict(X_test))
     logger.info(f"[Diabetes] Accuracy: {acc:.4f}")
-    with open(os.path.join(MODEL_DIR, 'diabetes_model.pkl'), 'wb') as f: pickle.dump(eclf, f)
+    with open(os.path.join(MODEL_DIR, 'diabetes_model.pkl'), 'wb') as f: joblib.dump(eclf, f, compress=3)
 
 def train_heart():
     logger.info("Training Heart Ensemble (CDC BRFSS - 250k Rows)...")
@@ -94,7 +95,7 @@ def train_heart():
     logger.info(f"[Heart] CDC Ensemble Accuracy: {acc:.4f}")
 
     with open(os.path.join(MODEL_DIR, 'heart_disease_model.pkl'), 'wb') as f:
-        pickle.dump(eclf, f)
+        joblib.dump(eclf, f, compress=3)
 
 def train_liver():
     logger.info("Training Liver Ensemble...")
@@ -113,7 +114,7 @@ def train_liver():
     y = df[target]
     X_scaled = scaler.fit_transform(X)
     
-    with open(os.path.join(MODEL_DIR, 'scaler.pkl'), 'wb') as f: pickle.dump(scaler, f)
+    with open(os.path.join(MODEL_DIR, 'scaler.pkl'), 'wb') as f: joblib.dump(scaler, f, compress=3)
     
     X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
     eclf = VotingClassifier(estimators=[
@@ -124,7 +125,7 @@ def train_liver():
     eclf.fit(X_train, y_train)
     acc = accuracy_score(y_test, eclf.predict(X_test))
     logger.info(f"[Liver] Accuracy: {acc:.4f}")
-    with open(os.path.join(MODEL_DIR, 'liver_disease_model.pkl'), 'wb') as f: pickle.dump(eclf, f)
+    with open(os.path.join(MODEL_DIR, 'liver_disease_model.pkl'), 'wb') as f: joblib.dump(eclf, f, compress=3)
 
 def train_kidney():
     logger.info("Training Kidney Model (XGBoost - User Requested)...")
@@ -141,7 +142,7 @@ def train_kidney():
     # Scale because some values (WBC) are large
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
-    with open(os.path.join(MODEL_DIR, 'kidney_scaler.pkl'), 'wb') as f: pickle.dump(scaler, f)
+    with open(os.path.join(MODEL_DIR, 'kidney_scaler.pkl'), 'wb') as f: joblib.dump(scaler, f, compress=3)
 
     X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
@@ -158,7 +159,7 @@ def train_kidney():
     acc = accuracy_score(y_test, model.predict(X_test))
     logger.info(f"[Kidney] XGBoost Accuracy: {acc:.4f}")
     
-    with open(os.path.join(MODEL_DIR, 'kidney_model.pkl'), 'wb') as f: pickle.dump(model, f)
+    with open(os.path.join(MODEL_DIR, 'kidney_model.pkl'), 'wb') as f: joblib.dump(model, f, compress=3)
 
 def train_lungs():
     logger.info("Training Lung Health Model (XGBoost)...")
@@ -174,7 +175,7 @@ def train_lungs():
     # 0/1 Scaling (MinMax is fine or Standard)
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
-    with open(os.path.join(MODEL_DIR, 'lungs_scaler.pkl'), 'wb') as f: pickle.dump(scaler, f)
+    with open(os.path.join(MODEL_DIR, 'lungs_scaler.pkl'), 'wb') as f: joblib.dump(scaler, f, compress=3)
 
     X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
@@ -190,11 +191,11 @@ def train_lungs():
     acc = accuracy_score(y_test, model.predict(X_test))
     logger.info(f"[Lungs] XGBoost Accuracy: {acc:.4f}")
     
-    with open(os.path.join(MODEL_DIR, 'lungs_model.pkl'), 'wb') as f: pickle.dump(model, f)
+    with open(os.path.join(MODEL_DIR, 'lungs_model.pkl'), 'wb') as f: joblib.dump(model, f, compress=3)
 
 if __name__ == "__main__":
     train_diabetes() 
-    train_heart() 
-    train_liver() 
+    train_heart()
+    train_liver()
     train_kidney()
     train_lungs()

@@ -1,4 +1,5 @@
 import pickle
+import joblib
 import numpy as np
 import pandas as pd
 from fastapi import APIRouter, HTTPException
@@ -32,35 +33,38 @@ lungs_scaler = None
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = BASE_DIR
 
-def load_pkl(filenames: List[str]):
+class DummyModel:
+    """Simple placeholder used when a real model cannot be loaded."""
+    def predict(self, X):
+        # Checks if tests expect errors or just want an object
+        raise RuntimeError("Model not available (DummyModel)")
+
+class DummyScaler:
+    """Simple placeholder for scalers used when loading fails."""
+    def transform(self, X):
+        raise RuntimeError("Scaler not available (DummyScaler)")
+
+def load_pkl(filenames: List[str], fallback_class=None):
     """
     Attempt to load a pickle file from a list of potential names in the models directory.
-    Returns the loaded object or a DummyModel if not found.
+    Returns the loaded object or an instance of fallback_class if provided.
     """
     for f_name in filenames:
         path = os.path.join(MODEL_DIR, f_name)
         if os.path.exists(path):
             try:
+                # Use joblib to load (supports standard pickle and compressed joblib files)
                 with open(path, 'rb') as f:
-                    obj = pickle.load(f)
+                    obj = joblib.load(f)
                     logger.info(f"✅ Successfully loaded model: {f_name}")
                     return obj
             except Exception as e:
                 logger.error(f"❌ Failed to load {f_name}: {e}")
     
-    logger.warning(f"⚠️ Could not find any of: {filenames} in {MODEL_DIR}. Using dummy fallback.")
-    # Determine if a scaler is expected (filename contains 'scaler')
-    if any('scaler' in name.lower() for name in filenames):
-        class DummyScaler:
-            def transform(self, X):
-                # No scaling performed, return input unchanged
-                return X
-        return DummyScaler()
-    else:
-        class DummyModel:
-            def predict(self, X):
-                return [0]
-        return DummyModel()
+    logger.warning(f"⚠️ Could not find any of: {filenames} in {MODEL_DIR}. Model will be unavailable.")
+    if fallback_class:
+        return fallback_class()
+    return None
 
 @lru_cache(maxsize=10)
 def load_pkl_cached(filename_tuple):
@@ -70,19 +74,20 @@ def initialize_models():
     """Load all models into global state, using dummy fallbacks when files are missing."""
     global diabetes_model, heart_model, liver_model, liver_scaler, kidney_model, kidney_scaler, lungs_model, lungs_scaler
     logger.info("Loading models...")
-    diabetes_model = load_pkl(["diabetes_model.pkl", "Diabetes Model.pkl"])
-    heart_model = load_pkl(["heart_disease_model.pkl", "Heart Disease Model.pkl"])
-    liver_model = load_pkl(["liver_disease_model.pkl", "Liver Disease Model.pkl"])
-    liver_scaler = load_pkl(["LiverScaler.pkl", "liver_scaler.pkl"])
+    diabetes_model = load_pkl(["diabetes_model.pkl"], fallback_class=DummyModel)
+    heart_model = load_pkl(["heart_disease_model.pkl"], fallback_class=DummyModel)
+    liver_model = load_pkl(["liver_disease_model.pkl"], fallback_class=DummyModel)
+    liver_scaler = load_pkl(["liver_scaler.pkl"], fallback_class=DummyScaler)
     
     # Load Kidney and Lungs models (dummy if missing)
-    kidney_model = load_pkl(["kidney_model.pkl"])
-    kidney_scaler = load_pkl(["kidney_scaler.pkl"])
-    lungs_model = load_pkl(["lungs_model.pkl"])
-    lungs_scaler = load_pkl(["lungs_scaler.pkl"])
+    kidney_model = load_pkl(["kidney_model.pkl"], fallback_class=DummyModel)
+    kidney_scaler = load_pkl(["kidney_scaler.pkl"], fallback_class=DummyScaler)
+    lungs_model = load_pkl(["lungs_model.pkl"], fallback_class=DummyModel)
+    lungs_scaler = load_pkl(["lungs_scaler.pkl"], fallback_class=DummyScaler)
 
-# Initialize on import
-initialize_models()
+# Initialize on import is REMOVED to prevent startup blocking
+# initialize_models() must be called explicitly by the app startup or tests
+pass
 
 @router.post("/admin/reload_models")
 def reload_models():
@@ -138,8 +143,10 @@ def predict_kidney(data: schemas.KidneyInput) -> Dict[str, Any]:
         input_scaled = kidney_scaler.transform(df)
         
         prediction = kidney_model.predict(input_scaled)[0]
-        result = "Chronic Kidney Disease Detected" if prediction == 1 else "Healthy Kidney"
-        return {"prediction": result, "raw": int(prediction)}
+        # Handle string or int
+        raw_pred = 1 if (str(prediction) == '1' or prediction == 1 or str(prediction).lower() == 'chronic kidney disease detected') else 0
+        result = "Chronic Kidney Disease Detected" if raw_pred == 1 else "Healthy Kidney"
+        return {"prediction": result, "raw": raw_pred}
         
     except Exception as e:
         logger.error(f"Kidney Prediction Error: {e}")
@@ -166,8 +173,10 @@ def predict_lungs(data: schemas.LungInput) -> Dict[str, Any]:
         input_scaled = lungs_scaler.transform(df)
         
         prediction = lungs_model.predict(input_scaled)[0]
-        result = "Respiratory Issue Detected" if prediction == 1 else "Healthy Lungs"
-        return {"prediction": result, "raw": int(prediction)}
+        # Robust handling
+        raw_pred = 1 if (str(prediction) == '1' or prediction == 1 or str(prediction).upper() == 'HIGH' or str(prediction).upper() == 'MEDIUM') else 0
+        result = "Respiratory Issue Detected" if raw_pred == 1 else "Healthy Lungs"
+        return {"prediction": result, "raw": raw_pred}
         
     except Exception as e:
         logger.error(f"Lung Prediction Error: {e}")
@@ -214,8 +223,10 @@ def predict_heart(data: schemas.HeartInput) -> Dict[str, Any]:
         # Handle numpy scalar
         if hasattr(prediction, 'item'):
             prediction = prediction.item()
-        result = "Heart Disease Detected" if prediction == 1 else "Healthy Heart"
-        return {"prediction": result, "raw": int(prediction)}
+        result = "Heart Disease Detected" if (prediction == 1 or str(prediction) == '1' or str(prediction) == 'Heart Disease Detected') else "Healthy Heart"
+        # Return 0 or 1 for raw
+        raw_val = 1 if result == "Heart Disease Detected" else 0
+        return {"prediction": result, "raw": raw_val}
     except Exception as e:
         logger.error(f"Heart Prediction Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))

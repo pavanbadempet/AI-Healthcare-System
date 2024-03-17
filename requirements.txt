@@ -1,34 +1,49 @@
+# --- Core API & Server ---
 fastapi>=0.111.0
 uvicorn[standard]>=0.29.0
+python-multipart>=0.0.9
+orjson
+starlette
+requests>=2.32.3
+
+# --- Authentication & Security ---
+passlib[bcrypt]>=1.7.4
+bcrypt<4.0
+pyjwt>=2.8.0
+python-jose[cryptography]>=3.3.0
+
+# --- Database & Config ---
+sqlalchemy
+python-dotenv
+
+# --- Data Science & ML ---
 pandas>=2.2.2
 numpy>=1.26.4
 scikit-learn>=1.4.2
+joblib>=1.3.0
+torch>=2.2.0
 xgboost>=2.0.3
 lightgbm>=4.3.0
 shap>=0.45.0
+sentence-transformers
+
+# --- Visualization ---
 matplotlib>=3.8.4
-seaborn>=0.13.2
+plotly>=5.21.0
+
+# --- Frontend (Streamlit) ---
 streamlit>=1.35.0
 streamlit-lottie>=0.0.5
 streamlit-option-menu>=0.3.13
+
+# --- AI & LLM ---
 google-generativeai>=0.5.2
 langchain-huggingface>=0.0.3
 langchain-community>=0.0.38
-requests>=2.32.3
-feedparser>=6.0.10
-python-multipart>=0.0.9
-passlib[bcrypt]>=1.7.4
-bcrypt<4.0
-sentence-transformers
-pyjwt>=2.8.0
-orjson
-plotly>=5.22.0
-python-jose[cryptography]>=3.3.0
-fpdf
-pillow
-python-dotenv
-sqlalchemy
 langchain-core
 langgraph>=0.0.10
-pydantic>=2.0.0
-starlette
+
+# --- Utilities ---
+fpdf
+pillow
+feedparser>=6.0.10

@@ -18,13 +18,30 @@ load_dotenv()
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
-if not GOOGLE_API_KEY:
-    logger.warning("GOOGLE_API_KEY not found. Vision features will fail.")
-else:
-    genai.configure(api_key=GOOGLE_API_KEY)
 
-# Use Gemini 2.0 Flash for speed and vision capabilities
-model = genai.GenerativeModel('gemini-2.0-flash')
+# Validated at runtime
+# if not GOOGLE_API_KEY: ...
+
+_vision_model = None
+
+def get_vision_model():
+    global _vision_model
+    if _vision_model:
+        return _vision_model
+        
+    if not GOOGLE_API_KEY:
+        logger.warning("GOOGLE_API_KEY not found. Vision features will fail.")
+        return None
+        
+    try:
+        genai.configure(api_key=GOOGLE_API_KEY)
+        _vision_model = genai.GenerativeModel('gemini-2.0-flash')
+    except Exception as e:
+        logger.error(f"Vision Model Init Failed: {e}")
+        return None
+    return _vision_model
+
+# Removed global model = ...
 
 def analyze_lab_report(image_bytes: bytes) -> Dict[str, Any]:
     """
@@ -40,10 +57,10 @@ def analyze_lab_report(image_bytes: bytes) -> Dict[str, Any]:
         if not GOOGLE_API_KEY:
             raise HTTPException(status_code=503, detail="Vision API Key not configured")
 
-        # Load Image
+
         image = Image.open(io.BytesIO(image_bytes))
         
-        # Prompt
+
         prompt = """
         You are an expert Medical AI. Analyze this lab report image.
         
@@ -68,12 +85,16 @@ def analyze_lab_report(image_bytes: bytes) -> Dict[str, Any]:
         Return ONLY valid JSON. Do not include markdown formatting like ```json.
         """
         
+        model = get_vision_model()
+        if not model:
+            raise HTTPException(status_code=503, detail="Vision Model Unavailable")
+            
         response = model.generate_content([prompt, image])
         
-        # Clean response
+
         text = response.text.replace("```json", "").replace("```", "").strip()
         
-        # Parse JSON
+
         result = json.loads(text)
         return result
 

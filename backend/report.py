@@ -2,7 +2,7 @@
 Backend Report Analysis Module
 ==============================
 Handles the "Smart Lab Analyzer" feature.
-Uses Computer Vision (via Gemini/OpenAI Vision API) to extract numerical data 
+Uses Computer Vision to extract numerical data 
 from uploaded medical report images (PNG/JPG).
 
 Author: Pavan Badempet

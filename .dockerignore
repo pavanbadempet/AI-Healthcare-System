@@ -6,11 +6,13 @@ __pycache__
 *.pyc
 *.pyd
 *.pyo
-*.pkl
+# *.pkl # REMOVED: We want to include our compressed models
+!backend/*.pkl # Explicitly include models in backend
 healthcare.db
 healthcare.db-shm
 healthcare.db-wal
 .env
+data/ # Exclude raw data folder
 .pytest_cache
 .vscode
 dist
