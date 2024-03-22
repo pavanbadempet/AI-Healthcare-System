@@ -102,7 +102,7 @@ def chat_endpoint(
             db.refresh(user_log)
             rag.add_interaction_to_db(str(current_user.id), str(user_log.id), "user", request.message, str(user_log.timestamp))
         except Exception as e:
-            print(f"Error saving user log: {e}")
+            logger.error(f"Error saving user log: {e}")
 
     # 2. Build Agent Graph Context
     graph_messages = []
