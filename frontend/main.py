@@ -63,11 +63,6 @@ def load_lottieurl(url: str):
 
 from frontend.components import sidebar
 
-# ... (rest of imports)
-
-# --- Configuration ---
-# ...
-
 # --- Main App Orchestrator ---
 def main():
     # 1. Initialize Session
