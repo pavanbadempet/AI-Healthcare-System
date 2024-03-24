@@ -159,8 +159,15 @@ class SimpleVectorStore:
         
         return results
 
-# Singleton Instance
-store = SimpleVectorStore()
+# --- Lazy Singleton Pattern ---
+_store = None
+
+def get_vector_store() -> SimpleVectorStore:
+    """Lazy load the vector store singleton."""
+    global _store
+    if _store is None:
+        _store = SimpleVectorStore()
+    return _store
 
 # --- Public Interface Functions ---
 
@@ -176,7 +183,7 @@ def add_checkup_to_db(user_id: str, record_id: str, record_type: str, data: dict
             f"Clinical Data: {data_str}"
         )
         
-        store.add(document_text, {
+        get_vector_store().add(document_text, {
             "user_id": str(user_id),
             "record_id": str(record_id),
             "type": record_type,
@@ -196,7 +203,7 @@ def add_interaction_to_db(user_id: str, interaction_id: str, role: str, content:
             f"Interaction: {role.upper()}: {content}"
         )
         
-        store.add(document_text, {
+        get_vector_store().add(document_text, {
             "user_id": str(user_id),
             "interaction_id": str(interaction_id),
             "type": "chat_log",
@@ -211,11 +218,11 @@ def add_interaction_to_db(user_id: str, interaction_id: str, role: str, content:
 def search_similar_records(user_id: str, query: str, n_results: int = 3) -> List[str]:
     """Retrieve relevant context for a user query."""
     try:
-        return store.search(query, filter_meta={"user_id": str(user_id)}, k=n_results)
+        return get_vector_store().search(query, filter_meta={"user_id": str(user_id)}, k=n_results)
     except Exception as e:
         logger.error(f"Error querying RAG: {e}")
         return []
 
 def delete_record_from_db(record_id: str) -> bool:
     """Remove a record from the vector index."""
-    return store.delete(str(record_id))
+    return get_vector_store().delete(str(record_id))

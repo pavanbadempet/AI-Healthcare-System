@@ -136,6 +136,10 @@ def test_predict_liver_exception():
         assert resp.status_code == 500
         assert "Liver Fail" in resp.json()["detail"]
 
+# NOTE: Kidney and Lungs endpoints do not exist in prediction.py
+# The frontend views use those terms but the backend only has diabetes, heart, liver
+
+
 # --- Import Error Test ---
 # This is tricky because it runs at import time. We use reload.
 import importlib
@@ -162,3 +166,4 @@ def test_model_loading_failure():
         importlib.reload(backend.prediction)
     except:
         pass # If local files are missing, it stays None, which is fine.
+

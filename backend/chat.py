@@ -7,6 +7,10 @@ import json
 import datetime
 from typing import List, Dict, Any, Optional
 from collections import defaultdict
+import logging
+
+# --- Logging Configuration ---
+logger = logging.getLogger(__name__)
 
 # --- Router Definition ---
 router = APIRouter()
