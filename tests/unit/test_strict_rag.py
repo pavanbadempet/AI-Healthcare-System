@@ -72,16 +72,23 @@ def test_store_search_filter():
 # --- High Level Function Tests (Exception Handling) ---
 
 def test_add_checkup_exception():
-    with patch("backend.rag.store.add", side_effect=Exception("Store Error")):
+    mock_store = MagicMock()
+    mock_store.add.side_effect = Exception("Store Error")
+    with patch("backend.rag.get_vector_store", return_value=mock_store):
         res = add_checkup_to_db("1", "1", "type", {}, "pred", "date")
         assert res is False
 
 def test_add_interaction_exception():
-    with patch("backend.rag.store.add", side_effect=Exception("Store Error")):
+    mock_store = MagicMock()
+    mock_store.add.side_effect = Exception("Store Error")
+    with patch("backend.rag.get_vector_store", return_value=mock_store):
         res = add_interaction_to_db("1", "int1", "user", "msg", "date")
         assert res is False
 
 def test_search_similar_records_exception():
-    with patch("backend.rag.store.search", side_effect=Exception("Search Fail")):
+    mock_store = MagicMock()
+    mock_store.search.side_effect = Exception("Search Fail")
+    with patch("backend.rag.get_vector_store", return_value=mock_store):
         res = search_similar_records("1", "q")
         assert res == []
+

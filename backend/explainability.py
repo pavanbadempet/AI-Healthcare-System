@@ -1,10 +1,13 @@
 import shap
 import json
 import numpy as np
-import pickle
 import matplotlib.pyplot as plt
 import io
 import base64
+import logging
+
+# --- Logging Configuration ---
+logger = logging.getLogger(__name__)
 
 def get_shap_values(model, input_vector, feature_names):
     """

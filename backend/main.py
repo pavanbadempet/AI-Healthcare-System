@@ -21,7 +21,6 @@ from starlette.middleware.base import BaseHTTPMiddleware
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # --- Logging Configuration ---
-# --- Logging Configuration ---
 logging.basicConfig(
     level=logging.DEBUG, 
     format='%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s',
@@ -119,7 +118,6 @@ origins = [
     "http://127.0.0.1:8501",
     "https://aiohealthcare.streamlit.app",
     "https://share.streamlit.io",
-    "*", 
 ]
 app.add_middleware(
     CORSMiddleware,

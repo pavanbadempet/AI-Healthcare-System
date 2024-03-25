@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from .database import Base
-from datetime import datetime
+from datetime import datetime, timezone
 
 class User(Base):
     __tablename__ = "users"
@@ -46,7 +46,7 @@ class HealthRecord(Base):
     record_type = Column(String) # 'diabetes', 'heart', 'liver'
     data = Column(Text) # JSON string of input data
     prediction = Column(String)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     owner = relationship("User", back_populates="health_records")
 
@@ -58,7 +58,7 @@ class ChatLog(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     role = Column(String) # 'user' or 'assistant'
     content = Column(String)
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     owner = relationship("User", back_populates="chat_logs")
 
@@ -69,5 +69,5 @@ class AuditLog(Base):
     admin_id = Column(Integer, ForeignKey("users.id"))
     target_user_id = Column(Integer) # Keep generic or link, but generic is safer if user deleted
     action = Column(String) # VIEW_FULL, DELETE, BAN
-    timestamp = Column(DateTime, default=datetime.utcnow)
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     details = Column(String, nullable=True)

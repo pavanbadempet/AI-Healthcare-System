@@ -12,24 +12,19 @@ except FileNotFoundError:
     BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
 
 # --- Session Management ---
-SESSION_FILE = "session.json"
+# NOTE: File-based session persistence is DISABLED for Streamlit Cloud security
+# Sessions are managed purely in st.session_state memory
 
 def save_session(token: str, username: str):
-    """
-    Save session to st.session_state. 
-    NOTE: File-based persistence is DISABLED for Streamlit Cloud security 
-    (containers are shared).
-    """
-    pass # Managed purely in memory for now
+    """Session saving is a no-op (managed in st.session_state)."""
+    pass
 
 def load_session() -> Optional[Dict[str, str]]:
     """Session loading disabled for stateless security on cloud."""
     return None
 
 def clear_session():
-    """Logout and clear session file."""
-    if os.path.exists(SESSION_FILE):
-        os.remove(SESSION_FILE)
+    """Logout by clearing session state."""
     if 'token' in st.session_state:
         del st.session_state['token']
     if 'username' in st.session_state:
