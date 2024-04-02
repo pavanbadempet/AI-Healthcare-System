@@ -1,7 +1,20 @@
-import shap
+# Optional heavy imports - not available on lite deployment
+try:
+    import shap
+    SHAP_AVAILABLE = True
+except ImportError:
+    SHAP_AVAILABLE = False
+    shap = None
+
+try:
+    import matplotlib.pyplot as plt
+    MATPLOTLIB_AVAILABLE = True
+except ImportError:
+    MATPLOTLIB_AVAILABLE = False
+    plt = None
+
 import json
 import numpy as np
-import matplotlib.pyplot as plt
 import io
 import base64
 import logging
@@ -24,6 +37,13 @@ def get_shap_values(model, input_vector, feature_names):
         JSON compatible dict with 'base_value', 'shap_values', 'feature_names'
         OR base64 image string of a force plot.
     """
+    
+    # Check if SHAP is available
+    if not SHAP_AVAILABLE:
+        return {
+            "html": "<div style='color:#F59E0B;padding:20px;'>⚠️ SHAP explanations are not available on the lite deployment. Full explanations require additional memory.</div>",
+            "error": "SHAP library not installed"
+        }
     
     # Strategy: Unwrap VotingClassifier to get the strongest tree-based member (XGBoost)
     # This provides a "High Fidelity Proxy Explanation" which is standard practice when

@@ -70,16 +70,17 @@ class CustomGeminiWrapper:
 llm = CustomGeminiWrapper("gemini-2.0-flash", GOOGLE_API_KEY)
 
 # --- 2. State Definition ---
-class AgentState(TypedDict):
+class AgentState(TypedDict, total=False):
     messages: Annotated[List[BaseMessage], operator.add]
     user_id: int
-    user_profile: str     # Short bio from DB (age, gender)
-    psych_profile: str    # Long term memory from DB
+    user_profile: str          # Short bio from DB (age, gender)
+    psych_profile: str         # Long term memory from DB
+    available_reports: str     # Medical history context
     
     # Internal Scratchpad
     tavily_results: str
     analysis_results: str
-    next_step: str        # 'research', 'analyze', 'respond', 'off_topic'
+    next_step: str             # 'research', 'analyze', 'respond', 'off_topic'
 
 # --- 3. Tools ---
 
@@ -201,7 +202,7 @@ workflow.add_node("guardrail", guardrail_node)
 
 # Edges
 def route_step(state):
-    return state['next_step']
+    return state.get('next_step', 'respond')
 
 workflow.set_entry_point("supervisor")
 
