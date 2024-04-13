@@ -2,7 +2,15 @@ import streamlit as st
 from frontend.utils import api
 
 def render_profile_page():
-    st.title(f"User Profile: {st.session_state.get('username')}")
+    username = st.session_state.get('username', 'User')
+    st.markdown(f"""
+    <div style="margin-bottom: 1.5rem;">
+        <h2 style="margin:0; font-size: 1.75rem;">👤 Profile: {username}</h2>
+        <p style="color: #94A3B8; margin-top: 0.5rem;">
+            Manage your health profile and personalization settings.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
     
     profile = api.fetch_profile()
     if not profile:
@@ -46,3 +54,68 @@ def render_profile_page():
     w_kg = float(weight_val)
     bmi = round(w_kg / (h_m ** 2), 2)
     c3.metric("BMI", bmi, delta="Normal" if 18.5 <= bmi <= 25 else "Check", delta_color="normal" if 18.5 <= bmi <= 25 else "inverse")
+
+    # --- PDF Health Report Download ---
+    st.markdown("---")
+    st.markdown("### 📄 Download Health Report")
+    st.markdown("""
+    <p style="color: #94A3B8; font-size: 0.9rem;">
+        Download a PDF summary of your health profile and assessment history.
+    </p>
+    """, unsafe_allow_html=True)
+    
+    # Download button with link to backend endpoint
+    backend_url = api.get_backend_url()
+    token = st.session_state.get('token', '')
+    
+    col1, col2 = st.columns([1, 3])
+    with col1:
+        st.markdown(f"""
+        <a href="{backend_url}/download/health-report" 
+           target="_blank"
+           style="
+               display: inline-block;
+               background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+               color: white;
+               padding: 0.75rem 1.5rem;
+               border-radius: 8px;
+               text-decoration: none;
+               font-weight: 600;
+               font-size: 0.9rem;
+               box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+               transition: transform 0.2s;
+           "
+           onmouseover="this.style.transform='translateY(-2px)'"
+           onmouseout="this.style.transform='translateY(0)'"
+        >
+            📥 Download PDF
+        </a>
+        """, unsafe_allow_html=True)
+    
+    with col2:
+        st.info("💡 **Tip:** The PDF includes your profile, recent health assessments, and personalized recommendations.")
+
+    # --- Personalized Health Tips ---
+    st.markdown("---")
+    st.markdown("### 💡 Your Personalized Tips")
+    
+    tips = []
+    if bmi < 18.5:
+        tips.append("🍎 Your BMI suggests you're underweight. Consider consulting a nutritionist for a healthy weight gain plan.")
+    elif bmi > 25:
+        tips.append("🏃 Your BMI is above normal. Regular cardio exercise and a balanced diet can help maintain a healthy weight.")
+    else:
+        tips.append("✅ Great job! Your BMI is in the healthy range. Keep up your good habits!")
+    
+    if profile.get('sleep_hours') and float(profile.get('sleep_hours', 7)) < 7:
+        tips.append("😴 You're getting less than 7 hours of sleep. Quality sleep is crucial for heart health and immune function.")
+    
+    if profile.get('stress_level') == 'High':
+        tips.append("🧘 High stress can impact your health. Consider meditation, deep breathing, or regular walks.")
+    
+    tips.append("💧 Remember to drink 8 glasses of water daily for optimal health.")
+    tips.append("🩺 Schedule regular check-ups with your healthcare provider.")
+    
+    for tip in tips:
+        st.markdown(f"- {tip}")
+

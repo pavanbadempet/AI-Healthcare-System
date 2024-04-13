@@ -33,9 +33,13 @@ from frontend.views import (
 )
 
 # --- Configuration ---
+# Get logo path for favicon
+import os as _os
+_logo_path = _os.path.join(_os.path.dirname(__file__), "static", "logo.png")
+
 st.set_page_config(
     page_title="AI Healthcare System",
-    page_icon="🏥",
+    page_icon=_logo_path if _os.path.exists(_logo_path) else "🏥",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -98,6 +102,12 @@ def main():
         lungs_view.render_lungs_page()
     elif selected == "My Profile":
         profile_view.render_profile_page()
+    elif selected == "Plans & Pricing":
+        from frontend.views import pricing_view
+        pricing_view.render_pricing_page()
+    elif selected == "About & Legal":
+        from frontend.views import about_view
+        about_view.render_about_page()
 
 if __name__ == '__main__':
     main()

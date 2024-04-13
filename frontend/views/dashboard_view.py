@@ -3,11 +3,18 @@ from frontend.utils import api
 from frontend.components import charts
 
 def render_dashboard():
-    st.header(f"👋 Welcome back, {st.session_state.get('username', 'User')}!")
+    # Styled header matching other pages
+    username = st.session_state.get('username', 'User')
+    st.markdown(f"""
+    <div style="margin-bottom: 1.5rem;">
+        <h2 style="margin:0; font-size: 1.75rem;">👋 Welcome back, {username}!</h2>
+        <p style="color: #94A3B8; margin-top: 0.5rem;">
+            Track your health trends and stay informed with personalized insights.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
     
-    # Quick Stats or Alerts can go here
-    
-    st.subheader("Your Health Trends")
+    st.subheader("📊 Your Health Trends")
     records = api.fetch_records()
     if records:
         tab1, tab2, tab3 = st.tabs(["BMI", "Glucose", "Bilirubin"])

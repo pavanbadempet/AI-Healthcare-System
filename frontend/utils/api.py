@@ -11,6 +11,11 @@ try:
 except FileNotFoundError:
     BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
 
+
+def get_backend_url() -> str:
+    """Return the backend URL for direct API calls."""
+    return BACKEND_URL
+
 # --- Session Management ---
 # NOTE: File-based session persistence is DISABLED for Streamlit Cloud security
 # Sessions are managed purely in st.session_state memory
