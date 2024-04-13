@@ -28,13 +28,13 @@ def train_diabetes_model():
     # 2. Preprocessing (Matching Notebook Logic)
     # Gender: Other->0, Male->1, Female->2
     # Note: Notebook removed '0' (Other). We will do the same.
-    df['gender'].replace(['Other', 'Male','Female'],[0,1,2], inplace=True)
-    df = df[df['gender'] != 0]
+    gender_map = {'Other': 0, 'Male': 1, 'Female': 2}
+    df['gender'] = df['gender'].map(gender_map).fillna(df['gender'])
+    df = df[df['gender'] != 0].copy()  # .copy() to avoid SettingWithCopyWarning
     
     # Smoking: never->0, No Info->1, current->2, former->3, ever->4, not current->5
-    # Note: Notebook map: ['never', 'No Info', 'current', 'former', 'ever', 'not current'],[0,1,2,3,4,5]
-    df['smoking_history'].replace(['never', 'No Info', 'current', 'former', 'ever', 'not current'], 
-                                  [0,1,2,3,4,5], inplace=True)
+    smoking_map = {'never': 0, 'No Info': 1, 'current': 2, 'former': 3, 'ever': 4, 'not current': 5}
+    df['smoking_history'] = df['smoking_history'].map(smoking_map).fillna(df['smoking_history'])
 
     print("Preprocessing Complete")
 

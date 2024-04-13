@@ -3,7 +3,14 @@ from frontend.utils import api
 from frontend.components import charts
 
 def render_liver_page():
-    st.header("🥃 Liver Disease Risk Assessment")
+    st.markdown("""
+    <div style="margin-bottom: 1.5rem;">
+        <h2 style="margin:0; font-size: 1.75rem;">🥃 Liver Disease Risk Assessment</h2>
+        <p style="color: #94A3B8; margin-top: 0.5rem;">
+            Enter your liver function test results for AI-powered analysis.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
     
     col1, col2 = st.columns(2)
     with col1:
@@ -21,7 +28,7 @@ def render_liver_page():
         aspartate = 30.0
         total_prot = 6.0
 
-    if st.button("Predict Liver Risk"):
+    if st.button("Predict Liver Risk", type="primary"):
         inputs = {
             "age": float(age),
             "gender": 1 if gender == "Male" else 0,
