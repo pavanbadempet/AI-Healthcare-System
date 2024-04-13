@@ -1,51 +1,93 @@
-
+"""
+RAG Module - Semantic Memory for Personalized Healthcare AI
+============================================================
+Uses FREE Gemini Embedding API (no local model needed = saves ~200MB)
+"""
 import os
 import json
 import pickle
 import numpy as np
 import logging
-from typing import List, Dict, Optional, Any, Union
-from langchain_huggingface import HuggingFaceEmbeddings
+from typing import List, Dict, Optional, Any
 from sklearn.metrics.pairwise import cosine_similarity
+import google.generativeai as genai
 
-# --- Logging Configuration ---
-# logging.basicConfig(level=logging.INFO) # Handled in main.py
+# --- Logging ---
 logger = logging.getLogger(__name__)
 
 # --- Constants ---
 DB_FILE = os.path.join(os.path.dirname(__file__), "..", "models", "vector_store.pkl")
-MODEL_NAME = "all-MiniLM-L6-v2"
+EMBEDDING_MODEL = "models/text-embedding-004"  # Free Gemini embedding model
 
-# --- Global Lazy Loader ---
-_embedding_model = None
+# --- Gemini Embedding (FREE, no local model needed) ---
+_configured = False
 
-def get_embedding_model() -> HuggingFaceEmbeddings:
+def get_embedding(text: str) -> List[float]:
     """
-    Lazy loads the HuggingFace Embedding Model.
-    Singleton pattern to avoid re-loading model on every request.
+    Generate embedding using FREE Gemini API.
+    No local model = saves ~200MB memory!
     """
-    global _embedding_model
-    if _embedding_model is None:
-        logger.info(f"Loading Embedding Model: {MODEL_NAME}...")
-        _embedding_model = HuggingFaceEmbeddings(model_name=MODEL_NAME)
-    return _embedding_model
+    global _configured
+    
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        logger.warning("GOOGLE_API_KEY not found, using zero vector")
+        return [0.0] * 768  # Return zero vector as fallback
+    
+    if not _configured:
+        genai.configure(api_key=api_key)
+        _configured = True
+    
+    try:
+        result = genai.embed_content(
+            model=EMBEDDING_MODEL,
+            content=text,
+            task_type="retrieval_document"
+        )
+        return result['embedding']
+    except Exception as e:
+        logger.error(f"Embedding failed: {e}")
+        return [0.0] * 768  # Fallback
+
+def get_query_embedding(text: str) -> List[float]:
+    """Generate embedding for search query."""
+    global _configured
+    
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        return [0.0] * 768
+    
+    if not _configured:
+        genai.configure(api_key=api_key)
+        _configured = True
+    
+    try:
+        result = genai.embed_content(
+            model=EMBEDDING_MODEL,
+            content=text,
+            task_type="retrieval_query"
+        )
+        return result['embedding']
+    except Exception as e:
+        logger.error(f"Query embedding failed: {e}")
+        return [0.0] * 768
+
 
 class SimpleVectorStore:
     """
-    A persistent, file-based vector store using Pickle and Scikit-Learn.
-    mimics behavior of ChromaDB but without external dependencies.
+    Persistent vector store using Pickle + Scikit-Learn cosine similarity.
+    Now powered by FREE Gemini embeddings!
     """
     
     def __init__(self):
-        """Initialize and load existing store if available."""
-        self.documents: List[str] = [] 
-        self.metadatas: List[Dict[str, Any]] = [] 
-        self.vectors: List[List[float]] = []   
-        self.ids: List[str] = []       
+        self.documents: List[str] = []
+        self.metadatas: List[Dict[str, Any]] = []
+        self.vectors: List[List[float]] = []
+        self.ids: List[str] = []
         self.load()
 
     def load(self) -> None:
-        """Load vector store data from pickle file."""
+        """Load from pickle file."""
         if os.path.exists(DB_FILE):
             try:
                 with open(DB_FILE, 'rb') as f:
@@ -59,8 +101,9 @@ class SimpleVectorStore:
                 logger.error(f"Failed to load vector store: {e}")
 
     def save(self) -> None:
-        """Persist vector store data to pickle file."""
+        """Persist to pickle file."""
         try:
+            os.makedirs(os.path.dirname(DB_FILE), exist_ok=True)
             with open(DB_FILE, 'wb') as f:
                 pickle.dump({
                     'documents': self.documents,
@@ -72,34 +115,24 @@ class SimpleVectorStore:
             logger.error(f"Failed to save vector store: {e}")
 
     def add(self, text: str, metadata: Dict[str, Any], record_id: str) -> None:
-        """
-        Add or Update a document in the store.
-        
-        Args:
-            text (str): Content to embed.
-            metadata (dict): Metadata for filtering (e.g. user_id).
-            record_id (str): Unique ID.
-        """
-        model = get_embedding_model()
-        vector = model.embed_query(text)
+        """Add or update a document."""
+        vector = get_embedding(text)
         
         if record_id in self.ids:
             idx = self.ids.index(record_id)
             self.documents[idx] = text
             self.metadatas[idx] = metadata
             self.vectors[idx] = vector
-            logger.debug(f"Updated record {record_id}")
         else:
             self.documents.append(text)
             self.metadatas.append(metadata)
             self.vectors.append(vector)
             self.ids.append(record_id)
-            logger.debug(f"Added record {record_id}")
         
         self.save()
 
     def delete(self, record_id: str) -> bool:
-        """Delete a document by ID."""
+        """Delete by ID."""
         if record_id in self.ids:
             idx = self.ids.index(record_id)
             self.documents.pop(idx)
@@ -111,39 +144,27 @@ class SimpleVectorStore:
         return False
 
     def search(self, query: str, filter_meta: Optional[Dict[str, Any]] = None, k: int = 3) -> List[str]:
-        """
-        Semantic search for relevant documents.
-        
-        Args:
-            query (str): The search query.
-            filter_meta (dict): Key-value pairs to filter results (e.g. {"user_id": "1"}).
-            k (int): Number of Top-K results to return.
-            
-        Returns:
-            List[str]: List of matching document texts.
-        """
+        """Semantic search with user filtering."""
         if not self.vectors:
             return []
         
-        # Embed query
-        model = get_embedding_model()
-        query_vector = model.embed_query(query)
+        query_vector = get_query_embedding(query)
         
         vec_matrix = np.array(self.vectors)
         q_vec = np.array([query_vector])
         
-        # Compute Cosine Similarity
+        # Cosine similarity
         sim_scores = cosine_similarity(q_vec, vec_matrix)[0]
-        # Get indices sorted by score descending
         sorted_indices = sim_scores.argsort()[::-1]
         
         results = []
         count = 0
         
         for idx in sorted_indices:
-            if sim_scores[idx] <= 0.0: break # Threshold
+            if sim_scores[idx] <= 0.0:
+                break
             
-            # Apply Metadata Filter
+            # Apply metadata filter
             match = True
             if filter_meta:
                 for k_filter, v_filter in filter_meta.items():
@@ -159,22 +180,23 @@ class SimpleVectorStore:
         
         return results
 
-# --- Lazy Singleton Pattern ---
+
+# --- Singleton ---
 _store = None
 
 def get_vector_store() -> SimpleVectorStore:
-    """Lazy load the vector store singleton."""
     global _store
     if _store is None:
         _store = SimpleVectorStore()
     return _store
 
-# --- Public Interface Functions ---
+
+# --- Public API ---
 
 def add_checkup_to_db(user_id: str, record_id: str, record_type: str, data: dict, prediction: str, timestamp: str) -> bool:
-    """Format and index a health checkup record."""
+    """Index a health checkup record."""
     try:
-        data_str = ", ".join([f"{k}: {v}" for k,v in data.items()])
+        data_str = ", ".join([f"{k}: {v}" for k, v in data.items()])
         document_text = (
             f"User: {user_id}\n"
             f"Date: {timestamp}\n"
@@ -196,7 +218,7 @@ def add_checkup_to_db(user_id: str, record_id: str, record_type: str, data: dict
         return False
 
 def add_interaction_to_db(user_id: str, interaction_id: str, role: str, content: str, timestamp: str) -> bool:
-    """Index a chat interaction for memory."""
+    """Index a chat interaction."""
     try:
         document_text = (
             f"Date: {timestamp}. "
@@ -216,7 +238,7 @@ def add_interaction_to_db(user_id: str, interaction_id: str, role: str, content:
         return False
 
 def search_similar_records(user_id: str, query: str, n_results: int = 3) -> List[str]:
-    """Retrieve relevant context for a user query."""
+    """Retrieve relevant context for a user."""
     try:
         return get_vector_store().search(query, filter_meta={"user_id": str(user_id)}, k=n_results)
     except Exception as e:
@@ -224,5 +246,5 @@ def search_similar_records(user_id: str, query: str, n_results: int = 3) -> List
         return []
 
 def delete_record_from_db(record_id: str) -> bool:
-    """Remove a record from the vector index."""
+    """Delete from vector index."""
     return get_vector_store().delete(str(record_id))

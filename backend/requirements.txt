@@ -1,7 +1,7 @@
 # =======================================================
 # AI HEALTHCARE - BACKEND REQUIREMENTS (Render)
 # =======================================================
-# Optimized for 512MB RAM limit on free tier
+# Optimized for 512MB RAM with FREE Gemini embeddings
 # =======================================================
 
 # --- Core API & Server ---
@@ -28,10 +28,13 @@ numpy>=1.26.4
 scikit-learn>=1.4.2
 joblib>=1.3.0
 
-# --- AI & LLM (Lite) ---
+# --- AI & LLM ---
 google-generativeai>=0.5.2
 langchain-core
 langgraph>=0.0.10
+
+# NOTE: RAG uses FREE Gemini embedding API (no sentence-transformers needed)
+# This saves ~200MB of memory!
 
 # --- Utilities ---
 fpdf
