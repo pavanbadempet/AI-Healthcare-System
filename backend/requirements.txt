@@ -20,6 +20,7 @@ python-jose[cryptography]>=3.3.0
 
 # --- Database & Config ---
 sqlalchemy
+psycopg2-binary
 python-dotenv
 
 # --- Data Science (Lite) ---
@@ -40,3 +41,4 @@ langgraph>=0.0.10
 fpdf
 pillow
 feedparser>=6.0.10
+razorpay
