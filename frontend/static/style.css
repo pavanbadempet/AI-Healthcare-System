@@ -183,3 +183,24 @@ footer {
 header {
     visibility: hidden;
 }
+
+/* --- MOBILE RESPONSIVENESS --- */
+@media only screen and (max-width: 600px) {
+
+    div[data-testid="stMetric"],
+    div.stDataFrame,
+    div.stForm {
+        padding: 16px;
+        /* Reduce padding on mobile */
+    }
+
+    h1 {
+        font-size: 1.8rem !important;
+        /* Smaller titles */
+    }
+
+    .stButton>button {
+        width: 100%;
+        /* Full width buttons on mobile */
+    }
+}

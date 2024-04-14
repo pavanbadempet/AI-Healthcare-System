@@ -83,31 +83,44 @@ def main():
         return
 
     # 3. Sidebar Navigation (DELEGATED TO COMPONENT)
-    selected = sidebar.render_sidebar()
+    # 3. Sidebar Navigation (DELEGATED TO COMPONENT)
+    # Get localized label
+    selected_label = sidebar.render_sidebar()
+    
+    # Resolve to English key
+    from frontend.utils import i18n
+    selected = i18n.get_english_key(selected_label)
     
     # 4. Route to View
-    if selected == "Dashboard":
+    if selected == "dashboard":
         dashboard_view.render_dashboard()
-    elif selected == "AI Chat Assistant":
+    elif selected == "chat":
         chat_view.render_chat_page()
-    elif selected == "Diabetes Prediction":
+    elif selected == "diabetes_pred":
         diabetes_view.render_diabetes_page()
-    elif selected == "Heart Disease Prediction":
+    elif selected == "heart_pred":
         heart_view.render_heart_page()
-    elif selected == "Liver Disease Prediction":
+    elif selected == "liver_pred":
         liver_view.render_liver_page()
-    elif selected == "Kidney Disease Prediction":
+    elif selected == "kidney_pred":
         kidney_view.render_kidney_page()
-    elif selected == "Lung Cancer Prediction":
+    elif selected == "lung_pred":
+        # Note: Module is named lungs_view
         lungs_view.render_lungs_page()
-    elif selected == "My Profile":
+    elif selected == "profile":
         profile_view.render_profile_page()
-    elif selected == "Plans & Pricing":
+    elif selected == "pricing":
         from frontend.views import pricing_view
         pricing_view.render_pricing_page()
-    elif selected == "About & Legal":
+    elif selected == "telemedicine":
+        from frontend.views import telemedicine_view
+        telemedicine_view.render_telemedicine_page()
+    elif selected == "about":
         from frontend.views import about_view
         about_view.render_about_page()
+    elif selected == "admin":
+        from frontend.views import admin_view
+        admin_view.render_admin_page()
 
 if __name__ == '__main__':
     main()
