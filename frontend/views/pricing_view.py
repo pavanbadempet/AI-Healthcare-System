@@ -5,6 +5,7 @@ Showcase subscription tiers to demonstrate commercial value.
 Currently mostly static/mock updates, but essential for "sellability".
 """
 import streamlit as st
+import streamlit.components.v1 as components
 from frontend.utils import api
 
 def render_pricing_page():
@@ -55,13 +56,14 @@ def render_pricing_page():
 
     # --- PRO TIER (Featured) ---
     with col2:
+        # Split card into Top (Content) and Bottom (Button Container) to embed Streamlit widget
         st.markdown("""
         <div style="
             background: linear-gradient(180deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.05));
             border: 2px solid #3B82F6;
-            border-radius: 16px;
+            border-bottom: none;
+            border-radius: 16px 16px 0 0;
             padding: 2rem;
-            height: 100%;
             text-align: center;
             position: relative;
         ">
@@ -80,7 +82,7 @@ def render_pricing_page():
             
             <h3 style="margin-top: 0; color: #60A5FA;">Pro</h3>
             <div style="font-size: 2.5rem; font-weight: 700; margin: 1rem 0;">
-                $9.99<span style="font-size: 1rem; color: #94A3B8; font-weight: 400;">/mo</span>
+                ₹999<span style="font-size: 1rem; color: #94A3B8; font-weight: 400;">/mo</span>
             </div>
             <p style="color: #94A3B8; font-size: 0.9rem;">For health enthusiasts</p>
             
@@ -91,20 +93,68 @@ def render_pricing_page():
                 <div style="margin-bottom: 0.5rem;">✅ Priority Support</div>
                 <div style="margin-bottom: 0.5rem;">✅ Early Access Features</div>
             </div>
-            
-            <a href="#" style="text-decoration: none;">
-                <div style="
-                    width: 100%;
-                    background: #3B82F6;
-                    color: white;
-                    padding: 0.75rem;
-                    border-radius: 8px;
-                    font-weight: 600;
-                    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.5);
-                ">Upgrade Now</div>
-            </a>
         </div>
         """, unsafe_allow_html=True)
+        
+        # Action Area
+        st.markdown("""
+        <div style="
+            background: linear-gradient(180deg, rgba(37, 99, 235, 0.05), rgba(59, 130, 246, 0.02));
+            border: 2px solid #3B82F6;
+            border-top: none;
+            border-radius: 0 0 16px 16px;
+            padding: 0 2rem 2rem 2rem;
+            text-align: center;
+        ">
+        """, unsafe_allow_html=True)
+        
+        if st.button("Upgrade Now", key="upgrade_pro", type="primary", use_container_width=True):
+            with st.spinner("Initializing Payment..."):
+                # Create Order (999 INR = 99900 paise)
+                resp = api.create_payment_order(99900, "pro_tier")
+                
+                if resp:
+                    order_id = resp['id']
+                    key_id = resp['key_id']
+                    amount = resp['amount']
+                    curr = resp['currency']
+                    
+                    # Embed Razorpay JS
+                    # Note: We use a component to execute the JS.
+                    # This script attempts to open the modal immediately.
+                    html_code = f"""
+                    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+                    <script>
+                        var options = {{
+                            "key": "{key_id}", 
+                            "amount": "{amount}", 
+                            "currency": "{curr}",
+                            "name": "AI Healthcare System",
+                            "description": "Pro Subscription",
+                            "image": "https://cdn-icons-png.flaticon.com/512/3063/3063823.png",
+                            "order_id": "{order_id}",
+                            "handler": function (response){{
+                                alert("Payment Successful! Payment ID: " + response.razorpay_payment_id + "\\nYour subscription will be active shortly.");
+                                // Here we could POST to verify endpoint
+                            }},
+                            "prefill": {{
+                                "name": "User",
+                                "email": "user@example.com"
+                            }},
+                            "theme": {{
+                                "color": "#3B82F6"
+                            }}
+                        }};
+                        var rzp1 = new Razorpay(options);
+                        rzp1.open();
+                    </script>
+                    <span style="color: #64748B; font-size: 0.8rem;">Opening Secure Payment Gateway...</span>
+                    """
+                    components.html(html_code, height=100)
+                else:
+                    st.error("Could not initiate payment. Please try again.")
+
+        st.markdown("</div>", unsafe_allow_html=True)
         
     # --- ENTERPRISE TIER ---
     with col3:
@@ -147,10 +197,10 @@ def render_pricing_page():
     <div style="text-align: center; margin-top: 2rem;">
         <p style="color: #94A3B8;">
             <b>100% Money-Back Guarantee.</b> Cancel anytime. <br>
-            Secure payments processed by Stripe.
+            Secure payments via <b>Razorpay</b> (International Cards Accepted).
         </p>
         <div style="font-size: 1.5rem; margin-top: 1rem; opacity: 0.6;">
-            💳 💳 💳
+            💳 🌍 💳
         </div>
     </div>
     """, unsafe_allow_html=True)

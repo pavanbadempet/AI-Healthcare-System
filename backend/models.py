@@ -31,6 +31,11 @@ class User(Base):
     # Privacy
     allow_data_collection = Column(Integer, default=1) # 0=False, 1=True
     
+    # Subscription / Monetization
+    plan_tier = Column(String, default="free") # free, pro, clinic
+    subscription_expiry = Column(DateTime, nullable=True)
+    razorpay_customer_id = Column(String, nullable=True)
+    
     # AI Memory
     psych_profile = Column(Text, nullable=True) # Long term memory summary
 
