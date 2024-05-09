@@ -54,68 +54,29 @@ def render_auth_page():
     
     # --- LEFT COLUMN: BRANDING ---
     with col1:
-        st.markdown(textwrap.dedent("""
-        <div style="
-            background: radial-gradient(circle at top right, #3B82F6, #1E293B, #0F172A);
-            height: 100vh;
-            padding: 0 5vw;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            border-right: 1px solid rgba(255,255,255,0.05);
-        ">
-            <div style="font-size: 4rem; margin-bottom: 2rem;">🏥</div>
-            
-            <h1 style="
-                font-family: 'Outfit', sans-serif;
-                font-size: 4rem;
-                font-weight: 800;
-                color: white;
-                line-height: 1.1;
-                margin-bottom: 1.5rem;
-            ">
-                The Future of <br>
-                <span style="color: #60A5FA;">AI Healthcare</span>
-            </h1>
-            
-            <p style="
-                font-size: 1.2rem; 
-                color: #CBD5E1; 
-                line-height: 1.6; 
-                max-width: 600px;
-                margin-bottom: 3rem;
-            ">
-                Experience hospital-grade disease prediction powered by advanced machine learning. 
-                Secure, accurate, and accessible from anywhere.
-            </p>
-            
-            <div style="display: flex; gap: 1.5rem;">
-                 <div class="stat-box">
-                    <div class="stat-val">99.8%</div>
-                    <div class="stat-label">Accuracy</div>
-                 </div>
-                 <div class="stat-box">
-                    <div class="stat-val">HIPAA</div>
-                    <div class="stat-label">Compliant</div>
-                 </div>
-                 <div class="stat-box">
-                    <div class="stat-val">24/7</div>
-                    <div class="stat-label">AI Support</div>
-                 </div>
-            </div>
-        </div>
-        """), unsafe_allow_html=True)
+        st.markdown("""
+<div style="background: radial-gradient(circle at top right, #3B82F6, #1E293B, #0F172A); height: 100vh; padding: 0 5vw; display: flex; flex-direction: column; justify-content: center; border-right: 1px solid rgba(255,255,255,0.05);">
+<div style="font-size: 4rem; margin-bottom: 2rem;">🏥</div>
+<h1 style="font-family: 'Outfit', sans-serif; font-size: 4rem; font-weight: 800; color: white; line-height: 1.1; margin-bottom: 1.5rem;">The Future of <br><span style="color: #60A5FA;">AI Healthcare</span></h1>
+<p style="font-size: 1.2rem; color: #CBD5E1; line-height: 1.6; max-width: 600px; margin-bottom: 3rem;">Experience hospital-grade disease prediction powered by advanced machine learning. Secure, accurate, and accessible from anywhere.</p>
+<div style="display: flex; gap: 1.5rem;">
+<div class="stat-box"><div class="stat-val">99.8%</div><div class="stat-label">Accuracy</div></div>
+<div class="stat-box"><div class="stat-val">HIPAA</div><div class="stat-label">Compliant</div></div>
+<div class="stat-box"><div class="stat-val">24/7</div><div class="stat-label">AI Support</div></div>
+</div>
+</div>
+""", unsafe_allow_html=True)
 
     # --- RIGHT COLUMN: AUTH FORM ---
     with col2:
         st.markdown('<div style="height: 15vh;"></div>', unsafe_allow_html=True)
         
         with st.container():
-            st.markdown(textwrap.dedent("""
-            <div style="max-width: 400px; margin: 0 auto; padding: 20px;">
-                <h2 style="text-align: center; margin-bottom: 2rem;">Get Started</h2>
-            </div>
-            """), unsafe_allow_html=True)
+            st.markdown("""
+<div style="max-width: 400px; margin: 0 auto; padding: 20px;">
+<h2 style="text-align: center; margin-bottom: 2rem;">Get Started</h2>
+</div>
+""", unsafe_allow_html=True)
             
             tab_login, tab_signup = st.tabs(["Sign In", "Create Account"])
             
@@ -139,8 +100,6 @@ def render_auth_page():
                         if api.signup(us, pw, em, fn, "2000-01-01"):
                             if api.login(us, pw): st.rerun()
 
-            st.markdown(textwrap.dedent("""
-            <div style="text-align: center; margin-top: 2rem; color: #64748B; font-size: 0.8rem;">
-                Secure Encrypted Connection
-            </div>
-            """), unsafe_allow_html=True)
+            st.markdown("""
+<div style="text-align: center; margin-top: 2rem; color: #64748B; font-size: 0.8rem;">Secure Encrypted Connection</div>
+""", unsafe_allow_html=True)
