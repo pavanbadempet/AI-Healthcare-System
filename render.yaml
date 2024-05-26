@@ -2,6 +2,22 @@ services:
   - type: web
     name: aio-health-backend
     plan: free # Explicitly request Free Tier
+    region: singapore # Southeast Asia
+    autoDeploy: true
+    healthCheckPath: /healthz
+    buildFilter:
+      paths:
+        - backend/**
+        - requirements.txt
+        - render.yaml
+        - scripts/generate_placeholder_models.py
+      ignoredPaths:
+        - frontend/**
+        - docs/**
+        - Notebooks/**
+        - legacy/**
+        - .github/**
+        - README.md
     env: python
     buildCommand: pip install --upgrade pip && pip install -r backend/requirements.txt && python scripts/generate_placeholder_models.py
     startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
@@ -15,4 +31,4 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: DATABASE_URL
-        value: sqlite:///./health.db # Note: Ephemeral on Free Tier
+        sync: false # User must provide this (e.g., Neon/Supabase URL)
