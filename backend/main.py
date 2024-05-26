@@ -247,6 +247,11 @@ app.include_router(payments.router)
 def read_root():
     return {"message": "AI Healthcare System API is running"}
 
+@app.get("/healthz")
+def health_check():
+    """Health check endpoint for Render.com monitoring."""
+    return {"status": "ok"}
+
 @app.post("/generate_report")
 async def get_medical_report(request: Request):
     """Generates a downloadable PDF medical report."""
