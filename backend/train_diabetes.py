@@ -10,7 +10,7 @@ from sklearn.metrics import accuracy_score
 # --- Configuration ---
 # Robust path resolution
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATASET_PATH = os.path.join(BASE_DIR, "..", "Datasets", "diabetes.csv")
+DATASET_PATH = os.path.join(BASE_DIR, "..", "data", "processed", "diabetes.parquet")
 MODEL_PATH = os.path.join(BASE_DIR, "Diabetes Model.pkl")
 SCALER_PATH = os.path.join(BASE_DIR, "Scaler.pkl")
 
@@ -18,11 +18,12 @@ def train_diabetes_model():
     print("Starting Diabetes Model Training...")
 
     # 1. Load Data
+    # 1. Load Data
     if not os.path.exists(DATASET_PATH):
         print(f"Error: Dataset not found at {DATASET_PATH}")
         return
 
-    df = pd.read_csv(DATASET_PATH)
+    df = pd.read_parquet(DATASET_PATH)
     print(f"Loaded Dataset: {len(df)} records")
 
     # 2. Preprocessing (Matching Notebook Logic)

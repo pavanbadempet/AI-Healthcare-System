@@ -11,7 +11,7 @@ from sklearn.metrics import accuracy_score
 
 # --- Configuration ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATASET_PATH = os.path.join(BASE_DIR, "..", "data", "raw", "liver_large.csv")
+DATASET_PATH = os.path.join(BASE_DIR, "..", "data", "processed", "liver.parquet")
 MODEL_PATH = os.path.join(BASE_DIR, "Liver Disease Model.pkl")
 SCALER_PATH = os.path.join(BASE_DIR, "LiverScaler.pkl")
 
@@ -23,81 +23,47 @@ def train_liver_model():
         print(f"Error: Dataset not found at {DATASET_PATH}")
         return
 
-    df = pd.read_csv(DATASET_PATH, encoding='latin-1')
+    df = pd.read_parquet(DATASET_PATH)
     print(f"Loaded Dataset: {len(df)} records")
 
-    # Rename Columns
-    df = df.rename(columns={
-        "Age of the patient": "Age",
-        "Gender of the patient": "Gender", 
-        "Total Bilirubin": "Total_Bilirubin",
-        "Direct Bilirubin": "Direct_Bilirubin",
-        "\xa0Alkphos Alkaline Phosphotase": "Alkaline_Phosphotase",
-        "\xa0Sgpt Alamine Aminotransferase": "Alamine_Aminotransferase",
-        "Sgot Aspartate Aminotransferase": "Aspartate_Aminotransferase",
-        "Total Protiens": "Total_Proteins",
-        "\xa0ALB Albumin": "Albumin",
-        "A/G Ratio Albumin and Globulin Ratio": "Albumin_and_Globulin_Ratio",
-        "Result": "Dataset"
-    })
-    
-    # Handle weird encoding char explicitly if needed
-    df.columns = df.columns.str.replace('', '').str.strip()
-    # Re-apply explicit rename for safety if encoding strip worked differently
-    df = df.rename(columns={
-        "Alkphos Alkaline Phosphotase": "Alkaline_Phosphotase",
-        "Sgpt Alamine Aminotransferase": "Alamine_Aminotransferase",
-        "ALB Albumin": "Albumin"
-    })
-
     # 2. Preprocessing
-    
-    # 2a. Handle Missing Values
-    # Notebook filled 'Albumin_and_Globulin_Ratio' with mean.
-    df['Albumin_and_Globulin_Ratio'].fillna(df['Albumin_and_Globulin_Ratio'].mean(), inplace=True)
-
-    # 2b. Gender Encoding
-    # Notebook: Male->1, Female->0 (via LabelEncoder)
-    le = LabelEncoder()
-    df['Gender'] = le.fit_transform(df['Gender'])
+    # Data is already cleaned and encoded in Parquet (columns are lowercase snake_case)
+    # Mapping: age, gender, total_bilirubin, direct_bilirubin, alkaline_phosphotase, 
+    # alamine_aminotransferase, aspartate_aminotransferase, total_proteins, albumin, 
+    # albumin_and_globulin_ratio, target
 
     # 2c. Log Transform Skewed Features
-    # Notebook logic: np.log1p applied to skewed columns
-    skewed = ['Total_Bilirubin', 'Alkaline_Phosphotase', 'Alamine_Aminotransferase', 'Albumin_and_Globulin_Ratio']
+    # Note: Column names are now lowercase
+    skewed = ['total_bilirubin', 'alkaline_phosphotase', 'alamine_aminotransferase', 'albumin_and_globulin_ratio']
+    # Ensure columns exist before transforming
+    skewed = [c for c in skewed if c in df.columns]
     df[skewed] = np.log1p(df[skewed])
 
     # 2d. Scaling (RobustScaler)
-    # Fit scaler on features (excluding Dataset)
-    # The scaler must be fitted BEFORE splitting/upsampling to maintain distribution validity, 
-    # OR fitted on training split. Notebook scaled EVERYTHING before upsampling.
-    # We will follow the notebook pattern to ensure close reproduction, but typically we split first.
-    # Notebook: rs.fit_transform(liver_data[attributes])
-    
-    attributes = [col for col in df.columns if col != 'Dataset']
+    attributes = [col for col in df.columns if col != 'target']
     scaler = RobustScaler()
     df[attributes] = scaler.fit_transform(df[attributes])
     
-    # Save Scaler (CRITICAL: Save as LiverScaler.pkl)
+    # Save Scaler
     with open(SCALER_PATH, 'wb') as f:
         pickle.dump(scaler, f)
     print(f"Scaler Saved to {SCALER_PATH}")
 
     # 2e. Upsampling
-    # Notebook split by Dataset: 1 (Majority), 2 (Minority)
-    # Then upsampled minority to match majority size.
-    minority = df[df.Dataset==2]
-    majority = df[df.Dataset==1]
+    # Target is 'target' (0/1)
+    minority = df[df.target==1] # Assuming 1 is minority/disease
+    majority = df[df.target==0]
     
+    # Check which is actually minority
+    if len(minority) > len(majority):
+        minority, majority = majority, minority
+
     minority_upsample = resample(minority, replace=True, n_samples=len(majority), random_state=42)
     df_upsampled = pd.concat([minority_upsample, majority], axis=0)
 
-    # 2f. Target Mapping
-    # Notebook maps: 2->0 (Healthy), 1->1 (Disease)
-    df_upsampled['Dataset'] = df_upsampled['Dataset'].map({2: 0, 1: 1})
-
     # 3. Train/Test Split
-    X = df_upsampled.drop('Dataset', axis=1)
-    Y = df_upsampled['Dataset']
+    X = df_upsampled.drop('target', axis=1)
+    Y = df_upsampled['target']
     
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.25, random_state=123)
 
