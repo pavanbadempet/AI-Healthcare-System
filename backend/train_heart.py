@@ -9,7 +9,7 @@ from sklearn.metrics import accuracy_score
 
 # --- Configuration ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATASET_PATH = os.path.join(BASE_DIR, "..", "Datasets", "heart.csv")
+DATASET_PATH = os.path.join(BASE_DIR, "..", "data", "processed", "heart.parquet")
 MODEL_PATH = os.path.join(BASE_DIR, "Heart Disease Model.pkl")
 
 def train_heart_model():
@@ -20,7 +20,7 @@ def train_heart_model():
         print(f"Error: Dataset not found at {DATASET_PATH}")
         return
 
-    df = pd.read_csv(DATASET_PATH)
+    df = pd.read_parquet(DATASET_PATH)
     print(f"Loaded Dataset: {len(df)} records")
 
     # 2. Preprocessing

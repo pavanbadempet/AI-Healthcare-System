@@ -4,7 +4,9 @@ from sqlalchemy.orm import sessionmaker
 import os
 
 # Allow override via env var for deployment, default to local SQLite
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./healthcare.db")
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
+if not SQLALCHEMY_DATABASE_URL:
+    SQLALCHEMY_DATABASE_URL = "sqlite:///./healthcare.db"
 
 # Fix for Render/Heroku using 'postgres://' instead of 'postgresql://'
 if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
