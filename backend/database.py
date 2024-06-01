@@ -17,7 +17,12 @@ if "sqlite" in SQLALCHEMY_DATABASE_URL:
     connect_args = {"check_same_thread": False}
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args=connect_args
+    SQLALCHEMY_DATABASE_URL, 
+    connect_args=connect_args,
+    pool_pre_ping=True,  # Check connection liveness
+    pool_recycle=300,    # Recycle connections every 5 mins
+    pool_size=5,         # Small pool for free tier
+    max_overflow=0
 )
 
 # Enable WAL Mode for Performance (SQLite Only)
