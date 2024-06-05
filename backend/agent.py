@@ -67,7 +67,7 @@ class CustomGeminiWrapper:
             return AIMessage(content=f"Error: {str(e)}")
 
 # Global instance, but effectively lazy due to internal check
-llm = CustomGeminiWrapper("gemini-2.0-flash", GOOGLE_API_KEY)
+llm = CustomGeminiWrapper("gemini-1.5-flash", GOOGLE_API_KEY)
 
 # --- 2. State Definition ---
 class AgentState(TypedDict, total=False):

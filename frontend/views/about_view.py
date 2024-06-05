@@ -45,7 +45,9 @@ def render_about_page():
         
         ---
         
-        **Contact:** support@aihealthcare.example.com  
+        **Developer Contact:** pavan9b@gmail.com  
+        **GitHub Repository:** [View Source Code](https://github.com/pavanbadempet/A-Healthcare-System-using-Machine-Learning-Techniques-for-Disease-Prediction-with-Chatbot-Assistance)
+        
         **Version:** 2.0.0  
         **Last Updated:** January 2026
         """)
@@ -168,7 +170,6 @@ def render_about_page():
     st.markdown("---")
     st.markdown("""
     <div style="text-align: center; color: #64748B; font-size: 0.85rem;">
-        © 2026 AI Healthcare System. All rights reserved.<br>
-        Built with ❤️ for better health outcomes.
+        © 2026 AI Healthcare System. All rights reserved.
     </div>
     """, unsafe_allow_html=True)
