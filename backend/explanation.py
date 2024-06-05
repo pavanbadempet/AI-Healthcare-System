@@ -28,7 +28,7 @@ def get_model():
         
     try:
         genai.configure(api_key=GOOGLE_API_KEY)
-        _model = genai.GenerativeModel("gemini-2.0-flash")
+        _model = genai.GenerativeModel("gemini-1.5-flash")
     except Exception as e:
         logger.error(f"GenAI Init Failed (Explanation Service Disabled): {e}")
         _model = None
