@@ -107,8 +107,8 @@ def render_sidebar():
     """, unsafe_allow_html=True)
     
     with st.sidebar:
-        # --- 0. LANGUAGE SELECTOR ---
-        i18n.render_language_selector()
+        # --- 0. LANGUAGE SELECTOR (REMOVED) ---
+        # i18n.render_language_selector()
         
         # --- 1. PREMIUM BRAND HEADER WITH LOGO ---
         import os
@@ -142,10 +142,7 @@ def render_sidebar():
                 -webkit-background-clip: text;
                 -webkit-text-fill-color: transparent;
                 margin-top: 4px;
-            ">AI Healthcare</div>
-            <div style="font-size: 0.65rem; color: #64748B; letter-spacing: 0.08em; text-transform: uppercase;">
-                ⚡ Powered by AI
-            </div>
+            ">AI Healthcare System</div>
             """, unsafe_allow_html=True)
         
         st.markdown("</div>", unsafe_allow_html=True)
