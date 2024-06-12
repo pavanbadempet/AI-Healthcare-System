@@ -203,27 +203,33 @@ def render_sidebar():
             i18n.get_text("profile"),
             i18n.get_text("pricing"),
             i18n.get_text("telemedicine"),
-            i18n.get_text("about"),
-            i18n.get_text("admin")
+            i18n.get_text("about")
         ]
         
+        nav_icons = [
+            "grid-1x2-fill",
+            "chat-dots-fill",
+            "droplet-half",
+            "heart-pulse-fill",
+            "activity",
+            "capsule-pill",
+            "lungs-fill",
+            "person-badge-fill",
+            "credit-card-2-front-fill",
+            "camera-video-fill",
+            "info-circle-fill"
+        ]
+        
+        # Only show Admin Panel to admins
+        username = st.session_state.get('username', '')
+        if username == "admin" or username.startswith("admin_"):
+            nav_options.append(i18n.get_text("admin"))
+            nav_icons.append("shield-lock-fill")
+
         selected = option_menu(
             menu_title=None,
             options=nav_options,
-            icons=[
-                "grid-1x2-fill",
-                "chat-dots-fill",
-                "droplet-half",
-                "heart-pulse-fill",
-                "activity",
-                "capsule-pill",
-                "lungs-fill",
-                "person-badge-fill",
-                "credit-card-2-front-fill",
-                "camera-video-fill",
-                "info-circle-fill",
-                "shield-lock-fill"
-            ],
+            icons=nav_icons,
             default_index=0,
             styles={
                 "container": {
