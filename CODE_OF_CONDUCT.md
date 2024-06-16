@@ -2,7 +2,7 @@
 
 ## Overview
 
-As contributors and maintainers of the AIO-Healthcare-System project, we are committed to fostering a welcoming and inclusive community. This Code of Conduct outlines our expectations for all those who participate in our project and community.
+As contributors and maintainers of the **AI Healthcare System** project, we are committed to fostering a welcoming and inclusive community. This Code of Conduct outlines our expectations for all those who participate in our project and community.
 
 ## Our Pledge
 
