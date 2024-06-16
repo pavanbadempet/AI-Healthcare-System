@@ -9,6 +9,7 @@
 streamlit>=1.35.0
 streamlit-lottie>=0.0.5
 streamlit-option-menu>=0.3.13
+extra-streamlit-components>=0.1.71
 
 # --- HTTP Client (to call backend API) ---
 requests>=2.32.3
