@@ -13,7 +13,7 @@
   </a>
   <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python"/>
   <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker"/>
-  <img src="https://img.shields.io/github/license/pavanbadempet/A-Healthcare-System-using-Machine-Learning-Techniques-for-Disease-Prediction-with-Chatbot-Assistance?style=for-the-badge" alt="License"/>
+  <img src="https://img.shields.io/github/license/pavanbadempet/AI-Healthcare-System?style=for-the-badge" alt="License"/>
 </p>
 
 ---
@@ -97,8 +97,8 @@ Spin up the entire stack with one command:
 
 ```bash
 # Clone the repository
-git clone https://github.com/pavanbadempet/A-Healthcare-System-using-Machine-Learning-Techniques-for-Disease-Prediction-with-Chatbot-Assistance.git
-cd A-Healthcare-System-using-Machine-Learning-Techniques-for-Disease-Prediction-with-Chatbot-Assistance
+git clone https://github.com/pavanbadempet/AI-Healthcare-System.git
+cd AI-Healthcare-System
 
 # Configure environment
 cp .env.example .env
