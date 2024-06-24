@@ -11,7 +11,7 @@ Welcome to the **AI Healthcare System** project! We appreciate your interest in 
 3. Clone the forked repository to your local machine:
 
     ```bash
-    git clone https://github.com/pavanbadempet/A-Healthcare-System-using-Machine-Learning-Techniques-for-Disease-Prediction-with-Chatbot-Assistance.git
+    git clone https://github.com/your-username/AI-Healthcare-System.git
     ```
 
 4. Create a new branch for your contribution:
@@ -54,4 +54,4 @@ Please note that this project follows our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Thank You
 
-Thank you for contributing to AIO-Healthcare-System! Your efforts are appreciated.
+Thank you for contributing to **AI Healthcare System**! Your efforts are appreciated.
