@@ -27,6 +27,7 @@ jobs:
         pip install pytest pytest-cov pytest-asyncio pytest-playwright httpx
         if [ -f requirements.txt ]; then pip install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt; fi
         pip install scikit-learn
+        pip install uvicorn
         
     - name: Install Playwright Browsers (Minimal)
       run: playwright install chromium
