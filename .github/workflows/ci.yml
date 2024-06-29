@@ -28,6 +28,7 @@ jobs:
         if [ -f requirements.txt ]; then pip install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt; fi
         pip install scikit-learn
         pip install uvicorn
+        pip install "sqlalchemy>=1.4"
         
     - name: Install Playwright Browsers (Minimal)
       run: playwright install chromium
@@ -37,8 +38,8 @@ jobs:
         
     - name: Start Backend & Wait
       run: |
-        nohup uvicorn backend.main:app --host 127.0.0.1 --port 8000 &
-        python scripts/wait_for_server.py
+        nohup uvicorn backend.main:app --host 127.0.0.1 --port 8000 > /tmp/uvicorn.log 2>&1 &
+        python scripts/wait_for_server.py || (echo "Server failed to start; last 200 lines of /tmp/uvicorn.log:" && tail -n 200 /tmp/uvicorn.log && exit 1)
 
     - name: Run All Tests (Unit, Integration, MLOps, Strict)
       run: |
