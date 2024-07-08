@@ -9,10 +9,10 @@ from backend.train_heart import train_heart_model
 from backend.train_liver import train_liver_model
 
 def test_train_diabetes():
-    with patch("backend.train_diabetes.pd.read_csv") as mock_read, \
+    with patch("pandas.read_parquet") as mock_read, \
          patch("backend.train_diabetes.os.path.exists", return_value=True), \
          patch("backend.train_diabetes.pickle.dump") as mock_pickle, \
-         patch("backend.train_diabetes.xgb.XGBClassifier") as mock_xgb:
+         patch("xgboost.XGBClassifier") as mock_xgb:
         
         # Setup Mock Data
         df = pd.DataFrame({
@@ -29,7 +29,6 @@ def test_train_diabetes():
         mock_read.return_value = df
         
         # Mock Predict to return a list (not a Mock)
-        # We use side_effect to return list of correct length based on input
         mock_xgb.return_value.predict.side_effect = lambda x: [0] * len(x)
         
         # Run
@@ -41,10 +40,10 @@ def test_train_diabetes():
         assert mock_pickle.called
 
 def test_train_heart():
-    with patch("backend.train_heart.pd.read_csv") as mock_read, \
+    with patch("pandas.read_parquet") as mock_read, \
          patch("backend.train_heart.os.path.exists", return_value=True), \
          patch("backend.train_heart.pickle.dump") as mock_pickle, \
-         patch("backend.train_heart.xgb.XGBClassifier") as mock_xgb:
+         patch("xgboost.XGBClassifier") as mock_xgb:
         
         df = pd.DataFrame({
             "age": [50] * 30,
@@ -72,10 +71,10 @@ def test_train_heart():
         assert mock_pickle.called
 
 def test_train_liver():
-    with patch("backend.train_liver.pd.read_csv") as mock_read, \
+    with patch("pandas.read_parquet") as mock_read, \
          patch("backend.train_liver.os.path.exists", return_value=True), \
          patch("backend.train_liver.pickle.dump") as mock_pickle, \
-         patch("backend.train_liver.xgb.XGBClassifier") as mock_xgb, \
+         patch("xgboost.XGBClassifier") as mock_xgb, \
          patch("builtins.open", mock_open()):
         
         # Dataset needs mixed classes 1 and 2
@@ -90,8 +89,18 @@ def test_train_liver():
             "Total_Protiens": [6.5] * 30,
             "Albumin": [3.5] * 30,
             "Albumin_and_Globulin_Ratio": [1.0] * 30,
-            "Dataset": [1, 2] * 15 
+            "Dataset": [1, 2] * 15 # NOTE: train_liver.py expects 'target', but logic inside handles various things. 
+            # Wait, `train_liver.py` line 53: df[df.target==1]
+            # But the mock DF here uses 'Dataset'.
+            # train_liver.py line 26: df = pd.read_parquet(DATASET_PATH) maps parquet cols to snake_case.
+            # If mock returns DF with 'Dataset', and code checks 'target', it fails.
+            # Let's check train_liver.py again.
+            # It loads parquet.
+            # Then it does: minority = df[df.target==1].
+            # So I should use 'target' in mock DF.
+            "target": [0, 1] * 15
         })
+        # Note: I am fixing the mocked column name to 'target' to match train_liver.py logic.
         mock_read.return_value = df
         mock_xgb.return_value.predict.side_effect = lambda x: [1] * len(x)
         
