@@ -1,13 +1,6 @@
 
-import pandas as pd
-import numpy as np
-import xgboost as xgb
-import pickle
 import os
-from sklearn.preprocessing import LabelEncoder, RobustScaler
-from sklearn.model_selection import train_test_split
-from sklearn.utils import resample
-from sklearn.metrics import accuracy_score
+import pickle
 
 # --- Configuration ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -17,6 +10,17 @@ SCALER_PATH = os.path.join(BASE_DIR, "LiverScaler.pkl")
 
 def train_liver_model():
     print("Starting Liver Disease Model Training...")
+    
+    import pandas as pd
+    import numpy as np
+    from sklearn.preprocessing import LabelEncoder, RobustScaler
+    from sklearn.model_selection import train_test_split
+    from sklearn.utils import resample
+    from sklearn.metrics import accuracy_score
+    try:
+        import xgboost as xgb
+    except ImportError:
+        raise RuntimeError("xgboost is required to train the liver model. Install it or mock it in tests.")
 
     # 1. Load Data
     if not os.path.exists(DATASET_PATH):

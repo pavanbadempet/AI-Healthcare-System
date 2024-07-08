@@ -1,11 +1,5 @@
-import pandas as pd
-import numpy as np
-import xgboost as xgb
-import pickle
 import os
-from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+import pickle
 
 # --- Configuration ---
 # Robust path resolution
@@ -16,6 +10,16 @@ SCALER_PATH = os.path.join(BASE_DIR, "Scaler.pkl")
 
 def train_diabetes_model():
     print("Starting Diabetes Model Training...")
+    
+    import pandas as pd
+    import numpy as np
+    from sklearn.preprocessing import StandardScaler
+    from sklearn.model_selection import train_test_split
+    from sklearn.metrics import accuracy_score
+    try:
+        import xgboost as xgb
+    except ImportError:
+        raise RuntimeError("xgboost is required to train the diabetes model. Install it or mock it in tests.")
 
     # 1. Load Data
     # 1. Load Data
