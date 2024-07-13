@@ -89,16 +89,8 @@ def test_train_liver():
             "Total_Protiens": [6.5] * 30,
             "Albumin": [3.5] * 30,
             "Albumin_and_Globulin_Ratio": [1.0] * 30,
-            "Dataset": [1, 2] * 15 # NOTE: train_liver.py expects 'target', but logic inside handles various things. 
-            # Wait, `train_liver.py` line 53: df[df.target==1]
-            # But the mock DF here uses 'Dataset'.
-            # train_liver.py line 26: df = pd.read_parquet(DATASET_PATH) maps parquet cols to snake_case.
-            # If mock returns DF with 'Dataset', and code checks 'target', it fails.
-            # Let's check train_liver.py again.
-            # It loads parquet.
-            # Then it does: minority = df[df.target==1].
-            # So I should use 'target' in mock DF.
             "target": [0, 1] * 15
+        })
         })
         # Note: I am fixing the mocked column name to 'target' to match train_liver.py logic.
         mock_read.return_value = df
