@@ -91,7 +91,6 @@ def test_train_liver():
             "Albumin_and_Globulin_Ratio": [1.0] * 30,
             "target": [0, 1] * 15
         })
-        })
         # Note: I am fixing the mocked column name to 'target' to match train_liver.py logic.
         mock_read.return_value = df
         mock_xgb.return_value.predict.side_effect = lambda x: [1] * len(x)
