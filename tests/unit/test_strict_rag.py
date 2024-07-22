@@ -8,15 +8,12 @@ from backend.rag import SimpleVectorStore, add_checkup_to_db, add_interaction_to
 # FIXTURE: Mock Embedding Model GLOBAL to prevent download
 @pytest.fixture(autouse=True)
 def mock_embedding_model():
-    with patch("backend.rag.HuggingFaceEmbeddings") as mock_cls:
-        mock_instance = MagicMock()
-        # embed_query returns a vector of valid shape (e.g. 384 dim)
-        mock_instance.embed_query.return_value = [0.1] * 5 
-        mock_cls.return_value = mock_instance
-        
-        # Reset global
-        backend.rag._embedding_model = None
-        yield mock_instance
+    # Mock google.generativeai
+    with patch("google.generativeai.embed_content") as mock_embed, \
+         patch("google.generativeai.configure") as mock_conf:
+         
+        mock_embed.return_value = {'embedding': [0.1] * 5}
+        yield mock_embed
 
 # --- SimpleVectorStore Tests ---
 
