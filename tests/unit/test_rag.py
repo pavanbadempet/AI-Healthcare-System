@@ -8,19 +8,27 @@ from backend import rag
 
 @pytest.fixture
 def mock_vector_db(monkeypatch, tmp_path):
+    # Mock Gemini embedding to return a zero vector
+    def mock_embed(*args, **kwargs):
+        return {'embedding': [0.0] * 768}
+        
+    monkeypatch.setattr("google.generativeai.embed_content", mock_embed)
+    monkeypatch.setattr("google.generativeai.configure", lambda api_key: None)
+
     # Create temp DB file
     d = tmp_path / "test_vector_store.pkl"
     monkeypatch.setattr(rag, "DB_FILE", str(d))
     
     # Reset store
-    rag.store = rag.SimpleVectorStore()
-    rag.store.documents = []
-    rag.store.vectors = []
-    rag.store.metadatas = []
-    rag.store.ids = []
-    rag.store.save() # Create file
+    # Since _store singleton might be initialized, we should force it to None or re-create
+    rag._store = rag.SimpleVectorStore()
+    rag._store.documents = []
+    rag._store.vectors = []
+    rag._store.metadatas = []
+    rag._store.ids = []
+    rag._store.save() # Create file
     
-    return rag.store
+    return rag._store
 
 def test_rag_tenant_isolation(mock_vector_db):
     user_a = "user_100"
