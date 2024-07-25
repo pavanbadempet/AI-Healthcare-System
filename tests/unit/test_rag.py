@@ -10,7 +10,7 @@ from backend import rag
 def mock_vector_db(monkeypatch, tmp_path):
     # Mock Gemini embedding to return a zero vector
     def mock_embed(*args, **kwargs):
-        return {'embedding': [0.0] * 768}
+        return {'embedding': [1.0] * 768}
         
     monkeypatch.setattr("google.generativeai.embed_content", mock_embed)
     monkeypatch.setattr("google.generativeai.configure", lambda api_key: None)
