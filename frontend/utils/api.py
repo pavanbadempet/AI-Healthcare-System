@@ -38,7 +38,6 @@ def create_payment_order(amount_paise: int, plan_id: str):
 import extra_streamlit_components as stx
 from datetime import datetime, timedelta
 
-@st.cache_resource
 def _get_cookie_manager():
     """Singleton cookie manager instance."""
     return stx.CookieManager()
