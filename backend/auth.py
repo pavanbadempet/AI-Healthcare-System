@@ -19,7 +19,9 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # --- Configuration & Constants ---
-SECRET_KEY = os.getenv("SECRET_KEY", "fallback-secret-for-dev-only")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    raise RuntimeError("FATAL: SECRET_KEY environment variable is not set. Cannot start server.")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
@@ -37,10 +39,10 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def get_password_hash(password: str) -> str:
     """Hash a password using bcrypt. Truncates to 72 bytes if necessary."""
-    password_bytes = password.encode('utf-8')
-    if len(password_bytes) > 72:
-        password = password_bytes[:72].decode('utf-8', errors='ignore')
-    return pwd_context.hash(password)
+    # Truncate BEFORE hashing - bcrypt has a 72-byte limit
+    password_bytes = password.encode('utf-8')[:72]
+    truncated_password = password_bytes.decode('utf-8', errors='ignore')
+    return pwd_context.hash(truncated_password)
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     """
@@ -81,6 +83,10 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
     return user
 
+def is_admin(user: models.User) -> bool:
+    """Check if user has admin privileges."""
+    # Check both username='admin' for backward compatibility and future role field
+    return user.username == "admin" or getattr(user, 'is_admin', False)
 
 # --- Endpoints ---
 
@@ -222,7 +228,7 @@ def update_user_profile(
 @router.get("/users", response_model=List[schemas.UserResponse])
 def get_all_users(current_user: models.User = Depends(get_current_user), db: Session = Depends(database.get_db)):
     """Admin only: Get all users."""
-    if current_user.username != "admin":
+    if not is_admin(current_user):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin privileges required"
@@ -233,7 +239,7 @@ def get_all_users(current_user: models.User = Depends(get_current_user), db: Ses
 @router.get("/users/{user_id}/full", response_model=schemas.UserFullResponse)
 def get_user_full_details(user_id: int, current_user: models.User = Depends(get_current_user), db: Session = Depends(database.get_db)):
     """Admin only: Get full user details including health records and chat logs (Audit Logged)."""
-    if current_user.username != "admin":
+    if not is_admin(current_user):
         raise HTTPException(status_code=403, detail="Admin access only")
     
     user = db.query(models.User).filter(models.User.id == user_id).first()
