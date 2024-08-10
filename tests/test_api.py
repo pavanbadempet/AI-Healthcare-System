@@ -10,7 +10,7 @@ client = TestClient(app, base_url="http://localhost")
 def test_read_root():
     response = client.get("/")
     assert response.status_code == 200
-    assert response.json() == {"message": "AI Healthcare System API is running"}
+    assert response.json() == {"message": "AI Healthcare API"}
 
 def test_heart_prediction_cdc():
     # Test with valid CDC BRFSS payload
