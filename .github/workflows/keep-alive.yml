@@ -1,0 +1,22 @@
+name: Keep Alive
+
+on:
+  schedule:
+    # Runs every 10 minutes to prevent Render free tier spin-down
+    - cron: '*/10 * * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping Backend (Render)
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" https://aio-health-backend.onrender.com/healthz || true
+          echo "Backend pinged"
+      
+      - name: Ping Frontend (Streamlit)
+        run: |
+          # Replace with your actual Streamlit URL if different
+          curl -s -o /dev/null -w "%{http_code}" https://ai-healthcare-system.streamlit.app/ || true
+          echo "Frontend pinged"
