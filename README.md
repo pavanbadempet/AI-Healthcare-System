@@ -237,7 +237,3 @@ Contributions are welcome! Please check [CONTRIBUTING.md](CONTRIBUTING.md) for g
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
-
-<p align="center">
-  <sub>Built with ❤️ by <a href="https://github.com/pavanbadempet">Pavan Badempet</a></sub>
-</p>
