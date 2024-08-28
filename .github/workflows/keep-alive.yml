@@ -2,21 +2,41 @@ name: Keep Alive
 
 on:
   schedule:
-    # Runs every 10 minutes to prevent Render free tier spin-down
-    - cron: '*/10 * * * *'
+    # Runs every 14 minutes to prevent free tier spin-down (Render spins down after 15 min of inactivity)
+    - cron: '*/14 * * * *'
   workflow_dispatch:  # Allow manual trigger
 
 jobs:
-  ping:
+  ping-services:
     runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
     steps:
-      - name: Ping Backend (Render)
+      - name: Ping Backend (Render) with Retry
         run: |
-          curl -s -o /dev/null -w "%{http_code}" https://aio-health-backend.onrender.com/healthz || true
-          echo "Backend pinged"
+          echo "Pinging Render backend..."
+          for i in 1 2 3; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 90 https://aio-health-backend.onrender.com/healthz)
+            echo "Attempt $i: HTTP $HTTP_CODE"
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ Backend is UP"
+              exit 0
+            fi
+            echo "Waiting 30s for cold start..."
+            sleep 30
+          done
+          echo "⚠️ Backend may be slow to wake up"
       
-      - name: Ping Frontend (Streamlit)
+      - name: Ping Frontend (Streamlit) with Retry
         run: |
-          # Replace with your actual Streamlit URL if different
-          curl -s -o /dev/null -w "%{http_code}" https://ai-healthcare-system.streamlit.app/ || true
-          echo "Frontend pinged"
+          echo "Pinging Streamlit frontend..."
+          for i in 1 2; do
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 https://ai-healthcare-system.streamlit.app/)
+            echo "Attempt $i: HTTP $HTTP_CODE"
+            if [ "$HTTP_CODE" = "200" ]; then
+              echo "✅ Frontend is UP"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "⚠️ Frontend may need manual wake-up"

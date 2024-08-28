@@ -6,9 +6,7 @@ body,
 [class*="css"] {
     font-family: 'Outfit', 'Inter', sans-serif;
     color: #E2E8F0;
-    /* Slate 200 */
     background-color: #0F172A;
-    /* Ensure base is dark */
 }
 
 /* Background Gradients (Deep Space / Neural) */
@@ -24,7 +22,6 @@ div[data-testid="stMetric"],
 div.stDataFrame,
 div.stForm {
     background: rgba(30, 41, 59, 0.7);
-    /* Dark Slate with opacity */
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(148, 163, 184, 0.1);
@@ -38,14 +35,12 @@ div[data-testid="stMetric"]:hover,
 div.stForm:hover {
     transform: translateY(-2px);
     border-color: rgba(56, 189, 248, 0.3);
-    /* Light Blue Glow */
     box-shadow: 0 12px 40px -10px rgba(0, 0, 0, 0.5);
 }
 
 /* Buttons (Neon / Gradient) */
 div.stButton>button {
     background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%);
-    /* Blue Core */
     color: white;
     border: none;
     border-radius: 10px;
@@ -64,7 +59,6 @@ div.stButton>button:hover {
 
 div[data-testid="stFormSubmitButton"]>button {
     background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-    /* Emerald for Actions */
     box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.2);
 }
 
@@ -96,7 +90,6 @@ section[data-testid="stSidebar"] {
     box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
 }
 
-/* Subtle blue glow at top */
 section[data-testid="stSidebar"]::before {
     content: "";
     position: absolute;
@@ -109,14 +102,12 @@ section[data-testid="stSidebar"]::before {
     z-index: 0;
 }
 
-/* Remove default sidebar top padding */
 section[data-testid="stSidebar"]>div:first-child {
     padding-top: 1rem;
     padding-left: 0.75rem;
     padding-right: 0.75rem;
 }
 
-/* Hide default navigation if any remains */
 div[data-testid="stSidebarNav"] {
     display: none !important;
 }
@@ -140,12 +131,7 @@ section[data-testid="stSidebar"] ::-webkit-scrollbar-thumb:hover {
 }
 
 /* --- TEXT & HEADERS --- */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
+h1, h2, h3, h4, h5, h6 {
     color: #F8FAFC !important;
     letter-spacing: -0.02em;
 }
@@ -158,11 +144,8 @@ h1 {
     text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-p,
-label,
-span {
+p, label, span {
     color: #CBD5E1;
-    /* Slate 300 */
 }
 
 /* --- ALERTS --- */
@@ -172,35 +155,194 @@ div[data-baseweb="notification"] {
 }
 
 /* --- HIDE CRUFT --- */
-#MainMenu {
-    visibility: hidden;
+#MainMenu { visibility: hidden; }
+footer { visibility: hidden; }
+header { visibility: hidden; }
+
+/* ============================================
+   RESPONSIVE DESIGN - COMPREHENSIVE BREAKPOINTS
+   ============================================ */
+
+/* --- TABLET BREAKPOINT (768px - 1024px) --- */
+@media only screen and (max-width: 1024px) {
+    .block-container {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+    
+    div[data-testid="stMetric"],
+    div.stDataFrame,
+    div.stForm {
+        padding: 20px;
+        border-radius: 14px;
+    }
+    
+    h1 {
+        font-size: 2rem !important;
+    }
+    
+    h2 {
+        font-size: 1.5rem !important;
+    }
 }
 
-footer {
-    visibility: hidden;
-}
-
-header {
-    visibility: hidden;
-}
-
-/* --- MOBILE RESPONSIVENESS --- */
-@media only screen and (max-width: 600px) {
-
+/* --- MOBILE BREAKPOINT (max 768px) --- */
+@media only screen and (max-width: 768px) {
+    /* Main container adjustments */
+    .block-container {
+        padding-top: 1rem !important;
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+        padding-bottom: 1rem !important;
+    }
+    
+    /* Cards/Forms - reduced padding */
     div[data-testid="stMetric"],
     div.stDataFrame,
     div.stForm {
         padding: 16px;
-        /* Reduce padding on mobile */
+        border-radius: 12px;
     }
-
+    
+    /* Full width metrics on mobile */
+    div[data-testid="stMetric"] {
+        min-width: 100% !important;
+    }
+    
+    /* Headers smaller on mobile */
     h1 {
-        font-size: 1.8rem !important;
-        /* Smaller titles */
+        font-size: 1.75rem !important;
+        line-height: 1.2 !important;
     }
+    
+    h2 {
+        font-size: 1.35rem !important;
+    }
+    
+    h3 {
+        font-size: 1.15rem !important;
+    }
+    
+    /* Full width buttons */
+    div.stButton>button {
+        width: 100% !important;
+        padding: 0.75rem 1rem !important;
+    }
+    
+    /* Form inputs - larger touch targets */
+    div[data-testid="stTextInput"] input,
+    div[data-testid="stNumberInput"] input,
+    div[data-testid="stPasswordInput"] input {
+        padding: 0.9rem 1rem !important;
+        font-size: 16px !important; /* Prevents iOS zoom on focus */
+    }
+    
+    /* Columns stack naturally - reduce gap */
+    div[data-testid="stHorizontalBlock"] {
+        gap: 0.5rem !important;
+    }
+    
+    /* Sidebar mobile adjustments */
+    section[data-testid="stSidebar"] {
+        min-width: 280px !important;
+        max-width: 85vw !important;
+    }
+    
+    section[data-testid="stSidebar"]>div:first-child {
+        padding: 0.75rem 0.5rem !important;
+    }
+    
+    /* Chat input mobile - full width, larger */
+    .stChatInput > div {
+        border-radius: 20px !important;
+    }
+    
+    .stChatInput input {
+        font-size: 16px !important;
+        padding: 0.75rem !important;
+    }
+    
+    /* Expander adjustments */
+    div[data-testid="stExpander"] {
+        border-radius: 12px !important;
+    }
+    
+    /* Tabs - scrollable on mobile */
+    .stTabs [data-baseweb="tab-list"] {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+    
+    .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar {
+        display: none;
+    }
+}
 
-    .stButton>button {
-        width: 100%;
-        /* Full width buttons on mobile */
+/* --- SMALL MOBILE BREAKPOINT (max 480px) --- */
+@media only screen and (max-width: 480px) {
+    .block-container {
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+    
+    h1 {
+        font-size: 1.5rem !important;
+    }
+    
+    h2 {
+        font-size: 1.2rem !important;
+    }
+    
+    div[data-testid="stMetric"],
+    div.stDataFrame,
+    div.stForm {
+        padding: 12px;
+        border-radius: 10px;
+    }
+    
+    /* Reduce button padding */
+    div.stButton>button {
+        padding: 0.6rem 0.75rem !important;
+        font-size: 0.9rem !important;
+    }
+    
+    /* Sidebar narrower */
+    section[data-testid="stSidebar"] {
+        min-width: 260px !important;
+    }
+}
+
+/* --- TOUCH DEVICE OPTIMIZATIONS --- */
+@media (hover: none) and (pointer: coarse) {
+    /* Larger tap targets for touch */
+    div.stButton>button {
+        min-height: 44px;
+    }
+    
+    /* Remove hover effects that feel sticky on touch */
+    div[data-testid="stMetric"]:hover,
+    div.stForm:hover {
+        transform: none;
+    }
+    
+    div.stButton>button:hover {
+        transform: none;
+    }
+}
+
+/* --- PRINT STYLES --- */
+@media print {
+    #MainMenu, footer, header, section[data-testid="stSidebar"] {
+        display: none !important;
+    }
+    
+    .stApp {
+        background: white !important;
+    }
+    
+    h1, h2, h3, h4, h5, h6, p, span, label {
+        color: black !important;
+        -webkit-text-fill-color: black !important;
     }
 }
