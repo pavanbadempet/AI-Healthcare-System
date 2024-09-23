@@ -40,7 +40,7 @@ def render_radar_chart(input_data: dict):
         margin=dict(l=40, r=40, t=40, b=40)
     )
     
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)  # Still valid for plotly_chart
 
 def render_trend_chart(records: list, metric_key: str, label: str):
     """
@@ -73,4 +73,4 @@ def render_trend_chart(records: list, metric_key: str, label: str):
     fig = px.line(df, x="Date", y=label, markers=True, title=f"{label} Over Time")
     fig.update_layout(xaxis_title="Checkup Date", yaxis_title=label)
     
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, use_container_width=True)  # Still valid for plotly_chart

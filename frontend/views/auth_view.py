@@ -116,7 +116,7 @@ div[data-testid="stFormSubmitButton"] button {
             with st.form("login", border=False):
                 u = st.text_input("Username", placeholder="Enter username", label_visibility="collapsed")
                 p = st.text_input("Password", type="password", placeholder="Enter password", label_visibility="collapsed")
-                if st.form_submit_button("Sign In →", type="primary", use_container_width=True):
+                if st.form_submit_button("Sign In →", type="primary", width="stretch"):
                     if api.login(u, p): st.rerun()
                         
         with tab2:
@@ -125,7 +125,7 @@ div[data-testid="stFormSubmitButton"] button {
                 us = st.text_input("Username", placeholder="Choose a username", label_visibility="collapsed")
                 em = st.text_input("Email", placeholder="Your email", label_visibility="collapsed")
                 pw = st.text_input("Password", type="password", placeholder="Create password", label_visibility="collapsed")
-                if st.form_submit_button("Create Account", type="primary", use_container_width=True):
+                if st.form_submit_button("Create Account", type="primary", width="stretch"):
                     if api.signup(us, pw, em, us, "2000-01-01"):  # Use username as name initially
                         if api.login(us, pw): st.rerun()
         

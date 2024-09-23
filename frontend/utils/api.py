@@ -36,8 +36,17 @@ def load_session() -> Optional[Dict[str, str]]:
 
 def clear_session():
     cm = _get_cookie_manager()
-    cm.delete("auth_token", key="del_token")
-    cm.delete("auth_username", key="del_user")
+    # Check if cookie exists before deleting to avoid KeyError
+    try:
+        if cm.get("auth_token"):
+            cm.delete("auth_token", key="del_token")
+    except Exception:
+        pass
+    try:
+        if cm.get("auth_username"):
+            cm.delete("auth_username", key="del_user")
+    except Exception:
+        pass
     st.session_state.pop('token', None)
     st.session_state.pop('username', None)
 
