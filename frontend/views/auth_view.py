@@ -79,6 +79,24 @@ div[data-testid="stFormSubmitButton"] button {
     font-size: 0.95rem !important;
     border-radius: 10px !important;
     margin-top: 0.5rem !important;
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%) !important;
+    border: none !important;
+    color: white !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3) !important;
+}
+
+div[data-testid="stFormSubmitButton"] button:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4) !important;
+    background: linear-gradient(135deg, #34D399 0%, #10B981 100%) !important;
+}
+
+div[data-testid="stFormSubmitButton"] button:active {
+    transform: translateY(0) !important;
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3) !important;
 }
 </style>
 """, unsafe_allow_html=True)
