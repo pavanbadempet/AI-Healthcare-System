@@ -17,13 +17,60 @@ def render_sidebar():
     4. Sign out button
     """
     
-    # Force sidebar to be visible (workaround for collapse issue)
+    # Proper sidebar styling with working collapse/expand
     st.markdown("""
     <style>
-    /* Ensure sidebar is always accessible */
+    /* Sidebar base styling */
     [data-testid="stSidebar"] {
         min-width: 280px !important;
         max-width: 320px !important;
+        transition: all 0.3s ease !important;
+    }
+    
+    /* Make the expand button very visible when sidebar is collapsed */
+    [data-testid="stSidebar"][aria-expanded="false"] {
+        min-width: 0 !important;
+        width: 0 !important;
+    }
+    
+    /* Style the collapse/expand button */
+    button[data-testid="stSidebarCollapseButton"] {
+        background: rgba(59, 130, 246, 0.2) !important;
+        border: 1px solid rgba(59, 130, 246, 0.3) !important;
+        border-radius: 8px !important;
+        color: #60A5FA !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    button[data-testid="stSidebarCollapseButton"]:hover {
+        background: rgba(59, 130, 246, 0.3) !important;
+        transform: scale(1.05);
+    }
+    
+    /* When collapsed, show a visible expand button */
+    [data-testid="stSidebarCollapsedControl"] {
+        display: block !important;
+        position: fixed !important;
+        left: 10px !important;
+        top: 10px !important;
+        z-index: 9999 !important;
+    }
+    
+    [data-testid="stSidebarCollapsedControl"] button {
+        background: linear-gradient(135deg, #3B82F6, #8B5CF6) !important;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 10px 14px !important;
+        color: white !important;
+        font-size: 1.2rem !important;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4) !important;
+        cursor: pointer !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    [data-testid="stSidebarCollapsedControl"] button:hover {
+        transform: scale(1.1) !important;
+        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5) !important;
     }
     
     /* Sidebar Background */
