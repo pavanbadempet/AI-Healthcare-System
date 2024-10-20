@@ -17,63 +17,10 @@ def render_sidebar():
     4. Sign out button
     """
     
-    # Proper sidebar styling with working collapse/expand
+    # Sidebar styling - minimal to not break native toggle
     st.markdown("""
     <style>
-    /* Sidebar base styling */
-    [data-testid="stSidebar"] {
-        min-width: 280px !important;
-        max-width: 320px !important;
-        transition: all 0.3s ease !important;
-    }
-    
-    /* Make the expand button very visible when sidebar is collapsed */
-    [data-testid="stSidebar"][aria-expanded="false"] {
-        min-width: 0 !important;
-        width: 0 !important;
-    }
-    
-    /* Style the collapse/expand button */
-    button[data-testid="stSidebarCollapseButton"] {
-        background: rgba(59, 130, 246, 0.2) !important;
-        border: 1px solid rgba(59, 130, 246, 0.3) !important;
-        border-radius: 8px !important;
-        color: #60A5FA !important;
-        transition: all 0.2s ease !important;
-    }
-    
-    button[data-testid="stSidebarCollapseButton"]:hover {
-        background: rgba(59, 130, 246, 0.3) !important;
-        transform: scale(1.05);
-    }
-    
-    /* When collapsed, show a visible expand button */
-    [data-testid="stSidebarCollapsedControl"] {
-        display: block !important;
-        position: fixed !important;
-        left: 10px !important;
-        top: 10px !important;
-        z-index: 9999 !important;
-    }
-    
-    [data-testid="stSidebarCollapsedControl"] button {
-        background: linear-gradient(135deg, #3B82F6, #8B5CF6) !important;
-        border: none !important;
-        border-radius: 10px !important;
-        padding: 10px 14px !important;
-        color: white !important;
-        font-size: 1.2rem !important;
-        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4) !important;
-        cursor: pointer !important;
-        transition: all 0.2s ease !important;
-    }
-    
-    [data-testid="stSidebarCollapsedControl"] button:hover {
-        transform: scale(1.1) !important;
-        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5) !important;
-    }
-    
-    /* Sidebar Background */
+    /* Sidebar appearance - NOT blocking collapse */
     section[data-testid="stSidebar"] {
         background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%) !important;
         border-right: 1px solid rgba(59, 130, 246, 0.15) !important;
@@ -81,6 +28,23 @@ def render_sidebar():
     
     section[data-testid="stSidebar"] > div:first-child {
         padding: 1.5rem 1rem !important;
+    }
+    
+    /* Style the toggle buttons nicely */
+    button[data-testid="stSidebarCollapseButton"],
+    [data-testid="stSidebarCollapsedControl"] button {
+        background: linear-gradient(135deg, #3B82F6, #8B5CF6) !important;
+        border: none !important;
+        border-radius: 8px !important;
+        color: white !important;
+        box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3) !important;
+        transition: all 0.2s ease !important;
+    }
+    
+    button[data-testid="stSidebarCollapseButton"]:hover,
+    [data-testid="stSidebarCollapsedControl"] button:hover {
+        transform: scale(1.05) !important;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4) !important;
     }
     
     /* Hide default nav */
