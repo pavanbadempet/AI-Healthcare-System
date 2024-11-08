@@ -11,8 +11,21 @@ body,
 
 /* Background Gradients (Deep Space / Neural) */
 .stApp {
+    overflow-x: hidden;
+}
+
+/* Force Reset Overflow for Headers - Vital for Sidebar Toggle */
+html,
+body {
+    overflow: auto !important;
+    overflow-x: hidden !important;
+}
+
+/* Background Gradients (Deep Space / Neural) */
+.stApp {
     background: radial-gradient(circle at top left, #1e293b 0%, #0f172a 100%);
     background-attachment: fixed;
+    overflow: visible !important;
 }
 
 /* --- COMPONENTS --- */
