@@ -17,82 +17,49 @@ def render_sidebar():
     4. Sign out button
     """
     
-    # --- CUSTOM JS SIDEBAR TOGGLE (Fallback for Cloud) ---
-    # This script adds a robust custom button if the native one is missing
-    toggle_script = """
-    <script>
-        function createToggle() {
-            // Check if our custom toggle already exists
-            if (document.getElementById('custom-sidebar-toggle')) return;
-
-            // Create the button
-            const btn = document.createElement('button');
-            btn.id = 'custom-sidebar-toggle';
-            btn.innerHTML = '☰';
-            btn.style.position = 'fixed';
-            btn.style.top = '15px';
-            btn.style.left = '15px';
-            btn.style.zIndex = '9999999';
-            btn.style.backgroundColor = 'rgba(59, 130, 246, 0.9)';
-            btn.style.color = 'white';
-            btn.style.border = 'none';
-            btn.style.borderRadius = '8px';
-            btn.style.width = '40px';
-            btn.style.height = '40px';
-            btn.style.fontSize = '20px';
-            btn.style.cursor = 'pointer';
-            btn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
-            btn.style.display = 'flex';
-            btn.style.alignItems = 'center';
-            btn.style.justifyContent = 'center';
-            btn.style.transition = 'all 0.3s ease';
-
-            // Add click event
-            btn.onclick = function() {
-                const sidebar = document.querySelector('section[data-testid="stSidebar"]');
-                if (sidebar) {
-                    // Check if collapsed by width or transform
-                    const computedStyle = window.getComputedStyle(sidebar);
-                    const is collapsed = computedStyle.transform !== 'none' && computedStyle.transform !== 'matrix(1, 0, 0, 1, 0, 0)' || computedStyle.width === '0px';
-                    
-                    if (sidebar.getAttribute('aria-expanded') === 'true') {
-                        // Collapse it
-                        // Try native button first
-                        const closeBtn = document.querySelector('button[data-testid="stSidebarCollapseButton"]');
-                        if (closeBtn) closeBtn.click();
-                        else {
-                            // Manual collapse hack (not ideal but works for visuals)
-                            sidebar.setAttribute('aria-expanded', 'false');
-                        }
-                    } else {
-                        // Expand it
-                        // Try native fallback expand button
-                        const openBtn = document.querySelector('[data-testid="stSidebarCollapsedControl"] button');
-                        if (openBtn) openBtn.click();
-                        else {
-                            sidebar.setAttribute('aria-expanded', 'true');
-                        }
-                    }
-                    
-                    // Toggle button animation
-                    btn.style.transform = 'scale(0.9)';
-                    setTimeout(() => btn.style.transform = 'scale(1)', 150);
-                }
-            };
-            
-            // Add to DOM
-            document.body.appendChild(btn);
-        }
-
-        // Run immediately and on intervals to ensure it persists
-        createToggle();
-        setInterval(createToggle, 1000);
-    </script>
-    """
+    # --- SIDEBAR CONTROLLER (Python Fallback) ---
+    # If native toggle fails, this button in the MAIN area allows forcing sidebar open
     
-    # Inject via components to ensure script execution
-    import streamlit.components.v1 as components
-    components.html(toggle_script, height=0)
+    # Initialize state
+    if 'sidebar_force_open' not in st.session_state:
+        st.session_state.sidebar_force_open = False
+
+    # Logic to handle toggle
+    def toggle_sidebar():
+        st.session_state.sidebar_force_open = not st.session_state.sidebar_force_open
+
+    # Render a small floating visible button in main area (if sidebar is closed or logic dictates)
+    # We place this in main area containers
+    placeholder = st.container()
+    col1, col2 = placeholder.columns([1, 20])
+    with col1:
+        # Only show "SHOW" button we aren't forcing it open, 
+        # allowing user to click it to "Force Open"
+        if not st.session_state.sidebar_force_open:
+            st.button("☰", key="custom_sidebar_show", on_click=toggle_sidebar, help="Show / Hide Sidebar")
+    
+    # If forced open, inject CSS to override collapse
+    if st.session_state.sidebar_force_open:
+        st.markdown("""
+        <style>
+            section[data-testid="stSidebar"] {
+                transform: translateX(0) !important;
+                visibility: visible !important;
+                width: 280px !important;
+                min-width: 280px !important;
+            }
+            /* Hide the expand button when we are forcing open */
+            [data-testid="stSidebarCollapsedControl"] {
+                display: none !important;
+            }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # Show a "Close" button at top of sidebar
+        with st.sidebar:
+            if st.button("✖️ Close Menu", key="custom_sidebar_close", type="secondary"):
+                toggle_sidebar()
+                st.rerun()
 
     # --- SIDEBAR RENDER ---
     with st.sidebar:
