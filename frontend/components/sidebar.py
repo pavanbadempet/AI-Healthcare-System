@@ -33,18 +33,30 @@ def render_sidebar():
     col1, col2 = placeholder.columns([1, 20])
     with col1:
         if not st.session_state.sidebar_force_open:
-            # Styled ghost button for "Show"
+            # Styled ghost button for "Show" - Ultra Minimal
             st.markdown("""
             <style>
             div[data-testid="stButton"] button[kind="secondary"] {
-                background: transparent;
-                border: 1px solid rgba(148, 163, 184, 0.2);
-                color: #94A3B8;
+                background: transparent !important;
+                border: none !important;
+                color: #94A3B8 !important;
+                padding: 0 !important;
+                font-size: 1.5rem !important;
+                line-height: 1 !important;
+                min-height: 0px !important;
+                height: 40px !important;
+                width: 40px !important;
+                margin-top: -15px !important; /* Pull up to align with where native toggle would be */
+                margin-left: -5px !important;
             }
             div[data-testid="stButton"] button[kind="secondary"]:hover {
-                background: rgba(59, 130, 246, 0.1);
-                color: #60A5FA;
-                border-color: #60A5FA;
+                background: rgba(59, 130, 246, 0.1) !important;
+                color: #3B82F6 !important;
+                border-radius: 50% !important;
+            }
+            /* Hide the container padding to make it flush */
+            div[data-testid="stVerticalBlock"] > div:has(div[data-testid="stButton"]) {
+                gap: 0 !important;
             }
             </style>
             """, unsafe_allow_html=True)
