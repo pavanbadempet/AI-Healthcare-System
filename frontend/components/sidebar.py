@@ -72,29 +72,40 @@ def render_sidebar():
                 width: 280px !important;
                 min-width: 280px !important;
             }
-            [data-testid="stSidebarCollapsedControl"] { display: none !important; }
-            
-            /* Style the Close Button to be minimal */
-            div[data-testid="stSidebar"] div[data-testid="stButton"] button {
-                background: transparent !important;
-                border: none !important;
-                color: #64748B !important;
-                float: right;
-                padding: 0 !important;
-                font-size: 1.2rem !important;
+            /* Hide NATIVE expand/collapse buttons when we are forcing open */
+            [data-testid="stSidebarCollapsedControl"],
+            button[data-testid="stSidebarCollapseButton"] {
+                display: none !important;
             }
-            div[data-testid="stSidebar"] div[data-testid="stButton"] button:hover {
+            
+            /* Style the Custom Close Button to be minimal and Red */
+            div.row-widget.stButton > button[kind="secondary"] {
+                background: transparent !important;
+                border: 1px solid rgba(239, 68, 68, 0.2) !important;
                 color: #F87171 !important;
-                transform: scale(1.1);
+                padding: 0.2rem 0.5rem !important;
+                font-size: 1rem !important;
+                height: auto !important;
+                min-height: 2rem !important;
+                line-height: 1 !important;
+                border-radius: 6px !important;
+                float: right !important;
+                margin-top: -1rem !important;
+            }
+            div.row-widget.stButton > button[kind="secondary"]:hover {
+                background: rgba(239, 68, 68, 0.1) !important;
+                border-color: #EF4444 !important;
+                transform: scale(1.05);
             }
         </style>
         """, unsafe_allow_html=True)
         
-        # Show a minimal "Close" icon at top-right of sidebar
+        # Show a minimal "Close" button at top-right of sidebar
+        # We use a container to push it to the right
         with st.sidebar:
-            col_close = st.columns([0.8, 0.2])
-            with col_close[1]:
-                if st.button("✖", key="custom_sidebar_close"):
+            col_spacer, col_close = st.columns([0.7, 0.3])
+            with col_close:
+                if st.button("✖ Close", key="custom_sidebar_close", type="secondary"):
                     toggle_sidebar()
                     st.rerun()
 
