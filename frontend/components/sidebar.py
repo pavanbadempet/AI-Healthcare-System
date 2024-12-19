@@ -246,7 +246,7 @@ def render_sidebar():
             styles={
                 "container": {
                     "padding": "0",
-                    "background-color": "transparent", /* Fix White Box */
+                    "background-color": "transparent",
                     "border-radius": "0px"
                 },
                 "icon": {
@@ -261,7 +261,7 @@ def render_sidebar():
                     "border-radius": "8px",
                     "color": "#94A3B8",
                     "font-weight": "500",
-                    "background": "transparent", /* Ensure link bg is transparent */
+                    "background": "transparent",
                 },
                 "nav-link-selected": {
                     "background": "linear-gradient(90deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.05))",
