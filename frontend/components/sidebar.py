@@ -69,45 +69,43 @@ def render_sidebar():
             section[data-testid="stSidebar"] {
                 transform: translateX(0) !important;
                 visibility: visible !important;
-                width: 350px !important; /* Wider menu as requested */
+                width: 350px !important;
                 min-width: 350px !important;
-                background-color: #0F172A !important; /* Force dark background to kill White Box */
+                background-color: #0F172A !important;
+                z-index: 999990 !important;
             }
             
-            /* Hide ONLY the native toggle button safely - NUKE IT */
+            /* Hide Native Toggle - Using ARIA label which is stable */
             button[data-testid="stSidebarCollapseButton"],
-            [data-testid="stSidebarCollapsedControl"],
-            section[data-testid="stSidebar"] button[kind="header"] {
+            section[data-testid="stSidebar"] button[kind="header"],
+            button[aria-label="Collapse sidebar"] {
                 display: none !important;
                 visibility: hidden !important;
+                opacity: 0 !important;
                 height: 0 !important;
                 width: 0 !important;
-                opacity: 0 !important;
-                pointer-events: none !important;
                 position: absolute !important;
-                top: -9999px !important;
-                left: -9999px !important;
+                top: -10000px !important;
             }
             
-            /* Fix White Box Regression - Force transparent iframe */
-            iframe[title="streamlit_option_menu.option_menu"] {
-                background: transparent !important;
+            /* Hide the container of the close button if possible */
+            section[data-testid="stSidebar"] > div:first-child:has(button[kind="header"]) {
+                 display: none !important;
+            }
+
+            /* Fix Iframe Transparency */
+            iframe {
+                background: transparent !important; 
                 background-color: transparent !important;
-            }
-            
-            div[data-testid="stIFrame"] {
-                background: transparent !important;
             }
         </style>
         """, unsafe_allow_html=True)
         
         # Show a standard "Close Menu" button at the very top of sidebar
         with st.sidebar:
-            # Spacer to push button down slightly from the very top edge
             st.markdown("<div style='margin-top: 0.5rem;'></div>", unsafe_allow_html=True)
-            if st.button("✖ Close Menu", key="custom_sidebar_close", type="primary", use_container_width=True):
-                toggle_sidebar()
-                st.rerun()
+            # Use on_click pattern for better state consistency
+            st.button("✖ Close Menu", key="custom_sidebar_close", type="primary", use_container_width=True, on_click=toggle_sidebar)
             st.markdown("<div style='margin-bottom: 1rem;'></div>", unsafe_allow_html=True)
 
     # --- SIDEBAR RENDER ---
@@ -246,7 +244,7 @@ def render_sidebar():
             styles={
                 "container": {
                     "padding": "0",
-                    "background-color": "transparent",
+                    "background-color": "#0F172A", /* Explicitly match sidebar bg instead of transparent */
                     "border-radius": "0px"
                 },
                 "icon": {
