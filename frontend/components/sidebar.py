@@ -247,7 +247,7 @@ def render_sidebar():
             styles={
                 "container": {
                     "padding": "0",
-                    "background-color": "#0F172A", /* Explicitly match sidebar bg instead of transparent */
+                    "background-color": "#0F172A",
                     "border-radius": "0px"
                 },
                 "icon": {
