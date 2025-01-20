@@ -244,6 +244,7 @@ def render_sidebar():
             options=nav_options,
             icons=nav_icons,
             default_index=0,
+            key="main_sidebar_nav", # Force unique ID to clear cache
             styles={
                 "container": {
                     "padding": "0",
