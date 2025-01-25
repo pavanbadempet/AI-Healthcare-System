@@ -136,8 +136,8 @@ div[data-testid="stFormSubmitButton"] button:active {
     with col2:
         st.markdown("""
 <div style="text-align: center; margin-bottom: 1rem;">
-    <h2 style="font-size: 1.75rem; margin: 0; color: white; font-weight: 600;">Welcome Back</h2>
-    <p style="font-size: 0.95rem; color: #94A3B8; margin: 0.5rem 0 0 0;">Sign in to access your dashboard</p>
+    <h2 style="font-size: 1.75rem; margin: 0; color: white; font-weight: 600;">System Access</h2>
+    <p style="font-size: 0.95rem; color: #94A3B8; margin: 0.5rem 0 0 0;">Authorized Personnel Only</p>
 </div>
 """, unsafe_allow_html=True)
         
