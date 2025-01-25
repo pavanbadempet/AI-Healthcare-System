@@ -22,34 +22,32 @@ def render_about_page():
     
     with tab1:
         st.markdown("""
-        ## 🏥 AI Healthcare System
+        ## 🏥 AI Clinical Support Platform
         
-        **Version:** 2.0  
-        **Built with:** Python, FastAPI, Streamlit, Google Gemini AI
+        **Version:** 2.4 Enterprise  
+        **Architecture:** Secure Cloud-Native Dispatch
         
         ### Our Mission
         
-        We believe everyone deserves access to intelligent health insights. Our AI-powered 
-        platform helps you:
+        To empower diagnostic centers and hospitals with state-of-the-art Artificial Intelligence, reducing diagnostic errors and streamlining patient throughput.
         
-        - **Assess health risks** with machine learning models
-        - **Get personalized advice** from our AI chatbot
-        - **Track your health journey** over time
+        **We support clinicians by:**
         
-        ### Disclaimer
+        - **Pre-screening** high-risk patients using predictive ML
+        - **Automating** routine triage with NLP-driven assistants
+        - **Visualizing** longitudinal patient data for faster diagnosis
         
-        ⚠️ **Important:** This application provides general health information and is 
-        **NOT a substitute for professional medical advice, diagnosis, or treatment.**
+        ### Clinical Liability Disclaimer
         
-        Always consult with a qualified healthcare provider for medical decisions.
+        ⚠️ **For Professional Use:** This system is a **Clinical Decision Support Tool (CDST)**. It is designed to assist, not replace, the judgment of qualified healthcare professionals. Final diagnostic authority rests with the attending physician.
         
         ---
         
-        **Developer Contact:** pavan9b@gmail.com  
-        **GitHub Repository:** [View Source Code](https://github.com/pavanbadempet/A-Healthcare-System-using-Machine-Learning-Techniques-for-Disease-Prediction-with-Chatbot-Assistance)
+        **Enterprise Support:** support@aihealthcare.com  
+        **Compliance Officer:** compliance@aihealthcare.com
         
-        **Version:** 2.0.0  
-        **Last Updated:** January 2026
+        **License:** Licensed to Diagnostic Center Usage  
+        **Last Audit:** Jan 2026
         """)
     
     with tab2:
