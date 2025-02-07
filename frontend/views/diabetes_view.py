@@ -3,29 +3,36 @@ from frontend.utils import api
 from frontend.components import charts
 
 def render_diabetes_page():
-    st.header("🩸 Diabetes Risk Assessment")
-    st.markdown("Enter your health details below for an AI-powered assessment.")
+    st.markdown("""
+    <div style="margin-bottom: 2rem;">
+        <h2 style="margin:0; font-size: 1.75rem;">🩸 Diabetes Health Screening</h2>
+        <p style="color: #94A3B8; margin-top: 0.5rem;">
+            Use your latest lab report to screen for potential diabetes indicators.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
     col1, col2 = st.columns(2)
     with col1:
+        st.subheader("Patient Details")
         gender = st.selectbox("Gender", ["Female", "Male"])
         age = st.number_input("Age", 1, 120, 30)
-        bmi = st.number_input("BMI", 10.0, 50.0, 25.0)
-        hba1c = st.number_input("HbA1c Level", 0.0, 15.0, 5.5)
-        glucose = st.number_input("Blood Glucose Level", 50, 300, 100)
+        bmi = st.number_input("BMI (Body Mass Index)", 10.0, 50.0, 25.0)
+        hba1c = st.number_input("HbA1c Level (From Lab Report)", 0.0, 15.0, 5.5, help="Hemoglobin A1c is your average blood sugar levels over the past 3 months.")
+        glucose = st.number_input("Blood Glucose Level (mg/dL)", 50, 300, 100)
     
     with col2:
-        hypertension = st.selectbox("Hypertension", ["No", "Yes"])
-        heart_disease = st.selectbox("Heart Disease", ["No", "Yes"])
+        st.subheader("Medical History")
+        hypertension = st.selectbox("Hypertension (High BP)", ["No", "Yes"])
+        heart_disease = st.selectbox("History of Heart Disease", ["No", "Yes"])
         smoking = st.selectbox("Smoking History", ["never", "current", "former", "ever", "not current"])
-        # Hidden defaults for cleaner UI if not available, or expose if critical
-        # The schema requires: high_chol, physical_activity, general_health
-        # Let's adding them as advanced or just exposed:
-        high_chol = st.selectbox("High Cholesterol", ["No", "Yes"])
-        activity = st.selectbox("Physically Active (Past 30d)", ["No", "Yes"])
-        gen_health = st.slider("General Health (1=Excellent, 5=Poor)", 1, 5, 3)
+        # Advanced Inputs (Optional)
+        with st.expander("Additional Health Factors", expanded=False):
+            high_chol = st.selectbox("High Cholesterol", ["No", "Yes"])
+            activity = st.selectbox("Physically Active (Past 30d)", ["No", "Yes"])
+            gen_health = st.slider("General Health Rating", 1, 5, 3, help="1=Excellent, 5=Poor")
 
-    if st.button("Analyze Risk", type="primary"):
+    if st.button("Run Screening Analysis", type="primary", use_container_width=True):
         # Map Inputs
         inputs = {
             "gender": 1 if gender == "Male" else 0,
