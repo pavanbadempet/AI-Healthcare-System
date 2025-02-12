@@ -3,8 +3,14 @@ from frontend.utils.api import get_prediction, save_record, get_explanation
 from frontend.components.charts import render_radar_chart
 
 def render_kidney_page():
-    st.header("🦠 Kidney Disease Prediction")
-    st.markdown("Enter your clinical details below.")
+    st.markdown("""
+    <div style="margin-bottom: 2rem;">
+        <h2 style="margin:0; font-size: 1.75rem;">🦠 Kidney Function Screening</h2>
+        <p style="color: #94A3B8; margin-top: 0.5rem;">
+            Screen for renal health indicators using clinical test values.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
     with st.form("kidney_form"):
         # Section 1: Demographics & Vitals
