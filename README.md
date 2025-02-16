@@ -2,9 +2,9 @@
   <img src="frontend/static/logo.png" alt="AI Healthcare Logo" width="120"/>
 </p>
 
-<h1 align="center">AI Healthcare System</h1>
+<h1 align="center">AI Smart Patient Portal</h1>
 <p align="center">
-  <strong>Disease Prediction & Medical Assistance Platform</strong>
+  <strong>Bridging Lab Results to Patient Understanding with AI</strong>
 </p>
 
 <p align="center">
@@ -20,7 +20,7 @@
 
 ## 🎯 Overview
 
-A production-grade healthcare platform that combines **Machine Learning** for disease prediction with **Generative AI** for intelligent medical assistance. Built with a modern microservices architecture, the system provides preliminary health assessments for multiple conditions while maintaining strict data privacy.
+A B2B2C healthcare platform that powers **Diagnostic Centers** to provide **Smart Patient Portals**. It combines detailed **Disease Screening** (Diabetes, Heart, etc.) with a **Personalized AI Companion** that explains lab reports to patients in plain English.
 
 **🔗 Live Demo**: [ai-healthcare-system.streamlit.app](https://ai-healthcare-system.streamlit.app/)
 
@@ -65,8 +65,18 @@ flowchart TB
 
 ## ✨ Key Features
 
-### 🔬 Multi-Disease Prediction
-| Disease | Model | Key Metrics |
+### 🏥 For Diagnostic Centers (B2B)
+- **White-label Patient Portal**: Offer a premium digital experience to your patients.
+- **Automated Screening**: 5+ Disease Prediction Models (XGBoost/RandomForest).
+- **Clinic Admin Console**: Manage patient records and system health.
+
+### 👤 For Patients (Consumer)
+- **AI Health Companion**: "Explain my lab report" chat interface.
+- **My Health Passport**: Secure access to historical health data.
+- **Virtual Consultations**: Book video calls with specialists.
+
+### 🔬 Multi-Disease Screening
+| Screening Screen | Model | Key Metrics |
 |---------|-------|-------------|
 | **Diabetes** | XGBoost | Glucose, BMI, Insulin, Age |
 | **Heart Disease** | XGBoost | Cholesterol, BP, ECG Results |
