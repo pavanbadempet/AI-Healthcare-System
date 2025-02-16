@@ -9,8 +9,8 @@ from datetime import datetime, timedelta
 def render_telemedicine_page():
     st.markdown("""
     <div style="text-align: center; margin-bottom: 2rem;">
-        <h1>🩺 Telemedicine Console</h1>
-        <p style="color: #64748B;">Connect with top specialists comfortably from home.</p>
+        <h1>🩺 Virtual Consultation</h1>
+        <p style="color: #64748B;">Video consultations with your facility's specialists.</p>
     </div>
     """, unsafe_allow_html=True)
     
