@@ -2,7 +2,7 @@
   <img src="frontend/static/logo.png" alt="AI Healthcare Logo" width="120"/>
 </p>
 
-<h1 align="center">AI Smart Patient Portal</h1>
+<h1 align="center">AI Healthcare System</h1>
 <p align="center">
   <strong>Bridging Lab Results to Patient Understanding with AI</strong>
 </p>

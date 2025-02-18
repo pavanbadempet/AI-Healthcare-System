@@ -22,7 +22,7 @@ def render_about_page():
     
     with tab1:
         st.markdown("""
-        ## 🏥 AI Patient Connect
+        ## 🏥 AI Healthcare System
         
         **Version:** 3.0 Portal Edition  
         **Powered by:** Your Diagnostic Center & Google Gemini
