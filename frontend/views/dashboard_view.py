@@ -27,7 +27,6 @@ def render_dashboard():
         with tab2: charts.render_trend_chart(records, "blood_glucose_level", "Glucose")
         with tab3: charts.render_trend_chart(records, "total_bilirubin", "Bilirubin")
     else:
-    else:
         st.info("No test results found. Visit your specialist to upload new diagnostic data.")
 
     st.markdown("---")
