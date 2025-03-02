@@ -73,20 +73,18 @@ def render_pricing_page():
     
     # --- CLINIC TIER (Basic) ---
     with col1:
-        st.markdown("""
+st.markdown("""
 <div style="background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 16px; padding: 2rem; height: 100%; text-align: center;">
-    <h3 style="margin-top: 0;">Clinic Basic</h3>
-    <div style="font-size: 2.5rem; font-weight: 700; margin: 1rem 0;">Free</div>
-    <p style="color: #94A3B8; font-size: 0.9rem;">For independent practitioners</p>
-    
-    <div style="margin: 2rem 0; text-align: left; font-size: 0.9rem;">
-        <div style="margin-bottom: 0.5rem;">✅ Single Doctor Account</div>
-        <div style="margin-bottom: 0.5rem;">✅ 100 Patient Records</div>
-        <div style="margin-bottom: 0.5rem;">✅ Basic Disease Screening</div>
-        <div style="margin-bottom: 0.5rem;">✅ Standard PDF Reports</div>
-    </div>
-    
-    <button style="width: 100%; background: rgba(148, 163, 184, 0.1); color: #94A3B8; border: 1px solid rgba(148, 163, 184, 0.2); padding: 0.75rem; border-radius: 8px; cursor: default;">Current Plan</button>
+<h3 style="margin-top: 0;">Clinic Basic</h3>
+<div style="font-size: 2.5rem; font-weight: 700; margin: 1rem 0;">Free</div>
+<p style="color: #94A3B8; font-size: 0.9rem;">For independent practitioners</p>
+<div style="margin: 2rem 0; text-align: left; font-size: 0.9rem;">
+<div style="margin-bottom: 0.5rem;">✅ Single Doctor Account</div>
+<div style="margin-bottom: 0.5rem;">✅ 100 Patient Records</div>
+<div style="margin-bottom: 0.5rem;">✅ Basic Disease Screening</div>
+<div style="margin-bottom: 0.5rem;">✅ Standard PDF Reports</div>
+</div>
+<button style="width: 100%; background: rgba(148, 163, 184, 0.1); color: #94A3B8; border: 1px solid rgba(148, 163, 184, 0.2); padding: 0.75rem; border-radius: 8px; cursor: default;">Current Plan</button>
 </div>
 """, unsafe_allow_html=True)
 
