@@ -115,95 +115,95 @@ def render_sidebar():
     with st.sidebar:
         # --- 1. BRAND HEADER ---
         st.markdown("""
+<div style="
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 1rem;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    margin-bottom: 1.5rem;
+">
+    <div style="font-size: 2rem;">🏥</div>
+    <div>
         <div style="
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 1rem;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
-            border-radius: 12px;
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            margin-bottom: 1.5rem;
-        ">
-            <div style="font-size: 2rem;">🏥</div>
-            <div>
-                <div style="
-                    font-weight: 700;
-                    font-size: 1.1rem;
-                    color: white;
-                ">AI Healthcare</div>
-                <div style="
-                    font-size: 0.75rem;
-                    color: #64748B;
-                ">Powered by AI</div>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: white;
+        ">AI Healthcare</div>
+        <div style="
+            font-size: 0.75rem;
+            color: #64748B;
+        ">Powered by AI</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
         
         # --- 2. USER QUICK INFO (if logged in) ---
         username = st.session_state.get('username', 'Guest')
         avatar_letter = username[0].upper() if username else 'G'
         
         st.markdown(f"""
+<div style="
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0.75rem 1rem;
+    background: rgba(30, 41, 59, 0.5);
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+">
+    <div style="
+        width: 40px;
+        height: 40px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 700;
+        font-size: 1rem;
+    ">{avatar_letter}</div>
+    <div style="flex: 1; min-width: 0;">
+        <div style="
+            color: #F1F5F9;
+            font-size: 0.9rem;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        ">{username}</div>
         <div style="
             display: flex;
             align-items: center;
-            gap: 12px;
-            padding: 0.75rem 1rem;
-            background: rgba(30, 41, 59, 0.5);
-            border-radius: 10px;
-            margin-bottom: 1.5rem;
+            gap: 4px;
         ">
-            <div style="
-                width: 40px;
-                height: 40px;
-                border-radius: 10px;
-                background: linear-gradient(135deg, #3B82F6, #8B5CF6);
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                color: white;
-                font-weight: 700;
-                font-size: 1rem;
-            ">{avatar_letter}</div>
-            <div style="flex: 1; min-width: 0;">
-                <div style="
-                    color: #F1F5F9;
-                    font-size: 0.9rem;
-                    font-weight: 600;
-                    white-space: nowrap;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
-                ">{username}</div>
-                <div style="
-                    display: flex;
-                    align-items: center;
-                    gap: 4px;
-                ">
-                    <span style="
-                        width: 6px;
-                        height: 6px;
-                        background: #22C55E;
-                        border-radius: 50%;
-                    "></span>
-                    <span style="color: #22C55E; font-size: 0.7rem;">Online</span>
-                </div>
-            </div>
+            <span style="
+                width: 6px;
+                height: 6px;
+                background: #22C55E;
+                border-radius: 50%;
+            "></span>
+            <span style="color: #22C55E; font-size: 0.7rem;">Online</span>
         </div>
-        """, unsafe_allow_html=True)
+    </div>
+</div>
+""", unsafe_allow_html=True)
         
         # --- 3. NAVIGATION LABEL ---
         st.markdown("""
-        <div style="
-            font-size: 0.7rem;
-            color: #64748B;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            padding-left: 0.5rem;
-        ">Menu</div>
-        """, unsafe_allow_html=True)
+<div style="
+    font-size: 0.7rem;
+    color: #64748B;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    padding-left: 0.5rem;
+">Menu</div>
+""", unsafe_allow_html=True)
         
         # --- 4. MAIN NAVIGATION ---
         nav_options = [
@@ -282,14 +282,14 @@ def render_sidebar():
         
         # --- 6. VERSION ---
         st.markdown("""
-        <div style="
-            text-align: center;
-            padding-top: 1.5rem;
-            color: #475569;
-            font-size: 0.7rem;
-        ">
-            v2.1 — © 2026 AI Healthcare
-        </div>
-        """, unsafe_allow_html=True)
+<div style="
+    text-align: center;
+    padding-top: 1.5rem;
+    color: #475569;
+    font-size: 0.7rem;
+">
+    v2.1 — © 2026 AI Healthcare
+</div>
+""", unsafe_allow_html=True)
     
     return selected
