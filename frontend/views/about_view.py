@@ -10,13 +10,13 @@ def render_about_page():
     """Render the About/Terms/Privacy page."""
     
     st.markdown("""
-    <div style="margin-bottom: 1.5rem;">
-        <h2 style="margin:0; font-size: 1.75rem;">📋 About & Legal</h2>
-        <p style="color: #94A3B8; margin-top: 0.5rem;">
-            Terms of Service, Privacy Policy, and About Us
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
+<div style="margin-bottom: 1.5rem;">
+    <h2 style="margin:0; font-size: 1.75rem;">📋 About & Legal</h2>
+    <p style="color: #94A3B8; margin-top: 0.5rem;">
+        Terms of Service, Privacy Policy, and About Us
+    </p>
+</div>
+""", unsafe_allow_html=True)
     
     tab1, tab2, tab3 = st.tabs(["About Us", "Terms of Service", "Privacy Policy"])
     
