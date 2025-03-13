@@ -136,15 +136,16 @@ def fetch_records(record_type: Optional[str] = None) -> List[Dict]:
     try:
         resp = requests.get(url, headers=_headers())
         return resp.json() if resp.status_code == 200 else []
-    except Exception:
+    except Exception as e:
+        print(f"Error fetching records: {e}")
         return []
 
 def save_record(record_type, data, prediction):
     if 'token' not in st.session_state: return
     try:
         requests.post(f"{BACKEND_URL}/records", json={"record_type": record_type, "data": data, "prediction": prediction}, headers=_headers())
-    except Exception:
-        pass
+    except Exception as e:
+        st.toast(f"Failed to save record: {e}", icon="❌")
 
 def delete_record(record_id: int):
     try:
