@@ -36,13 +36,16 @@ MODEL_DIR = BASE_DIR
 class DummyModel:
     """Simple placeholder used when a real model cannot be loaded."""
     def predict(self, X):
-        # Checks if tests expect errors or just want an object
-        raise RuntimeError("Model not available (DummyModel)")
+        # Return a safe mock prediction (0) to allow UI to function without crashing
+        logger.warning("Using DummyModel: Returning mock prediction (0)")
+        return [0]
 
 class DummyScaler:
     """Simple placeholder for scalers used when loading fails."""
     def transform(self, X):
-        raise RuntimeError("Scaler not available (DummyScaler)")
+        # Return X as-is (no-op scaler)
+        logger.warning("Using DummyScaler: Returning data unchanged")
+        return X
 
 def load_pkl(filenames: List[str], fallback_class=None):
     """

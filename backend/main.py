@@ -34,7 +34,8 @@ def run_migrations():
     """Add missing columns to users table."""
     columns = ["about_me TEXT", "diet TEXT", "activity_level TEXT", "sleep_hours FLOAT",
                "stress_level TEXT", "psych_profile TEXT", "plan_tier VARCHAR", 
-               "subscription_expiry DATETIME", "razorpay_customer_id VARCHAR"]
+               "subscription_expiry DATETIME", "razorpay_customer_id VARCHAR",
+               "created_at DATETIME"]
     try:
         with database.engine.connect() as conn:
             for col in columns:
