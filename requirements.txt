@@ -20,3 +20,4 @@ plotly>=5.21.0
 # --- Utilities ---
 python-dotenv
 pillow
+razorpay
