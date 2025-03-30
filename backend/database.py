@@ -16,13 +16,20 @@ connect_args = {}
 if "sqlite" in SQLALCHEMY_DATABASE_URL:
     connect_args = {"check_same_thread": False}
 
+# Configure Pooling only for non-SQLite (e.g. Postgres)
+engine_args = {
+    "connect_args": connect_args,
+    "pool_pre_ping": True,
+    "pool_recycle": 300
+}
+
+if "sqlite" not in SQLALCHEMY_DATABASE_URL:
+    engine_args["pool_size"] = 5
+    engine_args["max_overflow"] = 0
+
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, 
-    connect_args=connect_args,
-    pool_pre_ping=True,  # Check connection liveness
-    pool_recycle=300,    # Recycle connections every 5 mins
-    pool_size=5,         # Small pool for free tier
-    max_overflow=0
+    **engine_args
 )
 
 # Enable WAL Mode for Performance (SQLite Only)
