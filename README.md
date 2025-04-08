@@ -130,7 +130,11 @@ docker-compose up --build
 
 ```bash
 # Install dependencies
-pip install -r requirements.txt
+# Install dependencies (Full Feature Set)
+pip install -r requirements-full.txt
+
+# OR for Lite Version (No PySpark/Heavy ML)
+# pip install -r requirements.txt
 
 # Start Backend (Terminal 1)
 uvicorn backend.main:app --reload --port 8000
