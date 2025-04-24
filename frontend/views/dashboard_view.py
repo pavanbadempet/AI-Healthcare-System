@@ -21,6 +21,9 @@ def render_dashboard():
 
 # ... (Lines 22-37 omitted) ...
 
+    # Create layout for Tips & Notifications
+    col_a, col_b = st.columns(2)
+
     with col_a:
         st.subheader("💡 AI Health Tips")
         st.markdown("""
@@ -43,6 +46,8 @@ def render_dashboard():
 </div>
 """, unsafe_allow_html=True)
     
+    st.markdown("---")
+    
     st.subheader("📈 My Health Trends")
     records = api.fetch_records()
     if records:
@@ -52,28 +57,3 @@ def render_dashboard():
         with tab3: charts.render_trend_chart(records, "total_bilirubin", "Bilirubin")
     else:
         st.info("No test results found. Visit your specialist to upload new diagnostic data.")
-
-    st.markdown("---")
-    col_a, col_b = st.columns(2)
-    
-    with col_a:
-        st.subheader("💡 AI Health Tips")
-        st.markdown("""
-        <div style="background: rgba(15, 23, 42, 0.6); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-        <p style="color: #cbd5e1; font-size: 0.9rem;">Based on your recent activity:</p>
-        <ul style="color: #94A3B8; margin-bottom: 0;">
-            <li><b>Heart Health:</b> Your BMI is stable. Keep walking 30 mins/day.</li>
-            <li><b>Diet:</b> Limit sugar intake before your next glucose test.</li>
-            <li><b>Hydration:</b> Drink 2L water daily to support liver function.</li>
-        </ul>
-        </div>
-        """, unsafe_allow_html=True)
-
-    with col_b:
-        st.subheader("🔔 Notifications")
-        st.markdown("""
-        <div style="background: rgba(15, 23, 42, 0.6); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
-        <div style="font-size: 0.9rem; margin-bottom: 0.5rem; color: #cbd5e1;"><b>Next Appointment:</b> No upcoming visits.</div>
-        <div style="font-size: 0.9rem; color: #cbd5e1;"><b>Report Status:</b> All reports are up to date.</div>
-        </div>
-        """, unsafe_allow_html=True)
