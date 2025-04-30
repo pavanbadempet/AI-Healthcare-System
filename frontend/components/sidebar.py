@@ -244,31 +244,22 @@ def render_sidebar():
             options=nav_options,
             icons=nav_icons,
             default_index=0,
-            key="main_sidebar_nav", # Force unique ID to clear cache
+            key="main_sidebar_nav",
             styles={
-                "container": {
-                    "padding": "0",
-                    "background-color": "#0F172A",
-                    "border-radius": "0px"
-                },
-                "icon": {
-                    "color": "#64748B",
-                    "font-size": "1rem",
-                },
+                "container": {"background-color": "transparent"},
+                "icon": {"color": "#94A3B8", "font-size": "16px"}, 
                 "nav-link": {
-                    "font-size": "0.9rem",
+                    "font-size": "14px",
                     "text-align": "left",
-                    "margin": "3px 0",
-                    "padding": "0.65rem 0.75rem",
-                    "border-radius": "8px",
-                    "color": "#94A3B8",
-                    "font-weight": "500",
-                    "background": "transparent",
+                    "margin": "0px", 
+                    "color": "#CBD5E1",
+                    "--hover-color": "rgba(59, 130, 246, 0.1)"
                 },
                 "nav-link-selected": {
-                    "background": "linear-gradient(90deg, rgba(59, 130, 246, 0.2), rgba(59, 130, 246, 0.05))",
+                    "background-color": "rgba(59, 130, 246, 0.15)",
                     "color": "#60A5FA",
                     "font-weight": "600",
+                    "border-left": "3px solid #3B82F6"
                 },
             }
         )
