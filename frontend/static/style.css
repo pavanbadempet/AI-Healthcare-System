@@ -200,6 +200,14 @@ header {
     visibility: hidden;
 }
 
+/* Force Sidebar Toggle to be visible even if header is hidden */
+[data-testid="stSidebarCollapsedControl"] {
+    visibility: visible !important;
+    display: block !important;
+    color: #60A5FA !important;
+    z-index: 1000000 !important;
+}
+
 /* ============================================
    RESPONSIVE DESIGN - COMPREHENSIVE BREAKPOINTS
    ============================================ */
