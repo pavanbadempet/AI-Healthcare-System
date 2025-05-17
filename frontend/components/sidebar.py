@@ -19,13 +19,20 @@ def render_sidebar():
     # --- SIDEBAR RENDER ---
     with st.sidebar:
         # 1. Logo & Brand
-        # Using columns to center/style the logo nicely without raw HTML
         c1, c2 = st.columns([1, 4])
         with c1:
             try:
-                st.image("frontend/static/logo.png", width=50)
-            except:
-                st.markdown("🏥") # Fallback
+                import os
+                # Construct absolute path to avoid MediaFileStorageError
+                base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+                logo_path = os.path.join(base_dir, "frontend", "static", "logo.png")
+                
+                if os.path.exists(logo_path):
+                    st.image(logo_path, width=50)
+                else:
+                    st.markdown("### 🏥")
+            except Exception as e:
+                st.markdown("### 🏥")
         with c2:
             st.markdown("### AI Healthcare\n<small style='color: #64748B'>Patient Portal</small>", unsafe_allow_html=True)
             
@@ -101,7 +108,8 @@ def render_sidebar():
         
         # 4. Footer / Sign Out
         st.markdown("---")
-        if st.button("🚪 Sign Out", use_container_width=True):
+        # Updated: use width='stretch' instead of deprecated use_container_width=True
+        if st.button("🚪 Sign Out", key="logout_btn", type="secondary"): 
             api.clear_session()
             st.rerun()
             
