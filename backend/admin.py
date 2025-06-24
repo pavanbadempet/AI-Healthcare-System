@@ -69,3 +69,27 @@ def get_recent_users(
             "joined": u.created_at.strftime("%Y-%m-%d") if u.created_at else "2024-01-01"
         })
     return safe_users
+    return safe_users
+
+class RoleUpdate(models.Base):
+    # This is a Pydantic model hack, better to import from schemas but avoiding circular import issues easily
+    pass
+
+@router.put("/users/{user_id}/role")
+def update_user_role(
+    user_id: int, 
+    role: str,
+    db: Session = Depends(database.get_db),
+    admin: models.User = Depends(get_current_admin)
+):
+    """Update a user's system role (patient, doctor, admin)."""
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    if role not in ["patient", "doctor", "admin"]:
+        raise HTTPException(status_code=400, detail="Invalid role. Must be patient, doctor, or admin.")
+        
+    user.role = role
+    db.commit()
+    return {"status": "success", "message": f"User {user.username} promoted to {role}"}
