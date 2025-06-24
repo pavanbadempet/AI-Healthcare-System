@@ -45,7 +45,8 @@ def run_migrations():
         "plan_tier": "VARCHAR", 
         "subscription_expiry": "TIMESTAMP", # Changed from DATETIME for Postgres compat
         "razorpay_customer_id": "VARCHAR",
-        "created_at": "TIMESTAMP"
+        "created_at": "TIMESTAMP",
+        "role": "VARCHAR"
     }
     
     try:
