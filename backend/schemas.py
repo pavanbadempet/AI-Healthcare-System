@@ -20,6 +20,7 @@ class UserResponse(BaseModel):
     """Schema for Public User Profile"""
     id: int
     username: str
+    role: Optional[str] = "patient"
     full_name: Optional[str] = None
     email: Optional[str] = None
     

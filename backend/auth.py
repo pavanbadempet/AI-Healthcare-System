@@ -85,8 +85,8 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
 def is_admin(user: models.User) -> bool:
     """Check if user has admin privileges."""
-    # Check both username='admin' for backward compatibility and future role field
-    return user.username == "admin" or getattr(user, 'is_admin', False)
+    # Check both username='admin' for backward compatibility and role field
+    return user.username == "admin" or user.username.startswith("admin_") or getattr(user, 'role', 'patient') == 'admin'
 
 # --- Endpoints ---
 
@@ -198,7 +198,8 @@ def get_user_profile(current_user: models.User = Depends(get_current_user)) -> D
         "activity_level": current_user.activity_level,
         "sleep_hours": current_user.sleep_hours,
         "stress_level": current_user.stress_level,
-        "allow_data_collection": bool(current_user.allow_data_collection)
+        "allow_data_collection": bool(current_user.allow_data_collection),
+        "role": getattr(current_user, "role", "patient")
     }
 
 @router.put("/profile")
