@@ -71,10 +71,6 @@ def get_recent_users(
     return safe_users
     return safe_users
 
-class RoleUpdate(models.Base):
-    # This is a Pydantic model hack, better to import from schemas but avoiding circular import issues easily
-    pass
-
 @router.put("/users/{user_id}/role")
 def update_user_role(
     user_id: int, 
