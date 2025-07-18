@@ -64,49 +64,54 @@ class CustomGeminiWrapper:
             response = model.generate_content(full_prompt)
             return AIMessage(content=response.text)
         except Exception as e:
+            err_str = str(e)
+            if "429" in err_str or "Quota exceeded" in err_str:
+                return AIMessage(content="⚠️ **Daily Quota Exceeded.**\nYou are using the Free Tier of Google Gemini. Please wait a minute or ensure you are using a 'Flash' model.\n(The system has been updated to auto-select Flash for you now).")
             return AIMessage(content=f"Error: {str(e)}")
 
 # --- Dynamic Model Selection ---
 def get_best_available_model(api_key: str):
     """
-    Dynamically checks available models to avoid 404 errors.
-    Prioritizes: 1.5-flash > 1.5-pro > gemini-pro
+    Dynamically checks available models.
+    STRICTLY prefers Flash models for Free Tier reliability.
     """
     if api_key == "dummy": return "dummy-model"
     
     try:
         genai.configure(api_key=api_key)
-        # List models that support content generation
-        available = []
+        all_models = []
         for m in genai.list_models():
             if 'generateContent' in m.supported_generation_methods:
-                available.append(m.name)
+                all_models.append(m.name)
         
-        logger.info(f"Available Gemini Models: {available}")
+        logger.info(f"Available Gemini Models: {all_models}")
         
-        # Priority Queue
-        # Note: API returns 'models/gemini-1.5-flash', so we check for substrings or full matches
-        priorities = [
-            "gemini-1.5-flash", 
-            "gemini-1.5-flash-latest",
-            "gemini-1.5-pro",
-            "gemini-pro"
-        ]
+        # 1. Look for explicit Flash models (Reliable Free Tier)
+        flash_models = [m for m in all_models if "flash" in m.lower()]
+        for m in flash_models:
+            # Prefer 1.5 flash
+            if "1.5" in m:
+                logger.info(f"Selected Flash Model: {m}")
+                return m
         
-        for p in priorities:
-            for m in available:
-                if p in m:
-                    logger.info(f"Selected Model: {m}")
-                    return m # Return full name e.g. 'models/gemini-1.5-flash'
-                    
-        # Fallback to first available
-        if available:
-            return available[0]
+        # If any flash found (e.g. 1.0 or 2.0)
+        if flash_models:
+            logger.info(f"Selected Fallback Flash Model: {flash_models[0]}")
+            return flash_models[0]
+
+        # 2. Only if NO Flash exists, try Pro
+        pro_models = [m for m in all_models if "pro" in m.lower()]
+        if pro_models:
+             return pro_models[0]
+             
+        # 3. Fallback to anything
+        if all_models:
+            return all_models[0]
             
     except Exception as e:
         logger.error(f"Model discovery failed: {e}")
         
-    return "gemini-1.5-flash" # Ultimate fallback
+    return "models/gemini-1.5-flash" # Safe default
 
 # Global instance with dynamic selection
 selected_model = get_best_available_model(GOOGLE_API_KEY)
