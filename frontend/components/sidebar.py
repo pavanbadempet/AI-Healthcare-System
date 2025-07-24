@@ -19,24 +19,38 @@ def render_sidebar():
     # --- SIDEBAR RENDER ---
     with st.sidebar:
         # 1. Logo & Brand
-        c1, c2 = st.columns([1, 4])
-        with c1:
+        # 1. Logo & Brand - Refactored for Flexbox Alignment
+        import base64
+        import os
+        
+        # Helper to load image as base64
+        def get_img_base64(path):
             try:
-                import os
-                # Construct absolute path to avoid MediaFileStorageError
-                base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-                logo_path = os.path.join(base_dir, "frontend", "static", "logo.png")
-                
-                if os.path.exists(logo_path):
-                    st.image(logo_path, width=50)
-                else:
-                    st.markdown("### 🏥")
-            except Exception as e:
-                st.markdown("### 🏥")
-        with c2:
-            st.markdown("### AI Healthcare\n<small style='color: #64748B'>Patient Portal</small>", unsafe_allow_html=True)
+                if os.path.exists(path):
+                    with open(path, "rb") as f:
+                        data = f.read()
+                        return base64.b64encode(data).decode()
+            except:
+                pass
+            return None
+
+        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        logo_path = os.path.join(base_dir, "frontend", "static", "logo.png")
+        img_b64 = get_img_base64(logo_path)
+        
+        img_html = f'<img src="data:image/png;base64,{img_b64}" style="width: 48px; height: 48px; border-radius: 12px;">' if img_b64 else '<div style="font-size: 40px;">🏥</div>'
+        
+        st.markdown(f"""
+        <div style="display: flex; align-items: center; gap: 15px; padding: 10px 0 20px 0;">
+            {img_html}
+            <div style="line-height: 1.2;">
+                <div style="font-size: 20px; font-weight: 700; color: #F8FAFC; letter-spacing: -0.5px;">AI Healthcare</div>
+                <div style="font-size: 13px; color: #94A3B8; font-weight: 400;">Patient Portal</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
             
-        st.markdown("---")
+        st.markdown('<div style="height: 1px; background: rgba(255,255,255,0.1); margin-bottom: 20px;"></div>', unsafe_allow_html=True)
 
         # 2. User Info (Standard Streamlit Container)
         username = st.session_state.get('username', 'Guest')
