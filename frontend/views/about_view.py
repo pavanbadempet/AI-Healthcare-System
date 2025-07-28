@@ -44,7 +44,7 @@ def render_about_page():
         
         ---
         
-        **Support:** help@patientconnect.ai  
+        **Support:** pavan9b@gmail.com  
         
         **License:** Patient Personal Use License  
         **Privacy:** HIPAA Compliant Data Vault
@@ -157,7 +157,7 @@ def render_about_page():
         
         ### 7. Contact Us
         
-        For privacy concerns: privacy@aihealthcare.example.com
+        For privacy concerns: pavan9b@gmail.com
         
         ---
         
