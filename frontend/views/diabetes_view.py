@@ -12,12 +12,40 @@ def render_diabetes_page():
 </div>
 """, unsafe_allow_html=True)
 
+    # --- Autofill Logic ---
+    profile = api.fetch_profile() or {}
+    
+    # 1. Age Calculation
+    default_age = 30
+    if profile.get('dob'):
+        try:
+            from datetime import datetime
+            birth_date = datetime.strptime(str(profile['dob']).split()[0], "%Y-%m-%d")
+            today = datetime.today()
+            default_age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+        except:
+            pass
+            
+    # 2. Gender
+    p_gender = profile.get('gender', 'Male')
+    gender_idx = 0 if p_gender == "Female" else 1
+    
+    # 3. BMI Calculation
+    default_bmi = 25.0
+    if profile.get('height') and profile.get('weight'):
+        try:
+            h_m = float(profile['height']) / 100
+            w_kg = float(profile['weight'])
+            default_bmi = round(w_kg / (h_m ** 2), 1)
+        except:
+            pass
+
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Patient Details")
-        gender = st.selectbox("Gender", ["Female", "Male"])
-        age = st.number_input("Age", 1, 120, 30)
-        bmi = st.number_input("BMI (Body Mass Index)", 10.0, 50.0, 25.0)
+        gender = st.selectbox("Gender", ["Female", "Male"], index=gender_idx)
+        age = st.number_input("Age", 1, 120, default_age)
+        bmi = st.number_input("BMI (Body Mass Index)", 10.0, 50.0, default_bmi)
         hba1c = st.number_input("HbA1c Level (From Lab Report)", 0.0, 15.0, 5.5, help="Hemoglobin A1c is your average blood sugar levels over the past 3 months.")
         glucose = st.number_input("Blood Glucose Level (mg/dL)", 50, 300, 100)
     
