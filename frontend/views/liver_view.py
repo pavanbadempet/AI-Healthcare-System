@@ -12,10 +12,27 @@ def render_liver_page():
 </div>
 """, unsafe_allow_html=True)
     
+    profile = api.fetch_profile() or {}
+    
+    # 1. Age Calculation
+    default_age = 45
+    if profile.get('dob'):
+        try:
+            from datetime import datetime
+            birth_date = datetime.strptime(str(profile['dob']).split()[0], "%Y-%m-%d")
+            today = datetime.today()
+            default_age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+        except:
+            pass
+
+    # 2. Gender
+    p_gender = profile.get('gender', 'Male')
+    gender_idx = 0 if p_gender == "Female" else 1
+
     col1, col2 = st.columns(2)
     with col1:
-        age = st.number_input("Age", 1, 120, 45)
-        gender = st.selectbox("Gender", ["Female", "Male"])
+        age = st.number_input("Age", 1, 120, default_age)
+        gender = st.selectbox("Gender", ["Female", "Male"], index=gender_idx)
         tot_bili = st.number_input("Total Bilirubin", 0.0, 50.0, 1.0)
         alk_phos = st.number_input("Alkaline Phosphotase", 0.0, 2000.0, 100.0)
         alamine = st.number_input("Alamine Aminotransferase", 0.0, 2000.0, 30.0)
