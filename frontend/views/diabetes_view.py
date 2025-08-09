@@ -76,6 +76,8 @@ def render_diabetes_page():
             # Actually, `backend/schemas.py` says `smoking_history: int = Field(..., description="0: No, 1: Yes")`. 
             # Just 0/1. OK.
             "bmi": bmi,
+            "HbA1c_level": hba1c,
+            "glucose": glucose,
             "high_chol": 1 if high_chol == "Yes" else 0,
             "physical_activity": 1 if activity == "Yes" else 0,
             "general_health": gen_health,
