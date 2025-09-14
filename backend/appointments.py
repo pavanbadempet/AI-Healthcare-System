@@ -43,6 +43,9 @@ def get_appointments(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
+    if current_user.role in ["admin", "doctor"]:
+        return db.query(models.Appointment).order_by(models.Appointment.date_time.asc()).all()
+        
     return db.query(models.Appointment).filter(
         models.Appointment.user_id == current_user.id
     ).order_by(models.Appointment.date_time.asc()).all()
