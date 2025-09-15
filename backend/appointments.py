@@ -27,6 +27,7 @@ def create_appointment(
     
     new_appt = models.Appointment(
         user_id=current_user.id,
+        doctor_id=appt.doctor_id,
         specialist=appt.specialist,
         date_time=appointment_dt,
         reason=appt.reason,
@@ -36,6 +37,19 @@ def create_appointment(
     db.add(new_appt)
     db.commit()
     db.refresh(new_appt)
+    
+    # Send Confirmation Email (Async/Background in production, Sync here for safety)
+    from . import email_service
+    video_link = f"https://meet.jit.si/ai-health-{new_appt.id}" # Secure unique link
+    
+    email_service.send_booking_confirmation(
+        to_email=current_user.email or "patient@example.com",
+        patient_name=current_user.full_name or current_user.username,
+        doctor_name=appt.specialist,
+        date_time=dt_str,
+        link=video_link
+    )
+    
     return new_appt
 
 @router.get("/", response_model=list[schemas.AppointmentResponse])
@@ -49,3 +63,19 @@ def get_appointments(
     return db.query(models.Appointment).filter(
         models.Appointment.user_id == current_user.id
     ).order_by(models.Appointment.date_time.asc()).all()
+
+@router.get("/doctors", response_model=list[schemas.DoctorResponse])
+def get_doctors(db: Session = Depends(database.get_db)):
+    """Fetch all users with role='doctor'"""
+    doctors = db.query(models.User).filter(models.User.role == "doctor").all()
+    # Map to DoctorResponse (handling missing profile fields)
+    response = []
+    for doc in doctors:
+        response.append(schemas.DoctorResponse(
+            id=doc.id,
+            full_name=doc.full_name or doc.username,
+            specialization="General Physician", # Hardcoded for now or fetch from profile if stored
+            consultation_fee=doc.consultation_fee or 500.0,
+            profile_picture=doc.profile_picture
+        ))
+    return response
