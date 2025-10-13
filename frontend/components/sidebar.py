@@ -53,29 +53,29 @@ def render_sidebar():
                 # Simple clean profile display with Dynamic Picture
                 pic = st.session_state.get('profile_picture')
                 
-                avatar_html = ""
+                # Flattened HTML to prevent Markdown code block bugs
                 if pic:
-                    avatar_html = f"""
-                    <div style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; border: 2px solid #3B82F6;">
-                        <img src="{pic}" style="width: 100%; height: 100%; object-fit: cover;">
-                    </div>
-                    """
+                    avatar_html = (
+                        f'<div style="width: 38px; height: 38px; border-radius: 50%; overflow: hidden; border: 2px solid #3B82F6;">'
+                        f'<img src="{pic}" style="width: 100%; height: 100%; object-fit: cover;">'
+                        f'</div>'
+                    )
                 else:
-                    avatar_html = f"""
-                    <div style="background: #3B82F6; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;">
-                        {username[0].upper()}
-                    </div>
-                    """
+                    avatar_html = (
+                        f'<div style="background: #3B82F6; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white;">'
+                        f'{username[0].upper()}'
+                        f'</div>'
+                    )
 
                 st.markdown(f"""
-                <div style="background-color: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
-                    {avatar_html}
-                    <div>
-                        <div style="font-weight: 600; font-size: 14px; color: #F1F5F9;">{username}</div>
-                        <div style="font-size: 12px; color: #4ADE80;">● Online</div>
-                    </div>
-                </div>
-                """, unsafe_allow_html=True)
+<div style="background-color: rgba(255, 255, 255, 0.05); padding: 10px; border-radius: 8px; display: flex; align-items: center; gap: 10px; margin-bottom: 20px;">
+    {avatar_html}
+    <div>
+        <div style="font-weight: 600; font-size: 14px; color: #F1F5F9;">{username}</div>
+        <div style="font-size: 12px; color: #4ADE80;">● Online</div>
+    </div>
+</div>
+""", unsafe_allow_html=True)
         
         # 3. Navigation Menu
         nav_options = [
