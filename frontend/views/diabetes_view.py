@@ -121,17 +121,17 @@ def render_diabetes_page():
                 
                 # Explanation
                 st.markdown(f"""
-                <div style="
-                    background: rgba(30, 41, 59, 0.5); 
-                    border-left: 4px solid #3B82F6;
-                    padding: 1rem;
-                    border-radius: 4px;
-                    margin-bottom: 1.5rem;
-                ">
-                    <h4 style="margin-top:0; color: #60A5FA;">Assessment</h4>
-                    <p style="margin-bottom:0; color: #E2E8F0;">{ai_resp.get('explanation', '')}</p>
-                </div>
-                """, unsafe_allow_html=True)
+<div style="
+    background: rgba(30, 41, 59, 0.5); 
+    border-left: 4px solid #3B82F6;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 1.5rem;
+">
+    <h4 style="margin-top:0; color: #60A5FA;">Assessment</h4>
+    <p style="margin-bottom:0; color: #E2E8F0;">{ai_resp.get('explanation', '')}</p>
+</div>
+""", unsafe_allow_html=True)
                 
                 # Tips
                 if ai_resp.get('lifestyle_tips'):
