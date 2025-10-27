@@ -45,6 +45,19 @@ def render_profile_page():
                     height = st.number_input("Height (cm)", value=int(profile.get("height") or 170), format="%d", step=1)
                     weight = st.number_input("Weight (kg)", value=float(profile.get("weight") or 70.0), format="%.1f", step=0.1)
                     diet = st.selectbox("Diet", ["Vegetarian", "Non-Vegetarian", "Vegan", "Keto", "Other"], index=0 if not profile.get("diet") else ["Vegetarian", "Non-Vegetarian", "Vegan", "Keto", "Other"].index(profile.get("diet")))
+                    
+                    # Date of Birth
+                    from datetime import datetime, date
+                    dob_val = datetime.today()
+                    if profile.get("dob"):
+                        try:
+                            # Handle potential format variants
+                            dob_str = str(profile.get("dob")).split()[0]
+                            dob_val = datetime.strptime(dob_str, "%Y-%m-%d")
+                        except:
+                            pass
+                    
+                    dob = st.date_input("Date of Birth", value=dob_val, min_value=date(1900, 1, 1), max_value=date.today())
                 with col2:
                     activity = st.selectbox("Activity Level", ["Sedentary", "Lightly Active", "Moderately Active", "Very Active"], index=0)
                     sleep = st.slider("Sleep (Hours)", 4.0, 12.0, float(profile.get("sleep_hours") or 7.0), step=0.5, format="%.1f")
@@ -69,7 +82,8 @@ def render_profile_page():
                     "height": height, "weight": weight, "diet": diet,
                     "activity_level": activity, "sleep_hours": sleep,
                     "stress_level": stress, "allow_data_collection": allow_data,
-                    "profile_picture": pic_data
+                    "profile_picture": pic_data,
+                    "dob": str(dob)
                 }
                 if api.update_profile(payload):
                     # Update Session State immediately for Sidebar sync

@@ -1,6 +1,5 @@
-import streamlit as st
-from frontend.utils.api import get_prediction, save_record, get_explanation
-from frontend.components.charts import render_radar_chart
+from frontend.utils import api
+from frontend.components import charts
 
 def render_lungs_page():
     st.markdown("""
@@ -82,17 +81,17 @@ def render_lungs_page():
             }
             
             with st.spinner("Analyzing..."):
-                result = get_prediction("lungs", data)
+                result = api.get_prediction("lungs", data)
                 
             if "error" in result:
                 st.error(result['error'])
             else:
                 pred = result.get('prediction', 'Unknown')
                 st.success(f"Result: **{pred}**")
-                save_record("Lungs", data, pred)
+                api.save_record("Lungs", data, pred)
                 
                 c1, c2 = st.columns(2)
-                with c1: render_radar_chart(data)
+                with c1: charts.render_radar_chart(data)
                 with c2: 
-                    html = get_explanation("lungs", data)
+                    html = api.get_explanation("lungs", data)
                     if html: st.components.v1.html(html, height=300, scrolling=True)
