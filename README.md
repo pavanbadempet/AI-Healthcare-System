@@ -1,7 +1,7 @@
 # A-Healthcare-System: Disease Prediction with Chatbot Assistance
 
 ## Overview
-<img src="https://media.licdn.com/dms/image/v2/D562DAQEq88hM99V7jQ/profile-treasury-image-shrink_1280_1280/profile-treasury-image-shrink_1280_1280/0/1691866252494?e=1762448400&v=beta&t=gUxZmzU3dSsXPpxvy259PO072hcx-ZiqWMqTEfFegFA"/>
+<img src="Screenshot.jpg"/>
 Welcome to the repository for our Healthcare System using Machine Learning Techniques. This project focuses on disease prediction, including liver disease, diabetes, and heart disease, through machine learning models implemented with XGBoost. Additionally, a healthcare chatbot is integrated to provide personalized health recommendations. The entire system is containerized using Docker and deployed on Google Cloud Run for seamless scalability. Users also have the option to run the system locally.
 
 ## Key Features
