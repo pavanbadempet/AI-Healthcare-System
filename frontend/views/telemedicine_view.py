@@ -74,15 +74,35 @@ def render_telemedicine_page():
         
         if appointments:
             for appt in appointments:
-                 # Parse ISO format if needed, or just display raw for now
-                 # Backend returns ISO datetime
-                 date_str = appt['date_time'].replace("T", " ")[:16] # Simpler formatting
+                 # Parse ISO format
+                 date_str = appt['date_time'].replace("T", " ")[:16]
+                 status = appt['status']
                  
-                 st.info(f"""
-**{appt['specialist']}**  
-📅 {date_str}  
-*{appt['status']}*
-""")
+                 # Color code status
+                 status_color = "#34D399" if status in ["Scheduled", "Rescheduled"] else "#F87171"
+                 
+                 with st.expander(f"**{appt['specialist']}** - {date_str}"):
+                     st.write(f"**Status:** <span style='color:{status_color}'>{status}</span>", unsafe_allow_html=True)
+                     st.write(f"**Reason:** {appt['reason']}")
+                     
+                     if status != "Cancelled":
+                        col_a, col_b = st.columns(2)
+                        with col_a:
+                            if st.button("Cancel Appointment", key=f"cancel_{appt['id']}", type="secondary"):
+                                if api.cancel_appointment(appt['id']):
+                                    st.success("Cancelled!")
+                                    st.rerun()
+                        
+                        with col_b:
+                            # Reschedule UI
+                            with st.popover("Reschedule"):
+                                st.write("Pick a new time:")
+                                new_d = st.date_input("New Date", key=f"d_{appt['id']}", min_value=datetime.today())
+                                new_t = st.time_input("New Time", key=f"t_{appt['id']}", value=datetime.now())
+                                if st.button("Confirm Changes", key=f"resched_{appt['id']}", type="primary"):
+                                    if api.reschedule_appointment(appt['id'], new_d, new_t):
+                                        st.success("Rescheduled!")
+                                        st.rerun()
         else:
             st.info("No upcoming sessions.")
         
