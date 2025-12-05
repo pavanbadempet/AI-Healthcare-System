@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment Variables (Keep Secret!)
+.env
+.venv
+venv/
+
+# Database (Contains Patient Data)
+healthcare.db
+*.db
+*.sqlite3
+
+# Models (Large Binary Files)
+*.pkl
+
+# IDEs
+.vscode/
+.idea/
+
+# Logs
+*.log
