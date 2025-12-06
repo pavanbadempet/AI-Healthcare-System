@@ -26,10 +26,10 @@ try:
     
     with open("Scaler.pkl", 'rb') as f:
         scaler = pickle.load(f)
-    print("✔ Scaler Loaded")
+    print("[OK] Scaler Loaded")
 
 except Exception as e:
-    print(f"❌ Error Loading Models: {e}")
+    print(f"[ERROR] Error Loading Models: {e}")
     diabetes_model = None
     heart_model = None
     liver_model = None

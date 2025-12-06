@@ -7,8 +7,10 @@ from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from . import models, database
+from sqlalchemy.exc import IntegrityError
 
 import os
+import re
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -83,6 +85,13 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 @router.post("/signup", response_model=UserResponse)
 def signup(user: UserCreate, db: Session = Depends(database.get_db)):
     try:
+        # Password Complexity Check
+        if not re.match(r"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$", user.password):
+            raise HTTPException(
+                status_code=400, 
+                detail="Password must be at least 8 characters and contain both letters and numbers."
+            )
+
         # Check Username
         db_user = db.query(models.User).filter(models.User.username == user.username).first()
         if db_user:
@@ -110,10 +119,14 @@ def signup(user: UserCreate, db: Session = Depends(database.get_db)):
         db.commit()
         db.refresh(new_user)
         return new_user
+    except HTTPException as he:
+        raise he
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Username or Email already registered.")
     except Exception as e:
-        print(f"SIGNUP ERROR DETAILS: {e}") # CRITICAL DEBUG PRINT
-        import traceback
-        traceback.print_exc()
+        db.rollback()
+        print(f"[ERROR] Signup Exception: {e}")
         raise HTTPException(status_code=500, detail=f"Signup Failed: {str(e)}")
 
 @router.post("/token", response_model=Token)
@@ -121,11 +134,9 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     try:
         user = db.query(models.User).filter(models.User.username == form_data.username).first()
         if not user:
-            print(f"LOGIN FAILED: User {form_data.username} not found.")
             raise HTTPException(status_code=401, detail="Incorrect username or password")
         
         if not verify_password(form_data.password, user.hashed_password):
-            print(f"LOGIN FAILED: Password mismatch for {form_data.username}.")
             raise HTTPException(status_code=401, detail="Incorrect username or password")
             
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -214,3 +225,71 @@ def update_user_profile(profile: UserProfileUpdate, current_user: models.User = 
         "stress_level": current_user.stress_level,
         "allow_data_collection": bool(current_user.allow_data_collection)
     }}
+@router.get("/users", response_model=list[UserResponse])
+def get_all_users(current_user: models.User = Depends(get_current_user), db: Session = Depends(database.get_db)):
+    if current_user.username != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin privileges required"
+        )
+    users = db.query(models.User).all()
+    return users
+
+# --- Admin Deep Dive Endpoints ---
+
+class HealthRecordResponse(BaseModel):
+    id: int
+    record_type: str
+    prediction: str
+    timestamp: datetime
+    data: str # JSON string
+    class Config:
+        from_attributes = True
+
+class ChatLogResponse(BaseModel):
+    id: int
+    role: str
+    content: str
+    timestamp: datetime
+    class Config:
+        from_attributes = True
+
+class UserFullResponse(UserResponse):
+    health_records: list[HealthRecordResponse] = []
+    chat_logs: list[ChatLogResponse] = []
+
+@router.get("/users/{user_id}/full", response_model=UserFullResponse)
+def get_user_full_details(user_id: int, current_user: models.User = Depends(get_current_user), db: Session = Depends(database.get_db)):
+    if current_user.username != "admin":
+        raise HTTPException(status_code=403, detail="Admin access only")
+    
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # --- AUDIT LOGGING ---
+    try:
+        audit_entry = models.AuditLog(
+            admin_id=current_user.id,
+            target_user_id=user_id,
+            action="VIEW_SENSITIVE_DATA",
+            details="Accessed full dossier"
+        )
+        db.add(audit_entry)
+        db.commit()
+    except Exception as e:
+        print(f"Audit Log Error: {e}")
+
+    # --- PRIVACY COMPLIANCE GATE ---
+    # If user opted out (allow_data_collection=0), Redact Sensitive Data
+    if not user.allow_data_collection:
+        # We modify the response object, not the DB object
+        # Pydantic will serialize this. We must ensure we return a structure masking the real relationships.
+        # Since 'user' is an ORM object, accessing relationships loads them.
+        # We should create the response manually or monkey-patch the list for this response context.
+        user.health_records = [] 
+        user.chat_logs = []
+        user.about_me = "[REDACTED - PRIVACY RESTRICTED]"
+        user.existing_ailments = "[REDACTED]"
+        
+    return user
