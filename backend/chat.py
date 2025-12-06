@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage
 from . import models, database, auth, rag, agent
 import json
+import datetime
 
 router = APIRouter()
 
@@ -35,6 +36,12 @@ class ChatRequest(BaseModel):
     message: str
     history: list[Message] = []
 
+@router.delete("/chat/history")
+def delete_chat_history(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
+    db.query(models.ChatLog).filter(models.ChatLog.user_id == current_user.id).delete()
+    db.commit()
+    return {"status": "success", "message": "Chat history cleared"}
+
 @router.get("/chat/history")
 def get_chat_history(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
     logs = db.query(models.ChatLog).filter(models.ChatLog.user_id == current_user.id).order_by(models.ChatLog.timestamp).all()
@@ -52,7 +59,12 @@ def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth
         f"Gender: {current_user.gender or 'N/A'}\n"
         f"Height: {current_user.height}cm, Weight: {current_user.weight}kg\n"
         f"Blood Type: {current_user.blood_type or 'N/A'}\n"
-        f"Known Ailments: {current_user.existing_ailments or 'None'}"
+        f"Known Ailments: {current_user.existing_ailments or 'None'}\n"
+        f"Diet: {current_user.diet or 'Unspecified'}\n"
+        f"Activity: {current_user.activity_level or 'Unspecified'}\n"
+        f"Sleep: {current_user.sleep_hours or '?'} hours/night\n"
+        f"Stress: {current_user.stress_level or 'Unspecified'}\n"
+        f"About Me: {current_user.about_me or 'None'}"
     )
 
     # Save User Message (SQL + RAG)
@@ -82,11 +94,50 @@ def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth
     
     graph_messages.append(HumanMessage(content=request.message))
 
-    # 2.5 Fetch Available Records for Truthfulness
-    available_records = db.query(models.HealthRecord.record_type).filter(models.HealthRecord.user_id == current_user.id).distinct().all()
-    # available_records is a list of tuples like [('Diabetes',), ('Heart',)]
-    record_list = [rec[0] for rec in available_records]
-    available_reports_str = ", ".join(record_list) if record_list else "None"
+    # 2.5 Fetch Available Records for Truthfulness & Deep Context (Timeline)
+    # Fetch ALL records for user, sorted by timestamp DESC
+    all_records = db.query(models.HealthRecord).filter(
+        models.HealthRecord.user_id == current_user.id
+    ).order_by(models.HealthRecord.timestamp.desc()).all()
+    
+    # Group by Type and take top 5
+    from collections import defaultdict
+    import json
+    
+    records_by_type = defaultdict(list)
+    for rec in all_records:
+        # Validate Data Integrity
+        try:
+            d = json.loads(rec.data)
+            # Filter Logic: Reject if key vitals are 0
+            is_valid = True
+            if rec.record_type == "Diabetes":
+                if float(d.get("glucose", 0)) < 10 or float(d.get("bmi", 0)) < 5: is_valid = False
+            elif rec.record_type == "Heart Disease":
+                if float(d.get("trestbps", 0)) < 10 or float(d.get("chol", 0)) < 10: is_valid = False
+            elif rec.record_type == "Liver Disease":
+                if float(d.get("total_bilirubin", 0)) == 0: is_valid = False
+            
+            if is_valid:
+                records_by_type[rec.record_type].append(rec)
+        except:
+            pass # Skip malformed JSON
+    
+    if records_by_type:
+        summary_lines = []
+        for r_type, recs in records_by_type.items():
+            # Take top 5 recent
+            top_5 = recs[:5]
+            # Sort chronologically for the AI to read naturally (Oldest -> Newest)
+            top_5_asc = sorted(top_5, key=lambda x: x.timestamp)
+            
+            summary_lines.append(f"--- {r_type} History ---")
+            for r in top_5_asc:
+                summary_lines.append(f"- {r.timestamp.strftime('%Y-%m-%d')}: {r.prediction}")
+                
+        available_reports_str = "\n".join(summary_lines)
+    else:
+        available_reports_str = "No prior health records found."
 
     # 3. Invoke Agent
     try:
@@ -154,9 +205,11 @@ def save_health_record(record: RecordCreate, current_user: models.User = Depends
     return {"status": "success", "message": "Health record saved."}
 
 @router.get("/records")
-def get_health_records(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
-    records = db.query(models.HealthRecord).filter(models.HealthRecord.user_id == current_user.id).order_by(models.HealthRecord.timestamp.desc()).all()
-    return records
+def get_health_records(record_type: str = None, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
+    query = db.query(models.HealthRecord).filter(models.HealthRecord.user_id == current_user.id)
+    if record_type:
+        query = query.filter(models.HealthRecord.record_type == record_type)
+    return query.order_by(models.HealthRecord.timestamp.asc()).all()  # ASC for graphing
 
 @router.delete("/records/{record_id}")
 def delete_health_record(record_id: int, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):

@@ -20,6 +20,13 @@ class User(Base):
     weight = Column(Float, nullable=True)
     existing_ailments = Column(Text, nullable=True)
     profile_picture = Column(Text, nullable=True) # Base64 string
+    about_me = Column(Text, nullable=True) # Custom About Info
+    
+    # Lifestyle Data (The 4 Pillars)
+    diet = Column(String, nullable=True) # Vegan, Keto, etc.
+    activity_level = Column(String, nullable=True) # Sedentary, Active, etc.
+    sleep_hours = Column(Float, nullable=True)
+    stress_level = Column(String, nullable=True) # Low, Medium, High
     
     # Privacy
     allow_data_collection = Column(Integer, default=1) # 0=False, 1=True
