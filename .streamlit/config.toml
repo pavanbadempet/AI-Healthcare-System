@@ -3,7 +3,7 @@ runOnSave = true
 headless = true
 
 [runner]
-fastReruns = true
+fastReruns = false
 
 [theme]
 base = "dark"

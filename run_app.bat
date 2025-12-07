@@ -25,5 +25,5 @@ echo.
 echo ========================================
 echo      Starting Healthcare Frontend...
 echo ========================================
-streamlit run Healthcare-System.py
+streamlit run app.py
 pause
