@@ -2,31 +2,47 @@
 import google.generativeai as genai
 import os
 import json
+import logging
 from dotenv import load_dotenv
 from PIL import Image
 import io
+from typing import Dict, Any, Union
 
+# --- Logging ---
+# logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# --- Configuration ---
 load_dotenv()
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 if not GOOGLE_API_KEY:
-    raise ValueError("GOOGLE_API_KEY not found in .env file")
-
-genai.configure(api_key=GOOGLE_API_KEY)
+    logger.warning("GOOGLE_API_KEY not found. Vision features will fail.")
+else:
+    genai.configure(api_key=GOOGLE_API_KEY)
 
 # Use Gemini 2.0 Flash for speed and vision capabilities
 model = genai.GenerativeModel('gemini-2.0-flash')
 
-def analyze_lab_report(image_bytes: bytes):
+def analyze_lab_report(image_bytes: bytes) -> Dict[str, Any]:
     """
-    Analyzes a medical lab report image and returns structured JSON data + summary.
+    Analyzes a medical lab report image using Google Gemini Vision.
+    
+    Args:
+        image_bytes (bytes): Raw image data (JPEG/PNG).
+        
+    Returns:
+        dict: Structured JSON containing 'extracted_data' (metrics) and 'summary'.
     """
     try:
+        if not GOOGLE_API_KEY:
+            raise ValueError("API Key missing")
+
         # Load Image
         image = Image.open(io.BytesIO(image_bytes))
         
-        # Prompt for extraction
+        # Prompt
         prompt = """
         You are an expert Medical AI. Analyze this lab report image.
         
@@ -61,7 +77,7 @@ def analyze_lab_report(image_bytes: bytes):
         return result
 
     except Exception as e:
-        print(f"Vision Error: {e}")
+        logger.error(f"Vision Analysis Failed: {e}")
         return {
             "extracted_data": {},
             "summary": "Could not analyze the image. Please ensure the text is clear."

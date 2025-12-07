@@ -1,65 +1,87 @@
+
+"""
+AIO Healthcare System - Backend API Entrypoint
+==============================================
+
+Orchestrates the FastAPI application, including:
+- Database Connection & Tables
+- Security Middleware (CORS, TrustedHost, Headers)
+- Global Exception Handling
+- API Router inclusion
+
+Author: Pavan Badempet
+"""
 import sys
 import os
+import uuid
+import traceback
+import logging
+from sqlalchemy import text
+from fastapi import FastAPI
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import ORJSONResponse
+from fastapi.middleware.gzip import GZipMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
 
 # Add root directory to path to ensure modules can be found
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# Suppress Warnings
-import app_warnings
+# --- Logging Configuration ---
+logging.basicConfig(
+    level=logging.DEBUG, 
+    format='%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler('app.log')
+    ]
+)
+logger = logging.getLogger(__name__)
 
-from fastapi import FastAPI
+import app_warnings
 from . import models, database, auth, chat, explanation, prediction, report
 
-from sqlalchemy import text  # Required for raw SQL execution
-
-# Create Tables
+# --- Database Initialization ---
 models.Base.metadata.create_all(bind=database.engine)
 
-# Optimize: Add Indices & Schema Migration
-try:
-    with database.engine.connect() as conn:
-        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_health_records_timestamp ON health_records (timestamp)"))
-        conn.execute(text("CREATE INDEX IF NOT EXISTS ix_chat_logs_timestamp ON chat_logs (timestamp)"))
-        
-        # Schema Migration (Add Lifestyle Columns if missing)
-        # Schema Migration (Add Lifestyle Columns if missing)
-        # We must try each one independently. If one fails (already exists), the others must still run.
-        try:
-            conn.execute(text("ALTER TABLE users ADD COLUMN about_me TEXT"))
-        except Exception: pass
-
-        try:
-            conn.execute(text("ALTER TABLE users ADD COLUMN diet TEXT"))
-        except Exception: pass
-        
-        try:
-            conn.execute(text("ALTER TABLE users ADD COLUMN activity_level TEXT"))
-        except Exception: pass
-        
-        try:
-            conn.execute(text("ALTER TABLE users ADD COLUMN sleep_hours FLOAT"))
-        except Exception: pass
-        
-        try:
-            conn.execute(text("ALTER TABLE users ADD COLUMN stress_level TEXT"))
-        except Exception: pass
+def run_migrations():
+    """Run lightweight schema migrations on startup."""
+    try:
+        with database.engine.connect() as conn:
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_health_records_timestamp ON health_records (timestamp)"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_chat_logs_timestamp ON chat_logs (timestamp)"))
             
-        conn.commit()
-except Exception as e:
-    print(f"Index/Schema Creation Warning: {e}")
+            # Add Lifestyle Columns
+            columns = [
+                ("about_me", "TEXT"),
+                ("diet", "TEXT"),
+                ("activity_level", "TEXT"),
+                ("sleep_hours", "FLOAT"),
+                ("stress_level", "TEXT")
+            ]
+            
+            for col_name, col_type in columns:
+                try:
+                    conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}"))
+                except Exception:
+                    pass # Column likely exists
+                
+            conn.commit()
+    except Exception as e:
+        print(f"Index/Schema Creation Warning: {e}")
 
-app = FastAPI(title="AIO Healthcare System API")
+run_migrations()
 
-# --- SECURITY HARDENING ---
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
+# --- App Definition ---
+app = FastAPI(title="AIO Healthcare System API", default_response_class=ORJSONResponse)
 
-# 1. Trusted Host (Prevents Host Header Attacks)
+# --- Middleware ---
+
+# 1. Trusted Host
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "::1"])
 
-# 2. CORS (Restrict to Frontend Origins)
+# 2. CORS
 origins = [
     "http://localhost:8501",
     "http://127.0.0.1:8501",
@@ -72,8 +94,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 3. Security Headers Middleware
-# 3. Security Headers Middleware
+# 3. Security Headers
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
@@ -85,50 +106,57 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(SecurityHeadersMiddleware)
 
-# 4. Global Exception Handler (Resilience)
-from fastapi.responses import JSONResponse
-import traceback
-import logging
-
-# Configure File Logging
-logging.basicConfig(filename='app.log', level=logging.ERROR, 
-                    format='%(asctime)s %(levelname)s:%(message)s')
-
+# 4. Global Exception Handler
 class CatchExceptionsMiddleware(BaseHTTPMiddleware):
+    """
+    Catches unhandled exceptions, logs them with a reference ID, 
+    and returns a safe 500 JSON response to the client.
+    """
     async def dispatch(self, request: Request, call_next):
         try:
             return await call_next(request)
         except Exception as e:
-            # Generate Reference ID (for user support) - simplistic UUID
-            import uuid
             error_id = str(uuid.uuid4())
-            
-            # Log the full error internally
             logging.error(f"Unhandled Exception ID {error_id}: {str(e)}")
             logging.error(traceback.format_exc())
-            
-            # Return safe error to client
-            return JSONResponse(
+            return ORJSONResponse(
                 status_code=500,
                 content={"detail": f"Internal Server Error. Reference ID: {error_id}"}
             )
 
-# Only enable Global Exception Handler in Production/Dev, NOT in Automated Tests
-# In tests, we want the raw exception to bubble up so pytest shows the traceback.
+# Only enable in Production/Live Dev (Skip in pytest to see tracebacks)
 if not os.getenv("TESTING"):
     app.add_middleware(CatchExceptionsMiddleware)
 
-# Enable Gzip Compression for Performance
-from fastapi.middleware.gzip import GZipMiddleware
+# 5. Compression
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-# Include Routers
-app.include_router(auth.router, tags=["Authentication"]) # Endpoint: /users, /token
+# --- Routes ---
+app.include_router(auth.router, tags=["Authentication"])
 app.include_router(chat.router, tags=["Chat & Records"])
 app.include_router(prediction.router, tags=["AI Prediction"])
-app.include_router(explanation.router) # New GenAI Explainer
+app.include_router(explanation.router)
 app.include_router(report.router, tags=["Smart Lab Analyzer"])
 
 @app.get("/")
 def read_root():
     return {"message": "Healthcare System API is running"}
+
+from .pdf_service import generate_medical_report
+from fastapi.responses import Response
+
+@app.post("/generate_report")
+async def get_medical_report(request: Request):
+    try:
+        data = await request.json()
+        pdf_bytes = generate_medical_report(
+            user_name=data.get("user_name", "Valued Patient"),
+            report_type=data.get("report_type", "General Health"),
+            prediction=data.get("prediction", "N/A"),
+            data=data.get("data", {}),
+            advice=data.get("advice", [])
+        )
+        return Response(content=pdf_bytes, media_type="application/pdf")
+    except Exception as e:
+        logger.error(f"PDF Gen Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
