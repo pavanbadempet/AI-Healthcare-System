@@ -87,7 +87,11 @@ def test_chat_record_validation():
     malformed_rec.data = "Not JSON"
     
     mock_db = MagicMock()
+    # For GET query (first call): return list
     mock_db.query.return_value.filter.return_value.order_by.return_value.all.return_value = [valid_rec, invalid_rec, malformed_rec]
+    
+    # For DELETE query (second call, filter(...).first()): return None to trigger 404
+    mock_db.query.return_value.filter.return_value.first.return_value = None
     
     app.dependency_overrides[chat.database.get_db] = lambda: mock_db
     

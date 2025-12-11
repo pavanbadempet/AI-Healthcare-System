@@ -76,7 +76,10 @@ def run_checks():
     
     if res.status_code == 200:
         print(f"[OK] [AI] Chat Response Received in {duration:.2f}s")
-        print(f"   Response: {res.json()['response'][:50]}...")
+        response_text = res.json()['response'][:50]
+        # Sanitize for Windows Console
+        safe_response = response_text.encode('ascii', 'ignore').decode('ascii')
+        print(f"   Response: {safe_response}...")
     else:
         print(f"[FAIL] [AI] Chat Failed: {res.text}")
 
