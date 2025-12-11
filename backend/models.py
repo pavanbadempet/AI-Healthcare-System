@@ -30,6 +30,9 @@ class User(Base):
     
     # Privacy
     allow_data_collection = Column(Integer, default=1) # 0=False, 1=True
+    
+    # AI Memory
+    psych_profile = Column(Text, nullable=True) # Long term memory summary
 
     health_records = relationship("HealthRecord", back_populates="owner")
     chat_logs = relationship("ChatLog", back_populates="owner")

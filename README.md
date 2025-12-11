@@ -78,8 +78,14 @@ Run services individually for debugging.
    ```
 2. **Frontend**:
    ```bash
-   streamlit run Healthcare-System.py
+   streamlit run frontend/main.py
    ```
+
+### Option 3: Quick Scripts (Windows)
+Use the provided runner scripts for convenience:
+- **Run Everything**: `.\scripts\runners\run_app.bat`
+- **Run E2E Tests**: `.\scripts\runners\run_e2e_tests.ps1`
+
 
 ---
 
