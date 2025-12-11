@@ -47,11 +47,9 @@ def local_css(file_name):
     else:
         st.warning(f"Style file not found: {file_name}")
 
-# Adjust path if running from root
-if os.path.exists("frontend/static/style.css"):
-    local_css("frontend/static/style.css")
-else:
-    local_css("static/style.css") # Fallback
+# Adjust path relative to this script
+css_path = os.path.join(os.path.dirname(__file__), "static", "style.css")
+local_css(css_path)
 
 # --- Animation Loader ---
 @st.cache_data
