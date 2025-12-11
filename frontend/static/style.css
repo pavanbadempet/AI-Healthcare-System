@@ -1,144 +1,101 @@
-/* Global Font & Reset */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* --- GLOBAL THEME --- */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
 
-html,
-body,
-[class*="css"] {
+html, body, [class*="css"] {
     font-family: 'Inter', sans-serif;
+    color: #1E293B; /* Slate 800 */
 }
 
-/* Background & Main Container */
+/* Background Gradients (Subtle) */
 .stApp {
-    background: radial-gradient(circle at 10% 20%, rgb(15, 17, 21) 0%, rgb(10, 10, 10) 90%);
-    color: #e0e0e0;
+    background: linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 100%);
 }
 
-/* Sidebar Styling */
-[data-testid="stSidebar"] {
-    background-color: rgba(15, 17, 21, 0.95);
-    border-right: 1px solid rgba(255, 255, 255, 0.05);
+/* --- COMPONENTS --- */
+
+/* Cards (Glassmorphism) */
+div[data-testid="stMetric"], div.stDataFrame, div.stForm {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    transition: transform 0.2s ease;
 }
 
-[data-testid="stSidebarUserContent"] {
-    padding-top: 2rem;
+div[data-testid="stMetric"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
 }
 
-/* Inputs & Forms - Glassmorphism */
-.stTextInput>div>div>input,
-.stSelectbox>div>div>div,
-.stNumberInput>div>div>input,
-.stDateInput>div>div>input {
-    background-color: rgba(255, 255, 255, 0.03) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    color: white !important;
-    border-radius: 8px !important;
+/* Buttons (Modern Gradient) */
+div.stButton > button {
+    background: linear-gradient(to right, #2563EB, #4F46E5); /* Blue to Indigo */
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1.5rem;
+    font-weight: 600;
     transition: all 0.3s ease;
 }
 
-.stTextInput>div>div>input:focus,
-.stSelectbox>div>div:hover {
-    border-color: #00d2ff !important;
-    box-shadow: 0 0 0 1px #00d2ff !important;
-}
-
-/* Buttons - Premium Gradient */
-.stButton>button {
-    background: linear-gradient(45deg, #00d2ff, #3a7bd5) !important;
-    color: white !important;
-    border: none !important;
-    border-radius: 8px !important;
-    padding: 0.6rem 1.2rem !important;
-    font-weight: 600 !important;
-    transition: transform 0.2s, opacity 0.2s;
-}
-
-.stButton>button:hover {
-    opacity: 0.9;
+div.stButton > button:hover {
     transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
-/* Secondary/Ghost Buttons */
-div.stButton>button[kind="secondary"] {
-    background: transparent !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    color: #aeaeae !important;
+/* Inputs (Clean) */
+div[data-testid="stTextInput"] input, div[data-testid="stNumberInput"] input {
+    border-radius: 8px;
+    border: 1px solid #E2E8F0;
+    background: white;
+    padding: 0.5rem;
 }
 
-/* Cards & Containers */
-.css-card {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    padding: 20px;
-    backdrop-filter: blur(10px);
+div[data-testid="stTextInput"] input:focus, div[data-testid="stNumberInput"] input:focus {
+    border-color: #3B82F6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
-/* Custom Profile Pic */
-.profile-pic {
-    border-radius: 50%;
-    border: 2px solid #00d2ff;
-    padding: 3px;
-    width: 100px;
-    height: 100px;
-    object-fit: cover;
-    display: block;
-    margin: 0 auto 15px auto;
+/* --- SIDEBAR --- */
+section[data-testid="stSidebar"] {
+    background-color: #FFFFFF;
+    border-right: 1px solid #E2E8F0;
 }
 
-/* Headlines */
-h1,
-h2,
-h3 {
-    color: white !important;
-    font-weight: 700 !important;
+/* Navigation Menu */
+div.stRadio > div[role="radiogroup"] > label {
+    background: transparent;
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 5px;
+    border: 1px solid transparent;
+    transition: background 0.2s;
 }
 
-h1 {
-    background: -webkit-linear-gradient(0deg, #00d2ff, #3a7bd5);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
+div.stRadio > div[role="radiogroup"] > label:hover {
+    background: #F1F5F9;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-}
-
-::-webkit-scrollbar-track {
-    background: #0f1115;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #333;
-    border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #555;
-}
-
-/* Tabs */
-.stTabs [data-baseweb="tab-list"] {
-    gap: 20px;
-}
-
-.stTabs [data-baseweb="tab"] {
-    background-color: transparent !important;
-    border: none !important;
-    color: #888 !important;
+/* Active Nav Item */
+div.stRadio > div[role="radiogroup"] > label[data-checked="true"] {
+    background: #EFF6FF;
+    border-color: #BFDBFE;
+    color: #1D4ED8;
     font-weight: 600;
 }
 
-.stTabs [aria-selected="true"] {
-    color: #00d2ff !important;
-    border-bottom: 2px solid #00d2ff !important;
+/* --- HIDE DEFAULT STREAMLIT CRUFT --- */
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
+
+/* --- TYPOGRAPHY --- */
+h1, h2, h3 {
+    letter-spacing: -0.025em;
+    color: #0F172A; /* Slate 900 */
 }
 
-/* Alerts/Toasts */
-.stAlert {
-    background-color: rgba(0, 210, 255, 0.1);
-    border: 1px solid rgba(0, 210, 255, 0.2);
-    color: #00d2ff;
-}
+h1 { font-weight: 800; }
+h2 { font-weight: 700; color: #334155; }
