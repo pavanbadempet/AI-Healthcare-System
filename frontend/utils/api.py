@@ -15,18 +15,15 @@ except FileNotFoundError:
 SESSION_FILE = "session.json"
 
 def save_session(token: str, username: str):
-    """Save session token to local file (Simple Persistence)."""
-    with open(SESSION_FILE, "w") as f:
-        json.dump({"token": token, "username": username}, f)
+    """
+    Save session to st.session_state. 
+    NOTE: File-based persistence is DISABLED for Streamlit Cloud security 
+    (containers are shared).
+    """
+    pass # Managed purely in memory for now
 
 def load_session() -> Optional[Dict[str, str]]:
-    """Load session from local file if exists."""
-    if os.path.exists(SESSION_FILE):
-        try:
-            with open(SESSION_FILE, "r") as f:
-                return json.load(f)
-        except Exception:
-            return None
+    """Session loading disabled for stateless security on cloud."""
     return None
 
 def clear_session():
