@@ -27,9 +27,10 @@ lungs_model = None
 lungs_scaler = None
 
 # --- Path Configuration ---
-# Robustly find the models directory regardless of CWD
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-MODEL_DIR = os.path.join(BASE_DIR, 'models')
+# Robustly find the models directory regardless of CWD.
+# Models are located in the SAME directory as this file (backend/)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODEL_DIR = BASE_DIR
 
 def load_pkl(filenames: List[str]):
     """
