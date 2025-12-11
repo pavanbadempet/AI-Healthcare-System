@@ -33,9 +33,20 @@ These services have **NO expiry date**. You can use them for development as long
 *   **Action**: Create a "Test Mode" account for now (Free).
 
 ### Step B: Privacy (DPDP Act 2023)
-*   India's *Digital Personal Data Protection Act, 2023* is strict.
-*   **Advantage**: Our Architecture (Zero-Retention optional) is compliant by design.
-*   **Action**: Ensure your Privacy Policy explicitly mentions a "Grievance Officer" (Required by Indian Law).
+*   **India's DPDP Act**: Explicitly mention a "Grievance Officer" in your Privacy Policy.
+
+## 4. Troubleshooting: "Payment Info Required" on Render?
+If Render asks for a Credit Card when using the Blueprint (`render.yaml`), **Delete the Blueprint** and do this instead (Manual Mode requires NO card):
+
+1.  Go to Render Dashboard.
+2.  Click **New +** -> **Web Service**.
+3.  Connect your GitHub Repo.
+4.  Name: `aio-health-backend`.
+5.  **Instance Type: Free (Select this explicitly)**.
+6.  Build Command: `pip install -r requirements.txt`.
+7.  Start Command: `uvicorn backend.main:app --host 0.0.0.0 --port $PORT`.
+8.  **Environment Variables**: Add `PYTHON_VERSION=3.10.12`.
+9.  Click **Create Web Service**.
 
 ---
 **Verdict**: The current setup (Render + Streamlit) is **safe**. It uses no credits and has no expiry. You can develop in peace.
