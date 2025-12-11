@@ -1,6 +1,7 @@
 services:
   - type: web
     name: aio-health-backend
+    plan: free # Explicitly request Free Tier
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
