@@ -81,7 +81,12 @@ def render_telemedicine_page():
                  # Color code status
                  status_color = "#34D399" if status in ["Scheduled", "Rescheduled"] else "#F87171"
                  
-                 with st.expander(f"**{appt['specialist']}** - {date_str}"):
+                 # Dynamic Header
+                 header_text = f"**{appt['specialist']}** - {date_str}"
+                 if st.session_state.get('role') in ['admin', 'doctor']:
+                     header_text += f" | 👤 Patient ID: {appt.get('user_id', '?')}"
+
+                 with st.expander(header_text):
                      st.write(f"**Status:** <span style='color:{status_color}'>{status}</span>", unsafe_allow_html=True)
                      st.write(f"**Reason:** {appt['reason']}")
                      
