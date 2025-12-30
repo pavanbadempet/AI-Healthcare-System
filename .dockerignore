@@ -1,0 +1,17 @@
+node_modules
+venv
+.git
+.gitignore
+__pycache__
+*.pyc
+*.pyd
+*.pyo
+*.pkl
+healthcare.db
+healthcare.db-shm
+healthcare.db-wal
+.env
+.pytest_cache
+.vscode
+dist
+build
