@@ -13,54 +13,47 @@ def test_signup_and_dashboard_flow(page: Page):
     page.wait_for_selector("div[data-testid='stAppViewContainer']", timeout=10000)
     
     # 2. Switch to Sign Up
-    # Streamlit Tabs - use role='tab' to disambiguate from button
-    signup_tab = page.get_by_role("tab", name="Sign Up")
+    # Legacy design uses Emoji tabs
+    signup_tab = page.get_by_role("tab", name="📝 Sign Up")
+    # Logic: partial match or exact if whitespace differs slightly
     signup_tab.click()
     
     # 3. Fill Form
-    # Using locator.all() or filter to distinguish between Login and Signup tokens if they are identical
-    # However, unique labels are best.
-    # Assuming Username/Password are ambiguous, we'll try to find the one visible in the active tab context.
-    # We can assume the Signup fields are the ones appearing APART from the login ones.
+    # Distinct forms in tabs. We can use simplified logic or strict indexing.
+    # Given the new layout, 'Username' appears in Login (Tab 1) and Signup (Tab 2).
+    # We will target the Signup inputs specifically.
     
-    # Alternatively, focus on placeholder text if available
-    # page.get_by_placeholder("Create a username").fill("pw_bot")
+    # Signup is Tab index 1.
+    signup_inputs = page.locator("form").nth(1)
     
-    # For now, let's try the 'last' occurrence if it's the second tab
-    # Or strict indexing on the inputs themselves
+    signup_inputs.get_by_label("Username").fill("pw_bot")
+    signup_inputs.get_by_label("Password").fill("SecurePwd123")
+    signup_inputs.get_by_label("Email Address").fill("pw_user@bot.com")
+    signup_inputs.get_by_label("Full Name").fill("Playwright User")
     
-    inputs = page.get_by_label("Username").all()
-    # 2nd one should be signup if 1st is login
-    if len(inputs) > 1:
-        inputs[1].fill("pw_bot")
-    else:
-        # Fallback if only one is found (e.g. dynamic rendering)
-        page.get_by_label("Username").fill("pw_bot")
-
-    pw_inputs = page.get_by_label("Password").all()
-    if len(pw_inputs) > 1:
-        pw_inputs[1].fill("SecurePwd123")
-    else:
-        page.get_by_label("Password").fill("SecurePwd123")
-        
-    page.get_by_label("Email").fill("pw_user@bot.com")
-    page.get_by_label("Full Name").fill("Playwright User")
+    # New Field: Terms Agreement
+    # Checkbox might be outside or inside form depending on implementation.
+    # In auth_view.py, it is inside the form.
+    signup_inputs.get_by_label("I agree to the Terms of Service & Medical Disclaimer").check()
     
     # 4. Submit
-    # 'Sign Up' button might also be ambiguous if text matches tab
-    page.get_by_role("button", name="Sign Up", exact=True).click()
+    # Button text changed to "Register Account"
+    signup_inputs.get_by_role("button", name="Register Account").click()
     
     # 5. Expect Success
-    expect(page.get_by_text("Account Created!")).to_be_visible(timeout=15000)
+    # Message: "Account created successfully! Please switch to Login tab."
+    expect(page.get_by_text("Account created successfully!")).to_be_visible(timeout=15000)
     
     # 6. Login
-    page.get_by_text("Login", exact=True).click()
+    # Switch to Login Tab
+    page.get_by_text("🔐 Login", exact=False).click()
     
-    # Re-fetch inputs as DOM might have shifted? mostly same
-    # Login is usually first
-    page.get_by_label("Username").first.fill("pw_bot")
-    page.get_by_label("Password").first.fill("SecurePwd123")
-    page.get_by_role("button", name="Login", exact=True).click()
+    login_inputs = page.locator("form").nth(0)
+    login_inputs.get_by_label("Username").fill("pw_bot")
+    login_inputs.get_by_label("Password").fill("SecurePwd123")
+    
+    # Button text changed to "Access Portal"
+    login_inputs.get_by_role("button", name="Access Portal").click()
     
     # 7. Verify Dashboard
     expect(page.get_by_text(f"Hello, pw_bot")).to_be_visible(timeout=15000)

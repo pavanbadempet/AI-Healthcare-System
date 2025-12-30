@@ -106,6 +106,12 @@ def signup(user: schemas.UserCreate, db: Session = Depends(database.get_db)) -> 
              if db_email:
                  raise HTTPException(status_code=400, detail="Email already registered")
 
+        # Truncate password to 72 bytes for bcrypt compatibility
+        password_bytes = user.password.encode('utf-8')
+        if len(password_bytes) > 72:
+            password_bytes = password_bytes[:72]
+            user.password = password_bytes.decode('utf-8', errors='ignore')
+
         hashed_password = get_password_hash(user.password)
         
         new_user = models.User(
