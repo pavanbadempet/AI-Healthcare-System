@@ -1,5 +1,5 @@
 """
-AIO Healthcare System - Frontend Application
+AI Healthcare System - Frontend Application
 ============================================
 
 Main entry point. Orchestrates the UI using the Sidebar Navigation pattern.
@@ -33,7 +33,7 @@ from frontend.views import (
 
 # --- Configuration ---
 st.set_page_config(
-    page_title="AIO Healthcare System",
+    page_title="AI Healthcare System",
     page_icon="🏥",
     layout="wide",
     initial_sidebar_state="expanded"

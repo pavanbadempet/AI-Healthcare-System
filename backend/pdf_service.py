@@ -6,7 +6,7 @@ class PDFReport(FPDF):
         # Logo or Title
         self.set_font('Arial', 'B', 15)
         self.cell(80)
-        self.cell(30, 10, 'AIO Healthcare System', 0, 0, 'C')
+        self.cell(30, 10, 'AI Healthcare System', 0, 0, 'C')
         self.ln(20)
         
         # Line break

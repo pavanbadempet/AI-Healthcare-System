@@ -1,6 +1,6 @@
 @echo off
 echo ===================================================
-echo     AIO HEALTHCARE SYSTEM
+echo     AI HEALTHCARE SYSTEM
 echo ===================================================
 echo.
 echo [1/3] Cleaning up ports...
