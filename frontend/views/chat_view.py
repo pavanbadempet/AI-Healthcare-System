@@ -1,6 +1,5 @@
 import streamlit as st
 import requests
-import os
 from frontend.utils import api
 
 BACKEND_URL = api.BACKEND_URL

@@ -1,7 +1,6 @@
 import streamlit as st
 from frontend.utils import api
 from frontend.components import charts
-import logging
 
 def render_diabetes_page():
     st.header("🩸 Diabetes Risk Assessment")
