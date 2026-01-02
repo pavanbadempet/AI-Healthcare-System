@@ -35,11 +35,14 @@ def render_profile_page():
     # Display Metrics
     st.markdown("### My Stats")
     c1, c2, c3 = st.columns(3)
-    c1.metric("Height", f"{profile.get('height', 0)} cm")
-    c2.metric("Weight", f"{profile.get('weight', 0)} kg")
+    c1.metric("Height", f"{profile.get('height') or 0} cm")
+    c2.metric("Weight", f"{profile.get('weight') or 0} kg")
     
     # Calculate BMI
-    h_m = (profile.get('height', 170) / 100)
-    w_kg = profile.get('weight', 70)
+    height_val = profile.get('height') or 170
+    weight_val = profile.get('weight') or 70
+    
+    h_m = float(height_val) / 100
+    w_kg = float(weight_val)
     bmi = round(w_kg / (h_m ** 2), 2)
     c3.metric("BMI", bmi, delta="Normal" if 18.5 <= bmi <= 25 else "Check", delta_color="normal" if 18.5 <= bmi <= 25 else "inverse")
