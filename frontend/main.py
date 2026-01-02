@@ -16,6 +16,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from streamlit_lottie import st_lottie
 import requests
+from streamlit_option_menu import option_menu
 
 # --- Import Custom Modules ---
 from frontend.utils import api
@@ -60,6 +61,13 @@ def load_lottieurl(url: str):
         return r.json()
     except: return None
 
+from frontend.components import sidebar
+
+# ... (rest of imports)
+
+# --- Configuration ---
+# ...
+
 # --- Main App Orchestrator ---
 def main():
     # 1. Initialize Session
@@ -75,35 +83,9 @@ def main():
         auth_view.render_auth_page()
         return
 
-    # 3. Sidebar Navigation
-    with st.sidebar:
-        lottie_health = load_lottieurl("https://assets5.lottiefiles.com/packages/lf20_5njp3vgg.json")
-        if lottie_health:
-            st_lottie(lottie_health, height=150, key="sidebar_anim")
-            
-        st.image("https://cdn-icons-png.flaticon.com/512/3063/3063176.png", width=50)
-        st.title(f"Hello, {st.session_state.get('username', 'User')}")
-        
-        selected = st.radio(
-            "Navigate", 
-            [
-                "Dashboard", 
-                "AI Chat Assistant", 
-                "Diabetes Prediction", 
-                "Heart Disease Prediction", 
-                "Liver Disease Prediction", 
-                "Kidney Disease Prediction",
-                "Lung Cancer Prediction",
-                "My Profile"
-            ],
-            index=0
-        )
-        
-        st.markdown("---")
-        if st.button("Logout", use_container_width=True):
-            api.clear_session()
-            st.rerun()
-
+    # 3. Sidebar Navigation (DELEGATED TO COMPONENT)
+    selected = sidebar.render_sidebar()
+    
     # 4. Route to View
     if selected == "Dashboard":
         dashboard_view.render_dashboard()

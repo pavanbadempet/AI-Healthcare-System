@@ -146,6 +146,8 @@ def test_model_loading_failure():
     with patch("builtins.open", side_effect=FileNotFoundError("Mock File Missing")):
         # Reload module
         importlib.reload(backend.prediction)
+        # Initialize models manually since we removed auto-init
+        backend.prediction.initialize_models()
         
         # Check globals are DummyModel instances (not None)
         assert backend.prediction.diabetes_model is not None
