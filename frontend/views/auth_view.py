@@ -30,6 +30,17 @@ def render_auth_page():
         font-size: 0.85rem !important;
         margin-bottom: 0.2rem !important;
     }
+    
+    /* Animations */
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .hero-animate {
+        animation: fadeInUp 0.8s ease-out forwards;
+    }
+    .hero-delay-1 { animation-delay: 0.2s; opacity: 0; }
+    .hero-delay-2 { animation-delay: 0.4s; opacity: 0; }
     </style>
     """, unsafe_allow_html=True)
     
@@ -68,27 +79,17 @@ def render_auth_page():
         
         # Tagline
         st.markdown("""
-            <h1 style="
-                font-size: 2.3rem; 
-                font-weight: 800; 
-                background: linear-gradient(135deg, #60A5FA, #34D399); 
-                -webkit-background-clip: text; 
-                -webkit-text-fill-color: transparent;
-                line-height: 1.2;
-                margin: 1rem 0;
-            ">Predict. Prevent.<br>Protect.</h1>
-            
-            <p style="font-size: 0.9rem; color: #94A3B8; line-height: 1.6; margin-bottom: 1rem;">
-                Advanced disease prediction using machine learning.
-            </p>
-            
-            <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-                <span style="background: rgba(59,130,246,0.1); padding: 5px 12px; border-radius: 16px; color: #60A5FA; font-size: 0.7rem; border: 1px solid rgba(59,130,246,0.2);">🔒 Secure</span>
-                <span style="background: rgba(16,185,129,0.1); padding: 5px 12px; border-radius: 16px; color: #34D399; font-size: 0.7rem; border: 1px solid rgba(16,185,129,0.2);">⚡ Real-time</span>
-                <span style="background: rgba(139,92,246,0.1); padding: 5px 12px; border-radius: 16px; color: #A78BFA; font-size: 0.7rem; border: 1px solid rgba(139,92,246,0.2);">🤖 AI</span>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
+<div class="hero-animate">
+<h1 style="font-size: 2.3rem; font-weight: 800; background: linear-gradient(135deg, #60A5FA, #34D399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.2; margin: 1rem 0;">Predict. Prevent.<br>Protect.</h1>
+</div>
+<p class="hero-animate hero-delay-1" style="font-size: 0.9rem; color: #94A3B8; line-height: 1.6; margin-bottom: 1rem;">Advanced disease prediction using machine learning.</p>
+<div class="hero-animate hero-delay-2" style="display: flex; flex-wrap: wrap; gap: 8px;">
+<span style="background: rgba(59,130,246,0.1); padding: 5px 12px; border-radius: 16px; color: #60A5FA; font-size: 0.7rem; border: 1px solid rgba(59,130,246,0.2);">🔒 Secure</span>
+<span style="background: rgba(16,185,129,0.1); padding: 5px 12px; border-radius: 16px; color: #34D399; font-size: 0.7rem; border: 1px solid rgba(16,185,129,0.2);">⚡ Real-time</span>
+<span style="background: rgba(139,92,246,0.1); padding: 5px 12px; border-radius: 16px; color: #A78BFA; font-size: 0.7rem; border: 1px solid rgba(139,92,246,0.2);">🤖 AI</span>
+</div>
+</div>
+""", unsafe_allow_html=True)
 
 
     with auth_col:
