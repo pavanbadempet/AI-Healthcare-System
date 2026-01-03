@@ -89,21 +89,54 @@ div[data-testid="stPasswordInput"] input:focus {
     box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2);
 }
 
-/* --- SIDEBAR --- */
+/* --- SIDEBAR (Enhanced) --- */
 section[data-testid="stSidebar"] {
-    background-color: #0B1121;
-    /* Very dark slate */
-    border-right: 1px solid rgba(148, 163, 184, 0.05);
+    background: linear-gradient(180deg, #080c14 0%, #0a0f1a 50%, #0d1321 100%);
+    border-right: 1px solid rgba(59, 130, 246, 0.08);
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Subtle blue glow at top */
+section[data-testid="stSidebar"]::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 200px;
+    background: radial-gradient(ellipse at top center, rgba(59, 130, 246, 0.08) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 0;
 }
 
 /* Remove default sidebar top padding */
 section[data-testid="stSidebar"]>div:first-child {
-    padding-top: 2rem;
+    padding-top: 1rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
 }
 
 /* Hide default navigation if any remains */
 div[data-testid="stSidebarNav"] {
-    display: none;
+    display: none !important;
+}
+
+/* Custom scrollbar for sidebar */
+section[data-testid="stSidebar"] ::-webkit-scrollbar {
+    width: 4px;
+}
+
+section[data-testid="stSidebar"] ::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+section[data-testid="stSidebar"] ::-webkit-scrollbar-thumb {
+    background: rgba(59, 130, 246, 0.3);
+    border-radius: 4px;
+}
+
+section[data-testid="stSidebar"] ::-webkit-scrollbar-thumb:hover {
+    background: rgba(59, 130, 246, 0.5);
 }
 
 /* --- TEXT & HEADERS --- */
