@@ -16,6 +16,24 @@ def get_backend_url() -> str:
     """Return the backend URL for direct API calls."""
     return BACKEND_URL
 
+def create_payment_order(amount_paise: int, plan_id: str):
+    """Create a Razorpay order via backend."""
+    token = st.session_state.get('token')
+    headers = {"Authorization": f"Bearer {token}"} if token else {}
+    
+    try:
+        response = requests.post(f"{BACKEND_URL}/payments/create-order", json={
+            "amount": amount_paise,
+            "currency": "INR",
+            "plan_id": plan_id
+        }, headers=headers)
+        
+        if response.status_code == 200:
+            return response.json()
+        return None
+    except Exception:
+        return None
+
 # --- Session Management ---
 # NOTE: File-based session persistence is DISABLED for Streamlit Cloud security
 # Sessions are managed purely in st.session_state memory

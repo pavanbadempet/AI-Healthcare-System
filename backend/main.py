@@ -54,6 +54,10 @@ logger.info("--> Importing report...")
 from . import report
 logger.info("--> Importing pdf_service...")
 from .pdf_service import generate_medical_report
+logger.info("--> Importing admin...")
+from . import admin
+logger.info("--> Importing payments...")
+from . import payments
 logger.info("[SUCCESS] All Modules Imported Successfully.")
 
 # --- Database Initialization ---
@@ -73,8 +77,11 @@ def run_migrations():
                 ("activity_level", "TEXT"),
                 ("sleep_hours", "FLOAT"),
                 ("stress_level", "TEXT"),
-                ("psych_profile", "TEXT"), # NEW: AI derived psychological/medical summary
-                ("last_analysis_date", "DATETIME")
+                ("psych_profile", "TEXT"),
+                ("last_analysis_date", "DATETIME"),
+                ("plan_tier", "VARCHAR"),
+                ("subscription_expiry", "DATETIME"),
+                ("razorpay_customer_id", "VARCHAR")
             ]
             
             for col_name, col_type in columns:
@@ -108,6 +115,29 @@ app = FastAPI(
 )
 
 # --- Middleware ---
+
+from . import security
+
+# 0. Rate Limiting Middleware
+class RateLimitMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        # Identify by IP
+        client_ip = request.client.host if request.client else "unknown"
+        path = request.url.path
+        
+        # Skip static resources or health checks if needed (optional)
+        if path != "/" and path != "/docs" and path != "/openapi.json":
+             try:
+                 security.limiter.check(request, client_ip)
+             except HTTPException as e:
+                 return ORJSONResponse(
+                     status_code=e.status_code,
+                     content={"detail": e.detail}
+                 )
+        
+        return await call_next(request)
+
+app.add_middleware(RateLimitMiddleware)
 
 # 1. Trusted Host
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "::1", "aio-health-backend.onrender.com"])
@@ -210,6 +240,8 @@ app.include_router(chat.router, tags=["Chat & Records"])
 app.include_router(prediction.router, tags=["AI Prediction"])
 app.include_router(explanation.router)
 app.include_router(report.router, tags=["Smart Lab Analyzer"])
+app.include_router(admin.router)
+app.include_router(payments.router)
 
 @app.get("/")
 def read_root():
