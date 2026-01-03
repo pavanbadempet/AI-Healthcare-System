@@ -44,126 +44,105 @@ def render_auth_page():
     </style>
     """, unsafe_allow_html=True)
     
-    # SPLIT LAYOUT: Hero | Auth Form
-    hero_col, auth_col = st.columns([1.2, 1], gap="large")
+    # --- CENTERED LAYOUT ---
+    # Use 3 columns to center the content
+    c1, c2, c3 = st.columns([1, 1.4, 1])
     
-    with hero_col:
-        # Get logo path
-        import os
-        logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "logo.png")
-        
-        st.markdown('<div style="padding-top: 30px; padding-right: 20px; border-right: 1px solid #1e293b;">', unsafe_allow_html=True)
-        
-        # Logo + Brand name row
-        logo_col, brand_col = st.columns([0.15, 0.85])
-        with logo_col:
-            if os.path.exists(logo_path):
-                st.image(logo_path, width=52)
-            else:
-                st.markdown('<div style="font-size:2rem;">🏥</div>', unsafe_allow_html=True)
-        with brand_col:
-            st.markdown("""
-            <div style="
+    with c2:
+        # 1. Centered Header
+        st.markdown("""
+        <div style="text-align: center; margin-bottom: 2rem; animation: fadeInUp 0.8s ease-out;">
+            <div style="font-size: 3.5rem; margin-bottom: 0.5rem; filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.4));">🏥</div>
+            <h1 style="
                 font-family: 'Outfit', sans-serif;
-                font-weight: 700;
-                font-size: 1.4rem;
-                background: linear-gradient(90deg, #FFFFFF 0%, #94A3B8 100%);
+                font-size: 2.5rem; 
+                font-weight: 800; 
+                margin: 0;
+                background: linear-gradient(135deg, #FFFFFF 0%, #94A3B8 100%);
                 -webkit-background-clip: text;
                 -webkit-text-fill-color: transparent;
-                margin-top: 8px;
-            ">AI Healthcare</div>
-            <div style="font-size: 0.7rem; color: #64748B; letter-spacing: 0.08em; text-transform: uppercase;">
-                ⚡ Powered by ML
-            </div>
-            """, unsafe_allow_html=True)
+                letter-spacing: -1px;
+            ">AI Healthcare</h1>
+            <p style="
+                background: linear-gradient(90deg, #60A5FA, #34D399); 
+                -webkit-background-clip: text; 
+                -webkit-text-fill-color: transparent;
+                font-size: 1.1rem; 
+                font-weight: 600; 
+                margin-top: 0.5rem;
+                letter-spacing: 1px;
+            ">
+                PREDICT. PREVENT. PROTECT.
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
         
-        # Tagline
-        st.markdown("""
-<div class="hero-animate">
-<h1 style="font-size: 2.3rem; font-weight: 800; background: linear-gradient(135deg, #60A5FA, #34D399); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1.2; margin: 1rem 0;">Predict. Prevent.<br>Protect.</h1>
-</div>
-<p class="hero-animate hero-delay-1" style="font-size: 0.9rem; color: #94A3B8; line-height: 1.6; margin-bottom: 1rem;">Advanced disease prediction using machine learning.</p>
-<div class="hero-animate hero-delay-2" style="display: flex; flex-wrap: wrap; gap: 8px;">
-<span style="background: rgba(59,130,246,0.1); padding: 5px 12px; border-radius: 16px; color: #60A5FA; font-size: 0.7rem; border: 1px solid rgba(59,130,246,0.2);">🔒 Secure</span>
-<span style="background: rgba(16,185,129,0.1); padding: 5px 12px; border-radius: 16px; color: #34D399; font-size: 0.7rem; border: 1px solid rgba(16,185,129,0.2);">⚡ Real-time</span>
-<span style="background: rgba(139,92,246,0.1); padding: 5px 12px; border-radius: 16px; color: #A78BFA; font-size: 0.7rem; border: 1px solid rgba(139,92,246,0.2);">🤖 AI</span>
-</div>
-</div>
-""", unsafe_allow_html=True)
-
-
-    with auth_col:
-        # Tab selection
-        auth_tabs = st.tabs(["🔐 Login", "📝 Sign Up"])
+        # 2. Glass Card Container for Auth
+        st.markdown('<div class="auth-container">', unsafe_allow_html=True)
+        
+        # Auth Tabs
+        auth_tabs = st.tabs(["🔐 Login", "📝 Create Account"])
         
         # ========== LOGIN TAB ==========
         with auth_tabs[0]:
-            st.markdown("##### Welcome Back")
+            st.markdown("<br>", unsafe_allow_html=True)
             with st.form("login_form", border=False):
-                username = st.text_input("Username", placeholder="your_username", label_visibility="collapsed")
-                password = st.text_input("Password", type="password", placeholder="••••••••", label_visibility="collapsed")
+                username = st.text_input("Username", placeholder="Enter your username")
+                password = st.text_input("Password", type="password", placeholder="••••••••")
                 
-                col1, col2 = st.columns([1, 1])
-                with col2:
-                    submit = st.form_submit_button("Login →", type="primary", use_container_width=True)
+                st.markdown("<br>", unsafe_allow_html=True)
                 
-                if submit:
-                    if username and password:
-                        with st.spinner(""):
+                # Full width button
+                submitted = st.form_submit_button("Sign In", type="primary", use_container_width=True)
+                
+                if submitted:
+                    if not username or not password:
+                        st.warning("Please enter credentials.")
+                    else:
+                        with st.spinner("Authenticating..."):
                             if api.login(username, password):
                                 st.rerun()
-                    else:
-                        st.warning("Enter username and password")
-        
+                            else:
+                                st.error("Invalid username or password.")
+
         # ========== SIGNUP TAB ==========
         with auth_tabs[1]:
-            st.markdown("##### Create Account")
+            st.markdown("<br>", unsafe_allow_html=True)
             with st.form("signup_form", border=False):
-                # Row 1: Name + Email (side by side)
-                c1, c2 = st.columns(2)
-                with c1:
-                    new_fullname = st.text_input("Full Name", placeholder="John Doe", key="fname")
-                with c2:
-                    new_email = st.text_input("Email", placeholder="john@email.com", key="email")
+                col_a, col_b = st.columns(2)
+                with col_a:
+                    new_fullname = st.text_input("Full Name", placeholder="John Doe")
+                with col_b:
+                    new_user = st.text_input("Username", placeholder="johndoe")
                 
-                # Row 2: Username + Password (side by side)
-                c3, c4 = st.columns(2)
-                with c3:
-                    new_user = st.text_input("Username", placeholder="johndoe", key="uname")
-                with c4:
-                    new_pass = st.text_input("Password", type="password", placeholder="••••••••", key="pwd")
+                new_email = st.text_input("Email", placeholder="john@email.com")
+                new_pass = st.text_input("Password", type="password", placeholder="••••••••")
+                new_dob = st.date_input("Date of Birth", value=pd.to_datetime("2000-01-01"))
                 
-                # Row 3: DOB (compact)
-                new_dob = st.date_input(
-                    "Date of Birth", 
-                    value=None, 
-                    min_value=pd.to_datetime("1900-01-01"), 
-                    max_value=pd.to_datetime("today"),
-                    format="YYYY-MM-DD"
-                )
+                st.markdown("<br>", unsafe_allow_html=True)
+                agree = st.checkbox("I agree to Terms of Service & Medical Disclaimer")
                 
-                # Checkbox + Submit (same row)
-                terms_agreed = st.checkbox("I agree to Terms & Medical Disclaimer", value=False)
+                submitted_up = st.form_submit_button("Create Account", type="primary", use_container_width=True)
                 
-                if st.form_submit_button("Create Account →", type="primary", use_container_width=True):
-                    # Validation
-                    errors = []
-                    if not new_fullname: errors.append("Full Name")
-                    if not new_email: errors.append("Email")
-                    if not new_user: errors.append("Username")
-                    if not new_pass: errors.append("Password")
-                    if not new_dob: errors.append("Date of Birth")
-                    
-                    if not terms_agreed:
-                        st.error("Please agree to Terms & Disclaimer")
-                    elif errors:
-                        st.warning(f"Missing: {', '.join(errors)}")
+                if submitted_up:
+                    if not agree:
+                        st.error("You must agree to the terms.")
+                    elif not new_user or not new_pass or not new_email:
+                        st.warning("Please fill all required fields.")
                     else:
-                        with st.spinner("Creating account..."):
+                        with st.spinner("Creating secure account..."):
                             if api.signup(new_user, new_pass, new_email, new_fullname, new_dob):
-                                st.success("✅ Account created!")
-                                # AUTO-LOGIN after successful signup
+                                st.success("Account Created! Signing in...")
                                 if api.login(new_user, new_pass):
                                     st.rerun()
                                 else:
-                                    st.info("Please login with your new credentials.")
+                                    st.info("Please login manually.")
+        
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        # Footer
+        st.markdown("""
+        <div style="text-align: center; margin-top: 2rem; color: #64748B; font-size: 0.8rem;">
+            Secure Encrypted Connection • HIPAA Compliant • Powered by Advanced AI
+        </div>
+        """, unsafe_allow_html=True)
