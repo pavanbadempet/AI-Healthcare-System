@@ -44,105 +44,89 @@ def render_auth_page():
     </style>
     """, unsafe_allow_html=True)
     
-    # --- CENTERED LAYOUT ---
-    # Use 3 columns to center the content
-    c1, c2, c3 = st.columns([1, 1.4, 1])
+    # --- COMPACT CENTERED LAYOUT (NO SCROLL) ---
+    st.markdown("""
+    <style>
+    /* Force Remove Streamlit Vertical Padding */
+    .block-container {
+        padding-top: 1rem !important;
+        padding-bottom: 0rem !important;
+        max-width: 100% !important;
+    }
+    /* Compact Header */
+    .auth-header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # Use 3 columns to center
+    c1, c2, c3 = st.columns([1, 1.2, 1]) # Slightly narrower middle
     
     with c2:
-        # 1. Centered Header
+        # Glass Card Start
+        st.markdown('<div class="auth-container" style="padding: 1.5rem;">', unsafe_allow_html=True)
+        
+        # 1. Header INSIDE Card (Horizontal)
         st.markdown("""
-        <div style="text-align: center; margin-bottom: 2rem; animation: fadeInUp 0.8s ease-out;">
-            <div style="font-size: 3.5rem; margin-bottom: 0.5rem; filter: drop-shadow(0 0 20px rgba(59, 130, 246, 0.4));">🏥</div>
-            <h1 style="
-                font-family: 'Outfit', sans-serif;
-                font-size: 2.5rem; 
-                font-weight: 800; 
-                margin: 0;
-                background: linear-gradient(135deg, #FFFFFF 0%, #94A3B8 100%);
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                letter-spacing: -1px;
-            ">AI Healthcare</h1>
-            <p style="
-                background: linear-gradient(90deg, #60A5FA, #34D399); 
-                -webkit-background-clip: text; 
-                -webkit-text-fill-color: transparent;
-                font-size: 1.1rem; 
-                font-weight: 600; 
-                margin-top: 0.5rem;
-                letter-spacing: 1px;
-            ">
-                PREDICT. PREVENT. PROTECT.
-            </p>
+        <div class="auth-header">
+            <div style="font-size: 2.5rem; filter: drop-shadow(0 0 10px rgba(59,130,246,0.5));">🏥</div>
+            <div>
+                <h1 style="
+                    font-size: 1.8rem; 
+                    margin: 0; 
+                    line-height: 1;
+                    background: linear-gradient(135deg, #FFF 0%, #CBD5E1 100%);
+                    -webkit-background-clip: text;
+                    -webkit-text-fill-color: transparent;
+                ">AI Healthcare</h1>
+                <div style="font-size: 0.7rem; color: #60A5FA; letter-spacing: 2px; margin-top: 4px;">PREDICT. PREVENT.</div>
+            </div>
         </div>
         """, unsafe_allow_html=True)
         
-        # 2. Glass Card Container for Auth
-        st.markdown('<div class="auth-container">', unsafe_allow_html=True)
-        
         # Auth Tabs
-        auth_tabs = st.tabs(["🔐 Login", "📝 Create Account"])
+        auth_tabs = st.tabs(["🔐 Login", "📝 Sign Up"])
         
         # ========== LOGIN TAB ==========
         with auth_tabs[0]:
-            st.markdown("<br>", unsafe_allow_html=True)
+            st.markdown("<div style='margin-top: 1rem;'></div>", unsafe_allow_html=True)
             with st.form("login_form", border=False):
-                username = st.text_input("Username", placeholder="Enter your username")
-                password = st.text_input("Password", type="password", placeholder="••••••••")
+                username = st.text_input("Username", placeholder="Username", label_visibility="collapsed")
+                password = st.text_input("Password", type="password", placeholder="Password", label_visibility="collapsed")
                 
-                st.markdown("<br>", unsafe_allow_html=True)
-                
-                # Full width button
-                submitted = st.form_submit_button("Sign In", type="primary", use_container_width=True)
+                st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+                submitted = st.form_submit_button("Sign In →", type="primary", use_container_width=True)
                 
                 if submitted:
-                    if not username or not password:
-                        st.warning("Please enter credentials.")
+                    if username and password:
+                         with st.spinner(""):
+                            if api.login(username, password): st.rerun()
                     else:
-                        with st.spinner("Authenticating..."):
-                            if api.login(username, password):
-                                st.rerun()
-                            else:
-                                st.error("Invalid username or password.")
+                        st.warning("Required fields missing")
 
         # ========== SIGNUP TAB ==========
         with auth_tabs[1]:
-            st.markdown("<br>", unsafe_allow_html=True)
-            with st.form("signup_form", border=False):
-                col_a, col_b = st.columns(2)
-                with col_a:
-                    new_fullname = st.text_input("Full Name", placeholder="John Doe")
-                with col_b:
-                    new_user = st.text_input("Username", placeholder="johndoe")
+             st.markdown("<div style='margin-top: 0.5rem;'></div>", unsafe_allow_html=True)
+             with st.form("signup_form", border=False):
+                c_a, c_b = st.columns(2)
+                with c_a: new_fullname = st.text_input("Full Name", placeholder="John Doe", label_visibility="collapsed")
+                with c_b: new_email = st.text_input("Email", placeholder="john@email.com", label_visibility="collapsed")
                 
-                new_email = st.text_input("Email", placeholder="john@email.com")
-                new_pass = st.text_input("Password", type="password", placeholder="••••••••")
-                new_dob = st.date_input("Date of Birth", value=pd.to_datetime("2000-01-01"))
+                c_c, c_d = st.columns(2)
+                with c_c: new_user = st.text_input("User", placeholder="Username", label_visibility="collapsed")
+                with c_d: new_pass = st.text_input("Pass", type="password", placeholder="••••••", label_visibility="collapsed")
                 
-                st.markdown("<br>", unsafe_allow_html=True)
-                agree = st.checkbox("I agree to Terms of Service & Medical Disclaimer")
+                new_dob = st.date_input("DOB", value=pd.to_datetime("2000-01-01"), label_visibility="collapsed")
+                agree = st.checkbox("Agree to Terms", value=False)
                 
-                submitted_up = st.form_submit_button("Create Account", type="primary", use_container_width=True)
-                
-                if submitted_up:
-                    if not agree:
-                        st.error("You must agree to the terms.")
-                    elif not new_user or not new_pass or not new_email:
-                        st.warning("Please fill all required fields.")
-                    else:
-                        with st.spinner("Creating secure account..."):
-                            if api.signup(new_user, new_pass, new_email, new_fullname, new_dob):
-                                st.success("Account Created! Signing in...")
-                                if api.login(new_user, new_pass):
-                                    st.rerun()
-                                else:
-                                    st.info("Please login manually.")
+                if st.form_submit_button("Create Account", type="primary", use_container_width=True):
+                    if api.signup(new_user, new_pass, new_email, new_fullname, new_dob):
+                         if api.login(new_user, new_pass): st.rerun()
         
         st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Footer
-        st.markdown("""
-        <div style="text-align: center; margin-top: 2rem; color: #64748B; font-size: 0.8rem;">
-            Secure Encrypted Connection • HIPAA Compliant • Powered by Advanced AI
-        </div>
-        """, unsafe_allow_html=True)
+
