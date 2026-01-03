@@ -5,7 +5,7 @@ Modern glassmorphism-inspired navigation matching the main content aesthetic.
 """
 import streamlit as st
 from streamlit_option_menu import option_menu
-from frontend.utils import api
+from frontend.utils import api, i18n
 
 
 def render_sidebar():
@@ -107,6 +107,9 @@ def render_sidebar():
     """, unsafe_allow_html=True)
     
     with st.sidebar:
+        # --- 0. LANGUAGE SELECTOR ---
+        i18n.render_language_selector()
+        
         # --- 1. PREMIUM BRAND HEADER WITH LOGO ---
         import os
         logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "logo.png")
@@ -191,20 +194,25 @@ def render_sidebar():
         """, unsafe_allow_html=True)
         
         # --- 4. MAIN NAVIGATION ---
+        # Re-defining options list dynamically with Translations
+        nav_options = [
+            i18n.get_text("dashboard"),
+            i18n.get_text("chat"),
+            i18n.get_text("diabetes_pred"),
+            i18n.get_text("heart_pred"),
+            i18n.get_text("liver_pred"),
+            i18n.get_text("kidney_pred"),
+            i18n.get_text("lung_pred"),
+            i18n.get_text("profile"),
+            i18n.get_text("pricing"),
+            i18n.get_text("telemedicine"),
+            i18n.get_text("about"),
+            i18n.get_text("admin")
+        ]
+        
         selected = option_menu(
             menu_title=None,
-            options=[
-                "Dashboard",
-                "AI Chat Assistant",
-                "Diabetes Prediction",
-                "Heart Disease Prediction",
-                "Liver Disease Prediction",
-                "Kidney Disease Prediction",
-                "Lung Cancer Prediction",
-                "My Profile",
-                "Plans & Pricing",
-                "About & Legal"
-            ],
+            options=nav_options,
             icons=[
                 "grid-1x2-fill",
                 "chat-dots-fill",
@@ -215,7 +223,9 @@ def render_sidebar():
                 "lungs-fill",
                 "person-badge-fill",
                 "credit-card-2-front-fill",
-                "info-circle-fill"
+                "camera-video-fill",
+                "info-circle-fill",
+                "shield-lock-fill"
             ],
             default_index=0,
             styles={
