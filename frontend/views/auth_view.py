@@ -4,15 +4,15 @@ Auth View - Enterprise Split Layout
 Premium, high-conversion design similar to Stripe/Auth0.
 """
 import streamlit as st
+import textwrap
 import pandas as pd
 from frontend.utils import api
-import os
 
 def render_auth_page():
     """Render a premium split-screen auth experience."""
     
     # --- GLOBAL STYLES & LAYOUT RESET ---
-    st.markdown("""
+    st.markdown(textwrap.dedent("""
     <style>
     /* 1. Global Reset for Full Screen */
     [data-testid="stAppViewContainer"] {
@@ -47,15 +47,14 @@ def render_auth_page():
     .stat-val { font-weight: 700; color: white; font-size: 1.2rem; }
     .stat-label { font-size: 0.8rem; color: #94A3B8; }
     </style>
-    """, unsafe_allow_html=True)
+    """), unsafe_allow_html=True)
 
     # --- SPLIT LAYOUT COLUMNS ---
-    # Col 1: Branding (60%), Col 2: Auth Form (40%)
     col1, col2 = st.columns([1.5, 1], gap="medium")
     
     # --- LEFT COLUMN: BRANDING ---
     with col1:
-        st.markdown("""
+        st.markdown(textwrap.dedent("""
         <div style="
             background: radial-gradient(circle at top right, #3B82F6, #1E293B, #0F172A);
             height: 100vh;
@@ -105,22 +104,19 @@ def render_auth_page():
                  </div>
             </div>
         </div>
-        """, unsafe_allow_html=True)
+        """), unsafe_allow_html=True)
 
     # --- RIGHT COLUMN: AUTH FORM ---
     with col2:
-        # Vertical Spacer to center the card visually
         st.markdown('<div style="height: 15vh;"></div>', unsafe_allow_html=True)
         
-        # Wrapped in a container for width control
         with st.container():
-            st.markdown("""
+            st.markdown(textwrap.dedent("""
             <div style="max-width: 400px; margin: 0 auto; padding: 20px;">
                 <h2 style="text-align: center; margin-bottom: 2rem;">Get Started</h2>
             </div>
-            """, unsafe_allow_html=True)
+            """), unsafe_allow_html=True)
             
-            # Auth Logic
             tab_login, tab_signup = st.tabs(["Sign In", "Create Account"])
             
             with tab_login:
@@ -143,8 +139,8 @@ def render_auth_page():
                         if api.signup(us, pw, em, fn, "2000-01-01"):
                             if api.login(us, pw): st.rerun()
 
-            st.markdown("""
+            st.markdown(textwrap.dedent("""
             <div style="text-align: center; margin-top: 2rem; color: #64748B; font-size: 0.8rem;">
                 Secure Encrypted Connection
             </div>
-            """, unsafe_allow_html=True)
+            """), unsafe_allow_html=True)
