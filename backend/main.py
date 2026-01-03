@@ -112,16 +112,18 @@ app = FastAPI(
 # 1. Trusted Host
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=["localhost", "127.0.0.1", "::1", "aio-health-backend.onrender.com"])
 
-# 2. CORS
+# 2. CORS - Allow Streamlit Cloud and local development
 origins = [
     "http://localhost:8501",
     "http://127.0.0.1:8501",
     "https://aiohealthcare.streamlit.app",
+    "https://*.streamlit.app",  # Wildcard for all Streamlit apps
     "https://share.streamlit.io",
 ]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"https://.*\.streamlit\.app",  # Regex for all Streamlit subdomains
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
