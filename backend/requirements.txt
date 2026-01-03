@@ -1,0 +1,39 @@
+# =======================================================
+# AI HEALTHCARE - BACKEND REQUIREMENTS (Render)
+# =======================================================
+# Optimized for 512MB RAM limit on free tier
+# =======================================================
+
+# --- Core API & Server ---
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+python-multipart>=0.0.9
+orjson
+starlette
+requests>=2.32.3
+
+# --- Authentication & Security ---
+passlib[bcrypt]>=1.7.4
+bcrypt<4.0
+pyjwt>=2.8.0
+python-jose[cryptography]>=3.3.0
+
+# --- Database & Config ---
+sqlalchemy
+python-dotenv
+
+# --- Data Science (Lite) ---
+pandas>=2.2.2
+numpy>=1.26.4
+scikit-learn>=1.4.2
+joblib>=1.3.0
+
+# --- AI & LLM (Lite) ---
+google-generativeai>=0.5.2
+langchain-core
+langgraph>=0.0.10
+
+# --- Utilities ---
+fpdf
+pillow
+feedparser>=6.0.10

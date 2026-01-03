@@ -1,54 +1,21 @@
 # =======================================================
-# AI HEALTHCARE - LIGHTWEIGHT REQUIREMENTS (Render Free Tier)
+# AI HEALTHCARE - FRONTEND REQUIREMENTS (Streamlit Cloud)
 # =======================================================
-# Optimized for 512MB RAM limit - removes heavy ML libs
-# Full version: requirements-full.txt
+# Lightweight requirements for frontend only - no ML libs needed
+# The frontend calls the backend API for predictions
 # =======================================================
 
-# --- Core API & Server ---
-fastapi>=0.111.0
-uvicorn[standard]>=0.29.0
-python-multipart>=0.0.9
-orjson
-starlette
+# --- Frontend Framework ---
+streamlit>=1.35.0
+streamlit-lottie>=0.0.5
+streamlit-option-menu>=0.3.13
+
+# --- HTTP Client (to call backend API) ---
 requests>=2.32.3
 
-# --- Authentication & Security ---
-passlib[bcrypt]>=1.7.4
-bcrypt<4.0
-pyjwt>=2.8.0
-python-jose[cryptography]>=3.3.0
-
-# --- Database & Config ---
-sqlalchemy
-python-dotenv
-
-# --- Data Science (Lite) ---
-pandas>=2.2.2
-numpy>=1.26.4
-scikit-learn>=1.4.2
-joblib>=1.3.0
-# NOTE: torch, xgboost, lightgbm REMOVED - too heavy for 512MB
-# Models should be pre-trained scikit-learn pipelines saved with joblib
-
-# --- AI & LLM (Lite) ---
-google-generativeai>=0.5.2
-langchain-core
-langgraph>=0.0.10
-# NOTE: sentence-transformers REMOVED - uses 200MB+ RAM
-# NOTE: langchain-huggingface REMOVED - pulls torch
+# --- Visualization (for charts) ---
+plotly>=5.21.0
 
 # --- Utilities ---
-fpdf
+python-dotenv
 pillow
-feedparser>=6.0.10
-
-# --- NOT included (see requirements-full.txt for local dev) ---
-# torch - 500MB+
-# xgboost - 100MB
-# lightgbm - 50MB  
-# shap - heavy, needs torch
-# sentence-transformers - 200MB+
-# langchain-huggingface - pulls torch
-# streamlit - frontend only, not needed on backend
-# matplotlib/plotly - visualization, not needed on backend API
