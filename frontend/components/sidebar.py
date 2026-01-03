@@ -107,61 +107,45 @@ def render_sidebar():
     """, unsafe_allow_html=True)
     
     with st.sidebar:
-        # --- 1. PREMIUM BRAND HEADER ---
+        # --- 1. PREMIUM BRAND HEADER WITH LOGO ---
+        import os
+        logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "logo.png")
+        
+        # Brand container
         st.markdown("""
         <div style="
-            padding: 1.25rem 1rem;
+            padding: 1rem;
             margin-bottom: 0.5rem;
             background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.05) 100%);
             border-radius: 16px;
             border: 1px solid rgba(59, 130, 246, 0.15);
-            position: relative;
-            overflow: hidden;
         ">
-            <div style="
-                position: absolute;
-                top: -50%;
-                right: -30%;
-                width: 120px;
-                height: 120px;
-                background: radial-gradient(circle, rgba(59, 130, 246, 0.2) 0%, transparent 70%);
-                border-radius: 50%;
-                filter: blur(20px);
-            "></div>
-            <div style="display: flex; align-items: center; gap: 12px; position: relative; z-index: 1;">
-                <div style="
-                    width: 42px;
-                    height: 42px;
-                    background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%);
-                    border-radius: 12px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 1.3rem;
-                    box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-                ">🏥</div>
-                <div>
-                    <div style="
-                        font-family: 'Outfit', sans-serif;
-                        font-weight: 700;
-                        font-size: 1.15rem;
-                        background: linear-gradient(90deg, #FFFFFF 0%, #94A3B8 100%);
-                        -webkit-background-clip: text;
-                        -webkit-text-fill-color: transparent;
-                        letter-spacing: -0.02em;
-                    ">AI Healthcare</div>
-                    <div style="
-                        font-size: 0.65rem;
-                        color: #64748B;
-                        letter-spacing: 0.1em;
-                        text-transform: uppercase;
-                        font-weight: 600;
-                        margin-top: 2px;
-                    ">⚡ Powered by AI</div>
-                </div>
-            </div>
-        </div>
         """, unsafe_allow_html=True)
+        
+        # Logo + Text layout
+        logo_col, text_col = st.columns([0.25, 0.75])
+        with logo_col:
+            if os.path.exists(logo_path):
+                st.image(logo_path, width=42)
+            else:
+                st.markdown('<div style="font-size:1.5rem;">🏥</div>', unsafe_allow_html=True)
+        with text_col:
+            st.markdown("""
+            <div style="
+                font-family: 'Outfit', sans-serif;
+                font-weight: 700;
+                font-size: 1.1rem;
+                background: linear-gradient(90deg, #FFFFFF 0%, #94A3B8 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                margin-top: 4px;
+            ">AI Healthcare</div>
+            <div style="font-size: 0.65rem; color: #64748B; letter-spacing: 0.08em; text-transform: uppercase;">
+                ⚡ Powered by AI
+            </div>
+            """, unsafe_allow_html=True)
+        
+        st.markdown("</div>", unsafe_allow_html=True)
         
         # --- 2. QUICK STATS MINI CARD ---
         profile = api.fetch_profile()
@@ -217,7 +201,9 @@ def render_sidebar():
                 "Liver Disease Prediction",
                 "Kidney Disease Prediction",
                 "Lung Cancer Prediction",
-                "My Profile"
+                "My Profile",
+                "Plans & Pricing",
+                "About & Legal"
             ],
             icons=[
                 "grid-1x2-fill",
@@ -227,7 +213,9 @@ def render_sidebar():
                 "activity",
                 "capsule-pill",
                 "lungs-fill",
-                "person-badge-fill"
+                "person-badge-fill",
+                "credit-card-2-front-fill",
+                "info-circle-fill"
             ],
             default_index=0,
             styles={

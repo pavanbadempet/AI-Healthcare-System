@@ -147,13 +147,60 @@ def chat_endpoint(
     if not context_str:
         context_str = "No prior health records found."
 
-    # 4. Invoke Agent
+    # 4. ADVANCED RAG - Semantic Memory Retrieval (Maximum Personalization)
+    rag_memories = []
+    rag_health_context = []
+    rag_conversation_context = []
+    
+    try:
+        # Retrieve more memories since it's free!
+        rag_memories = rag.search_similar_records(
+            user_id=str(current_user.id),
+            query=request.message,
+            n_results=10  # Increased from 5 for better context
+        )
+        logger.info(f"RAG retrieved {len(rag_memories)} relevant memories")
+        
+        # Categorize memories for better prompt engineering
+        for memory in rag_memories:
+            if "Checkup Type:" in memory or "Result:" in memory:
+                rag_health_context.append(memory)
+            else:
+                rag_conversation_context.append(memory)
+                
+    except Exception as e:
+        logger.warning(f"RAG retrieval failed (non-critical): {e}")
+    
+    # Build rich memory context
+    health_memories = "\n".join(rag_health_context[:5]) if rag_health_context else "No relevant health records."
+    conversation_memories = "\n".join(rag_conversation_context[:5]) if rag_conversation_context else "No relevant past conversations."
+    
+    # User behavior summary (long-term patterns)
+    user_summary = ""
+    if current_user.about_me:
+        user_summary = f"User Notes: {current_user.about_me}"
+    
+    # Combine all memory types
+    full_memory_context = f"""
+=== HEALTH RECORD MEMORIES ===
+{health_memories}
+
+=== CONVERSATION MEMORIES ===
+{conversation_memories}
+
+=== USER NOTES ===
+{user_summary if user_summary else "User has not added personal notes."}
+"""
+
+    # 5. Invoke Agent with FULL CONTEXT
     try:
         inputs = {
             "messages": graph_messages,
             "user_profile": profile_str,
-            "user_id": current_user.id, # Used by tools for RAG lookup
-            "available_reports": context_str # Injected into Prompt
+            "user_id": current_user.id,
+            "available_reports": context_str,
+            "rag_memories": full_memory_context,  # Rich categorized memories
+            "conversation_count": len(graph_messages)  # Track engagement
         }
         
         result = agent.medical_agent.invoke(inputs)
@@ -244,3 +291,58 @@ def delete_health_record(
     rag.delete_record_from_db(str(record_id))
     
     return {"status": "success", "message": "Record deleted"}
+
+
+# --- PDF Report Download Endpoint ---
+from fastapi.responses import Response
+from . import pdf_generator
+
+@router.get("/download/health-report")
+def download_health_report(
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db)
+) -> Response:
+    """
+    Generate and download a PDF health report.
+    
+    Returns:
+        PDF file download
+    """
+    # Get user's health records
+    records = db.query(models.HealthRecord).filter(
+        models.HealthRecord.user_id == current_user.id
+    ).order_by(models.HealthRecord.timestamp.desc()).limit(50).all()
+    
+    # Convert to dict format
+    records_list = [
+        {
+            "timestamp": r.timestamp,
+            "record_type": r.record_type,
+            "prediction": r.prediction
+        }
+        for r in records
+    ]
+    
+    # Build user profile
+    user_profile = {
+        "height": current_user.height,
+        "weight": current_user.weight,
+        "dob": str(current_user.dob) if current_user.dob else "N/A",
+        "blood_type": current_user.blood_type
+    }
+    
+    # Generate PDF
+    pdf_bytes = pdf_generator.generate_health_report(
+        user_name=current_user.full_name or current_user.username,
+        user_profile=user_profile,
+        health_records=records_list
+    )
+    
+    # Return as downloadable file
+    filename = f"health_report_{current_user.username}_{datetime.datetime.now().strftime('%Y%m%d')}.pdf"
+    
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
+    )
