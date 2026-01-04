@@ -1,5 +1,5 @@
 """
-AI Health Assistant Chat View - Premium Edition
+Health Assistant Chat View
 ================================================
 Modern chat interface with typing indicators, reactions, and enhanced UX.
 """
@@ -136,7 +136,7 @@ def render_chat_page():
                     <div class="typing-indicator">
                         <span></span><span></span><span></span>
                     </div>
-                    <span style="font-size: 0.85rem;">Dr. AI is thinking...</span>
+                    <span style="font-size: 0.85rem;">Thinking...</span>
                 </div>
                 <style>
                 .typing-indicator {
