@@ -71,24 +71,19 @@ def render_profile_page():
     col1, col2 = st.columns([1, 3])
     with col1:
         st.markdown(f"""
-        <a href="{backend_url}/download/health-report" 
-           target="_blank"
-           style="
-               display: inline-block;
-               background: linear-gradient(135deg, #3B82F6, #8B5CF6);
-               color: white;
-               padding: 0.75rem 1.5rem;
-               border-radius: 8px;
-               text-decoration: none;
-               font-weight: 600;
-               font-size: 0.9rem;
-               box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-               transition: transform 0.2s;
-           "
-           onmouseover="this.style.transform='translateY(-2px)'"
-           onmouseout="this.style.transform='translateY(0)'"
-        >
-            📥 Download PDF
+        <a href="{backend_url}/download/health-report" target="_blank" style="text-decoration: none;">
+            <button style="
+                background: linear-gradient(135deg, #3B82F6, #8B5CF6);
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 8px;
+                font-weight: 600;
+                cursor: pointer;
+                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            ">
+                📥 Download PDF Report
+            </button>
         </a>
         """, unsafe_allow_html=True)
     

@@ -184,3 +184,23 @@ def get_explanation(endpoint: str, data: Dict[str, Any]) -> str:
     except Exception:
         pass
     return ""
+
+def get_ai_explanation(prediction_type: str, inputs: Dict[str, Any], result: str) -> Dict[str, Any]:
+    """Fetch Generative AI explanation and tips."""
+    if 'token' not in st.session_state: return {}
+    headers = {"Authorization": f"Bearer {st.session_state['token']}"}
+    
+    payload = {
+        "prediction_type": prediction_type,
+        "input_data": inputs,
+        "prediction_result": result
+    }
+    
+    try:
+        # Note: explanation.py router is mounted at /explain
+        resp = requests.post(f"{BACKEND_URL}/explain/", json=payload, headers=headers)
+        if resp.status_code == 200:
+            return resp.json()
+    except Exception as e:
+        print(f"AI Explanation Failed: {e}")
+    return {}
