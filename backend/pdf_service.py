@@ -20,7 +20,7 @@ class PDFReport(FPDF):
         self.set_font('Arial', 'I', 8)
         self.set_text_color(128)
         self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
-        self.cell(0, 10, 'Automated Report - Not a Diagnosis', 0, 0, 'R')
+        self.cell(0, 10, 'Not a Diagnosis', 0, 0, 'R')
 
 def generate_medical_report(user_name: str, report_type: str, prediction: str, data: dict, advice: list = []):
     """

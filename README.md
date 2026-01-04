@@ -1,20 +1,17 @@
 
-# 🏥 AI Healthcare System
-### *Intelligent Disease Prediction & AI-Powered Medical Assistance*
+# AI Healthcare System
+### Disease Prediction & Medical Assistance Platform
 
-![CI Status](https://img.shields.io/github/actions/workflow/status/pavanbadempet/AIO-Healthcare-System/ci.yml?branch=main)
-![Coverage](https://img.shields.io/badge/coverage-100%25-brightgreen)
 ![Python](https://img.shields.io/badge/python-3.10%2B-blue)
-![License](https://img.shields.io/badge/license-MIT-green)
 ![Docker](https://img.shields.io/badge/docker-ready-blue)
 
 ---
 
-## 📖 Overview
+## Overview
 
-The **AI Healthcare System** is a platform for preliminary medical insights. It combines **Gradient Boosting Machines (XGBoost)** for disease prediction with **Generative AI (Gemini Pro & RAG)** to convert raw data into actionable health advice.
+This project provides a platform for preliminary medical insights. It uses **XGBoost** for disease prediction and **Gemini Pro (via RAG)** for interpreting health records.
 
-This system uses **Retrieval Augmented Generation (RAG)** to provide context-aware answers based on user health records, ensuring verifiable and grounded responses.
+The system uses **Retrieval Augmented Generation (RAG)** to ground responses in user data, reducing the likelihood of hallucination.
 
 ---
 
@@ -28,31 +25,28 @@ This system uses **Retrieval Augmented Generation (RAG)** to provide context-awa
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-### 🩺 **Multi-Disease Prediction Engine**
-- **Diabetes, Heart, & Liver Disease**: High-accuracy XGBoost classifiers trained on verified medical datasets.
-- **Real-Time Inference**: Sub-millisecond prediction latency via optimized FastAPI endpoints.
-- **Explainable AI (XAI)**: (Experimental) SHAP-based reasoning for *why* a prediction was made.
+### Prediction Engine
+- **Models**: XGBoost classifiers for Diabetes, Heart, and Liver disease.
+- **Performance**: Optimized for low-latency inference.
 
-### 🤖 **Context-Aware AI Assistant**
-- **RAG Architecture**: Creating a "memory" for the AI. It recalls your past checkups and lab reports during conversation.
-- **Anti-Hallucination**: Strictly grounded in "Available Reports" and medical context.
-- **Persistent History**: Chat sessions are saved and indexed for long-term health tracking.
+### Assistant
+- **RAG Architecture**: Uses vector storage to recall past interactions and reports.
+- **Grounding**: Limits responses to available medical context.
 
-### � **Automated Lab Analysis**
-- **Vision API**: Upload detailed lab reports (PDF/Images). The system extracts values, flags anomalies, and adds them to your digital health profile.
+### Lab Analysis
+- **Vision**: Extracts data from PDF/Image lab reports using Gemini Vision.
 
-### 🔐 **Enterprise-Grade Security**
-- **JWT Authentication**: Stateless, secure session management.
-- **Password Policies**: Enforced complexity (Regex validation).
-- **Tenant Isolation**: User data is strictly siloed in both SQL and Vector Databases.
+### Security
+- **Auth**: JWT-based session management.
+- **Isolation**: Tenant-level data separation.
 
 ---
 
-## ⚡ Quick Start
+## Quick Start
 
-### Option 1: Docker (Recommended)
+### Option 1: Docker
 Get the entire system (Frontend + Backend + MLflow) running in one command.
 
 ```bash
@@ -89,37 +83,29 @@ Use the provided runner scripts for convenience:
 
 ---
 
-## 🛠️ Technology Stack
+## Technology Stack
 
 | Layer | Technology | Purpose |
 | :--- | :--- | :--- |
-| **Frontend** | Streamlit, Lottie | Rapid UI development, Interactive Data Viz |
-| **Backend** | FastAPI, Pydantic | High-performance Async API, Validation |
-| **ML Engine** | XGBoost, Scikit-Learn | State-of-the-art Tabular Classification |
-| **GenAI** | Google Gemini Pro, LangChain | LLM Orchestration, RAG, Vision Analysis |
-| **Database** | SQLAlchemy (SQLite), FAISS | Relational & Vector Data Persistence |
-| **DevOps** | Docker, GitHub Actions | Containerization & CI/CD Pipelines |
-| **MLOps** | MLflow | Experiment Tracking & Model Registry |
+| **Frontend** | Streamlit | UI & Data Viz |
+| **Backend** | FastAPI, Pydantic | API & Validation |
+| **ML** | XGBoost, Scikit-Learn | Classification Models |
+| **LLM** | Gemini Pro, LangChain | Orchestration & RAG |
+| **Database** | SQLite, FAISS | Relational & Vector Storage |
+| **Ops** | Docker, GitHub Actions | Containers & CI |
 
 ---
 
-## 🧪 Engineering Standards
+## Testing
 
-We adhere to strict engineering principles to ensure reliability.
-
-- **100% Line Coverage**: All critical backend modules (`prediction`, `auth`, `vision`, `report`) are fully unit-tested.
-- **Type Safety**: Strictly typed Python codebase using Pydantic V2 migration paths.
-- **CI/CD**: Automated testing on every push via GitHub Actions.
-
-To verify the system yourself:
+To run the test suite:
 ```bash
-# Run the full test suite
 pytest tests/ --cov=backend
 ```
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please check [CONTRIBUTING.md](CONTRIBUTING.md) for style guides and setup instructions.
 

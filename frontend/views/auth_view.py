@@ -60,20 +60,20 @@ The Future of <br>
 <span style="background: linear-gradient(90deg, #60A5FA, #34D399); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">AI Healthcare</span>
 </h1>
 <p style="font-size: 1rem; color: #CBD5E1; line-height: 1.5; max-width: 550px; margin-bottom: 2rem; font-weight: 300;">
-Hospital-grade predictive diagnostics. HIPAA compliant security. 
+Hospital-grade predictive diagnostics. Secure data protection. 
 Real-time analysis powered by next-gen neural networks.
 </p>
 <div style="display: flex; gap: 1rem;">
 <div class="stat-box"><div class="stat-val">99.8%</div><div class="stat-label">Precision</div></div>
-<div class="stat-box"><div class="stat-val">HIPAA</div><div class="stat-label">Secure</div></div>
-<div class="stat-box"><div class="stat-val">24/7</div><div class="stat-label">Monitor</div></div>
+<div class="stat-box"><div class="stat-val">Encrypted</div><div class="stat-label">Data</div></div>
+<div class="stat-box"><div class="stat-val">Global</div><div class="stat-label">Access</div></div>
 </div>
 </div>
 """, unsafe_allow_html=True)
 
     # --- RIGHT COLUMN: AUTH FORM ---
     with col2:
-        st.markdown('<div style="height: 15vh;"></div>', unsafe_allow_html=True)
+        # st.markdown('<div style="height: 15vh;"></div>', unsafe_allow_html=True)
         
         with st.container():
             # Header Text (No Card Style)
@@ -138,6 +138,6 @@ div[data-testid="stForm"] {
 
             st.markdown("""
 <div style="text-align: center; margin-top: 1.5rem; color: #64748B; font-size: 0.8rem; opacity: 0.7;">
-Powered by Neural Networks & Secure Enclaves
+Powered by Advanced Analytics & Secure Enclaves
 </div>
 """, unsafe_allow_html=True)
