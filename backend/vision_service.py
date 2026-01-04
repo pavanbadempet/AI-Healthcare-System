@@ -35,7 +35,7 @@ def get_vision_model():
         
     try:
         genai.configure(api_key=GOOGLE_API_KEY)
-        _vision_model = genai.GenerativeModel('gemini-2.0-flash')
+        _vision_model = genai.GenerativeModel('gemini-1.5-flash')
     except Exception as e:
         logger.error(f"Vision Model Init Failed: {e}")
         return None
