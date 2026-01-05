@@ -34,20 +34,38 @@ def create_payment_order(amount_paise: int, plan_id: str):
     except Exception:
         return None
 
-# --- Session Management ---
-# NOTE: File-based session persistence is DISABLED for Streamlit Cloud security
-# Sessions are managed purely in st.session_state memory
+# --- Session Management (Cookie-based for persistence) ---
+import extra_streamlit_components as stx
+from datetime import datetime, timedelta
+
+@st.cache_resource
+def _get_cookie_manager():
+    """Singleton cookie manager instance."""
+    return stx.CookieManager()
 
 def save_session(token: str, username: str):
-    """Session saving is a no-op (managed in st.session_state)."""
-    pass
+    """Save session to browser cookies (persists across browser restarts)."""
+    cm = _get_cookie_manager()
+    # Set cookies to expire in 7 days (or match JWT expiry)
+    expires = datetime.now() + timedelta(days=7)
+    cm.set("auth_token", token, expires_at=expires, key="set_token")
+    cm.set("auth_username", username, expires_at=expires, key="set_user")
 
 def load_session() -> Optional[Dict[str, str]]:
-    """Session loading disabled for stateless security on cloud."""
+    """Load session from browser cookies."""
+    cm = _get_cookie_manager()
+    token = cm.get("auth_token")
+    username = cm.get("auth_username")
+    if token and username:
+        return {"token": token, "username": username}
     return None
 
 def clear_session():
-    """Logout by clearing session state."""
+    """Logout by clearing both session state and cookies."""
+    cm = _get_cookie_manager()
+    cm.delete("auth_token", key="del_token")
+    cm.delete("auth_username", key="del_user")
+    # Also clear st.session_state
     if 'token' in st.session_state:
         del st.session_state['token']
     if 'username' in st.session_state:
