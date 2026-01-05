@@ -1,11 +1,6 @@
 
-import pandas as pd
-import numpy as np
-import xgboost as xgb
-import pickle
 import os
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+import pickle
 
 # --- Configuration ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -14,6 +9,15 @@ MODEL_PATH = os.path.join(BASE_DIR, "Heart Disease Model.pkl")
 
 def train_heart_model():
     print("Starting Heart Disease Model Training...")
+
+    import pandas as pd
+    import numpy as np
+    from sklearn.model_selection import train_test_split
+    from sklearn.metrics import accuracy_score
+    try:
+        import xgboost as xgb
+    except ImportError:
+        raise RuntimeError("xgboost is required to train the heart model. Install it or mock it in tests.")
 
     # 1. Load Data
     if not os.path.exists(DATASET_PATH):
