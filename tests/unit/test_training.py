@@ -80,7 +80,7 @@ def test_train_liver():
         # Dataset needs mixed classes 1 and 2
         df = pd.DataFrame({
             "Age": [40] * 30,
-            "Gender": ["Male", "Female"] * 15,
+            "Gender": [0, 1] * 15,
             "Total_Bilirubin": [0.8] * 30,
             "Direct_Bilirubin": [0.2] * 30,
             "Alkaline_Phosphotase": [180] * 30,
