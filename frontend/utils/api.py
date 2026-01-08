@@ -6,11 +6,36 @@ from typing import Optional, Dict, Any, List
 import extra_streamlit_components as stx
 from datetime import datetime, timedelta
 
-# Backend URL
-try:
-    BACKEND_URL = os.getenv("BACKEND_URL") or st.secrets.get("BACKEND_URL") or "http://127.0.0.1:8000"
-except FileNotFoundError:
-    BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
+# --- High-Availability Backend Resolution ---
+@st.cache_data(ttl=300) # Cache the active URL for 5 minutes
+def resolve_backend_url():
+    urls_str = None
+    try:
+        urls_str = os.getenv("BACKEND_URLS") or st.secrets.get("BACKEND_URLS")
+    except FileNotFoundError:
+        urls_str = os.getenv("BACKEND_URLS")
+        
+    if urls_str:
+        urls = [u.strip() for u in urls_str.split(',') if u.strip()]
+        # Fast failover ping
+        for url in urls:
+            try:
+                # Short timeout so we don't block user for 50s per asleep instance
+                if requests.get(f"{url}/healthz", timeout=2.5).status_code == 200:
+                    return url
+            except requests.exceptions.RequestException:
+                pass
+        # All dead or asleep? Pick the primary one and let it wake naturally
+        if urls:
+            return urls[0]
+
+    # Fallback to legacy single URL
+    try:
+        return os.getenv("BACKEND_URL") or st.secrets.get("BACKEND_URL") or "http://127.0.0.1:8000"
+    except FileNotFoundError:
+        return os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
+
+BACKEND_URL = resolve_backend_url()
 
 def get_backend_url(): return BACKEND_URL
 
