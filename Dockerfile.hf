@@ -1,0 +1,42 @@
+# =======================================================
+# AI HEALTHCARE - HUGGING FACE SPACES BACKEND
+# =======================================================
+# Hugging Face Spaces (Docker Space) requires port 7860
+# and running as a non-root user (uid 1000).
+# =======================================================
+
+FROM python:3.11-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set up non-root user required by Hugging Face Spaces
+RUN useradd -m -u 1000 user
+USER user
+ENV HOME=/home/user \
+    PATH=/home/user/.local/bin:$PATH
+
+WORKDIR $HOME/app
+
+# Copy requirements
+COPY --chown=user backend/requirements.txt $HOME/app/backend/requirements.txt
+COPY --chown=user requirements.txt $HOME/app/
+
+# Install dependencies based on backend requirements
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r backend/requirements.txt
+
+# Copy source code
+COPY --chown=user . $HOME/app/
+
+# Generate placeholder AI models (so the backend doesn't crash if models are missing)
+RUN python scripts/generate_placeholder_models.py
+
+# Expose the specific port Hugging Face Spaces uses
+EXPOSE 7860
+
+# Run FastAPI backend
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "7860"]
