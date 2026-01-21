@@ -32,8 +32,13 @@ jobs:
           git config --global user.email "github-actions@github.com"
           git config --global user.name "GitHub Actions Sync Bot"
           
+          # Remove the data folder from the local commit history so we don't push the heavy CSVs
+          # Since HF only needs the backend code and models, not raw data
+          git rm -rf data/ || true
+          git commit -m "chore: Remove data directory for Hugging Face deployment" || true
+          
           # Add the HF remote and push
           git remote add hf https://$HF_USERNAME:$HF_TOKEN@huggingface.co/spaces/$HF_USERNAME/$HF_SPACE_NAME
           
-          # Push the main branch to Hugging Face (force push to ensure it matches GitHub exactly)
+          # Push the main branch to Hugging Face
           git push --force hf main:main
