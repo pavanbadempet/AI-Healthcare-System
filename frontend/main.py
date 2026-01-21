@@ -17,6 +17,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from streamlit_lottie import st_lottie
 import requests
 from streamlit_option_menu import option_menu
+import extra_streamlit_components as stx
 
 # --- Import Custom Modules ---
 from frontend.utils import api
@@ -70,6 +71,9 @@ from frontend.components import sidebar
 # --- Main App Orchestrator ---
 def main():
     # 1. Initialize Session
+    # Initialize Cookie Manager once per run
+    st.session_state['cookie_manager'] = stx.CookieManager(key="init")
+    
     if 'token' not in st.session_state:
         # Try to load from local file (persistence)
         session = api.load_session()
@@ -83,8 +87,6 @@ def main():
         return
 
     # 3. Sidebar Navigation (DELEGATED TO COMPONENT)
-    # 3. Sidebar Navigation (DELEGATED TO COMPONENT)
-    # Get localized label
     selected_label = sidebar.render_sidebar()
     
     # Resolve to English key
