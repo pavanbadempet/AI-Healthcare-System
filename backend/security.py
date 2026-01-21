@@ -6,9 +6,12 @@ Handles Audit Logging and Rate Limiting logic.
 from sqlalchemy.orm import Session
 from . import models
 from fastapi import Request, HTTPException
-from datetime import datetime
+from datetime import datetime, timezone
 import time
+import logging
 from typing import Dict, Tuple
+
+logger = logging.getLogger(__name__)
 
 # --- Audit Logging ---
 
@@ -35,13 +38,13 @@ def log_audit_event(
             target_user_id=target_user_id,
             action=action,
             details=details,
-            timestamp=datetime.utcnow()
+            timestamp=datetime.now(timezone.utc)
         )
         db.add(log_entry)
         db.commit()
     except Exception as e:
-        print(f"FAILED TO AUDIT LOG: {e}")
-        # Don't crash the app if logging fails, but print strict error
+        logger.error(f"FAILED TO AUDIT LOG: {e}")
+        # Don't crash the app if logging fails, just log error
         pass
 
 

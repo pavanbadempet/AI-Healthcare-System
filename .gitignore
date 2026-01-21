@@ -2,29 +2,38 @@
 __pycache__/
 *.py[cod]
 *$py.class
+.pytest_cache/
 
-# Environment Variables (Keep Secret!)
+# Environment
 .env
-.venv
+.venv/
 venv/
 
-# Database (Contains Patient Data)
-healthcare.db
+# Database
 *.db
 *.sqlite3
 
-# Models (Large Binary Files)
+# Models (tracked via Git LFS or regenerated)
 *.pkl
 
-# Logs
+# Logs & Temp
 *.log
 session.json
 .coverage
 htmlcov/
 
-# AI/IDE Settings (Stealth)
+# IDE & Tools
 .cursor/
 .antigravity/
 .gemini/
 .idea/
 .vscode/
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# Airflow
+airflow/logs/
+airflow/airflow.db

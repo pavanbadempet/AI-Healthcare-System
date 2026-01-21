@@ -1,223 +1,162 @@
+"""Frontend API Client"""
 import requests
 import streamlit as st
-import json
 import os
 from typing import Optional, Dict, Any, List
+import extra_streamlit_components as stx
+from datetime import datetime, timedelta
 
-# --- Configuration ---
-# Allow override via env var (Render) or secrets (Streamlit Cloud), default to local
+# Backend URL
 try:
     BACKEND_URL = os.getenv("BACKEND_URL") or st.secrets.get("BACKEND_URL") or "http://127.0.0.1:8000"
 except FileNotFoundError:
     BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
 
+def get_backend_url(): return BACKEND_URL
 
-def get_backend_url() -> str:
-    """Return the backend URL for direct API calls."""
-    return BACKEND_URL
-
-def create_payment_order(amount_paise: int, plan_id: str):
-    """Create a Razorpay order via backend."""
-    token = st.session_state.get('token')
-    headers = {"Authorization": f"Bearer {token}"} if token else {}
-    
-    try:
-        response = requests.post(f"{BACKEND_URL}/payments/create-order", json={
-            "amount": amount_paise,
-            "currency": "INR",
-            "plan_id": plan_id
-        }, headers=headers)
-        
-        if response.status_code == 200:
-            return response.json()
-        return None
-    except Exception:
-        return None
-
-# --- Session Management (Cookie-based for persistence) ---
-import extra_streamlit_components as stx
-from datetime import datetime, timedelta
+# --- Session Management ---
 
 def _get_cookie_manager():
-    """Singleton cookie manager instance."""
-    return stx.CookieManager()
+    # Ensure cookie manager is initialized in main.py
+    if 'cookie_manager' not in st.session_state:
+        # Fallback (should typically be handled in main)
+        st.session_state['cookie_manager'] = stx.CookieManager(key="init")
+    return st.session_state['cookie_manager']
 
 def save_session(token: str, username: str):
-    """Save session to browser cookies (persists across browser restarts)."""
     cm = _get_cookie_manager()
-    # Set cookies to expire in 7 days (or match JWT expiry)
     expires = datetime.now() + timedelta(days=7)
     cm.set("auth_token", token, expires_at=expires, key="set_token")
     cm.set("auth_username", username, expires_at=expires, key="set_user")
 
 def load_session() -> Optional[Dict[str, str]]:
-    """Load session from browser cookies."""
     cm = _get_cookie_manager()
-    token = cm.get("auth_token")
-    username = cm.get("auth_username")
-    if token and username:
-        return {"token": token, "username": username}
-    return None
+    token, username = cm.get("auth_token"), cm.get("auth_username")
+    return {"token": token, "username": username} if token and username else None
 
 def clear_session():
-    """Logout by clearing both session state and cookies."""
     cm = _get_cookie_manager()
     cm.delete("auth_token", key="del_token")
     cm.delete("auth_username", key="del_user")
-    # Also clear st.session_state
-    if 'token' in st.session_state:
-        del st.session_state['token']
-    if 'username' in st.session_state:
-        del st.session_state['username']
+    st.session_state.pop('token', None)
+    st.session_state.pop('username', None)
 
-# --- Auth API ---
+
+# --- Auth ---
 
 def login(username, password) -> bool:
     try:
-        data = {"username": username, "password": password}
-        # FastAPI OAuth2PasswordRequestForm expects form data, not json
-        resp = requests.post(f"{BACKEND_URL}/token", data=data) 
+        resp = requests.post(f"{BACKEND_URL}/token", data={"username": username, "password": password})
         if resp.status_code == 200:
-            token_data = resp.json()
-            st.session_state['token'] = token_data['access_token']
+            token = resp.json()['access_token']
+            st.session_state['token'] = token
             st.session_state['username'] = username
-            save_session(token_data['access_token'], username)
+            save_session(token, username)
             return True
-        else:
-            st.error(f"Login Failed: {resp.json().get('detail', 'Unknown Error')}")
-            return False
+        st.error(f"Login Failed: {resp.json().get('detail', 'Error')}")
     except Exception as e:
         st.error(f"Connection Error: {e}")
-        return False
+    return False
 
 def signup(username, password, email, full_name, dob) -> bool:
     try:
-        print(f"DEBUG: Attempting signup for user: {username}")
-        payload = {
-            "username": username, 
-            "password": password,
-            "email": email,
-            "full_name": full_name,
-            "dob": str(dob)
-        }
-        resp = requests.post(f"{BACKEND_URL}/signup", json=payload)
+        resp = requests.post(f"{BACKEND_URL}/signup", json={
+            "username": username, "password": password, "email": email, "full_name": full_name, "dob": str(dob)
+        })
         if resp.status_code == 200:
             return True
-        else:
-            st.error(f"Signup Failed: {resp.json().get('detail', 'Unknown Error')}")
-            return False
+        st.error(f"Signup Failed: {resp.json().get('detail', 'Error')}")
     except Exception as e:
         st.error(f"Connection Error: {e}")
-        return False
+    return False
 
-# --- User Data API ---
+
+# --- Profile ---
+
+def _headers():
+    return {"Authorization": f"Bearer {st.session_state.get('token', '')}"}
 
 def fetch_profile() -> Optional[Dict[str, Any]]:
     if 'token' not in st.session_state: return None
-    headers = {"Authorization": f"Bearer {st.session_state['token']}"}
     try:
-        resp = requests.get(f"{BACKEND_URL}/profile", headers=headers)
-        if resp.status_code == 200:
-            return resp.json()
+        resp = requests.get(f"{BACKEND_URL}/profile", headers=_headers())
+        return resp.json() if resp.status_code == 200 else None
     except Exception:
-        pass
-    return None
+        return None
 
 def update_profile(data: Dict[str, Any]) -> bool:
-    headers = {"Authorization": f"Bearer {st.session_state['token']}"}
     try:
-        resp = requests.put(f"{BACKEND_URL}/profile", json=data, headers=headers)
+        resp = requests.put(f"{BACKEND_URL}/profile", json=data, headers=_headers())
         if resp.status_code == 200:
             st.success("Profile Updated!")
             return True
-        else:
-            st.error("Failed to update profile.")
-            return False
+        st.error("Update failed")
     except Exception as e:
         st.error(f"Error: {e}")
-        return False
+    return False
 
-# --- Records & Prediction API ---
 
-def fetch_records(record_type: Optional[str] = None) -> List[Dict[str, Any]]:
+# --- Records ---
+
+def fetch_records(record_type: Optional[str] = None) -> List[Dict]:
     if 'token' not in st.session_state: return []
-    headers = {"Authorization": f"Bearer {st.session_state['token']}"}
+    url = f"{BACKEND_URL}/records" + (f"?record_type={record_type}" if record_type else "")
     try:
-        url = f"{BACKEND_URL}/records"
-        if record_type:
-             url += f"?record_type={record_type}"
-        resp = requests.get(url, headers=headers)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as e:
-        st.error(f"Failed to fetch records: {e}")
-    return []
-
-def delete_record(record_id: int):
-    headers = {"Authorization": f"Bearer {st.session_state['token']}"}
-    try:
-        requests.delete(f"{BACKEND_URL}/records/{record_id}", headers=headers)
-        st.rerun()
-    except Exception as e:
-        st.error(f"Delete failed: {e}")
+        resp = requests.get(url, headers=_headers())
+        return resp.json() if resp.status_code == 200 else []
+    except Exception:
+        return []
 
 def save_record(record_type, data, prediction):
     if 'token' not in st.session_state: return
-    headers = {"Authorization": f"Bearer {st.session_state['token']}"}
-    payload = {
-        "record_type": record_type,
-        "data": data,
-        "prediction": prediction
-    }
     try:
-        requests.post(f"{BACKEND_URL}/records", json=payload, headers=headers)
-    except Exception as e:
-        st.error(f"Failed to save record: {e}")
-
-def get_prediction(endpoint: str, data: Dict[str, Any]) -> Dict[str, Any]:
-    """Generic prediction wrapper."""
-    if 'token' not in st.session_state:
-        # Fallback for unauthenticated access (if allowed) or error
-        # Currently backend requires auth for everything? No, predict endpoints are open in main.py?
-        # Let's check. Actually prediction endpoints in router don't have Depends(get_current_user).
-        # So they are public.
+        requests.post(f"{BACKEND_URL}/records", json={"record_type": record_type, "data": data, "prediction": prediction}, headers=_headers())
+    except Exception:
         pass
-        
+
+def delete_record(record_id: int):
+    try:
+        resp = requests.delete(f"{BACKEND_URL}/records/{record_id}", headers=_headers())
+        if resp.status_code == 200:
+            st.rerun()
+    except Exception as e:
+        st.error(f"Delete failed: {e}")
+
+
+# --- Predictions ---
+
+def get_prediction(endpoint: str, data: Dict) -> Dict:
     try:
         resp = requests.post(f"{BACKEND_URL}/predict/{endpoint}", json=data)
-        if resp.status_code == 200:
-            return resp.json()
-        else:
-             return {"error": resp.json().get('detail', 'Prediction Failed')}
+        return resp.json() if resp.status_code == 200 else {"error": resp.json().get('detail', 'Failed')}
     except Exception as e:
         return {"error": str(e)}
 
-def get_explanation(endpoint: str, data: Dict[str, Any]) -> str:
-    """Fetch SHAP explanation plot as HTML."""
+def get_explanation(endpoint: str, data: Dict) -> str:
     try:
         resp = requests.post(f"{BACKEND_URL}/predict/explain/{endpoint}", json=data)
-        if resp.status_code == 200:
-            return resp.json().get("html_plot", "")
+        return resp.json().get("html_plot", "") if resp.status_code == 200 else ""
     except Exception:
-        pass
-    return ""
+        return ""
 
-def get_ai_explanation(prediction_type: str, inputs: Dict[str, Any], result: str) -> Dict[str, Any]:
-    """Fetch Generative AI explanation and tips."""
+def get_ai_explanation(prediction_type: str, inputs: Dict, result: str) -> Dict:
     if 'token' not in st.session_state: return {}
-    headers = {"Authorization": f"Bearer {st.session_state['token']}"}
-    
-    payload = {
-        "prediction_type": prediction_type,
-        "input_data": inputs,
-        "prediction_result": result
-    }
-    
     try:
-        # Note: explanation.py router is mounted at /explain
-        resp = requests.post(f"{BACKEND_URL}/explain/", json=payload, headers=headers)
-        if resp.status_code == 200:
-            return resp.json()
-    except Exception as e:
-        print(f"AI Explanation Failed: {e}")
-    return {}
+        resp = requests.post(f"{BACKEND_URL}/explain/", json={
+            "prediction_type": prediction_type, "input_data": inputs, "prediction_result": result
+        }, headers=_headers())
+        return resp.json() if resp.status_code == 200 else {}
+    except Exception:
+        return {}
+
+
+# --- Payments ---
+
+def create_payment_order(amount_paise: int, plan_id: str):
+    try:
+        resp = requests.post(f"{BACKEND_URL}/payments/create-order", json={
+            "amount": amount_paise, "currency": "INR", "plan_id": plan_id
+        }, headers=_headers())
+        return resp.json() if resp.status_code == 200 else None
+    except Exception:
+        return None

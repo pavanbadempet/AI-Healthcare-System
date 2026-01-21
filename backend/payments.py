@@ -9,7 +9,7 @@ import hmac
 import hashlib
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.orm import Session
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from . import database, models, auth
 from pydantic import BaseModel
 
@@ -83,7 +83,7 @@ def verify_payment(
         user.plan_tier = "pro" if "pro" in req.plan_id else "clinic"
         
         # Set expiry to 30 days from now (Mock logic, real recurring needs webhook)
-        user.subscription_expiry = datetime.utcnow() + timedelta(days=30)
+        user.subscription_expiry = datetime.now(timezone.utc) + timedelta(days=30)
         
         db.commit()
         

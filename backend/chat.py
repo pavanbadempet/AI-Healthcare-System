@@ -1,241 +1,123 @@
+"""Chat and Records API"""
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import Response
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage, AIMessage
-from . import models, database, auth, rag, agent, schemas
+from . import models, database, auth, rag, agent, schemas, pdf_generator
 import json
 import datetime
 from typing import List, Dict, Any, Optional
 from collections import defaultdict
 import logging
 
-# --- Logging Configuration ---
 logger = logging.getLogger(__name__)
-
-# --- Router Definition ---
 router = APIRouter()
 
 # --- Schemas ---
-
 class Message(BaseModel):
     role: str
     content: str
 
 class ChatRequest(BaseModel):
-    """Schema for incoming chat messages."""
     message: str
     history: List[Message] = []
     current_context: Dict[str, Any] = {}
 
-
 class RecordCreate(BaseModel):
-    """Schema for saving a health record."""
     record_type: str
     data: Dict[str, Any]
     prediction: str
 
-# --- Endpoints ---
+
+# --- Chat Endpoints ---
 
 @router.delete("/chat/history")
-def delete_chat_history(
-    current_user: models.User = Depends(auth.get_current_user), 
-    db: Session = Depends(database.get_db)
-) -> Dict[str, str]:
-    """
-    Clear all chat history for the current user.
-    """
+def delete_chat_history(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
     db.query(models.ChatLog).filter(models.ChatLog.user_id == current_user.id).delete()
     db.commit()
-    return {"status": "success", "message": "Chat history cleared"}
+    return {"status": "success"}
 
-@router.get("/chat/history", response_model=List[Dict[str, Any]])
-def get_chat_history(
-    current_user: models.User = Depends(auth.get_current_user), 
-    db: Session = Depends(database.get_db)
-) -> List[Dict[str, Any]]:
-    """
-    Retrieve past chat interactions for the timeline UI.
-    
-    Returns:
-        List of dicts: [{"role": "user", "content": "..."}]
-    """
-    LOG_LIMIT = 100
-    logs = db.query(models.ChatLog).filter(
-        models.ChatLog.user_id == current_user.id
-    ).order_by(models.ChatLog.timestamp.desc()).limit(LOG_LIMIT).all()
-    
-    # Reverse to show oldest first in UI
+@router.get("/chat/history")
+def get_chat_history(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
+    logs = db.query(models.ChatLog).filter(models.ChatLog.user_id == current_user.id)\
+        .order_by(models.ChatLog.timestamp.desc()).limit(100).all()
     logs.reverse()
-    
     return [{"role": log.role, "content": log.content, "timestamp": log.timestamp} for log in logs]
 
 @router.post("/chat")
-def chat_endpoint(
-    request: ChatRequest, 
-    current_user: models.User = Depends(auth.get_current_user), 
-    db: Session = Depends(database.get_db)
-) -> Dict[str, Any]:
-    """
-    Core AI Chat Endpoint.
-    Orchestrates: Intent -> RAG -> Agent -> Memory.
-    """
-    # 0. Check Privacy Setting
+def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
+    """AI Chat with RAG context."""
     save_data = bool(current_user.allow_data_collection)
-
-    # 1. Build User Profile String
-    profile_str = (
-        f"Name: {current_user.full_name or 'N/A'}\n"
-        f"Age/DOB: {current_user.dob or 'N/A'}\n"
-        f"Gender: {current_user.gender or 'N/A'}\n"
-        f"Height: {current_user.height}cm, Weight: {current_user.weight}kg\n"
-        f"Blood Type: {current_user.blood_type or 'N/A'}\n"
-        f"Known Ailments: {current_user.existing_ailments or 'None'}\n"
-        f"Diet: {current_user.diet or 'Unspecified'}\n"
-        f"Activity: {current_user.activity_level or 'Unspecified'}\n"
-        f"Sleep: {current_user.sleep_hours or '?'} hours/night\n"
-        f"Stress: {current_user.stress_level or 'Unspecified'}\n"
-        f"About Me: {current_user.about_me or 'None'}"
-    )
-
-    # Save User Message to DB
+    
+    # Build profile
+    profile = f"Name: {current_user.full_name or 'N/A'}, Age: {current_user.dob or 'N/A'}, " \
+              f"Gender: {current_user.gender or 'N/A'}, Height/Weight: {current_user.height}/{current_user.weight}"
+    
+    # Save user message
     if save_data:
         try:
-            user_log = models.ChatLog(user_id=current_user.id, role="user", content=request.message, timestamp=datetime.datetime.now(datetime.timezone.utc))
-            db.add(user_log)
+            log = models.ChatLog(user_id=current_user.id, role="user", content=request.message)
+            db.add(log)
             db.commit()
-            db.refresh(user_log)
-            rag.add_interaction_to_db(str(current_user.id), str(user_log.id), "user", request.message, str(user_log.timestamp))
         except Exception as e:
-            logger.error(f"Error saving user log: {e}")
-
-    # 2. Build Agent Graph Context
-    graph_messages = []
-    for msg in request.history:
-        if msg.role == "user":
-            graph_messages.append(HumanMessage(content=msg.content))
-        elif msg.role == "assistant":
-            graph_messages.append(AIMessage(content=msg.content))
-    graph_messages.append(HumanMessage(content=request.message))
-
-    # 3. Build Medical Context (Real-time + History)
-    context_str = ""
+            logger.error(f"Save error: {e}")
     
-    # A. Real-time Context (From Session State passed via API)
+    # Build message history
+    messages = [HumanMessage(content=m.content) if m.role == "user" else AIMessage(content=m.content) 
+                for m in request.history]
+    messages.append(HumanMessage(content=request.message))
+    
+    # Get medical context
+    context = ""
     if request.current_context:
-        context_str += "--- CURRENT SESSION RESULTS ---\n"
-        for k, v in request.current_context.items():
-            if isinstance(v, dict) and "prediction" in v:
-                pred = v["prediction"]
-                context_str += f"- {k}: {pred}\n"
+        context = "\n".join([f"{k}: {v.get('prediction', 'N/A')}" for k, v in request.current_context.items() if isinstance(v, dict)])
     
-    # B. Historical Context (From DB) - Optimised to last 50 records
-    all_records = db.query(models.HealthRecord).filter(
-        models.HealthRecord.user_id == current_user.id
-    ).order_by(models.HealthRecord.timestamp.desc()).limit(50).all()
+    records = db.query(models.HealthRecord).filter(models.HealthRecord.user_id == current_user.id)\
+        .order_by(models.HealthRecord.timestamp.desc()).limit(10).all()
+    if records:
+        context += "\nHistory: " + ", ".join([f"{r.record_type}:{r.prediction}" for r in records[:5]])
     
-    if all_records:
-        context_str += "\n--- MEDICAL HISTORY ---\n"
-        records_by_type = defaultdict(list)
-        for rec in all_records:
-            records_by_type[rec.record_type].append(rec)
-            
-        for r_type, recs in records_by_type.items():
-            top_3 = recs[:3] # Latest 3
-            for r in top_3:
-                 context_str += f"- {r.timestamp.strftime('%Y-%m-%d')}: {r.record_type} -> {r.prediction}\n"
-
-    if not context_str:
-        context_str = "No prior health records found."
-
-    # 4. ADVANCED RAG - Semantic Memory Retrieval (Maximum Personalization)
-    rag_memories = []
-    rag_health_context = []
-    rag_conversation_context = []
-    
+    # RAG memory
+    rag_context = ""
     try:
-        # Retrieve more memories since it's free!
-        rag_memories = rag.search_similar_records(
-            user_id=str(current_user.id),
-            query=request.message,
-            n_results=10  # Increased from 5 for better context
-        )
-        logger.info(f"RAG retrieved {len(rag_memories)} relevant memories")
-        
-        # Categorize memories for better prompt engineering
-        for memory in rag_memories:
-            if "Checkup Type:" in memory or "Result:" in memory:
-                rag_health_context.append(memory)
-            else:
-                rag_conversation_context.append(memory)
-                
-    except Exception as e:
-        logger.warning(f"RAG retrieval failed (non-critical): {e}")
+        memories = rag.search_similar_records(str(current_user.id), request.message, n_results=5)
+        if memories:
+            rag_context = "\n".join(memories[:3])
+    except Exception:
+        pass
     
-    # Build rich memory context
-    health_memories = "\n".join(rag_health_context[:5]) if rag_health_context else "No relevant health records."
-    conversation_memories = "\n".join(rag_conversation_context[:5]) if rag_conversation_context else "No relevant past conversations."
-    
-    # User behavior summary (long-term patterns)
-    user_summary = ""
-    if current_user.about_me:
-        user_summary = f"User Notes: {current_user.about_me}"
-    
-    # Combine all memory types
-    full_memory_context = f"""
-=== HEALTH RECORD MEMORIES ===
-{health_memories}
-
-=== CONVERSATION MEMORIES ===
-{conversation_memories}
-
-=== USER NOTES ===
-{user_summary if user_summary else "User has not added personal notes."}
-"""
-
-    # 5. Invoke Agent with FULL CONTEXT
+    # Invoke agent
     try:
-        inputs = {
-            "messages": graph_messages,
-            "user_profile": profile_str,
+        result = agent.medical_agent.invoke({
+            "messages": messages,
+            "user_profile": profile,
             "user_id": current_user.id,
-            "available_reports": context_str,
-            "rag_memories": full_memory_context,  # Rich categorized memories
-            "conversation_count": len(graph_messages)  # Track engagement
-        }
+            "available_reports": context,
+            "rag_memories": rag_context,
+            "conversation_count": len(messages)
+        })
+        response = result['messages'][-1].content
         
-        result = agent.medical_agent.invoke(inputs)
-        
-        last_msg = result['messages'][-1]
-        response_text = last_msg.content
-        
-        # Save AI Response
+        # Save AI response
         if save_data:
             try:
-                ai_log = models.ChatLog(user_id=current_user.id, role="assistant", content=response_text, timestamp=datetime.datetime.now(datetime.timezone.utc))
-                db.add(ai_log)
+                db.add(models.ChatLog(user_id=current_user.id, role="assistant", content=response))
                 db.commit()
-                db.refresh(ai_log)
-                rag.add_interaction_to_db(str(current_user.id), str(ai_log.id), "assistant", response_text, str(ai_log.timestamp))
-            except Exception as e:
-                print(f"Error saving AI log: {e}")
-
-        return {"response": response_text}
-
+            except Exception:
+                pass
+        
+        return {"response": response}
+        
     except Exception as e:
-        print(f"AGENT ERROR: {e}")
-        return {"response": "I'm having trouble analyzing your files right now. Please try again later.", "error": str(e)}
+        logger.error(f"Agent error: {e}")
+        return {"response": "Sorry, I'm having trouble right now. Please try again.", "error": str(e)}
 
-# --- Record Management Endpoints ---
+
+# --- Record Endpoints ---
 
 @router.post("/records")
-def save_health_record(
-    record: RecordCreate, 
-    current_user: models.User = Depends(auth.get_current_user), 
-    db: Session = Depends(database.get_db)
-) -> Dict[str, str]:
-    """
-    Save a prediction result (Diabetes/Heart/Liver) to DB and Vector Index.
-    """
+def save_health_record(record: RecordCreate, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
     db_record = models.HealthRecord(
         user_id=current_user.id,
         record_type=record.record_type,
@@ -244,105 +126,41 @@ def save_health_record(
     )
     db.add(db_record)
     db.commit()
-    db.refresh(db_record)
-    
-    # Sync to Chroma/RAG
-    rag.add_checkup_to_db(
-        user_id=str(current_user.id),
-        record_id=str(db_record.id),
-        record_type=db_record.record_type,
-        data=record.data,
-        prediction=db_record.prediction,
-        timestamp=str(db_record.timestamp)
-    )
-    
-    return {"status": "success", "message": "Health record saved."}
+    rag.add_checkup_to_db(str(current_user.id), str(db_record.id), record.record_type, record.data, record.prediction, str(db_record.timestamp))
+    return {"status": "success"}
 
 @router.get("/records", response_model=List[schemas.HealthRecordResponse])
-def get_health_records(
-    record_type: Optional[str] = None, 
-    current_user: models.User = Depends(auth.get_current_user), 
-    db: Session = Depends(database.get_db)
-) -> List[schemas.HealthRecordResponse]:
-    """Retrieve health records, optionally filtered by type."""
+def get_health_records(record_type: Optional[str] = None, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
     query = db.query(models.HealthRecord).filter(models.HealthRecord.user_id == current_user.id)
     if record_type:
         query = query.filter(models.HealthRecord.record_type == record_type)
     return query.order_by(models.HealthRecord.timestamp.asc()).all()
 
 @router.delete("/records/{record_id}")
-def delete_health_record(
-    record_id: int, 
-    current_user: models.User = Depends(auth.get_current_user), 
-    db: Session = Depends(database.get_db)
-) -> Dict[str, str]:
-    """
-    Delete a health record permanently from SQL and Vector Store.
-    """
+def delete_health_record(record_id: int, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
     record = db.query(models.HealthRecord).filter(models.HealthRecord.id == record_id, models.HealthRecord.user_id == current_user.id).first()
     if not record:
-        raise HTTPException(status_code=404, detail="Record not found")
-    
-    # SQL Delete
+        raise HTTPException(status_code=404, detail="Not found")
     db.delete(record)
     db.commit()
-    
-    # Vector Delete
     rag.delete_record_from_db(str(record_id))
-    
-    return {"status": "success", "message": "Record deleted"}
+    return {"status": "success"}
 
 
-# --- PDF Report Download Endpoint ---
-from fastapi.responses import Response
-from . import pdf_generator
+# --- PDF Report ---
 
 @router.get("/download/health-report")
-def download_health_report(
-    current_user: models.User = Depends(auth.get_current_user),
-    db: Session = Depends(database.get_db)
-) -> Response:
-    """
-    Generate and download a PDF health report.
+def download_health_report(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
+    records = db.query(models.HealthRecord).filter(models.HealthRecord.user_id == current_user.id)\
+        .order_by(models.HealthRecord.timestamp.desc()).limit(50).all()
     
-    Returns:
-        PDF file download
-    """
-    # Get user's health records
-    records = db.query(models.HealthRecord).filter(
-        models.HealthRecord.user_id == current_user.id
-    ).order_by(models.HealthRecord.timestamp.desc()).limit(50).all()
+    records_list = [{"timestamp": r.timestamp, "record_type": r.record_type, "prediction": r.prediction} for r in records]
     
-    # Convert to dict format
-    records_list = [
-        {
-            "timestamp": r.timestamp,
-            "record_type": r.record_type,
-            "prediction": r.prediction
-        }
-        for r in records
-    ]
-    
-    # Build user profile
-    user_profile = {
-        "height": current_user.height,
-        "weight": current_user.weight,
-        "dob": str(current_user.dob) if current_user.dob else "N/A",
-        "blood_type": current_user.blood_type
-    }
-    
-    # Generate PDF
     pdf_bytes = pdf_generator.generate_health_report(
         user_name=current_user.full_name or current_user.username,
-        user_profile=user_profile,
+        user_profile={"height": current_user.height, "weight": current_user.weight, "blood_type": current_user.blood_type},
         health_records=records_list
     )
     
-    # Return as downloadable file
     filename = f"health_report_{current_user.username}_{datetime.datetime.now().strftime('%Y%m%d')}.pdf"
-    
-    return Response(
-        content=pdf_bytes,
-        media_type="application/pdf",
-        headers={"Content-Disposition": f"attachment; filename={filename}"}
-    )
+    return Response(content=pdf_bytes, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={filename}"})

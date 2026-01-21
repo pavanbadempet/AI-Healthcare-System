@@ -54,3 +54,7 @@ langgraph>=0.0.10
 fpdf
 pillow
 feedparser>=6.0.10
+
+# --- Data Pipeline (Orchestration) ---
+apache-airflow>=2.8.0
+pyspark>=3.5.0
