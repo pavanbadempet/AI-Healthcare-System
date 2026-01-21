@@ -89,9 +89,14 @@ def initialize_models():
 # initialize_models() must be called explicitly by the app startup or tests
 pass
 
+from . import auth, models as db_models
+from fastapi import Depends
+
 @router.post("/admin/reload_models")
-def reload_models():
-    """Force reload of all models from disk (Zero-Downtime Update)."""
+def reload_models(current_user: db_models.User = Depends(auth.get_current_user)):
+    """Force reload of all models from disk (Zero-Downtime Update). Admin only."""
+    if not auth.is_admin(current_user):
+        raise HTTPException(status_code=403, detail="Admin privileges required")
     initialize_models()
     return {
         "status": "Models Reloaded", 
