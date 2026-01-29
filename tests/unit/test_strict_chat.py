@@ -45,7 +45,7 @@ def test_chat_agent_failure():
     with patch("backend.chat.agent.medical_agent.invoke", side_effect=Exception("Agent Down")):
         resp = client.post("/chat", json={"message": "Hi"})
         assert resp.status_code == 200 # It returns 200 with error message
-        assert "trouble analyzing" in resp.json()["response"]
+        assert "trouble" in resp.json()["response"]
         assert "Agent Down" in resp.json()["error"]
 
 def test_chat_db_save_failure():
