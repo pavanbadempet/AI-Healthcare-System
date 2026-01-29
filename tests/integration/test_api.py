@@ -36,7 +36,7 @@ def test_full_lifecycle(client):
     }
     res = client.post("/records", json=rec_payload, headers=headers)
     assert res.status_code == 200
-    assert "saved" in res.json()["message"]
+    assert res.json()["status"] == "success"
     
     # Verify Get
     res = client.get("/records", headers=headers)
