@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GOOGLE_API_KEY: "dummy_key_for_testing"
+      SECRET_KEY: "test_secret_key_for_ci_only"
       TESTING: "true"
 
     steps:
