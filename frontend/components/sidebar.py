@@ -152,7 +152,8 @@ def render_sidebar():
         if profile and profile.get('user'):
             user_data = profile['user']
             st.markdown(f"""
-            <div style="
+            <style>
+            .sidebar-stats {{
                 display: grid;
                 grid-template-columns: 1fr 1fr;
                 gap: 8px;
@@ -161,18 +162,33 @@ def render_sidebar():
                 border-radius: 12px;
                 border: 1px solid rgba(148, 163, 184, 0.08);
                 margin-bottom: 1rem;
-            ">
-                <div style="text-align: center; padding: 8px;">
-                    <div style="font-size: 1.1rem; font-weight: 700; color: #60A5FA;">
+            }}
+            .sidebar-stat-item {{
+                text-align: center;
+                padding: 8px;
+            }}
+            .sidebar-stat-value {{
+                font-size: 1.1rem;
+                font-weight: 700;
+            }}
+            .sidebar-stat-label {{
+                font-size: 0.65rem;
+                color: #64748B;
+                text-transform: uppercase;
+            }}
+            </style>
+            <div class="sidebar-stats">
+                <div class="sidebar-stat-item">
+                    <div class="sidebar-stat-value" style="color: #60A5FA;">
                         {user_data.get('height', '—')}
                     </div>
-                    <div style="font-size: 0.65rem; color: #64748B; text-transform: uppercase;">Height cm</div>
+                    <div class="sidebar-stat-label">Height cm</div>
                 </div>
-                <div style="text-align: center; padding: 8px;">
-                    <div style="font-size: 1.1rem; font-weight: 700; color: #34D399;">
+                <div class="sidebar-stat-item">
+                    <div class="sidebar-stat-value" style="color: #34D399;">
                         {user_data.get('weight', '—')}
                     </div>
-                    <div style="font-size: 0.65rem; color: #64748B; text-transform: uppercase;">Weight kg</div>
+                    <div class="sidebar-stat-label">Weight kg</div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
