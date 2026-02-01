@@ -9,10 +9,61 @@ import streamlit.components.v1 as components
 from frontend.utils import api
 
 def render_pricing_page():
+    # Inject responsive CSS for pricing cards
     st.markdown("""
-<div style="text-align: center; margin-bottom: 3rem;">
-    <h1 style="font-size: 2.5rem; margin-bottom: 0.5rem;">Choose Your Health Journey</h1>
-    <p style="color: #64748B; font-size: 1.1rem;">
+<style>
+/* Pricing Cards Container */
+.pricing-card {
+    background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02));
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 16px;
+    padding: 1.5rem;
+    height: 100%;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+}
+
+.pricing-card h3 {
+    margin-top: 0;
+}
+
+.pricing-price {
+    font-size: clamp(1.8rem, 4vw, 2.5rem);
+    font-weight: 700;
+    margin: 1rem 0;
+}
+
+.pricing-features {
+    margin: 1.5rem 0;
+    text-align: left;
+    font-size: 0.9rem;
+    flex-grow: 1;
+}
+
+.pricing-features div {
+    margin-bottom: 0.5rem;
+}
+
+/* Mobile Responsive */
+@media only screen and (max-width: 768px) {
+    .pricing-card {
+        padding: 1.25rem;
+        margin-bottom: 1rem;
+    }
+    
+    .pricing-features {
+        font-size: 0.85rem;
+        margin: 1rem 0;
+    }
+}
+</style>
+""", unsafe_allow_html=True)
+    
+    st.markdown("""
+<div style="text-align: center; margin-bottom: 2rem;">
+    <h1 style="font-size: clamp(1.75rem, 4vw, 2.5rem); margin-bottom: 0.5rem;">Choose Your Health Journey</h1>
+    <p style="color: #64748B; font-size: clamp(0.9rem, 2vw, 1.1rem);">
         Flexible plans to unlock the full power of AI healthcare.
     </p>
 </div>

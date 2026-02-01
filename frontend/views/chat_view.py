@@ -79,36 +79,36 @@ def render_chat_page():
     # Quick action buttons
     if len(st.session_state.messages) == 0:
         st.markdown("""
-        <div style="
+        <style>
+        .quick-actions {
             display: flex;
             flex-wrap: wrap;
             gap: 8px;
             margin-bottom: 1.5rem;
-        ">
-            <div style="
-                background: rgba(30, 41, 59, 0.5);
-                border: 1px solid rgba(148, 163, 184, 0.1);
-                border-radius: 20px;
-                padding: 8px 16px;
-                font-size: 0.85rem;
-                color: #94A3B8;
-            ">💊 "What are common diabetes symptoms?"</div>
-            <div style="
-                background: rgba(30, 41, 59, 0.5);
-                border: 1px solid rgba(148, 163, 184, 0.1);
-                border-radius: 20px;
-                padding: 8px 16px;
-                font-size: 0.85rem;
-                color: #94A3B8;
-            ">❤️ "How can I lower my cholesterol?"</div>
-            <div style="
-                background: rgba(30, 41, 59, 0.5);
-                border: 1px solid rgba(148, 163, 184, 0.1);
-                border-radius: 20px;
-                padding: 8px 16px;
-                font-size: 0.85rem;
-                color: #94A3B8;
-            ">🏃 "Best exercises for heart health?"</div>
+        }
+        .quick-action-btn {
+            background: rgba(30, 41, 59, 0.5);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 20px;
+            padding: 8px 16px;
+            font-size: 0.85rem;
+            color: #94A3B8;
+            flex: 0 1 auto;
+            white-space: nowrap;
+        }
+        @media only screen and (max-width: 768px) {
+            .quick-action-btn {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+                white-space: normal;
+                text-align: center;
+            }
+        }
+        </style>
+        <div class="quick-actions">
+            <div class="quick-action-btn">💊 "What are common diabetes symptoms?"</div>
+            <div class="quick-action-btn">❤️ "How can I lower my cholesterol?"</div>
+            <div class="quick-action-btn">🏃 "Best exercises for heart health?"</div>
         </div>
         """, unsafe_allow_html=True)
     

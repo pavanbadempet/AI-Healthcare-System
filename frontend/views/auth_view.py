@@ -21,13 +21,12 @@ def render_auth_page():
                 radial-gradient(at 100% 100%, #0F172A 0px, transparent 50%),
                 radial-gradient(at 0% 100%, #1E293B 0px, transparent 50%),
                 #0F172A !important;
-    overflow: hidden !important; /* FORCE NO SCROLL */
 }
 
 /* Remove Padding */
 .block-container {
-    padding-top: 2rem !important; /* Minimal padding */
-    padding-bottom: 0 !important;
+    padding-top: 2rem !important;
+    padding-bottom: 1rem !important;
     max-width: 100% !important;
 }
 
@@ -39,11 +38,74 @@ def render_auth_page():
     border-radius: 12px; 
     border: 1px solid rgba(255,255,255,0.08);
     text-align: center;
-    min-width: 90px;
+    min-width: 80px;
+    flex: 1;
     box-shadow: 0 4px 6px rgba(0,0,0,0.1);
 }
-.stat-val { font-weight: 700; color: #F8FAFC; font-size: 1.1rem; }
-.stat-label { font-size: 0.75rem; color: #94A3B8; }
+.stat-val { font-weight: 700; color: #F8FAFC; font-size: 1rem; }
+.stat-label { font-size: 0.7rem; color: #94A3B8; }
+
+/* Stats container - responsive flex */
+.stats-container {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+/* Branding section - responsive */
+.branding-section {
+    padding: 2rem 3vw;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 50vh;
+}
+
+.branding-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    color: white;
+    line-height: 1.1;
+    margin-bottom: 1rem;
+    letter-spacing: -1px;
+}
+
+.branding-subtitle {
+    font-size: clamp(0.9rem, 2vw, 1rem);
+    color: #CBD5E1;
+    line-height: 1.5;
+    max-width: 550px;
+    margin-bottom: 2rem;
+    font-weight: 300;
+}
+
+/* Mobile Responsive */
+@media only screen and (max-width: 768px) {
+    .branding-section {
+        padding: 1.5rem 1rem;
+        min-height: auto;
+        text-align: center;
+    }
+    
+    .branding-subtitle {
+        max-width: 100%;
+    }
+    
+    .stats-container {
+        justify-content: center;
+    }
+    
+    .stat-box {
+        min-width: 70px;
+        padding: 0.6rem;
+    }
+    
+    .stat-val {
+        font-size: 0.9rem;
+    }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -53,17 +115,17 @@ def render_auth_page():
     # --- LEFT COLUMN: BRANDING ---
     with col1:
         st.markdown("""
-<div style="height: 85vh; padding: 0 5vw; display: flex; flex-direction: column; justify-content: center;">
-<div style="font-size: 3rem; margin-bottom: 1rem; filter: drop-shadow(0 0 20px rgba(59,130,246,0.3));">🏥</div>
-<h1 style="font-family: 'Outfit', sans-serif; font-size: 3.5rem; font-weight: 800; color: white; line-height: 1.1; margin-bottom: 1rem; letter-spacing: -1px;">
+<div class="branding-section">
+<div style="font-size: 2.5rem; margin-bottom: 1rem; filter: drop-shadow(0 0 20px rgba(59,130,246,0.3));">🏥</div>
+<h1 class="branding-title">
 The Future of <br>
 <span style="background: linear-gradient(90deg, #60A5FA, #34D399); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">AI Healthcare</span>
 </h1>
-<p style="font-size: 1rem; color: #CBD5E1; line-height: 1.5; max-width: 550px; margin-bottom: 2rem; font-weight: 300;">
+<p class="branding-subtitle">
 Hospital-grade predictive diagnostics. Secure data protection. 
 Real-time analysis powered by next-gen neural networks.
 </p>
-<div style="display: flex; gap: 1rem;">
+<div class="stats-container">
 <div class="stat-box"><div class="stat-val">99.8%</div><div class="stat-label">Precision</div></div>
 <div class="stat-box"><div class="stat-val">Encrypted</div><div class="stat-label">Data</div></div>
 <div class="stat-box"><div class="stat-val">Global</div><div class="stat-label">Access</div></div>
