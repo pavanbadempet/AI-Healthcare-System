@@ -6,19 +6,11 @@ from typing import Optional, Dict, Any, List
 import extra_streamlit_components as stx
 from datetime import datetime, timedelta
 
-# Backend URL - with robust fallback handling
-def _get_backend_url():
-    # Priority: Environment variable > Streamlit secrets > Default
-    if os.getenv("BACKEND_URL"):
-        return os.getenv("BACKEND_URL")
-    try:
-        if hasattr(st, 'secrets') and "BACKEND_URL" in st.secrets:
-            return st.secrets["BACKEND_URL"]
-    except Exception:
-        pass
-    return "https://aio-health-backend.onrender.com"
-
-BACKEND_URL = _get_backend_url()
+# Backend URL
+try:
+    BACKEND_URL = os.getenv("BACKEND_URL") or st.secrets.get("BACKEND_URL") or "http://127.0.0.1:8000"
+except FileNotFoundError:
+    BACKEND_URL = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
 
 def get_backend_url(): return BACKEND_URL
 
