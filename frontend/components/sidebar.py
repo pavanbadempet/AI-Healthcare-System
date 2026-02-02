@@ -63,28 +63,36 @@ def render_sidebar():
             st.button("☰", key="custom_sidebar_show", on_click=toggle_sidebar, help="Open Menu")
     
     # If forced open, inject CSS to override collapse
-    # If forced open, inject CSS to override collapse
     if st.session_state.sidebar_force_open:
         st.markdown("""
         <style>
             section[data-testid="stSidebar"] {
                 transform: translateX(0) !important;
                 visibility: visible !important;
-                width: 280px !important;
-                min-width: 280px !important;
+                width: 350px !important; /* Wider menu as requested */
+                min-width: 350px !important;
             }
-            /* Hide NATIVE expand/collapse buttons when we are forcing open */
+            
+            /* AGGRESSIVELY Hide ALL native header buttons in sidebar */
             [data-testid="stSidebarCollapsedControl"],
             button[data-testid="stSidebarCollapseButton"],
-            section[data-testid="stSidebar"] button[kind="header"] {
+            section[data-testid="stSidebar"] button[kind="header"],
+            section[data-testid="stSidebar"] > div:first-child button {
+                display: none !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+            }
+            
+            /* Hide the top header container of the sidebar entirely if possible to kill the arrow */
+            section[data-testid="stSidebar"] > div:first-child:has(button) {
                 display: none !important;
             }
         </style>
         """, unsafe_allow_html=True)
         
         # Show a standard "Close Menu" button at the very top of sidebar
-        # Simple, robust, no layout hacks
         with st.sidebar:
+            st.markdown("<div style='margin-top: -1rem;'></div>", unsafe_allow_html=True)
             if st.button("✖ Close Menu", key="custom_sidebar_close", type="primary", use_container_width=True):
                 toggle_sidebar()
                 st.rerun()
