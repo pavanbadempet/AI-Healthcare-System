@@ -110,9 +110,7 @@ def render_sidebar():
         # --- 0. LANGUAGE SELECTOR (REMOVED) ---
         # i18n.render_language_selector()
         
-        # --- 1. PREMIUM BRAND HEADER WITH LOGO ---
-        import os
-        logo_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "logo.png")
+        # --- 1. PREMIUM BRAND HEADER ---
         
         # Brand container
         st.markdown("""
@@ -128,10 +126,8 @@ def render_sidebar():
         # Logo + Text layout
         logo_col, text_col = st.columns([0.25, 0.75])
         with logo_col:
-            if os.path.exists(logo_path):
-                st.image(logo_path, width=42)
-            else:
-                st.markdown('<div style="font-size:1.5rem;">🏥</div>', unsafe_allow_html=True)
+            # Use emoji instead of st.image to avoid cached file reference errors
+            st.markdown('<div style="font-size:1.8rem; margin-top: 4px;">🏥</div>', unsafe_allow_html=True)
         with text_col:
             st.markdown("""
             <div style="
