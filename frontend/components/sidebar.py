@@ -17,72 +17,7 @@ def render_sidebar():
     4. Sign out button
     """
     
-    # Sidebar styling - minimal to not break native toggle
-    st.markdown("""
-    <style>
-    /* Sidebar appearance - NOT blocking collapse */
-    section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%) !important;
-        border-right: 1px solid rgba(59, 130, 246, 0.15) !important;
-    }
-    
-    section[data-testid="stSidebar"] > div:first-child {
-        padding: 1.5rem 1rem !important;
-    }
-    
-    /* Style the toggle buttons nicely */
-    button[data-testid="stSidebarCollapseButton"],
-    [data-testid="stSidebarCollapsedControl"] button {
-        background: linear-gradient(135deg, #3B82F6, #8B5CF6) !important;
-        border: none !important;
-        border-radius: 8px !important;
-        color: white !important;
-        box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3) !important;
-        transition: all 0.2s ease !important;
-    }
-    
-    button[data-testid="stSidebarCollapseButton"]:hover,
-    [data-testid="stSidebarCollapsedControl"] button:hover {
-        transform: scale(1.05) !important;
-        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4) !important;
-    }
-    
-    /* Hide default nav */
-    div[data-testid="stSidebarNav"] {
-        display: none !important;
-    }
-    
-    /* Navigation link styling */
-    section[data-testid="stSidebar"] .nav-link {
-        transition: all 0.2s ease !important;
-        border-left: 3px solid transparent !important;
-    }
-    
-    section[data-testid="stSidebar"] .nav-link:hover {
-        background: rgba(59, 130, 246, 0.1) !important;
-        border-left: 3px solid #3B82F6 !important;
-    }
-    
-    section[data-testid="stSidebar"] .nav-link-selected {
-        border-left: 3px solid #3B82F6 !important;
-    }
-    
-    /* Sign out button */
-    section[data-testid="stSidebar"] button[kind="secondary"] {
-        background: rgba(239, 68, 68, 0.1) !important;
-        border: 1px solid rgba(239, 68, 68, 0.3) !important;
-        color: #F87171 !important;
-        border-radius: 8px !important;
-        transition: all 0.2s ease !important;
-    }
-    
-    section[data-testid="stSidebar"] button[kind="secondary"]:hover {
-        background: rgba(239, 68, 68, 0.2) !important;
-        transform: translateY(-1px);
-    }
-    </style>
-    """, unsafe_allow_html=True)
-    
+    # --- SIDEBAR RENDER ---
     with st.sidebar:
         # --- 1. BRAND HEADER ---
         st.markdown("""
