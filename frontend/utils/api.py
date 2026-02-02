@@ -53,7 +53,22 @@ def clear_session():
 
 # --- Auth ---
 
+def _format_error(detail):
+    """Format API error detail into user-friendly message."""
+    if isinstance(detail, list):
+        # Validation errors come as list of dicts
+        messages = []
+        for err in detail:
+            field = err.get('loc', ['', 'field'])[-1]
+            msg = err.get('msg', 'Invalid')
+            messages.append(f"{field.replace('_', ' ').title()}: {msg}")
+        return "; ".join(messages) if messages else "Validation error"
+    return str(detail) if detail else "An error occurred"
+
 def login(username, password) -> bool:
+    if not username or not password:
+        st.error("Please enter both username and password")
+        return False
     try:
         resp = requests.post(f"{BACKEND_URL}/token", data={"username": username, "password": password})
         if resp.status_code == 200:
@@ -62,21 +77,29 @@ def login(username, password) -> bool:
             st.session_state['username'] = username
             save_session(token, username)
             return True
-        st.error(f"Login Failed: {resp.json().get('detail', 'Error')}")
+        detail = resp.json().get('detail', 'Invalid credentials')
+        st.error(f"Login Failed: {_format_error(detail)}")
     except Exception as e:
-        st.error(f"Connection Error: {e}")
+        st.error(f"Connection Error: Unable to reach server")
     return False
 
 def signup(username, password, email, full_name, dob) -> bool:
+    if not username or not password or not email:
+        st.error("Please fill in all required fields")
+        return False
+    if len(password) < 8:
+        st.error("Password must be at least 8 characters")
+        return False
     try:
         resp = requests.post(f"{BACKEND_URL}/signup", json={
             "username": username, "password": password, "email": email, "full_name": full_name, "dob": str(dob)
         })
         if resp.status_code == 200:
             return True
-        st.error(f"Signup Failed: {resp.json().get('detail', 'Error')}")
+        detail = resp.json().get('detail', 'Signup failed')
+        st.error(f"Signup Failed: {_format_error(detail)}")
     except Exception as e:
-        st.error(f"Connection Error: {e}")
+        st.error(f"Connection Error: Unable to reach server")
     return False
 
 
