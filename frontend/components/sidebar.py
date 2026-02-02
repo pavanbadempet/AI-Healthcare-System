@@ -341,7 +341,7 @@ def render_sidebar():
         
         # --- 7. SIGN OUT BUTTON ---
         st.markdown("<div style='height: 0.75rem'></div>", unsafe_allow_html=True)
-        if st.button("🚪 Sign Out", type="secondary", use_container_width=True, key="logout_btn"):
+        if st.button("🚪 Sign Out", type="secondary", width="stretch", key="logout_btn"):
             api.clear_session()
             st.rerun()
         

@@ -118,7 +118,7 @@ def render_pricing_page():
 <div style="background: linear-gradient(180deg, rgba(37, 99, 235, 0.05), rgba(59, 130, 246, 0.02)); border: 2px solid #3B82F6; border-top: none; border-radius: 0 0 16px 16px; padding: 0 2rem 2rem 2rem; text-align: center;">
 """, unsafe_allow_html=True)
         
-        if st.button("Upgrade Now", key="upgrade_pro", type="primary", use_container_width=True):
+        if st.button("Upgrade Now", key="upgrade_pro", type="primary", width="stretch"):
             with st.spinner("Initializing Payment..."):
                 # Create Order (999 INR = 99900 paise)
                 resp = api.create_payment_order(99900, "pro_tier")
