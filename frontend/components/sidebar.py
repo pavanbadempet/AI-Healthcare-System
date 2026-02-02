@@ -17,13 +17,31 @@ def render_sidebar():
     4. Sign out button
     """
     
-    # Force sidebar to be visible (workaround for collapse issue)
+    # Force sidebar to be ALWAYS visible and expanded
     st.markdown("""
     <style>
-    /* Ensure sidebar is always accessible */
+    /* FORCE SIDEBAR TO ALWAYS BE VISIBLE */
     [data-testid="stSidebar"] {
         min-width: 280px !important;
         max-width: 320px !important;
+        transform: translateX(0) !important;
+    }
+    
+    /* Override collapsed state */
+    [data-testid="stSidebar"][aria-expanded="false"] {
+        transform: translateX(0) !important;
+        min-width: 280px !important;
+    }
+    
+    /* Make sure sidebar content is visible */
+    [data-testid="stSidebarContent"] {
+        display: block !important;
+        opacity: 1 !important;
+    }
+    
+    /* Hide the collapse button if it causes issues */
+    button[data-testid="stSidebarCollapseButton"] {
+        display: none !important;
     }
     
     /* Sidebar Background */
