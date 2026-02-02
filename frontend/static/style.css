@@ -392,9 +392,20 @@ section[data-testid="stSidebar"] {
     border-right: 1px solid rgba(59, 130, 246, 0.15) !important;
 }
 
-/* Hide default streamlit nav items */
-div[data-testid="stSidebarNav"] {
+/* Hide default streamlit nav CONTENT but keep container (to prevent toggle hiding) */
+div[data-testid="stSidebarNav"]>ul {
     display: none !important;
+}
+
+div[data-testid="stSidebarNav"] {
+    display: block !important;
+    /* Must be block for toggle to exist */
+    visibility: visible !important;
+    height: 0 !important;
+    /* Collapse height */
+    overflow: hidden !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }
 
 /* --- TOGGLE BUTTONS (The Fix) --- */
@@ -414,16 +425,20 @@ button[data-testid="stSidebarCollapseButton"]:hover {
     transform: scale(1.05);
 }
 
-/* 2. Expand Button (When Sidebar Collapsed) - Fix for Cloud */
-[data-testid="stSidebarCollapsedControl"] {
+/* 2. Expand Button (When Sidebar Collapsed) - Support multiple selectors */
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="collapsedControl"] {
     display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
     z-index: 1000000 !important;
     position: fixed !important;
     top: 15px !important;
     left: 15px !important;
 }
 
-[data-testid="stSidebarCollapsedControl"] button {
+[data-testid="stSidebarCollapsedControl"] button,
+[data-testid="collapsedControl"] button {
     background: linear-gradient(135deg, #3B82F6, #8B5CF6) !important;
     color: white !important;
     border: none !important;
@@ -433,7 +448,8 @@ button[data-testid="stSidebarCollapseButton"]:hover {
     transition: all 0.2s ease;
 }
 
-[data-testid="stSidebarCollapsedControl"] button:hover {
+[data-testid="stSidebarCollapsedControl"] button:hover,
+[data-testid="collapsedControl"] button:hover {
     transform: scale(1.1);
     box-shadow: 0 6px 16px rgba(59, 130, 246, 0.6) !important;
 }
