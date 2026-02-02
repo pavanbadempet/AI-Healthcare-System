@@ -384,31 +384,56 @@ header {
     }
 }
 
-/* --- SIDEBAR ALWAYS VISIBLE (Streamlit Cloud fix) --- */
+/* --- SIDEBAR AND NAV --- */
 
-/* Force sidebar to ALWAYS be visible and NEVER collapse */
-[data-testid="stSidebar"] {
-    transform: translateX(0) !important;
-    visibility: visible !important;
-    display: block !important;
-    min-width: 280px !important;
-    width: 280px !important;
+/* Sidebar Background */
+section[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%) !important;
+    border-right: 1px solid rgba(59, 130, 246, 0.15) !important;
 }
 
-/* Force expanded state even when aria says collapsed */
-[data-testid="stSidebar"][aria-expanded="false"] {
-    transform: translateX(0) !important;
-    visibility: visible !important;
-    min-width: 280px !important;
-    margin-left: 0 !important;
+/* Hide default streamlit nav items */
+div[data-testid="stSidebarNav"] {
+    display: none !important;
 }
 
-/* Hide the collapse button - since it's broken on Cloud */
+/* --- TOGGLE BUTTONS (The Fix) --- */
+
+/* 1. Collapse Button (Inside Sidebar) */
 button[data-testid="stSidebarCollapseButton"] {
-    display: none !important;
+    display: flex !important;
+    color: #60A5FA !important;
+    border: 1px solid rgba(59, 130, 246, 0.3) !important;
+    background: rgba(15, 23, 42, 0.4) !important;
+    border-radius: 8px !important;
+    transition: all 0.2s ease;
 }
 
-/* Hide the expand control - we don't need it since sidebar is always visible */
+button[data-testid="stSidebarCollapseButton"]:hover {
+    background: rgba(59, 130, 246, 0.2) !important;
+    transform: scale(1.05);
+}
+
+/* 2. Expand Button (When Sidebar Collapsed) - Fix for Cloud */
 [data-testid="stSidebarCollapsedControl"] {
-    display: none !important;
+    display: block !important;
+    z-index: 1000000 !important;
+    position: fixed !important;
+    top: 15px !important;
+    left: 15px !important;
+}
+
+[data-testid="stSidebarCollapsedControl"] button {
+    background: linear-gradient(135deg, #3B82F6, #8B5CF6) !important;
+    color: white !important;
+    border: none !important;
+    border-radius: 8px !important;
+    padding: 0.5rem !important;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4) !important;
+    transition: all 0.2s ease;
+}
+
+[data-testid="stSidebarCollapsedControl"] button:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.6) !important;
 }
