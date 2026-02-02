@@ -17,6 +17,83 @@ def render_sidebar():
     4. Sign out button
     """
     
+    # --- CUSTOM JS SIDEBAR TOGGLE (Fallback for Cloud) ---
+    # This script adds a robust custom button if the native one is missing
+    toggle_script = """
+    <script>
+        function createToggle() {
+            // Check if our custom toggle already exists
+            if (document.getElementById('custom-sidebar-toggle')) return;
+
+            // Create the button
+            const btn = document.createElement('button');
+            btn.id = 'custom-sidebar-toggle';
+            btn.innerHTML = '☰';
+            btn.style.position = 'fixed';
+            btn.style.top = '15px';
+            btn.style.left = '15px';
+            btn.style.zIndex = '9999999';
+            btn.style.backgroundColor = 'rgba(59, 130, 246, 0.9)';
+            btn.style.color = 'white';
+            btn.style.border = 'none';
+            btn.style.borderRadius = '8px';
+            btn.style.width = '40px';
+            btn.style.height = '40px';
+            btn.style.fontSize = '20px';
+            btn.style.cursor = 'pointer';
+            btn.style.boxShadow = '0 4px 12px rgba(0,0,0,0.3)';
+            btn.style.display = 'flex';
+            btn.style.alignItems = 'center';
+            btn.style.justifyContent = 'center';
+            btn.style.transition = 'all 0.3s ease';
+
+            // Add click event
+            btn.onclick = function() {
+                const sidebar = document.querySelector('section[data-testid="stSidebar"]');
+                if (sidebar) {
+                    // Check if collapsed by width or transform
+                    const computedStyle = window.getComputedStyle(sidebar);
+                    const is collapsed = computedStyle.transform !== 'none' && computedStyle.transform !== 'matrix(1, 0, 0, 1, 0, 0)' || computedStyle.width === '0px';
+                    
+                    if (sidebar.getAttribute('aria-expanded') === 'true') {
+                        // Collapse it
+                        // Try native button first
+                        const closeBtn = document.querySelector('button[data-testid="stSidebarCollapseButton"]');
+                        if (closeBtn) closeBtn.click();
+                        else {
+                            // Manual collapse hack (not ideal but works for visuals)
+                            sidebar.setAttribute('aria-expanded', 'false');
+                        }
+                    } else {
+                        // Expand it
+                        // Try native fallback expand button
+                        const openBtn = document.querySelector('[data-testid="stSidebarCollapsedControl"] button');
+                        if (openBtn) openBtn.click();
+                        else {
+                            sidebar.setAttribute('aria-expanded', 'true');
+                        }
+                    }
+                    
+                    // Toggle button animation
+                    btn.style.transform = 'scale(0.9)';
+                    setTimeout(() => btn.style.transform = 'scale(1)', 150);
+                }
+            };
+            
+            // Add to DOM
+            document.body.appendChild(btn);
+        }
+
+        // Run immediately and on intervals to ensure it persists
+        createToggle();
+        setInterval(createToggle, 1000);
+    </script>
+    """
+    
+    # Inject via components to ensure script execution
+    import streamlit.components.v1 as components
+    components.html(toggle_script, height=0)
+
     # --- SIDEBAR RENDER ---
     with st.sidebar:
         # --- 1. BRAND HEADER ---
