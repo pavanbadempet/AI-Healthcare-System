@@ -236,6 +236,6 @@ Try refreshing the page or come back later."""
         st.markdown("<br>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns([1, 1, 1])
         with col2:
-            if st.button("🗑️ Clear Chat", type="secondary", use_container_width=True):
+            if st.button("🗑️ Clear Chat", type="secondary", width="stretch"):
                 st.session_state.messages = []
                 st.rerun()
