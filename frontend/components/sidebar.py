@@ -28,15 +28,27 @@ def render_sidebar():
     def toggle_sidebar():
         st.session_state.sidebar_force_open = not st.session_state.sidebar_force_open
 
-    # Render a small floating visible button in main area (if sidebar is closed or logic dictates)
-    # We place this in main area containers
+    # Render a subtle floating toggle button in main area
     placeholder = st.container()
     col1, col2 = placeholder.columns([1, 20])
     with col1:
-        # Only show "SHOW" button we aren't forcing it open, 
-        # allowing user to click it to "Force Open"
         if not st.session_state.sidebar_force_open:
-            st.button("☰", key="custom_sidebar_show", on_click=toggle_sidebar, help="Show / Hide Sidebar")
+            # Styled ghost button for "Show"
+            st.markdown("""
+            <style>
+            div[data-testid="stButton"] button[kind="secondary"] {
+                background: transparent;
+                border: 1px solid rgba(148, 163, 184, 0.2);
+                color: #94A3B8;
+            }
+            div[data-testid="stButton"] button[kind="secondary"]:hover {
+                background: rgba(59, 130, 246, 0.1);
+                color: #60A5FA;
+                border-color: #60A5FA;
+            }
+            </style>
+            """, unsafe_allow_html=True)
+            st.button("☰", key="custom_sidebar_show", on_click=toggle_sidebar, help="Open Menu")
     
     # If forced open, inject CSS to override collapse
     if st.session_state.sidebar_force_open:
@@ -48,18 +60,31 @@ def render_sidebar():
                 width: 280px !important;
                 min-width: 280px !important;
             }
-            /* Hide the expand button when we are forcing open */
-            [data-testid="stSidebarCollapsedControl"] {
-                display: none !important;
+            [data-testid="stSidebarCollapsedControl"] { display: none !important; }
+            
+            /* Style the Close Button to be minimal */
+            div[data-testid="stSidebar"] div[data-testid="stButton"] button {
+                background: transparent !important;
+                border: none !important;
+                color: #64748B !important;
+                float: right;
+                padding: 0 !important;
+                font-size: 1.2rem !important;
+            }
+            div[data-testid="stSidebar"] div[data-testid="stButton"] button:hover {
+                color: #F87171 !important;
+                transform: scale(1.1);
             }
         </style>
         """, unsafe_allow_html=True)
         
-        # Show a "Close" button at top of sidebar
+        # Show a minimal "Close" icon at top-right of sidebar
         with st.sidebar:
-            if st.button("✖️ Close Menu", key="custom_sidebar_close", type="secondary"):
-                toggle_sidebar()
-                st.rerun()
+            col_close = st.columns([0.8, 0.2])
+            with col_close[1]:
+                if st.button("✖", key="custom_sidebar_close"):
+                    toggle_sidebar()
+                    st.rerun()
 
     # --- SIDEBAR RENDER ---
     with st.sidebar:
