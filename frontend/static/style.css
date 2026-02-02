@@ -383,3 +383,50 @@ header {
         -webkit-text-fill-color: black !important;
     }
 }
+
+/* --- SIDEBAR TOGGLE BUTTON - ALWAYS VISIBLE --- */
+
+/* The expand button when sidebar is collapsed - make it VERY visible */
+[data-testid="stSidebarCollapsedControl"] {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: fixed !important;
+    top: 14px !important;
+    left: 14px !important;
+    z-index: 999999 !important;
+}
+
+[data-testid="stSidebarCollapsedControl"] button {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    background: linear-gradient(135deg, #3B82F6, #8B5CF6) !important;
+    border: none !important;
+    border-radius: 10px !important;
+    padding: 12px 16px !important;
+    color: white !important;
+    font-size: 1.3rem !important;
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.5) !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+}
+
+[data-testid="stSidebarCollapsedControl"] button:hover {
+    transform: scale(1.1) !important;
+    box-shadow: 0 6px 25px rgba(59, 130, 246, 0.6) !important;
+}
+
+/* The collapse button inside sidebar - make it styled nicely */
+button[data-testid="stSidebarCollapseButton"] {
+    background: rgba(59, 130, 246, 0.2) !important;
+    border: 1px solid rgba(59, 130, 246, 0.3) !important;
+    border-radius: 8px !important;
+    color: #60A5FA !important;
+    transition: all 0.2s ease !important;
+}
+
+button[data-testid="stSidebarCollapseButton"]:hover {
+    background: rgba(59, 130, 246, 0.3) !important;
+    transform: scale(1.05);
+}
