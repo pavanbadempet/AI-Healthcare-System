@@ -424,8 +424,9 @@ div[data-testid="stSidebarNav"] {
 /* --- TOGGLE BUTTONS (The Fix) --- */
 
 /* 1. Collapse Button (Inside Sidebar) */
+/* We allow this to be hidden by sidebar.py logic if needed */
 button[data-testid="stSidebarCollapseButton"] {
-    display: flex !important;
+    /* Do NOT force display: flex here as it overrides our hide logic */
     color: #60A5FA !important;
     border: 1px solid rgba(59, 130, 246, 0.3) !important;
     background: rgba(15, 23, 42, 0.4) !important;
@@ -438,7 +439,14 @@ button[data-testid="stSidebarCollapseButton"]:hover {
     transform: scale(1.05);
 }
 
-/* 2. Expand Button (When Sidebar Collapsed) - Support multiple selectors */
+/* GLOBAL: Fix White Box regression on iframes */
+iframe[title="streamlit_option_menu.option_menu"],
+div[data-testid="stIFrame"] {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
+/* 2. Expand Button (When Sidebar Collapsed) */
 [data-testid="stSidebarCollapsedControl"],
 [data-testid="collapsedControl"] {
     display: block !important;
