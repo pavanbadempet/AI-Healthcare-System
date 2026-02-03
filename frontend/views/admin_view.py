@@ -9,11 +9,11 @@ from frontend.utils import api
 
 def render_admin_page():
     st.markdown("""
-    <div style="text-align: center; margin-bottom: 2rem;">
-        <h1>🛡️ Clinic Admin Console</h1>
-        <p style="color: #64748B;">Facility Overview & Patient Management</p>
-    </div>
-    """, unsafe_allow_html=True)
+<div style="text-align: center; margin-bottom: 2rem;">
+    <h1>🛡️ Clinic Admin Console</h1>
+    <p style="color: #64748B;">Facility Overview & Patient Management</p>
+</div>
+""", unsafe_allow_html=True)
     
     # 1. Fetch Stats from Backend
     try:
