@@ -4,13 +4,13 @@ from frontend.utils import api
 def render_profile_page():
     username = st.session_state.get('username', 'Patient')
     st.markdown(f"""
-    <div style="margin-bottom: 2rem;">
-        <h2 style="margin:0; font-size: 1.75rem;">👤 My Health Passport</h2>
-        <p style="color: #94A3B8; margin-top: 0.5rem;">
-            Your central hub for personal health data and system preferences.
-        </p>
-    </div>
-    """, unsafe_allow_html=True)
+<div style="margin-bottom: 2rem;">
+    <h2 style="margin:0; font-size: 1.75rem;">👤 My Health Passport</h2>
+    <p style="color: #94A3B8; margin-top: 0.5rem;">
+        Your central hub for personal health data and system preferences.
+    </p>
+</div>
+""", unsafe_allow_html=True)
     
     profile = api.fetch_profile()
     if not profile:
