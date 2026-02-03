@@ -71,14 +71,32 @@ def render_sidebar():
                 visibility: visible !important;
                 width: 350px !important; /* Wider menu as requested */
                 min-width: 350px !important;
+                background-color: #0F172A !important; /* Force dark background to kill White Box */
             }
             
-            /* Hide ONLY the native toggle button safely */
+            /* Hide ONLY the native toggle button safely - NUKE IT */
             button[data-testid="stSidebarCollapseButton"],
             [data-testid="stSidebarCollapsedControl"],
             section[data-testid="stSidebar"] button[kind="header"] {
                 display: none !important;
                 visibility: hidden !important;
+                height: 0 !important;
+                width: 0 !important;
+                opacity: 0 !important;
+                pointer-events: none !important;
+                position: absolute !important;
+                top: -9999px !important;
+                left: -9999px !important;
+            }
+            
+            /* Fix White Box Regression - Force transparent iframe */
+            iframe[title="streamlit_option_menu.option_menu"] {
+                background: transparent !important;
+                background-color: transparent !important;
+            }
+            
+            div[data-testid="stIFrame"] {
+                background: transparent !important;
             }
         </style>
         """, unsafe_allow_html=True)
