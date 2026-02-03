@@ -66,6 +66,6 @@ def get_recent_users(
             "username": u.username,
             "email": u.email,
             "full_name": u.full_name,
-            "joined": "2024-01-01" # TODO: Add created_at to User model in future
+            "joined": u.created_at.strftime("%Y-%m-%d") if u.created_at else "2024-01-01"
         })
     return safe_users
