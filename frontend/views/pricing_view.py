@@ -93,23 +93,22 @@ def render_pricing_page():
     # --- PRO TIER (Featured) ---
     with col2:
         # Split card into Top (Content) and Bottom (Button Container) to embed Streamlit widget
+        # NOTE: WE MUST NOT INDENT HTML CONTENT INSIDE st.markdown TO AVOID CODE BLOCKS
         st.markdown("""
 <div style="background: linear-gradient(180deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.05)); border: 2px solid #3B82F6; border-bottom: none; border-radius: 16px 16px 0 0; padding: 2rem; text-align: center; position: relative;">
-    <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #3B82F6; color: white; padding: 2px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">MOST POPULAR</div>
-    
-    <h3 style="margin-top: 0; color: #60A5FA;">Pro</h3>
-    <div style="font-size: 2.5rem; font-weight: 700; margin: 1rem 0;">
-        ₹999<span style="font-size: 1rem; color: #94A3B8; font-weight: 400;">/mo</span>
-    </div>
-    <p style="color: #94A3B8; font-size: 0.9rem;">For health enthusiasts</p>
-    
-    <div style="margin: 2rem 0; text-align: left; font-size: 0.9rem;">
-        <div style="margin-bottom: 0.5rem;">✅ <b>Unlimited</b> Predictions</div>
-        <div style="margin-bottom: 0.5rem;">✅ <b>Advanced</b> AI Memory</div>
-        <div style="margin-bottom: 0.5rem;">✅ Unlimited PDF Reports</div>
-        <div style="margin-bottom: 0.5rem;">✅ Priority Support</div>
-        <div style="margin-bottom: 0.5rem;">✅ Early Access Features</div>
-    </div>
+<div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #3B82F6; color: white; padding: 2px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">MOST POPULAR</div>
+<h3 style="margin-top: 0; color: #60A5FA;">Pro</h3>
+<div style="font-size: 2.5rem; font-weight: 700; margin: 1rem 0;">
+₹999<span style="font-size: 1rem; color: #94A3B8; font-weight: 400;">/mo</span>
+</div>
+<p style="color: #94A3B8; font-size: 0.9rem;">For health enthusiasts</p>
+<div style="margin: 2rem 0; text-align: left; font-size: 0.9rem;">
+<div style="margin-bottom: 0.5rem;">✅ <b>Unlimited</b> Predictions</div>
+<div style="margin-bottom: 0.5rem;">✅ <b>Advanced</b> AI Memory</div>
+<div style="margin-bottom: 0.5rem;">✅ Unlimited PDF Reports</div>
+<div style="margin-bottom: 0.5rem;">✅ Priority Support</div>
+<div style="margin-bottom: 0.5rem;">✅ Early Access Features</div>
+</div>
 </div>
 """, unsafe_allow_html=True)
         
@@ -118,7 +117,7 @@ def render_pricing_page():
 <div style="background: linear-gradient(180deg, rgba(37, 99, 235, 0.05), rgba(59, 130, 246, 0.02)); border: 2px solid #3B82F6; border-top: none; border-radius: 0 0 16px 16px; padding: 0 2rem 2rem 2rem; text-align: center;">
 """, unsafe_allow_html=True)
         
-        if st.button("Upgrade Now", key="upgrade_pro", type="primary", width="stretch"):
+        if st.button("Upgrade Now", key="upgrade_pro", type="primary", use_container_width=True):
             with st.spinner("Initializing Payment..."):
                 # Create Order (999 INR = 99900 paise)
                 resp = api.create_payment_order(99900, "pro_tier")
@@ -129,9 +128,6 @@ def render_pricing_page():
                     amount = resp['amount']
                     curr = resp['currency']
                     
-                    # Embed Razorpay JS
-                    # Note: We use a component to execute the JS.
-                    # This script attempts to open the modal immediately.
                     html_code = f"""
                     <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
                     <script>
@@ -145,7 +141,6 @@ def render_pricing_page():
                             "order_id": "{order_id}",
                             "handler": function (response){{
                                 alert("Payment Successful! Payment ID: " + response.razorpay_payment_id + "\\nYour subscription will be active shortly.");
-                                // Here we could POST to verify endpoint
                             }},
                             "prefill": {{
                                 "name": "User",
@@ -170,32 +165,30 @@ def render_pricing_page():
     with col3:
         st.markdown("""
 <div style="background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 16px; padding: 2rem; height: 100%; text-align: center;">
-    <h3 style="margin-top: 0;">Clinic</h3>
-    <div style="font-size: 2.5rem; font-weight: 700; margin: 1rem 0;">Custom</div>
-    <p style="color: #94A3B8; font-size: 0.9rem;">For healthcare providers</p>
-    
-    <div style="margin: 2rem 0; text-align: left; font-size: 0.9rem;">
-        <div style="margin-bottom: 0.5rem;">✅ Multi-User Admin</div>
-        <div style="margin-bottom: 0.5rem;">✅ API Access</div>
-        <div style="margin-bottom: 0.5rem;">✅ White-label Reports</div>
-        <div style="margin-bottom: 0.5rem;">✅ HIPAA Compliance</div>
-    </div>
-    
-    <a href="mailto:sales@aihealthcare.com" style="text-decoration: none;">
-        <div style="width: 100%; background: transparent; color: #F8FAFC; border: 1px solid #94A3B8; padding: 0.75rem; border-radius: 8px; font-weight: 600;">Contact Sales</div>
-    </a>
+<h3 style="margin-top: 0;">Clinic</h3>
+<div style="font-size: 2.5rem; font-weight: 700; margin: 1rem 0;">Custom</div>
+<p style="color: #94A3B8; font-size: 0.9rem;">For healthcare providers</p>
+<div style="margin: 2rem 0; text-align: left; font-size: 0.9rem;">
+<div style="margin-bottom: 0.5rem;">✅ Multi-User Admin</div>
+<div style="margin-bottom: 0.5rem;">✅ API Access</div>
+<div style="margin-bottom: 0.5rem;">✅ White-label Reports</div>
+<div style="margin-bottom: 0.5rem;">✅ HIPAA Compliance</div>
+</div>
+<a href="mailto:sales@aihealthcare.com" style="text-decoration: none;">
+<div style="width: 100%; background: transparent; color: #F8FAFC; border: 1px solid #94A3B8; padding: 0.75rem; border-radius: 8px; font-weight: 600;">Contact Sales</div>
+</a>
 </div>
 """, unsafe_allow_html=True)
     
     st.markdown("---")
     st.markdown("""
 <div style="text-align: center; margin-top: 2rem;">
-    <p style="color: #94A3B8;">
-        <b>100% Money-Back Guarantee.</b> Cancel anytime. <br>
-        Secure payments via <b>Razorpay</b> (International Cards Accepted).
-    </p>
-    <div style="font-size: 1.5rem; margin-top: 1rem; opacity: 0.6;">
-        💳 🌍 💳
-    </div>
+<p style="color: #94A3B8;">
+<b>100% Money-Back Guarantee.</b> Cancel anytime. <br>
+Secure payments via <b>Razorpay</b> (International Cards Accepted).
+</p>
+<div style="font-size: 1.5rem; margin-top: 1rem; opacity: 0.6;">
+💳 🌍 💳
+</div>
 </div>
 """, unsafe_allow_html=True)
