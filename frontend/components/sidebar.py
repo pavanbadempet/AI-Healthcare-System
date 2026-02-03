@@ -75,10 +75,12 @@ def render_sidebar():
                 z-index: 999990 !important;
             }
             
-            /* Hide Native Toggle - Using ARIA label which is stable */
+            /* Hide Native Toggle - All possible selectors */
             button[data-testid="stSidebarCollapseButton"],
             section[data-testid="stSidebar"] button[kind="header"],
-            button[aria-label="Collapse sidebar"] {
+            button[aria-label="Collapse sidebar"],
+            div[data-testid="stSidebarHeader"] button,
+            button[data-testid="baseButton-header"] {
                 display: none !important;
                 visibility: hidden !important;
                 opacity: 0 !important;
@@ -86,6 +88,7 @@ def render_sidebar():
                 width: 0 !important;
                 position: absolute !important;
                 top: -10000px !important;
+                pointer-events: none !important;
             }
             
             /* Hide the container of the close button if possible */
