@@ -22,32 +22,32 @@ def render_about_page():
     
     with tab1:
         st.markdown("""
-        ## 🏥 AI Clinical Support Platform
+        ## 🏥 AI Patient Connect
         
-        **Version:** 2.4 Enterprise  
-        **Architecture:** Secure Cloud-Native Dispatch
+        **Version:** 3.0 Portal Edition  
+        **Powered by:** Your Diagnostic Center & Google Gemini
         
         ### Our Mission
         
-        To empower diagnostic centers and hospitals with state-of-the-art Artificial Intelligence, reducing diagnostic errors and streamlining patient throughput.
+        **Bridging the gap between Lab Results and Patient Understanding.**
         
-        **We support clinicians by:**
+        We partner with leading diagnostic centers to give you more than just paper reports. We give you an intelligent companion that helps you live healthier.
         
-        - **Pre-screening** high-risk patients using predictive ML
-        - **Automating** routine triage with NLP-driven assistants
-        - **Visualizing** longitudinal patient data for faster diagnosis
+        **How it works:**
+        1.  **Your Lab** uploads your test results securely.
+        2.  **Our AI** analyzes variables like Glucose, BMI, and Liver Enzymes.
+        3.  **You** get a personalized dashboard and a 24/7 Chat Assistant.
         
-        ### Clinical Liability Disclaimer
+        ### Disclaimer
         
-        ⚠️ **For Professional Use:** This system is a **Clinical Decision Support Tool (CDST)**. It is designed to assist, not replace, the judgment of qualified healthcare professionals. Final diagnostic authority rests with the attending physician.
+        ⚠️ **Not a Doctor:** The AI interprets data based on standard medical protocols but cannot diagnose you. Always verify critical concerns with your real doctor.
         
         ---
         
-        **Enterprise Support:** support@aihealthcare.com  
-        **Compliance Officer:** compliance@aihealthcare.com
+        **Support:** help@patientconnect.ai  
         
-        **License:** Licensed to Diagnostic Center Usage  
-        **Last Audit:** Jan 2026
+        **License:** Patient Personal Use License  
+        **Privacy:** HIPAA Compliant Data Vault
         """)
     
     with tab2:
