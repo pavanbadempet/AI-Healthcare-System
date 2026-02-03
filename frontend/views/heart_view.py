@@ -4,10 +4,10 @@ from frontend.components import charts
 
 def render_heart_page():
     st.markdown("""
-    <div style="margin-bottom: 1.5rem;">
-        <h2 style="margin:0; font-size: 1.75rem;">❤️ Heart Disease Risk Assessment</h2>
+    <div style="margin-bottom: 2rem;">
+        <h2 style="margin:0; font-size: 1.75rem;">❤️ Heart Health Screening</h2>
         <p style="color: #94A3B8; margin-top: 0.5rem;">
-            Enter your health metrics to assess cardiovascular risk factors.
+            Assess cardiovascular risk factors using metrics from your check-up.
         </p>
     </div>
     """, unsafe_allow_html=True)

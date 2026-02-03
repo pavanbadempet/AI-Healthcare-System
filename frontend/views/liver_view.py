@@ -4,10 +4,10 @@ from frontend.components import charts
 
 def render_liver_page():
     st.markdown("""
-    <div style="margin-bottom: 1.5rem;">
-        <h2 style="margin:0; font-size: 1.75rem;">🥃 Liver Disease Risk Assessment</h2>
+    <div style="margin-bottom: 2rem;">
+        <h2 style="margin:0; font-size: 1.75rem;">🥃 Liver Health Screening</h2>
         <p style="color: #94A3B8; margin-top: 0.5rem;">
-            Enter your liver function test results for AI-powered analysis.
+            Analyze liver function markers from your latest blood panel.
         </p>
     </div>
     """, unsafe_allow_html=True)
