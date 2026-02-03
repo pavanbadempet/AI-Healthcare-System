@@ -73,26 +73,20 @@ def render_sidebar():
                 min-width: 350px !important;
             }
             
-            /* AGGRESSIVELY Hide ALL native header buttons in sidebar */
-            [data-testid="stSidebarCollapsedControl"],
+            /* Hide ONLY the native toggle button safely */
             button[data-testid="stSidebarCollapseButton"],
-            section[data-testid="stSidebar"] button[kind="header"],
-            section[data-testid="stSidebar"] > div:first-child button {
+            [data-testid="stSidebarCollapsedControl"],
+            section[data-testid="stSidebar"] button[kind="header"] {
                 display: none !important;
-                opacity: 0 !important;
-                pointer-events: none !important;
-            }
-            
-            /* Hide the top header container of the sidebar entirely if possible to kill the arrow */
-            section[data-testid="stSidebar"] > div:first-child:has(button) {
-                display: none !important;
+                visibility: hidden !important;
             }
         </style>
         """, unsafe_allow_html=True)
         
         # Show a standard "Close Menu" button at the very top of sidebar
         with st.sidebar:
-            st.markdown("<div style='margin-top: -1rem;'></div>", unsafe_allow_html=True)
+            # Spacer to push button down slightly from the very top edge
+            st.markdown("<div style='margin-top: 0.5rem;'></div>", unsafe_allow_html=True)
             if st.button("✖ Close Menu", key="custom_sidebar_close", type="primary", use_container_width=True):
                 toggle_sidebar()
                 st.rerun()
