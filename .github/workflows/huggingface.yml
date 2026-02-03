@@ -50,6 +50,14 @@ jobs:
           echo "" >> HF_README.md
           cat README.md >> HF_README.md
           mv HF_README.md README.md
+          # Scrub large data files and binary caches before committing
+          rm -rf data/
+          rm -rf mlops/data/
+          find . -name "*.parquet" -type f -delete
+          find . -name "*.csv" -type f -delete
+          find . -name "*.db" -type f -delete
+          find . -name "*.sqlite3" -type f -delete
+          find . -name "__pycache__" -type d -exec rm -rf {} +
           
           git add .
           git commit -m "Deploy to Hugging Face Space"
