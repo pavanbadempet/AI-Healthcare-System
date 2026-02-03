@@ -108,7 +108,7 @@ def render_sidebar():
         with st.sidebar:
             st.markdown("<div style='margin-top: 0.5rem;'></div>", unsafe_allow_html=True)
             # Use on_click pattern for better state consistency
-            st.button("✖ Close Menu", key="custom_sidebar_close", type="primary", use_container_width=True, on_click=toggle_sidebar)
+            st.button("✖ Close Menu", key="custom_sidebar_close", type="primary", width="stretch", on_click=toggle_sidebar)
             st.markdown("<div style='margin-bottom: 1rem;'></div>", unsafe_allow_html=True)
 
     # --- SIDEBAR RENDER ---
