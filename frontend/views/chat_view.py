@@ -63,10 +63,10 @@ def render_chat_page():
     <div style="margin-bottom: 2rem;">
         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 0.5rem;">
             <span style="font-size: 2rem;">🤖</span>
-            <h1 style="margin: 0; font-size: 1.75rem;">AI Health Assistant</h1>
+            <h1 style="margin: 0; font-size: 1.75rem;">Personal Health Companion</h1>
         </div>
         <p style="color: #64748B; font-size: 0.9rem; margin: 0;">
-            Ask me about symptoms, medications, lifestyle advice, and more. 
+            I'm connected to your latest lab reports. Ask me to explain your results or give lifestyle advice.
             <span style="color: #F59E0B;">⚠️ Not a substitute for professional medical advice.</span>
         </p>
     </div>
@@ -106,9 +106,9 @@ def render_chat_page():
         }
         </style>
         <div class="quick-actions">
-            <div class="quick-action-btn">💊 "What are common diabetes symptoms?"</div>
-            <div class="quick-action-btn">❤️ "How can I lower my cholesterol?"</div>
-            <div class="quick-action-btn">🏃 "Best exercises for heart health?"</div>
+            <div class="quick-action-btn">📊 "Explain my latest report"</div>
+            <div class="quick-action-btn">🍎 "Diet plan for high glucose"</div>
+            <div class="quick-action-btn">💊 "Remind me about medication"</div>
         </div>
         """, unsafe_allow_html=True)
     
