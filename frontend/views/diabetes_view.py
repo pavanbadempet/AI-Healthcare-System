@@ -32,7 +32,7 @@ def render_diabetes_page():
             activity = st.selectbox("Physically Active (Past 30d)", ["No", "Yes"])
             gen_health = st.slider("General Health Rating", 1, 5, 3, help="1=Excellent, 5=Poor")
 
-    if st.button("Run Screening Analysis", type="primary", use_container_width=True):
+    if st.button("Run Screening Analysis", type="primary", width="stretch"):
         # Map Inputs
         inputs = {
             "gender": 1 if gender == "Male" else 0,
