@@ -28,6 +28,12 @@ body {
     overflow: visible !important;
 }
 
+/* Reduce top padding for main content */
+.block-container {
+    padding-top: 1.5rem !important;
+    padding-bottom: 3rem !important;
+}
+
 /* --- COMPONENTS --- */
 
 /* Cards (Dark Glassmorphism) - NOT forms, they're styled per-page */
