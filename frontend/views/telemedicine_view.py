@@ -8,11 +8,11 @@ from datetime import datetime, timedelta
 
 def render_telemedicine_page():
     st.markdown("""
-    <div style="text-align: center; margin-bottom: 2rem;">
-        <h1>🩺 Virtual Consultation</h1>
-        <p style="color: #64748B;">Video consultations with your facility's specialists.</p>
-    </div>
-    """, unsafe_allow_html=True)
+<div style="text-align: center; margin-bottom: 2rem;">
+    <h1>🩺 Virtual Consultation</h1>
+    <p style="color: #64748B;">Video consultations with your facility's specialists.</p>
+</div>
+""", unsafe_allow_html=True)
     
     col1, col2 = st.columns([2, 1])
     
