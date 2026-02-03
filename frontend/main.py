@@ -72,7 +72,8 @@ from frontend.components import sidebar
 def main():
     # 1. Initialize Session
     # Initialize Cookie Manager once per run
-    st.session_state['cookie_manager'] = stx.CookieManager(key="init")
+    if 'cookie_manager' not in st.session_state:
+        st.session_state['cookie_manager'] = stx.CookieManager(key="init")
     
     if 'token' not in st.session_state:
         # Try to load from local file (persistence)
