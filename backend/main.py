@@ -79,9 +79,42 @@ def run_migrations():
 
 run_migrations()
 
+# --- Seeding ---
+def create_default_admin():
+    """Create a default admin user if one does not exist."""
+    session = database.SessionLocal()
+    try:
+        # Check if any admin exists
+        admin = session.query(models.User).filter(models.User.role == "admin").first()
+        if not admin:
+            logger.warning("No admin found. Creating default 'admin' user...")
+            
+            # Secure default admin
+            hashed_pw = auth.get_password_hash("admin123")
+            default_admin = models.User(
+                username="admin", 
+                hashed_password=hashed_pw,
+                email="admin@hospital.com",
+                role="admin",
+                full_name="System Administrator",
+                allow_data_collection=0
+            )
+            session.add(default_admin)
+            session.commit()
+            logger.info("✅ Default Admin Created: username='admin', password='admin123'")
+        else:
+            logger.info("Admin account already exists.")
+    except Exception as e:
+        logger.error(f"Failed to seed admin: {e}")
+    finally:
+        session.close()
+
 # --- App ---
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Run Seeding
+    create_default_admin()
+    
     logger.info("Loading AI models...")
     prediction.initialize_models()
     yield

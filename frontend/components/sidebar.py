@@ -77,7 +77,9 @@ def render_sidebar():
         ]
         
         # Admin option
-        if username == "admin" or username.startswith("admin_"):
+        # Strict Check: Only show if role is explicitly 'admin'
+        user_role = st.session_state.get('role', 'patient')
+        if user_role == 'admin':
             nav_options.append(i18n.get_text("admin"))
             nav_icons.append("shield-lock")
 
