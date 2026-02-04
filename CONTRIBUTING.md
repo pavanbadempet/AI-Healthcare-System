@@ -30,7 +30,17 @@ Welcome to the **AI Healthcare System** project! We appreciate your interest in 
 
 1. Ensure that your changes do not introduce new bugs.
 
-2. Run existing tests and add new ones as needed.
+2. Run existing tests to ensure no regressions:
+    
+    ```bash
+    # Run all tests
+    pytest
+    
+    # Run unit tests only
+    pytest tests/unit
+    ```
+
+3. Add new tests for your feature in the `tests/` directory.
 
 ## Submitting Changes
 
