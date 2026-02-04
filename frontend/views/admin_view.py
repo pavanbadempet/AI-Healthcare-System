@@ -50,14 +50,39 @@ def render_admin_page():
         with col2:
             st.success(f"Database: {stats.get('database_status', 'Unknown')}")
             
-        # 4. Recent Users
-        st.subheader("👥 Recent Users")
+        # 4. Recent Users & Management
+        st.subheader("👥 User Management")
         
         users_resp = requests.get(f"{backend_url}/admin/users", headers=headers, timeout=5)
         if users_resp.status_code == 200:
             users = users_resp.json()
             if users:
-                st.table(users)
+                # Convert to DataFrame for better display
+                import pandas as pd
+                df = pd.DataFrame(users)
+                if 'role' not in df.columns:
+                    df['role'] = 'patient' # Fallback
+                
+                # Reorder columns
+                cols = ['id', 'username', 'role', 'full_name', 'email', 'joined']
+                st.dataframe(df[cols], use_container_width=True, hide_index=True)
+                
+                st.markdown("### ✏️ Update Role")
+                c1, c2, c3 = st.columns([2, 1, 1])
+                with c1:
+                    user_names = {u['username']: u['id'] for u in users}
+                    selected_username = st.selectbox("Select User", list(user_names.keys()))
+                
+                with c2:
+                    new_role = st.selectbox("New Role", ["patient", "doctor", "admin"])
+                    
+                with c3:
+                    st.write("") # Spacer
+                    st.write("")
+                    if st.button("Update Role", type="primary", use_container_width=True):
+                        uid = user_names[selected_username]
+                        if api.update_user_role(uid, new_role):
+                            st.rerun()
             else:
                 st.caption("No users found.")
         
