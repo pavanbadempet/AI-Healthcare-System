@@ -85,8 +85,8 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 
 def is_admin(user: models.User) -> bool:
     """Check if user has admin privileges."""
-    # Check both username='admin' for backward compatibility and role field
-    return user.username == "admin" or user.username.startswith("admin_") or getattr(user, 'role', 'patient') == 'admin'
+    # Strict Role-Based Access Control
+    return getattr(user, 'role', 'patient') == 'admin'
 
 # --- Endpoints ---
 
