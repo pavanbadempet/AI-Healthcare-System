@@ -152,26 +152,11 @@ div[data-testid="stFormSubmitButton"] button:active {
                         
         with tab2:
             with st.form("signup", border=False):
-                col_role, col_input = st.columns([1, 2])
-                with col_role:
-                    role = st.radio("I am a:", ["Patient", "Doctor", "Admin"], label_visibility="collapsed")
-                
-                with col_input:
-                    us = st.text_input("Username", placeholder="Choose username", label_visibility="collapsed")
-                
+                us = st.text_input("Username", placeholder="Choose a username", label_visibility="collapsed")
                 em = st.text_input("Email", placeholder="Your email", label_visibility="collapsed")
                 pw = st.text_input("Password", type="password", placeholder="Create password", label_visibility="collapsed")
-                
-                if st.form_submit_button("Create Account", type="primary", width="stretch"):
-                    # Apply Role Prefixes (Matches Sidebar Logic)
-                    final_username = us
-                    if role == "Admin" and not us.startswith("admin_"):
-                        final_username = f"admin_{us}"
-                    elif role == "Doctor" and not us.startswith("dr_"):
-                        final_username = f"dr_{us}"
-                        
-                    if api.signup(final_username, pw, em, us, "2000-01-01"):
-                        st.success(f"Account created! Log inside as {final_username}")
-                        if api.login(final_username, pw): st.rerun()
+                if st.form_submit_button("Register", type="primary", width="stretch"):
+                    if api.signup(us, pw, em, us, "2000-01-01"):
+                        if api.login(us, pw): st.rerun()
         
         st.markdown('<p style="text-align: center; font-size: 0.8rem; color: #475569; margin-top: 1rem;">Powered by Advanced AI</p>', unsafe_allow_html=True)
