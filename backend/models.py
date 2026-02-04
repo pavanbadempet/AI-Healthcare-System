@@ -10,6 +10,7 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    role = Column(String, default="patient") # patient, doctor, admin
     
     # Profile Data
     email = Column(String, nullable=True)

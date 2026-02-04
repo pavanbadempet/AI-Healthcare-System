@@ -80,6 +80,15 @@ def login(username, password) -> bool:
             st.session_state['token'] = token
             st.session_state['username'] = username
             save_session(token, username)
+            
+            # Fetch profile to get Role
+            try:
+                prof = fetch_profile()
+                if prof:
+                    st.session_state['role'] = prof.get('role', 'patient')
+            except:
+                pass
+                
             return True
         detail = resp.json().get('detail', 'Invalid credentials')
         st.error(f"Login Failed: {_format_error(detail)}")
