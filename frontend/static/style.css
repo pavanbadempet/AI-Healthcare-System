@@ -196,16 +196,31 @@ footer {
     visibility: hidden;
 }
 
-/* header {
-    visibility: hidden;
-} */
+/* Header: Visible but blended */
+header[data-testid="stHeader"] {
+    background-color: #0F172A !important;
+    /* Match theme background */
+    border-bottom: 1px solid rgba(59, 130, 246, 0.1);
+    /* Subtle border */
+    z-index: 90 !important;
+}
 
-/* Force Sidebar Toggle to be visible even if header is hidden */
+/* Hide the decoration line at top of header */
+header[data-testid="stHeader"]>div:first-child {
+    background: transparent !important;
+}
+
+/* Ensure content doesn't go under header */
+.block-container {
+    padding-top: 4rem !important;
+    /* Increased from 1.5rem to clear header */
+    padding-bottom: 3rem !important;
+}
+
+/* Force Sidebar Toggle to be visible */
 [data-testid="stSidebarCollapsedControl"] {
-    visibility: visible !important;
     display: block !important;
     color: #60A5FA !important;
-    z-index: 1000000 !important;
 }
 
 /* ============================================
