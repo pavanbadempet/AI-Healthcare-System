@@ -73,7 +73,7 @@ def render_pricing_page():
     
     # --- CLINIC TIER (Basic) ---
     with col1:
-st.markdown("""
+        st.markdown("""
 <div style="background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 16px; padding: 2rem; height: 100%; text-align: center;">
 <h3 style="margin-top: 0;">Clinic Basic</h3>
 <div style="font-size: 2.5rem; font-weight: 700; margin: 1rem 0;">Free</div>
