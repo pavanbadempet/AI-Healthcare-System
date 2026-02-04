@@ -75,10 +75,10 @@ def render_pricing_page():
     with col1:
         st.markdown("""
 <div style="background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 16px; padding: 2rem; height: 100%; text-align: center;">
-<h3 style="margin-top: 0;">Clinic Basic</h3>
-<div style="font-size: 2.5rem; font-weight: 700; margin: 1rem 0;">Free</div>
+<h3 style="margin-top: 0; color: #F8FAFC; font-weight: 600;">Clinic Basic</h3>
+<div style="font-size: 2.5rem; font-weight: 700; margin: 1rem 0; color: #E2E8F0;">Free</div>
 <p style="color: #94A3B8; font-size: 0.9rem;">For independent practitioners</p>
-<div style="margin: 2rem 0; text-align: left; font-size: 0.9rem;">
+<div style="margin: 2rem 0; text-align: left; font-size: 0.9rem; color: #CBD5E1;">
 <div style="margin-bottom: 0.5rem;">✅ Single Doctor Account</div>
 <div style="margin-bottom: 0.5rem;">✅ 100 Patient Records</div>
 <div style="margin-bottom: 0.5rem;">✅ Basic Disease Screening</div>
@@ -91,16 +91,15 @@ def render_pricing_page():
     # --- DIAGNOSTIC CENTER TIER (Pro) ---
     with col2:
         # Split card into Top (Content) and Bottom (Button Container) to embed Streamlit widget
-        # NOTE: WE MUST NOT INDENT HTML CONTENT INSIDE st.markdown TO AVOID CODE BLOCKS
         st.markdown("""
 <div style="background: linear-gradient(180deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.05)); border: 2px solid #3B82F6; border-bottom: none; border-radius: 16px 16px 0 0; padding: 2rem; text-align: center; position: relative;">
 <div style="position: absolute; top: -12px; left: 50%; transform: translateX(-50%); background: #3B82F6; color: white; padding: 2px 12px; border-radius: 12px; font-size: 0.75rem; font-weight: 600;">RECOMMENDED</div>
-<h3 style="margin-top: 0; color: #60A5FA;">Diagnostic Center</h3>
-<div style="font-size: 2.5rem; font-weight: 700; margin: 1rem 0;">
+<h3 style="margin-top: 0; color: #60A5FA; font-weight: 600;">Diagnostic Center</h3>
+<div style="font-size: 2.5rem; font-weight: 700; margin: 1rem 0; color: #E2E8F0;">
 ₹2,499<span style="font-size: 1rem; color: #94A3B8; font-weight: 400;">/mo</span>
 </div>
 <p style="color: #94A3B8; font-size: 0.9rem;">For mid-sized labs & clinics</p>
-<div style="margin: 2rem 0; text-align: left; font-size: 0.9rem;">
+<div style="margin: 2rem 0; text-align: left; font-size: 0.9rem; color: #CBD5E1;">
 <div style="margin-bottom: 0.5rem;">✅ <b>Unlimited</b> Patient Records</div>
 <div style="margin-bottom: 0.5rem;">✅ <b>Multi-User</b> Admin Access</div>
 <div style="margin-bottom: 0.5rem;">✅ White-label Lab Reports</div>
@@ -115,7 +114,8 @@ def render_pricing_page():
 <div style="background: linear-gradient(180deg, rgba(37, 99, 235, 0.05), rgba(59, 130, 246, 0.02)); border: 2px solid #3B82F6; border-top: none; border-radius: 0 0 16px 16px; padding: 0 2rem 2rem 2rem; text-align: center;">
 """, unsafe_allow_html=True)
         
-        if st.button("Upgrade Facility", key="upgrade_pro", type="primary", width="stretch"):
+        # Use simple True/False for width to avoid deprecation confusion, or useContainerWidth if supported
+        if st.button("Upgrade Facility", key="upgrade_pro", type="primary", use_container_width=True):
             with st.spinner("Initializing Clinical License..."):
                 # Create Order (2499 INR = 249900 paise)
                 resp = api.create_payment_order(249900, "diagnostic_tier")
@@ -146,14 +146,24 @@ def render_pricing_page():
                             }},
                             "theme": {{
                                 "color": "#3B82F6"
+                            }},
+                            "modal": {{
+                                "ondismiss": function() {{
+                                    console.log('Checkout form closed');
+                                }}
                             }}
                         }};
                         var rzp1 = new Razorpay(options);
                         rzp1.open();
+                        // Try to auto-focus if possible, though sandboxed
                     </script>
-                    <span style="color: #64748B; font-size: 0.8rem;">Opening Secure Payment Gateway...</span>
+                    <div style="color: #64748B; font-size: 0.9rem; padding: 20px; text-align: center;">
+                        <p>Secure Payment Gateway Initialized.</p>
+                        <p>If the popup didn't appear, ensure popups are allowed.</p>
+                    </div>
                     """
-                    components.html(html_code, height=100)
+                    # Increased HEIGHT to allow the embedded form to show if it doesn't pop out
+                    components.html(html_code, height=600, scrolling=True)
                 else:
                     st.error("Could not initiate payment. Please try again.")
  
@@ -163,8 +173,8 @@ def render_pricing_page():
     with col3:
         st.markdown("""
 <div style="background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 16px; padding: 2rem; height: 100%; text-align: center;">
-<h3 style="margin-top: 0;">Hospital Network</h3>
-<div style="font-size: 2.5rem; font-weight: 700; margin: 1rem 0;">Custom</div>
+<h3 style="margin-top: 0; color: #F8FAFC; font-weight: 600;">Hospital Network</h3>
+<div style="font-size: 2.5rem; font-weight: 700; margin: 1rem 0; color: #E2E8F0;">Custom</div>
 <p style="color: #94A3B8; font-size: 0.9rem;">For large healthcare chains</p>
 <div style="margin: 2rem 0; text-align: left; font-size: 0.9rem;">
 <div style="margin-bottom: 0.5rem;">✅ Full HL7 / FHIR Integration</div>
