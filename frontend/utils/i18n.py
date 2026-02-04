@@ -18,11 +18,11 @@ TRANSLATIONS = {
         "welcome": "Welcome back",
         "analyze": "Analyze Risk",
         "download_pdf": "Download Report",
-        "diabetes_pred": "Diabetes Prediction",
-        "heart_pred": "Heart Disease Prediction",
-        "liver_pred": "Liver Disease Prediction",
-        "kidney_pred": "Kidney Disease Prediction",
-        "lung_pred": "Lung Cancer Prediction"
+        "diabetes_pred": "Diabetes",
+        "heart_pred": "Heart Disease",
+        "liver_pred": "Liver Disease",
+        "kidney_pred": "Kidney Disease",
+        "lung_pred": "Lung Cancer"
     },
     "hi": {
         "dashboard": "डैशबोर्ड",

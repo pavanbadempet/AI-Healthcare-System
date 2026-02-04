@@ -450,4 +450,11 @@ div[data-testid="stSidebarNav"] {
     padding: 0 !important;
 }
 
+/* Global Transparency for Iframes (Fixes Menu Blockiness) */
+iframe[title="streamlit_option_menu.option_menu"],
+div[data-testid="stIFrame"] {
+    background: transparent !important;
+    background-color: transparent !important;
+}
+
 /* --- END OF STYLES --- */
