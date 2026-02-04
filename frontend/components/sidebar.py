@@ -246,7 +246,7 @@ def render_sidebar():
             default_index=0,
             key="main_sidebar_nav",
             styles={
-                "container": {"background-color": "transparent"},
+                "container": {"background-color": "#0F172A", "padding": "5px"},
                 "icon": {"color": "#94A3B8", "font-size": "16px"}, 
                 "nav-link": {
                     "font-size": "14px",
