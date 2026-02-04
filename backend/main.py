@@ -16,22 +16,18 @@ from contextlib import asynccontextmanager
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-# --- Logging ---
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
-logger = logging.getLogger(__name__)
-
-import warnings
-warnings.filterwarnings("ignore", category=FutureWarning)
-
 # --- Imports ---
 from . import app_warnings, models, database, auth, chat, explanation, prediction, report, admin, payments, security
 from .pdf_service import generate_medical_report
 
-# --- Database Init ---
+# Initialize Database
 models.Base.metadata.create_all(bind=database.engine)
 
 def run_migrations():
-    """Add missing columns to users table."""
+    """
+    Simple migration script to ensure the 'users' table has all new columns.
+    We run this on startup to handle schema updates without a heavy tool like Alembic (for now).
+    """
     columns = ["about_me TEXT", "diet TEXT", "activity_level TEXT", "sleep_hours FLOAT",
                "stress_level TEXT", "psych_profile TEXT", "plan_tier VARCHAR", 
                "subscription_expiry DATETIME", "razorpay_customer_id VARCHAR",
@@ -42,10 +38,11 @@ def run_migrations():
                 try:
                     conn.execute(text(f"ALTER TABLE users ADD COLUMN {col}"))
                 except Exception:
+                    # Column likely already exists
                     pass
             conn.commit()
     except Exception as e:
-        logger.warning(f"Migration warning: {e}")
+        logger.warning(f"Migration check failed (safe to ignore if DB is fresh): {e}")
 
 run_migrations()
 

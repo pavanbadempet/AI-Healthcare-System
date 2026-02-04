@@ -18,85 +18,41 @@
 
 ---
 
-## 🎯 Overview
+## 🎯 About The Project
 
-A B2B2C healthcare platform that powers **Diagnostic Centers** to provide **Smart Patient Portals**. It combines detailed **Disease Screening** (Diabetes, Heart, etc.) with a **Personalized AI Companion** that explains lab reports to patients in plain English.
+**AI Healthcare System** is a next-gen patient portal built for diagnostic centers. We wanted to solve a simple problem: **Lab reports are confusing.**
 
-**🔗 Live Demo**: [ai-healthcare-system.streamlit.app](https://ai-healthcare-system.streamlit.app/)
+Most patients get a PDF full of numbers they don't understand. Our platform fixes this by combining:
+1.  **Automated Screening:** Immediate risk assessment for Diabetes, Heart Disease, and more.
+2.  **AI Explanation:** A "Medical Assistant" chat that explains the report in plain English (powered by Gemini Pro).
 
----
-
-## 🏗️ Architecture
-
-```mermaid
-flowchart TB
-    subgraph Frontend["Frontend (Streamlit Cloud)"]
-        UI[Web Interface]
-        Auth[Authentication]
-        Views[Disease Prediction Views]
-    end
-    
-    subgraph Backend["Backend API (Render)"]
-        API[FastAPI Server]
-        ML[ML Prediction Engine]
-        RAG[RAG Pipeline]
-        Vision[Vision Service]
-    end
-    
-    subgraph AI["AI Services"]
-        Gemini[Gemini Pro]
-        FAISS[FAISS Vector Store]
-    end
-    
-    subgraph Storage["Data Layer"]
-        SQLite[(SQLite DB)]
-        Models[(ML Models)]
-    end
-    
-    UI --> API
-    API --> ML --> Models
-    API --> RAG --> FAISS
-    RAG --> Gemini
-    Vision --> Gemini
-    API --> SQLite
-```
+It's a full-stack solution—diagnostic centers get a dashboard to manage patients, and patients get a secure portal to understand their health.
 
 ---
 
-## ✨ Key Features
+## ✨ Features
 
-### 🏥 For Diagnostic Centers (B2B)
-- **White-label Patient Portal**: Offer a premium digital experience to your patients.
-- **Automated Screening**: 5+ Disease Prediction Models (XGBoost/RandomForest).
-- **Clinic Admin Console**: Manage patient records and system health.
+- **For Patients:**
+    - 📄 **Smart Reports:** Upload a PDF and get an instant AI summary.
+    - 🤖 **Health Assistant:** Chat with an AI that knows your medical history.
+    - 🩺 **Risk Screening:** ML models check your vitals (Diabetes, Kidney, Liver, etc.).
 
-### 👤 For Patients (Consumer)
-- **AI Health Companion**: "Explain my lab report" chat interface.
-- **My Health Passport**: Secure access to historical health data.
-- **Virtual Consultations**: Book video calls with specialists.
+- **For Doctors & Clinics:**
+    - 🏥 **Patient Dashboard:** View all patient records in one place.
+    - 📈 **Trend Analysis:** Visualize patient health metrics over time.
+    - 🔐 **Secure & compliant:** Role-based access and data isolation.
 
-### 🔬 Multi-Disease Screening
-| Screening Screen | Model | Key Metrics |
-|---------|-------|-------------|
-| **Diabetes** | XGBoost | Glucose, BMI, Insulin, Age |
-| **Heart Disease** | XGBoost | Cholesterol, BP, ECG Results |
-| **Liver Disease** | XGBoost | Bilirubin, Albumin, Proteins |
-| **Kidney Disease** | Random Forest | Creatinine, Hemoglobin, RBC |
-| **Lung Cancer** | Gradient Boosting | Smoking, Chest Pain, Fatigue |
+### 🔬 Supported Screenings
+We use trained ML models (XGBoost/RandomForest) to screen for:
+*   **Diabetes:** (Glucose, BMI, Insulin)
+*   **Heart Disease:** (Cholesterol, BP, ECG)
+*   **Liver & Kidney Health**
+*   **Lung Cancer Risk**
 
-### 🤖 AI-Powered Medical Assistant
-- **RAG Architecture**: Retrieval-Augmented Generation using FAISS vector storage
-- **Context-Aware Responses**: Grounded in user health records and medical context
-- **Conversation Memory**: Persists chat history for continuity
-
-### 📄 Smart Lab Report Analyzer
-- **Vision AI**: Extracts data from PDF/Image lab reports using Gemini Vision
-- **Automated Insights**: Generates AI explanations for abnormal values
-
-### 🔐 Security & Privacy
-- **JWT Authentication**: Secure session management
-- **Tenant Isolation**: User data fully separated
-- **Rate Limiting**: API abuse prevention
+### 🤖 Under the Hood
+*   **RAG Architecture:** We use separate vector stores for each user to prevent data leakage.
+*   **Vision AI:** Gemini Pro Vision reads raw PDF reports so you don't have to type data manually.
+*   **Security:** Full JWT authentication and session management.
 
 ---
 

@@ -70,31 +70,30 @@ from frontend.components import sidebar
 
 # --- Main App Orchestrator ---
 def main():
-    # 1. Initialize Session
-    # Initialize Cookie Manager once per run
+    # Initialize Cookie Manager for session persistence
     if 'cookie_manager' not in st.session_state:
         st.session_state['cookie_manager'] = stx.CookieManager(key="init")
     
+    # Attempt to restore session from cookies
     if 'token' not in st.session_state:
-        # Try to load from local file (persistence)
         session = api.load_session()
         if session:
             st.session_state['token'] = session.get('token')
             st.session_state['username'] = session.get('username')
 
-    # 2. Check Auth State
+    # If not logged in, show Auth Screen
     if 'token' not in st.session_state:
         auth_view.render_auth_page()
         return
 
-    # 3. Sidebar Navigation (DELEGATED TO COMPONENT)
+    # Render Sidebar and get selection
     selected_label = sidebar.render_sidebar()
     
-    # Resolve to English key
+    # Resolve to English key for routing
     from frontend.utils import i18n
     selected = i18n.get_english_key(selected_label)
     
-    # 4. Route to View
+    # Routing Logic
     if selected == "dashboard":
         dashboard_view.render_dashboard()
     elif selected == "chat":
