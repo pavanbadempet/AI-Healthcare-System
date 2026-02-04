@@ -196,9 +196,9 @@ footer {
     visibility: hidden;
 }
 
-header {
+/* header {
     visibility: hidden;
-}
+} */
 
 /* Force Sidebar Toggle to be visible even if header is hidden */
 [data-testid="stSidebarCollapsedControl"] {
