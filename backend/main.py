@@ -16,6 +16,10 @@ from contextlib import asynccontextmanager
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Configure Logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
 # --- Imports ---
 from . import app_warnings, models, database, auth, chat, explanation, prediction, report, admin, payments, security
 from .pdf_service import generate_medical_report
