@@ -9,6 +9,115 @@ import streamlit.components.v1 as components
 from frontend.utils import api
 
 def render_pricing_page():
+    # --- STATE MANAGEMENT ---
+    if 'show_payment' not in st.session_state:
+        st.session_state.show_payment = False
+        
+    # --- PAYMENT VIEW (Modal-like "Middle Gateway") ---
+    if st.session_state.show_payment:
+        # Full width container for the payment experience
+        st.markdown("""
+        <div style="text-align: center; padding: 2rem 0;">
+            <h2 style="color: #F8FAFC; margin-bottom: 0.5rem;">Secure Payment Gateway</h2>
+            <p style="color: #94A3B8;">Completing transaction for <b>Diagnostic Center License</b></p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Centered Layout
+        c1, c2, c3 = st.columns([1, 2, 1])
+        with c2:
+            st.info("Initializing Secure Connection to Razorpay...")
+            
+            # Create Order
+            with st.spinner("Contacting Banking Servers..."):
+                resp = api.create_payment_order(249900, "diagnostic_tier")
+            
+            if resp:
+                order_id = resp['id']
+                key_id = resp['key_id']
+                amount = resp['amount']
+                curr = resp['currency']
+                
+                # Full-size Payment Interface
+                html_code = f"""
+                <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+                <div style="background: #1E293B; padding: 30px; border-radius: 12px; text-align: center; color: white; border: 1px solid #334155;">
+                    <h3 style="margin-top:0;">Confirm Payment</h3>
+                    <p style="font-size: 1.5rem; font-weight: bold; color: #60A5FA;">₹2,499.00</p>
+                    <p style="color: #94A3B8; margin-bottom: 20px;">Secure SSL Connection</p>
+                    
+                    <button id="rzp-button1" style="
+                        background: #3B82F6; 
+                        color: white; 
+                        border: none; 
+                        padding: 12px 24px; 
+                        border-radius: 6px; 
+                        font-weight: 600; 
+                        font-size: 1rem;
+                        cursor: pointer;
+                        transition: background 0.2s;
+                        width: 100%;
+                        max-width: 300px;
+                    ">Pay Now</button>
+                    
+                    <div id="payment-status" style="margin-top: 20px;"></div>
+                </div>
+                
+                <script>
+                    var options = {{
+                        "key": "{key_id}", 
+                        "amount": "{amount}", 
+                        "currency": "{curr}",
+                        "name": "AI Healthcare System",
+                        "description": "Diagnostic Center License",
+                        "image": "https://cdn-icons-png.flaticon.com/512/3063/3063823.png",
+                        "order_id": "{order_id}",
+                        "handler": function (response){{
+                            document.getElementById('payment-status').innerHTML = '<p style="color:#4ADE80; font-weight:bold;">✅ Payment Successful! Redirecting...</p>';
+                            // You could trigger a streamlit rerun/callback here if embedded differently
+                            alert("Payment Successful! ID: " + response.razorpay_payment_id);
+                        }},
+                        "prefill": {{
+                            "name": "Clinic Admin",
+                            "email": "admin@clinic.com"
+                        }},
+                        "theme": {{
+                            "color": "#3B82F6"
+                        }},
+                        "modal": {{
+                            "ondismiss": function() {{
+                                console.log('Checkout form closed');
+                            }}
+                        }}
+                    }};
+                    
+                    var rzp1 = new Razorpay(options);
+                    
+                    document.getElementById('rzp-button1').onclick = function(e){{
+                        rzp1.open();
+                        e.preventDefault();
+                    }}
+                    
+                    // Auto-open for convenience
+                    setTimeout(function() {{ rzp1.open(); }}, 1000);
+                </script>
+                """
+                components.html(html_code, height=600, scrolling=False)
+                
+                # Back Button
+                if st.button("← Cancel & Return to Plans", key="cancel_pay"):
+                    st.session_state.show_payment = False
+                    st.rerun()
+                    
+            else:
+                st.error("Could not initiate payment session. Please check your internet connection.")
+                if st.button("← Go Back"):
+                    st.session_state.show_payment = False
+                    st.rerun()
+
+        return # STOP execution here so we don't render pricing cards
+
+    # --- PRICING CARDS VIEW (Default) ---
     # Inject responsive CSS for pricing cards
     st.markdown("""
 <style>
@@ -116,56 +225,8 @@ def render_pricing_page():
         
         # Use simple True/False for width to avoid deprecation confusion, or useContainerWidth if supported
         if st.button("Upgrade Facility", key="upgrade_pro", type="primary", use_container_width=True):
-            with st.spinner("Initializing Clinical License..."):
-                # Create Order (2499 INR = 249900 paise)
-                resp = api.create_payment_order(249900, "diagnostic_tier")
-                
-                if resp:
-                    order_id = resp['id']
-                    key_id = resp['key_id']
-                    amount = resp['amount']
-                    curr = resp['currency']
-                    
-                    html_code = f"""
-                    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
-                    <script>
-                        var options = {{
-                            "key": "{key_id}", 
-                            "amount": "{amount}", 
-                            "currency": "{curr}",
-                            "name": "AI Healthcare System",
-                            "description": "Diagnostic Center License",
-                            "image": "https://cdn-icons-png.flaticon.com/512/3063/3063823.png",
-                            "order_id": "{order_id}",
-                            "handler": function (response){{
-                                alert("License Activation Successful! Payment ID: " + response.razorpay_payment_id + "\\nYour facility dashboard will be upgraded shortly.");
-                            }},
-                            "prefill": {{
-                                "name": "Clinic Admin",
-                                "email": "admin@clinic.com"
-                            }},
-                            "theme": {{
-                                "color": "#3B82F6"
-                            }},
-                            "modal": {{
-                                "ondismiss": function() {{
-                                    console.log('Checkout form closed');
-                                }}
-                            }}
-                        }};
-                        var rzp1 = new Razorpay(options);
-                        rzp1.open();
-                        // Try to auto-focus if possible, though sandboxed
-                    </script>
-                    <div style="color: #64748B; font-size: 0.9rem; padding: 20px; text-align: center;">
-                        <p>Secure Payment Gateway Initialized.</p>
-                        <p>If the popup didn't appear, ensure popups are allowed.</p>
-                    </div>
-                    """
-                    # Increased HEIGHT to allow the embedded form to show if it doesn't pop out
-                    components.html(html_code, height=600, scrolling=True)
-                else:
-                    st.error("Could not initiate payment. Please try again.")
+             st.session_state.show_payment = True
+             st.rerun()
  
         st.markdown("</div>", unsafe_allow_html=True)
         
@@ -176,7 +237,7 @@ def render_pricing_page():
 <h3 style="margin-top: 0; color: #F8FAFC; font-weight: 600;">Hospital Network</h3>
 <div style="font-size: 2.5rem; font-weight: 700; margin: 1rem 0; color: #E2E8F0;">Custom</div>
 <p style="color: #94A3B8; font-size: 0.9rem;">For large healthcare chains</p>
-<div style="margin: 2rem 0; text-align: left; font-size: 0.9rem;">
+<div style="margin: 2rem 0; text-align: left; font-size: 0.9rem; color: #CBD5E1;">
 <div style="margin-bottom: 0.5rem;">✅ Full HL7 / FHIR Integration</div>
 <div style="margin-bottom: 0.5rem;">✅ Custom AI Model Tuning</div>
 <div style="margin-bottom: 0.5rem;">✅ On-Premise Deployment</div>
