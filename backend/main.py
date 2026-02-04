@@ -27,26 +27,54 @@ from .pdf_service import generate_medical_report
 # Initialize Database
 models.Base.metadata.create_all(bind=database.engine)
 
+from sqlalchemy import inspect
+
 def run_migrations():
     """
-    Simple migration script to ensure the 'users' table has all new columns.
-    We run this on startup to handle schema updates without a heavy tool like Alembic (for now).
+    Smart migration script: Checks for missing columns before trying to add them.
+    This prevents Postgres transaction aborts if a column already exists.
     """
-    columns = ["about_me TEXT", "diet TEXT", "activity_level TEXT", "sleep_hours FLOAT",
-               "stress_level TEXT", "psych_profile TEXT", "plan_tier VARCHAR", 
-               "subscription_expiry DATETIME", "razorpay_customer_id VARCHAR",
-               "created_at DATETIME"]
+    # Map of column_name -> definition
+    required_columns = {
+        "about_me": "TEXT",
+        "diet": "TEXT", 
+        "activity_level": "TEXT",
+        "sleep_hours": "FLOAT",
+        "stress_level": "TEXT", 
+        "psych_profile": "TEXT", 
+        "plan_tier": "VARCHAR", 
+        "subscription_expiry": "TIMESTAMP", # Changed from DATETIME for Postgres compat
+        "razorpay_customer_id": "VARCHAR",
+        "created_at": "TIMESTAMP"
+    }
+    
     try:
+        inspector = inspect(database.engine)
+        if not inspector.has_table("users"):
+            # Tables created by create_all, skip
+            return
+
+        existing_columns = {col['name'] for col in inspector.get_columns("users")}
+        
         with database.engine.connect() as conn:
-            for col in columns:
-                try:
-                    conn.execute(text(f"ALTER TABLE users ADD COLUMN {col}"))
-                except Exception:
-                    # Column likely already exists
-                    pass
-            conn.commit()
+            # Enable autocommit for schema changes if supported (converts simple executes)
+            # or just execute one by one.
+            count = 0
+            for col_name, col_type in required_columns.items():
+                if col_name not in existing_columns:
+                    try:
+                        logger.info(f"Migration: Adding missing column '{col_name}'...")
+                        conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}"))
+                        count += 1
+                    except Exception as e:
+                        logger.error(f"Failed to add column {col_name}: {e}")
+            
+            if count > 0:
+                conn.commit()
+                logger.info(f"Migration: Successfully added {count} columns.")
+                
     except Exception as e:
-        logger.warning(f"Migration check failed (safe to ignore if DB is fresh): {e}")
+        logger.warning(f"Migration check failed: {e}")
 
 run_migrations()
 
