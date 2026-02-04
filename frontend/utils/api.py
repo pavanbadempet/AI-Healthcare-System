@@ -14,6 +14,8 @@ except FileNotFoundError:
 
 def get_backend_url(): return BACKEND_URL
 
+import uuid
+
 # --- Session Management ---
 
 def _get_cookie_manager():
@@ -26,11 +28,13 @@ def _get_cookie_manager():
 def save_session(token: str, username: str):
     cm = _get_cookie_manager()
     expires = datetime.now() + timedelta(days=7)
-    cm.set("auth_token", token, expires_at=expires, key="set_token")
-    cm.set("auth_username", username, expires_at=expires, key="set_user")
+    # Use unique keys to force the component to update
+    cm.set("auth_token", token, expires_at=expires, key=f"set_token_{uuid.uuid4()}")
+    cm.set("auth_username", username, expires_at=expires, key=f"set_user_{uuid.uuid4()}")
 
 def load_session() -> Optional[Dict[str, str]]:
     cm = _get_cookie_manager()
+    # No unique need for get, as it just reads current state
     token, username = cm.get("auth_token"), cm.get("auth_username")
     return {"token": token, "username": username} if token and username else None
 
@@ -39,12 +43,12 @@ def clear_session():
     # Check if cookie exists before deleting to avoid KeyError
     try:
         if cm.get("auth_token"):
-            cm.delete("auth_token", key="del_token")
+            cm.delete("auth_token", key=f"del_token_{uuid.uuid4()}")
     except Exception:
         pass
     try:
         if cm.get("auth_username"):
-            cm.delete("auth_username", key="del_user")
+            cm.delete("auth_username", key=f"del_user_{uuid.uuid4()}")
     except Exception:
         pass
     st.session_state.pop('token', None)
