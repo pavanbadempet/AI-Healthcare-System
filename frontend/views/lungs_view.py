@@ -1,4 +1,4 @@
-from frontend.utils import api
+from frontend.utils import api  # Force reload
 from frontend.components import charts
 
 def render_lungs_page():
