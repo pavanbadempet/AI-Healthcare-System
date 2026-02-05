@@ -179,6 +179,8 @@ app.include_router(explanation.router)
 app.include_router(report.router, tags=["Reports"])
 app.include_router(admin.router)
 app.include_router(payments.router)
+from . import appointments
+app.include_router(appointments.router, tags=["Appointments"])
 
 @app.get("/")
 def root():

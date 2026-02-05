@@ -43,6 +43,7 @@ class User(Base):
 
     health_records = relationship("HealthRecord", back_populates="owner")
     chat_logs = relationship("ChatLog", back_populates="owner")
+    appointments = relationship("Appointment", back_populates="owner")
 
 
 class HealthRecord(Base):
@@ -78,3 +79,16 @@ class AuditLog(Base):
     action = Column(String) # VIEW_FULL, DELETE, BAN
     timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     details = Column(String, nullable=True)
+
+class Appointment(Base):
+    __tablename__ = "appointments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    specialist = Column(String)
+    date_time = Column(DateTime)
+    reason = Column(Text)
+    status = Column(String, default="Scheduled") # Scheduled, Completed, Cancelled
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    owner = relationship("User", back_populates="appointments")

@@ -65,6 +65,21 @@ class UserFullResponse(UserResponse):
     chat_logs: List[ChatLogResponse] = []
 
 
+
+class AppointmentCreate(BaseModel):
+    specialist: str
+    date: str
+    time: str
+    reason: str
+
+class AppointmentResponse(BaseModel):
+    id: int
+    specialist: str
+    date_time: datetime
+    reason: str
+    status: str
+    model_config = ConfigDict(from_attributes=True)
+
 # --- Prediction Schemas ---
 
 class DiabetesInput(BaseModel):
