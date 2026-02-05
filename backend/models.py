@@ -46,7 +46,7 @@ class User(Base):
 
     health_records = relationship("HealthRecord", back_populates="owner")
     chat_logs = relationship("ChatLog", back_populates="owner")
-    appointments = relationship("Appointment", back_populates="owner")
+    appointments = relationship("Appointment", back_populates="owner", foreign_keys="[Appointment.user_id]")
 
 
 class HealthRecord(Base):
@@ -95,4 +95,5 @@ class Appointment(Base):
     status = Column(String, default="Scheduled") # Scheduled, Completed, Cancelled
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
-    owner = relationship("User", back_populates="appointments")
+    owner = relationship("User", back_populates="appointments", foreign_keys=[user_id])
+    doctor = relationship("User", foreign_keys=[doctor_id]) # One-way relationship to doctor info
