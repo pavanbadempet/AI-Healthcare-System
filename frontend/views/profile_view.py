@@ -41,12 +41,12 @@ def render_profile_page():
             with col_inputs:
                 col1, col2 = st.columns(2)
                 with col1:
-                    height = st.number_input("Height (cm)", value=float(profile.get("height") or 170.0))
-                    weight = st.number_input("Weight (kg)", value=float(profile.get("weight") or 70.0))
+                    height = st.number_input("Height (cm)", value=int(profile.get("height") or 170), format="%d", step=1)
+                    weight = st.number_input("Weight (kg)", value=float(profile.get("weight") or 70.0), format="%.1f", step=0.1)
                     diet = st.selectbox("Diet", ["Vegetarian", "Non-Vegetarian", "Vegan", "Keto", "Other"], index=0 if not profile.get("diet") else ["Vegetarian", "Non-Vegetarian", "Vegan", "Keto", "Other"].index(profile.get("diet")))
                 with col2:
                     activity = st.selectbox("Activity Level", ["Sedentary", "Lightly Active", "Moderately Active", "Very Active"], index=0)
-                    sleep = st.slider("Sleep (Hours)", 4.0, 12.0, float(profile.get("sleep_hours") or 7.0))
+                    sleep = st.slider("Sleep (Hours)", 4.0, 12.0, float(profile.get("sleep_hours") or 7.0), step=0.5, format="%.1f")
                     stress = st.selectbox("Stress Level", ["Low", "Moderate", "High"], index=1)
                 
                 allow_data = st.checkbox("Allow Data Collection for AI Improvement", value=profile.get("allow_data_collection", True))
@@ -70,8 +70,10 @@ def render_profile_page():
                     "stress_level": stress, "allow_data_collection": allow_data,
                     "profile_picture": pic_data
                 }
-                api.update_profile(payload)
-                st.rerun()
+                if api.update_profile(payload):
+                    # Update Session State immediately for Sidebar sync
+                    st.session_state['profile_picture'] = pic_data
+                    st.rerun()
 
     # Display Metrics
     st.markdown("### My Stats")

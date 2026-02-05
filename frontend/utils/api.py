@@ -81,11 +81,12 @@ def login(username, password) -> bool:
             st.session_state['username'] = username
             save_session(token, username)
             
-            # Fetch profile to get Role
+            # Fetch profile to get Role and Picture
             try:
                 prof = fetch_profile()
                 if prof:
                     st.session_state['role'] = prof.get('role', 'patient')
+                    st.session_state['profile_picture'] = prof.get('profile_picture')
             except:
                 pass
                 
