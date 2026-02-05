@@ -66,8 +66,51 @@ class CustomGeminiWrapper:
         except Exception as e:
             return AIMessage(content=f"Error: {str(e)}")
 
-# Global instance, but effectively lazy due to internal check
-llm = CustomGeminiWrapper("gemini-1.5-flash", GOOGLE_API_KEY)
+# --- Dynamic Model Selection ---
+def get_best_available_model(api_key: str):
+    """
+    Dynamically checks available models to avoid 404 errors.
+    Prioritizes: 1.5-flash > 1.5-pro > gemini-pro
+    """
+    if api_key == "dummy": return "dummy-model"
+    
+    try:
+        genai.configure(api_key=api_key)
+        # List models that support content generation
+        available = []
+        for m in genai.list_models():
+            if 'generateContent' in m.supported_generation_methods:
+                available.append(m.name)
+        
+        logger.info(f"Available Gemini Models: {available}")
+        
+        # Priority Queue
+        # Note: API returns 'models/gemini-1.5-flash', so we check for substrings or full matches
+        priorities = [
+            "gemini-1.5-flash", 
+            "gemini-1.5-flash-latest",
+            "gemini-1.5-pro",
+            "gemini-pro"
+        ]
+        
+        for p in priorities:
+            for m in available:
+                if p in m:
+                    logger.info(f"Selected Model: {m}")
+                    return m # Return full name e.g. 'models/gemini-1.5-flash'
+                    
+        # Fallback to first available
+        if available:
+            return available[0]
+            
+    except Exception as e:
+        logger.error(f"Model discovery failed: {e}")
+        
+    return "gemini-1.5-flash" # Ultimate fallback
+
+# Global instance with dynamic selection
+selected_model = get_best_available_model(GOOGLE_API_KEY)
+llm = CustomGeminiWrapper(selected_model, GOOGLE_API_KEY)
 
 # --- 2. State Definition ---
 class AgentState(TypedDict, total=False):
