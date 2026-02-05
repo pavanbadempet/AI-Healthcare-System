@@ -79,3 +79,50 @@ def get_doctors(db: Session = Depends(database.get_db)):
             profile_picture=doc.profile_picture
         ))
     return response
+@router.put("/{appointment_id}/cancel")
+def cancel_appointment(
+    appointment_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    appt = db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
+    if not appt:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+        
+    # Permission check
+    if current_user.role != "admin" and appt.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    appt.status = "Cancelled"
+    db.commit()
+    return {"message": "Appointment cancelled"}
+
+@router.put("/{appointment_id}/reschedule")
+def reschedule_appointment(
+    appointment_id: int,
+    date: str, # Expecting YYYY-MM-DD
+    time: str, # Expecting HH:MM:SS or HH:MM
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    appt = db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
+    if not appt:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+        
+    if current_user.role != "admin" and appt.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+
+    # Combine date and time
+    try:
+        dt_str = f"{date} {time}"
+        new_dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M:%S")
+    except ValueError:
+        try:
+             new_dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M")
+        except:
+             raise HTTPException(status_code=400, detail="Invalid date/time format")
+    
+    appt.date_time = new_dt
+    appt.status = "Rescheduled"
+    db.commit()
+    return {"message": "Appointment rescheduled"}

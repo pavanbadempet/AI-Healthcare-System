@@ -247,3 +247,28 @@ def fetch_appointments() -> List[Dict]:
         return resp.json() if resp.status_code == 200 else []
     except Exception:
         return []
+def cancel_appointment(appointment_id: int) -> bool:
+    if 'token' not in st.session_state: return False
+    try:
+        resp = requests.put(f"{BACKEND_URL}/appointments/{appointment_id}/cancel", headers=_headers())
+        if resp.status_code == 200:
+            return True
+        st.error(f"Cancellation Failed: {resp.json().get('detail')}")
+    except Exception as e:
+        st.error(f"Error: {e}")
+    return False
+
+def reschedule_appointment(appointment_id: int, date, time) -> bool:
+    if 'token' not in st.session_state: return False
+    try:
+        resp = requests.put(
+            f"{BACKEND_URL}/appointments/{appointment_id}/reschedule", 
+            params={"date": str(date), "time": str(time)}, 
+            headers=_headers()
+        )
+        if resp.status_code == 200:
+            return True
+        st.error(f"Rescheduling Failed: {resp.json().get('detail')}")
+    except Exception as e:
+        st.error(f"Error: {e}")
+    return False
