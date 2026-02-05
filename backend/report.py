@@ -74,9 +74,9 @@ def download_health_report(
         # 1. Fetch latest health record (Simulating a general summary for now)
         # In a real app, we'd aggregate multiple records.
         # For now, let's grab the most recent prediction if any.
-        latest_record = db.query(models.Prediction).filter(
-            models.Prediction.user_id == current_user.id
-        ).order_by(models.Prediction.created_at.desc()).first()
+        latest_record = db.query(models.HealthRecord).filter(
+            models.HealthRecord.user_id == current_user.id
+        ).order_by(models.HealthRecord.timestamp.desc()).first()
 
         report_data = {
             "age": 30, # Default/Placeholder if profile empty
@@ -92,11 +92,15 @@ def download_health_report(
         advice_list = ["maintain a balanced diet", "regular exercise"]
 
         if latest_record:
-            prediction_val = f"{latest_record.record_type.capitalize()} Analysis: {latest_record.prediction_result}"
-            # Extract clinical data from the record if stored in a structured way
-            # (Assuming models.Prediction has a 'input_data' JSON column or similar, 
-            # skipping complex parsing for this hotfix)
-            pass
+            prediction_val = f"{latest_record.record_type.capitalize()} Analysis: {latest_record.prediction}"
+            # Extract clinical data
+            import json
+            try:
+                if latest_record.data:
+                    parsed_data = json.loads(latest_record.data)
+                    report_data.update(parsed_data)
+            except Exception as e:
+                logger.warning(f"Failed to parse record data: {e}")
 
         # 2. Generate PDF using the existing service
         pdf_bytes = pdf_service.generate_medical_report(
