@@ -79,10 +79,10 @@ def render_telemedicine_page():
                  date_str = appt['date_time'].replace("T", " ")[:16] # Simpler formatting
                  
                  st.info(f"""
-                 **{appt['specialist']}**  
-                 📅 {date_str}  
-                 *{appt['status']}*
-                 """)
+**{appt['specialist']}**  
+📅 {date_str}  
+*{appt['status']}*
+""")
         else:
             st.info("No upcoming sessions.")
         

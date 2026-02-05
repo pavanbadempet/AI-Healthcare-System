@@ -59,18 +59,19 @@ def render_chat_page():
     """, unsafe_allow_html=True)
     
     # Header with icon and subtitle
+    # Header with icon and subtitle
     st.markdown("""
-    <div style="margin-bottom: 2rem;">
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 0.5rem;">
-            <span style="font-size: 2rem;">🤖</span>
-            <h1 style="margin: 0; font-size: 1.75rem;">Personal Health Companion</h1>
-        </div>
-        <p style="color: #64748B; font-size: 0.9rem; margin: 0;">
-            I'm connected to your latest lab reports. Ask me to explain your results or give lifestyle advice.
-            <span style="color: #F59E0B;">⚠️ Not a substitute for professional medical advice.</span>
-        </p>
+<div style="margin-bottom: 2rem;">
+    <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 0.5rem;">
+        <span style="font-size: 2rem;">🤖</span>
+        <h1 style="margin: 0; font-size: 1.75rem;">Personal Health Companion</h1>
     </div>
-    """, unsafe_allow_html=True)
+    <p style="color: #64748B; font-size: 0.9rem; margin: 0;">
+        I'm connected to your latest lab reports. Ask me to explain your results or give lifestyle advice.
+        <span style="color: #F59E0B;">⚠️ Not a substitute for professional medical advice.</span>
+    </p>
+</div>
+""", unsafe_allow_html=True)
     
     # Initialize session state
     if "messages" not in st.session_state:
@@ -79,38 +80,38 @@ def render_chat_page():
     # Quick action buttons
     if len(st.session_state.messages) == 0:
         st.markdown("""
-        <style>
-        .quick-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin-bottom: 1.5rem;
-        }
-        .quick-action-btn {
-            background: rgba(30, 41, 59, 0.5);
-            border: 1px solid rgba(148, 163, 184, 0.1);
-            border-radius: 20px;
-            padding: 8px 16px;
-            font-size: 0.85rem;
-            color: #94A3B8;
-            flex: 0 1 auto;
-            white-space: nowrap;
-        }
-        @media only screen and (max-width: 768px) {
-            .quick-action-btn {
-                padding: 6px 12px;
-                font-size: 0.8rem;
-                white-space: normal;
-                text-align: center;
-            }
-        }
-        </style>
-        <div class="quick-actions">
-            <div class="quick-action-btn">📊 "Explain my latest report"</div>
-            <div class="quick-action-btn">🍎 "Diet plan for high glucose"</div>
-            <div class="quick-action-btn">💊 "Remind me about medication"</div>
-        </div>
-        """, unsafe_allow_html=True)
+<style>
+.quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 1.5rem;
+}
+.quick-action-btn {
+    background: rgba(30, 41, 59, 0.5);
+    border: 1px solid rgba(148, 163, 184, 0.1);
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 0.85rem;
+    color: #94A3B8;
+    flex: 0 1 auto;
+    white-space: nowrap;
+}
+@media only screen and (max-width: 768px) {
+    .quick-action-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+        white-space: normal;
+        text-align: center;
+    }
+}
+</style>
+<div class="quick-actions">
+    <div class="quick-action-btn">📊 "Explain my latest report"</div>
+    <div class="quick-action-btn">🍎 "Diet plan for high glucose"</div>
+    <div class="quick-action-btn">💊 "Remind me about medication"</div>
+</div>
+""", unsafe_allow_html=True)
     
     # Display chat history
     for msg in st.session_state.messages:

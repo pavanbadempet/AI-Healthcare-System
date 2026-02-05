@@ -27,12 +27,13 @@ def render_profile_page():
                 current_pic = profile.get("profile_picture")
                 if current_pic:
                     # Fix: Use HTML to bypass Streamlit MediaFileManager bugs with Base64
+                    # Flattened HTML to prevent Markdown code block bugs
                     st.markdown(f'''
-                        <div style="text-align: center;">
-                            <img src="{current_pic}" style="width: 150px; height: 150px; object-fit: cover; border-radius: 50%; border: 3px solid #3B82F6;">
-                            <p style="font-size: 0.8rem; color: #94A3B8; margin-top: 5px;">Current Photo</p>
-                        </div>
-                    ''', unsafe_allow_html=True)
+<div style="text-align: center;">
+    <img src="{current_pic}" style="width: 150px; height: 150px; object-fit: cover; border-radius: 50%; border: 3px solid #3B82F6;">
+    <p style="font-size: 0.8rem; color: #94A3B8; margin-top: 5px;">Current Photo</p>
+</div>
+''', unsafe_allow_html=True)
                 else:
                     st.info("No photo uploaded")
                 
