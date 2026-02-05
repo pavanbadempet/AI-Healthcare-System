@@ -19,12 +19,25 @@ def render_telemedicine_page():
     with col1:
         st.markdown("### 📅 Book an Appointment")
         with st.form("booking_form"):
-            specialist = st.selectbox("Select Specialist", [
-                "General Physician (Dr. Smith)",
-                "Cardiologist (Dr. A. Gupta)",
-                "Endocrinologist (Dr. R. Lee)",
-                "Nutritionist (Sarah Jones)"
-            ])
+            # Fetch Doctors Dynamic List
+            from frontend.utils import api
+            doctors = api.fetch_doctors()
+            
+            doctor_map = {}
+            if doctors:
+                for doc in doctors:
+                    label = f"{doc['full_name']} - {doc['specialization']} (₹{doc['consultation_fee']})"
+                    doctor_map[label] = doc
+                    
+                selected_label = st.selectbox("Select Specialist", list(doctor_map.keys()))
+                selected_doc = doctor_map[selected_label]
+            else:
+                st.warning("No doctors are currently available. Using fallback.")
+                selected_doc = None
+                specialist = st.selectbox("Select Specialist", [
+                     "General Physician (Dr. Smith)",
+                     "Cardiologist (Dr. A. Gupta)"
+                ])
             
             d = st.date_input("Preferred Date", min_value=datetime.today())
             t = st.time_input("Preferred Time", value=datetime.now())
@@ -37,14 +50,19 @@ def render_telemedicine_page():
                 if not reason:
                     st.error("Please provide a reason for your visit.")
                 else:
+                    specialist_name = selected_doc['full_name'] if selected_doc else specialist
+                    doctor_id = selected_doc['id'] if selected_doc else None
+                    
                     payload = {
-                        "specialist": specialist,
+                        "doctor_id": doctor_id,
+                        "specialist": specialist_name,
                         "date": str(d),
                         "time": str(t),
                         "reason": reason
                     }
                     if api.book_appointment(payload):
-                        st.success(f"✅ Appointment Confirmed with {specialist}!")
+                        st.success(f"✅ Appointment Confirmed with {specialist_name}!")
+                        st.info("📧 Confirmation email has been sent.")
                         st.balloons()
                         st.rerun()
     

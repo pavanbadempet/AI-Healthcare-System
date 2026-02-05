@@ -38,6 +38,9 @@ class User(Base):
     subscription_expiry = Column(DateTime, nullable=True)
     razorpay_customer_id = Column(String, nullable=True)
     
+    # Doctor Specific
+    consultation_fee = Column(Float, default=500.0)
+    
     # AI Memory
     psych_profile = Column(Text, nullable=True) # Long term memory summary
 
@@ -85,7 +88,8 @@ class Appointment(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    specialist = Column(String)
+    doctor_id = Column(Integer, ForeignKey("users.id"), nullable=True) # Link to specific doctor
+    specialist = Column(String) # Keep for fallback name display
     date_time = Column(DateTime)
     reason = Column(Text)
     status = Column(String, default="Scheduled") # Scheduled, Completed, Cancelled

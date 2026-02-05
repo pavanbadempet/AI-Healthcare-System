@@ -66,20 +66,30 @@ class UserFullResponse(UserResponse):
 
 
 
+
 class AppointmentCreate(BaseModel):
-    specialist: str
+    doctor_id: Optional[int] = None # Link to real doctor
+    specialist: str # Fallback name
     date: str
     time: str
     reason: str
 
 class AppointmentResponse(BaseModel):
     id: int
+    doctor_id: Optional[int] = None
     specialist: str
     date_time: datetime
     reason: str
     status: str
     model_config = ConfigDict(from_attributes=True)
-
+    
+class DoctorResponse(BaseModel):
+    id: int
+    full_name: str
+    specialization: str = "General Physician" # Default for now if not in DB
+    consultation_fee: float
+    profile_picture: Optional[str] = None
+    
 # --- Prediction Schemas ---
 
 class DiabetesInput(BaseModel):

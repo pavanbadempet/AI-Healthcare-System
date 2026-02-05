@@ -46,7 +46,10 @@ def run_migrations():
         "subscription_expiry": "TIMESTAMP", # Changed from DATETIME for Postgres compat
         "razorpay_customer_id": "VARCHAR",
         "created_at": "TIMESTAMP",
-        "role": "VARCHAR"
+        "role": "VARCHAR",
+        "consultation_fee": "FLOAT",
+        # Note: Foreign keys are harder to add via simple script, assuming basic column add for now
+        "doctor_id": "INTEGER" 
     }
     
     try:
