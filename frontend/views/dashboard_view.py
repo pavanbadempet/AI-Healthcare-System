@@ -53,7 +53,7 @@ def render_dashboard():
     if records:
         tab1, tab2, tab3 = st.tabs(["BMI", "Glucose", "Bilirubin"])
         with tab1: charts.render_trend_chart(records, "bmi", "BMI")
-        with tab2: charts.render_trend_chart(records, "blood_glucose_level", "Glucose")
+        with tab2: charts.render_trend_chart(records, "glucose", "Glucose")
         with tab3: charts.render_trend_chart(records, "total_bilirubin", "Bilirubin")
     else:
         st.info("No test results found. Visit your specialist to upload new diagnostic data.")
