@@ -29,23 +29,22 @@ def get_current_admin(current_user: models.User = Depends(auth.get_current_user)
 # --- Endpoints ---
 
 @router.get("/stats")
-def get_system_stats(
+def get_admin_stats(
     db: Session = Depends(database.get_db),
-    admin: models.User = Depends(get_current_admin)
+    current_user: models.User = Depends(auth.get_current_user)
 ) -> Dict:
     """Get high-level system statistics."""
-    total_users = db.query(models.User).count()
-    total_records = db.query(models.HealthRecord).count()
-    total_chats = db.query(models.ChatLog).count()
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized")
     
     # Calculate mock revenue based on "Pro" users (future)
     # For now, just return 0
     
     return {
-        "total_users": total_users,
-        "total_predictions": total_records,
-        "total_messages": total_chats,
-        "server_status": "Healthy",
+        "total_users": db.query(models.User).count(),
+        "total_predictions": db.query(models.HealthRecord).count(),
+        "total_messages": db.query(models.ChatLog).count(),
+        "server_status": "Online",
         "database_status": "Connected"
     }
 
