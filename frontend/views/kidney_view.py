@@ -1,5 +1,5 @@
 import streamlit as st
-from frontend.utils import api
+from frontend.utils import api  # Force reload
 from frontend.components import charts
 
 def render_kidney_page():
