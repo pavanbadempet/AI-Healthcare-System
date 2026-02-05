@@ -73,18 +73,36 @@ def get_recent_users(
 @router.put("/users/{user_id}/role")
 def update_user_role(
     user_id: int, 
-    role: str,
-    db: Session = Depends(database.get_db),
-    admin: models.User = Depends(get_current_admin)
+    role: str, 
+    admin: models.User = Depends(get_current_admin),
+    db: Session = Depends(database.get_db)
 ):
     """Update a user's system role (patient, doctor, admin)."""
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    
+        
     if role not in ["patient", "doctor", "admin"]:
         raise HTTPException(status_code=400, detail="Invalid role. Must be patient, doctor, or admin.")
         
     user.role = role
     db.commit()
-    return {"status": "success", "message": f"User {user.username} promoted to {role}"}
+    return {"message": f"User role updated to {role}"}
+
+@router.delete("/users/{user_id}")
+def delete_user(
+    user_id: int,
+    admin: models.User = Depends(get_current_admin),
+    db: Session = Depends(database.get_db)
+):
+    """Permanently delete a user and their data."""
+    user = db.query(models.User).filter(models.User.id == user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+        
+    if user.id == admin.id:
+        raise HTTPException(status_code=400, detail="Cannot delete yourself.")
+        
+    db.delete(user)
+    db.commit()
+    return {"message": "User deleted successfully"}

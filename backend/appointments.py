@@ -126,3 +126,21 @@ def reschedule_appointment(
     appt.status = "Rescheduled"
     db.commit()
     return {"message": "Appointment rescheduled"}
+
+@router.delete("/{appointment_id}")
+def delete_appointment(
+    appointment_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    """Admin or Owner can delete an appointment."""
+    appt = db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
+    if not appt:
+        raise HTTPException(status_code=404, detail="Appointment not found")
+        
+    if current_user.role != "admin" and appt.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized")
+        
+    db.delete(appt)
+    db.commit()
+    return {"message": "Appointment deleted"}
