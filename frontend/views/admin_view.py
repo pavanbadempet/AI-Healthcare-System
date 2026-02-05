@@ -67,6 +67,25 @@ def render_admin_page():
                 cols = ['id', 'username', 'role', 'full_name', 'email', 'joined']
                 st.dataframe(df[cols], use_container_width=True, hide_index=True)
                 
+                st.markdown("### ✏️ Update Role")
+                c1, c2, c3 = st.columns([2, 1, 1])
+                with c1:
+                    user_names = {u['username']: u['id'] for u in users}
+                    selected_username = st.selectbox("Select User", list(user_names.keys()))
+                
+                with c2:
+                    new_role = st.selectbox("New Role", ["patient", "doctor", "admin"])
+                    
+                with c3:
+                    st.write("") # Spacer
+                    st.write("")
+                    if st.button("Update Role", type="primary"):
+                        uid = user_names[selected_username]
+                        if api.update_user_role(uid, new_role):
+                            st.rerun()
+            else:
+                st.caption("No users found.")
+                
         # 5. Appointment Management
         st.markdown("---")
         st.subheader("📅 Global Appointments")
@@ -99,27 +118,6 @@ def render_admin_page():
             st.info("No appointments found in the system.")
             
         st.markdown("---")
-            
-        # 6. Recent Users & Management
-                
-                st.markdown("### ✏️ Update Role")
-                c1, c2, c3 = st.columns([2, 1, 1])
-                with c1:
-                    user_names = {u['username']: u['id'] for u in users}
-                    selected_username = st.selectbox("Select User", list(user_names.keys()))
-                
-                with c2:
-                    new_role = st.selectbox("New Role", ["patient", "doctor", "admin"])
-                    
-                with c3:
-                    st.write("") # Spacer
-                    st.write("")
-                    if st.button("Update Role", type="primary"):
-                        uid = user_names[selected_username]
-                        if api.update_user_role(uid, new_role):
-                            st.rerun()
-            else:
-                st.caption("No users found.")
         
     except Exception as e:
         st.error(f"Connection Error: {e}")
