@@ -67,6 +67,41 @@ def render_admin_page():
                 cols = ['id', 'username', 'role', 'full_name', 'email', 'joined']
                 st.dataframe(df[cols], use_container_width=True, hide_index=True)
                 
+        # 5. Appointment Management
+        st.markdown("---")
+        st.subheader("📅 Global Appointments")
+        
+        appointments = api.fetch_appointments()
+        if appointments:
+            import pandas as pd
+            df_appt = pd.DataFrame(appointments)
+            
+            # Enrich with logic if needed, but raw display is fine for MVP
+            # Columns: id, specialist, date_time, reason, status
+            
+            # Simple status filter
+            status_filter = st.selectbox("Filter Status", ["All", "Scheduled", "Completed", "Cancelled"])
+            if status_filter != "All":
+                df_appt = df_appt[df_appt['status'] == status_filter]
+                
+            st.dataframe(
+                df_appt,
+                column_config={
+                    "date_time": st.column_config.DatetimeColumn("Date & Time", format="D MMM YYYY, h:mm a"),
+                    "specialist": "Doctor",
+                    "reason": "Patient Note",
+                    "status": "Status"
+                },
+                use_container_width=True,
+                hide_index=True
+            )
+        else:
+            st.info("No appointments found in the system.")
+            
+        st.markdown("---")
+            
+        # 6. Recent Users & Management
+                
                 st.markdown("### ✏️ Update Role")
                 c1, c2, c3 = st.columns([2, 1, 1])
                 with c1:
