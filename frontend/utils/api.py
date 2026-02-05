@@ -140,6 +140,16 @@ def update_profile(data: Dict[str, Any]) -> bool:
         st.error(f"Error: {e}")
     return False
 
+def fetch_health_report() -> Optional[bytes]:
+    """Fetch the PDF health report with auth headers."""
+    if 'token' not in st.session_state: return None
+    try:
+        resp = requests.get(f"{BACKEND_URL}/download/health-report", headers=_headers())
+        if resp.status_code == 200:
+            return resp.content
+    except Exception as e:
+        print(f"Error fetching report: {e}")
+    return None
 
 # --- Records ---
 

@@ -64,30 +64,27 @@ def render_profile_page():
     </p>
     """, unsafe_allow_html=True)
     
-    # Download button with link to backend endpoint
-    backend_url = api.get_backend_url()
-    token = st.session_state.get('token', '')
+    # Authenticated Download Button
+    c1, c2 = st.columns([1, 2])
     
-    col1, col2 = st.columns([1, 3])
-    with col1:
-        st.markdown(f"""
-        <a href="{backend_url}/download/health-report" target="_blank" style="text-decoration: none;">
-            <button style="
-                background: linear-gradient(135deg, #3B82F6, #8B5CF6);
-                color: white;
-                border: none;
-                padding: 10px 20px;
-                border-radius: 8px;
-                font-weight: 600;
-                cursor: pointer;
-                box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            ">
-                📥 Download PDF Report
-            </button>
-        </a>
-        """, unsafe_allow_html=True)
-    
-    with col2:
+    with c1:
+        # We use a callback pattern or direct fetch if it's fast enough.
+        # Since generating PDF might take a second, we'll make it direct for now.
+        report_data = api.fetch_health_report()
+        
+        if report_data:
+            st.download_button(
+                label="📥 Download PDF Report",
+                data=report_data,
+                file_name=f"Health_Report_{username}.pdf",
+                mime="application/pdf",
+                key="dl_pdf_btn",
+                use_container_width=True,
+            )
+        else:
+            st.warning("Report unavailable (check connection)")
+            
+    with c2:
         st.info("💡 **Tip:** The PDF includes your profile, recent health assessments, and personalized recommendations.")
 
     # --- Personalized Health Tips ---

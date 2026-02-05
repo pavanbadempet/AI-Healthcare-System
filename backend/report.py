@@ -54,3 +54,66 @@ async def analyze_report(file: UploadFile = File(...)) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Report Analysis Failed: {e}")
         raise HTTPException(status_code=500, detail="Failed to analyze report")
+        raise HTTPException(status_code=500, detail="Failed to analyze report")
+
+# --- PDF Download Endpoint ---
+from fastapi import Depends
+from fastapi.responses import Response
+from sqlalchemy.orm import Session
+from . import database, auth, models, pdf_service
+
+@router.get("/download/health-report")
+def download_health_report(
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db)
+):
+    """
+    Generate and download a comprehensive health report PDF for the authenticated user.
+    """
+    try:
+        # 1. Fetch latest health record (Simulating a general summary for now)
+        # In a real app, we'd aggregate multiple records.
+        # For now, let's grab the most recent prediction if any.
+        latest_record = db.query(models.Prediction).filter(
+            models.Prediction.user_id == current_user.id
+        ).order_by(models.Prediction.created_at.desc()).first()
+
+        report_data = {
+            "age": 30, # Default/Placeholder if profile empty
+            "gender": "Unknown"
+        }
+        
+        # Merge Profile Data
+        if current_user.about_me:
+            # Simplistic parsing or just dumping raw profile fields
+            report_data["about"] = current_user.about_me
+            
+        prediction_val = "General Health Summary"
+        advice_list = ["maintain a balanced diet", "regular exercise"]
+
+        if latest_record:
+            prediction_val = f"{latest_record.record_type.capitalize()} Analysis: {latest_record.prediction_result}"
+            # Extract clinical data from the record if stored in a structured way
+            # (Assuming models.Prediction has a 'input_data' JSON column or similar, 
+            # skipping complex parsing for this hotfix)
+            pass
+
+        # 2. Generate PDF using the existing service
+        pdf_bytes = pdf_service.generate_medical_report(
+            user_name=current_user.username,
+            report_type="Comprehensive Health Profile",
+            prediction=prediction_val,
+            data=report_data,
+            advice=advice_list
+        )
+
+        # 3. Return as downloadable file
+        return Response(
+            content=pdf_bytes, 
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename=Health_Report_{current_user.username}.pdf"}
+        )
+
+    except Exception as e:
+        logger.error(f"PDF Generation Failed: {e}")
+        raise HTTPException(status_code=500, detail="Could not generate report")

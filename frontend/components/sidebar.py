@@ -18,33 +18,28 @@ def render_sidebar():
     
     # --- SIDEBAR RENDER ---
     with st.sidebar:
-        # 1. Logo & Brand
-        # 1. Logo & Brand - Refactored for Flexbox Alignment
-        import base64
-        import os
+        # 1. Logo & Brand - Refactored for Flexbox Alignment (SVG Mode)
         
-        # Helper to load image as base64
-        def get_img_base64(path):
-            try:
-                if os.path.exists(path):
-                    with open(path, "rb") as f:
-                        data = f.read()
-                        return base64.b64encode(data).decode()
-            except:
-                pass
-            return None
-
-        base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        logo_path = os.path.join(base_dir, "frontend", "static", "logo.png")
-        img_b64 = get_img_base64(logo_path)
-        
-        img_html = f'<img src="data:image/png;base64,{img_b64}" style="width: 48px; height: 48px; border-radius: 12px;">' if img_b64 else '<div style="font-size: 40px;">🏥</div>'
+        # Professional Vector Logo (Heart + Pulse)
+        # Using SVG ensures perfect scaling and 100% transparent background
+        svg_logo = """
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" style="stop-color:#60A5FA;stop-opacity:1" />
+                    <stop offset="100%" style="stop-color:#34D399;stop-opacity:1" />
+                </linearGradient>
+            </defs>
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" fill="url(#grad1)" fill-opacity="0.2" stroke="url(#grad1)" stroke-width="2"/>
+            <path d="M6 12h2l2-4 2 8 2-4h2" stroke="url(#grad1)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        """
         
         st.markdown(f"""
-        <div style="display: flex; align-items: center; gap: 15px; padding: 10px 0 20px 0;">
-            {img_html}
+        <div style="display: flex; align-items: center; gap: 12px; padding: 15px 0 25px 0;">
+            {svg_logo}
             <div style="line-height: 1.2;">
-                <div style="font-size: 20px; font-weight: 700; color: #F8FAFC; letter-spacing: -0.5px;">AI Healthcare</div>
+                <div style="font-size: 22px; font-weight: 700; color: #F8FAFC; letter-spacing: -0.5px;">AI Healthcare</div>
                 <div style="font-size: 13px; color: #94A3B8; font-weight: 400;">Patient Portal</div>
             </div>
         </div>
