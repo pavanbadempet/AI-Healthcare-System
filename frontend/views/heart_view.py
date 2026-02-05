@@ -12,11 +12,39 @@ def render_heart_page():
 </div>
 """, unsafe_allow_html=True)
     
+    # --- Autofill Logic ---
+    profile = api.fetch_profile() or {}
+    
+    # 1. Age Calculation
+    default_age = 45
+    if profile.get('dob'):
+        try:
+            from datetime import datetime
+            birth_date = datetime.strptime(str(profile['dob']).split()[0], "%Y-%m-%d")
+            today = datetime.today()
+            default_age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+        except:
+            pass
+
+    # 2. Gender
+    p_gender = profile.get('gender', 'Male')
+    gender_idx = 0 if p_gender == "Female" else 1 # [Female, Male]
+    
+    # 3. BMI Calculation
+    default_bmi = 25.0
+    if profile.get('height') and profile.get('weight'):
+        try:
+            h_m = float(profile['height']) / 100
+            w_kg = float(profile['weight'])
+            default_bmi = round(w_kg / (h_m ** 2), 1)
+        except:
+            pass
+
     col1, col2 = st.columns(2)
     with col1:
-        age = st.number_input("Age", 1, 120, 45)
-        gender = st.selectbox("Gender", ["Female", "Male"])
-        bmi = st.number_input("BMI", 10.0, 50.0, 25.0)
+        age = st.number_input("Age", 1, 120, default_age)
+        gender = st.selectbox("Gender", ["Female", "Male"], index=gender_idx)
+        bmi = st.number_input("BMI", 10.0, 50.0, default_bmi)
         systolic = st.number_input("Systolic BP", 80, 250, 120)
         chol = st.number_input("Cholesterol", 100, 600, 200)
     
