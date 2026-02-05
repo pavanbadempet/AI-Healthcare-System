@@ -85,10 +85,14 @@ def render_telemedicine_page():
                      st.write(f"**Status:** <span style='color:{status_color}'>{status}</span>", unsafe_allow_html=True)
                      st.write(f"**Reason:** {appt['reason']}")
                      
+                     # Admin Explanation
+                     if st.session_state.get('role') == 'admin':
+                         st.caption("🔒 Admin View: You are seeing this because you are an Admin.")
+
                      if status != "Cancelled":
                         col_a, col_b = st.columns(2)
                         with col_a:
-                            if st.button("Cancel Appointment", key=f"cancel_{appt['id']}", type="secondary"):
+                            if st.button("Cancel", key=f"cancel_{appt['id']}", type="secondary"):
                                 if api.cancel_appointment(appt['id']):
                                     st.success("Cancelled!")
                                     st.rerun()
