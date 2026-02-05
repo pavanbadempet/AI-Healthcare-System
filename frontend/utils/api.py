@@ -217,3 +217,33 @@ def create_payment_order(amount_paise: int, plan_id: str):
         return resp.json() if resp.status_code == 200 else None
     except Exception:
         return None
+
+
+# --- Telemedicine ---
+
+def fetch_doctors() -> List[Dict]:
+    if 'token' not in st.session_state: return []
+    try:
+        resp = requests.get(f"{BACKEND_URL}/appointments/doctors", headers=_headers())
+        return resp.json() if resp.status_code == 200 else []
+    except Exception:
+        return []
+
+def book_appointment(data: Dict) -> bool:
+    if 'token' not in st.session_state: return False
+    try:
+        resp = requests.post(f"{BACKEND_URL}/appointments/", json=data, headers=_headers())
+        if resp.status_code == 200:
+            return True
+        st.error(f"Booking Failed: {_format_error(resp.json().get('detail'))}")
+    except Exception as e:
+        st.error(f"Error: {e}")
+    return False
+
+def fetch_appointments() -> List[Dict]:
+    if 'token' not in st.session_state: return []
+    try:
+        resp = requests.get(f"{BACKEND_URL}/appointments/", headers=_headers())
+        return resp.json() if resp.status_code == 200 else []
+    except Exception:
+        return []
