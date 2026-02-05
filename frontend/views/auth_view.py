@@ -101,13 +101,23 @@ div[data-testid="stFormSubmitButton"] button:active {
 </style>
 """, unsafe_allow_html=True)
 
+    # Custom Header with SVG Logo
+    svg_logo = """
+    <svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+        <path d="M12 5 9.04 11H6a1 1 0 0 0 0 2h4.37l1.63-3.26L14.6 15h3.83a1 1 0 0 0 0-2h-3.04l-1.63-3.26z"/>
+    </svg>
+    """
+    
     col1, col2 = st.columns([1.2, 1])
     
     # Left - Branding
     with col1:
-        st.markdown("""
+        st.markdown(f"""
 <div style="padding: 2rem;">
-    <div style="font-size: 3rem; margin-bottom: 1rem; filter: drop-shadow(0 0 20px rgba(59,130,246,0.3));">🏥</div>
+    <div style="margin-bottom: 1rem; filter: drop-shadow(0 0 20px rgba(59,130,246,0.3));">
+        {svg_logo}
+    </div>
     <h1 style="font-size: 2.75rem; margin: 0 0 0.75rem 0; color: white; line-height: 1.15; font-weight: 800;">
         The Future of<br>
         <span style="background: linear-gradient(90deg, #60A5FA, #34D399); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">AI Healthcare</span>
