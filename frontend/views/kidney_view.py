@@ -13,11 +13,23 @@ def render_kidney_page():
 """, unsafe_allow_html=True)
 
     with st.form("kidney_form"):
+        profile = api.fetch_profile() or {}
+        # 1. Age Calculation
+        default_age = 50
+        if profile.get('dob'):
+            try:
+                from datetime import datetime
+                birth_date = datetime.strptime(str(profile['dob']).split()[0], "%Y-%m-%d")
+                today = datetime.today()
+                default_age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+            except:
+                pass
+
         # Section 1: Demographics & Vitals
         st.subheader("Patient Details")
         c1, c2, c3 = st.columns(3)
         with c1:
-            age = st.number_input("Age", 1, 120, 50)
+            age = st.number_input("Age", 1, 120, default_age)
         with c2:
             bp = st.number_input("Blood Pressure (mm/Hg)", 50.0, 200.0, 80.0)
         with c3:

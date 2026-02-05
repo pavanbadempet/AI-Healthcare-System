@@ -13,10 +13,28 @@ def render_lungs_page():
 """, unsafe_allow_html=True)
 
     with st.form("lungs_form"):
+        profile = api.fetch_profile() or {}
+        
+        # 1. Age & Gender
+        default_age = 60
+        gender_idx = 0 # Default Male [Male, Female]
+        
+        if profile.get('dob'):
+            try:
+                from datetime import datetime
+                birth_date = datetime.strptime(str(profile['dob']).split()[0], "%Y-%m-%d")
+                today = datetime.today()
+                default_age = today.year - birth_date.year - ((today.month, today.day) < (birth_date.month, birth_date.day))
+            except:
+                pass
+        
+        if profile.get('gender') == 'Female':
+            gender_idx = 1
+            
         col1, col2 = st.columns(2)
         with col1:
-            age = st.number_input("Age", 0, 120, 60)
-            gender = st.selectbox("Gender", ["Male", "Female"])
+            age = st.number_input("Age", 0, 120, default_age)
+            gender = st.selectbox("Gender", ["Male", "Female"], index=gender_idx)
         
         st.subheader("Symptoms & Habits")
         
