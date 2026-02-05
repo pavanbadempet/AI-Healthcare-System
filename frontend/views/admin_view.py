@@ -79,7 +79,7 @@ def render_admin_page():
                 with c3:
                     st.write("") # Spacer
                     st.write("")
-                    if st.button("Update Role", type="primary", use_container_width=True):
+                    if st.button("Update Role", type="primary"):
                         uid = user_names[selected_username]
                         if api.update_user_role(uid, new_role):
                             st.rerun()
