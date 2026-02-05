@@ -117,22 +117,30 @@ def render_admin_page():
                 filtered_appts = [a for a in appointments if status_filter == "All" or a['status'] == status_filter]
                 
                 if filtered_appts:
+                    # Pre-fetch user map for speed
+                    u_ids = list(set([a['user_id'] for a in appointments]))
+                    
+                    # Manual fetch (or in real app, JOIN)
+                    # Currently we just show ID, let's try to fetch if we have the cache or just show ID
+                    
                     for appt in filtered_appts:
                         date_str = appt['date_time'].replace("T", " ")[:16]
                         color = "#34D399" if appt['status'] in ['Scheduled', 'Rescheduled'] else "#94A3B8"
                         
-                        with st.expander(f"{date_str} | {appt['specialist']} (ID: {appt['id']})"):
-                            c_a, c_b = st.columns([3, 1])
-                            with c_a:
-                                st.markdown(f"**Patient ID:** `{appt['user_id']}`")
-                                st.markdown(f"**Status:** <span style='color:{color}'>{appt['status']}</span>", unsafe_allow_html=True)
-                                st.markdown(f"**Reason:** {appt['reason']}")
-                            
-                            with c_b:
-                                if st.button("🗑️ Delete", key=f"del_apt_{appt['id']}"):
-                                    if api.delete_appointment(appt['id']):
-                                        st.success("Deleted!")
-                                        st.rerun()
+                        # Better Header
+                        header = f"📅 {date_str}  |  👨‍⚕️ {appt['specialist']}  |  Patient ID: {appt['user_id']}"
+                        
+                        with st.expander(header):
+                             c_a, c_b = st.columns([3, 1])
+                             with c_a:
+                                 st.markdown(f"**Reason:** {appt['reason']}")
+                                 st.markdown(f"**Status:** <span style='color:{color}'>{appt['status']}</span>", unsafe_allow_html=True)
+                             
+                             with c_b:
+                                 if st.button("🗑️ Delete", key=f"del_apt_{appt['id']}"):
+                                     if api.delete_appointment(appt['id']):
+                                         st.success("Deleted!")
+                                         st.rerun()
                 else:
                     st.info(f"No {status_filter} appointments found.")
             else:
