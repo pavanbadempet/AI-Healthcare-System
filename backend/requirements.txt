@@ -40,7 +40,7 @@ langgraph>=0.0.10
 # This saves ~200MB of memory!
 
 # --- Utilities ---
-fpdf
+fpdf2
 pillow
 feedparser>=6.0.10
 razorpay
