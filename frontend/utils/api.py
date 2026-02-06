@@ -272,3 +272,36 @@ def reschedule_appointment(appointment_id: int, date, time) -> bool:
     except Exception as e:
         st.error(f"Error: {e}")
     return False
+
+def delete_user(user_id: int) -> bool:
+    if 'token' not in st.session_state: return False
+    try:
+        resp = requests.delete(f"{BACKEND_URL}/admin/users/{user_id}", headers=_headers())
+        if resp.status_code == 200:
+            return True
+        st.error(f"User Deletion Failed: {resp.json().get('detail')}")
+    except Exception as e:
+        st.error(f"Error: {e}")
+    return False
+
+def delete_appointment(appointment_id: int) -> bool:
+    if 'token' not in st.session_state: return False
+    try:
+        resp = requests.delete(f"{BACKEND_URL}/appointments/{appointment_id}", headers=_headers())
+        if resp.status_code == 200:
+            return True
+        st.error(f"Appointment Deletion Failed: {resp.json().get('detail')}")
+    except Exception as e:
+        st.error(f"Error: {e}")
+    return False
+
+def update_user_role(user_id: int, role: str) -> bool:
+    if 'token' not in st.session_state: return False
+    try:
+        resp = requests.put(f"{BACKEND_URL}/admin/users/{user_id}/role", params={"role": role}, headers=_headers())
+        if resp.status_code == 200:
+            return True
+        st.error("Update failed")
+    except Exception as e:
+        st.error(f"Error: {e}")
+    return False

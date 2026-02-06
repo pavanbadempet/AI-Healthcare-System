@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 def send_booking_confirmation(to_email: str, patient_name: str, doctor_name: str, date_time: str, link: str):
     """
     Simulates sending a booking confirmation email.
-    In production, this would use SMTP or SendGrid.
+    If SMTP_SERVER is set, it sends a REAL email.
+    Otherwise, logs it.
     """
     try:
         # Construct Email Body
@@ -32,13 +33,32 @@ def send_booking_confirmation(to_email: str, patient_name: str, doctor_name: str
         AI Healthcare System
         """
         
-        # Log instead of Send (Safety First)
-        logger.info(f"📧 [EMAIL SENT TO {to_email}] Subject: {subject}")
-        logger.info(f"📧 Body: {body.strip()}")
-        
-        # If we had SMTP credentials, we would use them here:
-        # if os.getenv("SMTP_SERVER"):
-        #     send_smtp_email(...)
+        smtp_server = os.getenv("SMTP_SERVER")
+        smtp_port = int(os.getenv("SMTP_PORT", 587))
+        smtp_user = os.getenv("SMTP_EMAIL")
+        smtp_password = os.getenv("SMTP_PASSWORD")
+
+        if smtp_server and smtp_user:
+            import smtplib
+            from email.mime.text import MIMEText
+            from email.mime.multipart import MIMEMultipart
+
+            msg = MIMEMultipart()
+            msg['From'] = smtp_user
+            msg['To'] = to_email
+            msg['Subject'] = subject
+            msg.attach(MIMEText(body, 'plain'))
+
+            server = smtplib.SMTP(smtp_server, smtp_port)
+            server.starttls()
+            server.login(smtp_user, smtp_password)
+            text = msg.as_string()
+            server.sendmail(smtp_user, to_email, text)
+            server.quit()
+            logger.info(f"✅ Real Email sent to {to_email}")
+        else:
+            # Fallback to simulation
+            logger.info(f"📧 [SIMULATION] To: {to_email} | Subject: {subject}")
             
         return True
     except Exception as e:
