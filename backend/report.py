@@ -10,7 +10,8 @@ Author: Pavan Badempet
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from typing import Dict, Any
 import logging
-from . import vision_service
+import json
+from . import vision_service, database, auth, models, pdf_service
 
 # --- Logging ---
 # logging.basicConfig(level=logging.INFO) # Handled in main.py
@@ -120,4 +121,6 @@ def download_health_report(
 
     except Exception as e:
         logger.error(f"PDF Generation Failed: {e}")
-        raise HTTPException(status_code=500, detail="Could not generate report")
+        # Return a fallback PDF or 500 based on preference. 
+        # For now, let's try to return a simple error PDF if possible, or just raise 500
+        raise HTTPException(status_code=500, detail=f"PDF Generation Error: {str(e)}")

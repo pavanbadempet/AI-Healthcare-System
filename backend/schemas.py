@@ -76,6 +76,7 @@ class AppointmentCreate(BaseModel):
 
 class AppointmentResponse(BaseModel):
     id: int
+    user_id: int # Vital for Admin/Doctor visibility
     doctor_id: Optional[int] = None
     specialist: str
     date_time: datetime
