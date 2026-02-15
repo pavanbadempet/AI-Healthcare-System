@@ -1,0 +1,154 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Enterprise Database
+  postgres:
+    image: postgres:15
+    container_name: healthcare_postgres
+    environment:
+      POSTGRES_DB: healthcare_prod
+      POSTGRES_USER: healthcare_admin
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U healthcare_admin -d healthcare_prod"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for Caching & Sessions
+  redis:
+    image: redis:7-alpine
+    container_name: healthcare_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: always
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD}
+
+  # Prometheus for Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: healthcare_prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=200h'
+      - '--web.enable-lifecycle'
+
+  # Grafana for Visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: healthcare_grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    depends_on:
+      - prometheus
+
+  # Jaeger for Distributed Tracing
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: healthcare_jaeger
+    ports:
+      - "16686:16686"
+      - "14268:14268"
+    environment:
+      - COLLECTOR_OTLP_ENABLED=true
+
+  # Backend with Enterprise Features
+  backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile.enterprise
+    container_name: healthcare_backend_enterprise
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://healthcare_admin:${POSTGRES_PASSWORD}@postgres:5432/healthcare_prod
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
+      - PROMETHEUS_ENABLED=true
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    volumes:
+      - ./.env:/app/.env
+      - ./vector_store.pkl:/app/vector_store.pkl
+      - ./mlruns:/app/mlruns
+      - ./Datasets:/app/Datasets
+      - ./backend:/app/backend
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend with Enhanced Features
+  frontend:
+    build: .
+    container_name: healthcare_frontend_enterprise
+    command: streamlit run frontend/main.py --server.port 8501 --server.address 0.0.0.0
+    ports:
+      - "8501:8501"
+    environment:
+      - BACKEND_URL=http://backend:8000
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+    depends_on:
+      backend:
+        condition: service_healthy
+    volumes:
+      - ./.streamlit:/app/.streamlit
+      - ./frontend:/app/frontend
+
+  # MLflow with PostgreSQL Backend
+  mlflow:
+    build: .
+    container_name: healthcare_mlflow_enterprise
+    command: >
+      bash -c "mlflow server 
+      --host 0.0.0.0 
+      --port 5000 
+      --backend-store-uri postgresql://healthcare_admin:${POSTGRES_PASSWORD}@postgres:5432/mlflow
+      --default-artifact-root /app/mlruns
+      --serve-artifacts"
+    ports:
+      - "5000:5000"
+    environment:
+      - DATABASE_URL=postgresql://healthcare_admin:${POSTGRES_PASSWORD}@postgres:5432/mlflow
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./mlruns:/app/mlruns
+    restart: always
+
+volumes:
+  postgres_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:
