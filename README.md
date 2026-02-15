@@ -24,9 +24,9 @@
 
 Most patients get a PDF full of numbers they don't understand. Our platform fixes this by combining:
 1.  **Automated Screening:** Immediate risk assessment for Diabetes, Heart Disease, and more.
-2.  **AI Explanation:** A "Medical Assistant" chat that explains the report in plain English (powered by Gemini).
+2.  **AI Explanation:** A "Medical Assistant" chat that explains the report in plain English (powered by Gemini Pro).
 
-It's a full-stack solution diagnostic centers get a dashboard to manage patients, and patients get a secure portal to understand their health.
+It's a full-stack solution—diagnostic centers get a dashboard to manage patients, and patients get a secure portal to understand their health.
 
 ---
 
