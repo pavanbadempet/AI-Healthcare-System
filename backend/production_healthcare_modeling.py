@@ -5,14 +5,11 @@ Real-world solution for healthcare data requirements
 """
 
 import logging
-from typing import Dict, List, Any, Optional, Tuple
-from datetime import datetime, timezone, timedelta
+from typing import Dict, List, Any
 from dataclasses import dataclass
 from enum import Enum
-import json
 from pyspark.sql import SparkSession, DataFrame as SparkDF, Window
-from pyspark.sql.functions import col, lit, current_timestamp, row_number, when, max as spark_max, min as spark_min
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType, FloatType, DateType, TimestampType, BooleanType
+from pyspark.sql.functions import col, lit, current_timestamp, row_number
 from delta.tables import DeltaTable
 
 logger = logging.getLogger(__name__)
@@ -229,7 +226,6 @@ class ProductionHealthcareModeler:
     
     def update_scd_record(self, table_name: str, business_key: str, updates: Dict[str, Any]) -> Dict[str, Any]:
         """Update SCD Type 2 record with proper business logic"""
-        config = self.table_configs[table_name]
         table_path = f"{self.warehouse_path}/{table_name}"
         
         # Create update DataFrame
@@ -249,8 +245,8 @@ class ProductionHealthcareModeler:
             StructField("end_date", TimestampType(), True)
         ])
         
-        for col in update_cols:
-            update_schema.add(StructField(col, StringType(), True))
+        for up_col in update_cols:
+            update_schema.add(StructField(up_col, StringType(), True))
         
         update_data = [(business_key, current_timestamp(), current_timestamp()) + tuple(updates.values())]
         update_df = self.spark.createDataFrame(update_data, update_schema)
@@ -269,7 +265,7 @@ class ProductionHealthcareModeler:
             set={
                 "is_current": False,
                 "end_date": current_timestamp(),
-                **{col: f"source.{col}" for col in update_cols}
+                **{up_col: f"source.{up_col}" for up_col in update_cols}
             }
         ).whenNotMatchedInsertAll().execute()
         
@@ -379,7 +375,6 @@ class ProductionHealthcareModeler:
     
     def get_historical_snapshot(self, table_name: str, as_of_date: str) -> SparkDF:
         """Get historical snapshot of entire table"""
-        config = self.table_configs[table_name]
         table_path = f"{self.warehouse_path}/{table_name}"
         
         return self.spark.read.format("delta") \
@@ -402,7 +397,7 @@ class ProductionHealthcareModeler:
                 'vacuum_completed': True,
                 'retention_hours': config.vacuum_retention_hours,
                 'history_preserved': config.strategy != TableStrategy.TIME_TRAVEL,
-                'message': f"VACUUM completed successfully. History preserved via SCD Type 2." if config.strategy == TableStrategy.SCD_TYPE_2 else f"VACUUM completed. Time travel available for last {config.vacuum_retention_hours} hours."
+                'message': "VACUUM completed successfully. History preserved via SCD Type 2." if config.strategy == TableStrategy.SCD_TYPE_2 else f"VACUUM completed. Time travel available for last {config.vacuum_retention_hours} hours."
             }
             
         except Exception as e:

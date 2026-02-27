@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Health Copilot — Browser AI (WebGPU)</title>
+<style>
+  :root {
+    --bg: #0a0e1a; --surface: #111827; --surface2: #1e293b;
+    --accent: #06b6d4; --accent2: #8b5cf6; --text: #e2e8f0;
+    --text-dim: #94a3b8; --success: #10b981; --warn: #f59e0b;
+    --error: #ef4444; --radius: 12px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'Inter',system-ui,sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; }
+
+  .header { background:linear-gradient(135deg,#0f172a,#1e1b4b); padding:16px 24px; display:flex; align-items:center; gap:16px; border-bottom:1px solid #1e293b; }
+  .header h1 { font-size:1.2rem; background:linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .badge { font-size:0.65rem; padding:3px 8px; border-radius:20px; font-weight:600; }
+  .badge-webgpu { background:rgba(6,182,212,0.15); color:var(--accent); border:1px solid rgba(6,182,212,0.3); }
+  .badge-server { background:rgba(139,92,246,0.15); color:var(--accent2); border:1px solid rgba(139,92,246,0.3); }
+  .badge-offline { background:rgba(239,68,68,0.15); color:var(--error); border:1px solid rgba(239,68,68,0.3); }
+  .header-right { margin-left:auto; display:flex; gap:8px; align-items:center; }
+
+  .model-panel { background:var(--surface); border-bottom:1px solid #1e293b; padding:12px 24px; display:none; }
+  .model-panel.active { display:block; }
+  .model-panel h3 { font-size:0.85rem; color:var(--text-dim); margin-bottom:8px; }
+  .model-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:8px; }
+  .model-card { background:var(--surface2); border-radius:8px; padding:10px 14px; cursor:pointer; border:1px solid transparent; transition:all 0.2s; }
+  .model-card:hover { border-color:var(--accent); }
+  .model-card.selected { border-color:var(--accent); background:rgba(6,182,212,0.08); }
+  .model-card .name { font-size:0.8rem; font-weight:600; }
+  .model-card .size { font-size:0.7rem; color:var(--text-dim); }
+  .model-card .status { font-size:0.65rem; margin-top:4px; }
+  .progress-wrap { margin-top:8px; display:none; }
+  .progress-wrap.active { display:block; }
+  .progress-bar { height:4px; background:var(--surface2); border-radius:2px; overflow:hidden; }
+  .progress-fill { height:100%; background:linear-gradient(90deg,var(--accent),var(--accent2)); width:0%; transition:width 0.3s; }
+  .progress-text { font-size:0.7rem; color:var(--text-dim); margin-top:4px; }
+
+  .chat-area { flex:1; overflow-y:auto; padding:20px 24px; display:flex; flex-direction:column; gap:16px; }
+  .msg { max-width:75%; padding:12px 16px; border-radius:var(--radius); font-size:0.88rem; line-height:1.6; animation:fadeIn 0.3s ease; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+  .msg.user { align-self:flex-end; background:linear-gradient(135deg,rgba(6,182,212,0.2),rgba(139,92,246,0.2)); border:1px solid rgba(6,182,212,0.2); }
+  .msg.ai { align-self:flex-start; background:var(--surface); border:1px solid #1e293b; }
+  .msg.system { align-self:center; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.2); color:var(--warn); font-size:0.8rem; max-width:90%; text-align:center; }
+  .msg .tier-tag { font-size:0.6rem; color:var(--text-dim); margin-top:6px; opacity:0.7; }
+  .msg .sources { margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.05); }
+  .msg .sources span { display:inline-block; font-size:0.65rem; padding:2px 6px; background:rgba(6,182,212,0.1); border-radius:4px; margin:2px; color:var(--accent); }
+
+  .input-area { padding:16px 24px; background:var(--surface); border-top:1px solid #1e293b; }
+  .input-wrap { display:flex; gap:8px; }
+  .input-wrap input { flex:1; background:var(--surface2); border:1px solid #334155; border-radius:8px; padding:12px 16px; color:var(--text); font-size:0.9rem; outline:none; transition:border-color 0.2s; }
+  .input-wrap input:focus { border-color:var(--accent); }
+  .input-wrap button { background:linear-gradient(135deg,var(--accent),var(--accent2)); border:none; border-radius:8px; padding:12px 20px; color:white; font-weight:600; cursor:pointer; transition:opacity 0.2s; }
+  .input-wrap button:disabled { opacity:0.4; cursor:not-allowed; }
+  .input-wrap button:hover:not(:disabled) { opacity:0.9; }
+  .tier-info { font-size:0.7rem; color:var(--text-dim); margin-top:6px; text-align:center; }
+
+  .btn-sm { font-size:0.75rem; padding:6px 12px; border-radius:6px; border:1px solid #334155; background:var(--surface2); color:var(--text); cursor:pointer; transition:all 0.2s; }
+  .btn-sm:hover { border-color:var(--accent); color:var(--accent); }
+  .typing { display:flex; gap:4px; padding:8px 0; }
+  .typing span { width:6px; height:6px; background:var(--accent); border-radius:50%; animation:bounce 1.4s infinite; }
+  .typing span:nth-child(2) { animation-delay:0.2s; }
+  .typing span:nth-child(3) { animation-delay:0.4s; }
+  @keyframes bounce { 0%,80%,100%{transform:scale(0)} 40%{transform:scale(1)} }
+  .disclaimer { font-size:0.65rem; color:var(--text-dim); text-align:center; padding:8px; opacity:0.6; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🏥 AI Health Copilot</h1>
+  <span class="badge badge-offline" id="tierBadge">Initializing...</span>
+  <div class="header-right">
+    <button class="btn-sm" id="btnModels" onclick="toggleModelPanel()">⚙ Models</button>
+    <button class="btn-sm" onclick="cycleTier()">Switch Tier</button>
+  </div>
+</div>
+
+<div class="model-panel" id="modelPanel">
+  <h3>WebGPU Model Manager — Download LLMs to run directly in your browser</h3>
+  <div class="model-grid" id="modelGrid"></div>
+  <div class="progress-wrap" id="progressWrap">
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="progress-text" id="progressText">Preparing...</div>
+  </div>
+</div>
+
+<div class="chat-area" id="chatArea">
+  <div class="msg system">
+    Welcome to the AI Health Copilot — Tri-Tier Inference Engine<br>
+    <strong>🖥️ Tier 0: WebGPU</strong> (in-browser, fully private) →
+    <strong>🏠 Tier A: Ollama</strong> (local server) →
+    <strong>☁️ Tier B: Cloud</strong> (Gemini/OpenAI)<br>
+    Your data never leaves your device on WebGPU or Ollama tiers.
+  </div>
+</div>
+
+<div class="input-area">
+  <div class="input-wrap">
+    <input type="text" id="msgInput" placeholder="Ask about your health..." onkeypress="if(event.key==='Enter')sendMessage()">
+    <button id="sendBtn" onclick="sendMessage()">Send</button>
+  </div>
+  <div class="tier-info" id="tierInfo">Detecting available inference tiers...</div>
+</div>
+<div class="disclaimer">⚕️ AI-generated health information only. Not a substitute for professional medical advice.</div>
+
+<script type="module">
+// ═══════════════════════════════════════════════════════════════════
+// Tri-Tier Inference Engine — Browser Orchestrator
+// Tier 0: WebGPU/WebLLM   →   Tier A: Ollama   →   Tier B: Cloud
+// ═══════════════════════════════════════════════════════════════════
+
+const API_BASE = 'http://127.0.0.1:8000';
+const OLLAMA_BASE = 'http://127.0.0.1:11434';
+
+const MODELS = [
+  { id: 'SmolLM2-360M-Instruct-q4f16_1-MLC', name: 'SmolLM2 360M', size: '250 MB', vram: '~400 MB' },
+  { id: 'Llama-3.2-1B-Instruct-q4f16_1-MLC', name: 'Llama 3.2 1B', size: '600 MB', vram: '~1 GB' },
+  { id: 'Llama-3.2-3B-Instruct-q4f16_1-MLC', name: 'Llama 3.2 3B', size: '1.8 GB', vram: '~3 GB' },
+];
+
+const S = {
+  tier: null, webgpu: false, ollama: false, cloud: false,
+  engine: null, ready: false, model: MODELS[0].id,
+  loading: false, history: []
+};
+
+// ── Tier Detection ───────────────────────────────────────────────
+async function detectTiers() {
+  if (navigator.gpu) {
+    try { S.webgpu = !!(await navigator.gpu.requestAdapter()); } catch(e) {}
+  }
+  try {
+    const r = await fetch(`${OLLAMA_BASE}/api/tags`, {signal: AbortSignal.timeout(2000)});
+    S.ollama = r.ok;
+  } catch(e) {}
+  try {
+    const r = await fetch(`${API_BASE}/`, {signal: AbortSignal.timeout(2000)});
+    S.cloud = r.ok;
+  } catch(e) {}
+
+  S.tier = S.webgpu ? 'webgpu' : S.ollama ? 'ollama' : S.cloud ? 'cloud' : null;
+  updateUI(); renderGrid();
+}
+
+function updateUI() {
+  const b = document.getElementById('tierBadge'), i = document.getElementById('tierInfo');
+  const avail = [S.webgpu&&'🖥️WebGPU', S.ollama&&'🏠Ollama', S.cloud&&'☁️Cloud'].filter(Boolean).join(' · ');
+  if (S.tier==='webgpu') { b.className='badge badge-webgpu'; b.textContent='🖥️ WebGPU'; i.textContent=`Browser inference — data stays in your browser | ${avail}`; }
+  else if (S.tier==='ollama') { b.className='badge badge-webgpu'; b.textContent='🏠 Ollama'; i.textContent=`Local inference — data stays on machine | ${avail}`; }
+  else if (S.tier==='cloud') { b.className='badge badge-server'; b.textContent='☁️ Cloud'; i.textContent=`Cloud inference via backend | ${avail}`; }
+  else { b.className='badge badge-offline'; b.textContent='❌ Offline'; i.textContent='No tiers available. Start Ollama or backend.'; }
+}
+
+window.cycleTier = function() {
+  const t = ['webgpu','ollama','cloud'].filter(x => S[x === 'cloud' ? 'cloud' : x]);
+  if (!t.length) return;
+  S.tier = t[(t.indexOf(S.tier)+1) % t.length];
+  updateUI();
+};
+window.toggleModelPanel = function() { document.getElementById('modelPanel').classList.toggle('active'); };
+
+function renderGrid() {
+  document.getElementById('modelGrid').innerHTML = MODELS.map(m => `
+    <div class="model-card ${m.id===S.model?'selected':''}" onclick="selectModel('${m.id}')">
+      <div class="name">${m.name}</div>
+      <div class="size">${m.size} · ${m.vram} VRAM</div>
+      <div class="status">${!S.webgpu?'⚠️ No WebGPU':m.id===S.model&&S.ready?'✅ Loaded':'📥 Click to load'}</div>
+    </div>`).join('');
+}
+
+// ── WebLLM ───────────────────────────────────────────────────────
+async function loadModel(id) {
+  if (!S.webgpu) { sysMsg('WebGPU unavailable. Use Chrome/Edge 113+.'); return; }
+  const pw = document.getElementById('progressWrap'), pf = document.getElementById('progressFill'), pt = document.getElementById('progressText');
+  pw.classList.add('active'); pt.textContent = 'Loading WebLLM runtime...';
+  try {
+    const { CreateMLCEngine } = await import('https://esm.run/@mlc-ai/web-llm');
+    pt.textContent = `Downloading ${id}...`;
+    S.engine = await CreateMLCEngine(id, {
+      initProgressCallback: (p) => { pf.style.width = Math.round((p.progress||0)*100)+'%'; pt.textContent = p.text || 'Loading...'; }
+    });
+    S.ready = true; S.model = id;
+    pt.textContent = '✅ Ready!'; setTimeout(()=>pw.classList.remove('active'), 2000);
+    renderGrid(); sysMsg(`Model "${id}" loaded in browser via WebGPU.`);
+  } catch(e) {
+    pt.textContent = `❌ ${e.message}`;
+    sysMsg(`WebLLM failed: ${e.message}. Falling back.`);
+    S.tier = S.ollama ? 'ollama' : S.cloud ? 'cloud' : null; updateUI();
+  }
+}
+window.selectModel = function(id) { S.model = id; renderGrid(); loadModel(id); };
+
+// ── RAG Context ──────────────────────────────────────────────────
+async function getContext(q) {
+  try {
+    const r = await fetch(`${API_BASE}/chat/context?q=${encodeURIComponent(q)}`, {signal: AbortSignal.timeout(5000)});
+    if (r.ok) return await r.json();
+  } catch(e) {}
+  return {context:'', sources:[]};
+}
+
+// ── Action Interceptor ──────────────────────────────────────────
+function interceptActions(text) {
+  // Scan AI output for embedded JSON action blocks: ```json\n{"action": "..."}```
+  const actionRegex = /```json\s*\n(\{[^`]*"action"\s*:[^`]*\})\s*\n```/g;
+  let match;
+  const actions = [];
+  let cleanText = text;
+  while ((match = actionRegex.exec(text)) !== null) {
+    try {
+      const action = JSON.parse(match[1]);
+      actions.push(action);
+      cleanText = cleanText.replace(match[0], '');
+    } catch(e) {}
+  }
+  // Dispatch actions
+  actions.forEach(a => {
+    if (a.action === 'navigate' && a.target) {
+      sysMsg(`🔗 Copilot suggests navigating to: ${a.target}`);
+    } else if (a.action === 'update_field') {
+      sysMsg(`📝 Copilot suggests updating ${a.field} = ${a.value}`);
+    }
+  });
+  return cleanText.trim();
+}
+
+// ── Inference ────────────────────────────────────────────────────
+async function generate(question) {
+  let rag = {context:'', sources:[]};
+  if (S.cloud) rag = await getContext(question);
+
+  const sys = rag.context
+    ? `You are an AI Health Copilot. Use the medical context below. Include a medical disclaimer.\n\n${rag.context}`
+    : 'You are an AI Health Copilot. Provide helpful health info. Include a medical disclaimer.';
+  const msgs = [{role:'system',content:sys}, ...S.history.slice(-4), {role:'user',content:question}];
+
+  let res = '', tier = S.tier;
+
+  // Tier 0: WebGPU
+  if (tier==='webgpu' && S.ready && S.engine) {
+    try {
+      const r = await S.engine.chat.completions.create({messages: msgs, temperature:0.7, max_tokens:512});
+      res = r.choices[0]?.message?.content || '';
+    } catch(e) { tier = S.ollama ? 'ollama' : 'cloud'; }
+  }
+  // Tier A: Ollama
+  if (!res && (tier==='ollama') && S.ollama) {
+    try {
+      const r = await fetch(`${OLLAMA_BASE}/api/chat`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({model:'llama3.2', messages:msgs, stream:false}),
+        signal: AbortSignal.timeout(60000)
+      });
+      if (r.ok) { res = (await r.json()).message?.content || ''; tier='ollama'; }
+    } catch(e) { tier = 'cloud'; }
+  }
+  // Tier B: Cloud SSE
+  if (!res && S.cloud) {
+    try {
+      const r = await fetch(`${API_BASE}/chat/stream`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({message:question, history:S.history.slice(-4).map(m=>({role:m.role,content:m.content}))})
+      });
+      const reader = r.body.getReader(), dec = new TextDecoder();
+      while (true) {
+        const {done, value} = await reader.read();
+        if (done) break;
+        for (const line of dec.decode(value).split('\n')) {
+          if (line.startsWith('data: ')) {
+            try { const d = JSON.parse(line.slice(6)); if (d.reply) res += d.reply; } catch(e) {}
+          }
+        }
+      }
+      tier = 'cloud';
+    } catch(e) { res = 'All tiers unavailable.'; tier = 'none'; }
+  }
+  if (!res) res = 'No AI available. Run: ollama serve  or  uvicorn backend.main:app';
+
+  // Intercept copilot actions from response
+  res = interceptActions(res);
+
+  return {response: res, tier, sources: rag.sources};
+}
+
+// ── UI ───────────────────────────────────────────────────────────
+function addMsg(role, text, tier, sources) {
+  const area = document.getElementById('chatArea'), d = document.createElement('div');
+  d.className = `msg ${role}`;
+  let h = text.replace(/\n/g,'<br>');
+  if (role==='ai' && tier) {
+    const l = tier==='webgpu'?'🖥️ WebGPU (browser)':tier==='ollama'?'🏠 Ollama (local)':tier==='cloud'?'☁️ Cloud':'❌';
+    h += `<div class="tier-tag">Inference: ${l}</div>`;
+  }
+  if (sources?.length) { h += '<div class="sources">'+sources.map(s=>`<span>${s.name||s.type}</span>`).join('')+'</div>'; }
+  d.innerHTML = h; area.appendChild(d); area.scrollTop = area.scrollHeight;
+}
+function sysMsg(t) { addMsg('system', t); }
+
+window.sendMessage = async function() {
+  const inp = document.getElementById('msgInput'), msg = inp.value.trim();
+  if (!msg || S.loading) return;
+  S.loading = true; document.getElementById('sendBtn').disabled = true; inp.value = '';
+  addMsg('user', msg);
+  S.history.push({role:'user', content:msg});
+  // Typing indicator
+  const area = document.getElementById('chatArea'), td = document.createElement('div');
+  td.className='msg ai'; td.id='typing'; td.innerHTML='<div class="typing"><span></span><span></span><span></span></div>';
+  area.appendChild(td); area.scrollTop = area.scrollHeight;
+
+  const {response, tier, sources} = await generate(msg);
+  document.getElementById('typing')?.remove();
+  addMsg('ai', response, tier, sources);
+  S.history.push({role:'assistant', content:response});
+  S.loading = false; document.getElementById('sendBtn').disabled = false; inp.focus();
+};
+
+detectTiers();
+</script>
+</body>
+</html>

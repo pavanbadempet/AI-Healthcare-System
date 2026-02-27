@@ -9,7 +9,7 @@ from fastapi import Request, HTTPException
 from datetime import datetime, timezone
 import time
 import logging
-from typing import Dict, Tuple
+from typing import Dict
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +45,6 @@ def log_audit_event(
     except Exception as e:
         logger.error(f"FAILED TO AUDIT LOG: {e}")
         # Don't crash the app if logging fails, just log error
-        pass
 
 
 # --- Simple In-Memory Rate Limiter ---

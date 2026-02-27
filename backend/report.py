@@ -10,7 +10,6 @@ Author: Pavan Badempet
 from fastapi import APIRouter, UploadFile, File, HTTPException
 from typing import Dict, Any
 import logging
-import json
 from . import vision_service, database, auth, models, pdf_service
 
 # --- Logging ---
@@ -61,7 +60,6 @@ async def analyze_report(file: UploadFile = File(...)) -> Dict[str, Any]:
 from fastapi import Depends
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
-from . import database, auth, models, pdf_service
 
 @router.get("/download/health-report")
 def download_health_report(

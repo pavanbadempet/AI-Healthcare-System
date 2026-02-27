@@ -28,6 +28,8 @@ def db_session():
         db.close()
         Base.metadata.drop_all(bind=engine)
 
+from backend.prediction import initialize_models
+
 @pytest.fixture(scope="function")
 def client(db_session):
     """Override dependency and return TestClient."""
@@ -38,6 +40,10 @@ def client(db_session):
             db_session.close()
 
     app.dependency_overrides[get_db] = override_get_db
+    
+    # Initialize dummy models so prediction endpoints don't return 503
+    initialize_models()
+    
     with TestClient(app, base_url="http://localhost") as c:
         yield c
     app.dependency_overrides.clear()

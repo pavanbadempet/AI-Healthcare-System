@@ -10,19 +10,17 @@ Advanced AI Features for Enterprise Healthcare System
 import asyncio
 import numpy as np
 import pandas as pd
-from typing import Dict, List, Any, Optional, Tuple
-from datetime import datetime, timezone, timedelta
+from typing import Dict, List, Any, Tuple
+from datetime import datetime, timezone
 import json
+import time
 import logging
 from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor
 import redis
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score
-from sklearn.ensemble import VotingClassifier, StackingClassifier
-import shap
 import joblib
 import os
-from fastapi import WebSocket, WebSocketDisconnect
+from fastapi import WebSocket
 import uuid
 
 logger = logging.getLogger(__name__)

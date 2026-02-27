@@ -5,6 +5,7 @@ Book video appointments with doctors.
 """
 import streamlit as st
 from datetime import datetime, timedelta
+import time
 
 def render_telemedicine_page():
     st.markdown("""
@@ -39,8 +40,8 @@ def render_telemedicine_page():
                      "Cardiologist (Dr. A. Gupta)"
                 ])
             
-            d = st.date_input("Preferred Date", min_value=datetime.today())
-            t = st.time_input("Preferred Time", value=datetime.now())
+            d = st.date_input("Preferred Date", min_value=datetime.today().date())
+            t = st.time_input("Preferred Time", value=datetime.now().time())
             
             reason = st.text_area("Reason for Visit", placeholder="Describe your symptoms...")
             
@@ -64,6 +65,7 @@ def render_telemedicine_page():
                         st.success(f"✅ Appointment Confirmed with {specialist_name}!")
                         st.info("📧 Confirmation email has been sent.")
                         st.balloons()
+                        time.sleep(2)
                         st.rerun()
     
     with col2:
@@ -104,10 +106,10 @@ def render_telemedicine_page():
                         
                         with col_b:
                             # Reschedule UI
-                            with st.popover("Reschedule"):
+                            with st.expander("Reschedule"):
                                 st.write("Pick a new time:")
-                                new_d = st.date_input("New Date", key=f"d_{appt['id']}", min_value=datetime.today())
-                                new_t = st.time_input("New Time", key=f"t_{appt['id']}", value=datetime.now())
+                                new_d = st.date_input("New Date", key=f"d_{appt['id']}", min_value=datetime.today().date())
+                                new_t = st.time_input("New Time", key=f"t_{appt['id']}", value=datetime.now().time())
                                 if st.button("Confirm Changes", key=f"resched_{appt['id']}", type="primary"):
                                     if api.reschedule_appointment(appt['id'], new_d, new_t):
                                         st.success("Rescheduled!")
