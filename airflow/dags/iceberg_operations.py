@@ -77,7 +77,7 @@ def create_iceberg_lab_results(**context):
         lab_df = spark.createDataFrame(lab_data, lab_schema)
         
         # Convert date string to timestamp
-        from pyspark.sql.functions import to_timestamp
+        from pyspark.sql.functions import to_timestamp, col, current_timestamp
         lab_df = lab_df.withColumn("test_date", to_timestamp(col("test_date"), "yyyy-MM-dd HH:mm:ss")) \
                        .withColumn("created_at", current_timestamp())
         

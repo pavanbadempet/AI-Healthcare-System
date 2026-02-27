@@ -8,7 +8,6 @@ from . import models, database, auth, rag, agent, schemas, pdf_generator
 import json
 import datetime
 from typing import List, Dict, Any, Optional
-from collections import defaultdict
 import logging
 
 logger = logging.getLogger(__name__)

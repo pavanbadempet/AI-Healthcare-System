@@ -13,7 +13,7 @@ def train_liver_model():
     
     import pandas as pd
     import numpy as np
-    from sklearn.preprocessing import LabelEncoder, RobustScaler
+    from sklearn.preprocessing import RobustScaler
     from sklearn.model_selection import train_test_split
     from sklearn.utils import resample
     from sklearn.metrics import accuracy_score

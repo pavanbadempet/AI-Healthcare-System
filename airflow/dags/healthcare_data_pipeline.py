@@ -16,6 +16,8 @@ from airflow.utils.dates import days_ago
 from airflow.models import Variable
 import json
 import logging
+import pandas as pd
+import numpy as np
 
 logger = logging.getLogger(__name__)
 

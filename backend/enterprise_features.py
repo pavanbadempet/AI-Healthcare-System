@@ -7,14 +7,15 @@ Enterprise Features for AI Healthcare System
 """
 
 import time
+import os
 import psutil
 import logging
 from typing import Dict, Any, Optional
 from functools import wraps
 from contextlib import contextmanager
-from prometheus_client import Counter, Histogram, Gauge, generate_latest
+from prometheus_client import Counter, Histogram, Gauge
 from sqlalchemy import text
-from fastapi import Request, Response
+from fastapi import Request
 import redis
 import json
 from datetime import datetime, timezone
@@ -79,7 +80,7 @@ class EnterpriseMetrics:
         try:
             from .database import engine
             with engine.connect() as conn:
-                result = conn.execute(text("SELECT 1"))
+                conn.execute(text("SELECT 1"))
                 health['checks']['database'] = 'healthy'
         except Exception as e:
             health['checks']['database'] = f'unhealthy: {str(e)}'
@@ -234,14 +235,11 @@ def audit_decorator(resource_type: str):
                     user_id = getattr(arg.user, 'id', None)
             
             # Execute function
-            start_time = time.time()
+            time.time()
             try:
                 result = await func(*args, **kwargs)
-                success = True
-                error = None
             except Exception as e:
-                success = False
-                error = str(e)
+                str(e)
                 raise
             finally:
                 # Log audit trail
@@ -301,7 +299,6 @@ class AdvancedSecurity:
 # Enterprise feature initialization
 def init_enterprise_features(app):
     """Initialize all enterprise features"""
-    from fastapi.middleware.cors import CORSMiddleware
     from fastapi.middleware.gzip import GZipMiddleware
     
     # Add metrics middleware

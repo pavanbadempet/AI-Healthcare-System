@@ -6,17 +6,14 @@ AI components: ML models for data quality and predictions
 
 import asyncio
 import logging
-from typing import Dict, List, Any, Optional, Tuple
-from datetime import datetime, timezone, timedelta
+from typing import Dict, List, Any, Optional
+from datetime import datetime, timedelta
 from dataclasses import dataclass
 from enum import Enum
 import json
-import pandas as pd
-import numpy as np
 from pyspark.sql import SparkSession, DataFrame as SparkDF
 from pyspark.sql.functions import col, count, sum, avg, max as spark_max, min as spark_min
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType, FloatType, DateType, TimestampType
-from sqlalchemy import text
+from pyspark.sql.types import StructType, StructField, StringType, FloatType, DateType, TimestampType
 import redis
 from concurrent.futures import ThreadPoolExecutor
 import time
@@ -106,11 +103,11 @@ class HealthcareDataPipeline:
             StructField("procedure_code", StringType(), False),
             StructField("diagnosis_code", StringType(), True),
             StructField("billed_amount", FloatType(), False),
-            structField("allowed_amount", FloatType(), True),
-            structField("paid_amount", FloatType(), True),
-            structField("claim_status", StringType(), False),
-            structField("submission_date", TimestampType(), False),
-            structField("processing_date", TimestampType(), True)
+            StructField("allowed_amount", FloatType(), True),
+            StructField("paid_amount", FloatType(), True),
+            StructField("claim_status", StringType(), False),
+            StructField("submission_date", TimestampType(), False),
+            StructField("processing_date", TimestampType(), True)
         ])
     
     async def run_etl_pipeline(self, pipeline_config: Dict[str, Any]) -> Dict[str, Any]:
@@ -404,12 +401,11 @@ class HealthcareDataPipeline:
             # Data enrichment with lookups
             enrichments = transformation.get('enrichments', [])
             for enrichment in enrichments:
-                lookup_table = enrichment.get('lookup_table')
-                key_column = enrichment.get('key_column')
-                value_column = enrichment.get('value_column')
+                enrichment.get('lookup_table')
+                enrichment.get('key_column')
+                enrichment.get('value_column')
                 
                 # This would implement lookup logic
-                pass
             
             return df
         
@@ -597,7 +593,6 @@ class HealthcareDataPipeline:
     async def _assess_data_quality(self, load_results: Dict[str, Any]) -> DataQualityMetrics:
         """Assess data quality metrics"""
         # Get sample data for quality assessment
-        sample_df = None
         for target_result in load_results.values():
             if 'records_written' in target_result and target_result['records_written'] > 0:
                 # This would need to be implemented based on target type

@@ -6,7 +6,7 @@ Endpoints for system administration, analytics, and user management.
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from . import database, models, auth
-from typing import List, Dict
+from typing import Dict
 
 router = APIRouter(prefix="/admin", tags=["Admin Dashboard"])
 

@@ -1,4 +1,3 @@
-import pickle
 import joblib
 import numpy as np
 import pandas as pd
@@ -90,7 +89,6 @@ def initialize_models():
 
 # Initialize on import is REMOVED to prevent startup blocking
 # initialize_models() must be called explicitly by the app startup or tests
-pass
 
 from . import auth, models as db_models
 from fastapi import Depends

@@ -1,9 +1,6 @@
-import requests
 import uuid
 
-BASE_URL = "http://127.0.0.1:8000"
-
-def test_research():
+def test_research(client):
     print("[INFO] Testing Super Agent Research...")
     
     # 1. Signup/Login
@@ -17,8 +14,8 @@ def test_research():
         "full_name": "Dr. Researcher",
         "dob": "1985-05-05"
     }
-    requests.post(f"{BASE_URL}/signup", json=payload)
-    res = requests.post(f"{BASE_URL}/token", data={"username": username, "password": password})
+    client.post("/signup", json=payload)
+    res = client.post("/token", data={"username": username, "password": password})
     if res.status_code != 200:
         print(f"Login failed: {res.text}")
         return
@@ -30,10 +27,10 @@ def test_research():
     query = {"message": "What is the latest 2024 news on Type 2 Diabetes treatment?", "history": []}
     print(f"   Query: {query['message']}")
     
-    res = requests.post(f"{BASE_URL}/chat", json=query, headers=headers)
+    res = client.post("/chat", json=query, headers=headers)
     
     if res.status_code == 200:
-        reply = res.json()['response']
+        reply = res.json().get('response', '')
         print(f"   AI Reply: {reply[:200]}...") # Print first 200 chars
         
         if "http" in reply: 
@@ -43,5 +40,3 @@ def test_research():
     else:
         print(f"[FAIL] API Error: {res.text}")
 
-if __name__ == "__main__":
-    test_research()

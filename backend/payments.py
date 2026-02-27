@@ -5,9 +5,7 @@ Handles order creation and signature verification.
 """
 import os
 import razorpay
-import hmac
-import hashlib
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta, timezone
 from . import database, models, auth

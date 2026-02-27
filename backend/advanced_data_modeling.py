@@ -5,17 +5,13 @@ Enterprise-grade data modeling for healthcare analytics
 """
 
 import logging
-from typing import Dict, List, Any, Optional, Tuple, Union
-from datetime import datetime, timezone, timedelta
+from typing import Dict, List, Any, Optional
+from datetime import datetime, timezone
 from dataclasses import dataclass, field
 from enum import Enum
-import json
-import pandas as pd
-import numpy as np
 from pyspark.sql import SparkSession, DataFrame as SparkDF
-from pyspark.sql.functions import col, lit, current_timestamp, row_number, when, max as spark_max, min as spark_min
-from pyspark.sql.window import Window
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType, FloatType, DateType, TimestampType, BooleanType
+from pyspark.sql.functions import col, lit, current_timestamp
+from pyspark.sql.types import StructType
 from delta.tables import DeltaTable
 import os
 
@@ -337,7 +333,7 @@ class SCDManager:
         start_time = datetime.now()
         
         # Read existing data
-        target_df = self.spark.table(target_table)
+        self.spark.table(target_table)
         
         # Build merge condition
         merge_condition = " AND ".join([f"target.{key} = source.{key}" for key in business_keys])
@@ -371,15 +367,15 @@ class SCDManager:
                                    .withColumn("end_date", lit(None))
         
         # Read existing data
-        target_df = self.spark.table(target_table)
+        self.spark.table(target_table)
         
         # Build merge condition
         merge_condition = " AND ".join([f"target.{key} = source.{key}" for key in business_keys])
         
         # Check for changes in tracking columns
         change_conditions = []
-        for col in tracking_columns:
-            change_conditions.append(f"target.{col} <> source.{col} OR (target.{col} IS NULL AND source.{col} IS NOT NULL) OR (target.{col} IS NOT NULL AND source.{col} IS NULL)")
+        for track_col in tracking_columns:
+            change_conditions.append(f"target.{track_col} <> source.{track_col} OR (target.{track_col} IS NULL AND source.{track_col} IS NOT NULL) OR (target.{track_col} IS NOT NULL AND source.{track_col} IS NULL)")
         
         if change_conditions:
             merge_condition += f" AND ({' OR '.join(change_conditions)})"
@@ -418,23 +414,23 @@ class SCDManager:
         source_df = source_df.withColumn("updated_at", current_timestamp())
         
         # Read existing data
-        target_df = self.spark.table(target_table)
+        self.spark.table(target_table)
         
         # Build merge condition
         merge_condition = " AND ".join([f"target.{key} = source.{key}" for key in business_keys])
         
         # Check for changes
         change_conditions = []
-        for col in tracking_columns:
-            change_conditions.append(f"target.{col} <> source.{col}")
+        for track_col in tracking_columns:
+            change_conditions.append(f"target.{track_col} <> source.{track_col}")
         
         if change_conditions:
             merge_condition += f" AND ({' OR '.join(change_conditions)})"
         
         # Prepare update set
         update_set = {"updated_at": current_timestamp()}
-        for col in tracking_columns:
-            update_set[f"previous_{col}"] = f"target.{col}"
+        for track_col in tracking_columns:
+            update_set[f"previous_{track_col}"] = f"target.{track_col}"
         
         # Perform SCD Type 3 merge
         from delta.tables import DeltaTable
@@ -494,13 +490,13 @@ class SchemaEvolutionManager:
         new_fields = {field.name: field for field in new_schema.fields}
         
         # Check for added columns
-        for field_name, field in new_fields.items():
+        for field_name, new_field in new_fields.items():
             if field_name not in old_fields:
                 changes.append(SchemaChange(
                     change_type="ADD_COLUMN",
                     column_name=field_name,
-                    new_data_type=str(field.dataType),
-                    nullable=field.nullable
+                    new_data_type=str(new_field.dataType),
+                    nullable=new_field.nullable
                 ))
         
         # Check for dropped columns
@@ -556,7 +552,7 @@ class SchemaEvolutionManager:
         """Apply schema evolution for Delta Lake"""
         from delta.tables import DeltaTable
         
-        delta_table = DeltaTable.forName(self.spark, table_name)
+        DeltaTable.forName(self.spark, table_name)
         
         applied_changes = []
         
@@ -678,7 +674,7 @@ class HealthcareDataModeler:
         
         if not os.path.exists(table_path):
             # Create new table
-            delta_table = self.delta_manager.create_delta_table(patient_df, config)
+            self.delta_manager.create_delta_table(patient_df, config)
         else:
             # Apply SCD Type 2
             result = self.delta_manager.upsert_to_delta(patient_df, config, None)
