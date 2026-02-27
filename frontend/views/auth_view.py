@@ -11,10 +11,10 @@ def render_auth_page():
     
     st.markdown("""
 <style>
-/* No scrolling */
+/* Responsive page sizing */
 html, body, [data-testid="stAppViewContainer"], .main {
-    overflow: hidden !important;
-    height: 100vh !important;
+    min-height: 100vh !important;
+    overflow-x: hidden !important;
 }
 
 [data-testid="stAppViewContainer"] {
@@ -26,14 +26,35 @@ html, body, [data-testid="stAppViewContainer"], .main {
 }
 
 .block-container {
+    min-height: 100vh !important;
     padding: 2rem 2rem !important;
-    height: 100vh !important;
-    overflow: hidden !important;
+    overflow: visible !important;
 }
 
 [data-testid="stHorizontalBlock"] {
-    height: calc(100vh - 4rem) !important;
+    min-height: calc(100vh - 4rem) !important;
     align-items: center !important;
+    flex-wrap: wrap !important;
+}
+
+[data-testid="stHorizontalBlock"] > div {
+    min-width: 100% !important;
+    max-width: 100% !important;
+}
+
+@media only screen and (max-width: 900px) {
+    .block-container {
+        padding: 1.25rem 1rem !important;
+    }
+    .stForm {
+        padding: 1rem !important;
+    }
+    .stButton>button {
+        width: 100% !important;
+    }
+    h1 {
+        font-size: 2.25rem !important;
+    }
 }
 
 /* Form styling - proper sizing */
@@ -154,6 +175,7 @@ div[data-testid="stFormSubmitButton"] button:active {
 """, unsafe_allow_html=True)
 
     # Right - Auth Form
+    from datetime import date
     with col2:
         st.markdown("""
 <div style="text-align: center; margin-bottom: 1rem;">
@@ -168,16 +190,18 @@ div[data-testid="stFormSubmitButton"] button:active {
             with st.form("login", border=False):
                 u = st.text_input("Username", placeholder="Enter username", label_visibility="collapsed")
                 p = st.text_input("Password", type="password", placeholder="Enter password", label_visibility="collapsed")
-                if st.form_submit_button("Sign In →", type="primary", width="stretch"):
+                if st.form_submit_button("Sign In →", type="primary", use_container_width=True):
                     if api.login(u, p): st.rerun()
                         
         with tab2:
             with st.form("signup", border=False):
+                name = st.text_input("Full Name", placeholder="Your full name", label_visibility="collapsed")
                 us = st.text_input("Username", placeholder="Choose a username", label_visibility="collapsed")
                 em = st.text_input("Email", placeholder="Your email", label_visibility="collapsed")
+                dob = st.date_input("Date of Birth", value=date(1990, 1, 1), min_value=date(1900, 1, 1), max_value=date.today())
                 pw = st.text_input("Password", type="password", placeholder="Create password", label_visibility="collapsed")
-                if st.form_submit_button("Register", type="primary", width="stretch"):
-                    if api.signup(us, pw, em, us, "2000-01-01"):
+                if st.form_submit_button("Register", type="primary", use_container_width=True):
+                    if api.signup(us, pw, em, name, dob):
                         if api.login(us, pw): st.rerun()
         
         st.markdown('<p style="text-align: center; font-size: 0.8rem; color: #475569; margin-top: 1rem;">Powered by Advanced AI</p>', unsafe_allow_html=True)

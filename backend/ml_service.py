@@ -1,4 +1,3 @@
-import numpy as np
 import logging
 from . import prediction, schemas
 

@@ -4,15 +4,12 @@ from backend.main import app
 import logging
 from backend.schemas import HeartInput, LiverInput, DiabetesInput
 
-# Fix: TrustedHostMiddleware requires a valid host
-client = TestClient(app, base_url="http://localhost")
-
-def test_read_root():
+def test_read_root(client):
     response = client.get("/")
     assert response.status_code == 200
     assert response.json() == {"message": "AI Healthcare API"}
 
-def test_heart_prediction_cdc():
+def test_heart_prediction_cdc(client):
     # Test with valid CDC BRFSS payload
     payload = {
         "age": 50,
@@ -33,7 +30,7 @@ def test_heart_prediction_cdc():
     assert "prediction" in json_data
     assert json_data["prediction"] in ["Heart Disease Detected", "Healthy Heart"]
 
-def test_liver_prediction_extended():
+def test_liver_prediction_extended(client):
     # Test with valid ILPD payload
     payload = {
         "age": 45,
@@ -52,7 +49,7 @@ def test_liver_prediction_extended():
     json_data = response.json()
     assert "prediction" in json_data
 
-def test_diabetes_prediction():
+def test_diabetes_prediction(client):
     payload = {
         "gender": 1,
         "age": 45.0,
@@ -69,7 +66,7 @@ def test_diabetes_prediction():
     json_data = response.json()
     assert "prediction" in json_data
 
-def test_kidney_prediction():
+def test_kidney_prediction(client):
     # Test with valid UCI CKD payload (24 features)
     payload = {
         "age": 48.0, "bp": 80.0, "sg": 1.020, "al": 1.0, "su": 0.0,
@@ -88,7 +85,7 @@ def test_kidney_prediction():
     else:
         assert "Healthy" in json_data["prediction"]
 
-def test_lung_prediction():
+def test_lung_prediction(client):
     payload = {
         "gender": 1, "age": 60, "smoking": 1, "yellow_fingers": 1,
         "anxiety": 1, "peer_pressure": 1, "chronic_disease": 1,
@@ -100,7 +97,7 @@ def test_lung_prediction():
     assert response.status_code == 200
     assert "prediction" in response.json()
 
-def test_chat_context():
+def test_chat_context(client):
     # Test Chat with injected medical context
     payload = {
         "message": "What does my heart result mean?",

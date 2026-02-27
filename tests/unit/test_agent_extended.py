@@ -1,13 +1,13 @@
 """
 Extended tests for backend/agent.py to increase coverage.
-Tests CustomGeminiWrapper, tavily_search, supervisor routing, and guardrail node.
+Tests CoreAIWrapper, tavily_search, supervisor routing, and guardrail node.
 """
 import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock, patch, AsyncMock
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
 from backend.agent import (
-    CustomGeminiWrapper, 
+    CoreAIWrapper, 
     tavily_search, 
     supervisor_node, 
     guardrail_node,
@@ -16,62 +16,19 @@ from backend.agent import (
 )
 
 
-class TestCustomGeminiWrapper:
-    """Tests for the CustomGeminiWrapper class."""
-    
-    def test_get_model_cached(self):
-        """Test that model is cached after first load."""
-        wrapper = CustomGeminiWrapper("test-model", "real-key")
-        
-        mock_model = MagicMock()
-        with patch("backend.agent.genai") as mock_genai:
-            mock_genai.GenerativeModel.return_value = mock_model
-            
-            # First call
-            result1 = wrapper._get_model()
-            # Second call should return cached
-            result2 = wrapper._get_model()
-            
-            assert result1 == result2
-            # Should only be called once
-            assert mock_genai.GenerativeModel.call_count == 1
-    
-    def test_get_model_dummy_key(self):
-        """Test that dummy key returns None."""
-        wrapper = CustomGeminiWrapper("test-model", "dummy")
-        result = wrapper._get_model()
-        assert result is None
-    
-    def test_get_model_init_failure(self):
-        """Test graceful handling of initialization errors."""
-        wrapper = CustomGeminiWrapper("test-model", "real-key")
-        
-        with patch("backend.agent.genai") as mock_genai:
-            mock_genai.configure.side_effect = Exception("API Error")
-            
-            result = wrapper._get_model()
-            assert result is None
-    
-    def test_invoke_no_model(self):
-        """Test invoke returns error when model unavailable."""
-        wrapper = CustomGeminiWrapper("test-model", "dummy")
-        
-        result = wrapper.invoke([HumanMessage(content="Hello")])
-        
-        assert isinstance(result, AIMessage)
-        assert "AI Unavailable" in result.content
+class TestCoreAIWrapper:
+    """Tests for the CoreAIWrapper class (replaced CustomGeminiWrapper)."""
     
     def test_invoke_success(self):
-        """Test successful invocation."""
-        wrapper = CustomGeminiWrapper("test-model", "real-key")
+        """Test successful invocation via core_ai."""
+        wrapper = CoreAIWrapper()
         
-        mock_model = MagicMock()
-        mock_response = MagicMock()
-        mock_response.text = "Test response"
-        mock_model.generate_content.return_value = mock_response
-        
-        with patch("backend.agent.genai") as mock_genai:
-            mock_genai.GenerativeModel.return_value = mock_model
+        with patch("backend.agent.core_ai") as mock_core:
+            # Make generate return a coroutine
+            import asyncio
+            async def fake_generate(prompt):
+                return "Test response"
+            mock_core.generate = fake_generate
             
             result = wrapper.invoke([
                 SystemMessage(content="System prompt"),
@@ -82,20 +39,50 @@ class TestCustomGeminiWrapper:
             assert isinstance(result, AIMessage)
             assert result.content == "Test response"
     
+    def test_invoke_empty_response(self):
+        """Test handling of empty AI response."""
+        wrapper = CoreAIWrapper()
+        
+        with patch("backend.agent.core_ai") as mock_core:
+            import asyncio
+            async def fake_generate(prompt):
+                return ""
+            mock_core.generate = fake_generate
+            
+            result = wrapper.invoke([HumanMessage(content="Hello")])
+            
+            assert isinstance(result, AIMessage)
+            assert "unavailable" in result.content.lower()
+    
     def test_invoke_exception(self):
         """Test error handling during invocation."""
-        wrapper = CustomGeminiWrapper("test-model", "real-key")
+        wrapper = CoreAIWrapper()
         
-        mock_model = MagicMock()
-        mock_model.generate_content.side_effect = Exception("API timeout")
-        
-        with patch("backend.agent.genai") as mock_genai:
-            mock_genai.GenerativeModel.return_value = mock_model
+        with patch("backend.agent.core_ai") as mock_core:
+            import asyncio
+            async def fake_generate(prompt):
+                raise Exception("API timeout")
+            mock_core.generate = fake_generate
             
             result = wrapper.invoke([HumanMessage(content="Test")])
             
             assert isinstance(result, AIMessage)
-            assert "Error" in result.content
+            assert "Error" in result.content or "error" in result.content.lower()
+    
+    def test_invoke_quota_exceeded(self):
+        """Test quota exceeded error handling."""
+        wrapper = CoreAIWrapper()
+        
+        with patch("backend.agent.core_ai") as mock_core:
+            import asyncio
+            async def fake_generate(prompt):
+                raise Exception("429 Quota exceeded")
+            mock_core.generate = fake_generate
+            
+            result = wrapper.invoke([HumanMessage(content="Test")])
+            
+            assert isinstance(result, AIMessage)
+            assert "Quota" in result.content
 
 
 class TestTavilySearch:

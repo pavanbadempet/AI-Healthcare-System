@@ -15,6 +15,10 @@ def render_pricing_page():
         
     # --- PAYMENT VIEW (Modal-like "Middle Gateway") ---
     if st.session_state.show_payment:
+        if 'payment_order' not in st.session_state:
+            st.session_state.payment_order = None
+            st.session_state.payment_error = None
+
         # Full width container for the payment experience
         st.markdown("""
         <div style="text-align: center; padding: 2rem 0;">
@@ -26,19 +30,29 @@ def render_pricing_page():
         # Centered Layout
         c1, c2, c3 = st.columns([1, 2, 1])
         with c2:
-            st.info("Initializing Secure Connection to Razorpay...")
-            
-            # Create Order
-            with st.spinner("Contacting Banking Servers..."):
-                resp = api.create_payment_order(249900, "diagnostic_tier")
-            
-            if resp:
-                order_id = resp['id']
-                key_id = resp['key_id']
-                amount = resp['amount']
-                curr = resp['currency']
+            if not st.session_state.payment_order and not st.session_state.payment_error:
+                with st.spinner("Initializing payment session..."):
+                    resp = api.create_payment_order(249900, "diagnostic_tier")
+                if resp and resp.get('id'):
+                    st.session_state.payment_order = resp
+                else:
+                    st.session_state.payment_error = "Unable to initialize payment. Please refresh and try again."
+
+            if st.session_state.payment_error:
+                st.error(st.session_state.payment_error)
+                if st.button("Retry Payment Initialization", key="retry_pay_init"):
+                    st.session_state.payment_order = None
+                    st.session_state.payment_error = None
+                    st.rerun()
+            elif st.session_state.payment_order:
+                order = st.session_state.payment_order
+                order_id = order['id']
+                key_id = order['key_id']
+                amount = order['amount']
+                curr = order['currency']
                 
-                # Full-size Payment Interface
+                st.info("A secure payment widget is ready. Click Pay Now to proceed.")
+                
                 html_code = f"""
                 <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
                 <div style="background: #1E293B; padding: 30px; border-radius: 12px; text-align: center; color: white; border: 1px solid #334155;">
@@ -74,7 +88,6 @@ def render_pricing_page():
                         "order_id": "{order_id}",
                         "handler": function (response){{
                             document.getElementById('payment-status').innerHTML = '<p style="color:#4ADE80; font-weight:bold;">✅ Payment Successful! Redirecting...</p>';
-                            // You could trigger a streamlit rerun/callback here if embedded differently
                             alert("Payment Successful! ID: " + response.razorpay_payment_id);
                         }},
                         "prefill": {{
@@ -97,21 +110,16 @@ def render_pricing_page():
                         rzp1.open();
                         e.preventDefault();
                     }}
-                    
-                    // Auto-open for convenience
-                    setTimeout(function() {{ rzp1.open(); }}, 1000);
                 </script>
                 """
                 components.html(html_code, height=600, scrolling=False)
                 
-                # Back Button
                 if st.button("← Cancel & Return to Plans", key="cancel_pay"):
                     st.session_state.show_payment = False
                     st.rerun()
-                    
             else:
-                st.error("Could not initiate payment session. Please check your internet connection.")
-                if st.button("← Go Back"):
+                st.info("Preparing your secure payment link. Please wait...")
+                if st.button("Cancel and return", key="cancel_pay_wait"):
                     st.session_state.show_payment = False
                     st.rerun()
 

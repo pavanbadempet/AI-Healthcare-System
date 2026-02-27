@@ -4,11 +4,9 @@ Time Travel First, Selective SCD Type 2 Only Where Business Value Justifies It
 """
 
 import logging
-from typing import Dict, List, Any, Optional
-from datetime import datetime, timezone
+from typing import Dict, List, Any
 from dataclasses import dataclass
 from enum import Enum
-import json
 from pyspark.sql import SparkSession, DataFrame as SparkDF
 from pyspark.sql.functions import col, lit, current_timestamp
 from delta.tables import DeltaTable
@@ -252,7 +250,6 @@ class SimplifiedHealthcareModeler:
                         current_timestamp(), current_timestamp(), lit(None), lit(True))]
         
         from pyspark.sql.types import StructType, StructField, StringType, FloatType, TimestampType, BooleanType
-        from pyspark.sql.functions import lit
         update_schema = StructType([
             StructField("claim_id", StringType(), False),
             StructField("status", StringType(), True),
@@ -289,37 +286,6 @@ class SimplifiedHealthcareModeler:
     
     def get_cost_benefit_analysis(self) -> Dict[str, Any]:
         """Get cost-benefit analysis of the simplified approach"""
-        
-        # Storage costs comparison
-        traditional_scd_cost = {
-            'patients': '3x storage for historical tracking',
-            'lab_results': '3x storage (unnecessary)',
-            'providers': '3x storage (unnecessary)',
-            'medications': '3x storage (unnecessary)',
-            'claims': '3x storage (justified)',
-            'financial_transactions': '3x storage (justified)'
-        }
-        
-        simplified_approach_cost = {
-            'patients': '1x storage (time travel sufficient)',
-            'lab_results': '1x storage (immutable)',
-            'providers': '1x storage (time travel sufficient)',
-            'medications': '1x storage (time travel sufficient)',
-            'claims': '3x storage (business value justified)',
-            'financial_transactions': '3x storage (business value justified)'
-        }
-        
-        # Performance comparison
-        performance_comparison = {
-            'patients': {
-                'traditional_scd': 'Current lookup: 50ms, Historical: 200ms',
-                'simplified': 'Current lookup: 80ms, Historical: 150ms'
-            },
-            'claims': {
-                'traditional_scd': 'Current lookup: 50ms, Historical: 200ms',
-                'simplified': 'Current lookup: 50ms, Historical: 200ms (same, justified)'
-            }
-        }
         
         return {
             'storage_savings': '66% overall (4/6 tables use time travel only)',

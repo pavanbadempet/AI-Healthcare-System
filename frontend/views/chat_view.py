@@ -78,40 +78,18 @@ def render_chat_page():
         st.session_state.messages = []
     
     # Quick action buttons
+    quick_prompts = [
+        "Explain my latest report",
+        "Diet plan for high glucose",
+        "Remind me about medication"
+    ]
     if len(st.session_state.messages) == 0:
-        st.markdown("""
-<style>
-.quick-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 1.5rem;
-}
-.quick-action-btn {
-    background: rgba(30, 41, 59, 0.5);
-    border: 1px solid rgba(148, 163, 184, 0.1);
-    border-radius: 20px;
-    padding: 8px 16px;
-    font-size: 0.85rem;
-    color: #94A3B8;
-    flex: 0 1 auto;
-    white-space: nowrap;
-}
-@media only screen and (max-width: 768px) {
-    .quick-action-btn {
-        padding: 6px 12px;
-        font-size: 0.8rem;
-        white-space: normal;
-        text-align: center;
-    }
-}
-</style>
-<div class="quick-actions">
-    <div class="quick-action-btn">📊 "Explain my latest report"</div>
-    <div class="quick-action-btn">🍎 "Diet plan for high glucose"</div>
-    <div class="quick-action-btn">💊 "Remind me about medication"</div>
-</div>
-""", unsafe_allow_html=True)
+        cols = st.columns(len(quick_prompts))
+        for idx, label in enumerate(quick_prompts):
+            with cols[idx]:
+                if st.button(label, key=f"quick_action_{idx}", type="secondary"):
+                    st.session_state["quick_prompt"] = label
+                    st.rerun()
     
     # Display chat history
     for msg in st.session_state.messages:
@@ -120,7 +98,13 @@ def render_chat_page():
             st.markdown(msg["content"])
     
     # Chat input
-    if prompt := st.chat_input("Ask me about your health..."):
+    prompt = None
+    if st.session_state.get("quick_prompt"):
+        prompt = st.session_state.pop("quick_prompt")
+    else:
+        prompt = st.chat_input("Ask me about your health...")
+
+    if prompt:
         # Add user message
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user", avatar="🧑‍💻"):
@@ -237,6 +221,6 @@ Try refreshing the page or come back later."""
         st.markdown("<br>", unsafe_allow_html=True)
         col1, col2, col3 = st.columns([1, 1, 1])
         with col2:
-            if st.button("🗑️ Clear Chat", type="secondary", width="stretch"):
+            if st.button("🗑️ Clear Chat", type="secondary", use_container_width=True):
                 st.session_state.messages = []
                 st.rerun()

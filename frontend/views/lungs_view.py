@@ -1,3 +1,4 @@
+import streamlit as st
 from frontend.utils import api  # Force reload
 from frontend.components import charts
 

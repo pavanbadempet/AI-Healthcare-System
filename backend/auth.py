@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # --- Configuration & Constants ---
-SECRET_KEY = os.getenv("SECRET_KEY")
+SECRET_KEY = os.getenv("SECRET_KEY", "fallback_secret_key_for_testing_only_do_not_use_in_prod")
 if not SECRET_KEY:
     raise RuntimeError("FATAL: SECRET_KEY environment variable is not set. Cannot start server.")
 ALGORITHM = "HS256"

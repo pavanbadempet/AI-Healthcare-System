@@ -5,7 +5,6 @@ Generates downloadable PDF health reports for users.
 Uses fpdf (already in requirements).
 """
 from fpdf import FPDF
-from io import BytesIO
 from datetime import datetime
 from typing import List, Dict, Any
 import logging

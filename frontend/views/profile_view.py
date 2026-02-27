@@ -44,24 +44,30 @@ def render_profile_page():
                 with col1:
                     height = st.number_input("Height (cm)", value=int(profile.get("height") or 170), format="%d", step=1)
                     weight = st.number_input("Weight (kg)", value=float(profile.get("weight") or 70.0), format="%.1f", step=0.1)
-                    diet = st.selectbox("Diet", ["Vegetarian", "Non-Vegetarian", "Vegan", "Keto", "Other"], index=0 if not profile.get("diet") else ["Vegetarian", "Non-Vegetarian", "Vegan", "Keto", "Other"].index(profile.get("diet")))
+                    diet_options = ["Vegetarian", "Non-Vegetarian", "Vegan", "Keto", "Other"]
+                    diet_index = diet_options.index(profile.get("diet")) if profile.get("diet") in diet_options else 0
+                    diet = st.selectbox("Diet", diet_options, index=diet_index)
                     
                     # Date of Birth
                     from datetime import datetime, date
-                    dob_val = datetime.today()
+                    dob_val = datetime.today().date()
                     if profile.get("dob"):
                         try:
                             # Handle potential format variants
                             dob_str = str(profile.get("dob")).split()[0]
-                            dob_val = datetime.strptime(dob_str, "%Y-%m-%d")
+                            dob_val = datetime.strptime(dob_str, "%Y-%m-%d").date()
                         except:
                             pass
                     
                     dob = st.date_input("Date of Birth", value=dob_val, min_value=date(1900, 1, 1), max_value=date.today())
                 with col2:
-                    activity = st.selectbox("Activity Level", ["Sedentary", "Lightly Active", "Moderately Active", "Very Active"], index=0)
+                    activity_options = ["Sedentary", "Lightly Active", "Moderately Active", "Very Active"]
+                    activity_index = activity_options.index(profile.get("activity_level")) if profile.get("activity_level") in activity_options else 0
+                    activity = st.selectbox("Activity Level", activity_options, index=activity_index)
                     sleep = st.slider("Sleep (Hours)", 4.0, 12.0, float(profile.get("sleep_hours") or 7.0), step=0.5, format="%.1f")
-                    stress = st.selectbox("Stress Level", ["Low", "Moderate", "High"], index=1)
+                    stress_options = ["Low", "Moderate", "High"]
+                    stress_index = stress_options.index(profile.get("stress_level")) if profile.get("stress_level") in stress_options else 1
+                    stress = st.selectbox("Stress Level", stress_options, index=stress_index)
                 
                 allow_data = st.checkbox("Allow Data Collection for AI Improvement", value=profile.get("allow_data_collection", True))
             
@@ -118,10 +124,12 @@ def render_profile_page():
     c1, c2 = st.columns([1, 2])
     
     with c1:
-        # We use a callback pattern or direct fetch if it's fast enough.
-        # Since generating PDF might take a second, we'll make it direct for now.
-        report_data = api.fetch_health_report()
-        
+        if st.button("Load Health Report", key="load_report"):
+            with st.spinner("Fetching report..."):
+                report_data = api.fetch_health_report()
+            st.session_state['report_data'] = report_data
+
+        report_data = st.session_state.get('report_data')
         if report_data:
             st.download_button(
                 label="📥 Download PDF Report",
@@ -131,8 +139,10 @@ def render_profile_page():
                 key="dl_pdf_btn",
                 use_container_width=True,
             )
-        else:
+        elif 'report_data' in st.session_state:
             st.warning("Report unavailable (check connection)")
+        else:
+            st.info("Click 'Load Health Report' to fetch your PDF report.")
             
     with c2:
         st.info("💡 **Tip:** The PDF includes your profile, recent health assessments, and personalized recommendations.")

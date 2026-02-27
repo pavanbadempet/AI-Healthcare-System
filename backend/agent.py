@@ -1,17 +1,16 @@
-from typing import TypedDict, Annotated, List, Union, Any, Dict
+from typing import TypedDict, Annotated, List
 from langgraph.graph import StateGraph, END
 from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, BaseMessage
-import google.generativeai as genai
+import asyncio
 import operator
 import logging
 import requests
-import json
 import os
 from dotenv import load_dotenv
 
-# Import our internals
-from . import rag
-from .ml_service import ml_service
+# All AI inference goes through core_ai — never call providers directly.
+from . import core_ai
+from .prompt_registry import get_prompt
 
 # Configure Logging
 logging.basicConfig(level=logging.INFO)
@@ -19,103 +18,52 @@ logger = logging.getLogger(__name__)
 
 # Load keys
 load_dotenv()
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
 
-if not GOOGLE_API_KEY:
-    logger.warning("GOOGLE_API_KEY not found. AI features disabled.")
-    GOOGLE_API_KEY = "dummy"
 
-# Gemini Wrapper
+# ── core_ai-backed LLM Wrapper ────────────────────────────────────────
+# Wraps the multi-tier AI engine (Ollama → Gemini → Cloud) in a
+# LangChain-compatible .invoke() interface for the LangGraph agent.
 
-class CustomGeminiWrapper:
-    def __init__(self, model_name: str, api_key: str):
-        self.api_key = api_key
-        self.model_name = model_name
-        self.model = None
+class CoreAIWrapper:
+    """LangChain-compatible wrapper around core_ai multi-tier inference."""
 
-    def _get_model(self):
-        if self.model:
-            return self.model
-            
-        if self.api_key == "dummy":
-            return None
-            
-        try:
-            # Configure only when needed
-            genai.configure(api_key=self.api_key)
-            self.model = genai.GenerativeModel(self.model_name)
-            return self.model
-        except Exception as e:
-            logger.error(f"Failed to initialize Gemini: {e}")
-            return None
-    
     def invoke(self, messages: List[BaseMessage]) -> AIMessage:
-        model = self._get_model()
-        if model is None:
-            return AIMessage(content="AI Unavailable.")
-            
         full_prompt = ""
         for msg in messages:
             role = "User" if isinstance(msg, HumanMessage) else "System" if isinstance(msg, SystemMessage) else "AI"
             full_prompt += f"{role}: {msg.content}\n\n"
-            
+
         try:
-            response = model.generate_content(full_prompt)
-            return AIMessage(content=response.text)
+            # Run async generate in sync context
+            loop = None
+            try:
+                loop = asyncio.get_running_loop()
+            except RuntimeError:
+                pass
+
+            if loop and loop.is_running():
+                # We're inside an async context — use a thread
+                import concurrent.futures
+                with concurrent.futures.ThreadPoolExecutor() as pool:
+                    result = pool.submit(asyncio.run, core_ai.generate(full_prompt)).result()
+            else:
+                result = asyncio.run(core_ai.generate(full_prompt))
+
+            if result:
+                return AIMessage(content=result)
+            return AIMessage(content="AI is temporarily unavailable. Please try again shortly.")
+
         except Exception as e:
             err_str = str(e)
-            if "429" in err_str or "Quota exceeded" in err_str:
-                return AIMessage(content="⚠️ **Daily Quota Exceeded.**\nYou are using the Free Tier of Google Gemini. Please wait a minute or ensure you are using a 'Flash' model.\n(The system has been updated to auto-select Flash for you now).")
-            return AIMessage(content=f"Error: {str(e)}")
+            if "429" in err_str or "Quota" in err_str:
+                return AIMessage(content="⚠️ **Quota Exceeded.** Please wait a moment or configure a local Ollama model for unlimited free inference.")
+            logger.error(f"AI generation error: {e}")
+            return AIMessage(content=f"AI Error: {str(e)}")
 
-# --- Dynamic Model Selection ---
-def get_best_available_model(api_key: str):
-    """
-    Dynamically checks available models.
-    STRICTLY prefers Flash models for Free Tier reliability.
-    """
-    if api_key == "dummy": return "dummy-model"
-    
-    try:
-        genai.configure(api_key=api_key)
-        all_models = []
-        for m in genai.list_models():
-            if 'generateContent' in m.supported_generation_methods:
-                all_models.append(m.name)
-        
-        logger.info(f"Available Gemini Models: {all_models}")
-        
-        # 1. Look for explicit Flash models (Reliable Free Tier)
-        flash_models = [m for m in all_models if "flash" in m.lower()]
-        for m in flash_models:
-            # Prefer 1.5 flash
-            if "1.5" in m:
-                logger.info(f"Selected Flash Model: {m}")
-                return m
-        
-        # If any flash found (e.g. 1.0 or 2.0)
-        if flash_models:
-            logger.info(f"Selected Fallback Flash Model: {flash_models[0]}")
-            return flash_models[0]
 
-        # 2. Only if NO Flash exists, try Pro
-        pro_models = [m for m in all_models if "pro" in m.lower()]
-        if pro_models:
-             return pro_models[0]
-             
-        # 3. Fallback to anything
-        if all_models:
-            return all_models[0]
-            
-    except Exception as e:
-        logger.error(f"Model discovery failed: {e}")
-        
-    return "models/gemini-1.5-flash" # Safe default
-
-# Global instance with dynamic selection
-selected_model = get_best_available_model(GOOGLE_API_KEY)
-llm = CustomGeminiWrapper(selected_model, GOOGLE_API_KEY)
+# Global instance — uses multi-tier inference automatically
+llm = CoreAIWrapper()
 
 # --- 2. State Definition ---
 class AgentState(TypedDict, total=False):
@@ -210,6 +158,7 @@ def generation_node(state: AgentState):
     """
     Generates highly personalized responses using all available context.
     Features: Memory recall, proactive suggestions, empathy, follow-ups.
+    Uses version-controlled prompt from prompt_registry.
     """
     messages = state['messages']
     profile = state.get("user_profile", "Unknown")
@@ -226,33 +175,14 @@ def generation_node(state: AgentState):
     else:
         engagement_style = "DEEP SESSION: Long conversation. Summarize key points discussed and offer next steps."
     
-    system_prompt = f"""Act as a helpful medical assistant.
-    
-    User Profile:
-    {profile}
-
-    Medical History:
-    {medical_history}
-
-    Past Interactions:
-    {rag_context}
-
-    Web Context:
-    {web_data if web_data else "N/A"}
-
-    Instructions:
-    - Personalize responses using the user's name and history.
-    - Be supportive and pragmatic.
-    - Suggest relevant health tips or follow-up topics.
-    - Safety: If symptoms are severe (chest pain, stroke signs), advise calling emergency services immediately.
-    - Disclaimer: Always clarify you are an assistant, not a doctor.
-    - Keep responses concise and readable.
-    
-    CRITICAL - DATA PRIVACY & MEMORY:
-    - You HAVE access to this user's secure medical records and past conversations (provided above).
-    - If the user asks if you "remember" or "store data", say: "Yes, I can securely recall your past checkups and conversations to help you better."
-    - DO NOT give generic "I am an AI who doesn't store data" responses. You are a Personal Medical Companion with memory.
-    """
+    # Use version-controlled prompt from the registry
+    system_prompt = get_prompt("chat_system").format(
+        user_profile=profile,
+        medical_history=medical_history,
+        rag_context=rag_context,
+        web_context=web_data if web_data else "N/A",
+        engagement_style=engagement_style,
+    )
     
     final_msgs = [SystemMessage(content=system_prompt)] + messages
     response = llm.invoke(final_msgs)
