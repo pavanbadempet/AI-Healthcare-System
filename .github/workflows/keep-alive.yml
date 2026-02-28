@@ -12,31 +12,30 @@ jobs:
     timeout-minutes: 5
     
     steps:
-      - name: Ping Backend (Render) with Retry
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: "3.10"
+
+      - name: Install Playwright
         run: |
-          echo "Pinging Render backend..."
-          for i in 1 2 3; do
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 90 https://aio-health-backend.onrender.com/healthz)
-            echo "Attempt $i: HTTP $HTTP_CODE"
-            if [ "$HTTP_CODE" = "200" ]; then
-              echo "✅ Backend is UP"
-              exit 0
-            fi
-            echo "Waiting 30s for cold start..."
-            sleep 30
-          done
-          echo "⚠️ Backend may be slow to wake up"
-      
-      - name: Ping Frontend (Streamlit) with Retry
+          python -m pip install --upgrade pip
+          pip install playwright requests
+          playwright install chromium
+
+      - name: Ping Backends (Render)
         run: |
-          echo "Pinging Streamlit frontend..."
-          for i in 1 2; do
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 https://ai-healthcare-system.streamlit.app/)
-            echo "Attempt $i: HTTP $HTTP_CODE"
-            if [ "$HTTP_CODE" = "200" ]; then
-              echo "✅ Frontend is UP"
-              exit 0
-            fi
-            sleep 15
-          done
-          echo "⚠️ Frontend may need manual wake-up"
+          echo "Pinging primary backend (Fastest/New)..."
+          # Render wakes up if it receives any request. It might take 50s, so we give it a 30s timeout
+          # Even if curl times out, the request reached Render and it will start waking up
+          curl -s -o /dev/null -w "%{http_code}" --max-time 30 https://aio-health-backend-gdzi.onrender.com/healthz || echo "Primary ping sent"
+          
+          echo "Pinging secondary backend (Fallback)..."
+          curl -s -o /dev/null -w "%{http_code}" --max-time 30 https://aio-health-backend.onrender.com/healthz || echo "Secondary ping sent"
+          
+      - name: Ping Frontend (Streamlit Headless)
+        run: |
+          echo "Launching headless browser to check if Streamlit is asleep..."
+          python scripts/keep_alive_frontend.py
