@@ -38,8 +38,18 @@ jobs:
           git config --global user.email "github-actions@github.com"
           git config --global user.name "GitHub Actions Sync Bot"
           
-          # Remove the heavy data folder completely from this snapshot
-          rm -rf data/
+          # Add Hugging Face required YAML frontmatter to README.md
+          echo "---" > HF_README.md
+          echo "title: AIO Health Backend" >> HF_README.md
+          echo "emoji: 🏥" >> HF_README.md
+          echo "colorFrom: blue" >> HF_README.md
+          echo "colorTo: green" >> HF_README.md
+          echo "sdk: docker" >> HF_README.md
+          echo "pinned: false" >> HF_README.md
+          echo "---" >> HF_README.md
+          echo "" >> HF_README.md
+          cat README.md >> HF_README.md
+          mv HF_README.md README.md
           
           git add .
           git commit -m "Deploy to Hugging Face Space"
