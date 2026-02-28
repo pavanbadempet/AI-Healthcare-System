@@ -29,16 +29,23 @@ jobs:
           # Rename the specific Dockerfile for Hugging Face
           cp Dockerfile.hf Dockerfile
           
+          # Delete the original .git history to avoid pushing historical large files to Hugging Face
+          rm -rf .git
+          
+          # Create a fresh git repository just for this deployment snapshot
+          git init
+          git checkout -b main
           git config --global user.email "github-actions@github.com"
           git config --global user.name "GitHub Actions Sync Bot"
           
-          # Remove the data folder from the local commit history so we don't push the heavy CSVs
-          # Since HF only needs the backend code and models, not raw data
-          git rm -rf data/ || true
-          git commit -m "chore: Remove data directory for Hugging Face deployment" || true
+          # Remove the heavy data folder completely from this snapshot
+          rm -rf data/
+          
+          git add .
+          git commit -m "Deploy to Hugging Face Space"
           
           # Add the HF remote and push
           git remote add hf https://$HF_USERNAME:$HF_TOKEN@huggingface.co/spaces/$HF_USERNAME/$HF_SPACE_NAME
           
-          # Push the main branch to Hugging Face
+          # Force push this single fresh commit to Hugging Face
           git push --force hf main:main
