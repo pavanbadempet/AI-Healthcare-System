@@ -93,8 +93,8 @@ def create_patient_dimension_scd2(**context):
     finally:
         spark.stop()
 
-def create_lab_results_fact_iceberg(**context):
-    """Create lab results fact table using Apache Iceberg"""
+def create_lab_results_fact_delta(**context):
+    """Create lab results fact table using Delta Lake"""
     from backend.advanced_data_modeling import create_spark_session_with_lakehouse, get_data_modeler
     from pyspark.sql.types import StructType, StructField, StringType, FloatType, TimestampType
     
@@ -134,7 +134,7 @@ def create_lab_results_fact_iceberg(**context):
         # Initialize data modeler
         data_modeler = get_data_modeler(spark, "/tmp/healthcare_warehouse")
         
-        # Create lab results fact with Iceberg
+        # Create lab results fact with Delta Lake
         result = data_modeler.create_lab_results_fact(lab_df)
         
         logger.info(f"Lab results fact created: {result}")
@@ -214,10 +214,10 @@ def create_claims_dimension_scd2(**context):
             table_name='claims',
             table_format=TableFormat.DELTA,
             scd_type=SCDType.TYPE2,
-            partition_columns=['service_date'],
-            sort_columns=['claim_id'],
+            cluster_columns=['service_date', 'claim_id', 'patient_id'],
             business_keys=['claim_id'],
-            tracking_columns=['claim_status', 'paid_amount']
+            tracking_columns=['claim_status', 'paid_amount'],
+            enable_cdc=True
         )
         
         if not spark.catalog._existsTable("claims"):
@@ -335,8 +335,8 @@ def optimize_delta_tables(**context):
                 table_name='patients',
                 table_format=TableFormat.DELTA,
                 scd_type=SCDType.TYPE2,
-                partition_columns=['updated_date'],
-                sort_columns=['patient_id']
+                cluster_columns=['patient_id', 'updated_date'],
+                enable_cdc=True
             )
             
             patient_opt = delta_manager.optimize_table(config)
@@ -350,8 +350,8 @@ def optimize_delta_tables(**context):
                 table_name='claims',
                 table_format=TableFormat.DELTA,
                 scd_type=SCDType.TYPE2,
-                partition_columns=['service_date'],
-                sort_columns=['claim_id']
+                cluster_columns=['service_date', 'claim_id'],
+                enable_cdc=True
             )
             
             claims_opt = delta_manager.optimize_table(config)
@@ -382,9 +382,8 @@ spark_modeling_task = SparkSubmitOperator(
     executor_cores='2',
     num_executors='4',
     packages=[
-        'io.delta:delta-core_2.12:2.4.0',
-        'org.apache.iceberg:iceberg-spark-runtime:1.4.2',
-        'org.postgresql:postgresql:42.2.18'
+        'io.delta:delta-spark_2.12:3.1.0',
+        'org.postgresql:postgresql:42.7.3',
     ],
     dag=dag,
 )
@@ -397,8 +396,8 @@ create_patient_dim_task = PythonOperator(
 )
 
 create_lab_results_fact_task = PythonOperator(
-    task_id='create_lab_results_fact_iceberg',
-    python_callable=create_lab_results_fact_iceberg,
+    task_id='create_lab_results_fact_delta',
+    python_callable=create_lab_results_fact_delta,
     dag=dag,
 )
 

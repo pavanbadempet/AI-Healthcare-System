@@ -43,8 +43,8 @@ def log_audit_event(
         db.add(log_entry)
         db.commit()
     except Exception as e:
+        db.rollback() # Ensure ACID isolation by clearing failed transactions
         logger.error(f"FAILED TO AUDIT LOG: {e}")
-        # Don't crash the app if logging fails, just log error
 
 
 # --- Simple In-Memory Rate Limiter ---

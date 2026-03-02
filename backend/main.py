@@ -9,7 +9,7 @@ from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import ORJSONResponse, Response
+from fastapi.responses import JSONResponse, Response
 from fastapi.middleware.gzip import GZipMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
 from sqlalchemy import text
@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # --- Imports ---
-from . import models, database, auth, chat, explanation, prediction, report, admin, payments, security
+from . import models, database, auth, chat, explanation, prediction, report, admin, payments, security, telemetry
 from . import streaming_chat
 from .pdf_service import generate_medical_report
 
@@ -125,7 +125,7 @@ async def lifespan(app: FastAPI):
     yield
     logger.info("Shutting down...")
 
-app = FastAPI(title="AI Healthcare API", default_response_class=ORJSONResponse, lifespan=lifespan)
+app = FastAPI(title="AI Healthcare API", default_response_class=JSONResponse, lifespan=lifespan)
 
 # --- Middleware ---
 
@@ -135,7 +135,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             try:
                 security.limiter.check(request, request.client.host if request.client else "unknown")
             except HTTPException as e:
-                return ORJSONResponse(status_code=e.status_code, content={"detail": e.detail})
+                return JSONResponse(status_code=e.status_code, content={"detail": e.detail})
         return await call_next(request)
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -152,7 +152,7 @@ class ExceptionMiddleware(BaseHTTPMiddleware):
         except Exception as e:
             error_id = str(uuid.uuid4())[:8]
             logger.error(f"Error {error_id}: {e}")
-            return ORJSONResponse(status_code=500, content={"detail": f"Error: {error_id}"})
+            return JSONResponse(status_code=500, content={"detail": f"Error: {error_id}"})
 
 class LoggingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -169,11 +169,12 @@ if not os.getenv("TESTING"):
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(CORSMiddleware,
-    allow_origins=["http://localhost:8501", "https://*.streamlit.app"],
-    allow_origin_regex=r"https://.*\.streamlit\.app",
-    allow_credentials=True, allow_methods=["*"], allow_headers=["*"])
+    allow_origins=["http://127.0.0.1:3000"],
+    allow_credentials=True, 
+    allow_methods=["*"], 
+    allow_headers=["*"])
 app.add_middleware(TrustedHostMiddleware, 
-    allowed_hosts=["localhost", "127.0.0.1", "aio-health-backend.onrender.com", "*"])
+    allowed_hosts=["127.0.0.1", "aio-health-backend.onrender.com"])
 app.add_middleware(RateLimitMiddleware)
 
 # --- Routes ---
@@ -185,8 +186,10 @@ app.include_router(explanation.router)
 app.include_router(report.router, tags=["Reports"])
 app.include_router(admin.router)
 app.include_router(payments.router)
-from . import appointments
+app.include_router(telemetry.router, prefix="/telemetry", tags=["Telemetry"])
+from . import appointments, ollama_routes
 app.include_router(appointments.router, tags=["Appointments"])
+app.include_router(ollama_routes.router)
 
 @app.get("/")
 def root():

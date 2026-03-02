@@ -107,20 +107,22 @@ class DiabetesInput(BaseModel):
 
 class HeartInput(BaseModel):
     """
-    Schema for Heart Disease Prediction (CDC BRFSS - 90%+ Accuracy).
-    Feature Logic: Focuses on Risk Factors (History) rather than just current Vitals.
+    Schema for Heart Disease Prediction (Cleveland Dataset).
+    Feature Logic: Focuses on Lab Reports and Clinical Vitals.
     """
     age: float = Field(..., description="Age in years.")
-    gender: int = Field(..., description="0: Female, 1: Male")
-    high_bp: int = Field(..., description="0: Normal, 1: High BP")
-    high_chol: int = Field(..., description="0: Normal, 1: High Cholesterol")
-    bmi: float = Field(..., description="Body Mass Index")
-    smoker: int = Field(..., description="1 if smoked 100+ cigs in lifetime, else 0")
-    stroke: int = Field(..., description="1 if history of stroke, else 0")
-    diabetes: int = Field(..., description="0: No, 1: Pre-Diabetes or Diabetes")
-    phys_activity: int = Field(..., description="1 if active in past 30 days, else 0")
-    hvy_alcohol: int = Field(..., description="1 if heavy drinker (Men >14/wk, Women >7/wk), else 0")
-    gen_hlth: int = Field(..., description="Self-rated health: 1 (Excellent) to 5 (Poor)")
+    sex: int = Field(..., description="0: Female, 1: Male")
+    cp: int = Field(..., description="Chest pain type (0-3)")
+    trestbps: float = Field(..., description="Resting blood pressure")
+    chol: float = Field(..., description="Serum cholesterol in mg/dl")
+    fbs: int = Field(..., description="Fasting blood sugar > 120 mg/dl (1/0)")
+    restecg: int = Field(..., description="Resting ECG results (0-2)")
+    thalach: float = Field(..., description="Maximum heart rate achieved")
+    exang: int = Field(..., description="Exercise induced angina (1/0)")
+    oldpeak: float = Field(..., description="ST depression induced by exercise")
+    slope: int = Field(..., description="Slope of the peak exercise ST segment (0-2)")
+    ca: int = Field(..., description="Number of major vessels (0-4)")
+    thal: int = Field(..., description="Thalassemia (1-3)")
 
 class LiverInput(BaseModel):
     """Schema for Liver Disease Prediction (ILPD)."""

@@ -1,45 +1,15 @@
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-import google.generativeai as genai
 import os
 import logging
+from . import core_ai
 from dotenv import load_dotenv
 
 # Load Env
 load_dotenv()
 logger = logging.getLogger(__name__)
 
-# Config
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
-if not GOOGLE_API_KEY:
-    logger.error("GOOGLE_API_KEY not found for Explanation Service")
-
-# Global lazy model holder
-_model = None
-
-def get_model():
-    global _model
-    if _model:
-        return _model
-    
-    if not GOOGLE_API_KEY:
-        logger.error("GOOGLE_API_KEY not found for Explanation Service")
-        return None
-        
-    try:
-        genai.configure(api_key=GOOGLE_API_KEY)
-        _model = genai.GenerativeModel("gemini-1.5-flash")
-    except Exception as e:
-        logger.error(f"GenAI Init Failed (Explanation Service Disabled): {e}")
-        _model = None
-    return _model
-
-# Removed module-level initialization:
-# try:
-#     genai.configure(api_key=GOOGLE_API_KEY)
-#     ...
-# except ...
-model = None # Placeholder to satisfy static checks if needed, but we use get_model() 
+# AI inference is now managed via core_ai.generate()
 
 router = APIRouter(prefix="/explain", tags=["Explanation"])
 
@@ -55,15 +25,11 @@ class ExplanationResponse(BaseModel):
 from typing import Optional, Any
 
 @router.post("/", response_model=ExplanationResponse)
-async def explain_prediction(req: ExplanationRequest, injected_model: Optional[Any] = None):
+async def explain_prediction(req: ExplanationRequest):
     """
-    Uses Gemini to explain WHY a prediction was made in plain English.
+    Uses core_ai to explain WHY a prediction was made in plain English.
     """
     try:
-        model = injected_model or get_model()
-        if not model:
-            raise HTTPException(status_code=503, detail="Explanation Service Unavailable (Model not loaded)")
-            
         # Construct Prompt
         prompt = f"""
         You are an expert Medical AI. I have just run a Machine Learning prediction for **{req.prediction_type}**.
@@ -88,9 +54,10 @@ async def explain_prediction(req: ExplanationRequest, injected_model: Optional[A
         - [Tip 3]
         """
         
-        # Call Gemini
-        response = model.generate_content(prompt)
-        text = response.text
+        # Call core_ai (Multi-tier)
+        text = await core_ai.generate(prompt)
+        if not text:
+             raise HTTPException(status_code=503, detail="AI Service Unavailable")
         
         # Naive parsing (could be improved with structured output mode if available)
         explanation_part = ""
@@ -113,5 +80,4 @@ async def explain_prediction(req: ExplanationRequest, injected_model: Optional[A
 
     except Exception as e:
         logger.error(f"Explanation Error: {e}")
-        # Return actual error for debugging
         raise HTTPException(status_code=500, detail=f"Failed to generate explanation: {str(e)}")
