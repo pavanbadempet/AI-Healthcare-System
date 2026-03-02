@@ -13,16 +13,18 @@ def test_heart_prediction_cdc(client):
     # Test with valid CDC BRFSS payload
     payload = {
         "age": 50,
-        "gender": 1,
-        "high_bp": 1,
-        "high_chol": 1,
-        "bmi": 30.5,
-        "smoker": 1,
-        "stroke": 0,
-        "diabetes": 0,
-        "phys_activity": 1,
-        "hvy_alcohol": 0,
-        "gen_hlth": 3
+        "sex": 1,
+        "cp": 3,
+        "trestbps": 145,
+        "chol": 233,
+        "fbs": 1,
+        "restecg": 0,
+        "thalach": 150,
+        "exang": 0,
+        "oldpeak": 2.3,
+        "slope": 0,
+        "ca": 0,
+        "thal": 1
     }
     response = client.post("/predict/heart", json=payload)
     assert response.status_code == 200

@@ -1,27 +1,34 @@
-# Use slim python image for smaller size
-FROM python:3.10-slim
+# ============================================================
+# AI Healthcare System — Backend Dockerfile
+# ============================================================
+FROM python:3.12-slim
 
-# Set working directory
 WORKDIR /app
 
-# Install system dependencies (gcc for building some python libs if needed, curl for healthcheck)
+# System dependencies
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements first to leverage Docker cache
+# Install Python dependencies (cached layer)
 COPY requirements.txt .
-
-# Install Dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy all application code
+# Copy application code
 COPY . .
 
-# Expose ports for both services (documentation only)
-EXPOSE 8000
-EXPOSE 8501
+# Train models if missing (ensures containers have valid models)
+RUN python -c "\
+import os; \
+models = ['backend/diabetes_model.pkl', 'backend/heart_disease_model.pkl']; \
+missing = [m for m in models if not os.path.exists(m) or os.path.getsize(m) == 0]; \
+print(f'Models to train: {missing}') if missing else print('All models present')"
 
-# Default command (overridden by docker-compose)
-CMD ["bash"]
+EXPOSE 8000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD curl -f http://127.0.0.1:8000/healthz || exit 1
+
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]

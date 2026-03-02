@@ -72,7 +72,10 @@ class TestSetSqlitePragma:
         
         set_sqlite_pragma(mock_connection, None)
         
-        mock_cursor.execute.assert_called_once_with("PRAGMA journal_mode=WAL")
+        assert mock_cursor.execute.call_count == 3
+        mock_cursor.execute.assert_any_call("PRAGMA journal_mode=WAL")
+        mock_cursor.execute.assert_any_call("PRAGMA synchronous=NORMAL")
+        mock_cursor.execute.assert_any_call("PRAGMA foreign_keys=ON")
         mock_cursor.close.assert_called_once()
 
 

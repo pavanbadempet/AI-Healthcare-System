@@ -44,21 +44,20 @@ class MLService:
         try:
             g_val = 1 if str(gender).lower() == 'male' else 0
             
-            # Map legacy 'cp', 'trestbps' etc to HeartInput
-            # HeartInput: high_bp, high_chol, bmi, smoker, stroke, diabetes, phys_activity, hvy_alcohol, gen_hlth, gender, age
-            
             data = schemas.HeartInput(
                 age=float(age),
-                gender=g_val,
-                high_bp=1 if float(trestbps) > 130 else 0,
-                high_chol=1 if float(chol) > 200 else 0,
-                bmi=25.0, # Default
-                smoker=0,
-                stroke=0,
-                diabetes=1 if float(fbs) > 0 else 0,
-                phys_activity=0,
-                hvy_alcohol=0,
-                gen_hlth=3
+                sex=g_val,
+                cp=int(cp),
+                trestbps=float(trestbps),
+                chol=float(chol),
+                fbs=int(fbs),
+                restecg=int(restecg),
+                thalach=float(thalach),
+                exang=int(exang),
+                oldpeak=float(oldpeak),
+                slope=int(slope),
+                ca=int(ca),
+                thal=int(thal)
             )
              
             result = prediction.predict_heart(data)

@@ -8,7 +8,7 @@ from typing import Dict, Any, List
 from functools import lru_cache
 
 # --- Custom Modules ---
-from . import explainability, schemas
+from . import explainability, schemas, features
 
 # --- Logging Configuration ---
 logger = logging.getLogger(__name__)
@@ -32,19 +32,7 @@ lungs_scaler = None
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MODEL_DIR = BASE_DIR
 
-class DummyModel:
-    """Simple placeholder used when a real model cannot be loaded."""
-    def predict(self, X):
-        # Return a safe mock prediction (0) to allow UI to function without crashing
-        logger.warning("Using DummyModel: Returning mock prediction (0)")
-        return [0]
-
-class DummyScaler:
-    """Simple placeholder for scalers used when loading fails."""
-    def transform(self, X):
-        # Return X as-is (no-op scaler)
-        logger.warning("Using DummyScaler: Returning data unchanged")
-        return X
+# Dummy Fallbacks are now restricted to logging; API will fail explicitly for safety.
 
 def load_pkl(filenames: List[str], fallback_class=None):
     """
@@ -75,17 +63,31 @@ def load_pkl_cached(filename_tuple):
 def initialize_models():
     """Load all models into global state, using dummy fallbacks when files are missing."""
     global diabetes_model, heart_model, liver_model, liver_scaler, kidney_model, kidney_scaler, lungs_model, lungs_scaler
-    logger.info("Loading models...")
-    diabetes_model = load_pkl(["diabetes_model.pkl"], fallback_class=DummyModel)
-    heart_model = load_pkl(["heart_disease_model.pkl"], fallback_class=DummyModel)
-    liver_model = load_pkl(["liver_disease_model.pkl"], fallback_class=DummyModel)
-    liver_scaler = load_pkl(["liver_scaler.pkl"], fallback_class=DummyScaler)
     
-    # Load Kidney and Lungs models (dummy if missing)
-    kidney_model = load_pkl(["kidney_model.pkl"], fallback_class=DummyModel)
-    kidney_scaler = load_pkl(["kidney_scaler.pkl"], fallback_class=DummyScaler)
-    lungs_model = load_pkl(["lungs_model.pkl"], fallback_class=DummyModel)
-    lungs_scaler = load_pkl(["lungs_scaler.pkl"], fallback_class=DummyScaler)
+    if os.getenv("TESTING"):
+        logger.info("TESTING MODE: Injecting mock models...")
+        from unittest.mock import MagicMock
+        mock_pred = lambda X: np.array([0])
+        diabetes_model = MagicMock(); diabetes_model.predict.side_effect = mock_pred
+        heart_model = MagicMock(); heart_model.predict.side_effect = mock_pred
+        liver_model = MagicMock(); liver_model.predict.side_effect = mock_pred
+        liver_scaler = MagicMock(); liver_scaler.transform.side_effect = lambda x: x
+        kidney_model = MagicMock(); kidney_model.predict.side_effect = mock_pred
+        kidney_scaler = MagicMock(); kidney_scaler.transform.side_effect = lambda x: x
+        lungs_model = MagicMock(); lungs_model.predict.side_effect = mock_pred
+        lungs_scaler = MagicMock(); lungs_scaler.transform.side_effect = lambda x: x
+        return
+
+    logger.info("Loading models...")
+    diabetes_model = load_pkl(["diabetes_model.pkl"])
+    heart_model = load_pkl(["heart_disease_model.pkl"])
+    liver_model = load_pkl(["liver_disease_model.pkl"])
+    liver_scaler = load_pkl(["liver_scaler.pkl"])
+    
+    kidney_model = load_pkl(["kidney_model.pkl"])
+    kidney_scaler = load_pkl(["kidney_scaler.pkl"])
+    lungs_model = load_pkl(["lungs_model.pkl"])
+    lungs_scaler = load_pkl(["lungs_scaler.pkl"])
 
 # Initialize on import is REMOVED to prevent startup blocking
 # initialize_models() must be called explicitly by the app startup or tests
@@ -135,7 +137,7 @@ def predict_kidney(data: schemas.KidneyInput) -> Dict[str, Any]:
              
     try:
         # Features Verified: ['age', 'bp', 'sg', 'al', 'su', 'rbc', 'pc', 'pcc', 'ba', 'bgr', 'bu', 'sc', 'sod', 'pot', 'hemo', 'pcv', 'wc', 'rc', 'htn', 'dm', 'cad', 'appet', 'pe', 'ane']
-        feature_names = ['age', 'bp', 'sg', 'al', 'su', 'rbc', 'pc', 'pcc', 'ba', 'bgr', 'bu', 'sc', 'sod', 'pot', 'hemo', 'pcv', 'wc', 'rc', 'htn', 'dm', 'cad', 'appet', 'pe', 'ane']
+        feature_names = features.KIDNEY_FEATURES
         
         input_list = [
             data.age, data.bp, data.sg, data.al, data.su, 
@@ -165,7 +167,7 @@ def predict_lungs(data: schemas.LungInput) -> Dict[str, Any]:
              
     try:
         # Features Verified: UPPERCASE ['GENDER', 'AGE', 'SMOKING', ...]
-        feature_names = ['GENDER', 'AGE', 'SMOKING', 'YELLOW_FINGERS', 'ANXIETY', 'PEER_PRESSURE', 'CHRONIC_DISEASE', 'FATIGUE', 'ALLERGY', 'WHEEZING', 'ALCOHOL_CONSUMING', 'COUGHING', 'SHORTNESS_OF_BREATH', 'SWALLOWING_DIFFICULTY', 'CHEST_PAIN']
+        feature_names = features.LUNG_FEATURES
         
         input_list = [
             data.gender, data.age, data.smoking, data.yellow_fingers,
@@ -217,11 +219,10 @@ def predict_heart(data: schemas.HeartInput) -> Dict[str, Any]:
     if not heart_model:
         raise HTTPException(status_code=503, detail="Heart Model not available")
     try:
-        age_bucket = get_age_bucket(data.age)
         input_list = [
-            data.high_bp, data.high_chol, data.bmi, data.smoker,
-            data.stroke, data.diabetes, data.phys_activity,
-            data.hvy_alcohol, data.gen_hlth, data.gender, age_bucket
+            data.age, data.sex, data.cp, data.trestbps, data.chol,
+            data.fbs, data.restecg, data.thalach, data.exang,
+            data.oldpeak, data.slope, data.ca, data.thal
         ]
         prediction = heart_model.predict([input_list])
         if isinstance(prediction, (list, tuple, np.ndarray)):
@@ -243,7 +244,7 @@ def predict_liver(data: schemas.LiverInput) -> Dict[str, Any]:
         raise HTTPException(status_code=503, detail="Liver Model or Scaler not available")
     try:
         # Features Verified: Title Case ['Age', 'Gender', 'Total_Bilirubin', ...]
-        feature_names = ['Age', 'Gender', 'Total_Bilirubin', 'Direct_Bilirubin', 'Alkaline_Phosphotase', 'Alamine_Aminotransferase', 'Aspartate_Aminotransferase', 'Total_Proteins', 'Albumin', 'Albumin_and_Globulin_Ratio']
+        feature_names = features.LIVER_FEATURES
         
         # Data List
         input_list = [
@@ -289,7 +290,7 @@ def explain_diabetes(data: schemas.DiabetesInput):
         data.heart_disease, data.physical_activity, data.general_health, 
         data.gender, age_bucket
     ]
-    feature_names = ['Hypertension', 'HighChol', 'BMI', 'Smoking', 'HeartDisease', 'PhysActivity', 'GenHlth', 'Gender', 'AgeBucket']
+    feature_names = features.DIABETES_FEATURES
     
     explanation = explainability.get_shap_values(diabetes_model, np.array([input_list]), feature_names)
     if explanation: return explanation
@@ -300,13 +301,12 @@ def explain_heart(data: schemas.HeartInput):
     if not heart_model:
         raise HTTPException(status_code=503, detail="Model unavailable")
     
-    age_bucket = get_age_bucket(data.age)
     input_list = [
-        data.high_bp, data.high_chol, data.bmi, data.smoker, 
-        data.stroke, data.diabetes, data.phys_activity, 
-        data.hvy_alcohol, data.gen_hlth, data.gender, age_bucket
+        data.age, data.sex, data.cp, data.trestbps, data.chol,
+        data.fbs, data.restecg, data.thalach, data.exang,
+        data.oldpeak, data.slope, data.ca, data.thal
     ]
-    feature_names = ['HighBP', 'HighChol', 'BMI', 'Smoker', 'Stroke', 'Diabetes', 'PhysActivity', 'HvyAlcohol', 'GenHlth', 'Gender', 'AgeBucket']
+    feature_names = ['Age', 'Sex', 'ChestPain', 'RestBP', 'Cholesterol', 'FastingBS', 'RestECG', 'MaxHR', 'ExerciseAngina', 'Oldpeak', 'Slope', 'MajorVessels', 'Thal']
     
     explanation = explainability.get_shap_values(heart_model, np.array([input_list]), feature_names)
     if explanation: return explanation

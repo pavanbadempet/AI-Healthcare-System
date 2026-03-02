@@ -49,6 +49,7 @@ class StreamChatRequest(BaseModel):
     message: str
     history: List[StreamChatMessage] = []
     model: Optional[str] = None
+    rag_scope: Optional[str] = "patient"
 
 
 # ── SSE Streaming Chat ────────────────────────────────────────────────
@@ -76,8 +77,8 @@ async def stream_chat(
     ai_available = await core_ai.is_available() or (x_ai_provider and x_ai_api_key)
 
     if ai_available:
-        # Build RAG context
-        context, context_sources = build_chat_context(db, question, current_user)
+        # Build RAG context with Governance Scope
+        context, context_sources = build_chat_context(db, question, current_user, req.rag_scope)
 
         sources = []
         if context:
@@ -171,7 +172,7 @@ async def stream_chat(
         )
 
     # Fallback mode (no AI available)
-    context, _ = build_chat_context(db, question, current_user)
+    context, _ = build_chat_context(db, question, current_user, req.rag_scope)
     fallback_msg = (
         f"I found the following from your records:\n\n{context}\n\n"
         "(AI response unavailable; showing raw data fallback)"

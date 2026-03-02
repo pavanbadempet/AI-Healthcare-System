@@ -6,8 +6,7 @@ import backend.vision_service
 from backend.vision_service import analyze_lab_report
 from fastapi import HTTPException, UploadFile
 
-@pytest.mark.asyncio
-async def test_analyze_report_success():
+def test_analyze_report_success():
     # Mock the model object returned by get_vision_model
     mock_model = MagicMock()
     mock_resp = MagicMock()
@@ -16,20 +15,21 @@ async def test_analyze_report_success():
 
     # Ensure get_vision_model returns our mock model
     with patch("backend.vision_service.get_vision_model", return_value=mock_model), \
-         patch("backend.vision_service.Image.open"):
+         patch("backend.vision_service.Image.open"), \
+         patch("backend.vision_service.GOOGLE_API_KEY", "dummy_key"):
         
         result = analyze_lab_report(b"fake_image_data")
         
         assert result["extracted_data"]["glucose"] == 100
         assert "Healthy" in result["summary"]
 
-@pytest.mark.asyncio
-async def test_analyze_report_api_failure():
+def test_analyze_report_api_failure():
     mock_model = MagicMock()
     # Simulate API Error
     mock_model.generate_content.side_effect = Exception("API Error")
 
-    with patch("backend.vision_service.get_vision_model", return_value=mock_model):
+    with patch("backend.vision_service.get_vision_model", return_value=mock_model), \
+         patch("backend.vision_service.GOOGLE_API_KEY", "dummy_key"):
         
         # Expect generic success dict with empty data (as per service logic)
         result = analyze_lab_report(b"data")
