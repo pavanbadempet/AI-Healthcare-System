@@ -13,6 +13,8 @@ import logging
 from typing import List, Dict, Optional, Any
 from dataclasses import dataclass, field
 from sklearn.metrics.pairwise import cosine_similarity
+import warnings
+warnings.filterwarnings("ignore", message=".*google.generativeai.*", category=FutureWarning)
 import google.generativeai as genai
 
 # --- Logging ---

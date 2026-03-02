@@ -62,8 +62,9 @@ def test_predict_heart_success():
     
     with patch("backend.prediction.heart_model", mock_model):
         resp = client.post("/predict/heart", json={
-            "age": 50, "gender": 1, "high_bp": 0, "high_chol": 200, "bmi": 25.0, 
-            "smoker": 0, "stroke": 0, "diabetes": 0, "phys_activity": 1, "hvy_alcohol": 0, "gen_hlth": 2
+            "age": 50, "sex": 1, "cp": 3, "trestbps": 145, "chol": 233,
+            "fbs": 1, "restecg": 0, "thalach": 150, "exang": 0,
+            "oldpeak": 2.3, "slope": 0, "ca": 0, "thal": 1
         })
         assert resp.status_code == 200
         assert resp.json()["prediction"] == "Heart Disease Detected"
@@ -71,8 +72,9 @@ def test_predict_heart_success():
 def test_predict_heart_model_unavailable():
     with patch("backend.prediction.heart_model", None):
         resp = client.post("/predict/heart", json={
-            "age": 50, "gender": 1, "high_bp": 0, "high_chol": 200, "bmi": 25.0, 
-            "smoker": 0, "stroke": 0, "diabetes": 0, "phys_activity": 1, "hvy_alcohol": 0, "gen_hlth": 2
+            "age": 50, "sex": 1, "cp": 3, "trestbps": 145, "chol": 233,
+            "fbs": 1, "restecg": 0, "thalach": 150, "exang": 0,
+            "oldpeak": 2.3, "slope": 0, "ca": 0, "thal": 1
         })
         assert resp.status_code == 503
 
@@ -82,8 +84,9 @@ def test_predict_heart_exception():
     
     with patch("backend.prediction.heart_model", mock_model):
         resp = client.post("/predict/heart", json={
-            "age": 50, "gender": 1, "high_bp": 0, "high_chol": 200, "bmi": 25.0, 
-            "smoker": 0, "stroke": 0, "diabetes": 0, "phys_activity": 1, "hvy_alcohol": 0, "gen_hlth": 2
+            "age": 50, "sex": 1, "cp": 3, "trestbps": 145, "chol": 233,
+            "fbs": 1, "restecg": 0, "thalach": 150, "exang": 0,
+            "oldpeak": 2.3, "slope": 0, "ca": 0, "thal": 1
         })
         assert resp.status_code == 500
 
@@ -147,17 +150,16 @@ import builtins
 
 def test_model_loading_failure():
     # Patch open to fail, forcing exception block
-    with patch("builtins.open", side_effect=FileNotFoundError("Mock File Missing")):
+    with patch("builtins.open", side_effect=FileNotFoundError("Mock File Missing")), \
+         patch.dict("os.environ", {"TESTING": ""}):
         # Reload module
         importlib.reload(backend.prediction)
-        # Initialize models manually since we removed auto-init
+        # Initialize models manually
         backend.prediction.initialize_models()
         
-        # Check globals are DummyModel instances (not None)
-        assert backend.prediction.diabetes_model is not None
-        assert type(backend.prediction.diabetes_model).__name__ == "DummyModel"
-        assert backend.prediction.heart_model is not None
-        assert type(backend.prediction.heart_model).__name__ == "DummyModel"
+        # Check globals are None (since we unset TESTING)
+        assert backend.prediction.diabetes_model is None
+        assert backend.prediction.heart_model is None
         
     # Restore module (reload again without patch) to fix state for other tests?
     # Actually, other tests rely on patching the GLOBAL variable, so if it is None, strict patching works fine.

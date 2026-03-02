@@ -20,7 +20,8 @@
 
 - `backend/main.py` → FastAPI application entry point
 - `backend/` → All API routes, models, services, ML, AI modules
-- `frontend/` → Streamlit UI (views, components, utils, static)
+- `frontend/` → Next.js App Router (UI, components, hooks, lib)
+- `frontend_legacy/` → Old Streamlit UI (for reference/legacy only)
 - `scripts/` → Dev utilities, DB management, deployment checks
 - `tests/` → Pytest test suite
 - `docs/` → Architecture docs, whitepapers, analysis
@@ -29,7 +30,7 @@
 
 ## Always True
 
-- Use `127.0.0.1`, never `localhost`.
+- Use `127.0.0.1`, never `localhost`. For frontend, port is `3000`.
 - Never hardcode database paths; use `DATABASE_URL` from env.
 - All AI inference must go through `backend/core_ai.py` — never call provider APIs directly.
 - Never log or expose PII (patient names, DOBs, health data) in error messages or debug output.
@@ -45,7 +46,7 @@
 | File | Use when |
 | --- | --- |
 | [backend/AGENTS.md](backend/AGENTS.md) | Editing backend API, services, or AI modules |
-| [frontend/AGENTS.md](frontend/AGENTS.md) | Editing the Streamlit frontend |
+| [frontend/AGENTS.md](frontend/AGENTS.md) | Editing the Next.js frontend |
 | [tests/AGENTS.md](tests/AGENTS.md) | Editing test infrastructure |
 
 ## Core Commands
@@ -55,8 +56,8 @@
 uvicorn backend.main:app --reload --port 8000
 python -m pytest tests/ -v
 
-# Frontend
-streamlit run frontend/main.py --server.port 8501
+# Frontend (Next.js)
+cd frontend && npm run dev -- -p 3000
 
 # DevX
 python scripts/ai_context.py

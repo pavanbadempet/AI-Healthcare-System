@@ -68,9 +68,9 @@ class TestHeartExplanation:
         """Test error when model not available."""
         with patch("backend.prediction.heart_model", None):
             resp = client.post("/predict/explain/heart", json={
-                "age": 50, "gender": 1, "high_bp": 0, "high_chol": 200, "bmi": 25.0,
-                "smoker": 0, "stroke": 0, "diabetes": 0, "phys_activity": 1,
-                "hvy_alcohol": 0, "gen_hlth": 2
+                "age": 50, "sex": 1, "cp": 3, "trestbps": 145, "chol": 233,
+                "fbs": 1, "restecg": 0, "thalach": 150, "exang": 0,
+                "oldpeak": 2.3, "slope": 0, "ca": 0, "thal": 1
             })
             assert resp.status_code == 503
     
@@ -83,9 +83,9 @@ class TestHeartExplanation:
              patch("backend.prediction.explainability.get_shap_values", return_value=mock_shap):
             
             resp = client.post("/predict/explain/heart", json={
-                "age": 50, "gender": 1, "high_bp": 0, "high_chol": 200, "bmi": 25.0,
-                "smoker": 0, "stroke": 0, "diabetes": 0, "phys_activity": 1,
-                "hvy_alcohol": 0, "gen_hlth": 2
+                "age": 50, "sex": 1, "cp": 3, "trestbps": 145, "chol": 233,
+                "fbs": 1, "restecg": 0, "thalach": 150, "exang": 0,
+                "oldpeak": 2.3, "slope": 0, "ca": 0, "thal": 1
             })
             
             if resp.status_code == 200:

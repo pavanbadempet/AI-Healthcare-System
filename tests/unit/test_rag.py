@@ -12,6 +12,8 @@ def mock_vector_db(monkeypatch, tmp_path):
     def mock_embed(*args, **kwargs):
         return {'embedding': [1.0] * 768}
         
+    monkeypatch.setenv("GOOGLE_API_KEY", "mock_key")
+        
     monkeypatch.setattr("google.generativeai.embed_content", mock_embed)
     monkeypatch.setattr("google.generativeai.configure", lambda api_key: None)
 

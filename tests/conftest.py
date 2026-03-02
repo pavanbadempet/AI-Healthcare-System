@@ -1,3 +1,6 @@
+import warnings
+warnings.filterwarnings("ignore", message=".*google.generativeai.*", category=FutureWarning)
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -16,6 +19,13 @@ engine = create_engine(
     poolclass=StaticPool,
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+# --- Environment Setup for Testing ---
+import os
+os.environ["TESTING"] = "1"
+
+from backend.prediction import initialize_models
+initialize_models()
+
 
 @pytest.fixture(scope="function")
 def db_session():
@@ -28,7 +38,7 @@ def db_session():
         db.close()
         Base.metadata.drop_all(bind=engine)
 
-from backend.prediction import initialize_models
+
 
 @pytest.fixture(scope="function")
 def client(db_session):
@@ -40,10 +50,9 @@ def client(db_session):
             db_session.close()
 
     app.dependency_overrides[get_db] = override_get_db
-    
-    # Initialize dummy models so prediction endpoints don't return 503
+    # Initialize models (will use mocks if TESTING=1)
     initialize_models()
     
-    with TestClient(app, base_url="http://localhost") as c:
+    with TestClient(app, base_url="http://127.0.0.1") as c:
         yield c
     app.dependency_overrides.clear()
