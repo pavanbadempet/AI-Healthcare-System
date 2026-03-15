@@ -128,6 +128,28 @@ def get_age_bucket(age: float) -> int:
     elif age <= 79: return 12
     else: return 13
 
+# --- Helpers ---
+
+def _get_confidence(model, input_data):
+    """Extract prediction probability from model. Returns (probability, risk_level)."""
+    try:
+        proba = model.predict_proba(input_data)[0]
+        # proba is [prob_class_0, prob_class_1, ...]
+        disease_prob = float(proba[1]) if len(proba) > 1 else float(proba[0])
+        confidence = round(disease_prob * 100, 1)
+        if confidence >= 75:
+            risk_level = "High"
+        elif confidence >= 40:
+            risk_level = "Moderate"
+        else:
+            risk_level = "Low"
+        return confidence, risk_level
+    except Exception:
+        return None, None
+
+MEDICAL_DISCLAIMER = ("This is an AI-assisted screening tool, not a medical diagnosis. "
+                      "Please consult a qualified healthcare professional for clinical decisions.")
+
 # --- Prediction Endpoints ---
 
 @router.post("/predict/kidney", response_model=Dict[str, Any])
@@ -154,7 +176,8 @@ def predict_kidney(data: schemas.KidneyInput) -> Dict[str, Any]:
         # Handle string or int
         raw_pred = 1 if (str(prediction) == '1' or prediction == 1 or str(prediction).lower() == 'chronic kidney disease detected') else 0
         result = "Chronic Kidney Disease Detected" if raw_pred == 1 else "Healthy Kidney"
-        return {"prediction": result, "raw": raw_pred}
+        confidence, risk_level = _get_confidence(kidney_model, input_scaled)
+        return {"prediction": result, "raw": raw_pred, "confidence": confidence, "risk_level": risk_level, "disclaimer": MEDICAL_DISCLAIMER}
         
     except Exception as e:
         logger.error(f"Kidney Prediction Error: {e}")
@@ -184,7 +207,8 @@ def predict_lungs(data: schemas.LungInput) -> Dict[str, Any]:
         # Robust handling
         raw_pred = 1 if (str(prediction) == '1' or prediction == 1 or str(prediction).upper() == 'HIGH' or str(prediction).upper() == 'MEDIUM') else 0
         result = "Respiratory Issue Detected" if raw_pred == 1 else "Healthy Lungs"
-        return {"prediction": result, "raw": raw_pred}
+        confidence, risk_level = _get_confidence(lungs_model, input_scaled)
+        return {"prediction": result, "raw": raw_pred, "confidence": confidence, "risk_level": risk_level, "disclaimer": MEDICAL_DISCLAIMER}
         
     except Exception as e:
         logger.error(f"Lung Prediction Error: {e}")
@@ -209,7 +233,8 @@ def predict_diabetes(data: schemas.DiabetesInput) -> Dict[str, Any]:
         if hasattr(prediction, 'item'):
             prediction = prediction.item()
         result = "High Risk" if prediction == 1 or prediction == 2 else "Low Risk"
-        return {"prediction": result, "raw": int(prediction)}
+        confidence, risk_level = _get_confidence(diabetes_model, [input_list])
+        return {"prediction": result, "raw": int(prediction), "confidence": confidence, "risk_level": risk_level, "disclaimer": MEDICAL_DISCLAIMER}
     except Exception as e:
         logger.error(f"Diabetes Prediction Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -233,7 +258,8 @@ def predict_heart(data: schemas.HeartInput) -> Dict[str, Any]:
         result = "Heart Disease Detected" if (prediction == 1 or str(prediction) == '1' or str(prediction) == 'Heart Disease Detected') else "Healthy Heart"
         # Return 0 or 1 for raw
         raw_val = 1 if result == "Heart Disease Detected" else 0
-        return {"prediction": result, "raw": raw_val}
+        confidence, risk_level = _get_confidence(heart_model, [input_list])
+        return {"prediction": result, "raw": raw_val, "confidence": confidence, "risk_level": risk_level, "disclaimer": MEDICAL_DISCLAIMER}
     except Exception as e:
         logger.error(f"Heart Prediction Error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
@@ -269,7 +295,8 @@ def predict_liver(data: schemas.LiverInput) -> Dict[str, Any]:
         prediction = liver_model.predict(X_scaled)
         val = prediction[0]
         result = "Liver Disease Detected" if val == 1 else "Healthy Liver"
-        return {"prediction": result, "raw": int(val)}
+        confidence, risk_level = _get_confidence(liver_model, X_scaled)
+        return {"prediction": result, "raw": int(val), "confidence": confidence, "risk_level": risk_level, "disclaimer": MEDICAL_DISCLAIMER}
 
     except Exception as e:
         import traceback
