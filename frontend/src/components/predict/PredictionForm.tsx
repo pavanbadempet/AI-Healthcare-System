@@ -334,25 +334,48 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
                 </div>
               </div>
 
-              {result.probability !== undefined && (
-                <div className="mb-8 p-4 bg-[var(--bg-card)] border border-[var(--border)]">
+              {(result.confidence !== undefined || result.probability !== undefined) && (
+                <div className="mb-6 p-4 bg-[var(--bg-card)] border border-[var(--border)]">
                   <div className="flex justify-between items-end mb-3">
-                    <span className="section-label">Confidence Interval</span>
-                    <span className="text-xl font-mono font-semibold text-[var(--text-primary)]">{(result.probability * 100).toFixed(1)}%</span>
+                    <span className="section-label">Confidence Score</span>
+                    <span className="text-xl font-mono font-semibold text-[var(--text-primary)]">
+                      {result.confidence !== undefined ? `${result.confidence}%` : `${((result.probability ?? 0) * 100).toFixed(1)}%`}
+                    </span>
                   </div>
-                  <div className="h-1 w-full bg-[var(--border)] overflow-hidden">
+                  <div className="h-2 w-full bg-[var(--border)] overflow-hidden rounded-sm">
                     <motion.div 
                       initial={{ width: 0 }} 
-                      animate={{ width: `${result.probability * 100}%` }} 
-                      transition={{ duration: 0.8 }}
-                      className={`h-full ${isHighRisk ? 'bg-[var(--danger)]' : 'bg-[var(--success)]'}`}
+                      animate={{ width: `${result.confidence ?? ((result.probability ?? 0) * 100)}%` }} 
+                      transition={{ duration: 0.8, ease: "easeOut" }}
+                      className={`h-full ${
+                        (result.confidence ?? ((result.probability ?? 0) * 100)) >= 75 
+                          ? 'bg-[var(--danger)]' 
+                          : (result.confidence ?? ((result.probability ?? 0) * 100)) >= 40 
+                            ? 'bg-[var(--warning)]' 
+                            : 'bg-[var(--success)]'
+                      }`}
                       role="progressbar"
-                      aria-valuenow={Math.round(result.probability * 100)}
+                      aria-valuenow={Math.round(result.confidence ?? ((result.probability ?? 0) * 100))}
                       aria-valuemin={0}
                       aria-valuemax={100}
-                      aria-label={`Confidence: ${(result.probability * 100).toFixed(1)}%`}
+                      aria-label={`Confidence: ${result.confidence ?? ((result.probability ?? 0) * 100)}%`}
                     />
                   </div>
+                  
+                  {result.risk_level && (
+                    <div className="flex items-center gap-2 mt-3">
+                      <span className="section-label">Risk Classification:</span>
+                      <span className={`text-[11px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 border ${
+                        result.risk_level === 'High' 
+                          ? 'text-[var(--danger)] bg-[var(--danger-muted)] border-[var(--danger-border)]'
+                          : result.risk_level === 'Moderate'
+                            ? 'text-[var(--warning)] bg-[var(--warning-muted)] border-[var(--warning-border)]'
+                            : 'text-[var(--success)] bg-[var(--success-muted)] border-[var(--success-border)]'
+                      }`}>
+                        {result.risk_level}
+                      </span>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -375,8 +398,11 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
                 </div>
               )}
               
-              <div className="mt-8 pt-4 border-t border-[var(--border)] text-center">
-                <p className="text-[11px] text-[var(--text-dim)] font-bold uppercase tracking-widest">
+              <div className="mt-8 pt-4 border-t border-[var(--border)]">
+                <p className="text-[10px] text-[var(--text-dim)] font-mono leading-relaxed mb-1">
+                  {result.disclaimer || "This is an AI-assisted screening tool, not a medical diagnosis. Please consult a qualified healthcare professional for clinical decisions."}
+                </p>
+                <p className="text-[11px] text-[var(--text-dim)] font-bold uppercase tracking-widest text-center mt-2">
                   AI Prediction • Not for Official Diagnostic Use
                 </p>
               </div>

@@ -65,6 +65,7 @@
   --danger-border: rgba(239, 68, 68, 0.3);
   --warning: #f59e0b;
   --warning-muted: rgba(245, 158, 11, 0.1);
+  --warning-border: rgba(245, 158, 11, 0.3);
   --success: #10b981;
   --success-muted: rgba(16, 185, 129, 0.1);
   --success-border: rgba(16, 185, 129, 0.2);
