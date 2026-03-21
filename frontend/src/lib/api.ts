@@ -212,8 +212,12 @@ export async function deleteRecord(id: number): Promise<void> {
 export interface PredictionResult {
   prediction: string;
   probability?: number;
+  confidence?: number;
+  risk_level?: string;
+  raw?: number;
   advice?: string[];
   explanation?: string;
+  disclaimer?: string;
 }
 
 export async function predictDiabetes(data: Record<string, number>): Promise<PredictionResult> {
