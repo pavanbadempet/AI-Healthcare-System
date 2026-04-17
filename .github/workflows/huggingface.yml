@@ -58,6 +58,11 @@ jobs:
           find . -name "*.db" -type f -delete
           find . -name "*.sqlite3" -type f -delete
           find . -name "__pycache__" -type d -exec rm -rf {} +
+          # Remove binary files rejected by HF Xet policy
+          find . -name "*.pkl" -type f -delete
+          find . -name "*.png" -type f -delete
+          find . -name "*.joblib" -type f -delete
+          rm -f pytest_output.txt
           
           git add .
           git commit -m "Deploy to Hugging Face Space"
