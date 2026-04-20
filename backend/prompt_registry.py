@@ -172,6 +172,7 @@ class PromptRegistry:
                 "Patient Profile:\n{user_profile}\n\n"
                 "Medical History:\n{medical_history}\n\n"
                 "Past Interactions (RAG Memory):\n{rag_context}\n\n"
+                "Clinical Analysis Context:\n{analysis_context}\n\n"
                 "Web Research Context:\n{web_context}\n\n"
                 "Instructions:\n"
                 "- Engagement Style: {engagement_style}\n"
