@@ -42,7 +42,6 @@ class UserProfileUpdate(BaseModel):
     activity_level: Optional[str] = None
     sleep_hours: Optional[float] = None
     stress_level: Optional[str] = None
-    specialization: Optional[str] = None
     allow_data_collection: Optional[bool] = None
 
 class HealthRecordResponse(BaseModel):

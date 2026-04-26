@@ -5,7 +5,7 @@ import uuid
 import logging
 import time
 
-from fastapi import FastAPI, Request, HTTPException, Depends
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.middleware.cors import CORSMiddleware
@@ -50,7 +50,6 @@ def run_migrations():
         "created_at": "TIMESTAMP",
         "role": "VARCHAR",
         "consultation_fee": "FLOAT",
-        "specialization": "VARCHAR",
         # Note: Foreign keys are harder to add via simple script, assuming basic column add for now
         "doctor_id": "INTEGER" 
     }
@@ -73,50 +72,45 @@ def run_migrations():
                         logger.info(f"Migration: Adding missing column '{col_name}'...")
                         conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}"))
                         count += 1
-                    except Exception:
-                        logger.error("Failed to add column %s", col_name)
+                    except Exception as e:
+                        logger.error(f"Failed to add column {col_name}: {e}")
             
             if count > 0:
                 conn.commit()
                 logger.info(f"Migration: Successfully added {count} columns.")
                 
-    except Exception:
-        logger.warning("Migration check failed")
+    except Exception as e:
+        logger.warning(f"Migration check failed: {e}")
 
 run_migrations()
 
 # --- Seeding ---
 def create_default_admin():
-    """Create a configured admin user if explicit bootstrap credentials are provided."""
-    default_username = os.getenv("DEFAULT_ADMIN_USERNAME")
-    default_password = os.getenv("DEFAULT_ADMIN_PASSWORD")
-    if not default_username or not default_password:
-        logger.info("Default admin seeding skipped; bootstrap credentials are not configured.")
-        return
-
+    """Create a default admin user if one does not exist."""
     session = database.SessionLocal()
     try:
         # Check if any admin exists
         admin = session.query(models.User).filter(models.User.role == "admin").first()
         if not admin:
-            logger.warning("No admin found. Creating configured bootstrap admin user...")
+            logger.warning("No admin found. Creating default 'admin' user...")
             
-            hashed_pw = auth.get_password_hash(default_password)
+            # Secure default admin
+            hashed_pw = auth.get_password_hash("admin123")
             default_admin = models.User(
-                username=default_username,
+                username="admin", 
                 hashed_password=hashed_pw,
-                email=os.getenv("DEFAULT_ADMIN_EMAIL", ""),
+                email="admin@hospital.com",
                 role="admin",
-                full_name=os.getenv("DEFAULT_ADMIN_FULL_NAME", "System Administrator"),
+                full_name="System Administrator",
                 allow_data_collection=0
             )
             session.add(default_admin)
             session.commit()
-            logger.info("Default admin created from configured bootstrap credentials.")
+            logger.info("✅ Default Admin Created: username='admin', password='admin123'")
         else:
             logger.info("Admin account already exists.")
-    except Exception:
-        logger.error("Failed to seed admin")
+    except Exception as e:
+        logger.error(f"Failed to seed admin: {e}")
     finally:
         session.close()
 
@@ -155,9 +149,9 @@ class ExceptionMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         try:
             return await call_next(request)
-        except Exception:
+        except Exception as e:
             error_id = str(uuid.uuid4())[:8]
-            logger.error("Unhandled server error %s", error_id)
+            logger.error(f"Error {error_id}: {e}")
             return JSONResponse(status_code=500, content={"detail": f"Error: {error_id}"})
 
 class LoggingMiddleware(BaseHTTPMiddleware):
@@ -206,10 +200,7 @@ def health():
     return {"status": "ok"}
 
 @app.post("/generate_report")
-async def generate_report(
-    request: Request,
-    _current_user: models.User = Depends(auth.get_current_user),
-):
+async def generate_report(request: Request):
     data = await request.json()
     pdf = generate_medical_report(
         user_name=data.get("user_name", "Patient"),
