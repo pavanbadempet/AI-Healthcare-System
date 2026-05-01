@@ -1,578 +1,995 @@
-<!-- 
-  SEO: AI Healthcare System, Medical AI, Healthcare ML, Disease Prediction, 
-  Health Risk Assessment, Clinical Decision Support, Medical AI Platform,
-  FastAPI Healthcare, Next.js Medical Dashboard, RAG Healthcare, 
-  Gemini Medical AI, XGBoost Disease Classification, HIPAA Compliant AI,
-  Open Source Healthcare, Patient Portal AI, Diagnostic AI System
--->
+﻿<div align="center">
 
-<p align="center">
-  <img src="https://img.shields.io/badge/🏥-AI_Healthcare_System-00D4AA?style=for-the-badge&labelColor=0a0a0a" alt="AI Healthcare System" height="40"/>
+<!-- HERO BANNER -->
+<img src="docs/assets/hero-banner.svg" alt="AI Healthcare System â€” Clinical Decision Support Platform" width="100%"/>
+
+<br/>
+
+<!-- DYNAMIC GITHUB BADGES -->
+<p>
+  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml/badge.svg" alt="CI" /></a>
+  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml/badge.svg" alt="CodeQL" /></a>
+  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/blob/main/LICENSE"><img src="https://img.shields.io/github/license/pavanbadempet/AI-Healthcare-System?color=22c55e&style=flat-square" alt="License" /></a>
+  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/stargazers"><img src="https://img.shields.io/github/stars/pavanbadempet/AI-Healthcare-System?style=flat-square&color=f59e0b" alt="Stars" /></a>
+  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/issues"><img src="https://img.shields.io/github/issues/pavanbadempet/AI-Healthcare-System?style=flat-square&color=ef4444" alt="Issues" /></a>
+  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/pulls"><img src="https://img.shields.io/github/issues-pr/pavanbadempet/AI-Healthcare-System?style=flat-square&color=8b5cf6" alt="PRs" /></a>
 </p>
 
-<h1 align="center">AI Healthcare System</h1>
-
-<p align="center">
-  <strong>Production-Grade Clinical Decision Support Platform</strong><br/>
-  <em>Bridging Lab Results to Patient Understanding with AI · ML-Powered Diagnostics · RAG-Enhanced Medical Chat</em>
+<!-- TECH STACK BADGES -->
+<p>
+  <img src="https://img.shields.io/badge/Python-3.12-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Next.js_15-000000?style=for-the-badge&logo=next.js&logoColor=white" alt="Next.js" />
+  <img src="https://img.shields.io/badge/LangGraph-FF6F00?style=for-the-badge&logo=chainlink&logoColor=white" alt="LangGraph" />
+  <img src="https://img.shields.io/badge/scikit--learn-F7931E?style=for-the-badge&logo=scikit-learn&logoColor=white" alt="scikit-learn" />
+  <img src="https://img.shields.io/badge/XGBoost-189FDD?style=for-the-badge&logo=xgboost&logoColor=white" alt="XGBoost" />
+</p>
+<p>
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/Kubernetes-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white" alt="K8s" />
+  <img src="https://img.shields.io/badge/Terraform-7B42BC?style=for-the-badge&logo=terraform&logoColor=white" alt="Terraform" />
+  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis" />
+  <img src="https://img.shields.io/badge/Prometheus-E6522C?style=for-the-badge&logo=prometheus&logoColor=white" alt="Prometheus" />
 </p>
 
-<p align="center">
-  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml">
-    <img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI Status"/>
-  </a>
-  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml">
-    <img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml/badge.svg" alt="CodeQL"/>
-  </a>
-  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/blob/main/LICENSE">
-    <img src="https://img.shields.io/github/license/pavanbadempet/AI-Healthcare-System?color=blue" alt="License"/>
-  </a>
-  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/pulls">
-    <img src="https://img.shields.io/github/issues-pr/pavanbadempet/AI-Healthcare-System?color=purple" alt="PRs"/>
-  </a>
-  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/issues">
-    <img src="https://img.shields.io/github/issues/pavanbadempet/AI-Healthcare-System?color=orange" alt="Issues"/>
-  </a>
-  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/stargazers">
-    <img src="https://img.shields.io/github/stars/pavanbadempet/AI-Healthcare-System?style=social" alt="Stars"/>
-  </a>
+<!-- NAVIGATION -->
+<p>
+  <a href="#-quick-start"><strong>Quick Start</strong></a> Â· 
+  <a href="#-architecture"><strong>Architecture</strong></a> Â· 
+  <a href="#-ml-models"><strong>ML Models</strong></a> Â· 
+  <a href="#-3-tier-ai-engine"><strong>AI Engine</strong></a> Â· 
+  <a href="#-rag-pipeline"><strong>RAG Pipeline</strong></a> Â· 
+  <a href="#-api-reference"><strong>API Docs</strong></a> Â· 
+  <a href="#-deployment"><strong>Deploy</strong></a>
 </p>
 
-<p align="center">
-  <a href="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white">
-    <img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white" alt="Python"/>
-  </a>
-  <img src="https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white" alt="FastAPI"/>
-  <img src="https://img.shields.io/badge/Next.js_15-000000?logo=nextdotjs&logoColor=white" alt="Next.js"/>
-  <img src="https://img.shields.io/badge/Gemini_AI-4285F4?logo=google&logoColor=white" alt="Gemini"/>
-  <img src="https://img.shields.io/badge/XGBoost-FF6600?logo=xgboost&logoColor=white" alt="XGBoost"/>
-  <img src="https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white" alt="Docker"/>
-  <img src="https://img.shields.io/badge/Terraform-7B42BC?logo=terraform&logoColor=white" alt="Terraform"/>
-</p>
+</div>
 
-<p align="center">
-  <a href="#-quick-start">Quick Start</a> •
-  <a href="#-features">Features</a> •
-  <a href="#-architecture">Architecture</a> •
-  <a href="#-ml-models">ML Models</a> •
-  <a href="#-api-reference">API</a> •
-  <a href="#-deployment">Deployment</a> •
-  <a href="#-contributing">Contributing</a>
-</p>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
----
-
-## 🎯 What Is This?
-
-**AI Healthcare System** is a full-stack clinical decision support platform that transforms raw lab reports into actionable patient insights. It combines **ML-powered disease screening**, **RAG-enhanced medical chat**, and **automated PDF report generation** into a single, production-ready system.
-
-### The Problem
-> Patients receive lab reports full of numbers they don't understand. Doctors spend time explaining basics instead of treating.
-
-### The Solution
-A platform where patients get **instant risk assessments** with **plain-English explanations**, and clinicians get a **unified dashboard** to monitor patient health — all powered by AI with built-in medical safety guardrails.
+## âš¡ Feature Highlights
 
 <table>
 <tr>
-<td width="50%">
+<td width="33%" valign="top">
 
-**🧑‍⚕️ For Clinicians**
-- Patient management dashboard
-- Health trend visualization over time
-- Automated PDF medical reports
-- Role-based access control (RBAC)
-- Telemedicine scheduling
+### ðŸ”¬ 5 ML Diagnostic Models
+Diabetes Â· Heart Â· Liver Â· Kidney Â· Lungs â€” trained on real clinical datasets (BRFSS, Cleveland, ILPD, UCI CKD) with SHAP explainability and confidence scoring.
 
 </td>
-<td width="50%">
+<td width="33%" valign="top">
 
-**🧑‍💻 For Patients**
-- Upload lab PDF → instant AI summary
-- 5-disease ML risk screening
-- Chat with AI that knows your history
-- Download professional PDF reports
-- Secure, isolated health records
+### ðŸ§  3-Tier AI Inference
+**Ollama â†’ Gemini â†’ Cloud** automatic fallback. HIPAA-friendly local inference, free Gemini tier, or OpenAI/Anthropic via headers. Zero vendor lock-in.
+
+</td>
+<td width="33%" valign="top">
+
+### ðŸ“š RAG Medical Chat
+Gemini embeddings + vector store + LangGraph agent. Personalized responses grounded in patient history with citation tracking and token budget management.
+
+</td>
+</tr>
+<tr>
+<td width="33%" valign="top">
+
+### ðŸ”’ Enterprise Security
+JWT + bcrypt auth, RBAC (patient/doctor/admin), audit logging, rate limiting, PII redaction, HIPAA/GDPR compliance modules, and 7-layer middleware stack.
+
+</td>
+<td width="33%" valign="top">
+
+### ðŸš€ 5 Deployment Options
+Docker Compose Â· Enterprise Stack (7 services) Â· Render PaaS Â· Kubernetes (3-replica HA) Â· Terraform AWS (VPC + EKS + RDS + ElastiCache).
+
+</td>
+<td width="33%" valign="top">
+
+### âš™ï¸ 8 CI/CD Pipelines
+Pytest + coverage, CodeQL SAST, Docker GHCR builds, HuggingFace sync, Dependabot, release drafter, stale bot, and Render keep-alive.
 
 </td>
 </tr>
 </table>
 
----
+> **Built for portfolios, built for production.** This isn't a tutorial project â€” it's a full-stack healthcare platform demonstrating ML engineering, LLM orchestration, RAG architecture, and DevOps maturity in a single cohesive codebase.
 
-## ✨ Features
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
+## ðŸ“‹ Table of Contents
 
-### 🔬 ML-Powered Disease Screening
-Real-time risk prediction using validated clinical ML models:
+<details>
+<summary><strong>Click to expand full table of contents</strong></summary>
 
-| Disease | Algorithm | Key Features | Clinical Markers |
-|---------|-----------|--------------|------------------|
-| **Diabetes** | XGBoost | Glucose, BMI, Insulin, Age | HbA1c correlation |
-| **Heart Disease** | Random Forest | Cholesterol, BP, ECG, Chest Pain | Framingham-aligned |
-| **Liver Disease** | XGBoost | Bilirubin, Albumin, ALT/AST | Enzyme ratio analysis |
-| **Kidney Disease** | Random Forest | Creatinine, Blood Urea, Albumin | GFR estimation support |
-| **Lung Cancer** | XGBoost | Smoking history, Chronic Disease, Allergy | Multi-factor risk scoring |
+- [Quick Start](#-quick-start)
+- [Architecture Overview](#-architecture)
+- [ML Diagnostic Models (5)](#-ml-models)
+- [3-Tier AI Inference Engine](#-3-tier-ai-engine)
+- [RAG Pipeline & Semantic Memory](#-rag-pipeline)
+- [LangGraph Agent](#-langgraph-medical-agent)
+- [Prompt Registry](#-prompt-registry)
+- [API Reference (All Endpoints)](#-api-reference)
+- [Pydantic Schemas](#-pydantic-schemas)
+- [Frontend (Next.js)](#-frontend)
+- [Database Layer](#-database-layer)
+- [Security Posture](#-security-posture)
+- [CI/CD Pipelines (8 Workflows)](#-cicd-pipelines)
+- [Telemetry WebSocket](#-telemetry-websocket)
+- [Deployment Options](#-deployment)
+- [Project Structure](#-project-structure)
+- [Environment Variables](#-environment-variables)
+- [Contributing](#-contributing)
+- [License](#-license)
 
-### 🤖 AI-Powered Medical Assistant
-- **RAG Architecture** — Per-user vector stores (FAISS) prevent cross-patient data leakage
-- **Vision AI** — Gemini Pro Vision reads raw PDF lab reports automatically
-- **Streaming Chat** — Real-time AI responses with medical context awareness
-- **Prompt Registry** — All system prompts managed centrally for auditability
-- **Medical Safety** — Built-in disclaimers and guardrails on all AI-generated advice
-
-### 🔒 Enterprise Security
-- JWT authentication with configurable token expiry
-- Role-based access control (Patient / Doctor / Admin)
-- CORS and trusted host middleware
-- PII never logged or exposed in error messages
-- CodeQL + Dependabot automated security scanning
-
-### 📊 Clinical Intelligence
-- **SHAP Explainability** — Model predictions are interpretable and auditable
-- **PDF Report Generation** — Professional medical reports with risk indicators
-- **Health Trend Tracking** — Longitudinal patient metric visualization
-- **Automated Screening Pipelines** — End-to-end from lab upload to risk assessment
+</details>
 
 ---
 
-## 🏗️ Architecture
+## ðŸš€ Quick Start
 
-```
-┌─────────────────────────────────────────────────────────────────────┐
-│                        CLIENT LAYER                                 │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────────┐  │
-│  │   Next.js 15  │  │  Streamlit   │  │   REST API Consumers    │  │
-│  │  (Primary UI) │  │  (Legacy UI) │  │   (Mobile / 3rd Party)  │  │
-│  └──────┬───────┘  └──────┬───────┘  └──────────┬───────────────┘  │
-└─────────┼─────────────────┼─────────────────────┼──────────────────┘
-          │                 │                     │
-          ▼                 ▼                     ▼
-┌─────────────────────────────────────────────────────────────────────┐
-│                      API GATEWAY (FastAPI)                          │
-│  ┌─────────┐ ┌──────────┐ ┌────────┐ ┌───────┐ ┌───────────────┐  │
-│  │  Auth   │ │ Predict  │ │  Chat  │ │  RAG  │ │  PDF Reports  │  │
-│  │ (JWT)   │ │ (5 Models)│ │(Stream)│ │(FAISS)│ │  (fpdf2)      │  │
-│  └─────────┘ └──────────┘ └────────┘ └───────┘ └───────────────┘  │
-│  ┌─────────┐ ┌──────────┐ ┌────────────────────────────────────┐  │
-│  │ Vision  │ │  SHAP    │ │         Prompt Registry            │  │
-│  │ Service │ │ Explain  │ │    (Centralized System Prompts)    │  │
-│  └─────────┘ └──────────┘ └────────────────────────────────────┘  │
-└──────────────────────────┬──────────────────────────────────────────┘
-                           │
-          ┌────────────────┼────────────────┐
-          ▼                ▼                ▼
-   ┌────────────┐  ┌─────────────┐  ┌─────────────┐
-   │  SQLite    │  │    FAISS    │  │  Gemini AI  │
-   │ (Users,    │  │  (Per-User  │  │  (Chat,     │
-   │  Records)  │  │  Vectors)   │  │   Vision)   │
-   └────────────┘  └─────────────┘  └─────────────┘
-```
+### Prerequisites
 
-### Core Design Principles
+- Python 3.10+ &nbsp;|&nbsp; Node.js 18+ &nbsp;|&nbsp; (Optional) [Ollama](https://ollama.com) for local AI
 
-| Principle | Implementation |
-|-----------|---------------|
-| **AI Safety** | All inference through `core_ai.py` — never direct API calls |
-| **Prompt Governance** | System prompts in `prompt_registry.py` — never inlined |
-| **Data Isolation** | Per-user FAISS vector stores prevent cross-patient leakage |
-| **Medical Disclaimers** | Enforced on every AI-generated response |
-| **Model Integrity** | Training scripts prevent data leakage; honest accuracy metrics |
-| **Zero-PII Logging** | Patient data never appears in logs or error messages |
-
----
-
-## 🛠️ Tech Stack
-
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| **Frontend** | Next.js 15, React 19, Framer Motion | Modern clinical dashboard UI |
-| **State** | Zustand, SWR | Client-side state management |
-| **Backend** | FastAPI, Pydantic v2 | REST API with auto-validation |
-| **ML/AI** | XGBoost, Scikit-Learn, SHAP | Disease classification + explainability |
-| **GenAI** | Gemini Pro, LangChain | Medical chat assistant + Vision |
-| **Vector DB** | FAISS | Per-user semantic search |
-| **Database** | SQLite (dev) / PostgreSQL (prod) | User data, chat history, records |
-| **PDF** | fpdf2 | Professional medical report generation |
-| **DevOps** | Docker, Docker Compose | Multi-container orchestration |
-| **CI/CD** | GitHub Actions (8 workflows) | Testing, security, deployment |
-| **Security** | CodeQL, Dependabot | Automated vulnerability scanning |
-| **IaC** | Terraform, Kubernetes (k8s) | Cloud infrastructure definitions |
-| **Hosting** | Render, HF Spaces, Streamlit Cloud | Production deployment |
-
----
-
-## 🚀 Quick Start
-
-### Option 1: Docker (Recommended)
+### 1. Clone & Install
 
 ```bash
-# Clone
 git clone https://github.com/pavanbadempet/AI-Healthcare-System.git
 cd AI-Healthcare-System
 
-# Configure
-cp .env.example .env
-# Edit .env → add your GOOGLE_API_KEY
+# Backend
+pip install -r backend/requirements.txt
 
-# Launch
-docker-compose up --build
+# Frontend
+cd frontend && npm install && cd ..
 ```
 
-| Service | URL |
-|---------|-----|
-| **Frontend (Next.js)** | `http://127.0.0.1:3000` |
-| **Backend API** | `http://127.0.0.1:8000` |
-| **API Docs (Swagger)** | `http://127.0.0.1:8000/docs` |
-
-### Option 2: Local Development
+### 2. Configure Environment
 
 ```bash
-# Prerequisites: Python 3.10+, Node.js 18+
+cp .env.example .env
+# Edit .env â†’ set GOOGLE_API_KEY (free Gemini key) and SECRET_KEY
+```
 
-# Backend (Terminal 1)
-pip install -r requirements.txt
+### 3. Run
+
+```bash
+# Terminal 1: Backend (FastAPI on port 8000)
 uvicorn backend.main:app --reload --port 8000
 
-# Frontend (Terminal 2)
-cd frontend && npm install && npm run dev -- -p 3000
+# Terminal 2: Frontend (Next.js on port 3000)
+cd frontend && npm run dev -- -p 3000
 ```
 
-### Option 3: Quick Scripts (Windows)
+### 4. (Optional) Local AI with Ollama
 
-```powershell
-.\scripts\runners\run_app.bat          # Run everything
-.\scripts\runners\run_e2e_tests.ps1    # Run E2E tests
-.\scripts\runners\run_test_suite.ps1   # Run full test suite
+```bash
+# Install Ollama â†’ https://ollama.com
+ollama pull llama3.2
+# The system auto-detects Ollama on 127.0.0.1:11434
 ```
-
-### Environment Variables
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `GOOGLE_API_KEY` | ✅ | Gemini API key for AI features |
-| `SECRET_KEY` | ✅ | JWT signing key |
-| `DATABASE_URL` | ❌ | Database URL (defaults to SQLite) |
-| `TESTING` | ❌ | Set to `true` for test mode |
 
 ---
 
-## 🧠 ML Models
-
-### Training Pipeline
-
-All models follow a validated training pipeline with **data leakage prevention**:
-
-```bash
-# Train individual models
-python backend/train_diabetes.py
-python backend/train_heart.py
-python backend/train_liver.py
-python backend/train_kidney.py
-python backend/train_lungs.py
-
-# Generate placeholder models for CI
-python scripts/generate_placeholder_models.py
-```
-
-### Model Architecture
+## ðŸ— Architecture
 
 ```
-Data → Feature Engineering → Train/Test Split → Model Training → SHAP Validation → .pkl Export
-                                    │
-                                    ▼
-                        ┌──── Leakage Guard ────┐
-                        │  No test data in train │
-                        │  No target in features │
-                        └────────────────────────┘
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚                    FRONTEND (Next.js 15)                        â”‚
+â”‚   App Router â€¢ Auth Pages â€¢ Dashboard â€¢ Chat â€¢ Predict â€¢ Admin  â”‚
+â”‚   Capacity Board â€¢ Telemedicine â€¢ Profile â€¢ Pricing             â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                           â”‚ REST / SSE / WebSocket
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚                    FASTAPI BACKEND                              â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”‚
+â”‚  â”‚   Auth   â”‚ â”‚   Chat   â”‚ â”‚ Predict  â”‚ â”‚  Streaming Chat   â”‚  â”‚
+â”‚  â”‚  (JWT)   â”‚ â”‚(LangGraphâ”‚ â”‚ (5 ML    â”‚ â”‚  (SSE + Heartbeat)â”‚  â”‚
+â”‚  â”‚  bcrypt  â”‚ â”‚  Agent)  â”‚ â”‚  Models) â”‚ â”‚                   â”‚  â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”‚
+â”‚  â”‚  Admin   â”‚ â”‚ Reports  â”‚ â”‚Payments  â”‚ â”‚   Appointments    â”‚  â”‚
+â”‚  â”‚Dashboard â”‚ â”‚PDF+Visionâ”‚ â”‚(Razorpay)â”‚ â”‚  + Email + Jitsi  â”‚  â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”‚
+â”‚  â”‚Telemetry â”‚ â”‚Explain AIâ”‚ â”‚ Ollama   â”‚ â”‚   Enterprise      â”‚  â”‚
+â”‚  â”‚WebSocket â”‚ â”‚(core_ai) â”‚ â”‚ Routes   â”‚ â”‚   Features        â”‚  â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â”‚
+â”‚                                                                 â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”    â”‚
+â”‚  â”‚              CORE AI ENGINE (core_ai.py)                â”‚    â”‚
+â”‚  â”‚   Tier A: Ollama (Local, HIPAA-friendly)                â”‚    â”‚
+â”‚  â”‚   Tier B: Gemini (Google API, free tier)                â”‚    â”‚
+â”‚  â”‚   Tier C: OpenAI / Anthropic / OpenRouter (Cloud)       â”‚    â”‚
+â”‚  â”‚   Auto-fallback: A â†’ B â†’ C                             â”‚    â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â”‚
+â”‚                                                                 â”‚
+â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”    â”‚
+â”‚  â”‚   RAG Pipeline     â”‚  â”‚     Prompt Registry             â”‚    â”‚
+â”‚  â”‚ Gemini Embeddings  â”‚  â”‚  Version-controlled prompts     â”‚    â”‚
+â”‚  â”‚ Cosine Similarity  â”‚  â”‚  6 registered templates         â”‚    â”‚
+â”‚  â”‚ Citation Tracking  â”‚  â”‚  A/B testing support            â”‚    â”‚
+â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜    â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                           â”‚
+        â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+        â–¼                  â–¼                  â–¼
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚   SQLite /   â”‚  â”‚ Vector Store â”‚  â”‚  ML Model Files  â”‚
+â”‚  PostgreSQL  â”‚  â”‚  (Pickle +   â”‚  â”‚  (.pkl artifacts)â”‚
+â”‚  (DATABASE_  â”‚  â”‚   Cosine)    â”‚  â”‚  5 models +      â”‚
+â”‚   URL env)   â”‚  â”‚              â”‚  â”‚  3 scalers       â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
-### Explainability
-Every prediction includes **SHAP-based feature importance** so clinicians understand *why* the model made its prediction — not just *what* it predicted.
+### Key Architectural Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| **All AI through `core_ai.py`** | Single gateway prevents provider lock-in; enforces audit logging |
+| **Prompts in `prompt_registry.py`** | No inline prompts in handlers; versioned, auditable, A/B testable |
+| **ML loading via `prediction.py â†’ initialize_models()`** | Centralized model lifecycle; supports hot-reload via `/admin/reload_models` |
+| **`DATABASE_URL` from env** | Never hardcoded; supports SQLite (dev) â†’ PostgreSQL (prod) seamlessly |
+| **Gemini embeddings for RAG** | Free API, saves ~200MB vs local sentence-transformers |
 
 ---
 
-## 📡 API Reference
+## ðŸ¤– ML Models
 
-The backend exposes a RESTful API with full Swagger documentation at `/docs`.
+Five scikit-learn/XGBoost diagnostic models trained on public clinical datasets:
 
-### Key Endpoints
+### 1. Diabetes Prediction (`diabetes_model.pkl`)
 
-```
-POST   /auth/register          # User registration
-POST   /auth/login             # JWT authentication
-GET    /auth/me                # Current user profile
+| Property | Value |
+|----------|-------|
+| **Dataset** | BRFSS 2015 (CDC Big Data) |
+| **Algorithm** | XGBoost Classifier |
+| **Features (9)** | `hypertension`, `high_chol`, `bmi`, `smoking_history`, `heart_disease`, `physical_activity`, `general_health`, `gender`, `age_bucket` |
+| **Preprocessing** | Age mapped to BRFSS buckets (1â€“13) via `get_age_bucket()` |
+| **Endpoint** | `POST /predict/diabetes` |
+| **Training Script** | `backend/train_diabetes.py` |
 
-POST   /predict/{disease}      # ML disease prediction
-POST   /predict/explain        # SHAP explainability
+### 2. Heart Disease Prediction (`heart_disease_model.pkl`)
 
-POST   /chat                   # AI medical chat
-POST   /chat/stream            # Streaming chat (SSE)
-POST   /vision/analyze         # PDF lab report analysis
+| Property | Value |
+|----------|-------|
+| **Dataset** | Cleveland Heart Disease (UCI) |
+| **Algorithm** | Ensemble Classifier |
+| **Features (13)** | `age`, `sex`, `cp`, `trestbps`, `chol`, `fbs`, `restecg`, `thalach`, `exang`, `oldpeak`, `slope`, `ca`, `thal` |
+| **Endpoint** | `POST /predict/heart` |
+| **Training Script** | `backend/train_heart.py` |
 
-GET    /report/generate        # PDF medical report
-GET    /patients               # Patient listing (doctor)
-GET    /healthz                # Health check
-```
+### 3. Liver Disease Prediction (`liver_disease_model.pkl`)
 
-### Example: Disease Prediction
+| Property | Value |
+|----------|-------|
+| **Dataset** | Indian Liver Patient Dataset (ILPD) |
+| **Algorithm** | Ensemble with StandardScaler |
+| **Features (10)** | `Age`, `Gender`, `Total_Bilirubin`, `Direct_Bilirubin`, `Alkaline_Phosphotase`, `Alamine_Aminotransferase`, `Aspartate_Aminotransferase`, `Total_Proteins`, `Albumin`, `Albumin_and_Globulin_Ratio` |
+| **Preprocessing** | Log1p transform on skewed features + StandardScaler (`liver_scaler.pkl`) |
+| **Endpoint** | `POST /predict/liver` |
+| **Training Script** | `backend/train_liver.py` |
 
-```bash
-curl -X POST http://127.0.0.1:8000/predict/diabetes \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "glucose": 120,
-    "bmi": 28.5,
-    "insulin": 80,
-    "age": 45,
-    "blood_pressure": 130
-  }'
-```
+### 4. Kidney Disease Prediction (`kidney_model.pkl`)
+
+| Property | Value |
+|----------|-------|
+| **Dataset** | Chronic Kidney Disease (UCI) |
+| **Algorithm** | Classifier with StandardScaler |
+| **Features (24)** | `age`, `bp`, `sg`, `al`, `su`, `rbc`, `pc`, `pcc`, `ba`, `bgr`, `bu`, `sc`, `sod`, `pot`, `hemo`, `pcv`, `wc`, `rc`, `htn`, `dm`, `cad`, `appet`, `pe`, `ane` |
+| **Preprocessing** | StandardScaler (`kidney_scaler.pkl`) |
+| **Endpoint** | `POST /predict/kidney` |
+| **Training Script** | `backend/train_kidney.py` |
+
+### 5. Lung/Respiratory Prediction (`lungs_model.pkl`)
+
+| Property | Value |
+|----------|-------|
+| **Dataset** | Lung Cancer Survey Dataset |
+| **Algorithm** | Classifier with StandardScaler |
+| **Features (15)** | `GENDER`, `AGE`, `SMOKING`, `YELLOW_FINGERS`, `ANXIETY`, `PEER_PRESSURE`, `CHRONIC_DISEASE`, `FATIGUE`, `ALLERGY`, `WHEEZING`, `ALCOHOL_CONSUMING`, `COUGHING`, `SHORTNESS_OF_BREATH`, `SWALLOWING_DIFFICULTY`, `CHEST_PAIN` |
+| **Preprocessing** | StandardScaler (`lungs_scaler.pkl`) |
+| **Endpoint** | `POST /predict/lungs` |
+| **Training Script** | `backend/train_lungs.py` |
+
+### Prediction Response Format (All Models)
 
 ```json
 {
-  "prediction": "High Risk",
-  "confidence": 0.87,
-  "risk_factors": ["glucose", "bmi"],
-  "disclaimer": "This is not a medical diagnosis. Please consult a healthcare professional."
+  "prediction": "High Risk | Low Risk | Disease Detected | Healthy",
+  "raw": 0,
+  "confidence": 78.5,
+  "risk_level": "High | Moderate | Low",
+  "disclaimer": "This is an AI-assisted screening tool, not a medical diagnosis..."
 }
 ```
 
+### SHAP Explainability
+
+Three models support SHAP-based explanation endpoints that return interactive force plots:
+- `POST /predict/explain/diabetes`
+- `POST /predict/explain/heart`
+- `POST /predict/explain/liver`
+
+Uses `TreeExplainer` with VotingClassifier unwrapping for real-time proxy explanations.
+
 ---
 
-## 🧪 Testing
+## ðŸ§  3-Tier AI Engine
 
-```bash
-# Full test suite with coverage
-pytest tests/ --cov=backend --cov-report=term-missing
+**File:** `backend/core_ai.py` â€” **The single gateway for ALL AI inference.** No module may call provider APIs directly.
 
-# By category
-pytest tests/unit/              # Unit tests
-pytest tests/integration/       # API integration tests
-pytest tests/e2e/               # End-to-end (requires running app)
-
-# Specific test files
-pytest tests/unit/test_prediction_shap.py -v    # ML model tests
-pytest tests/unit/test_pdf_service.py -v        # PDF generation tests
-pytest tests/unit/test_rag.py -v                # RAG pipeline tests
+```
+â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+â”‚                 PUBLIC API (3 functions)                 â”‚
+â”‚  generate(prompt, system, model, api_provider, api_key) â”‚
+â”‚  chat(messages, system, model, api_provider, api_key)   â”‚
+â”‚  chat_stream(messages, system, ...)  â†’ async generator  â”‚
+â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+                         â”‚ Automatic Fallback Chain
+          â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+          â–¼              â–¼                  â–¼
+   â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â” â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+   â”‚  TIER A     â”‚ â”‚ TIER B   â”‚  â”‚    TIER C         â”‚
+   â”‚  Ollama     â”‚ â”‚ Gemini   â”‚  â”‚ OpenAI/Anthropic  â”‚
+   â”‚  (Local)    â”‚ â”‚ (Google) â”‚  â”‚ /OpenRouter       â”‚
+   â”‚             â”‚ â”‚          â”‚  â”‚                   â”‚
+   â”‚ llama3.2    â”‚ â”‚ gemini-  â”‚  â”‚ gpt-4o-mini       â”‚
+   â”‚ Zero-cost   â”‚ â”‚ 1.5-flashâ”‚  â”‚ claude-3-haiku    â”‚
+   â”‚ HIPAA-safe  â”‚ â”‚ Free tierâ”‚  â”‚ Via headers       â”‚
+   â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
 ```
 
-### CI/CD Pipeline (8 Workflows)
+| Tier | Provider | Config | Privacy | Cost |
+|------|----------|--------|---------|------|
+| **A** | Ollama | `OLLAMA_BASE_URL`, `OLLAMA_MODEL` | âœ… Data never leaves machine | Free |
+| **B** | Gemini | `GOOGLE_API_KEY`, `GEMINI_MODEL` | Cloud API | Free tier available |
+| **C** | OpenAI/Anthropic/OpenRouter | `x-ai-provider` + `x-ai-api-key` headers | Cloud API | Pay-per-use |
 
-| Workflow | Trigger | Purpose |
-|----------|---------|---------|
-| **CI** | Push / PR | Tests + coverage |
-| **CodeQL** | Push / PR / Weekly | Security vulnerability scanning |
-| **Docker** | Push / PR | Build + push to GHCR |
-| **HF Sync** | Push | Deploy to Hugging Face Space |
-| **Keep-Alive** | Cron (14min) | Prevent free-tier spin-down |
-| **Stale Bot** | Daily | Auto-close inactive issues |
-| **Release Drafter** | PR merge | Auto-generate release notes |
-| **Label Sync** | Manual | Sync label taxonomy |
+**Key features:**
+- **Fuzzy model matching** â€” `llama3.2` auto-resolves to `llama3.2:3b` if exact name unavailable
+- **3-attempt retry** with warmup detection for Ollama cold starts
+- **Dual-endpoint fallback** â€” tries `/api/generate` then `/api/chat` on Ollama
+- **Model list TTL cache** (30s) to avoid redundant `/api/tags` calls
+- **Streaming support** â€” true SSE streaming for Ollama, pseudo-stream for Gemini/Cloud
 
 ---
 
-## 📁 Project Structure
+## ðŸ“š RAG Pipeline
+
+**File:** `backend/rag.py` â€” Retrieval-Augmented Generation with semantic memory.
+
+### Architecture
+
+```
+User Query â†’ Gemini Embedding API â†’ Cosine Similarity Search â†’ Context Assembly â†’ LLM
+                (text-embedding-004)     (scikit-learn)         (Token Budget)
+```
+
+### Components
+
+| Component | Implementation |
+|-----------|---------------|
+| **Embedding Model** | `models/text-embedding-004` (FREE Gemini API) |
+| **Vector Store** | `SimpleVectorStore` â€” Pickle-persisted, cosine similarity via scikit-learn |
+| **Storage** | `models/vector_store.pkl` |
+| **Token Budget** | 3,000 tokens default, max 10 chunks |
+| **Dual task types** | `retrieval_document` for indexing, `retrieval_query` for search |
+
+### Data Classes
+
+```python
+RetrievedChunk    # record_type, record_id, text, similarity, metadata
+Citation          # record_type, record_id, record_name, relevance, excerpt
+RAGResult         # answer, citations[], context_chunks_used, total_context_tokens, grounded
+```
+
+### Context Builder (`chat_context.py`)
+
+The `build_chat_context()` function assembles structured RAG context with **role-based governance**:
+
+| Scope | Access | Description |
+|-------|--------|-------------|
+| `patient` | All users | Patient's own profile, records, chat history |
+| `global` | Doctors/Admins only | Anonymized hospital-wide historical cases |
+
+Context sections assembled in order:
+1. **Patient Profile** â€” demographics, lifestyle (diet, activity, sleep, stress)
+2. **Condition-Specific Records** â€” keyword-matched health records (diabetes, heart, liver, kidney, lungs)
+3. **General Health Records** â€” fallback if no condition keyword matched
+4. **General Stats** â€” trend/summary if user asks about progress
+5. **Chat History** â€” last 3 conversation pairs for continuity
+
+Max context: 6,000 characters, truncated with `...(truncated)` marker.
+
+---
+
+## ðŸ•¸ LangGraph Medical Agent
+
+**File:** `backend/agent.py` â€” A stateful multi-node agent graph built with LangGraph.
+
+```
+                    â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+         â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”‚ Supervisor  â”‚â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
+         â”‚         â”‚ (Router)    â”‚         â”‚
+         â”‚         â””â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”˜         â”‚
+         â”‚                â”‚                â”‚
+    â”Œâ”€â”€â”€â”€â–¼â”€â”€â”€â”€â”    â”Œâ”€â”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”€â”   â”Œâ”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”€â”
+    â”‚Researcherâ”‚    â”‚  Analyst   â”‚   â”‚ Guardrail  â”‚
+    â”‚(Tavily)  â”‚    â”‚ (ML Tools) â”‚   â”‚(Off-topic) â”‚
+    â””â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”˜    â””â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”˜   â””â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”˜
+         â”‚                â”‚                â”‚
+         â””â”€â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”˜                â”‚
+           â”Œâ”€â”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”€â”                 â”‚
+           â”‚  Generate   â”‚                 â”‚
+           â”‚  (core_ai)  â”‚                 â”‚
+           â””â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”˜                 â”‚
+                  â”‚                        â”‚
+                  â–¼                        â–¼
+                 END                      END
+```
+
+### Agent State (`AgentState`)
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `messages` | `List[BaseMessage]` | Conversation history |
+| `user_id` | `int` | Current user ID |
+| `user_profile` | `str` | Demographics from DB |
+| `psych_profile` | `str` | Long-term AI memory |
+| `available_reports` | `str` | Medical history context |
+| `rag_memories` | `str` | Semantic memory from vector store |
+| `conversation_count` | `int` | Message count for engagement style |
+| `tavily_results` | `str` | Web search results |
+| `next_step` | `str` | Router decision: `research`, `analyze`, `respond`, `off_topic` |
+
+### Routing Logic
+
+- **Research** â†’ keywords: `latest`, `news`, `treatment`, `research`, `study`, `2024`, `2025`
+- **Analyze** â†’ keywords: `predict`, `risk`, `chance`, `probability`, `analyze`
+- **Off-topic** â†’ guardrail keywords: `president`, `politics`, `movie`, `song`, `joke`, `code`, `finance`
+- **Respond** â†’ default path
+
+### `CoreAIWrapper`
+
+LangChain-compatible `.invoke()` wrapper around `core_ai.generate()` â€” bridges the LangGraph agent to the multi-tier inference engine.
+
+---
+
+## ðŸ“ Prompt Registry
+
+**File:** `backend/prompt_registry.py` â€” Version-controlled, auditable prompt management.
+
+### Registered Prompts (6)
+
+| Name | Version | Description |
+|------|---------|-------------|
+| `chat_system` | 1.0 | Main chatbot system prompt with full context injection (profile, history, RAG, web) |
+| `medical_qa` | 1.0 | RAG-grounded Q&A with citation requirements |
+| `symptom_analysis` | 1.0 | Structured symptom analysis with red-flag detection |
+| `report_summary` | 1.0 | Health record summarization in plain language |
+| `risk_assessment` | 1.0 | Disease prediction explanation and recommendations |
+| `streaming_system` | 1.0 | Compact system prompt for SSE streaming (token-efficient) |
+
+### API
+
+```python
+from backend.prompt_registry import get_prompt, register_prompt
+
+template = get_prompt("medical_qa")                    # Get active version
+template = get_prompt("chat_system", version="1.0")    # Get specific version
+register_prompt("medical_qa", version="2.0", template="...")  # Register new
+```
+
+### Features
+- **Versioning** â€” Multiple versions per prompt, activate/deactivate
+- **A/B Testing** â€” Switch active versions at runtime
+- **Audit Trail** â€” Each version has `created_at` timestamp and metadata
+- **No Inline Prompts** â€” All handlers use `get_prompt()`, never raw strings
+
+---
+## ðŸ“¡ API Reference
+
+<details>
+<summary><strong>Authentication</strong> â€” <code>backend/auth.py</code></summary>
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/signup` | âŒ | Register new user (password complexity enforced) |
+| `POST` | `/token` | âŒ | Login â†’ returns JWT `access_token` |
+| `GET` | `/profile` | ðŸ”’ | Get current user profile |
+| `PUT` | `/profile` | ðŸ”’ | Update profile fields |
+| `GET` | `/users` | ðŸ”’ Admin | List all users |
+| `GET` | `/users/{id}/full` | ðŸ”’ Admin | Full user dossier (audit logged, privacy-gated) |
+
+</details>
+
+<details>
+<summary><strong>Prediction</strong> â€” <code>backend/prediction.py</code></summary>
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/predict/diabetes` | âŒ | Diabetes risk screening (9 features) |
+| `POST` | `/predict/heart` | âŒ | Heart disease detection (13 features) |
+| `POST` | `/predict/liver` | âŒ | Liver disease detection (10 features) |
+| `POST` | `/predict/kidney` | âŒ | Chronic kidney disease (24 features) |
+| `POST` | `/predict/lungs` | âŒ | Respiratory issue detection (15 features) |
+| `POST` | `/predict/explain/diabetes` | âŒ | SHAP explanation for diabetes |
+| `POST` | `/predict/explain/heart` | âŒ | SHAP explanation for heart |
+| `POST` | `/predict/explain/liver` | âŒ | SHAP explanation for liver |
+| `POST` | `/admin/reload_models` | ðŸ”’ Admin | Hot-reload ML models from disk |
+
+</details>
+
+<details>
+<summary><strong>Chat & Streaming</strong> â€” <code>backend/chat.py</code>, <code>backend/streaming_chat.py</code></summary>
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/chat` | ðŸ”’ | AI chat with LangGraph agent + RAG context |
+| `GET` | `/chat/history` | ðŸ”’ | Retrieve chat history (last 100) |
+| `DELETE` | `/chat/history` | ðŸ”’ | Clear chat history |
+| `POST` | `/chat/stream` | ðŸ”’ | SSE streaming chat with heartbeat keepalive |
+| `GET` | `/chat/context` | ðŸ”’ | Debug: view assembled RAG context for a query |
+| `GET` | `/chat/suggestions` | ðŸ”’ | Dynamic starter questions based on patient data |
+
+</details>
+
+<details>
+<summary><strong>Health Records</strong> â€” <code>backend/chat.py</code></summary>
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/records` | ðŸ”’ | Save health record (auto-indexed to RAG) |
+| `GET` | `/records` | ðŸ”’ | Get records (optional `?record_type=` filter) |
+| `DELETE` | `/records/{id}` | ðŸ”’ | Delete record (removes from RAG index too) |
+
+</details>
+
+<details>
+<summary><strong>Reports & Vision</strong> â€” <code>backend/report.py</code></summary>
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/analyze/report` | âŒ | Vision AI analysis of uploaded lab report image |
+| `GET` | `/download/health-report` | ðŸ”’ | Generate & download PDF health report |
+| `POST` | `/generate_report` | âŒ | Generate PDF from provided data |
+
+</details>
+
+<details>
+<summary><strong>Explanation</strong> â€” <code>backend/explanation.py</code></summary>
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/explain/` | âŒ | AI-generated plain-English explanation of any prediction |
+
+</details>
+
+<details>
+<summary><strong>Appointments</strong> â€” <code>backend/appointments.py</code></summary>
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/appointments/` | ðŸ”’ | Book appointment (sends email + Jitsi link) |
+| `GET` | `/appointments/` | ðŸ”’ | List appointments (admin/doctor see all) |
+| `GET` | `/appointments/doctors` | âŒ | List available doctors |
+| `PUT` | `/appointments/{id}/cancel` | ðŸ”’ | Cancel appointment |
+| `PUT` | `/appointments/{id}/reschedule` | ðŸ”’ | Reschedule appointment |
+| `DELETE` | `/appointments/{id}` | ðŸ”’ | Delete appointment |
+
+</details>
+
+<details>
+<summary><strong>Payments</strong> â€” <code>backend/payments.py</code></summary>
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/payments/create-order` | ðŸ”’ | Create Razorpay order |
+| `POST` | `/payments/verify` | ðŸ”’ | Verify payment signature â†’ activate subscription |
+
+</details>
+
+<details>
+<summary><strong>Admin</strong> â€” <code>backend/admin.py</code></summary>
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/admin/stats` | ðŸ”’ Admin | System statistics (users, predictions, messages) |
+| `GET` | `/admin/users` | ðŸ”’ Admin | Paginated user list |
+| `PUT` | `/admin/users/{id}/role` | ðŸ”’ Admin | Change user role (patient/doctor/admin) |
+| `DELETE` | `/admin/users/{id}` | ðŸ”’ Admin | Delete user |
+
+</details>
+
+<details>
+<summary><strong>Ollama Model Management</strong> â€” <code>backend/ollama_routes.py</code></summary>
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/ai/models` | âŒ | List downloaded Ollama models |
+| `POST` | `/ai/models/pull` | âŒ | Pull model with SSE streaming progress |
+| `DELETE` | `/ai/models` | âŒ | Delete an Ollama model |
+| `GET` | `/ai/models/library` | âŒ | Catalog of recommended models |
+
+</details>
+
+<details>
+<summary><strong>Telemetry & System</strong></summary>
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `WS` | `/telemetry/stream` | âŒ | WebSocket stream of live hospital telemetry |
+| `GET` | `/` | âŒ | API root |
+| `GET` | `/healthz` | âŒ | Health check |
+
+</details>
+
+---
+
+## ðŸ“ Pydantic Schemas
+
+**File:** `backend/schemas.py`
+
+<details>
+<summary><strong>Authentication & User Schemas</strong></summary>
+
+| Schema | Fields | Usage |
+|--------|--------|-------|
+| `Token` | `access_token`, `token_type` | JWT response |
+| `UserCreate` | `username`, `password`, `email`, `full_name`, `dob` | Registration |
+| `UserResponse` | `id`, `username`, `role`, `full_name`, `email` | Public profile |
+| `UserProfileUpdate` | 15 fields including demographics, lifestyle, privacy | Profile update |
+| `UserFullResponse` | Extends `UserResponse` + `health_records[]`, `chat_logs[]` | Admin dossier |
+| `HealthRecordResponse` | `id`, `record_type`, `prediction`, `timestamp`, `data` | Health record |
+| `ChatLogResponse` | `id`, `role`, `content`, `timestamp` | Chat log entry |
+
+</details>
+
+<details>
+<summary><strong>Prediction Input Schemas (5)</strong></summary>
+
+| Schema | Features | Dataset |
+|--------|----------|---------|
+| `DiabetesInput` | 9 fields | BRFSS 2015 |
+| `HeartInput` | 13 fields | Cleveland UCI |
+| `LiverInput` | 10 fields | ILPD |
+| `KidneyInput` | 24 fields | UCI CKD |
+| `LungInput` | 15 fields | Lung Survey |
+
+</details>
+
+<details>
+<summary><strong>Appointment & Payment Schemas</strong></summary>
+
+| Schema | Fields |
+|--------|--------|
+| `AppointmentCreate` | `doctor_id`, `specialist`, `date`, `time`, `reason` |
+| `AppointmentResponse` | `id`, `user_id`, `doctor_id`, `specialist`, `date_time`, `reason`, `status` |
+| `DoctorResponse` | `id`, `full_name`, `specialization`, `consultation_fee`, `profile_picture` |
+
+</details>
+
+---
+
+## ðŸ–¥ Frontend
+
+**Stack:** Next.js 15 (App Router) + TypeScript + Tailwind CSS
+
+### Pages (Protected Routes)
+
+| Route | Page | Description |
+|-------|------|-------------|
+| `/dashboard` | Patient Dashboard | Health overview, recent records, quick actions |
+| `/chat` | AI Chat | Medical chatbot with SSE streaming |
+| `/predict` | Predictions | ML diagnostic forms for 5 conditions |
+| `/profile` | Profile | User profile management |
+| `/admin` | Admin Panel | System stats, user management |
+| `/capacity` | Capacity Board | Real-time hospital telemetry (WebSocket) |
+| `/infrastructure` | Infrastructure | System monitoring |
+| `/telemedicine` | Telemedicine | Jitsi video consultations |
+| `/patients` | Patient Management | Doctor/admin patient view |
+| `/pricing` | Pricing | Subscription tiers |
+| `/about` | About | Platform information |
+| `/login` | Login | Authentication |
+| `/signup` | Registration | New user signup |
+
+---
+
+## ðŸ—„ Database Layer
+
+**File:** `backend/database.py` â€” SQLAlchemy with auto-detection of SQLite vs PostgreSQL.
+
+### ORM Models (`backend/models.py`)
+
+| Model | Table | Key Fields |
+|-------|-------|------------|
+| `User` | `users` | id, username, role (patient/doctor/admin), email, full_name, gender, dob, height, weight, blood_type, diet, activity_level, sleep_hours, stress_level, psych_profile, plan_tier, subscription_expiry |
+| `HealthRecord` | `health_records` | id, user_id (FK), record_type, data (JSON), prediction, timestamp |
+| `ChatLog` | `chat_logs` | id, user_id (FK), role, content, timestamp |
+| `AuditLog` | `audit_logs` | id, admin_id (FK), target_user_id, action, timestamp, details |
+| `Appointment` | `appointments` | id, user_id (FK), doctor_id (FK), specialist, date_time, reason, status |
+
+### Database Features
+
+- **SQLite WAL mode** enabled for dev performance (`PRAGMA journal_mode=WAL`)
+- **Connection pooling** for PostgreSQL (`pool_size=5`, `pool_pre_ping=True`)
+- **Auto-migration** â€” `run_migrations()` adds missing columns at startup
+- **`postgres://` fix** â€” auto-converts to `postgresql://` for Render/Heroku
+
+---
+
+## ðŸ”’ Security Posture
+
+### Authentication & Authorization
+- **JWT tokens** (HS256) with 30-minute expiry via `python-jose`
+- **bcrypt** password hashing with 72-byte truncation safety
+- **Password complexity** â€” regex: 8+ chars, letters + numbers required
+- **Role-Based Access Control** â€” `patient`, `doctor`, `admin` roles
+- **OAuth2PasswordBearer** token flow
+
+### Middleware Stack (applied in order)
+
+| # | Middleware | Purpose |
+|---|-----------|---------|
+| 1 | `RateLimitMiddleware` | Sliding window rate limiter (60 req/min per IP) |
+| 2 | `TrustedHostMiddleware` | Allows only `127.0.0.1` and `aio-health-backend.onrender.com` |
+| 3 | `CORSMiddleware` | Origin: `http://127.0.0.1:3000`, credentials allowed |
+| 4 | `SecurityHeadersMiddleware` | `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff` |
+| 5 | `GZipMiddleware` | Response compression (min 1000 bytes) |
+| 6 | `ExceptionMiddleware` | Error ID generation, no PII in error responses |
+| 7 | `LoggingMiddleware` | Request timing and status logging |
+
+### Data Privacy
+- **PII Redaction** â€” Privacy-opted-out users get `[REDACTED]` in admin views
+- **Audit Logging** â€” All admin data access logged to `AuditLog` table
+- **Medical Disclaimers** â€” Every AI response includes mandatory disclaimer
+- **`allow_data_collection`** flag â€” per-user privacy control
+- **RAG Governance** â€” Global hospital search restricted to doctor/admin roles
+
+### Enterprise Security (`backend/enterprise_features.py`)
+- Prometheus metrics (request count, duration, prediction metrics)
+- HIPAA/GDPR compliance audit logging
+- Anomaly detection heuristics
+- Redis-backed rate limiting for enterprise deployments
+
+---
+
+## âš™ CI/CD Pipelines
+
+**8 GitHub Actions workflows** in `.github/workflows/`:
+
+| Workflow | File | Trigger | Purpose |
+|----------|------|---------|---------|
+| **CI Tests** | `ci.yml` | Push/PR to `main` | Python 3.10, pytest with coverage, placeholder model generation |
+| **CodeQL Security** | `codeql.yml` | Push/PR + weekly cron | SAST scanning for Python & JS/TS (security-extended queries) |
+| **Docker Image** | `docker-image.yml` | Push/PR to `main` | Build & push to `ghcr.io`, Buildx layer caching |
+| **HuggingFace Sync** | `huggingface.yml` | Push to `main` | Deploy to HF Spaces (scrubs binaries, adds HF frontmatter) |
+| **Keep-Alive** | `keep-alive.yml` | Scheduled | Prevents Render free-tier cold starts |
+| **Label Sync** | `labels.yml` | Push to `main` | Syncs GitHub labels from `.github/labels.yml` |
+| **Release Drafter** | `release-drafter.yml` | Push/PR to `main` | Auto-drafts release notes |
+| **Stale Bot** | `stale.yml` | Scheduled | Marks/closes stale issues and PRs |
+
+### Additional GitHub Features
+- **Dependabot** â€” Auto-updates for pip, npm, GitHub Actions, Docker
+- **CODEOWNERS** â€” Automated review assignment
+- **Issue/PR Templates** â€” Standardized contribution flow
+- **FUNDING.yml** â€” Sponsor configuration
+
+---
+
+## ðŸ“Š Telemetry WebSocket
+
+**File:** `backend/telemetry.py` â€” Real-time hospital operations dashboard.
+
+**Endpoint:** `WS /telemetry/stream` â€” pushes JSON snapshots every 2 seconds.
+
+<details>
+<summary><strong>Telemetry Payload Example</strong></summary>
+
+```json
+{
+  "timestamp": "2025-01-01T00:00:00Z",
+  "active_census": 77,
+  "total_capacity": 100,
+  "system_latency_ms": 14,
+  "ai_nodes_active": 14,
+  "ed_boarding": 18,
+  "ed_avg_wait_min": 135,
+  "pending_discharges": 34,
+  "confirmed_discharges": 12,
+  "surge_prediction_pct": 12,
+  "department_loads": [
+    {"dept": "Cardiology", "load": 82, "status": "Elevated"},
+    {"dept": "Pulmonology", "load": 65, "status": "Stable"},
+    {"dept": "Nephrology", "load": 45, "status": "Stable"},
+    {"dept": "Endocrinology", "load": 72, "status": "Elevated"}
+  ],
+  "bed_units": [
+    {"unit": "ICU-A", "total": 20, "occupied": 17, "cleaning": 1, "available": 2},
+    {"unit": "MED-SURG 4B", "total": 40, "occupied": 34, "cleaning": 2, "available": 4}
+  ]
+}
+```
+
+</details>
+
+---
+
+## ðŸš¢ Deployment
+
+### Option 1: Docker Compose (Recommended)
+
+```bash
+docker compose up --build
+# Backend: http://127.0.0.1:8000
+# Frontend: http://127.0.0.1:3000
+```
+
+### Option 2: Enterprise Docker Compose
+
+Full stack with PostgreSQL, Redis, Prometheus, Grafana, Jaeger, and MLflow:
+
+```bash
+docker compose -f docker-compose.enterprise.yml up --build
+```
+
+| Service | Port | Purpose |
+|---------|------|---------|
+| Backend | 8000 | FastAPI application |
+| PostgreSQL 15 | 5432 | Production database |
+| Redis 7 | 6379 | Caching & sessions |
+| Prometheus | 9090 | Metrics collection |
+| Grafana | 3001 | Dashboards |
+| Jaeger | 16686 | Distributed tracing |
+| MLflow | 5000 | ML experiment tracking |
+
+### Option 3: Render (Free Tier)
+
+Pre-configured via `render.yaml` â€” auto-deploys from `main`, health check at `/healthz`, Singapore region.
+
+### Option 4: Kubernetes
+
+```bash
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/services.yaml
+kubectl apply -f k8s/autoscaling.yaml
+```
+
+K8s manifests provision: Backend (3 replicas) Â· Frontend (2 replicas) Â· PostgreSQL Â· Redis â€” all with PVC storage, liveness/readiness probes, and resource limits.
+
+### Option 5: Terraform (AWS)
+
+```bash
+cd terraform && terraform init && terraform plan && terraform apply
+```
+
+Provisions: VPC (3 AZs) Â· EKS (2â€“10 nodes) Â· RDS PostgreSQL 15 (encrypted, 7-day backups) Â· ElastiCache Redis Â· S3 (versioned, SSE) Â· EFS Â· ALB + Route53 DNS Â· Secrets Manager Â· CloudWatch.
+
+---
+
+## ðŸ“ Project Structure
+
+<details>
+<summary><strong>Click to expand full project tree</strong></summary>
 
 ```
 AI-Healthcare-System/
-├── 🔧 backend/                  # FastAPI Backend
-│   ├── main.py                  #   App entrypoint + route mounting
-│   ├── core_ai.py               #   Central AI inference gateway
-│   ├── prediction.py            #   ML model loading + prediction
-│   ├── agent.py                 #   AI chat agent orchestration
-│   ├── rag.py                   #   RAG pipeline (per-user FAISS)
-│   ├── vision_service.py        #   PDF lab report vision analysis
-│   ├── prompt_registry.py       #   Centralized system prompts
-│   ├── explainability.py        #   SHAP model explanations
-│   ├── pdf_service.py           #   Medical PDF report generation
-│   ├── streaming_chat.py        #   SSE streaming chat
-│   ├── security.py              #   Auth + RBAC middleware
-│   ├── schemas.py               #   Pydantic request/response models
-│   ├── models.py                #   SQLAlchemy ORM models
-│   ├── database.py              #   Database session management
-│   └── train_*.py               #   ML model training scripts
-│
-├── 🎨 frontend/                 # Next.js 15 Frontend
-│   └── src/app/
-│       ├── (protected)/         #   Authenticated routes
-│       │   ├── dashboard/       #     Main clinical dashboard
-│       │   ├── predict/         #     Disease screening UI
-│       │   ├── chat/            #     AI medical assistant
-│       │   ├── patients/        #     Patient management
-│       │   ├── telemedicine/    #     Telemedicine scheduling
-│       │   └── profile/         #     User settings
-│       ├── login/               #   Login page
-│       └── signup/              #   Registration page
-│
-├── 🧪 tests/                   # Test Suite
-│   ├── unit/                    #   20+ unit test files
-│   ├── integration/             #   API integration tests
-│   └── e2e/                     #   Playwright E2E tests
-│
-├── 📊 mlops/                   # MLOps Pipeline
-│   ├── data_ingestion.py        #   Data loading
-│   ├── data_processing.py       #   Feature engineering
-│   └── model_training.py        #   Training orchestration
-│
-├── ☁️ Infrastructure
-│   ├── terraform/               #   Terraform IaC configs
-│   ├── k8s/                     #   Kubernetes manifests
-│   ├── airflow/                 #   Airflow DAG definitions
-│   ├── monitoring/              #   Observability configs
-│   ├── docker-compose.yml       #   Multi-container setup
-│   ├── Dockerfile               #   Production container
-│   └── render.yaml              #   Render deployment config
-│
-├── 📚 docs/                    # Documentation
-│   ├── AI_AGENT_ARCHITECTURE.md #   AI module deep-dive
-│   ├── TECHNICAL_WHITEPAPER.md  #   System design whitepaper
-│   ├── MASTER_PROJECT_REPORT.md #   Full project report
-│   └── ZERO_CAPITAL_GUIDE.md    #   Free-tier deployment guide
-│
-└── ⚙️ .github/                 # GitHub Configuration
-    ├── workflows/               #   8 CI/CD workflows
-    ├── ISSUE_TEMPLATE/          #   Bug, feature, docs templates
-    ├── PULL_REQUEST_TEMPLATE.md #   PR checklist (medical safety)
-    ├── dependabot.yml           #   Dependency auto-updates
-    ├── CODEOWNERS               #   Auto-assign reviewers
-    └── FUNDING.yml              #   Sponsor configuration
+â”œâ”€â”€ backend/
+â”‚   â”œâ”€â”€ main.py                 # FastAPI entry point, middleware, routers
+â”‚   â”œâ”€â”€ core_ai.py              # 3-tier AI engine (Ollamaâ†’Geminiâ†’Cloud)
+â”‚   â”œâ”€â”€ prediction.py           # ML model loading & 5 prediction endpoints
+â”‚   â”œâ”€â”€ schemas.py              # All Pydantic schemas
+â”‚   â”œâ”€â”€ models.py               # SQLAlchemy ORM models
+â”‚   â”œâ”€â”€ database.py             # DB engine (SQLite/PostgreSQL auto-detect)
+â”‚   â”œâ”€â”€ auth.py                 # JWT auth, signup, login, RBAC
+â”‚   â”œâ”€â”€ chat.py                 # LangGraph agent chat + health records
+â”‚   â”œâ”€â”€ streaming_chat.py       # SSE streaming chat with heartbeat
+â”‚   â”œâ”€â”€ chat_context.py         # RAG context builder with governance
+â”‚   â”œâ”€â”€ rag.py                  # Vector store, embeddings, semantic search
+â”‚   â”œâ”€â”€ agent.py                # LangGraph medical agent
+â”‚   â”œâ”€â”€ prompt_registry.py      # Version-controlled prompts (6 templates)
+â”‚   â”œâ”€â”€ explainability.py       # SHAP TreeExplainer
+â”‚   â”œâ”€â”€ explanation.py          # AI plain-English explanations
+â”‚   â”œâ”€â”€ features.py             # Canonical feature schemas (5 models)
+â”‚   â”œâ”€â”€ admin.py                # Admin dashboard routes
+â”‚   â”œâ”€â”€ appointments.py         # Booking, Jitsi links, email
+â”‚   â”œâ”€â”€ payments.py             # Razorpay integration
+â”‚   â”œâ”€â”€ report.py               # Lab report vision + PDF download
+â”‚   â”œâ”€â”€ pdf_service.py          # PDF generation (fpdf2)
+â”‚   â”œâ”€â”€ vision_service.py       # Gemini Vision for medical OCR
+â”‚   â”œâ”€â”€ security.py             # Audit logging + rate limiter
+â”‚   â”œâ”€â”€ telemetry.py            # WebSocket hospital telemetry
+â”‚   â”œâ”€â”€ enterprise_features.py  # Prometheus, HIPAA, Redis
+â”‚   â”œâ”€â”€ ollama_routes.py        # Ollama model management
+â”‚   â”œâ”€â”€ email_service.py        # Appointment emails
+â”‚   â”œâ”€â”€ train_*.py              # Training scripts (5 models)
+â”‚   â””â”€â”€ *.pkl                   # Trained model artifacts
+â”‚
+â”œâ”€â”€ frontend/                   # Next.js 15 App Router
+â”‚   â”œâ”€â”€ src/app/(protected)/    # Auth-gated routes (11 pages)
+â”‚   â”œâ”€â”€ src/components/         # Chat, layout, predict components
+â”‚   â””â”€â”€ src/lib/                # Auth utilities, API client
+â”‚
+â”œâ”€â”€ tests/                      # Pytest suite
+â”‚   â”œâ”€â”€ unit/                   # Unit tests
+â”‚   â”œâ”€â”€ integration/            # Integration tests
+â”‚   â””â”€â”€ e2e/                    # Playwright E2E tests
+â”‚
+â”œâ”€â”€ k8s/                        # Kubernetes manifests
+â”œâ”€â”€ terraform/                  # AWS IaC (VPC, EKS, RDS, etc.)
+â”œâ”€â”€ monitoring/                 # Prometheus config
+â”œâ”€â”€ .github/workflows/          # 8 CI/CD pipelines
+â”œâ”€â”€ docker-compose.yml          # Standard 2-service stack
+â”œâ”€â”€ docker-compose.enterprise.yml  # 7-service enterprise stack
+â”œâ”€â”€ Dockerfile                  # Backend (Python 3.12-slim)
+â”œâ”€â”€ render.yaml                 # Render PaaS config
+â””â”€â”€ .env.example                # Environment template
 ```
+
+</details>
 
 ---
 
-## 🌐 Deployment
-
-### Production (Render + HF Spaces)
-
-| Component | Platform | URL |
-|-----------|----------|-----|
-| Backend API | Render | Auto-deployed via `render.yaml` |
-| Frontend | Vercel / Streamlit Cloud | Connect repo + set `BACKEND_URL` |
-| HF Space | Hugging Face | Auto-synced via GitHub Actions |
-
-### Self-Hosted (Docker)
+## ðŸ”§ Environment Variables
 
 ```bash
-docker-compose up -d --build
+# Required
+GOOGLE_API_KEY=your_gemini_api_key     # Gemini AI + Embeddings (free tier)
+SECRET_KEY=random_secret_string        # JWT signing key
+
+# Database (defaults to SQLite)
+DATABASE_URL=sqlite:///./healthcare.db # or postgresql://user:pass@host/db
+
+# Local AI (Optional â€” zero-cost, HIPAA-friendly)
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_MODEL=llama3.2
+OLLAMA_TIMEOUT=120
+
+# Gemini Model Selection
+GEMINI_MODEL=gemini-1.5-flash
+
+# Payments (Optional)
+RAZORPAY_KEY_ID=rzp_test_...
+RAZORPAY_KEY_SECRET=...
+
+# Cloud AI Fallback (Optional â€” via request headers)
+# OPENAI_API_KEY=sk-...
+# ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-### Cloud (Terraform)
+---
 
-```bash
-cd terraform
-terraform init
-terraform plan
-terraform apply
-```
+## ðŸ¤ Contributing
 
-### Required Secrets for CI/CD
+See [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines. Please read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md).
 
-| Secret | Used By |
-|--------|---------|
-| `GOOGLE_API_KEY` | Backend AI features |
-| `SECRET_KEY` | JWT auth |
-| `HF_TOKEN` | Hugging Face sync |
-| `HF_USERNAME` | Hugging Face sync |
-| `HF_SPACE_NAME` | Hugging Face sync |
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/new-feature`)
+3. Run tests (`pytest tests/ -v`)
+4. Submit a Pull Request
 
 ---
 
-## 🔒 Security
+## ðŸ“„ License
 
-This project takes security seriously, especially given the sensitivity of medical data.
+MIT License â€” Copyright (c) 2025 **Pavan Badempet**, Shiva Prasad Anagondi, Prashanth Cheerala.
 
-- 🛡️ **CodeQL** — Automated static analysis on every push (Python + JavaScript)
-- 📦 **Dependabot** — Auto-PRs for vulnerable dependencies (pip, npm, Actions, Docker)
-- 🔐 **JWT Auth** — Configurable token expiry with role-based access
-- 🚫 **Zero-PII Logging** — Patient data never exposed in logs or errors
-- ⚕️ **Medical Disclaimers** — Enforced on all AI-generated health advice
-- 📋 **SECURITY.md** — [Vulnerability reporting policy](SECURITY.md)
-
-Found a vulnerability? Please report it privately via our [Security Policy](SECURITY.md).
+See [LICENSE](LICENSE) for full text.
 
 ---
 
-## 📈 Project Status
+<div align="center">
 
-| Metric | Status |
-|--------|--------|
-| **CI/CD** | [![CI](https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml/badge.svg)](https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml) |
-| **Security** | [![CodeQL](https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml/badge.svg)](https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml) |
-| **Test Coverage** | 134+ passing tests |
-| **Commits** | 330+ commits |
-| **License** | MIT |
+**If this project helped you, consider giving it a â­**
 
----
-
-## 🤝 Contributing
-
-Contributions are welcome! We have structured templates to make it easy:
-
-1. **🐛 [Report a Bug](https://github.com/pavanbadempet/AI-Healthcare-System/issues/new?template=bug_report.yml)** — Structured bug report form
-2. **✨ [Request a Feature](https://github.com/pavanbadempet/AI-Healthcare-System/issues/new?template=feature_request.yml)** — Feature proposal with priority
-3. **📚 [Improve Docs](https://github.com/pavanbadempet/AI-Healthcare-System/issues/new?template=docs.yml)** — Documentation gaps
-
-### Development Workflow
-
-```bash
-# Fork → Clone → Branch → Code → Test → PR
-git checkout -b feature/amazing-feature
-pytest tests/ --cov=backend            # Ensure tests pass
-git commit -m "feat: add amazing feature"
-git push origin feature/amazing-feature
-# Open PR → Auto-assigned reviewer → CI runs → Merge
-```
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) for community standards.
-
----
-
-## 📄 Documentation
-
-| Document | Description |
-|----------|-------------|
-| [AI Agent Architecture](docs/AI_AGENT_ARCHITECTURE.md) | Deep-dive into AI module design |
-| [Technical Whitepaper](docs/TECHNICAL_WHITEPAPER.md) | Full system design document |
-| [Model Integrity Report](docs/MODEL_INTEGRITY_REPORT.md) | ML model validation & metrics |
-| [Master Project Report](docs/MASTER_PROJECT_REPORT.md) | Comprehensive project analysis |
-| [Zero Capital Guide](docs/ZERO_CAPITAL_GUIDE.md) | Deploy entirely on free tiers |
-| [Security Policy](SECURITY.md) | Vulnerability reporting process |
-| [Contributing Guide](CONTRIBUTING.md) | How to contribute |
-
----
-
-## ⭐ Star History
-
-If this project helped you, consider giving it a ⭐ — it helps others discover it!
-
-<p align="center">
-  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/stargazers">
-    <img src="https://img.shields.io/github/stars/pavanbadempet/AI-Healthcare-System?style=for-the-badge&color=yellow&logo=github" alt="Star this repo"/>
-  </a>
-  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/fork">
-    <img src="https://img.shields.io/github/forks/pavanbadempet/AI-Healthcare-System?style=for-the-badge&color=blue&logo=github" alt="Fork this repo"/>
-  </a>
+<p>
+  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/stargazers"><img src="https://img.shields.io/github/stars/pavanbadempet/AI-Healthcare-System?style=social" alt="Stars" /></a>
+  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/network/members"><img src="https://img.shields.io/github/forks/pavanbadempet/AI-Healthcare-System?style=social" alt="Forks" /></a>
 </p>
 
----
+<sub>
+<strong>Keywords:</strong> AI healthcare, machine learning diagnosis, medical chatbot, diabetes prediction, heart disease prediction, liver disease prediction, kidney disease prediction, lung cancer prediction, FastAPI healthcare API, LangGraph medical agent, RAG healthcare, SHAP explainability, Ollama local inference, Gemini healthcare, HIPAA-friendly AI, healthcare ML models, clinical decision support, medical AI system, health prediction API, telemedicine platform, hospital capacity management, real-time telemetry, enterprise healthcare, Docker healthcare deployment, Kubernetes healthcare, Terraform AWS healthcare, prompt engineering healthcare, vector store medical records, patient data privacy, audit logging healthcare
+</sub>
 
-## 📄 License
-
-This project is licensed under the **MIT License** — see the [LICENSE](LICENSE) file for details.
-
-<p align="center">
-  <strong>Built with ❤️ by <a href="https://github.com/pavanbadempet">Pavan Badempet</a></strong>
-  <br/>
-  <sub>© 2025 Pavan Badempet, Shiva Prasad Anagondi, Prashanth Cheerala</sub>
-</p>
-
----
-
-<p align="center">
-  <sub>
-    <strong>Keywords:</strong> AI Healthcare · Medical AI Platform · Disease Prediction · Clinical Decision Support · 
-    Health Risk Assessment · ML Diagnostics · RAG Medical Chat · FastAPI Healthcare API · Next.js Medical Dashboard · 
-    XGBoost Disease Classification · SHAP Explainability · Open Source Healthcare · Patient Portal · 
-    Gemini Medical AI · HIPAA-Aware · Telemedicine · Medical Report Generator
-  </sub>
-</p>
+</div>
