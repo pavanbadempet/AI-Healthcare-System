@@ -22,6 +22,11 @@ session.json
 .coverage
 htmlcov/
 
+# Local resume/profile drafts
+README_DATA_ENGINEERING.md
+README_ENHANCED.md
+RESUME_*.tex
+
 # IDE & Tools
 .cursor/
 .antigravity/
