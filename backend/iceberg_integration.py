@@ -4,14 +4,11 @@ Full implementation with schema evolution, partition evolution, and time travel
 """
 
 import logging
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Any
 from datetime import datetime, timezone
 from dataclasses import dataclass
 from enum import Enum
-import json
 from pyspark.sql import SparkSession, DataFrame as SparkDF
-from pyspark.sql.functions import col, lit, current_timestamp, max as spark_max, min as spark_min
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType, FloatType, DateType, TimestampType, BooleanType
 
 logger = logging.getLogger(__name__)
 

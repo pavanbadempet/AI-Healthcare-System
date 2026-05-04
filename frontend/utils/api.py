@@ -78,6 +78,8 @@ def clear_session():
         pass
     st.session_state.pop('token', None)
     st.session_state.pop('username', None)
+    st.session_state.pop('role', None)
+    st.session_state.pop('profile_picture', None)
 
 
 # --- Auth ---
@@ -99,7 +101,8 @@ def login(username, password) -> bool:
         st.error("Please enter both username and password")
         return False
     try:
-        resp = requests.post(f"{BACKEND_URL}/token", data={"username": username, "password": password})
+        with st.spinner("Authenticating..."):
+            resp = requests.post(f"{BACKEND_URL}/token", data={"username": username, "password": password})
         if resp.status_code == 200:
             token = resp.json()['access_token']
             st.session_state['token'] = token
@@ -130,9 +133,10 @@ def signup(username, password, email, full_name, dob) -> bool:
         st.error("Password must be at least 8 characters")
         return False
     try:
-        resp = requests.post(f"{BACKEND_URL}/signup", json={
-            "username": username, "password": password, "email": email, "full_name": full_name, "dob": str(dob)
-        })
+        with st.spinner("Creating account..."):
+            resp = requests.post(f"{BACKEND_URL}/signup", json={
+                "username": username, "password": password, "email": email, "full_name": full_name, "dob": str(dob)
+            })
         if resp.status_code == 200:
             return True
         detail = resp.json().get('detail', 'Signup failed')
@@ -194,7 +198,7 @@ def save_record(record_type, data, prediction):
     try:
         requests.post(f"{BACKEND_URL}/records", json={"record_type": record_type, "data": data, "prediction": prediction}, headers=_headers())
     except Exception as e:
-        st.toast(f"Failed to save record: {e}", icon="❌")
+        st.error(f"Failed to save record: {e}")
 
 def delete_record(record_id: int):
     try:
@@ -209,15 +213,19 @@ def delete_record(record_id: int):
 
 def get_prediction(endpoint: str, data: Dict) -> Dict:
     try:
-        resp = requests.post(f"{BACKEND_URL}/predict/{endpoint}", json=data)
-        return resp.json() if resp.status_code == 200 else {"error": resp.json().get('detail', 'Failed')}
+        resp = requests.post(f"{BACKEND_URL}/predict/{endpoint}", json=data, headers=_headers())
+        if resp.status_code in [200, 201]:
+            return resp.json()
+        return {"error": resp.json().get('detail', 'Failed')}
     except Exception as e:
         return {"error": str(e)}
 
 def get_explanation(endpoint: str, data: Dict) -> str:
     try:
-        resp = requests.post(f"{BACKEND_URL}/predict/explain/{endpoint}", json=data)
-        return resp.json().get("html_plot", "") if resp.status_code == 200 else ""
+        resp = requests.post(f"{BACKEND_URL}/predict/explain/{endpoint}", json=data, headers=_headers())
+        if resp.status_code in [200, 201]:
+            return resp.json().get("html_plot", "")
+        return ""
     except Exception:
         return ""
 
@@ -239,7 +247,9 @@ def create_payment_order(amount_paise: int, plan_id: str):
         resp = requests.post(f"{BACKEND_URL}/payments/create-order", json={
             "amount": amount_paise, "currency": "INR", "plan_id": plan_id
         }, headers=_headers())
-        return resp.json() if resp.status_code == 200 else None
+        if resp.status_code in [200, 201]:
+            return resp.json()
+        return None
     except Exception:
         return None
 

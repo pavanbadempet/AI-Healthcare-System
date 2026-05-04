@@ -51,9 +51,8 @@ def render_sidebar():
 
         # 2. User Info (Standard Streamlit Container)
         username = st.session_state.get('username', 'Guest')
-        if username != 'Guest':
-            with st.container():
-                # Simple clean profile display
+        with st.container():
+            if username != 'Guest':
                 # Simple clean profile display with Dynamic Picture
                 pic = st.session_state.get('profile_picture')
                 
@@ -78,6 +77,13 @@ def render_sidebar():
         <div style="font-weight: 600; font-size: 14px; color: #F1F5F9;">{username}</div>
         <div style="font-size: 12px; color: #4ADE80;">● Online</div>
     </div>
+</div>
+""", unsafe_allow_html=True)
+            else:
+                st.markdown("""
+<div style="background-color: rgba(255, 255, 255, 0.03); padding: 12px; border-radius: 8px; margin-bottom: 20px;">
+    <div style="font-size: 14px; color: #F8FAFC;">Signed in as Guest</div>
+    <div style="font-size: 12px; color: #94A3B8;">Please log in to access full features.</div>
 </div>
 """, unsafe_allow_html=True)
         
@@ -137,9 +143,12 @@ def render_sidebar():
         # 4. Footer / Sign Out
         st.markdown("---")
         # Updated: use width='stretch' instead of deprecated use_container_width=True
-        if st.button("🚪 Sign Out", key="logout_btn", type="secondary"): 
-            api.clear_session()
-            st.rerun()
+        if username != 'Guest':
+            if st.button("🚪 Sign Out", key="logout_btn", type="secondary"): 
+                api.clear_session()
+                st.rerun()
+        else:
+            st.markdown("<div style='text-align: center; color: #94A3B8; font-size: 12px; margin-top: 20px;'>Sign in to unlock full features and personalize your care.</div>", unsafe_allow_html=True)
             
         st.markdown("<div style='text-align: center; color: #475569; font-size: 12px; margin-top: 20px;'>v2.1 • © 2026 AI Healthcare</div>", unsafe_allow_html=True)
     

@@ -27,10 +27,15 @@ def render_diabetes_page():
             pass
             
     # 2. Gender
-    p_gender = profile.get('gender', 'Male')
-    gender_idx = 0 if p_gender == "Female" else 1
-    
-    # 3. BMI Calculation
+    p_gender = str(profile.get('gender', 'Male')).strip()
+    gender_idx = 0 if p_gender.lower() == "female" else 1
+
+    # 3. Smoking history
+    smoking_idx = 0
+    if str(profile.get('smoking_history', '')).lower() in ["1", "yes", "true", "current", "former", "ever"]:
+        smoking_idx = 1
+
+    # 4. BMI Calculation
     default_bmi = 25.0
     if profile.get('height') and profile.get('weight'):
         try:
@@ -53,28 +58,22 @@ def render_diabetes_page():
         st.subheader("Medical History")
         hypertension = st.selectbox("Hypertension (High BP)", ["No", "Yes"])
         heart_disease = st.selectbox("History of Heart Disease", ["No", "Yes"])
-        smoking = st.selectbox("Smoking History", ["never", "current", "former", "ever", "not current"])
+        smoking = st.selectbox("Smoking History", ["No", "Yes"], index=smoking_idx)
         # Advanced Inputs (Optional)
         with st.expander("Additional Health Factors", expanded=False):
             high_chol = st.selectbox("High Cholesterol", ["No", "Yes"])
             activity = st.selectbox("Physically Active (Past 30d)", ["No", "Yes"])
             gen_health = st.slider("General Health Rating", 1, 5, 3, help="1=Excellent, 5=Poor")
 
-    if st.button("Run Screening Analysis", type="primary", width="stretch"):
+    if st.button("Run Screening Analysis", type="primary", use_container_width=True):
         # Map Inputs
         inputs = {
             "gender": 1 if gender == "Male" else 0,
             "age": age,
             "hypertension": 1 if hypertension == "Yes" else 0,
             "heart_disease": 1 if heart_disease == "Yes" else 0,
-            "smoking_history": 0 if smoking == "never" else 1, # Simplified map, really strict map in schema needed? 
-            # WAIT: Backend prediction.py schema for diabetes uses: smoking_history (int)
-            # BUT ml_service.py (legacy) handled string mapping. 
-            # IF we hit backend DIRECTLY (recommended), we need to send INTs.
-            # Let's map robustly here or use `api` wrapper.
-            # Schema says: smoking_history: int. 0: No, 1: Yes. 
-            # Actually, `backend/schemas.py` says `smoking_history: int = Field(..., description="0: No, 1: Yes")`. 
-            # Just 0/1. OK.
+            "smoking_history": 1 if smoking == "Yes" else 0,
+            # Backend schema expects smoking_history as 0/1.
             "bmi": bmi,
             "HbA1c_level": hba1c,
             "glucose": glucose,

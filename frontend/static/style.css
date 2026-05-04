@@ -134,10 +134,6 @@ section[data-testid="stSidebar"]>div:first-child {
     padding-right: 0.75rem;
 }
 
-div[data-testid="stSidebarNav"] {
-    display: none !important;
-}
-
 /* Custom scrollbar for sidebar */
 section[data-testid="stSidebar"] ::-webkit-scrollbar {
     width: 4px;
@@ -443,9 +439,8 @@ div[data-testid="stSidebarNav"] {
     display: block !important;
     /* Must be block for toggle to exist */
     visibility: visible !important;
-    height: 0 !important;
-    /* Collapse height */
-    overflow: hidden !important;
+    height: auto !important;
+    overflow: visible !important;
     margin: 0 !important;
     padding: 0 !important;
 }

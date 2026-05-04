@@ -14,7 +14,6 @@ from datetime import datetime, timezone, timedelta
 from typing import Dict, List, Any, Optional, Set
 from dataclasses import dataclass
 from enum import Enum
-import re
 import os
 from cryptography.fernet import Fernet
 from sqlalchemy import text

@@ -2,6 +2,11 @@ import pandas as pd
 import numpy as np
 import os
 import sys
+import logging
+
+RAW_DIR = "data/raw"
+PROCESSED_DIR = "data/processed"
+
 # Configure Logging
 logging.basicConfig(
     level=logging.INFO, 

@@ -80,6 +80,13 @@ def main():
         if session:
             st.session_state['token'] = session.get('token')
             st.session_state['username'] = session.get('username')
+            try:
+                profile_data = api.fetch_profile()
+                if profile_data:
+                    st.session_state['role'] = profile_data.get('role', 'patient')
+                    st.session_state['profile_picture'] = profile_data.get('profile_picture')
+            except Exception:
+                pass
 
     # If not logged in, show Auth Screen
     if 'token' not in st.session_state:

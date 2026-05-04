@@ -6,6 +6,7 @@ import logging
 import time
 
 from fastapi import FastAPI, Request, HTTPException
+from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import ORJSONResponse, Response
@@ -21,7 +22,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # --- Imports ---
-from . import app_warnings, models, database, auth, chat, explanation, prediction, report, admin, payments, security
+from . import models, database, auth, chat, explanation, prediction, report, admin, payments, security
+from . import streaming_chat
 from .pdf_service import generate_medical_report
 
 # Initialize Database
@@ -177,6 +179,7 @@ app.add_middleware(RateLimitMiddleware)
 # --- Routes ---
 app.include_router(auth.router, tags=["Auth"])
 app.include_router(chat.router, tags=["Chat"])
+app.include_router(streaming_chat.router)
 app.include_router(prediction.router, tags=["Prediction"])
 app.include_router(explanation.router)
 app.include_router(report.router, tags=["Reports"])
@@ -204,3 +207,8 @@ async def generate_report(request: Request):
         advice=data.get("advice", [])
     )
     return Response(content=pdf, media_type="application/pdf")
+
+# --- Static Files (WebLLM AI Copilot page) ---
+_static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend", "static")
+if os.path.isdir(_static_dir):
+    app.mount("/static", StaticFiles(directory=_static_dir, html=True), name="static")

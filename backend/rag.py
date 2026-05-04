@@ -2,18 +2,115 @@
 RAG Module - Semantic Memory for Personalized Healthcare AI
 ============================================================
 Uses FREE Gemini Embedding API (no local model needed = saves ~200MB)
+
+Enhanced with citation tracking, token budget management, and
+RAGResult return types from the Singularity AI Engine architecture.
 """
 import os
-import json
 import pickle
 import numpy as np
 import logging
 from typing import List, Dict, Optional, Any
+from dataclasses import dataclass, field
 from sklearn.metrics.pairwise import cosine_similarity
 import google.generativeai as genai
 
 # --- Logging ---
 logger = logging.getLogger(__name__)
+
+# ── Token Budget Constants ──
+DEFAULT_CONTEXT_TOKEN_BUDGET = 3000
+DEFAULT_MAX_CHUNKS = 10
+
+
+# ── RAG Pipeline Dataclasses (from Singularity AI Engine) ──
+
+@dataclass
+class RetrievedChunk:
+    """A single retrieved context chunk from the vector store."""
+    record_type: str
+    record_id: str
+    text: str
+    similarity: float
+    metadata: Dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def citation_key(self) -> str:
+        return f"{self.record_type}:{self.record_id}"
+
+    def estimated_tokens(self) -> int:
+        """Rough token estimate (4 chars ≈ 1 token for English text)."""
+        return max(1, len(self.text) // 4)
+
+
+@dataclass
+class Citation:
+    """A citation linking generated text back to source records."""
+    record_type: str
+    record_id: str
+    record_name: str
+    relevance: float
+    excerpt: str = ""
+
+
+@dataclass
+class RAGResult:
+    """Result of a RAG pipeline execution with citations."""
+    answer: str
+    citations: List[Citation] = field(default_factory=list)
+    context_chunks_used: int = 0
+    total_context_tokens: int = 0
+    model_used: str = ""
+    grounded: bool = True
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "answer": self.answer,
+            "citations": [
+                {
+                    "record_type": c.record_type,
+                    "record_id": c.record_id,
+                    "record_name": c.record_name,
+                    "relevance": round(c.relevance, 3),
+                    "excerpt": c.excerpt,
+                }
+                for c in self.citations
+            ],
+            "metadata": {
+                "context_chunks_used": self.context_chunks_used,
+                "total_context_tokens": self.total_context_tokens,
+                "model_used": self.model_used,
+                "grounded": self.grounded,
+            },
+        }
+
+
+def assemble_context(
+    chunks: List[RetrievedChunk],
+    token_budget: int = DEFAULT_CONTEXT_TOKEN_BUDGET,
+    max_chunks: int = DEFAULT_MAX_CHUNKS,
+) -> tuple:
+    """
+    Assemble retrieved chunks into a context string within the token budget.
+
+    Returns (context_string, total_tokens_used, selected_chunks).
+    """
+    selected = []
+    total_tokens = 0
+
+    for chunk in chunks[:max_chunks]:
+        chunk_tokens = chunk.estimated_tokens()
+        if total_tokens + chunk_tokens > token_budget:
+            break
+        selected.append(chunk)
+        total_tokens += chunk_tokens
+
+    context_parts = []
+    for i, chunk in enumerate(selected, 1):
+        source = f"[{chunk.record_type.title()} #{chunk.record_id}]"
+        context_parts.append(f"{i}. {source} {chunk.text}")
+
+    return "\n".join(context_parts), total_tokens, selected
 
 # --- Constants ---
 DB_FILE = os.path.join(os.path.dirname(__file__), "..", "models", "vector_store.pkl")

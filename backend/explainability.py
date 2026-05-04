@@ -13,10 +13,7 @@ except ImportError:
     MATPLOTLIB_AVAILABLE = False
     plt = None
 
-import json
 import numpy as np
-import io
-import base64
 import logging
 
 # --- Logging Configuration ---
@@ -93,4 +90,3 @@ def generate_static_force_plot(model, input_vector, feature_names):
     Use this if frontend interactivity is hard to implement.
     """
     # ... implementation can be added if frontend pure JS fails
-    pass

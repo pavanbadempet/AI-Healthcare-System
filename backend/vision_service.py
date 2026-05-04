@@ -6,7 +6,7 @@ import logging
 from dotenv import load_dotenv
 from PIL import Image
 import io
-from typing import Dict, Any, Union
+from typing import Dict, Any
 from fastapi import HTTPException
 
 # --- Logging ---
