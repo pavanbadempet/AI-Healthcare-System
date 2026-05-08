@@ -9,29 +9,17 @@
       <stop offset="0%" style="stop-color:#06b6d4"/>
       <stop offset="100%" style="stop-color:#14b8a6"/>
     </linearGradient>
-    <linearGradient id="glow" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#06b6d4;stop-opacity:0.4"/>
-      <stop offset="50%" style="stop-color:#14b8a6;stop-opacity:0.6"/>
-      <stop offset="100%" style="stop-color:#06b6d4;stop-opacity:0.4"/>
-    </linearGradient>
-    <filter id="blur1">
-      <feGaussianBlur stdDeviation="40"/>
-    </filter>
-    <filter id="blur2">
-      <feGaussianBlur stdDeviation="2"/>
-    </filter>
-    <filter id="shadow">
-      <feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#06b6d4" flood-opacity="0.3"/>
-    </filter>
   </defs>
 
   <!-- Background -->
   <rect width="1200" height="400" fill="url(#bg)"/>
 
-  <!-- Ambient Glow Orbs -->
-  <circle cx="200" cy="200" r="180" fill="#06b6d4" opacity="0.04" filter="url(#blur1)"/>
-  <circle cx="1000" cy="200" r="180" fill="#14b8a6" opacity="0.04" filter="url(#blur1)"/>
-  <circle cx="600" cy="350" r="120" fill="#8b5cf6" opacity="0.03" filter="url(#blur1)"/>
+  <!-- Ambient Glow Orbs (no filter, just low-opacity circles) -->
+  <circle cx="200" cy="200" r="160" fill="#06b6d4" opacity="0.035"/>
+  <circle cx="200" cy="200" r="100" fill="#06b6d4" opacity="0.025"/>
+  <circle cx="1000" cy="200" r="160" fill="#14b8a6" opacity="0.035"/>
+  <circle cx="1000" cy="200" r="100" fill="#14b8a6" opacity="0.025"/>
+  <circle cx="600" cy="350" r="100" fill="#8b5cf6" opacity="0.025"/>
 
   <!-- Grid Pattern (subtle) -->
   <g opacity="0.04" stroke="#94a3b8" stroke-width="0.5">
@@ -52,17 +40,16 @@
 
   <!-- ECG Heartbeat Line (left side) -->
   <polyline points="30,200 80,200 100,200 115,170 125,240 135,180 145,210 155,200 250,200"
-    fill="none" stroke="url(#accent)" stroke-width="2" opacity="0.25"/>
+    fill="none" stroke="#06b6d4" stroke-width="2" opacity="0.3"/>
 
   <!-- ECG Heartbeat Line (right side) -->
   <polyline points="950,200 1000,200 1020,200 1035,170 1045,240 1055,180 1065,210 1075,200 1170,200"
-    fill="none" stroke="url(#accent)" stroke-width="2" opacity="0.25"/>
+    fill="none" stroke="#14b8a6" stroke-width="2" opacity="0.3"/>
 
   <!-- DNA Helix (left decorative) -->
-  <g opacity="0.15" stroke="#06b6d4" stroke-width="1.5" fill="none">
+  <g opacity="0.18" stroke="#06b6d4" stroke-width="1.5" fill="none">
     <path d="M 80,60 Q 100,100 80,140 Q 60,180 80,220 Q 100,260 80,300 Q 60,340 80,370"/>
     <path d="M 100,60 Q 80,100 100,140 Q 120,180 100,220 Q 80,260 100,300 Q 120,340 100,370"/>
-    <!-- Rungs -->
     <line x1="82" y1="100" x2="98" y2="100"/>
     <line x1="68" y1="180" x2="112" y2="180"/>
     <line x1="82" y1="260" x2="98" y2="260"/>
@@ -70,7 +57,7 @@
   </g>
 
   <!-- Neural Network Nodes (right decorative) -->
-  <g opacity="0.12">
+  <g opacity="0.15">
     <circle cx="1080" cy="80" r="4" fill="#14b8a6"/>
     <circle cx="1120" cy="120" r="4" fill="#14b8a6"/>
     <circle cx="1060" cy="150" r="4" fill="#14b8a6"/>
@@ -91,48 +78,42 @@
     <line x1="1090" y1="220" x2="1070" y2="310" stroke="#14b8a6" stroke-width="0.5" opacity="0.3"/>
   </g>
 
-  <!-- Medical Cross Icon -->
-  <g transform="translate(600, 110)" filter="url(#shadow)">
+  <!-- Medical Cross Icon (no filter, subtle glow via circles) -->
+  <circle cx="600" cy="110" r="35" fill="#06b6d4" opacity="0.08"/>
+  <g transform="translate(600, 110)">
     <rect x="-12" y="-30" width="24" height="60" rx="4" fill="url(#accent)" opacity="0.9"/>
     <rect x="-30" y="-12" width="60" height="24" rx="4" fill="url(#accent)" opacity="0.9"/>
   </g>
 
   <!-- Title -->
-  <text x="600" y="195" text-anchor="middle" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="48" font-weight="700" fill="white" letter-spacing="1">
-    AI Healthcare System
-  </text>
+  <text x="600" y="195" text-anchor="middle" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="48" font-weight="700" fill="white" letter-spacing="1">AI Healthcare System</text>
 
   <!-- Accent Line -->
   <rect x="450" y="215" width="300" height="3" rx="2" fill="url(#accent)" opacity="0.8"/>
 
   <!-- Subtitle -->
-  <text x="600" y="255" text-anchor="middle" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="18" fill="#94a3b8" font-weight="400" letter-spacing="3">
-    CLINICAL DECISION SUPPORT PLATFORM
-  </text>
+  <text x="600" y="255" text-anchor="middle" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="18" fill="#94a3b8" font-weight="400" letter-spacing="3">CLINICAL DECISION SUPPORT PLATFORM</text>
 
   <!-- Feature Pills -->
   <g font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="12" font-weight="500">
-    <!-- Pill 1 -->
     <rect x="195" y="290" width="120" height="30" rx="15" fill="#06b6d4" opacity="0.15" stroke="#06b6d4" stroke-width="0.8" stroke-opacity="0.3"/>
     <text x="255" y="310" text-anchor="middle" fill="#06b6d4">5 ML Models</text>
-    <!-- Pill 2 -->
+
     <rect x="335" y="290" width="130" height="30" rx="15" fill="#14b8a6" opacity="0.15" stroke="#14b8a6" stroke-width="0.8" stroke-opacity="0.3"/>
     <text x="400" y="310" text-anchor="middle" fill="#14b8a6">3-Tier AI Engine</text>
-    <!-- Pill 3 -->
+
     <rect x="485" y="290" width="120" height="30" rx="15" fill="#8b5cf6" opacity="0.15" stroke="#8b5cf6" stroke-width="0.8" stroke-opacity="0.3"/>
     <text x="545" y="310" text-anchor="middle" fill="#8b5cf6">RAG Pipeline</text>
-    <!-- Pill 4 -->
+
     <rect x="625" y="290" width="140" height="30" rx="15" fill="#f59e0b" opacity="0.15" stroke="#f59e0b" stroke-width="0.8" stroke-opacity="0.3"/>
     <text x="695" y="310" text-anchor="middle" fill="#f59e0b">LangGraph Agent</text>
-    <!-- Pill 5 -->
+
     <rect x="785" y="290" width="120" height="30" rx="15" fill="#ef4444" opacity="0.15" stroke="#ef4444" stroke-width="0.8" stroke-opacity="0.3"/>
     <text x="845" y="310" text-anchor="middle" fill="#ef4444">Enterprise K8s</text>
   </g>
 
   <!-- Bottom tech line -->
-  <text x="600" y="360" text-anchor="middle" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="11" fill="#64748b" letter-spacing="2">
-    FASTAPI · NEXT.JS · SCIKIT-LEARN · XGBOOST · DOCKER · TERRAFORM · POSTGRESQL · REDIS
-  </text>
+  <text x="600" y="360" text-anchor="middle" font-family="'Segoe UI', system-ui, -apple-system, sans-serif" font-size="11" fill="#64748b" letter-spacing="2">FASTAPI · NEXT.JS · SCIKIT-LEARN · XGBOOST · DOCKER · TERRAFORM · POSTGRESQL · REDIS</text>
 
   <!-- Bottom border accent -->
   <rect x="0" y="396" width="1200" height="4" fill="url(#accent)" opacity="0.6"/>
