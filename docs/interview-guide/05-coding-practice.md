@@ -339,7 +339,206 @@ FROM sales
 GROUP BY product_id;
 ```
 
+### Pattern 8: Consecutive Days / Streaks (Very Common in DE)
+
+**Q: Find users who logged in for 3+ consecutive days.**
+
+**Why this is asked:** Tests your understanding of window functions AND date arithmetic. This pattern appears in user engagement, uptime monitoring, and SLA tracking.
+
+```sql
+WITH login_with_groups AS (
+    SELECT
+        user_id,
+        login_date,
+        -- Subtract row_number from login_date
+        -- Consecutive dates produce the SAME group value
+        login_date - INTERVAL '1 day' * ROW_NUMBER() OVER (
+            PARTITION BY user_id ORDER BY login_date
+        ) AS grp
+    FROM user_logins
+)
+SELECT
+    user_id,
+    MIN(login_date) AS streak_start,
+    MAX(login_date) AS streak_end,
+    COUNT(*) AS streak_length
+FROM login_with_groups
+GROUP BY user_id, grp
+HAVING COUNT(*) >= 3
+ORDER BY streak_length DESC;
+```
+
+**How the trick works:**
+```
+login_date:    Jan 1, Jan 2, Jan 3, Jan 5, Jan 6
+row_number:       1,     2,     3,     4,     5
+date - row_num: Dec 31, Dec 31, Dec 31, Jan 1, Jan 1
+                ^^^^^^^^^^^^^^^^^^^^    ^^^^^^^^^^
+                Same group = streak!    Same group = streak!
+```
+
+### Pattern 9: Gaps and Islands
+
+**Q: Find periods where a sensor was offline (gaps in time-series data).**
+
+```sql
+WITH status_changes AS (
+    SELECT
+        sensor_id,
+        timestamp,
+        status,
+        LAG(status) OVER (PARTITION BY sensor_id ORDER BY timestamp) AS prev_status,
+        LAG(timestamp) OVER (PARTITION BY sensor_id ORDER BY timestamp) AS prev_time
+    FROM sensor_readings
+)
+SELECT
+    sensor_id,
+    prev_time AS offline_start,
+    timestamp AS back_online,
+    timestamp - prev_time AS downtime_duration
+FROM status_changes
+WHERE status = 'online' AND prev_status = 'offline';
+```
+
+**Why this matters for DE:** Monitoring pipeline SLAs, detecting data gaps, finding missing partitions in data lakes.
+
+### Pattern 10: Deduplication with ROW_NUMBER (The #1 DE SQL Pattern)
+
+**Q: Remove duplicate records, keeping the most recent one per key.**
+
+```sql
+-- Method 1: DELETE duplicates (for tables you can modify)
+DELETE FROM raw_events
+WHERE id IN (
+    SELECT id FROM (
+        SELECT
+            id,
+            ROW_NUMBER() OVER (
+                PARTITION BY event_id
+                ORDER BY event_timestamp DESC
+            ) AS rn
+        FROM raw_events
+    ) ranked
+    WHERE rn > 1    -- Delete everything except the latest
+);
+
+-- Method 2: SELECT deduplicated (for read-only queries)
+WITH deduplicated AS (
+    SELECT
+        *,
+        ROW_NUMBER() OVER (
+            PARTITION BY event_id
+            ORDER BY event_timestamp DESC
+        ) AS rn
+    FROM raw_events
+)
+SELECT * FROM deduplicated WHERE rn = 1;
+```
+
+**This is the SQL equivalent of your PySpark dedup pattern from Chapter 5's PySpark section.** Same logic, different syntax.
+
+### Pattern 11: Recursive CTEs (Know the Concept)
+
+**Q: Given an employee hierarchy, find all reports under a given manager.**
+
+```sql
+WITH RECURSIVE org_chart AS (
+    -- Base case: the manager themselves
+    SELECT id, name, manager_id, 0 AS level
+    FROM employees
+    WHERE id = 100    -- Starting manager
+
+    UNION ALL
+
+    -- Recursive case: find their direct reports, then THEIR reports, etc.
+    SELECT e.id, e.name, e.manager_id, oc.level + 1
+    FROM employees e
+    JOIN org_chart oc ON e.manager_id = oc.id
+)
+SELECT * FROM org_chart ORDER BY level, name;
+```
+
+**When this comes up:** Org charts, category trees (parent/child products), bill of materials, file system hierarchies.
+
+### Pattern 12: MERGE / UPSERT (Critical for DE)
+
+**Q: Write a SQL MERGE that updates existing records and inserts new ones.**
+
+```sql
+-- Snowflake/Delta Lake MERGE syntax
+MERGE INTO dim_instruments AS target
+USING staging_instruments AS source
+ON target.instrument_id = source.instrument_id
+
+WHEN MATCHED AND source.updated_at > target.updated_at THEN
+    UPDATE SET
+        target.instrument_name = source.instrument_name,
+        target.asset_class = source.asset_class,
+        target.updated_at = source.updated_at
+
+WHEN NOT MATCHED THEN
+    INSERT (instrument_id, instrument_name, asset_class, created_at, updated_at)
+    VALUES (source.instrument_id, source.instrument_name, source.asset_class,
+            CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+```
+
+**Why this matters:** This is how you implement idempotent data loading. Running the same MERGE twice won't create duplicates. This is the SQL version of your Delta Lake PySpark MERGE pattern.
+
+### Pattern 13: Percentile / Median
+
+**Q: Find the median salary per department.**
+
+```sql
+-- Snowflake / PostgreSQL
+SELECT
+    department_id,
+    PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY salary) AS median_salary,
+    PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY salary) AS p25_salary,
+    PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY salary) AS p75_salary,
+    PERCENTILE_CONT(0.75) WITHIN GROUP (ORDER BY salary) -
+        PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY salary) AS iqr
+FROM employees
+GROUP BY department_id;
+```
+
+**IQR (Interquartile Range)** = P75 - P25. Used in data quality checks to detect outliers. Values outside P25 - 1.5*IQR or P75 + 1.5*IQR are potential outliers.
+
+### Pattern 14: Retention / Cohort Analysis
+
+**Q: Calculate Day-7 retention rate by signup cohort.**
+
+```sql
+WITH first_login AS (
+    -- Get each user's first login date (their cohort)
+    SELECT user_id, MIN(login_date) AS cohort_date
+    FROM user_logins
+    GROUP BY user_id
+),
+retention AS (
+    SELECT
+        f.cohort_date,
+        COUNT(DISTINCT f.user_id) AS cohort_size,
+        COUNT(DISTINCT CASE
+            WHEN l.login_date = f.cohort_date + INTERVAL '7 days'
+            THEN l.user_id
+        END) AS retained_day7
+    FROM first_login f
+    LEFT JOIN user_logins l ON f.user_id = l.user_id
+    GROUP BY f.cohort_date
+)
+SELECT
+    cohort_date,
+    cohort_size,
+    retained_day7,
+    ROUND(100.0 * retained_day7 / cohort_size, 1) AS retention_pct
+FROM retention
+ORDER BY cohort_date;
+```
+
+**Why this matters:** Product analytics, subscription metrics, and customer churn analysis. Shows you can think beyond ETL into business impact.
+
 ---
+
 
 ## PYSPARK CODING PATTERNS (Critical for DE Interviews)
 
