@@ -1,13 +1,16 @@
 # 00 — MASTER STUDY ORDER
 
-> Read in THIS exact order. Each file builds on the previous one.
-> Your brain will absorb concepts → experience → projects → code → strategy.
+> Your COMPLETE interview preparation curriculum.
+> Read in THIS exact order. Each phase builds on the previous one.
+> Total study time: ~14 hours for full mastery.
 
 ---
 
 ## HOW YOUR BRAIN SHOULD BUILD THIS
 
 ```
+PHASE 0: MINDSET             "How do I THINK during interviews?"
+    ↓
 PHASE 1: VOCABULARY          "What are the words/concepts?"
     ↓
 PHASE 2: YOUR STORY          "Who am I professionally?"
@@ -18,6 +21,18 @@ PHASE 4: PROVE IT            "Show me the code and tests"
     ↓
 PHASE 5: PERFORM             "How do I ace the interview?"
 ```
+
+---
+
+## PHASE 0: MINDSET & PSYCHOLOGY (Read FIRST — 1 Hour)
+
+> Before ANY technical prep, learn how interviews ACTUALLY work.
+
+| Order | File | Time | What You Learn |
+|---|---|---|---|
+| 0 | [24-psychology-mindset.md](24-psychology-mindset.md) | 60 min | 5 golden rules, 6 traps to avoid, body language, salary negotiation, hidden scorecard, pre-interview checklist |
+
+**After Phase 0, you know**: How to handle "I don't know", how to avoid traps, how to negotiate salary, what interviewers are ACTUALLY evaluating, and the pre-interview checklist.
 
 ---
 
