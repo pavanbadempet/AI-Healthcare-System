@@ -341,38 +341,208 @@ GROUP BY product_id;
 
 ---
 
-## SPARK CODING PATTERNS
+## PYSPARK CODING PATTERNS (Critical for DE Interviews)
 
-### Q: Read Parquet, join, aggregate, write.
+**Why this matters:** Data Engineer interviews at companies using Spark will test you on PySpark. These are the exact patterns from your Nomura and Nova work.
+
+### Pattern 1: Read, Join, Aggregate, Write (The bread and butter)
+
+**What the interviewer is testing:** Can you write a basic ETL pipeline in Spark?
+
 ```python
 from pyspark.sql import SparkSession, functions as F, Window
 
 spark = SparkSession.builder.appName("ETL").getOrCreate()
 
-# Read
+# Step 1: Read from source (Parquet is columnar, fast)
 trades = spark.read.parquet("s3://data/trades/")
 instruments = spark.read.parquet("s3://data/instruments/")
 
-# Join (broadcast small dimension)
+# Step 2: Join -- broadcast the SMALL table (instruments ~10K rows)
+# broadcast() tells Spark to send the small table to every executor
+# instead of shuffling the large table. This avoids expensive data movement.
 joined = trades.join(
-    F.broadcast(instruments), 
+    F.broadcast(instruments),        # Small table -> sent to all executors
     trades.instrument_id == instruments.id
 )
+# Without broadcast: Spark shuffles BOTH tables across the network (slow)
+# With broadcast: Only instruments (10K rows) is sent, trades stays put
 
-# Window function
+# Step 3: Window function -- running P&L per instrument
 window = Window.partitionBy("instrument_id").orderBy("trade_date")
 result = joined.withColumn(
     "running_pnl", F.sum("amount").over(window)
 ).withColumn(
-    "rank", F.row_number().over(window)
+    "trade_rank", F.row_number().over(window)
 )
 
-# Write partitioned
+# Step 4: Write partitioned by date (enables partition pruning on reads)
 result.write.partitionBy("trade_date").mode("overwrite").parquet("s3://output/")
 ```
 
+**Follow-up: "What is partition pruning?"**
+> When you write `WHERE trade_date = '2024-01-15'`, Spark only reads the `trade_date=2024-01-15/` folder -- skipping ALL other dates. On a year of daily data, this reads 1/365th of the data. That's the 30% optimization I achieved at Nomura.
+
+### Pattern 2: Deduplication with Window Functions
+
+**Q: Remove duplicate records, keeping the most recent one per key.**
+
+```python
+from pyspark.sql import Window
+from pyspark.sql import functions as F
+
+def deduplicate(df, key_col, timestamp_col):
+    """
+    Keep only the latest record per key.
+    This is how you handle late-arriving data or replayed events.
+    """
+    window = Window.partitionBy(key_col).orderBy(F.col(timestamp_col).desc())
+
+    return (
+        df
+        .withColumn("row_num", F.row_number().over(window))
+        .filter(F.col("row_num") == 1)    # Keep only the latest
+        .drop("row_num")                   # Clean up helper column
+    )
+
+# Usage:
+clean_df = deduplicate(raw_events, "event_id", "event_timestamp")
+```
+
+**Why this pattern matters:** In streaming/batch pipelines, the same event can arrive multiple times (retries, Kafka replay). Dedup is essential for idempotent pipelines.
+
+### Pattern 3: Delta Lake Upsert (Merge)
+
+**Q: Write a PySpark job that upserts new data into an existing Delta table.**
+
+```python
+from delta.tables import DeltaTable
+
+def upsert_movies(spark, new_data_path, target_path):
+    """
+    MERGE = UPDATE existing rows + INSERT new rows in one atomic operation.
+    This is how Nova's Silver layer handles catalog updates.
+    """
+    # Read new batch
+    new_df = spark.read.parquet(new_data_path)
+
+    # Load existing Delta table
+    target = DeltaTable.forPath(spark, target_path)
+
+    # Merge: match on movie_id
+    target.alias("existing").merge(
+        new_df.alias("new"),
+        "existing.movie_id = new.movie_id"
+    ).whenMatchedUpdate(
+        # If movie exists: update its metadata
+        set={
+            "title": "new.title",
+            "rating": "new.rating",
+            "updated_at": F.current_timestamp()
+        }
+    ).whenNotMatchedInsert(
+        # If movie is new: insert it
+        values={
+            "movie_id": "new.movie_id",
+            "title": "new.title",
+            "rating": "new.rating",
+            "created_at": F.current_timestamp(),
+            "updated_at": F.current_timestamp()
+        }
+    ).execute()
+
+# This is ATOMIC -- if it fails midway, no partial writes.
+# This is what makes Delta Lake better than raw Parquet.
+```
+
+**Follow-up: "What if you need to track history?"** -- Use SCD Type 2: instead of `whenMatchedUpdate`, insert a new row with `is_current=true` and mark the old row as `is_current=false`.
+
+### Pattern 4: Data Quality Checks in PySpark
+
+**Q: Write quality validation for a pipeline.**
+
+```python
+def validate_dataframe(df, table_name):
+    """
+    Run quality checks before writing. Fail early, fail loud.
+    This is the Silver layer validation from Nova.
+    """
+    checks = []
+
+    # Check 1: Not empty
+    count = df.count()
+    checks.append(("row_count > 0", count > 0, count))
+
+    # Check 2: No null primary keys
+    null_keys = df.filter(F.col("id").isNull()).count()
+    checks.append(("no_null_keys", null_keys == 0, null_keys))
+
+    # Check 3: No duplicate primary keys
+    distinct_count = df.select("id").distinct().count()
+    checks.append(("no_duplicate_keys", distinct_count == count, count - distinct_count))
+
+    # Check 4: Values in expected range
+    bad_ratings = df.filter((F.col("rating") < 0) | (F.col("rating") > 10)).count()
+    checks.append(("rating_in_range", bad_ratings == 0, bad_ratings))
+
+    # Report
+    for name, passed, value in checks:
+        status = "PASS" if passed else "FAIL"
+        print(f"  [{status}] {name}: {value}")
+
+    failed = [c for c in checks if not c[1]]
+    if failed:
+        raise ValueError(f"Quality gate FAILED for {table_name}: {[c[0] for c in failed]}")
+
+    return df
+```
+
+### Pattern 5: Performance Optimization (The Interview Question)
+
+**Q: "Your Spark job takes 45 minutes. How do you optimize it?"**
+
+```python
+# BEFORE (slow):
+df1 = spark.read.parquet("s3://big_table/")      # 100GB
+df2 = spark.read.parquet("s3://small_table/")     # 50MB
+
+result = df1.join(df2, "key")                      # Shuffle join (BAD for small table)
+result = result.filter(col("date") == "2024-01-15") # Filter AFTER join (BAD)
+result.write.parquet("s3://output/")               # No partitioning (BAD for reads)
+
+# AFTER (fast - what you did at Nomura):
+
+# Fix 1: Filter BEFORE join (predicate pushdown)
+df1 = spark.read.parquet("s3://big_table/").filter(col("date") == "2024-01-15")
+# Now we only join 1 day of data instead of all history
+
+# Fix 2: Broadcast join for small table
+result = df1.join(F.broadcast(df2), "key")
+# Small table sent to all executors. No shuffle of the big table.
+
+# Fix 3: Repartition before expensive operations
+result = result.repartition(200, "key")    # Even distribution
+# Prevents data skew (one partition with 90% of data)
+
+# Fix 4: Cache intermediate results used multiple times
+result.cache()    # Keep in memory for reuse
+
+# Fix 5: Write with partitioning for downstream queries
+result.write.partitionBy("date").mode("overwrite").parquet("s3://output/")
+
+# Result: 45 min -> 31 min (30% improvement)
+# The biggest wins: predicate pushdown + broadcast join
+```
+
+**The 5 Spark optimization levers to mention in interviews:**
+1. **Predicate pushdown** -- filter before join, not after
+2. **Broadcast join** -- send small table to executors instead of shuffling
+3. **Partition pruning** -- read only the partitions you need
+4. **Repartitioning** -- fix data skew by redistributing evenly
+5. **Caching** -- avoid recomputing intermediate DataFrames
 
 ---
+
 
 
 > DE interviews test lighter DSA than SDE roles, but you MUST know these patterns.
