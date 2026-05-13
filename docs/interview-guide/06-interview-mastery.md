@@ -1,6 +1,6 @@
 ?# Chapter 6 - Interview Mastery: Psychology, Behavioral, HR and Salary
 
-> This file is about HOW to think during the interview ??" not what to say, but how to NEVER go wrong.
+> This file is about HOW to think during the interview -- not what to say, but how to NEVER go wrong.
 
 ---
 
@@ -22,7 +22,7 @@ This shows: honesty + related knowledge + learning attitude.
 
 **Wrong**: "I used XGBoost."
 
-**Right**: "I chose XGBoost over Random Forest and neural networks. Random Forest was close, but XGBoost handles class imbalance natively with scale_pos_weight. Neural networks would overfit on 253K tabular records ??" the Grinsztajn 2022 benchmark showed tree-based models outperform deep learning on tabular data."
+**Right**: "I chose XGBoost over Random Forest and neural networks. Random Forest was close, but XGBoost handles class imbalance natively with scale_pos_weight. Neural networks would overfit on 253K tabular records -- the Grinsztajn 2022 benchmark showed tree-based models outperform deep learning on tabular data."
 
 Let's unpack every term in that answer so you UNDERSTAND it and can explain further if asked:
 
@@ -30,13 +30,13 @@ Let's unpack every term in that answer so you UNDERSTAND it and can explain furt
 
 - **Random Forest**: Also uses decision trees, but trains them ALL independently in parallel (not sequentially like XGBoost). Each tree votes, majority wins. Simpler but doesn't have a built-in way to handle imbalanced data.
 
-- **Class imbalance**: When one category vastly outnumbers the other. In your diabetes data, 86% of patients are healthy, only 14% are diabetic. The model gets lazy ??" it learns that predicting "healthy" every time gives 86% accuracy. It catches ZERO diabetic patients. 86% accuracy but completely useless.
+- **Class imbalance**: When one category vastly outnumbers the other. In your diabetes data, 86% of patients are healthy, only 14% are diabetic. The model gets lazy -- it learns that predicting "healthy" every time gives 86% accuracy. It catches ZERO diabetic patients. 86% accuracy but completely useless.
 
 - **scale_pos_weight=6.16**: Tells XGBoost "missing a diabetic patient is 6.16x worse than a false alarm on a healthy patient." Calculated as: 218,334 healthy / 35,346 diabetic = 6.16. Now the model is FORCED to learn patterns that catch diabetic patients, because missing them costs 6x more during training.
 
 - **Overfit**: When a model memorizes the training data instead of learning real patterns. It scores 99% on training data but fails on new data. Like a student who memorizes exam answers but can't solve new problems. Neural networks with limited data (253K is "limited" for deep learning) tend to overfit on tabular data.
 
-- **Tabular data**: Data in rows and columns ??" like a spreadsheet or SQL table. Your health data is tabular: each row is a patient, each column is a measurement (BMI, age, blood pressure). This is different from images or text, where neural networks excel.
+- **Tabular data**: Data in rows and columns -- like a spreadsheet or SQL table. Your health data is tabular: each row is a patient, each column is a measurement (BMI, age, blood pressure). This is different from images or text, where neural networks excel.
 
 - **Grinsztajn 2022**: A NeurIPS research paper that benchmarked tree-based models (XGBoost, Random Forest) against deep learning on 45 tabular datasets. Result: tree models won on medium-sized tabular data. This is your academic backing for choosing XGBoost.
 
@@ -50,7 +50,7 @@ This shows: you evaluated options, you have depth, you make informed decisions.
 
 **Wrong**: "I improved the pipeline."
 
-**Right**: "I improved Spark execution time by 30% ??" from 45 minutes to 31 minutes ??" through broadcast joins on dimension tables under 100MB, partition pruning on trade_date, and predicate pushdown to the Parquet reader."
+**Right**: "I improved Spark execution time by 30% -- from 45 minutes to 31 minutes -- through broadcast joins on dimension tables under 100MB, partition pruning on trade_date, and predicate pushdown to the Parquet reader."
 
 **Pattern**: [What] + [Number] + [How]
 
@@ -62,7 +62,7 @@ Interviewers remember numbers. "30% improvement" sticks in their head during the
 
 **Wrong**: "The prediction API returns the result."
 
-**Right**: "The prediction API returns the result. If the model isn't loaded, it returns 503. If the input is invalid, Pydantic returns 422 with the specific field error. If there's an unexpected exception, the middleware catches it and returns a UUID error ID ??" never a stack trace ??" for debugging without exposing PII."
+**Right**: "The prediction API returns the result. If the model isn't loaded, it returns 503. If the input is invalid, Pydantic returns 422 with the specific field error. If there's an unexpected exception, the middleware catches it and returns a UUID error ID -- never a stack trace -- for debugging without exposing PII."
 
 **Pattern**: "Here's what happens when it works. Here's what happens when it BREAKS."
 
@@ -86,9 +86,9 @@ This shows: growth mindset, you're always thinking ahead.
 
 ### Trap 1: "Rate yourself 1-10 on Python"
 
-**The trap**: Say 9 or 10 ??' they'll ask obscure questions to humiliate you. Say 5 ??' you look weak.
+**The trap**: Say 9 or 10 -> they'll ask obscure questions to humiliate you. Say 5 -> you look weak.
 
-**The answer**: "I'd say 7-8. I use Python daily for ETL, API development, and ML. I'm very comfortable with pandas, PySpark, FastAPI, and data processing patterns. I know there's always more to learn ??" for example, I'd like to deepen my knowledge of async patterns and metaclasses."
+**The answer**: "I'd say 7-8. I use Python daily for ETL, API development, and ML. I'm very comfortable with pandas, PySpark, FastAPI, and data processing patterns. I know there's always more to learn -- for example, I'd like to deepen my knowledge of async patterns and metaclasses."
 
 **Rule**: Never above 8. Always mention what you still want to learn.
 
@@ -96,7 +96,7 @@ This shows: growth mindset, you're always thinking ahead.
 
 ### Trap 2: "What's your biggest weakness?"
 
-**The trap**: Say a real weakness ??' they worry. Say "I work too hard" ??' they know you're lying.
+**The trap**: Say a real weakness -> they worry. Say "I work too hard" -> they know you're lying.
 
 **The answer**: "I tend to over-engineer solutions initially. In my Healthcare project, I built 7 middleware layers and comprehensive testing when a simpler MVP might have shipped faster. I've learned to ask 'what's the minimum viable solution?' first, then iterate. I now use a 'make it work, make it right, make it fast' approach."
 
@@ -106,9 +106,9 @@ This shows: growth mindset, you're always thinking ahead.
 
 ### Trap 3: "Why are you leaving TCS?"
 
-**The trap**: If you criticize TCS ??' red flag. If you sound desperate ??' red flag.
+**The trap**: If you criticize TCS -> red flag. If you sound desperate -> red flag.
 
-**The answer**: "TCS gave me a strong foundation ??" Spark, SQL, production systems, working with large enterprises like Nomura. I'm now looking for a role where I can (1) work on more modern data stacks, (2) get closer to the AI/ML side of data engineering, and (3) be in an environment that prioritizes engineering growth."
+**The answer**: "TCS gave me a strong foundation -- Spark, SQL, production systems, working with large enterprises like Nomura. I'm now looking for a role where I can (1) work on more modern data stacks, (2) get closer to the AI/ML side of data engineering, and (3) be in an environment that prioritizes engineering growth."
 
 **Rule**: Appreciate current employer + frame the move as growth, not escape.
 
@@ -134,7 +134,7 @@ This shows: growth mindset, you're always thinking ahead.
 
 **The trap**: Saying yes might signal desperation. Being rigid might lose the offer.
 
-**The answer**: "I have a [30-day/60-day] notice period at TCS. I'll work with my manager to see if we can expedite it. I'd like to wrap up my current responsibilities properly ??" that's the same professionalism I'd bring to your team."
+**The answer**: "I have a [30-day/60-day] notice period at TCS. I'll work with my manager to see if we can expedite it. I'd like to wrap up my current responsibilities properly -- that's the same professionalism I'd bring to your team."
 
 ---
 
@@ -144,7 +144,7 @@ This shows: growth mindset, you're always thinking ahead.
 
 **Wrong**: "No, that's not how Spark works."
 
-**Right**: "That's interesting ??" in my experience with Spark at Nomura, I've seen it work differently. The shuffle happens when... but I could be thinking of a different context. Could you tell me more about the scenario you're describing?"
+**Right**: "That's interesting -- in my experience with Spark at Nomura, I've seen it work differently. The shuffle happens when... but I could be thinking of a different context. Could you tell me more about the scenario you're describing?"
 
 **Rule**: Disagree by sharing your experience, not by correcting them. Then ask them to elaborate.
 
@@ -156,13 +156,13 @@ This shows: growth mindset, you're always thinking ahead.
 - Sleep well. Seriously. Your brain processes patterns during sleep.
 - Have water nearby. Sipping water buys thinking time.
 - Have your resume printed in front of you (even for virtual interviews).
-- Open your projects in the browser ??" ready to screenshare.
+- Open your projects in the browser -- ready to screenshare.
 
 ### During the Interview
 - **Pause before answering**. 3 seconds of thinking looks confident. Rushing looks nervous.
 - **Think out loud** during coding. "I'm thinking about using a hash map here because lookup is O(1)..."
 - **Ask clarifying questions** before jumping into coding. "Should I handle edge cases like empty input?"
-- **Say "Let me think about this"** ??" it's NEVER a bad thing to say.
+- **Say "Let me think about this"** -- it's NEVER a bad thing to say.
 
 ### When Stuck
 - "I'm not sure about the exact syntax, but the approach would be..."
@@ -171,7 +171,7 @@ This shows: growth mindset, you're always thinking ahead.
 
 ### Virtual Interview Specifics
 - Camera ON, good lighting, clean background
-- Look at the CAMERA when speaking (not the screen) ??" appears as eye contact
+- Look at the CAMERA when speaking (not the screen) -- appears as eye contact
 - Mute when not speaking to avoid background noise
 - Have a code editor ready (VS Code) for live coding
 
@@ -185,7 +185,7 @@ This shows: growth mindset, you're always thinking ahead.
 > "I'm flexible on compensation. Could you share the range budgeted for this role?"
 
 If they insist:
-> "Based on my experience and market research for this role, I'm looking at [current CTC + 40-60%]. But I'm open to discussing based on the complete package ??" role, growth, team, and learning opportunities matter to me."
+> "Based on my experience and market research for this role, I'm looking at [current CTC + 40-60%]. But I'm open to discussing based on the complete package -- role, growth, team, and learning opportunities matter to me."
 
 ### After Receiving an Offer
 
@@ -246,10 +246,10 @@ What they're ACTUALLY evaluating:
 
 ---
 
-## The Golden Rule: NEVER Just Describe ??" Always Show DEPTH
+## The Golden Rule: NEVER Just Describe -- Always Show DEPTH
 
 **Bad answer**: "I used XGBoost to predict diabetes."
-**FAANG answer**: "I chose XGBoost over neural nets because the dataset is tabular with 253K records and severe class imbalance at 6:1. XGBoost handles this natively with `scale_pos_weight`, and its gradient-boosted trees excel on structured data ??" outperforming deep learning for tabular problems according to the Grinsztajn et al. 2022 benchmark. I validated with 48 real patient records and achieved 77% accuracy."
+**FAANG answer**: "I chose XGBoost over neural nets because the dataset is tabular with 253K records and severe class imbalance at 6:1. XGBoost handles this natively with `scale_pos_weight`, and its gradient-boosted trees excel on structured data -- outperforming deep learning for tabular problems according to the Grinsztajn et al. 2022 benchmark. I validated with 48 real patient records and achieved 77% accuracy."
 
 ---
 
@@ -274,7 +274,7 @@ What they're ACTUALLY evaluating:
 #### Step 1: Requirements (2 minutes)
 ```
 Functional:
-- Users submit health metrics ??' get prediction + confidence
+- Users submit health metrics -> get prediction + confidence
 - Support 5 disease models
 - Real-time AI chat
 - User auth + records
@@ -288,39 +288,39 @@ Non-functional:
 
 #### Step 2: High-Level Design (5 minutes)
 ```
-                    ?"??"??"??"??"??"??"??"??"??"??"??"??"??"??"??"??"??"?
+                    ?"----------------------------------?
                     ?"?   CDN (Vercel) ?"?
                     ?"?   Frontend     ?"?
-                    ?""?"??"??"??"??"??"??"??"??"??"??"??"??"??"??"??"??"?
+                    ?""?"--------------------------------?
                             ?"?
-                    ?"??"??"??"??"??"??"??"??-??"??"??"??"??"??"??"??"??"?
+                    ?"---------------------------------?
                     ?"? API Gateway    ?"?  Rate limiting, auth
                     ?"? (Kong/Nginx)   ?"?
-                    ?""?"??"??"??"??"??"??"??"??"??"??"??"??"??"??"??"??"?
-                     ?"??"??"??"??"??"??"??"??"??"??"??"??"??"??"?
+                    ?""?"--------------------------------?
+                     ?"----------------------------?
                      ?"?      ?"?      ?"?
-              ?"??"??"??"??"??"??"??-??"? ?"??"??"??"??-??"??"??"? ?"??"??-??"??"??"??"??"??"?
+              ?"---------------? ?"-------------? ?"---------------?
               ?"?Predict ?"? ?"?Chat  ?"? ?"?Auth   ?"?
               ?"?Service ?"? ?"?Service?"? ?"?Service?"?
-              ?""?"??"??"??"??"??"??"??"??"? ?""?"??"??"??"??"??"??"? ?""?"??"??"??"??"??"??"??"?
+              ?""?"----------------? ?""?"------------? ?""?"--------------?
                   ?"?         ?"?        ?"?
-           ?"??"??"??"??"??"??"??-??"??"??"?  ?"??"??"??"??-??"??"??"?  ?"??"??"??-??"??"??"?
+           ?"-------------------?  ?"-------------?  ?"-----------?
            ?"?Model    ?"?  ?"?Gemini?"?  ?"? DB  ?"?
            ?"?Server   ?"?  ?"? API  ?"?  ?"?(PG) ?"?
-           ?"?(TF Serve)?"?  ?""?"??"??"??"??"??"??"?  ?""?"??"??"??"??"??"?
-           ?""?"??"??"??"??"??"??"??"??"??"?
+           ?"?(TF Serve)?"?  ?""?"------------?  ?""?"----------?
+           ?""?"------------------?
 ```
 
 #### Step 3: Deep Dive (10 minutes)
 **Model Serving:**
 - "Instead of pickle in RAM, I'd use TensorFlow Serving or Triton Inference Server"
 - "Models versioned in S3: `s3://models/diabetes/v3/model.onnx`"
-- "A/B testing: 90% traffic to v2, 10% to v3 ??" compare accuracy"
+- "A/B testing: 90% traffic to v2, 10% to v3 -- compare accuracy"
 - "Canary deployment: roll out new model to 1% first"
 
 **Caching:**
-- "Redis cache for identical predictions ??" same inputs = same output"
-- "Cache key: `hash(model_name + sorted(features))` ??' TTL 1 hour"
+- "Redis cache for identical predictions -- same inputs = same output"
+- "Cache key: `hash(model_name + sorted(features))` -> TTL 1 hour"
 - "Reduces model inference calls by ~40% for repeat queries"
 
 **Database:**
@@ -330,13 +330,13 @@ Non-functional:
 
 **Scaling:**
 - "Horizontal scaling: 3 API instances behind load balancer"
-- "Model server scales independently ??" GPU instances for heavy models"
+- "Model server scales independently -- GPU instances for heavy models"
 - "Chat service scales separately (SSE connections are long-lived)"
 
 #### Step 4: Trade-offs (2 minutes)
-- "Chose SSE over WebSocket for simplicity ??" sufficient for unidirectional streaming"
-- "Chose PostgreSQL over NoSQL ??" structured health data benefits from relational integrity"
-- "Chose ONNX over pickle ??" cross-platform, language-agnostic model format"
+- "Chose SSE over WebSocket for simplicity -- sufficient for unidirectional streaming"
+- "Chose PostgreSQL over NoSQL -- structured health data benefits from relational integrity"
+- "Chose ONNX over pickle -- cross-platform, language-agnostic model format"
 
 ---
 
@@ -349,13 +349,13 @@ Non-functional:
    - PagerDuty alerts: if p99 latency > 200ms or error rate > 1%
 
 2. CIRCUIT BREAKER
-   - If Gemini API fails 5x in 1 minute ??' stop calling, use fallback
-   - Pattern: closed ??' open ??' half-open ??' closed
+   - If Gemini API fails 5x in 1 minute -> stop calling, use fallback
+   - Pattern: closed -> open -> half-open -> closed
 
 3. GRACEFUL DEGRADATION
-   - Gemini down ??' Ollama local LLM ??' static FAQ responses
-   - Database down ??' predictions still work (models in RAM)
-   - Redis down ??' bypass cache, direct to service
+   - Gemini down -> Ollama local LLM -> static FAQ responses
+   - Database down -> predictions still work (models in RAM)
+   - Redis down -> bypass cache, direct to service
 
 4. HEALTH CHECKS
    - /healthz endpoint: checks DB connection + model loaded
@@ -378,7 +378,7 @@ Non-functional:
 > 
 > **T**: The model showed 86.7% accuracy during evaluation, which seemed great. But when I tested it with 5 known diabetic patients from the dataset, it detected zero of them.
 > 
-> **A**: I investigated and found severe class imbalance ??" 86% of records were healthy. The model learned to just predict "healthy" for everything, getting 86% accuracy by default. I researched class balancing techniques and implemented `scale_pos_weight=6.16` in XGBoost, which tells the algorithm that missing a diabetic patient is 6x worse than a false alarm.
+> **A**: I investigated and found severe class imbalance -- 86% of records were healthy. The model learned to just predict "healthy" for everything, getting 86% accuracy by default. I researched class balancing techniques and implemented `scale_pos_weight=6.16` in XGBoost, which tells the algorithm that missing a diabetic patient is 6x worse than a false alarm.
 > 
 > **R**: Disease detection went from 0% to ~60%. Overall accuracy dropped to 71.7%, but the model now actually catches at-risk patients.
 > 
@@ -402,11 +402,11 @@ Non-functional:
 
 ### Q: "Tell me about a time you debugged a complex issue."
 
-> **S**: After deploying the heart disease model, it went from detecting 5/5 known cases to 0/5 ??" a complete regression.
+> **S**: After deploying the heart disease model, it went from detecting 5/5 known cases to 0/5 -- a complete regression.
 > 
 > **T**: I needed to find why the same model on the same data was now giving inverted results.
 > 
-> **A**: I systematically debugged: (1) Checked model file wasn't corrupted ??" it was fine. (2) Checked API endpoint ??" requests were reaching the model. (3) Printed raw features being sent to the model vs. what training expected. Found the bug: the BRFSS dataset has different column names than the Cleveland Heart Disease schema our API uses. The column mapping was wrong ??" BMI was being interpreted as blood pressure.
+> **A**: I systematically debugged: (1) Checked model file wasn't corrupted -- it was fine. (2) Checked API endpoint -- requests were reaching the model. (3) Printed raw features being sent to the model vs. what training expected. Found the bug: the BRFSS dataset has different column names than the Cleveland Heart Disease schema our API uses. The column mapping was wrong -- BMI was being interpreted as blood pressure.
 > 
 > **R**: Fixed the column mapping in `train_heart.py`, retrained, and detection went back to 5/5.
 > 
@@ -422,7 +422,7 @@ Non-functional:
 | "I added error handling" | "I implemented a 7-layer middleware stack with rate limiting, security headers, and error masking" |
 | "I tested it" | "I validated with 3 testing layers: 141 unit tests, 28 integration checks, and 48 real-world patient records" |
 | "It's a healthcare app" | "It's a clinical-grade screening system with confidence scoring, risk stratification, and medical disclaimers" |
-| "I used React" | "I built a reusable component architecture ??" one PredictionForm component powers all 5 disease pages" |
+| "I used React" | "I built a reusable component architecture -- one PredictionForm component powers all 5 disease pages" |
 | "I stored data" | "I used SQLAlchemy ORM with dependency injection for session lifecycle management" |
 | "I did authentication" | "I implemented OAuth2 with JWT tokens, bcrypt password hashing, and role-based access control" |
 | "I deployed it" | "The system is deployment-ready with Docker support, environment-based configuration, and CI/CD pipeline design" |
@@ -446,7 +446,7 @@ These show senior-level thinking:
 | Don't... | Do... |
 |---|---|
 | Say "I just followed a tutorial" | Say "I researched multiple approaches and chose X because..." |
-| Give one-word answers | Always give context ??' action ??' result |
+| Give one-word answers | Always give context -> action -> result |
 | Skip trade-offs | Always mention what you considered AND rejected |
 | Ignore failure modes | Always discuss what happens when things break |
 | Forget security | Always mention auth, PII protection, HIPAA awareness |
@@ -456,7 +456,7 @@ These show senior-level thinking:
 ---
 
 
-> "What would you do if..." ??" these test your real-world engineering judgment.
+> "What would you do if..." -- these test your real-world engineering judgment.
 
 ---
 
@@ -467,10 +467,10 @@ These show senior-level thinking:
 > **Minute 0-5**: Check AutoSys/monitoring alerts. Identify WHICH job failed and the error message.
 >
 > **Minute 5-15**: Check Spark UI or logs.
-> - **OutOfMemoryError** ??' Increase executor memory, reduce partition size
-> - **FileNotFoundException** ??' Source file not delivered, check with upstream
-> - **Data quality failure** ??' Schema change in source data, investigate
-> - **Network/infra** ??' Cluster health, K8s pod status
+> - **OutOfMemoryError** -> Increase executor memory, reduce partition size
+> - **FileNotFoundException** -> Source file not delivered, check with upstream
+> - **Data quality failure** -> Schema change in source data, investigate
+> - **Network/infra** -> Cluster health, K8s pod status
 >
 > **Minute 15-30**: Apply fix based on root cause.
 > - If fixable: Fix and re-run the failed job (idempotent design means safe to re-run)
@@ -489,16 +489,16 @@ These show senior-level thinking:
 
 > 1. **Don't panic. Don't delete data.** Investigate first.
 >
-> 2. **Check if it's a source issue**: Did the upstream system send nulls? Compare with previous days ??" was it always 15% or sudden?
+> 2. **Check if it's a source issue**: Did the upstream system send nulls? Compare with previous days -- was it always 15% or sudden?
 >
 > 3. **Check if it's a pipeline issue**: Did our transform introduce the nulls? Check the transformation logic.
 >
 > 4. **Impact assessment**: What downstream systems consumed this data? Are reports already wrong?
 >
 > 5. **Decision tree**:
->    - If source is wrong ??' Contact upstream, request re-delivery, hold pipeline
->    - If our pipeline broke ??' Fix the transform, re-run (idempotent)
->    - If it's normal (optional field) ??' Update quality thresholds, document
+>    - If source is wrong -> Contact upstream, request re-delivery, hold pipeline
+>    - If our pipeline broke -> Fix the transform, re-run (idempotent)
+>    - If it's normal (optional field) -> Update quality thresholds, document
 >
 > 6. **Prevention**: Add a quality gate that BLOCKS the pipeline if null% exceeds threshold:
 >    ```python
@@ -515,7 +515,7 @@ These show senior-level thinking:
 
 > **Immediate**: 
 > - Spark's `.read.parquet()` is usually resilient to new columns (reads only specified columns)
-> - If using `.read.csv()` with fixed schema ??' that's what broke
+> - If using `.read.csv()` with fixed schema -> that's what broke
 >
 > **Fix**: Use `schema-on-read` with explicit column selection:
 > ```python
@@ -540,10 +540,10 @@ These show senior-level thinking:
 > **Step 1**: Check if data volume increased. 3x data = 3x time (expected).
 >
 > **Step 2**: Check Spark UI:
-> - **Shuffle spill to disk?** ??' Need more executor memory
-> - **One task taking 10x longer?** ??' Data skew on join key
-> - **Too many small tasks?** ??' Too many partitions, need `coalesce()`
-> - **GC time > 10%?** ??' Reduce in-memory caching, increase off-heap
+> - **Shuffle spill to disk?** -> Need more executor memory
+> - **One task taking 10x longer?** -> Data skew on join key
+> - **Too many small tasks?** -> Too many partitions, need `coalesce()`
+> - **GC time > 10%?** -> Reduce in-memory caching, increase off-heap
 >
 > **Step 3**: Check infrastructure:
 > - K8s: Are pods getting evicted? Resource limits hit?
@@ -560,24 +560,24 @@ These show senior-level thinking:
 
 **Q: "We need to migrate from Oracle to Snowflake. How would you plan this?"**
 
-> **Phase 1 ??" Assessment (Week 1-2)**:
+> **Phase 1 -- Assessment (Week 1-2)**:
 > - Inventory all tables, views, stored procedures
 > - Map Oracle data types to Snowflake equivalents
-> - Identify transformation logic in stored procedures ??' rewrite in Python/Spark
+> - Identify transformation logic in stored procedures -> rewrite in Python/Spark
 > - Document dependencies (which reports use which tables)
 >
-> **Phase 2 ??" Build (Week 3-6)**:
+> **Phase 2 -- Build (Week 3-6)**:
 > - Create Snowflake schema (stages, tables, views)
-> - Build ETL pipeline: Oracle ??' S3 ??' Snowflake (Snowpipe or COPY INTO)
+> - Build ETL pipeline: Oracle -> S3 -> Snowflake (Snowpipe or COPY INTO)
 > - Rewrite stored procedures as dbt models or Python transforms
 > - Data validation: row counts, checksums, sample comparisons
 >
-> **Phase 3 ??" Parallel Run (Week 7-8)**:
+> **Phase 3 -- Parallel Run (Week 7-8)**:
 > - Run both Oracle and Snowflake pipelines simultaneously
-> - Compare outputs daily ??" must be identical
+> - Compare outputs daily -- must be identical
 > - Fix discrepancies
 >
-> **Phase 4 ??" Cutover (Week 9)**:
+> **Phase 4 -- Cutover (Week 9)**:
 > - Switch downstream reports to Snowflake
 > - Keep Oracle read-only for 30 days (rollback option)
 > - Decommission Oracle after validation period
@@ -592,7 +592,7 @@ These show senior-level thinking:
 >
 > **T**: I believed maintaining two storage systems would double operational complexity and create data consistency risks.
 >
-> **A**: Instead of arguing, I prepared a comparison document showing: (1) MinIO is S3-compatible ??" same API, (2) maintaining HDFS costs $X/month in hardware, (3) dual storage means data can get out of sync. I presented this in the team meeting.
+> **A**: Instead of arguing, I prepared a comparison document showing: (1) MinIO is S3-compatible -- same API, (2) maintaining HDFS costs $X/month in hardware, (3) dual storage means data can get out of sync. I presented this in the team meeting.
 >
 > **R**: The team agreed to fully migrate to MinIO with a 30-day rollback plan (keep HDFS read-only). After 30 days of zero issues, we decommissioned HDFS.
 >
@@ -600,19 +600,19 @@ These show senior-level thinking:
 
 ### Q: "Tell me about a time you missed a deadline."
 
-> **S**: The Nissan Snowflake integration was planned for 3 weeks. At the end of week 2, I realized the schema validation logic was more complex than estimated ??" the source data had 15 different file formats.
+> **S**: The Nissan Snowflake integration was planned for 3 weeks. At the end of week 2, I realized the schema validation logic was more complex than estimated -- the source data had 15 different file formats.
 >
 > **T**: I needed to either cut scope or extend the timeline.
 >
-> **A**: I communicated early ??" told the project lead on Friday of week 2, not Monday of week 4. I proposed: deliver the 3 most common file formats by the deadline, handle the remaining 12 in a follow-up sprint.
+> **A**: I communicated early -- told the project lead on Friday of week 2, not Monday of week 4. I proposed: deliver the 3 most common file formats by the deadline, handle the remaining 12 in a follow-up sprint.
 >
 > **R**: The core pipeline shipped on time with 3 formats. The remaining formats were delivered in 2 more sprints. Business users had working data ingestion within the original timeline for their most common use case.
 >
-> **I**: Communicate early, propose solutions (not just problems), and negotiate scope ??" not quality.
+> **I**: Communicate early, propose solutions (not just problems), and negotiate scope -- not quality.
 
 ### Q: "Tell me about a time you learned something quickly."
 
-> **S**: At TCS, I was assigned to the Nomura project which used AutoSys ??" a tool I'd never used before.
+> **S**: At TCS, I was assigned to the Nomura project which used AutoSys -- a tool I'd never used before.
 >
 > **T**: I needed to be productive within 2 weeks.
 >
@@ -620,15 +620,15 @@ These show senior-level thinking:
 >
 > **R**: Within 2 weeks, I was managing AutoSys job chains independently. Within a month, I was optimizing dependency chains and reducing manual intervention by 25%.
 >
-> **I**: I learn by doing ??" documentation ??' sandbox ??' shadow ??' independent work.
+> **I**: I learn by doing -- documentation -> sandbox -> shadow -> independent work.
 
 ### Q: "Why do you want to leave TCS?"
 
-> "TCS has given me a strong foundation in enterprise data engineering ??" Spark, SQL, cloud, and working with large financial datasets. I'm now looking for an opportunity where I can: (1) work on more modern data stacks (Delta Lake, dbt, Airflow), (2) get closer to the ML/AI side of data engineering, and (3) work at a company where engineering culture and growth are prioritized."
+> "TCS has given me a strong foundation in enterprise data engineering -- Spark, SQL, cloud, and working with large financial datasets. I'm now looking for an opportunity where I can: (1) work on more modern data stacks (Delta Lake, dbt, Airflow), (2) get closer to the ML/AI side of data engineering, and (3) work at a company where engineering culture and growth are prioritized."
 
 ### Q: "Where do you see yourself in 5 years?"
 
-> "As a Senior Data Engineer or ML Platform Engineer ??" someone who builds the infrastructure that powers AI at scale. I want to be the bridge between raw data and production ML systems. In 5 years, I see myself leading a team that owns the data platform: ingestion, transformation, quality, serving, and monitoring."
+> "As a Senior Data Engineer or ML Platform Engineer -- someone who builds the infrastructure that powers AI at scale. I want to be the bridge between raw data and production ML systems. In 5 years, I see myself leading a team that owns the data platform: ingestion, transformation, quality, serving, and monitoring."
 
 ### Q: "What's your biggest weakness?"
 
@@ -640,7 +640,7 @@ These show senior-level thinking:
 
 ### Q: "Tell me about yourself." (2-minute version)
 
-> "I'm Pavan, a Data Engineer at TCS with 2+ years of experience. I currently work on the Nomura Capital Markets project where I build Spark ETL pipelines processing trade and risk data ??" I've optimized execution time by 30% through broadcast joins and partition pruning, and led the migration from YARN to Kubernetes. Before that, I worked on the Nissan project building serverless batch pipelines on AWS. 
+> "I'm Pavan, a Data Engineer at TCS with 2+ years of experience. I currently work on the Nomura Capital Markets project where I build Spark ETL pipelines processing trade and risk data -- I've optimized execution time by 30% through broadcast joins and partition pruning, and led the migration from YARN to Kubernetes. Before that, I worked on the Nissan project building serverless batch pipelines on AWS. 
 >
 > Outside work, I've built two production projects: an AI Healthcare System that predicts 5 diseases using XGBoost on 253K records, and a Movie Recommendation Platform with PySpark Delta Lake pipelines and FAISS vector search. These combine my data engineering skills with practical AI/ML experience.
 >

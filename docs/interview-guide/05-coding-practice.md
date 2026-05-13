@@ -157,7 +157,7 @@ def flatten_json(nested: dict, prefix: str = "") -> dict:
 
 # Example:
 # flatten_json({"a": {"b": 1, "c": {"d": 2}}})
-# â†' {"a.b": 1, "a.c.d": 2}
+# ' {"a.b": 1, "a.c.d": 2}
 ```
 
 ### Pattern 6: Batch Processing Simulation
@@ -556,7 +556,7 @@ result.write.partitionBy("date").mode("overwrite").parquet("s3://output/")
 **Q: Find two numbers in an array that sum to a target.**
 ```python
 def two_sum(nums: list[int], target: int) -> list[int]:
-    seen = {}  # value â†' index
+    seen = {}  # value ' index
     for i, num in enumerate(nums):
         complement = target - num
         if complement in seen:
@@ -582,7 +582,7 @@ from collections import defaultdict
 def group_anagrams(words: list[str]) -> list[list[str]]:
     groups = defaultdict(list)
     for word in words:
-        key = ''.join(sorted(word))  # "eat" â†' "aet"
+        key = ''.join(sorted(word))  # "eat" ' "aet"
         groups[key].append(word)
     return list(groups.values())
 
@@ -806,7 +806,7 @@ def search_insert(nums: list[int], target: int) -> int:
 
 ### 10. Dynamic Programming (Rare for DE, but know basics)
 
-**Q: Climbing stairs â€" how many ways to reach step n?**
+**Q: Climbing stairs " how many ways to reach step n?**
 ```python
 def climb_stairs(n: int) -> int:
     if n <= 2:
@@ -831,18 +831,18 @@ def climb_stairs(n: int) -> int:
 | O(2^n) | Exponential | Recursive subsets |
 
 **When they ask "What's the time complexity?":**
-- Single loop â†' O(n)
-- Nested loops â†' O(n^2)
-- Binary search / divide â†' O(log n)
-- Sort then search â†' O(n log n)
-- Hash map lookup â†' O(1) average
-- Spark shuffle â†' O(n) data transfer across network
+- Single loop ' O(n)
+- Nested loops ' O(n^2)
+- Binary search / divide ' O(log n)
+- Sort then search ' O(n log n)
+- Hash map lookup ' O(1) average
+- Spark shuffle ' O(n) data transfer across network
 
 ---
 
 ## PYTHON-SPECIFIC KNOWLEDGE
 
-### Q: List vs Tuple vs Set vs Dict â€" when to use each?
+### Q: List vs Tuple vs Set vs Dict " when to use each?
 
 | Type | Mutable | Ordered | Duplicates | Lookup | Use Case |
 |---|---|---|---|---|---|
@@ -854,17 +854,17 @@ def climb_stairs(n: int) -> int:
 ### Q: What is a generator and why use it?
 
 ```python
-# Regular function â€" loads ALL data into memory
+# Regular function " loads ALL data into memory
 def read_all(path):
-    return open(path).readlines()  # 10GB file â†' 10GB RAM!
+    return open(path).readlines()  # 10GB file ' 10GB RAM!
 
-# Generator â€" yields one line at a time
+# Generator " yields one line at a time
 def read_lines(path):
     with open(path) as f:
         for line in f:
             yield line  # Only 1 line in memory at a time
 
-# Usage â€" memory efficient
+# Usage " memory efficient
 for line in read_lines("huge_file.csv"):
     process(line)
 ```
@@ -890,7 +890,7 @@ def process_data(df):
     # ... expensive operation
     return df.transform(...)
 
-# process_data(df) â†' "process_data took 3.45s"
+# process_data(df) ' "process_data took 3.45s"
 ```
 
 ### Q: What is `__init__`, `__str__`, `__repr__`?
@@ -911,13 +911,13 @@ class Pipeline:
 ### Q: Exception handling best practices?
 
 ```python
-# Bad â€" catches everything, hides bugs:
+# Bad " catches everything, hides bugs:
 try:
     process()
 except:
     pass
 
-# Good â€" specific exceptions, logging:
+# Good " specific exceptions, logging:
 try:
     df = spark.read.parquet(path)
 except FileNotFoundError:
