@@ -24,6 +24,22 @@ This shows: honesty + related knowledge + learning attitude.
 
 **Right**: "I chose XGBoost over Random Forest and neural networks. Random Forest was close, but XGBoost handles class imbalance natively with scale_pos_weight. Neural networks would overfit on 253K tabular records — the Grinsztajn 2022 benchmark showed tree-based models outperform deep learning on tabular data."
 
+Let's unpack every term in that answer so you UNDERSTAND it and can explain further if asked:
+
+- **XGBoost (eXtreme Gradient Boosting)**: An algorithm that trains hundreds of small decision trees one after another. Each new tree focuses on correcting the mistakes of the previous trees. Like a team of weak learners that together become strong. It's the go-to for tabular (spreadsheet-like) data.
+
+- **Random Forest**: Also uses decision trees, but trains them ALL independently in parallel (not sequentially like XGBoost). Each tree votes, majority wins. Simpler but doesn't have a built-in way to handle imbalanced data.
+
+- **Class imbalance**: When one category vastly outnumbers the other. In your diabetes data, 86% of patients are healthy, only 14% are diabetic. The model gets lazy — it learns that predicting "healthy" every time gives 86% accuracy. It catches ZERO diabetic patients. 86% accuracy but completely useless.
+
+- **scale_pos_weight=6.16**: Tells XGBoost "missing a diabetic patient is 6.16x worse than a false alarm on a healthy patient." Calculated as: 218,334 healthy / 35,346 diabetic = 6.16. Now the model is FORCED to learn patterns that catch diabetic patients, because missing them costs 6x more during training.
+
+- **Overfit**: When a model memorizes the training data instead of learning real patterns. It scores 99% on training data but fails on new data. Like a student who memorizes exam answers but can't solve new problems. Neural networks with limited data (253K is "limited" for deep learning) tend to overfit on tabular data.
+
+- **Tabular data**: Data in rows and columns — like a spreadsheet or SQL table. Your health data is tabular: each row is a patient, each column is a measurement (BMI, age, blood pressure). This is different from images or text, where neural networks excel.
+
+- **Grinsztajn 2022**: A NeurIPS research paper that benchmarked tree-based models (XGBoost, Random Forest) against deep learning on 45 tabular datasets. Result: tree models won on medium-sized tabular data. This is your academic backing for choosing XGBoost.
+
 **Pattern**: "I chose X over Y and Z because [specific technical reason]."
 
 This shows: you evaluated options, you have depth, you make informed decisions.
