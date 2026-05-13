@@ -895,3 +895,346 @@ The interview is not about knowing everything. It's about three things:
 You have ALL THREE. You built two production systems from scratch. You optimized Spark pipelines by 30%. You trained ML models on 253K records. You wrote 141+ tests. You designed a 7-layer middleware stack. You implemented RAG with SSE streaming.
 
 **You are not pretending to be an engineer. You ARE one. Go prove it.**
+
+---
+
+## DE SYSTEM DESIGN ROUND (The 45-Minute Deep-Dive)
+
+> In system design rounds, they don't want perfect answers. They want to see HOW you think. Use this framework: Requirements -> High-Level Design -> Deep-Dive -> Tradeoffs -> Monitoring.
+
+### System Design 1: "Design a real-time clickstream analytics platform"
+
+**Step 1: Clarify requirements (2 min)**
+> "Let me confirm scope: We're ingesting user click events from a website, computing metrics like page views, session duration, and conversion rates, and serving them to a real-time dashboard and a batch reporting system. Expected volume? I'll assume 10K events/second at peak, 100M events/day."
+
+**Step 2: High-level architecture (5 min)**
+```
+Web/Mobile App
+    |
+[Kafka] -- 3 topics: page-views, clicks, purchases
+    |
+[Spark Structured Streaming]
+    |-- Micro-batch every 30 seconds
+    |-- Sessionize by user_id + 30-min inactivity gap
+    |-- Compute: page_views, session_duration, bounce_rate
+    |
+[Delta Lake]
+    |-- Bronze: raw events (append-only, immutable)
+    |-- Silver: deduplicated, sessionized events
+    |-- Gold: aggregated metrics (hourly, daily)
+    |
++---------------+------------------+
+|               |                  |
+[Redis]     [Snowflake]      [Airflow]
+Real-time   BI dashboards    Daily batch
+metrics     (Tableau)        aggregations
+API
+```
+
+**Step 3: Deep-dive decisions (15 min)**
+
+**Why Kafka, not direct-to-database?**
+> "At 10K events/sec, writing directly to a database would overwhelm it. Kafka buffers events, decouples producers from consumers, and enables replay if our processing fails."
+
+**Why Spark Structured Streaming, not Flink?**
+> "Spark gives us micro-batch (30-sec latency is acceptable for dashboards). We already use Spark for batch -- one engine for both. Flink would give sub-second latency but adds operational complexity. Tradeoff: latency vs simplicity."
+
+**Why Delta Lake, not raw Parquet?**
+> "Delta Lake gives us ACID writes (no corrupted files from concurrent streaming + batch), time travel for debugging, and OPTIMIZE/ZORDER for query performance. Raw Parquet has none of these."
+
+**How do you handle late-arriving events?**
+> "Watermark of 24 hours in Spark Structured Streaming. Events arriving within 24 hours are processed normally. Beyond that, a daily Airflow job reprocesses affected partitions. Delta Lake MERGE ensures no duplicates."
+
+**Step 4: Monitoring (5 min)**
+> "I'd monitor: (1) Kafka consumer lag -- if we're falling behind, scale up Spark executors. (2) Event count anomalies -- alert if volume drops >50% vs same hour yesterday. (3) Pipeline freshness -- alert if Gold tables aren't updated within SLA. (4) Data quality -- null rates, schema drift detection at Bronze layer."
+
+---
+
+### System Design 2: "Design an ETL pipeline for a data warehouse"
+
+**Step 1: Requirements**
+> "We need to ingest data from 5 source systems (CRM, billing, product, support, marketing), transform it into a star schema, and serve it to BI analysts via Snowflake. Daily batch, SLA: data ready by 6 AM."
+
+**Step 2: Architecture**
+```
+Source Systems (5)
+    |
+[Extraction Layer]
+    |-- CDC (Change Data Capture) for databases
+    |-- API pulls for SaaS tools (Salesforce, HubSpot)
+    |-- S3 file drops for flat files
+    |
+[S3 Landing Zone] -- Raw files, partitioned by date
+    |
+[Airflow DAG] -- Orchestrates entire pipeline
+    |
+[Spark/dbt Transformation]
+    |-- Staging: clean, deduplicate, type-cast
+    |-- Integration: join across sources, resolve entities
+    |-- Marts: star schemas per business domain
+    |
+[Snowflake]
+    |-- fact_orders, fact_support_tickets
+    |-- dim_customers, dim_products, dim_dates
+    |
+[Tableau/Looker] -- BI dashboards
+```
+
+**Key decisions to explain:**
+
+**CDC vs Full Extract?**
+> "CDC (Change Data Capture) only pulls changed records since last run. Full extract pulls everything. For large tables (100M+ rows), CDC reduces load time from hours to minutes. I use CDC for high-volume tables and full extract for small reference tables."
+
+**Spark vs dbt for transformation?**
+> "dbt for SQL-heavy transforms (aggregations, joins, window functions) because it runs inside Snowflake -- no data movement. Spark for complex transforms (ML feature engineering, custom Python logic) that SQL can't express. Hybrid approach."
+
+**How do you handle failures at 4 AM?**
+> "Airflow retries 3x with 5-min delays. If still failing, alerts via Slack/PagerDuty. All tasks are idempotent -- safe to re-run. I break the pipeline into checkpoints: if step 3 fails, I restart from step 3, not step 1."
+
+---
+
+### System Design 3: "Design a data quality monitoring system"
+
+**Step 1: Requirements**
+> "We need to detect data issues BEFORE they reach production dashboards. Check freshness, volume, schema, distribution, and uniqueness. Alert the right team within 5 minutes of detection."
+
+**Step 2: Architecture**
+```
+Data Pipeline Output
+    |
+[Quality Engine] -- Runs after each pipeline step
+    |
+    +-- Freshness: Is the table updated? (compare max(updated_at) to now)
+    +-- Volume: Row count within 2 standard deviations of 30-day average?
+    +-- Schema: Columns match expected? Types match?
+    +-- Distribution: Null rate, mean, min, max within expected range?
+    +-- Uniqueness: Primary key has zero duplicates?
+    +-- Referential: Foreign keys exist in parent table?
+    |
+[Decision Engine]
+    |
+    +-- PASS -> Continue pipeline, log metrics
+    +-- WARN -> Continue but alert team (Slack)
+    +-- FAIL -> HALT pipeline, alert team (PagerDuty), quarantine data
+    |
+[Metrics Store] -- Historical quality scores for trending
+    |
+[Dashboard] -- Quality scorecard per table, per day
+```
+
+**Implementation pattern:**
+```python
+# Quality check framework (what you'd write on a whiteboard)
+def check_quality(df, table_name, checks):
+    results = []
+    for check in checks:
+        if check.type == "not_null":
+            null_pct = df.filter(col(check.column).isNull()).count() / df.count()
+            results.append({"check": check.name, "passed": null_pct < check.threshold})
+        elif check.type == "unique":
+            dupes = df.count() - df.select(check.column).distinct().count()
+            results.append({"check": check.name, "passed": dupes == 0})
+        elif check.type == "freshness":
+            max_ts = df.agg(max(check.column)).collect()[0][0]
+            age_hours = (datetime.now() - max_ts).total_seconds() / 3600
+            results.append({"check": check.name, "passed": age_hours < check.max_hours})
+
+    failed = [r for r in results if not r["passed"]]
+    if failed:
+        alert(f"{table_name}: {len(failed)} checks failed: {failed}")
+        if any(r["check"].startswith("critical_") for r in failed):
+            halt_pipeline(table_name)
+    return results
+```
+
+---
+
+## MANAGEMENT / HIRING MANAGER ROUND
+
+> This round tests: leadership potential, communication skills, project estimation, and stakeholder management. They want to see senior-level thinking.
+
+### Q: "How do you estimate how long a data pipeline project will take?"
+
+> "I break it into phases with buffer:
+>
+> 1. **Discovery (1-2 days)**: Understand source systems, data volume, schema, quality issues
+> 2. **Design (2-3 days)**: Architecture, schema design, tech choices, write design doc
+> 3. **Build (1-2 weeks)**: Core pipeline implementation
+> 4. **Test (3-5 days)**: Unit tests, integration tests, data validation
+> 5. **Parallel run (1 week)**: Run alongside existing system, compare outputs
+> 6. **Cutover (1-2 days)**: Switch production traffic, monitor closely
+>
+> I multiply the total by 1.5x for unknowns. A '2-week' project is really 3 weeks. I communicate this upfront -- stakeholders prefer accurate timelines over optimistic ones that slip."
+
+### Q: "How do you prioritize when you have 5 urgent requests?"
+
+> "I use an impact-effort matrix:
+>
+> | | Low Effort | High Effort |
+> |---|---|---|
+> | **High Impact** | DO FIRST | Plan and schedule |
+> | **Low Impact** | Quick wins, delegate | Push back or defer |
+>
+> Then I communicate: 'I can deliver X by Monday and Y by Wednesday. Z is lower priority -- can it wait until next sprint?' I never say 'I'll do everything' because that means nothing gets done well."
+
+### Q: "Tell me about a time you had to push back on a stakeholder."
+
+> **S**: A business analyst wanted me to add 15 new columns to our daily Snowflake pipeline by end of week.
+>
+> **T**: Adding 15 columns to an existing pipeline requires schema changes, testing, and downstream validation -- a 2-week effort, not 2 days.
+>
+> **A**: I showed the effort breakdown: 5 columns from Source A (straightforward, 2 days), 7 columns from Source B (requires new API integration, 1 week), 3 columns that need business logic clarification. I proposed: deliver the 5 easy columns this week, schedule the rest for next sprint.
+>
+> **R**: Stakeholder agreed. Got the 5 columns by Friday, remaining 10 delivered over 2 more sprints. No quality compromises.
+>
+> **I**: Push back with data, not opinions. Show the WHY and offer alternatives.
+
+### Q: "How do you handle knowledge silos in a team?"
+
+> "I prevent silos with:
+> 1. **Documentation**: Every pipeline has a README with architecture, dependencies, and runbook
+> 2. **Code reviews**: Every PR reviewed by at least one other engineer
+> 3. **Rotation**: Rotate on-call so everyone learns all pipelines
+> 4. **Pair programming**: For complex tasks, pair a senior with a junior
+> 5. **Tech talks**: Weekly 30-min internal demos of what each person built"
+
+### Q: "How do you mentor junior engineers?"
+
+> "I follow a 4-stage progression:
+> 1. **Show**: I do it while they watch and ask questions
+> 2. **Guide**: They do it while I watch and give real-time feedback
+> 3. **Support**: They do it independently, I review after
+> 4. **Trust**: They do it independently and own it
+>
+> At TCS, I onboarded new engineers to AutoSys using this exact approach -- documentation -> sandbox -> shadow -> independent. Within 2 weeks they were handling production batch monitoring."
+
+### Q: "What's your approach to technical debt?"
+
+> "I categorize debt into 3 levels:
+>
+> | Level | Example | Action |
+> |---|---|---|
+> | **Critical** | No tests, hard-coded credentials, data corruption risk | Fix NOW, sprint 0 |
+> | **Scheduled** | Manual deployments, copy-paste code, no monitoring | Plan for next sprint |
+> | **Accepted** | Suboptimal query performance, old library version | Track, fix when it hurts |
+>
+> I allocate 20% of each sprint to debt reduction. I make the business case: 'Fixing this saves 2 hours/week of manual work, which is 100 hours/year.'"
+
+---
+
+## DATA MODELING ROUND (Common at Large Companies)
+
+### Q: "Design a data model for an e-commerce company"
+
+**Star Schema:**
+```
+                    dim_products
+                    (product_id, name, category, brand, price)
+                         |
+dim_customers ---- fct_orders ---- dim_dates
+(customer_id,      (order_id,      (date_key, date,
+ name, email,       customer_id,    month, quarter,
+ segment,           product_id,     year, is_weekend,
+ region)            date_key,       is_holiday)
+                    quantity,
+                    unit_price,
+                    discount,
+                    total_amount,
+                    shipping_cost)
+                         |
+                    dim_channels
+                    (channel_id, name: web/mobile/store)
+```
+
+**Why star schema?** "Analysts query this in many dimensions -- by product category, by customer segment, by channel, by time period. Star schema lets them slice any way without restructuring."
+
+**Grain:** "One row per order line item. An order with 3 products = 3 rows in fct_orders."
+
+### Q: "How would you model slowly changing data here?"
+
+> "Customer address changes: SCD Type 2.
+> Product price changes: SCD Type 2 (track historical pricing for revenue analysis).
+> Product category renames: SCD Type 1 (overwrite, history doesn't matter).
+> Date dimension: Type 0 (dates never change)."
+
+### Q: "What's the difference between a fact and a dimension?"
+
+> "**Fact** = the measurement, the event, the number. It answers 'how many?' or 'how much?' Examples: order_amount, quantity, page_views.
+>
+> **Dimension** = the context around the fact. It answers 'who?', 'what?', 'where?', 'when?' Examples: customer_name, product_category, order_date.
+>
+> Rule of thumb: if you'd SUM or COUNT it, it's a fact. If you'd GROUP BY it, it's a dimension."
+
+---
+
+## MORE PRODUCTION SCENARIOS
+
+### SCENARIO 6: Data Drift
+
+**Q: "Your ML model's accuracy dropped from 85% to 72% over the past month. What happened?"**
+
+> **Immediate**: Check if the training data distribution changed vs production data.
+>
+> **Root causes to investigate:**
+> 1. **Feature drift**: Input data distributions shifted (e.g., user demographics changed)
+> 2. **Label drift**: The definition of the target changed (e.g., new disease coding)
+> 3. **Upstream data change**: A source system changed format or stopped sending a field
+> 4. **Concept drift**: The real-world relationship between features and target changed
+>
+> **How I'd fix it:**
+> - Compare feature distributions: training vs last 30 days (histogram comparison)
+> - Check null rates per feature over time (sudden spike = upstream issue)
+> - Retrain model on recent data and evaluate
+> - Set up automated drift monitoring: alert when PSI (Population Stability Index) > 0.2
+>
+> **Your Healthcare project answer:**
+> "In my Healthcare project, I'd detect this by comparing the BRFSS training distribution against incoming API requests. If BMI or age distributions shifted significantly, the model trained on 2015 data might not generalize to 2024 patients. The fix: retrain on more recent data, or add a drift detection layer that flags when input distributions deviate beyond a threshold."
+
+### SCENARIO 7: Scaling Challenge
+
+**Q: "Your pipeline processes 10GB daily. The company just acquired another company and data will 10x to 100GB. How do you scale?"**
+
+> **Assessment first:**
+> 1. Does the current architecture hit a bottleneck at 100GB? Where?
+>    - Single-machine processing (Pandas) -> Move to Spark
+>    - Spark but single node -> Add more executors
+>    - Network bottleneck -> Optimize data locality
+>    - Storage -> Partitioning and compaction
+>
+> **My scaling playbook:**
+> 1. **Vertical first**: Can I just give the cluster more memory/CPU? (cheapest, fastest)
+> 2. **Partition better**: Is the data partitioned by date? Can I add sub-partitions?
+> 3. **Incremental processing**: Am I reprocessing all 100GB daily or just the delta?
+> 4. **Broadcast joins**: Are dimension table joins still broadcastable at 100GB?
+> 5. **Architecture change**: Do I need to move from batch to streaming for the new volume?
+>
+> **Timeline**: "I'd spend 1 week profiling the current bottlenecks, 2 weeks implementing fixes, 1 week load-testing at 100GB. Total: 4 weeks with buffer."
+
+### SCENARIO 8: Cross-Team Dependency
+
+**Q: "Another team changed their API schema without telling you and your pipeline broke."**
+
+> **Immediate**: Fix the pipeline (add default values for missing fields, bypass new fields).
+>
+> **Root cause fix:**
+> 1. **Data contract**: Formalize the schema agreement in a shared document
+> 2. **Schema validation**: Add Bronze layer validation that catches changes before they propagate
+> 3. **Alerting**: Schema diff detection -- compare today's schema to yesterday's
+> 4. **Process**: Establish a change notification protocol (Slack channel, JIRA ticket before breaking changes)
+> 5. **Defensive coding**: Never use `SELECT *`. Always specify columns explicitly.
+>
+> **Communication**: "I'd have a direct conversation with the team lead: 'Hey, our pipeline broke because field X was renamed. Can we set up a process where schema changes are communicated 1 week before deployment?' Frame it as 'helping both teams' not 'you broke my stuff.'"
+
+---
+
+## FINAL REMINDER: THE META-GAME
+
+The interview is not about knowing everything. It's about three things:
+
+1. **Can you think?** (Problem-solving approach, tradeoff analysis, structured reasoning)
+2. **Can you communicate?** (Explain clearly, adjust to the audience, draw diagrams)
+3. **Can you deliver?** (Real projects, real code, real numbers, real impact)
+
+You have ALL THREE. You built two production systems from scratch. You optimized Spark pipelines by 30%. You trained ML models on 253K records. You wrote 141+ tests. You designed a 7-layer middleware stack. You implemented RAG with SSE streaming.
+
+**You are not pretending to be an engineer. You ARE one. Go prove it.**
