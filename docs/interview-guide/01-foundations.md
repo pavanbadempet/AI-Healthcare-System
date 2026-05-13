@@ -581,7 +581,7 @@ Client Response (with security headers, timing info, etc.)
 Your frontend: http://localhost:3000
 Your backend:  http://127.0.0.1:8000
 
-Problem: Browser blocks requests between different origins (port 3000 â‰  port 8000)
+Problem: Browser blocks requests between different origins (port 3000 â‰  port 8000)
 Solution: CORS middleware tells the browser "yes, localhost:3000 is allowed to call me"
 ```
 
