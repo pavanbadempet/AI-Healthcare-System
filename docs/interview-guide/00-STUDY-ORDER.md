@@ -24,15 +24,16 @@ PHASE 5: PERFORM             "How do I ace the interview?"
 
 ---
 
-## PHASE 0: MINDSET & PSYCHOLOGY (Read FIRST — 1 Hour)
+## PHASE 0: UNDERSTAND EVERYTHING FIRST (Read FIRST — 3 Hours)
 
-> Before ANY technical prep, learn how interviews ACTUALLY work.
+> Before ANY other prep, make sure you DEEPLY UNDERSTAND every concept. These two files build your foundation.
 
 | Order | File | Time | What You Learn |
 |---|---|---|---|
-| 0 | [24-psychology-mindset.md](24-psychology-mindset.md) | 60 min | 5 golden rules, 6 traps to avoid, body language, salary negotiation, hidden scorecard, pre-interview checklist |
+| 0a | [25-concepts-from-scratch.md](25-concepts-from-scratch.md) | 120 min | EVERY concept explained from zero — class imbalance, scale_pos_weight, XGBoost, predict_proba, ETL, Parquet, JWT, bcrypt, middleware, SSE, Zustand. If you read ONE file, read THIS. |
+| 0b | [24-psychology-mindset.md](24-psychology-mindset.md) | 60 min | 5 golden rules, 6 traps to avoid, body language, salary negotiation, hidden scorecard, pre-interview checklist |
 
-**After Phase 0, you know**: How to handle "I don't know", how to avoid traps, how to negotiate salary, what interviewers are ACTUALLY evaluating, and the pre-interview checklist.
+**After Phase 0, you UNDERSTAND**: What class imbalance IS and why it matters. What scale_pos_weight DOES and how it's calculated. What XGBoost IS and why it beats neural networks. What JWT IS and how tokens work. How to handle traps and negotiate salary.
 
 ---
 
