@@ -18,6 +18,8 @@
 | [10-deployment.md](10-deployment.md) | Deployment & DevOps | Docker, CI/CD, environments |
 | [11-challenges-learnings.md](11-challenges-learnings.md) | Challenges & Learnings | Bugs, trade-offs, what I'd change |
 | [12-quick-reference.md](12-quick-reference.md) | Quick Reference | One-line definitions, cheat sheet |
+| [13-faang-strategies.md](13-faang-strategies.md) | FAANG Strategies | STAR answers, system design framework, power phrases |
+| [14-code-walkthrough.md](14-code-walkthrough.md) | Code Walkthrough | Exactly what to show when they say "walk me through" |
 
 ## How to Use
 
