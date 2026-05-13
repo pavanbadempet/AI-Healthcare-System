@@ -1,4 +1,4 @@
-﻿# 24 â€” Interview Psychology & Mindset
+﻿# Chapter 6 - Interview Mastery: Psychology, Behavioral, HR and Salary
 
 > This file is about HOW to think during the interview â€” not what to say, but how to NEVER go wrong.
 
@@ -241,7 +241,6 @@ What they're ACTUALLY evaluating:
 
 ---
 
-# 13 â€” FAANG Interview Strategies
 
 > How to present this project to impress at Google, Amazon, Microsoft, Meta, or any top company.
 
@@ -456,7 +455,6 @@ These show senior-level thinking:
 
 ---
 
-# 20 â€” Scenario-Based & Behavioral Questions
 
 > "What would you do if..." â€” these test your real-world engineering judgment.
 

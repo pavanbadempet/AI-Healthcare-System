@@ -1,4 +1,4 @@
-﻿# 25 â€” Every Concept Explained From Scratch
+﻿# Chapter 1 - Foundations: Every Concept Explained From Scratch
 
 > This file explains EVERY technical term used in your projects from absolute zero.
 > Read this FIRST before anything else. If you understand everything here, you can explain anything in an interview.
@@ -706,7 +706,6 @@ function LoginPage() {
 
 ---
 
-# 12 â€” Quick Reference Cheat Sheet
 
 ## One-Line Definitions
 
@@ -815,7 +814,6 @@ FastAPI Backend (7 middleware layers, JWT auth, Pydantic validation)
 
 ---
 
-# 21 â€” Data Engineering Concepts Deep-Dive
 
 > Every concept a DE interviewer expects you to know, with clear explanations and examples.
 
@@ -1127,7 +1125,6 @@ Three delivery guarantees:
 
 ---
 
-# 23 â€” Tool & Technology Comparisons
 
 > Interviewers LOVE asking "Why X over Y?" Here's every comparison you need.
 

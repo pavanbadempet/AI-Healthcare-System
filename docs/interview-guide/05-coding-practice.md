@@ -1,4 +1,4 @@
-﻿# 19 â€” Python & SQL Coding Round
+﻿# Chapter 5 - Coding Practice: Python, SQL, DSA and PySpark
 
 > Data Engineer interviews ALWAYS have a coding round. Here are the patterns they ask.
 
@@ -316,7 +316,6 @@ result.write.partitionBy("trade_date").mode("overwrite").parquet("s3://output/")
 
 ---
 
-# 22 â€” DSA Patterns for Data Engineer Interviews
 
 > DE interviews test lighter DSA than SDE roles, but you MUST know these patterns.
 

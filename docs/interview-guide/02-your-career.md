@@ -1,4 +1,4 @@
-﻿# 17 â€” Data Engineer Interview Guide (Your Primary Role)
+﻿# Chapter 2 - Your Career: Resume, TCS Experience and Career Positioning
 
 > **Your positioning**: Data Engineer with 2+ years at TCS (Nomura Capital, Nissan), who ALSO builds AI systems.
 > This file reframes EVERYTHING through the Data Engineering lens that matches your resume.
@@ -363,7 +363,6 @@ Step Function orchestrates:
 
 ---
 
-# 18 â€” Resume Line-by-Line Defense
 
 > For EVERY single bullet point on your resume, here's the detailed answer when they ask "Tell me more about this."
 

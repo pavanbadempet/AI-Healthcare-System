@@ -1,4 +1,4 @@
-﻿# 01 â€” Project Overview
+﻿# Chapter 3 - AI Healthcare System: Complete Project Deep-Dive
 
 ## Q: Give me a 2-minute elevator pitch of your project.
 
@@ -138,7 +138,6 @@ Mine is a **complete production system**:
 
 ---
 
-# 04 â€” Machine Learning Pipeline
 
 ## Q: Describe all 5 ML models.
 
@@ -397,7 +396,6 @@ def initialize_models():
 
 ---
 
-# 03 â€” Backend Deep Dive
 
 ## Q: Explain the backend architecture.
 
@@ -698,7 +696,6 @@ app = FastAPI(lifespan=lifespan)
 
 ---
 
-# 02 â€” Frontend Deep Dive
 
 ## Q: Explain your frontend architecture.
 
@@ -1028,7 +1025,6 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 
 ---
 
-# 05 â€” AI & Chat System (Complete Deep-Dive)
 
 > Everything about how the AI chatbot works â€” RAG, Gemini, streaming, prompts, fallbacks.
 
@@ -1476,7 +1472,6 @@ This means the system **degrades gracefully** instead of going completely down.
 
 ---
 
-# 06 â€” Database Design (Complete Deep-Dive)
 
 > Everything about the database layer â€” schema, ORM, sessions, migrations, queries.
 
@@ -1869,7 +1864,6 @@ pg_conn.commit()
 
 ---
 
-# 07 â€” Security & Compliance
 
 > Every security concept in your project explained from scratch with examples.
 
@@ -2253,7 +2247,6 @@ Layer 7: Timing Middleware
 
 ---
 
-# 08 â€” System Design
 
 ## Q: Draw the system architecture.
 
@@ -2438,7 +2431,6 @@ s3://models/
 
 ---
 
-# 09 â€” Testing Strategy
 
 ## Q: How do you test this system?
 
@@ -2637,7 +2629,6 @@ python backend/test_predictions.py
 
 ---
 
-# 10 â€” Deployment & DevOps
 
 > How the application goes from your laptop to the internet â€” every step explained.
 
@@ -2917,7 +2908,6 @@ jobs:
 
 ---
 
-# 11 â€” Challenges & Learnings
 
 ## Q: What was the hardest bug you encountered?
 
@@ -3057,7 +3047,6 @@ jobs:
 
 ---
 
-# 14 â€” Code Walkthrough Guide
 
 > When interviewers say "Walk me through your code" â€” this is exactly what to show.
 
@@ -3235,7 +3224,6 @@ def test_predict_invalid_input(client):
     assert response.status_code == 422
 
 # 4. Real-world validation
-# 48 actual patient records from training data
 # 77% match ground truth labels
 ```
 
@@ -3261,7 +3249,6 @@ When asked "which files are most important?":
 
 ---
 
-# 15 â€” Exhaustive Q&A with Real Code Examples
 
 > Every answer here uses ACTUAL code from the real codebase with file paths and line numbers.
 > This is the "I want to know EVERYTHING" file.
