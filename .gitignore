@@ -3,6 +3,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+.hypothesis/
 
 # Environment
 .env
@@ -29,24 +30,49 @@ venv/
 session.json
 .coverage
 htmlcov/
+pytest_output.txt
 
-# Local resume/profile drafts
+# Local drafts
 README_DATA_ENGINEERING.md
 README_ENHANCED.md
 RESUME_*.tex
 
-# IDE & Tools
+# IDE & AI Tools
 .cursor/
+.cursorrules
 .antigravity/
 .gemini/
 .idea/
 .vscode/
+.kiro/
+CLAUDE.md
+GEMINI.md
+
+# Antigravity / Agent brain data (NEVER commit)
+brain/
+
+# Streamlit config
+.streamlit/
 
 # Build
 dist/
 build/
 *.egg-info/
+node_modules/
 
 # Airflow
 airflow/logs/
 airflow/airflow.db
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Legacy/dead frontends
+frontend_legacy/
+frontend_v2/
+
+# Loose scripts (moved to scripts/)
+seed_data.py
+seed_doctor.py
+start_servers.bat
