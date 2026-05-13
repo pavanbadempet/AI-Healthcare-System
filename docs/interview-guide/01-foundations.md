@@ -1295,3 +1295,36 @@ Three delivery guarantees:
 | API auth | **JWT** | Stateless, scalable |
 | Vector search | **FAISS** | Sub-ms, battle-tested |
 
+---
+
+### What is Schema Evolution?
+
+Schema evolution means changing the structure of your data (adding columns, renaming fields, changing types) WITHOUT breaking existing pipelines or downstream consumers.
+
+**Why this matters:** In production, source systems change ALL the time. A vendor adds a new field, a team renames a column, a data type changes from string to integer. Your pipeline either handles this gracefully or breaks at 2 AM.
+
+**The 3 types of schema changes:**
+
+| Change type | Example | Risk level | How to handle |
+|---|---|---|---|
+| **Additive** (safe) | New column added | Low | Ignore new column, or add it with a default |
+| **Rename** (medium) | `user_id` -> `customer_id` | Medium | Column mapping in ETL, don't use `SELECT *` |
+| **Breaking** (dangerous) | Column deleted, type changed | High | Schema validation catches it, pipeline halts, alert fires |
+
+**How Delta Lake handles this:**
+```python
+# Delta Lake schema evolution: auto-merge new columns
+df.write.format("delta") \
+    .option("mergeSchema", "true") \
+    .mode("append") \
+    .save("gold/movies")
+# If the new data has extra columns, Delta adds them automatically
+# Existing rows get NULL for the new columns
+```
+
+**How your projects handle this:**
+- **Healthcare**: Fixed schema (9-24 features per model). Schema changes require model retraining.
+- **Nova**: Delta Lake `mergeSchema=true` for additive changes. Breaking changes caught by Silver layer validation and quarantined.
+
+**Interview answer pattern:**
+> "I handle schema evolution at three levels: (1) Prevention -- use explicit column selection, never SELECT *, schema contracts with upstream. (2) Detection -- Bronze layer validates incoming schema against expected, alerts on drift. (3) Adaptation -- Delta Lake's mergeSchema for safe additive changes, manual review for breaking changes."
