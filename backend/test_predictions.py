@@ -1,88 +1,85 @@
-import os
-import sys
+"""
+Real-World Prediction Validation v2 — Actual records from training datasets.
+Fixed: lung encoding (0/1 not 1/2), heart model retrained with class balancing.
+"""
+import httpx
 import pandas as pd
-import numpy as np
-import traceback
-from typing import Dict, Any
 
-# Add the current directory to sys.path to allow imports from .
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+BASE = "http://127.0.0.1:8000"
+results = []
 
-from . import prediction
-from . import schemas
-
-def test_all_predictions():
-    print("Testing all trained models with sample data...")
-    
-    # 1. Initialize models
-    prediction.initialize_models()
-    
-    # 2. Test Diabetes
+def test(model, case_name, expected, payload):
     try:
-        diabetes_data = schemas.DiabetesInput(
-            gender=1, age=50.0, hypertension=1, high_chol=1, 
-            bmi=28.0, smoking_history=1, heart_disease=0, 
-            physical_activity=1, general_health=3
-        )
-        res = prediction.predict_diabetes(diabetes_data)
-        print(f"OK - Diabetes Prediction: {res}")
+        r = httpx.post(f"{BASE}/predict/{model}", json=payload, timeout=10)
+        if r.status_code == 200:
+            actual = r.json()["prediction"]
+            match = "PASS" if actual == expected else "DIFF"
+            results.append((model.upper(), case_name, expected, actual, match))
+        else:
+            results.append((model.upper(), case_name, expected, f"HTTP {r.status_code}", "FAIL"))
     except Exception as e:
-        print(f"FAIL - Diabetes Prediction Error: {e}")
-        traceback.print_exc()
+        results.append((model.upper(), case_name, expected, str(e)[:50], "FAIL"))
 
-    # 3. Test Heart
-    try:
-        heart_data = schemas.HeartInput(
-            age=63, sex=1, cp=3, trestbps=145, chol=233, 
-            fbs=1, restecg=0, thalach=150, exang=0, 
-            oldpeak=2.3, slope=0, ca=0, thal=1
-        )
-        res = prediction.predict_heart(heart_data)
-        print(f"OK - Heart Prediction: {res}")
-    except Exception as e:
-        print(f"FAIL - Heart Prediction Error: {e}")
-        traceback.print_exc()
+# ═══════════════════ DIABETES (BRFSS) ═══════════════════
+df = pd.read_parquet("data/processed/diabetes.parquet")
+for i, (_, row) in enumerate(df[df["diabetes"]==0].head(5).iterrows()):
+    test("diabetes", f"BRFSS healthy #{i+1}", "Low Risk",
+         {"hypertension":int(row["HighBP"]),"high_chol":int(row["HighChol"]),"bmi":float(row["BMI"]),"smoking_history":int(row["Smoker"]),"heart_disease":int(row["HeartDiseaseorAttack"]),"physical_activity":int(row["PhysActivity"]),"general_health":int(row["GenHlth"]),"gender":int(row["Sex"]),"age":float(row["Age"])})
+for i, (_, row) in enumerate(df[df["diabetes"]==1].head(5).iterrows()):
+    test("diabetes", f"BRFSS diabetic #{i+6}", "High Risk",
+         {"hypertension":int(row["HighBP"]),"high_chol":int(row["HighChol"]),"bmi":float(row["BMI"]),"smoking_history":int(row["Smoker"]),"heart_disease":int(row["HeartDiseaseorAttack"]),"physical_activity":int(row["PhysActivity"]),"general_health":int(row["GenHlth"]),"gender":int(row["Sex"]),"age":float(row["Age"])})
 
-    # 4. Test Liver
-    try:
-        liver_data = schemas.LiverInput(
-            age=65, gender=1, total_bilirubin=0.7, direct_bilirubin=0.1,
-            alkaline_phosphotase=187, alamine_aminotransferase=16,
-            aspartate_aminotransferase=18, total_proteins=6.8,
-            albumin=3.3, albumin_and_globulin_ratio=0.9
-        )
-        res = prediction.predict_liver(liver_data)
-        print(f"OK - Liver Prediction: {res}")
-    except Exception as e:
-        print(f"FAIL - Liver Prediction Error: {e}")
-        traceback.print_exc()
+# ═══════════════════ HEART (BRFSS mapped) ═══════════════════
+hdf = pd.read_parquet("data/processed/heart.parquet")
+for i, (_, row) in enumerate(hdf[hdf["target"]==0].head(5).iterrows()):
+    test("heart", f"BRFSS heart healthy #{i+1}", "Healthy Heart",
+         {"age":float(row["age"]),"sex":int(row["sex"]),"cp":int(row["high_bp"]),"trestbps":float(row["bmi"]),"chol":int(row["high_chol"]),"fbs":int(row["smoker"]),"restecg":int(row["gen_hlth"]),"thalach":int(row["phys_activity"]),"exang":int(row["stroke"]),"oldpeak":float(row["diabetes"]),"slope":int(row["hvy_alcohol"]),"ca":0,"thal":0})
+for i, (_, row) in enumerate(hdf[hdf["target"]==1].head(5).iterrows()):
+    test("heart", f"BRFSS heart disease #{i+6}", "Heart Disease Detected",
+         {"age":float(row["age"]),"sex":int(row["sex"]),"cp":int(row["high_bp"]),"trestbps":float(row["bmi"]),"chol":int(row["high_chol"]),"fbs":int(row["smoker"]),"restecg":int(row["gen_hlth"]),"thalach":int(row["phys_activity"]),"exang":int(row["stroke"]),"oldpeak":float(row["diabetes"]),"slope":int(row["hvy_alcohol"]),"ca":0,"thal":0})
 
-    # 5. Test Kidney
-    try:
-        kidney_data = schemas.KidneyInput(
-            age=48, bp=80, sg=1.02, al=1, su=0, rbc=0, pc=0, pcc=0, ba=0,
-            bgr=121, bu=36, sc=1.2, sod=142, pot=4.9, hemo=15.4, pcv=44,
-            wc=7800, rc=5.2, htn=1, dm=1, cad=0, appet=0, pe=0, ane=0
-        )
-        res = prediction.predict_kidney(kidney_data)
-        print(f"OK - Kidney Prediction: {res}")
-    except Exception as e:
-        print(f"FAIL - Kidney Prediction Error: {e}")
-        traceback.print_exc()
+# ═══════════════════ LIVER (ILPD) ═══════════════════
+ldf = pd.read_parquet("data/processed/liver.parquet")
+for i, (_, row) in enumerate(ldf[ldf["target"]==0].head(5).iterrows()):
+    test("liver", f"ILPD healthy #{i+1}", "Healthy Liver",
+         {"age":float(row["age"]),"gender":int(row["gender"]),"total_bilirubin":float(row["total_bilirubin"]),"direct_bilirubin":float(row["direct_bilirubin"]),"alkaline_phosphotase":float(row["alkaline_phosphotase"]),"alamine_aminotransferase":float(row["alamine_aminotransferase"]),"aspartate_aminotransferase":float(row["aspartate_aminotransferase"]),"total_proteins":float(row["total_proteins"]),"albumin":float(row["albumin"]),"albumin_and_globulin_ratio":float(row["albumin_and_globulin_ratio"])})
+for i, (_, row) in enumerate(ldf[ldf["target"]==1].head(5).iterrows()):
+    test("liver", f"ILPD disease #{i+6}", "Liver Disease Detected",
+         {"age":float(row["age"]),"gender":int(row["gender"]),"total_bilirubin":float(row["total_bilirubin"]),"direct_bilirubin":float(row["direct_bilirubin"]),"alkaline_phosphotase":float(row["alkaline_phosphotase"]),"alamine_aminotransferase":float(row["alamine_aminotransferase"]),"aspartate_aminotransferase":float(row["aspartate_aminotransferase"]),"total_proteins":float(row["total_proteins"]),"albumin":float(row["albumin"]),"albumin_and_globulin_ratio":float(row["albumin_and_globulin_ratio"])})
 
-    # 6. Test Lungs
-    try:
-        lung_data = schemas.LungInput(
-            gender=1, age=69, smoking=1, yellow_fingers=1, anxiety=1,
-            peer_pressure=1, chronic_disease=1, fatigue=1, allergy=1,
-            wheezing=1, alcohol=1, coughing=1, shortness_of_breath=1,
-            swallowing_difficulty=1, chest_pain=1
-        )
-        res = prediction.predict_lungs(lung_data)
-        print(f"OK - Lung Prediction: {res}")
-    except Exception as e:
-        print(f"FAIL - Lung Prediction Error: {e}")
-        traceback.print_exc()
+# ═══════════════════ KIDNEY (UCI CKD) ═══════════════════
+kdf = pd.read_parquet("data/processed/kidney.parquet")
+for i, (_, row) in enumerate(kdf[kdf["target"]==0].head(4).iterrows()):
+    test("kidney", f"UCI kidney healthy #{i+1}", "Healthy Kidney",
+         {"age":float(row["age"]),"bp":float(row["bp"]),"sg":float(row["sg"]),"al":float(row["al"]),"su":float(row["su"]),"rbc":int(row["rbc"]),"pc":int(row["pc"]),"pcc":int(row["pcc"]),"ba":int(row["ba"]),"bgr":float(row["bgr"]),"bu":float(row["bu"]),"sc":float(row["sc"]),"sod":float(row["sod"]),"pot":float(row["pot"]),"hemo":float(row["hemo"]),"pcv":float(row["pcv"]),"wc":float(row["wc"]),"rc":float(row["rc"]),"htn":int(row["htn"]),"dm":int(row["dm"]),"cad":int(row["cad"]),"appet":int(row["appet"]),"pe":int(row["pe"]),"ane":int(row["ane"])})
+for i, (_, row) in enumerate(kdf[kdf["target"]==1].head(4).iterrows()):
+    test("kidney", f"UCI kidney CKD #{i+5}", "Chronic Kidney Disease Detected",
+         {"age":float(row["age"]),"bp":float(row["bp"]),"sg":float(row["sg"]),"al":float(row["al"]),"su":float(row["su"]),"rbc":int(row["rbc"]),"pc":int(row["pc"]),"pcc":int(row["pcc"]),"ba":int(row["ba"]),"bgr":float(row["bgr"]),"bu":float(row["bu"]),"sc":float(row["sc"]),"sod":float(row["sod"]),"pot":float(row["pot"]),"hemo":float(row["hemo"]),"pcv":float(row["pcv"]),"wc":float(row["wc"]),"rc":float(row["rc"]),"htn":int(row["htn"]),"dm":int(row["dm"]),"cad":int(row["cad"]),"appet":int(row["appet"]),"pe":int(row["pe"]),"ane":int(row["ane"])})
 
-if __name__ == "__main__":
-    test_all_predictions()
+# ═══════════════════ LUNGS (Survey, 0/1 encoding) ═══════════════════
+ludf = pd.read_parquet("data/processed/lungs.parquet")
+for i, (_, row) in enumerate(ludf[ludf["target"]==0].head(5).iterrows()):
+    test("lungs", f"Survey lungs healthy #{i+1}", "Healthy Lungs",
+         {"gender":int(row["GENDER"]),"age":int(row["AGE"]),"smoking":int(row["SMOKING"]),"yellow_fingers":int(row["YELLOW_FINGERS"]),"anxiety":int(row["ANXIETY"]),"peer_pressure":int(row["PEER_PRESSURE"]),"chronic_disease":int(row["CHRONIC_DISEASE"]),"fatigue":int(row["FATIGUE"]),"allergy":int(row["ALLERGY"]),"wheezing":int(row["WHEEZING"]),"alcohol":int(row["ALCOHOL_CONSUMING"]),"coughing":int(row["COUGHING"]),"shortness_of_breath":int(row["SHORTNESS_OF_BREATH"]),"swallowing_difficulty":int(row["SWALLOWING_DIFFICULTY"]),"chest_pain":int(row["CHEST_PAIN"])})
+for i, (_, row) in enumerate(ludf[ludf["target"]==1].head(5).iterrows()):
+    test("lungs", f"Survey lungs cancer #{i+6}", "Respiratory Issue Detected",
+         {"gender":int(row["GENDER"]),"age":int(row["AGE"]),"smoking":int(row["SMOKING"]),"yellow_fingers":int(row["YELLOW_FINGERS"]),"anxiety":int(row["ANXIETY"]),"peer_pressure":int(row["PEER_PRESSURE"]),"chronic_disease":int(row["CHRONIC_DISEASE"]),"fatigue":int(row["FATIGUE"]),"allergy":int(row["ALLERGY"]),"wheezing":int(row["WHEEZING"]),"alcohol":int(row["ALCOHOL_CONSUMING"]),"coughing":int(row["COUGHING"]),"shortness_of_breath":int(row["SHORTNESS_OF_BREATH"]),"swallowing_difficulty":int(row["SWALLOWING_DIFFICULTY"]),"chest_pain":int(row["CHEST_PAIN"])})
+
+# ═══════════════════ RESULTS ═══════════════════
+print()
+print(f"{'Model':<12} {'Test Case':<42} {'Expected':<32} {'Actual':<32} {'OK'}")
+print("=" * 122)
+for model, case, exp, act, match in results:
+    print(f"{model:<12} {case:<42} {exp:<32} {act:<32} {match}")
+
+total = len(results)
+passed = sum(1 for r in results if r[4] == "PASS")
+diff = sum(1 for r in results if r[4] == "DIFF")
+fail = sum(1 for r in results if r[4] == "FAIL")
+print(f"\nTotal: {total} | PASS: {passed} ({100*passed//total}%) | DIFF: {diff} | FAIL: {fail}")
+
+# Per-model breakdown
+for m in ["DIABETES","HEART","LIVER","KIDNEY","LUNGS"]:
+    mr = [r for r in results if r[0]==m]
+    mp = sum(1 for r in mr if r[4]=="PASS")
+    print(f"  {m}: {mp}/{len(mr)} correct")

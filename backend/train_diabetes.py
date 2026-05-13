@@ -41,12 +41,17 @@ def train_diabetes_model():
     # 3. Train/Test Split
     X_train, X_test, Y_train, Y_test = train_test_split(X, Y, test_size=0.2, random_state=42)
 
-    # 4. Training (XGBoost)
-    # Using parameters tuned for BRFSS
+    # 4. Training (XGBoost with class balancing)
+    neg_count = int((Y_train == 0).sum())
+    pos_count = int((Y_train == 1).sum()) + int((Y_train == 2).sum())
+    scale_weight = neg_count / pos_count if pos_count > 0 else 1.0
+    print(f"Class balance: neg={neg_count}, pos={pos_count}, scale_pos_weight={scale_weight:.2f}")
+
     model = xgb.XGBClassifier(
-        n_estimators=100,
+        n_estimators=200,
         max_depth=6,
         learning_rate=0.1,
+        scale_pos_weight=scale_weight,
         eval_metric='logloss',
         random_state=42
     )
