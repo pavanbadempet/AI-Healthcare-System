@@ -1968,3 +1968,242 @@ Data Pipeline Output
 | Airflow DAG count | 50-500 per organization | "I managed 50+ AutoSys job chains at Nomura" |
 | Data freshness SLA | 1-4 hours for batch, <1 min for streaming | "Nissan SLA was data ready by 6 AM" |
 | Data quality threshold | >99% completeness for production | "Silver layer enforces >99% non-null for key fields" |
+
+---
+
+### Kafka Deep-Dive (Every DE Must Know This)
+
+**Analogy:** Kafka is like a post office with infinite mailboxes. Producers drop off letters (events). Consumers pick up letters whenever they're ready. The post office keeps letters for 7 days so anyone who missed them can catch up.
+
+**Core concepts:**
+
+| Concept | What it is | Analogy |
+|---|---|---|
+| **Topic** | A named feed of messages | A mailbox labeled "trades" or "user-clicks" |
+| **Partition** | A topic split into ordered segments | Multiple slots in the mailbox for parallelism |
+| **Producer** | Sends messages to a topic | The person mailing a letter |
+| **Consumer** | Reads messages from a topic | The person checking the mailbox |
+| **Consumer Group** | Multiple consumers sharing the work | A team of mail sorters splitting the load |
+| **Offset** | Position of a message within a partition | Page number in a logbook |
+| **Broker** | A Kafka server | One post office branch |
+| **Replication** | Copies of data across brokers | Backup copies at other branches |
+
+**Why Kafka instead of just writing to a database?**
+1. **Decoupling**: Producer doesn't need to know who consumes. Add new consumers without changing producer.
+2. **Buffering**: If downstream is slow, Kafka holds messages. Database writes would back-pressure the producer.
+3. **Replay**: Consumer crashed? Restart and replay from the offset. Database INSERT is gone forever.
+4. **Fan-out**: One event goes to 5 different systems. Without Kafka, producer writes to 5 databases.
+
+**Q: "Explain Kafka's delivery guarantees."**
+
+| Guarantee | Meaning | Config | Use when |
+|---|---|---|---|
+| **At-most-once** | Message might be lost, never duplicated | `acks=0` | Logging, metrics (losing one is OK) |
+| **At-least-once** | Message never lost, might be duplicated | `acks=all` | Most pipelines (dedup downstream) |
+| **Exactly-once** | Message delivered exactly once | `enable.idempotence=true` + transactions | Financial transactions, billing |
+
+**Your Nova implementation:**
+> "In Nova, user behavior events (views, clicks, ratings) flow through Kafka topics. Spark Structured Streaming consumes them in micro-batches and writes to Delta Lake Bronze tables. We use at-least-once delivery with deduplication at the Silver layer -- Delta Lake MERGE on event_id ensures no duplicates even if Kafka replays."
+
+---
+
+### Docker and Kubernetes (What DE Needs to Know)
+
+**Docker analogy:** A Docker container is like a shipping container for software. Everything your app needs (code, libraries, Python version) is packed inside. It runs identically on your laptop, in CI/CD, and in production.
+
+**Why Docker matters for DE:**
+```
+WITHOUT Docker:
+  "It works on my machine" -> Fails in production
+  Python 3.9 locally, Python 3.11 on server -> Library incompatibility
+
+WITH Docker:
+  Same container everywhere -> Same behavior everywhere
+```
+
+**Your Healthcare project Dockerfile:**
+```dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+COPY backend/ ./backend/
+EXPOSE 8000
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+```
+
+**Kubernetes analogy:** If Docker is a shipping container, Kubernetes is the shipping port -- it decides which ship (server) carries which containers, replaces broken containers, and scales up during high demand.
+
+**K8s concepts for DE:**
+
+| Concept | What it does | Your experience |
+|---|---|---|
+| **Pod** | Smallest unit -- runs 1+ containers | Each Spark executor runs as a K8s pod |
+| **Deployment** | Manages replicas of pods | "Run 3 copies of my API" |
+| **Service** | Stable network endpoint for pods | API accessible at `api-service:8000` |
+| **ConfigMap/Secret** | External configuration | Database URLs, API keys |
+| **HPA** | Auto-scales pods based on CPU/memory | Scale Spark executors based on queue depth |
+
+**Your YARN-to-K8s migration answer:**
+> "At Nomura, I migrated Spark from YARN to Kubernetes. Think of it as moving from a dedicated office building (YARN on fixed hardware) to a flexible coworking space (K8s with auto-scaling). The challenges were: (1) packaging Spark JARs into Docker images, (2) configuring S3A connectors for MinIO instead of HDFS, (3) translating YARN's memory model to K8s resource requests/limits. The result: same Spark jobs, now portable between on-prem and cloud."
+
+---
+
+### CI/CD for Data Pipelines
+
+**Analogy:** CI/CD is like a car assembly line quality check. Every code change goes through automated inspections (tests) before reaching production. No human manually deploys code.
+
+**CI/CD stages for a data pipeline:**
+```
+Developer pushes code
+        |
+    [CI: Continuous Integration]
+    1. Lint Python code (flake8/ruff)
+    2. Run unit tests (pytest)
+    3. Validate SQL syntax
+    4. Check dbt model compilation
+    5. Build Docker image
+        |
+    [CD: Continuous Deployment]
+    6. Deploy to staging
+    7. Run integration tests (against test data)
+    8. Data quality validation
+    9. Promote to production
+    10. Smoke test on production data
+```
+
+**Your implementation:**
+- Healthcare: pytest with 141 tests, GitHub-hosted repo
+- Nova: Schema validation + quality gates at each medallion layer
+
+**Q: "How do you test data pipelines?"**
+
+| Test type | What it tests | Example |
+|---|---|---|
+| **Unit test** | Individual functions | "Does `clean_column()` remove nulls correctly?" |
+| **Integration test** | End-to-end pipeline | "Does Bronze->Silver->Gold produce expected output?" |
+| **Data quality test** | Output data correctness | "Are there nulls in primary key? Row count in range?" |
+| **Contract test** | Schema matches agreement | "Does output have expected columns and types?" |
+| **Performance test** | Speed within SLA | "Does pipeline complete in <45 minutes?" |
+
+---
+
+### Every DE Tradeoff (Complete Reference)
+
+**Q: "Walk me through a tradeoff you made."** -- This is the #1 senior-level question.
+
+#### Tradeoff 1: Spark vs Pandas
+
+| | Spark | Pandas |
+|---|---|---|
+| **Data size** | GB to TB | MB to low GB |
+| **Execution** | Distributed cluster | Single machine |
+| **Overhead** | High (cluster setup, JVM) | Zero |
+| **Learning curve** | Steeper | Easier |
+| **When to use** | >1GB, production pipelines | <1GB, exploration, prototyping |
+
+**Analogy:** Pandas is a bicycle -- great for short trips, no setup. Spark is a bus -- overkill for one person, but essential when you're moving 50 people.
+
+**Your answer:** "At Nomura, trade data was hundreds of thousands of rows daily with multi-way joins -- Pandas would run out of memory. Spark distributed the work across executors. But for my Healthcare project's 253K records, Pandas was sufficient for training -- I used Spark only when I needed window functions and complex aggregations."
+
+#### Tradeoff 2: Parquet vs CSV vs JSON vs Avro
+
+| Format | Type | Compression | Read speed | Schema | Best for |
+|---|---|---|---|---|---|
+| **Parquet** | Columnar | 65-80% | Fastest for analytics | Embedded | Analytics, Spark, data lakes |
+| **CSV** | Row | None | Slow | None | Human-readable, small files |
+| **JSON** | Row | None | Slow | Flexible | APIs, nested data, config |
+| **Avro** | Row | Good | Medium | Schema registry | Kafka messages, streaming |
+| **ORC** | Columnar | 60-70% | Fast (Hive) | Embedded | Hive-heavy environments |
+
+**Analogy:** 
+- **CSV** = handwritten notes (anyone can read, but slow to search)
+- **Parquet** = indexed filing cabinet (fast lookup by column, but can't read with notepad)
+- **JSON** = labeled boxes (flexible shape, but wastes space)
+
+**Your answer:** "I use Parquet everywhere. At Nomura, switching from CSV to Parquet cut read times by 95%. The key advantage is columnar storage -- when a query only needs 3 of 50 columns, Parquet reads only those 3. CSV reads all 50."
+
+#### Tradeoff 3: Snowflake vs Redshift vs BigQuery
+
+| | Snowflake | Redshift | BigQuery |
+|---|---|---|---|
+| **Cloud** | Multi-cloud | AWS only | GCP only |
+| **Compute/Storage** | Separated (scale independently) | Coupled (older) / Serverless (newer) | Separated |
+| **Pricing** | Per-second compute + storage | Per-node (reserved) or per-query | Per-query (on-demand) |
+| **Concurrency** | Excellent (virtual warehouses) | Limited without Serverless | Excellent |
+| **Strength** | Multi-cloud, ease of use | AWS ecosystem integration | ML integration, unstructured data |
+| **Your experience** | Nissan project | N/A | N/A |
+
+**Your answer:** "I used Snowflake at Nissan because it separates compute and storage -- we could scale our warehouse up during daily loads and scale down after. The multi-cloud support also meant no vendor lock-in. If the company was all-in on AWS, Redshift Serverless would be equally valid."
+
+#### Tradeoff 4: Airflow vs Step Functions vs Prefect vs Dagster
+
+| | Airflow | Step Functions | Prefect | Dagster |
+|---|---|---|---|---|
+| **Type** | Open-source orchestrator | AWS managed | Modern orchestrator | Modern orchestrator |
+| **DAG definition** | Python | JSON/YAML | Python (decorator-based) | Python (asset-based) |
+| **Learning curve** | Medium | Low | Low | Medium |
+| **Best for** | Complex multi-system ETL | AWS-native simple workflows | Python-first teams | Data-asset-focused teams |
+| **Scalability** | High (CeleryExecutor) | Very high (serverless) | High (cloud) | High |
+| **Your experience** | AutoSys (similar) | Nissan project | N/A | N/A |
+
+**Your answer:** "At Nissan I used Step Functions because the pipeline was AWS-native (Lambda + S3 + Snowflake) -- serverless orchestration was perfect. For a more complex multi-system pipeline like Nomura's (Spark + HDFS + multiple destinations), I'd use Airflow for its flexibility and Python-based DAGs."
+
+#### Tradeoff 5: Delta Lake vs Apache Iceberg vs Apache Hudi
+
+| | Delta Lake | Apache Iceberg | Apache Hudi |
+|---|---|---|---|
+| **Creator** | Databricks | Netflix | Uber |
+| **ACID** | Yes | Yes | Yes |
+| **Time travel** | Yes | Yes | Yes |
+| **Engine support** | Spark-native, growing Trino/Flink | Engine-agnostic (Spark, Trino, Flink) | Spark, Flink |
+| **Schema evolution** | Excellent | Excellent | Good |
+| **Strength** | Spark ecosystem, OPTIMIZE/ZORDER | Engine portability, partition evolution | Upsert-heavy workloads |
+| **Your experience** | Nova project | N/A | N/A |
+
+**Your answer:** "I chose Delta Lake for Nova because it's native to the Spark ecosystem we were already using. The OPTIMIZE and ZORDER commands are essential for query performance. If the requirement was engine-agnostic (query with both Spark and Trino), I'd consider Iceberg. If the workload was primarily upserts on streaming data, Hudi would be worth evaluating."
+
+#### Tradeoff 6: Star Schema vs OBT (One Big Table)
+
+| | Star Schema | One Big Table (OBT) |
+|---|---|---|
+| **Structure** | Fact + dimension tables | Single denormalized table |
+| **Joins** | Required (fact JOIN dims) | None |
+| **Query speed** | Good (with proper indexing) | Fastest (no joins) |
+| **Storage** | Less (normalized dims) | More (repeated dim values) |
+| **Maintenance** | More complex (multiple tables) | Simpler (one table) |
+| **Best for** | Analytics with many query patterns | Dashboards with fixed queries |
+
+**Your answer:** "At Nomura we used star schema because portfolio managers query the data in many different ways -- by instrument, by desk, by date, by counterparty. An OBT would require pre-deciding the grain. Star schema is more flexible. But for a specific dashboard with known queries, OBT can be simpler and faster."
+
+---
+
+### Data Governance (Know the Vocabulary)
+
+| Term | Meaning | Your implementation |
+|---|---|---|
+| **Data Catalog** | Searchable inventory of all datasets | Nova: Gold layer tables documented with schema |
+| **Data Lineage** | Track where data came from and where it goes | Nova: Bronze->Silver->Gold with transformation metadata |
+| **Data Classification** | Label data sensitivity (PII, PHI, public) | Healthcare: patient data never logged (PII protection) |
+| **Access Control** | Who can read/write which data | Healthcare: JWT authentication, role-based access |
+| **Data Retention** | How long to keep data | Delta Lake time travel: 30-day default retention |
+| **Audit Trail** | Log of who accessed what, when | Healthcare: 7-layer middleware logs all API requests |
+
+---
+
+### The "I Haven't Used X" Bridge Framework
+
+When they ask about a tool you haven't used directly:
+
+| They ask about | You bridge to | Script |
+|---|---|---|
+| **Airflow** | AutoSys | "Same paradigm -- DAGs, dependencies, retries. Airflow uses Python, AutoSys uses JIL. I'd ramp up in days." |
+| **dbt** | PySpark SQL | "Same concept -- modular SQL transforms with testing. dbt pushes down to warehouse, I pull into Spark. Both version-controlled." |
+| **Flink** | Spark Streaming | "Both process streams. Flink is true event-at-a-time, Spark is micro-batch. I'd learn Flink's API but the concepts transfer." |
+| **Terraform** | Docker/K8s YAML | "Infrastructure-as-code principle is the same. I define K8s resources in YAML, Terraform uses HCL for cloud resources." |
+| **Great Expectations** | Custom quality checks | "Same validation patterns. GE has a framework; I wrote the same checks manually (null %, range, uniqueness)." |
+| **Databricks** | PySpark + Delta Lake | "Databricks is managed Spark + Delta Lake + notebooks. I already use PySpark and Delta Lake -- Databricks wraps these with a UI." |
+| **Snowpipe** | Lambda + S3 triggers | "Same pattern: file lands in S3, auto-triggers ingestion. Snowpipe is native to Snowflake, I built the same with Lambda." |
+| **Kafka Connect** | Custom producers/consumers | "Connect is managed connectors. I built the same integration manually -- the concepts (sources, sinks, transforms) are identical." |
+
+**The magic phrase:** "I haven't used [X] directly, but the underlying concept is identical to [Y] which I've used extensively. The API would be new, but the engineering principles transfer directly. I'd be productive within [timeframe]."
