@@ -1328,3 +1328,643 @@ df.write.format("delta") \
 
 **Interview answer pattern:**
 > "I handle schema evolution at three levels: (1) Prevention -- use explicit column selection, never SELECT *, schema contracts with upstream. (2) Detection -- Bronze layer validates incoming schema against expected, alerts on drift. (3) Adaptation -- Delta Lake's mergeSchema for safe additive changes, manual review for breaking changes."
+
+---
+
+## PART 8: DATA ENGINEERING DEEP-DIVE (The Core of Your Interview)
+
+> Everything below is what separates a "developer who writes SQL" from a Data Engineer.
+
+---
+
+### What is Apache Airflow?
+
+**Airflow** is a workflow orchestration tool. You define tasks and their dependencies as a DAG (Directed Acyclic Graph) in Python, and Airflow runs them in the right order, retries failures, and alerts you.
+
+**Think of it like this:** You have 10 tasks that need to run every day:
+1. Download file from S3
+2. Validate schema
+3. Transform data
+4. Run quality checks
+5. Load to Snowflake
+
+Some depend on others (can't transform before downloading). Airflow manages this automatically.
+
+**You used AutoSys at TCS (same concept, enterprise version).** Airflow is the open-source equivalent that every startup and mid-size company uses.
+
+**Core Airflow concepts:**
+
+| Concept | What it is | AutoSys equivalent |
+|---|---|---|
+| **DAG** | A Python file defining tasks and their order | JIL (Job Information Language) file |
+| **Task** | A single unit of work (run a script, call an API) | A job definition |
+| **Operator** | The TYPE of task (BashOperator, PythonOperator, etc.) | Job type (command, file watcher) |
+| **Sensor** | A task that WAITS for a condition (file arrives, API responds) | File trigger / event trigger |
+| **XCom** | How tasks pass small data between each other | No direct equivalent |
+| **Connection** | Credentials for external systems (S3, Snowflake, etc.) | Machine/profile definitions |
+| **Schedule** | Cron expression for when the DAG runs | Calendar/schedule definition |
+| **Backfill** | Re-run a DAG for past dates (replay history) | Rerun with date override |
+
+**Example DAG (what you'd write in an interview):**
+
+```python
+from airflow import DAG
+from airflow.operators.python import PythonOperator
+from airflow.providers.amazon.aws.sensors.s3 import S3KeySensor
+from airflow.providers.snowflake.operators.snowflake import SnowflakeOperator
+from datetime import datetime, timedelta
+
+# Default args: retry 3 times, wait 5 min between retries, alert on failure
+default_args = {
+    'owner': 'data-engineering',
+    'retries': 3,
+    'retry_delay': timedelta(minutes=5),
+    'email_on_failure': True,
+    'email': ['data-team@company.com'],
+}
+
+# The DAG definition
+with DAG(
+    dag_id='daily_trade_etl',
+    default_args=default_args,
+    schedule_interval='0 6 * * *',   # Run at 6 AM UTC daily
+    start_date=datetime(2024, 1, 1),
+    catchup=False,                    # Don't backfill old dates
+    tags=['production', 'trades'],
+) as dag:
+
+    # Task 1: Wait for source file to arrive in S3
+    wait_for_file = S3KeySensor(
+        task_id='wait_for_source_file',
+        bucket_name='raw-data',
+        bucket_key='trades/{{ ds }}/trades.parquet',  # ds = execution date
+        timeout=3600,           # Wait up to 1 hour
+        poke_interval=300,      # Check every 5 minutes
+    )
+
+    # Task 2: Validate schema
+    def validate_schema(**context):
+        import pandas as pd
+        df = pd.read_parquet(f"s3://raw-data/trades/{context['ds']}/trades.parquet")
+        expected_cols = {'trade_id', 'instrument_id', 'amount', 'trade_date'}
+        if not expected_cols.issubset(set(df.columns)):
+            raise ValueError(f"Schema mismatch: missing {expected_cols - set(df.columns)}")
+        context['ti'].xcom_push(key='row_count', value=len(df))
+
+    validate = PythonOperator(
+        task_id='validate_schema',
+        python_callable=validate_schema,
+    )
+
+    # Task 3: Transform with Spark (submit to EMR/K8s)
+    def run_spark_transform(**context):
+        from airflow.providers.amazon.aws.hooks.emr import EmrHook
+        # Submit Spark job to EMR cluster
+        hook = EmrHook()
+        hook.add_job_flow_steps(cluster_id='j-XXXXX', steps=[{
+            'Name': 'transform_trades',
+            'ActionOnFailure': 'CONTINUE',
+            'HadoopJarStep': {
+                'Jar': 'command-runner.jar',
+                'Args': ['spark-submit', 's3://scripts/transform_trades.py',
+                         '--date', context['ds']]
+            }
+        }])
+
+    transform = PythonOperator(
+        task_id='spark_transform',
+        python_callable=run_spark_transform,
+    )
+
+    # Task 4: Load to Snowflake
+    load = SnowflakeOperator(
+        task_id='load_to_snowflake',
+        sql="""
+            COPY INTO trades_staging
+            FROM @s3_stage/trades/{{ ds }}/
+            FILE_FORMAT = (TYPE = PARQUET)
+        """,
+        snowflake_conn_id='snowflake_prod',
+    )
+
+    # Task 5: Quality checks
+    quality_check = SnowflakeOperator(
+        task_id='quality_checks',
+        sql="""
+            -- Fail if no rows loaded
+            SELECT CASE WHEN COUNT(*) = 0
+                THEN 1/0  -- Intentional error to fail task
+                ELSE 1 END
+            FROM trades_staging
+            WHERE trade_date = '{{ ds }}'
+        """,
+        snowflake_conn_id='snowflake_prod',
+    )
+
+    # DEFINE THE ORDER (the DAG structure)
+    wait_for_file >> validate >> transform >> load >> quality_check
+    # This means: wait_for_file runs first, then validate, then transform, etc.
+```
+
+**Key Airflow interview questions:**
+
+**Q: "What's the difference between `schedule_interval` and `start_date`?"**
+> `start_date` is when the DAG BEGINS being eligible to run. `schedule_interval` is HOW OFTEN it runs after that. A DAG with `start_date=Jan 1` and `schedule_interval='@daily'` will first run on Jan 2 (for the Jan 1 data period).
+
+**Q: "What is `catchup`?"**
+> If `catchup=True` and you deploy a DAG with `start_date` 30 days ago, Airflow will run 30 backfill executions to "catch up." Usually set to `False` in production to avoid accidental mass runs.
+
+**Q: "How do you handle task failures?"**
+> 1. `retries=3` with `retry_delay=timedelta(minutes=5)` -- automatic retry
+> 2. `email_on_failure=True` -- alert the team
+> 3. `on_failure_callback` -- custom Python function for Slack/PagerDuty
+> 4. Airflow UI shows failed tasks in red -- click to see logs and re-trigger
+
+**Q: "What are XComs?"**
+> XCom = Cross-Communication. Tasks can push/pull small values between each other. Example: Task 1 pushes `row_count=50000`, Task 3 pulls it to validate. NOT for large data -- use S3/GCS for that.
+
+**How to bridge AutoSys to Airflow:**
+> "At TCS I used AutoSys for job scheduling -- same concept as Airflow. The difference is Airflow defines DAGs in Python code (version-controlled, testable), while AutoSys uses JIL configuration files. I managed 50+ daily job chains in AutoSys with dependency management and failure recovery. Airflow is the same workflow orchestration paradigm -- I'd ramp up in days, not weeks."
+
+---
+
+### What is dbt (data build tool)?
+
+**dbt** transforms data INSIDE your warehouse using SQL. Instead of writing ad-hoc SQL scripts, you write modular SQL models that dbt compiles, runs, and tests.
+
+**Think of it like this:** dbt is to SQL what React is to HTML. It adds structure, reusability, and testing to what would otherwise be a mess of SQL files.
+
+**Why companies love dbt:**
+1. SQL transformations are version-controlled (Git)
+2. Built-in testing (not null, unique, accepted values)
+3. Auto-generated documentation and lineage graphs
+4. Modular: models reference other models with `ref()`
+5. Jinja templating for dynamic SQL
+
+**Example dbt project structure:**
+```
+models/
+  staging/
+    stg_trades.sql          -- Clean raw data
+    stg_instruments.sql     -- Clean reference data
+  marts/
+    fct_daily_pnl.sql       -- Business metric: daily P&L
+    dim_instruments.sql     -- Dimension table
+  schema.yml                -- Tests and documentation
+```
+
+**Example dbt model (what you'd write):**
+
+```sql
+-- models/marts/fct_daily_pnl.sql
+-- This model calculates daily P&L per instrument
+
+WITH trades AS (
+    SELECT * FROM {{ ref('stg_trades') }}
+    -- ref() creates a dependency: stg_trades runs BEFORE fct_daily_pnl
+),
+
+instruments AS (
+    SELECT * FROM {{ ref('stg_instruments') }}
+),
+
+daily_aggregates AS (
+    SELECT
+        t.trade_date,
+        t.instrument_id,
+        i.instrument_name,
+        i.asset_class,
+        SUM(t.amount) AS total_amount,
+        COUNT(*) AS trade_count,
+        AVG(t.amount) AS avg_trade_size
+    FROM trades t
+    JOIN instruments i ON t.instrument_id = i.instrument_id
+    GROUP BY 1, 2, 3, 4
+)
+
+SELECT
+    *,
+    SUM(total_amount) OVER (
+        PARTITION BY instrument_id
+        ORDER BY trade_date
+    ) AS cumulative_pnl
+FROM daily_aggregates
+```
+
+**Example dbt tests (schema.yml):**
+```yaml
+# models/schema.yml
+version: 2
+
+models:
+  - name: fct_daily_pnl
+    description: "Daily P&L aggregated by instrument"
+    columns:
+      - name: instrument_id
+        tests:
+          - not_null        # Fails if any NULL instrument_id
+          - relationships:  # Foreign key check
+              to: ref('dim_instruments')
+              field: instrument_id
+      - name: total_amount
+        tests:
+          - not_null
+      - name: trade_date
+        tests:
+          - not_null
+          - unique          # One row per instrument per day
+```
+
+**dbt commands:**
+```bash
+dbt run              # Execute all models (build the tables)
+dbt test             # Run all tests
+dbt docs generate    # Generate documentation website
+dbt run --select fct_daily_pnl+   # Run one model and all downstream
+dbt run --full-refresh            # Drop and rebuild tables
+```
+
+**How to bridge to your experience:**
+> "I haven't used dbt directly, but the concept maps to what I do in PySpark. dbt transforms data in the warehouse with SQL; I transform data in Spark with PySpark/SQL. Both use modular code, testing, and version control. The difference is dbt runs SQL inside Snowflake/BigQuery (push-down), while Spark pulls data out and processes it in a cluster. For SQL-heavy ELT workloads, dbt is simpler. For complex transformations with ML features, Spark is more powerful. I'd pick up dbt quickly."
+
+---
+
+### Data Lake vs Data Warehouse vs Lakehouse
+
+This is asked in EVERY DE interview. Know the tradeoffs cold:
+
+| | Data Warehouse | Data Lake | Data Lakehouse |
+|---|---|---|---|
+| **What it is** | Structured storage optimized for analytics | Raw storage for any data type | Combines both: raw storage + warehouse features |
+| **Examples** | Snowflake, Redshift, BigQuery | S3 + Parquet files, HDFS | Delta Lake, Apache Iceberg, Apache Hudi |
+| **Schema** | Schema-on-write (define before loading) | Schema-on-read (define when querying) | Schema-on-write with evolution |
+| **Data types** | Structured only (tables) | Any (structured, semi, unstructured) | Any, with table abstraction |
+| **ACID** | Yes (transactional) | No (files can be corrupted mid-write) | Yes (Delta Lake adds transactions) |
+| **Cost** | Expensive (compute + storage coupled) | Cheap (just S3/GCS storage) | Cheap storage + compute-on-demand |
+| **Performance** | Fast (optimized engine) | Slow (no indexing, no stats) | Fast (Z-ordering, file skipping, caching) |
+| **Best for** | BI/reporting, dashboards | ML training data, raw archives | Modern analytics + ML on one platform |
+
+**Your experience spans all three:**
+- **Warehouse**: Snowflake at Nissan (structured analytics)
+- **Lake**: S3/Parquet at Nomura (raw trade data)
+- **Lakehouse**: Delta Lake in Nova (medallion architecture)
+
+**Interview answer:**
+> "I've worked with all three patterns. At Nissan, we loaded clean data into Snowflake for reporting -- classic warehouse. At Nomura, trade data landed as Parquet in S3 -- a data lake that Spark queried directly. In my Nova project, I used Delta Lake which is a lakehouse -- raw data in Bronze (lake), validated data in Silver (warehouse-like), and ML-ready features in Gold. The lakehouse gives you cheap storage with ACID transactions and time travel."
+
+---
+
+### Batch vs Streaming -- When to Use Which
+
+| | Batch Processing | Stream Processing |
+|---|---|---|
+| **What it is** | Process data in chunks at scheduled intervals | Process data as it arrives, continuously |
+| **Latency** | Minutes to hours | Milliseconds to seconds |
+| **Tools** | Spark (batch), dbt, Airflow | Kafka, Spark Structured Streaming, Flink |
+| **Complexity** | Simpler (process, done) | Harder (state management, ordering, exactly-once) |
+| **Cost** | Lower (run once, stop) | Higher (always running) |
+| **Use when** | Daily reports, model training, backfills | Real-time dashboards, fraud detection, alerts |
+
+**Your experience:**
+- **Batch**: Everything at Nomura (daily trade processing), Healthcare (model training), Nissan (daily ETL)
+- **Streaming**: Nova's Kafka event ingestion (user views, clicks, ratings)
+
+**The hybrid pattern (most common in production):**
+```
+Source -> Kafka (streaming buffer) -> Spark Structured Streaming (micro-batch)
+                                          |
+                                     Delta Lake (ACID writes)
+                                          |
+                                     Gold tables (batch analytics)
+```
+> "Most production systems are hybrid. We stream events into Kafka for low-latency capture, then Spark Structured Streaming processes them in micro-batches (every 30 seconds) and writes to Delta Lake. Downstream analytics still runs as daily batch. This gives us near-real-time data capture without the complexity of true event-at-a-time processing."
+
+---
+
+### What is Idempotency? (Critical DE concept)
+
+**Idempotent** = running the same operation multiple times produces the same result as running it once.
+
+**Why it matters:** Pipelines WILL fail and be re-run. If your pipeline isn't idempotent, re-running creates duplicates or corrupts data.
+
+**Bad (not idempotent):**
+```python
+# Running this twice creates DUPLICATE rows
+df.write.mode("append").save("output/")
+```
+
+**Good (idempotent):**
+```python
+# Running this twice produces the SAME result
+# Method 1: Delete then insert
+spark.sql(f"DELETE FROM target WHERE batch_date = '{date}'")
+df.write.mode("append").save("output/")
+
+# Method 2: Overwrite partition
+df.write.mode("overwrite").partitionBy("batch_date").save("output/")
+
+# Method 3: Delta Lake MERGE (best)
+target.merge(source, "target.id = source.id") \
+    .whenMatchedUpdateAll() \
+    .whenNotMatchedInsertAll() \
+    .execute()
+```
+
+**Your implementation at Nissan:**
+```python
+def process_batch(date, data):
+    existing = snowflake.query(f"SELECT COUNT(*) FROM target WHERE batch_date = '{date}'")
+    if existing > 0:
+        snowflake.execute(f"DELETE FROM target WHERE batch_date = '{date}'")
+    data.write.mode("append").save("snowflake://target")
+# Safe to re-run: always produces the same result
+```
+
+---
+
+### Data Partitioning Strategies
+
+**Partitioning** = splitting a large table into smaller pieces based on a column value. Each partition is stored as a separate folder/file.
+
+```
+trades/
+  trade_date=2024-01-01/
+    part-00000.parquet  (500MB)
+  trade_date=2024-01-02/
+    part-00000.parquet  (480MB)
+  trade_date=2024-01-03/
+    part-00000.parquet  (520MB)
+```
+
+**Why partition?**
+- Query `WHERE trade_date = '2024-01-01'` reads only ONE folder instead of all
+- On 1 year of daily data, this skips 364/365 = 99.7% of the data
+
+**Choosing the partition key:**
+| Good partition key | Bad partition key | Why |
+|---|---|---|
+| `trade_date` (daily) | `trade_id` (unique per row) | Too many partitions = "small files problem" |
+| `region` (10 values) | `user_id` (millions) | Each partition should have meaningful data volume |
+| `year/month` (24 values for 2 years) | `timestamp` (unique) | Partition pruning only works with WHERE filters |
+
+**Rule of thumb:** Partition key should have 10-1000 distinct values. More = too many small files. Less = partitions too large.
+
+**The Small Files Problem:**
+```
+BAD: 10,000 partitions x 1MB each = 10,000 small files
+     Spark opens 10,000 file handles = SLOW
+     S3 lists 10,000 objects = SLOW
+
+GOOD: 365 partitions x 30MB each = 365 reasonably-sized files
+     Spark opens 365 file handles = FAST
+```
+
+**Fix:** Delta Lake `OPTIMIZE` compaction merges small files into larger ones:
+```sql
+OPTIMIZE delta.`/data/trades/`              -- Compact small files
+OPTIMIZE delta.`/data/trades/` ZORDER BY (instrument_id)  -- Also co-locate related data
+```
+
+**Z-Ordering** arranges data within files so that rows with similar values are stored near each other. This makes filter queries faster because Spark can skip entire file sections.
+
+---
+
+### Data Contracts
+
+**Data contracts** = formal agreements between data producers and consumers about schema, quality, and SLAs.
+
+**The problem without contracts:** Upstream team changes a column name. Your pipeline breaks at 2 AM. No one told you.
+
+**The solution:**
+```yaml
+# data_contract.yml
+contract:
+  name: trade_feed
+  owner: trading-team
+  consumer: data-engineering
+  schema:
+    - name: trade_id
+      type: string
+      nullable: false
+      description: "Unique trade identifier"
+    - name: amount
+      type: decimal(18,2)
+      nullable: false
+      constraints:
+        - "amount > 0"
+    - name: trade_date
+      type: date
+      nullable: false
+  sla:
+    delivery_time: "06:00 UTC"
+    freshness: "< 4 hours"
+  quality:
+    completeness: "> 99%"
+    uniqueness: "trade_id must be unique"
+```
+
+**Your implementation:** You already do this informally:
+- Healthcare: Pydantic schema validation on every API request
+- Nova: Silver layer validates against expected schema, quarantines bad records
+- Nissan: Schema validation Lambda before processing
+
+**Interview answer:**
+> "I implement data contracts through schema validation at the ingestion layer. At Nissan, the first Lambda in our Step Function pipeline validates incoming files against an expected schema -- column names, types, and not-null constraints. In Nova, the Bronze-to-Silver transformation enforces schema contracts: records that don't match are quarantined with quality metadata, not silently dropped. This is the same principle as formal data contracts -- just implemented at the pipeline level rather than as a separate governance tool."
+
+---
+
+### Data Observability
+
+**Data observability** = monitoring the health of your data (not just your infrastructure).
+
+**The 5 pillars:**
+| Pillar | What it monitors | Example alert |
+|---|---|---|
+| **Freshness** | Is data arriving on time? | "trades table hasn't been updated in 6 hours" |
+| **Volume** | Is the expected amount of data arriving? | "Only 1K rows today vs usual 50K" |
+| **Schema** | Has the structure changed? | "New column 'risk_score' appeared" |
+| **Distribution** | Are values within expected ranges? | "Average trade amount jumped from $10K to $10M" |
+| **Lineage** | Where did this data come from? Which tables depend on it? | "Table X feeds 15 downstream reports" |
+
+**Tools:** Monte Carlo, Great Expectations, Elementary, Soda
+
+**Your implementation:**
+- CloudWatch metrics on Lambda execution (Nissan) = freshness + volume monitoring
+- Silver layer quality scoring (Nova) = distribution + schema monitoring
+- 7-layer middleware with logging (Healthcare) = freshness monitoring
+- Test suite with 141 tests (Healthcare) = schema + distribution validation
+
+---
+
+### Kimball vs Inmon (Data Warehouse Design)
+
+Two competing philosophies for designing a data warehouse:
+
+| | Kimball (Bottom-Up) | Inmon (Top-Down) |
+|---|---|---|
+| **Approach** | Build one star schema at a time, for each business process | Design the entire enterprise data model first |
+| **Structure** | Star schemas (fact + dimension tables) | 3NF normalized enterprise data warehouse |
+| **Speed** | Fast to deliver first results (weeks) | Slow to start (months) but comprehensive |
+| **Complexity** | Simpler (denormalized, fewer joins) | More complex (normalized, more joins) |
+| **Best for** | Analytics, BI, dashboards | Enterprise-wide single source of truth |
+| **Your experience** | Nomura used star schema (Kimball) | N/A |
+
+**Star Schema (what you used at Nomura):**
+```
+                    dim_instruments
+                         |
+dim_counterparties -- fct_trades -- dim_dates
+                         |
+                    dim_currencies
+```
+
+**Fact table** = the measurements/events (trades, with amounts and quantities)
+**Dimension tables** = the context (WHO traded, WHAT instrument, WHEN, in what CURRENCY)
+
+```sql
+-- Star schema query: Daily P&L by asset class
+SELECT
+    d.trade_date,
+    i.asset_class,
+    SUM(f.trade_amount) AS total_pnl,
+    COUNT(*) AS trade_count
+FROM fct_trades f
+JOIN dim_instruments i ON f.instrument_id = i.instrument_id
+JOIN dim_dates d ON f.date_key = d.date_key
+WHERE d.trade_date >= '2024-01-01'
+GROUP BY 1, 2
+ORDER BY 1, 2;
+```
+
+**Why Kimball for Nomura:**
+> "We used Kimball's star schema because capital markets analytics is query-heavy -- portfolio managers need fast aggregations (daily P&L, risk exposure by desk). Denormalized dimensions mean fewer joins, which means faster queries. The trade-off is some data redundancy in dimensions, but for analytics that's acceptable."
+
+---
+
+### Slowly Changing Dimensions -- All 4 Types (Complete Reference)
+
+| Type | Strategy | Example | When to use |
+|---|---|---|---|
+| **Type 0** | Never update | Country codes, US states | Reference data that truly never changes |
+| **Type 1** | Overwrite | Fix a typo: "Jonh" -> "John" | Corrections where history doesn't matter |
+| **Type 2** | Add new row | Rating changes: 8.5 -> 8.8 | When you MUST track history (regulatory, HIPAA) |
+| **Type 3** | Add column | `current_city`, `previous_city` | When you only need ONE previous value |
+
+**Type 1 -- Overwrite (simplest):**
+```sql
+-- Customer moved from NYC to SF. Just update:
+UPDATE dim_customers SET city = 'San Francisco' WHERE customer_id = 123;
+-- History lost. We no longer know they were in NYC.
+```
+
+**Type 2 -- New Row (what you use in Nova):**
+```sql
+-- Step 1: Close the current record
+UPDATE dim_movies
+SET valid_to = CURRENT_DATE, is_current = false
+WHERE movie_id = 123 AND is_current = true;
+
+-- Step 2: Insert new record
+INSERT INTO dim_movies (movie_id, title, rating, valid_from, valid_to, is_current)
+VALUES (123, 'Inception', 8.8, CURRENT_DATE, NULL, true);
+```
+
+Result:
+```
+| movie_id | title     | rating | valid_from | valid_to   | is_current |
+|----------|-----------|--------|------------|------------|------------|
+| 123      | Inception | 8.5    | 2024-01-01 | 2024-06-15 | false      |
+| 123      | Inception | 8.8    | 2024-06-15 | NULL       | true       |
+```
+
+**Type 3 -- Previous Value Column:**
+```sql
+ALTER TABLE dim_customers ADD COLUMN previous_city VARCHAR;
+
+UPDATE dim_customers
+SET previous_city = city, city = 'San Francisco'
+WHERE customer_id = 123;
+```
+
+Result:
+```
+| customer_id | city          | previous_city |
+|-------------|---------------|---------------|
+| 123         | San Francisco | New York      |
+```
+
+---
+
+### Common DE System Design Questions
+
+**Q: "Design a real-time analytics pipeline for an e-commerce company."**
+
+```
+User clicks/views/purchases
+        |
+    [Kafka Topics]
+    user-events, order-events
+        |
+    [Spark Structured Streaming]
+    - Deduplicate events
+    - Sessionize user activity
+    - Compute metrics (GMV, conversion rate)
+        |
+    [Delta Lake Gold Tables]
+    fct_sessions, fct_orders, dim_products
+        |
+    [Snowflake / Redshift]  <-- BI/dashboards (Tableau, Looker)
+        |
+    [Redis Cache]           <-- Real-time metrics API
+```
+
+**Key decisions to mention:**
+1. **Kafka** for event capture (durability, replay, decoupling)
+2. **Spark Structured Streaming** for processing (micro-batch, exactly-once with Delta)
+3. **Delta Lake** for storage (ACID, time travel, schema evolution)
+4. **Separate serving layer** (Snowflake for BI, Redis for real-time API)
+
+**Q: "How would you handle late-arriving data?"**
+> "Late data means events that arrive after the processing window has closed. For example, a mobile app event from Tuesday that arrives on Thursday due to the device being offline. I handle this with three techniques:
+> 1. **Watermarking** in Spark Structured Streaming -- define how late is acceptable (e.g., 24 hours)
+> 2. **Idempotent writes** -- if we re-process, Delta Lake MERGE prevents duplicates
+> 3. **Reprocessing** -- for very late data, trigger a backfill of the affected partition"
+
+**Q: "Design a data quality monitoring system."**
+
+```
+Data Pipeline Output
+        |
+    [Great Expectations / Custom Checks]
+    - Row count within expected range?
+    - Null percentage below threshold?
+    - Column values within valid range?
+    - Schema matches expected?
+    - Freshness: updated within SLA?
+        |
+    +---------+---------+
+    |                   |
+  PASS                FAIL
+    |                   |
+  Continue          [Alert System]
+  pipeline          - Slack notification
+                    - PagerDuty for P0
+                    - Quarantine bad data
+                    - Block downstream
+```
+
+---
+
+### The DE Interview Cheat Sheet -- Numbers to Know
+
+| Concept | Typical value | Your value |
+|---|---|---|
+| Parquet vs CSV read speed | 10-100x faster | "Our Spark jobs read Parquet 95% faster than CSV" |
+| Broadcast join threshold | < 10MB default, tunable to ~100MB | "We broadcast dimension tables under 100MB" |
+| Spark partition size | 128MB-256MB ideal | "We target ~200MB per partition" |
+| Kafka retention | 7 days default | "We retain events for 14 days for replay" |
+| Delta Lake OPTIMIZE | Run daily or when >1000 small files | "Nova compacts during off-peak hours" |
+| Snowflake warehouse size | XS for dev, M-L for production | "Nissan used medium warehouse for daily loads" |
+| Airflow DAG count | 50-500 per organization | "I managed 50+ AutoSys job chains at Nomura" |
+| Data freshness SLA | 1-4 hours for batch, <1 min for streaming | "Nissan SLA was data ready by 6 AM" |
+| Data quality threshold | >99% completeness for production | "Silver layer enforces >99% non-null for key fields" |
