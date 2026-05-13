@@ -182,9 +182,247 @@ def process_in_batches(records: list, batch_size: int = 1000):
     return processed
 ```
 
+### Pattern 7: Generator for Large File Processing (Memory-Efficient)
+
+**Q: "Process a 50GB log file without running out of memory."**
+
+**Why generators:** A generator yields one item at a time instead of loading everything into memory. Essential for DE when dealing with files that don't fit in RAM.
+
+```python
+def read_large_file(file_path: str, chunk_size: int = 8192):
+    """Read a large file line by line without loading into memory."""
+    with open(file_path, 'r') as f:
+        for line in f:
+            yield line.strip()
+
+def process_log_file(file_path: str) -> dict:
+    """Process a massive log file with constant memory usage."""
+    stats = {"total": 0, "errors": 0, "warnings": 0}
+
+    for line in read_large_file(file_path):
+        stats["total"] += 1
+        if "ERROR" in line:
+            stats["errors"] += 1
+        elif "WARN" in line:
+            stats["warnings"] += 1
+
+    return stats
+
+# Memory usage: ~1 line at a time, regardless of file size
+# 50GB file? Still uses ~1KB of memory
+```
+
+**Follow-up:** "What's the difference between a generator and a list?"
+> "A list stores all items in memory at once. A generator computes items lazily -- only when asked. For 1M records: list uses ~800MB, generator uses ~1KB. In DE, we use generators for ETL pipelines where data flows through transformations without materializing intermediate results."
+
+### Pattern 8: Retry with Exponential Backoff (Production Pattern)
+
+**Q: "Write a retry decorator for flaky API calls."**
+
+```python
+import time
+import functools
+
+def retry(max_attempts=3, backoff_factor=2, exceptions=(Exception,)):
+    """Decorator that retries a function with exponential backoff."""
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    return func(*args, **kwargs)
+                except exceptions as e:
+                    if attempt == max_attempts:
+                        raise  # Final attempt failed, propagate error
+                    wait = backoff_factor ** attempt  # 2, 4, 8 seconds
+                    print(f"Attempt {attempt} failed: {e}. Retrying in {wait}s...")
+                    time.sleep(wait)
+        return wrapper
+    return decorator
+
+# Usage:
+@retry(max_attempts=3, backoff_factor=2, exceptions=(ConnectionError, TimeoutError))
+def fetch_data_from_api(url: str) -> dict:
+    response = requests.get(url, timeout=30)
+    response.raise_for_status()
+    return response.json()
+```
+
+**Why this matters:** Every production pipeline has flaky dependencies (APIs, databases, S3). This pattern is in YOUR Healthcare project (middleware retry logic).
+
+### Pattern 9: ETL Pipeline Class (What They Want to See)
+
+**Q: "Write a simple ETL pipeline framework."**
+
+```python
+from abc import ABC, abstractmethod
+from datetime import datetime
+
+class ETLPipeline(ABC):
+    """Base class for ETL pipelines. Subclass and implement extract/transform/load."""
+
+    def __init__(self, pipeline_name: str):
+        self.name = pipeline_name
+        self.metrics = {"start": None, "end": None, "rows_in": 0, "rows_out": 0}
+
+    def run(self, execution_date: str) -> dict:
+        """Execute the full ETL pipeline."""
+        self.metrics["start"] = datetime.now()
+
+        try:
+            # Extract
+            raw_data = self.extract(execution_date)
+            self.metrics["rows_in"] = len(raw_data)
+
+            # Transform
+            clean_data = self.transform(raw_data)
+
+            # Load
+            self.load(clean_data, execution_date)
+            self.metrics["rows_out"] = len(clean_data)
+
+            self.metrics["end"] = datetime.now()
+            self.metrics["status"] = "SUCCESS"
+        except Exception as e:
+            self.metrics["status"] = "FAILED"
+            self.metrics["error"] = str(e)
+            raise
+
+        return self.metrics
+
+    @abstractmethod
+    def extract(self, execution_date: str) -> list: ...
+
+    @abstractmethod
+    def transform(self, raw_data: list) -> list: ...
+
+    @abstractmethod
+    def load(self, clean_data: list, execution_date: str) -> None: ...
+
+
+# Concrete implementation:
+class TradePipeline(ETLPipeline):
+    def extract(self, execution_date):
+        return read_from_s3(f"trades/{execution_date}/")
+
+    def transform(self, raw_data):
+        return [r for r in raw_data if r["amount"] > 0 and r["trade_id"] is not None]
+
+    def load(self, clean_data, execution_date):
+        write_to_snowflake(clean_data, table="fct_trades", partition=execution_date)
+```
+
+**Why this impresses:** Shows OOP, separation of concerns, error handling, metrics collection, and production thinking.
+
+### Pattern 10: Concurrent API Calls (Common DE Task)
+
+**Q: "Fetch data from 100 API endpoints efficiently."**
+
+```python
+from concurrent.futures import ThreadPoolExecutor, as_completed
+import requests
+
+def fetch_all_endpoints(urls: list[str], max_workers: int = 10) -> list[dict]:
+    """Fetch data from multiple URLs concurrently."""
+    results = []
+    errors = []
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Submit all tasks
+        future_to_url = {executor.submit(requests.get, url): url for url in urls}
+
+        # Collect results as they complete
+        for future in as_completed(future_to_url):
+            url = future_to_url[future]
+            try:
+                response = future.result(timeout=30)
+                results.append({"url": url, "data": response.json()})
+            except Exception as e:
+                errors.append({"url": url, "error": str(e)})
+
+    print(f"Success: {len(results)}, Errors: {len(errors)}")
+    return results
+
+# Sequential: 100 APIs x 2 sec each = 200 seconds
+# Concurrent (10 workers): 100 APIs / 10 workers x 2 sec = 20 seconds
+```
+
+### Pattern 11: Date Range Generation (Every DE Needs This)
+
+```python
+from datetime import datetime, timedelta
+
+def generate_date_range(start: str, end: str) -> list[str]:
+    """Generate list of dates between start and end (inclusive)."""
+    start_dt = datetime.strptime(start, "%Y-%m-%d")
+    end_dt = datetime.strptime(end, "%Y-%m-%d")
+
+    dates = []
+    current = start_dt
+    while current <= end_dt:
+        dates.append(current.strftime("%Y-%m-%d"))
+        current += timedelta(days=1)
+    return dates
+
+# Used for: backfills, partition generation, date-based processing
+# generate_date_range("2024-01-01", "2024-01-05")
+# -> ["2024-01-01", "2024-01-02", "2024-01-03", "2024-01-04", "2024-01-05"]
+```
+
+### Pattern 12: Data Profiling (First Thing You Do with New Data)
+
+```python
+def profile_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    """Profile a DataFrame: types, nulls, unique values, sample values."""
+    profile = pd.DataFrame({
+        "dtype": df.dtypes,
+        "non_null": df.count(),
+        "null_pct": (df.isnull().sum() / len(df) * 100).round(1),
+        "unique": df.nunique(),
+        "unique_pct": (df.nunique() / len(df) * 100).round(1),
+        "sample": df.iloc[0] if len(df) > 0 else None,
+    })
+    return profile
+
+# Use this FIRST when you encounter new data. Shows you think about
+# data quality BEFORE writing transformations.
+```
+
+### Pattern 13: Log Parsing with Regex (Common in DE Coding Rounds)
+
+```python
+import re
+from collections import Counter
+
+def parse_access_log(log_path: str) -> dict:
+    """Parse web server access log and compute statistics."""
+    # Apache log format: 127.0.0.1 - - [10/Oct/2024:13:55:36] "GET /api/health HTTP/1.1" 200 2326
+    pattern = r'(\d+\.\d+\.\d+\.\d+) .+ "(\w+) (.+) HTTP/.+" (\d+) (\d+)'
+
+    stats = {
+        "total_requests": 0,
+        "status_codes": Counter(),
+        "top_endpoints": Counter(),
+        "error_ips": Counter(),
+    }
+
+    for line in read_large_file(log_path):
+        match = re.match(pattern, line)
+        if match:
+            ip, method, path, status, size = match.groups()
+            stats["total_requests"] += 1
+            stats["status_codes"][status] += 1
+            stats["top_endpoints"][path] += 1
+            if status.startswith("5"):
+                stats["error_ips"][ip] += 1
+
+    return stats
+```
+
 ---
 
 ## SQL CODING PATTERNS
+
 
 ### Pattern 1: Window Functions (Most Asked - know this COLD)
 
