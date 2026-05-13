@@ -1,48 +1,44 @@
-version: '3.8'
+# ============================================================
+# AI Healthcare System — Docker Compose
+# ============================================================
+# Usage:
+#   docker compose up --build        (start all services)
+#   docker compose up backend        (backend only)
+#   docker compose down              (stop all)
+# ============================================================
 
 services:
   backend:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: healthcare_backend
-    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000
     ports:
       - "8000:8000"
+    env_file:
+      - .env
     volumes:
-      - ./.env:/app/.env
       - ./healthcare.db:/app/healthcare.db
-      - ./vector_store.pkl:/app/vector_store.pkl
-      - ./mlruns:/app/mlruns
-      - ./Datasets:/app/Datasets
-      - ./Testing:/app/Testing
-      - ./backend:/app/backend # Mount backend for live updates
-    restart: always
+      - ./backend:/app/backend
+      - ./data:/app/data
+      - ./models:/app/models
+    restart: unless-stopped
     healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/" ]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/healthz"]
       interval: 30s
-      timeout: 10s
+      timeout: 5s
       retries: 3
 
   frontend:
-    build: .
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: healthcare_frontend
-    command: streamlit run frontend/main.py --server.port 8501 --server.address 0.0.0.0
     ports:
-      - "8501:8501"
+      - "3000:3000"
     environment:
-      - BACKEND_URL=http://backend:8000
+      - NEXT_PUBLIC_API_URL=http://backend:8000
     depends_on:
       backend:
         condition: service_healthy
-    volumes:
-      - ./.streamlit:/app/.streamlit
-      - ./frontend:/app/frontend # Mount frontend for live updates
-
-  mlflow:
-    build: .
-    container_name: healthcare_mlflow
-    command: mlflow ui --host 0.0.0.0 --port 5000
-    ports:
-      - "5000:5000"
-    volumes:
-      - ./mlruns:/app/mlruns
-    restart: always
+    restart: unless-stopped

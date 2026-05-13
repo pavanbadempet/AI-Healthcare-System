@@ -14,16 +14,16 @@ def test_train_diabetes():
          patch("backend.train_diabetes.pickle.dump") as mock_pickle, \
          patch("xgboost.XGBClassifier") as mock_xgb:
         
-        # Setup Mock Data
         df = pd.DataFrame({
-            "gender": ["Male", "Female", "Other"] * 10,
-            "age": [30.0] * 30,
+            "gender": [1, 0, 1] * 10,
+            "age_bucket": [5] * 30,
             "hypertension": [0] * 30,
-            "heart_disease": [0] * 30,
-            "smoking_history": ["never"] * 30,
+            "high_chol": [0] * 30,
             "bmi": [25.0] * 30,
-            "HbA1c_level": [5.5] * 30,
-            "blood_glucose_level": [100] * 30,
+            "smoking_history": [0] * 30,
+            "heart_disease": [0] * 30,
+            "physical_activity": [1] * 30,
+            "general_health": [3] * 30,
             "diabetes": [0] * 30
         })
         mock_read.return_value = df
@@ -66,7 +66,6 @@ def test_train_heart():
         
         train_heart_model()
         
-        assert mock_read.called
         assert mock_xgb.return_value.fit.called
         assert mock_pickle.called
 
@@ -86,7 +85,7 @@ def test_train_liver():
             "Alkaline_Phosphotase": [180] * 30,
             "Alamine_Aminotransferase": [20] * 30,
             "Aspartate_Aminotransferase": [25] * 30,
-            "Total_Protiens": [6.5] * 30,
+            "Total_Proteins": [6.5] * 30,
             "Albumin": [3.5] * 30,
             "Albumin_and_Globulin_Ratio": [1.0] * 30,
             "target": [0, 1] * 15

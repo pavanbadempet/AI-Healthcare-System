@@ -39,6 +39,8 @@ if "sqlite" in SQLALCHEMY_DATABASE_URL:
     def set_sqlite_pragma(dbapi_connection, connection_record):
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL") # Balance ACID with performance in WAL
+        cursor.execute("PRAGMA foreign_keys=ON") # Strict OLTP data integrity
         cursor.close()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -48,5 +50,8 @@ def get_db():
     db = SessionLocal()
     try:
         yield db
+    except Exception as e:
+        db.rollback() # ACID compliance: Rollback dirty OLTP transactions
+        raise
     finally:
         db.close()

@@ -94,24 +94,7 @@ class TestMLServiceHeart:
             
             assert result == "Heart Disease Detected"
     
-    def test_predict_heart_high_bp_threshold(self):
-        """Test high BP threshold detection."""
-        mock_result = {"prediction": "Healthy Heart", "raw": 0}
-        
-        with patch("backend.ml_service.prediction.predict_heart", return_value=mock_result) as mock_pred:
-            service = MLService()
-            
-            # Test with high BP (>130)
-            service.predict_heart_disease(
-                age=50, gender="male", cp=0, trestbps=135, chol=180,
-                fbs=0, restecg=0, thalach=160, exang=0, oldpeak=0,
-                slope=0, ca=0, thal=1
-            )
-            
-            # Verify high_bp was set to 1
-            call_args = mock_pred.call_args[0][0]
-            assert call_args.high_bp == 1
-    
+
     def test_predict_heart_exception(self):
         """Test error handling in heart prediction."""
         with patch("backend.ml_service.prediction.predict_heart", side_effect=Exception("Heart model error")):

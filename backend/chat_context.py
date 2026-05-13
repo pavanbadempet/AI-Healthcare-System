@@ -196,17 +196,76 @@ def _build_general_stats_context(question: str, db: Session, user_id: int) -> st
     return "\n".join(lines)
 
 
+def _build_global_rag_context(db: Session, question: str) -> tuple[str, list[dict[str, Any]]]:
+    """
+    Hospital-wide Global RAG Search (Anonymized).
+    Finds historical cases matching conditions mentioned in the query.
+    """
+    q = _normalize(question)
+    sources = []
+    lines = ["### Global Hospital Database (Anonymized Historical Cases)"]
+
+    condition_map = {
+        "diabetes": "diabetes", "glucose": "diabetes", "sugar": "diabetes",
+        "heart": "heart", "cardiac": "heart", "cardiovascular": "heart",
+        "liver": "liver", "hepatic": "liver", "kidney": "kidney", "renal": "kidney",
+        "lung": "lungs", "pulmonary": "lungs", "respiratory": "lungs",
+    }
+
+    matched_types = set()
+    for keyword, record_type in condition_map.items():
+        if keyword in q:
+            matched_types.add(record_type)
+
+    if not matched_types:
+        # Fallback to general historical statistics if no specific disease mentioned
+        total_records = db.query(models.HealthRecord).count()
+        lines.append(f"System has indexed {total_records} historical health records across all departments.")
+        lines.append("No specific disease keyword detected for cross-patient similarity matching.")
+        return "\n".join(lines), sources
+
+    for record_type in matched_types:
+        records = (
+            db.query(models.HealthRecord)
+            .filter(models.HealthRecord.record_type == record_type)
+            .order_by(models.HealthRecord.timestamp.desc())
+            .limit(10)
+            .all()
+        )
+        if records:
+            lines.append(f"\n#### Historical {record_type.capitalize()} Cases")
+            for r in records:
+                timestamp = r.timestamp.strftime("%Y-%m-%d") if r.timestamp else "Unknown"
+                # Strip PII completely, only show the diagnosis/prediction and time
+                lines.append(f"  - [Case {r.id}] ({timestamp}): {r.prediction}")
+                sources.append({"type": "global_record", "name": f"Anonymized {record_type} Case", "id": r.id})
+
+    return "\n".join(lines), sources
+
+
 def build_chat_context(
-    db: Session, question: str, user: models.User
+    db: Session, question: str, user: models.User, rag_scope: str = "patient"
 ) -> tuple[str, list[dict[str, Any]]]:
     """
-    Build RAG context for a chat question.
+    Build RAG context for a chat question with Role-Based Governance.
 
     Returns (context_string, sources_list).
-
-    All context sections are assembled and truncated to fit within
-    the token budget for reliable LLM performance.
     """
+    # RAG Governance Security Check
+    if rag_scope == "global" and user.role not in ("doctor", "admin"):
+        # Strictly override to patient mode if unauthorized
+        rag_scope = "patient"
+
+    if rag_scope == "global":
+        global_ctx, global_sources = _build_global_rag_context(db, question)
+        # Always include chat history for context continuity even in global mode
+        chat_ctx = _build_chat_history_context(db, user.id, limit=3)
+        combined = f"{global_ctx}\n\n{chat_ctx}"
+        if len(combined) > MAX_CONTEXT_CHARS:
+            combined = combined[:MAX_CONTEXT_CHARS] + "\n...(truncated)"
+        return combined, global_sources
+
+    # Standard Patient-Scoped RAG
     sources: list[dict[str, Any]] = []
     sections: list[str] = []
 

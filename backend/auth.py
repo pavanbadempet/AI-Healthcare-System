@@ -171,6 +171,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
             db.add(audit_entry)
             db.commit()
         except Exception as e:
+            db.rollback()
             logger.error(f"Audit Log Failed: {e}")
             # Do not fail login if audit fails, just log error
             
@@ -258,9 +259,17 @@ def get_user_full_details(user_id: int, current_user: models.User = Depends(get_
         db.add(audit_entry)
         db.commit()
     except Exception as e:
+        db.rollback()
         logger.error(f"Audit Log Error: {e}")
 
     # --- PRIVACY COMPLIANCE GATE ---
+    # Eagerly load the collections so they can be read post-expunge
+    _ = user.health_records
+    _ = user.chat_logs
+    
+    # Detach from session so we don't accidentally commit redactions to OLTP DB
+    db.expunge(user)
+    
     if not user.allow_data_collection:
         # Redact Sensitive Data for privacy opted-out users
         user.health_records = [] 

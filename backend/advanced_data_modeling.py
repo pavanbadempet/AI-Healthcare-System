@@ -1,6 +1,6 @@
 """
 Advanced Data Modeling Framework
-Delta Lake, Apache Iceberg, SCD Patterns, Schema Evolution
+Databricks Delta Lake, Liquid Clustering, SCD Patterns, Schema Evolution
 Enterprise-grade data modeling for healthcare analytics
 """
 
@@ -19,7 +19,6 @@ logger = logging.getLogger(__name__)
 
 class TableFormat(Enum):
     DELTA = "delta"
-    ICEBERG = "iceberg"
     PARQUET = "parquet"
     HUDI = "hudi"
 
@@ -34,8 +33,8 @@ class DataModelConfig:
     table_name: str
     table_format: TableFormat
     scd_type: SCDType
-    partition_columns: List[str]
-    sort_columns: List[str]
+    cluster_columns: List[str]  # Replaces static partitions and Z-ordering
+    enable_cdc: bool = True     # Enables Change Data Feed natively
     schema_evolution_enabled: bool = True
     time_travel_enabled: bool = True
     audit_columns: List[str] = field(default_factory=lambda: ['created_at', 'updated_at', 'is_current'])
@@ -72,19 +71,19 @@ class DeltaLakeManager:
             "delta.deletedFileRetentionDuration": "7 days"
         }
         
-        # Write to Delta Lake
+        # Write to Delta Lake with Liquid Clustering
         df.write.format("delta") \
           .mode("overwrite") \
           .options(**delta_options) \
-          .partitionBy(*config.partition_columns) \
+          .clusterBy(*config.cluster_columns) \
           .save(self.table_path)
         
         # Create Delta table object
         delta_table = DeltaTable.forPath(self.spark, self.table_path)
         
-        # Configure Z-ordering for performance
-        if config.sort_columns:
-            delta_table.optimize().executeZOrderBy(config.sort_columns)
+        # Trigger Liquid Clustering dynamically
+        if config.cluster_columns:
+            delta_table.optimize().executeCompaction()
         
         logger.info(f"Created Delta table: {self.table_name}")
         return delta_table
@@ -169,9 +168,9 @@ class DeltaLakeManager:
         
         start_time = datetime.now()
         
-        # Z-order optimization
-        if config.sort_columns:
-            delta_table.optimize().executeZOrderBy(config.sort_columns)
+        # Liquid Clustering dynamically groups data (Replaces Z-ordering)
+        if config.cluster_columns:
+            delta_table.optimize().executeCompaction()
         
         # Compact small files
         delta_table.optimize().executeCompaction()
@@ -185,7 +184,7 @@ class DeltaLakeManager:
             'operation': 'optimize',
             'table': self.table_name,
             'duration_seconds': duration,
-            'z_order_columns': config.sort_columns
+            'liquid_cluster_columns': config.cluster_columns
         }
     
     def _build_merge_condition(self, business_keys: List[str]) -> str:
@@ -195,131 +194,7 @@ class DeltaLakeManager:
             conditions.append(f"target.{key} = source.{key}")
         return " AND ".join(conditions)
 
-class IcebergManager:
-    """Apache Iceberg operations for table format evolution"""
-    
-    def __init__(self, spark: SparkSession, catalog_name: str = "healthcare_catalog"):
-        self.spark = spark
-        self.catalog_name = catalog_name
-        
-        # Configure Iceberg
-        spark.conf.set("spark.sql.catalog." + catalog_name, "org.apache.iceberg.spark.SparkCatalog")
-        spark.conf.set("spark.sql.catalog." + catalog_name + ".type", "hive")
-        spark.conf.set("spark.sql.catalog." + catalog_name + ".warehouse", "s3://healthcare-warehouse/")
-    
-    def create_iceberg_table(self, df: SparkDF, table_name: str, 
-                           config: DataModelConfig) -> Dict[str, Any]:
-        """Create Iceberg table with schema evolution support"""
-        namespace = f"{self.catalog_name}.healthcare_db"
-        full_table_name = f"{namespace}.{table_name}"
-        
-        # Create Iceberg table
-        df.write.format("iceberg") \
-          .mode("overwrite") \
-          .partitionBy(*config.partition_columns) \
-          .saveAsTable(full_table_name)
-        
-        # Configure table properties
-        self.spark.sql(f"""
-            ALTER TABLE {full_table_name} 
-            SET TBLPROPERTIES (
-                'write.format.default' = 'parquet',
-                'write.parquet.compression-codec' = 'snappy',
-                'write.delete.mode' = 'merge-on-read',
-                'write.update.mode' = 'merge-on-read',
-                'write.merge.mode' = 'merge-on-read'
-            )
-        """)
-        
-        logger.info(f"Created Iceberg table: {full_table_name}")
-        
-        return {
-            'table_name': full_table_name,
-            'format': 'iceberg',
-            'partitioning': config.partition_columns
-        }
-    
-    def evolve_schema(self, table_name: str, schema_changes: List[SchemaChange]) -> Dict[str, Any]:
-        """Evolve Iceberg table schema"""
-        namespace = f"{self.catalog_name}.healthcare_db"
-        full_table_name = f"{namespace}.{table_name}"
-        
-        changes_applied = []
-        
-        for change in schema_changes:
-            try:
-                if change.change_type == "ADD_COLUMN":
-                    # Add new column
-                    data_type = change.new_data_type or "STRING"
-                    nullable_clause = "" if change.nullable else " NOT NULL"
-                    default_clause = f" DEFAULT {change.default_value}" if change.default_value is not None else ""
-                    
-                    self.spark.sql(f"""
-                        ALTER TABLE {full_table_name} 
-                        ADD COLUMN {change.column_name} {data_type}{nullable_clause}{default_clause}
-                    """)
-                    
-                elif change.change_type == "DROP_COLUMN":
-                    # Drop column (with careful consideration)
-                    self.spark.sql(f"""
-                        ALTER TABLE {full_table_name} 
-                        DROP COLUMN {change.column_name}
-                    """)
-                
-                elif change.change_type == "MODIFY_TYPE":
-                    # Modify column type (Iceberg supports this)
-                    self.spark.sql(f"""
-                        ALTER TABLE {full_table_name} 
-                        ALTER COLUMN {change.column_name} TYPE {change.new_data_type}
-                    """)
-                
-                elif change.change_type == "RENAME_COLUMN":
-                    # Rename column
-                    self.spark.sql(f"""
-                        ALTER TABLE {full_table_name} 
-                        RENAME COLUMN {change.old_column_name} TO {change.new_column_name}
-                    """)
-                
-                changes_applied.append(change.__dict__)
-                
-            except Exception as e:
-                logger.error(f"Failed to apply schema change {change.change_type}: {e}")
-                continue
-        
-        return {
-            'table_name': full_table_name,
-            'changes_applied': changes_applied,
-            'changes_count': len(changes_applied)
-        }
-    
-    def get_table_history(self, table_name: str) -> List[Dict[str, Any]]:
-        """Get Iceberg table history for audit"""
-        namespace = f"{self.catalog_name}.healthcare_db"
-        full_table_name = f"{namespace}.{table_name}"
-        
-        history_df = self.spark.sql(f"SELECT * FROM {full_table_name}.history")
-        
-        return [row.asDict() for row in history_df.collect()]
-    
-    def rollback_to_snapshot(self, table_name: str, snapshot_id: int) -> Dict[str, Any]:
-        """Rollback table to specific snapshot"""
-        namespace = f"{self.catalog_name}.healthcare_db"
-        full_table_name = f"{namespace}.{table_name}"
-        
-        # Create rollback branch
-        branch_name = f"rollback_{snapshot_id}_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        
-        self.spark.sql(f"""
-            ALTER TABLE {full_table_name} 
-            CREATE BRANCH {branch_name} AS OF VERSION {snapshot_id}
-        """)
-        
-        return {
-            'table_name': full_table_name,
-            'snapshot_id': snapshot_id,
-            'branch_name': branch_name,
-            'rollback_time': datetime.now().isoformat()
-        }
+
 
 class SCDManager:
     """Slowly Changing Dimensions (SCD) implementation"""
@@ -539,8 +414,6 @@ class SchemaEvolutionManager:
             # Apply changes based on table format
             if table_format == TableFormat.DELTA:
                 return self._apply_delta_evolution(table_name, changes)
-            elif table_format == TableFormat.ICEBERG:
-                return self._apply_iceberg_evolution(table_name, changes)
             else:
                 return {'status': 'unsupported_format', 'table': table_name}
                 
@@ -574,20 +447,7 @@ class SchemaEvolutionManager:
             'changes_applied': applied_changes
         }
     
-    def _apply_iceberg_evolution(self, table_name: str, changes: List[SchemaChange]) -> Dict[str, Any]:
-        """Apply schema evolution for Iceberg"""
-        # This would use the IcebergManager
-        ice_manager = IcebergManager(self.spark)
-        
-        table_short_name = table_name.split('.')[-1]
-        result = ice_manager.evolve_schema(table_short_name, changes)
-        
-        return {
-            'status': 'success',
-            'table': table_name,
-            'format': 'iceberg',
-            **result
-        }
+
     
     def get_schema_history(self, table_name: str) -> List[Dict[str, Any]]:
         """Get schema evolution history"""
@@ -611,7 +471,6 @@ class HealthcareDataModeler:
         self.spark = spark
         self.warehouse_path = warehouse_path
         self.delta_manager = None
-        self.iceberg_manager = IcebergManager(spark)
         self.scd_manager = SCDManager(spark)
         self.schema_manager = SchemaEvolutionManager(spark)
         
@@ -625,36 +484,36 @@ class HealthcareDataModeler:
                 table_name='patients',
                 table_format=TableFormat.DELTA,
                 scd_type=SCDType.TYPE2,
-                partition_columns=['updated_date'],
-                sort_columns=['patient_id'],
+                cluster_columns=['patient_id', 'updated_date'],
                 business_keys=['patient_id'],
-                tracking_columns=['email', 'phone', 'address']
+                tracking_columns=['email', 'phone', 'address'],
+                enable_cdc=True
             ),
             'providers': DataModelConfig(
                 table_name='providers',
                 table_format=TableFormat.DELTA,
                 scd_type=SCDType.TYPE2,
-                partition_columns=['specialization'],
-                sort_columns=['provider_id'],
+                cluster_columns=['provider_id', 'specialization'],
                 business_keys=['provider_id'],
-                tracking_columns=['specialization', 'department', 'status']
+                tracking_columns=['specialization', 'department', 'status'],
+                enable_cdc=True
             ),
             'lab_results': DataModelConfig(
                 table_name='lab_results',
-                table_format=TableFormat.ICEBERG,
+                table_format=TableFormat.DELTA,
                 scd_type=SCDType.TYPE1,  # Lab results don't change
-                partition_columns=['test_date', 'facility_id'],
-                sort_columns=['result_id'],
-                business_keys=['result_id']
+                cluster_columns=['test_date', 'facility_id', 'patient_id'],
+                business_keys=['result_id'],
+                enable_cdc=True
             ),
             'claims': DataModelConfig(
                 table_name='claims',
                 table_format=TableFormat.DELTA,
                 scd_type=SCDType.TYPE2,
-                partition_columns=['submission_date'],
-                sort_columns=['claim_id'],
+                cluster_columns=['submission_date', 'claim_id', 'patient_id'],
                 business_keys=['claim_id'],
-                tracking_columns=['claim_status', 'paid_amount']
+                tracking_columns=['claim_status', 'paid_amount'],
+                enable_cdc=True
             )
         }
     
@@ -688,18 +547,22 @@ class HealthcareDataModeler:
         }
     
     def create_lab_results_fact(self, source_df: SparkDF) -> Dict[str, Any]:
-        """Create lab results fact table with Iceberg"""
+        """Create lab results fact table with Delta Lake"""
         config = self.model_configs['lab_results']
+        table_path = f"{self.warehouse_path}/lab_results"
         
-        # Create Iceberg table
-        result = self.iceberg_manager.create_iceberg_table(source_df, 'lab_results', config)
+        self.delta_manager = DeltaLakeManager(self.spark, table_path)
         
+        if not os.path.exists(table_path):
+            self.delta_manager.create_delta_table(source_df, config)
+        else:
+            self.delta_manager.upsert_to_delta(source_df, config, None)
+            
         return {
             'status': 'success',
             'table': 'lab_results',
-            'format': 'iceberg',
-            'records_processed': source_df.count(),
-            **result
+            'format': 'delta',
+            'records_processed': source_df.count()
         }
     
     def apply_schema_evolution_example(self) -> Dict[str, Any]:
@@ -720,9 +583,12 @@ class HealthcareDataModeler:
             )
         ]
         
-        # Apply evolution
-        result = self.iceberg_manager.evolve_schema('patients', new_schema_changes)
-        
+        # Apply evolution via SchemaManager
+        result = self.schema_manager.apply_schema_evolution(
+            "patients", 
+            self.spark.createDataFrame([], StructType()), # Dummy DF in real usage
+            TableFormat.DELTA
+        )
         return result
     
     def get_data_lineage_report(self) -> Dict[str, Any]:
@@ -738,9 +604,10 @@ class HealthcareDataModeler:
             lineage['tables'][table_name] = {
                 'format': config.table_format.value,
                 'scd_type': config.scd_type.value,
-                'partitioning': config.partition_columns,
+                'liquid_clustering': config.cluster_columns,
                 'business_keys': config.business_keys,
-                'tracking_columns': config.tracking_columns
+                'tracking_columns': config.tracking_columns,
+                'cdc_enabled': config.enable_cdc
             }
             
             # Schema history
@@ -756,20 +623,19 @@ class HealthcareDataModeler:
         
         return lineage
 
-# Initialize Spark session with Delta and Iceberg support
+# Initialize Spark session with Delta & Unity Catalog support
 def create_spark_session_with_lakehouse() -> SparkSession:
-    """Create Spark session with Delta Lake and Iceberg support"""
+    """Create Spark session with Databricks Delta Lake and Unity Catalog support"""
     spark = SparkSession.builder \
         .appName("HealthcareLakehouse") \
         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
-        .config("spark.sql.catalog.local", "org.apache.iceberg.spark.SparkCatalog") \
-        .config("spark.sql.catalog.local.type", "hadoop") \
-        .config("spark.sql.catalog.local.warehouse", "file:///tmp/iceberg-warehouse") \
+        .config("spark.sql.catalog.uc_healthcare_prod", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
         .config("spark.delta.logStore.class", "org.apache.spark.sql.delta.storage.HDFSLogStore") \
         .config("spark.sql.shuffle.partitions", "200") \
         .config("spark.sql.adaptive.enabled", "true") \
         .config("spark.sql.adaptive.coalescePartitions.enabled", "true") \
+        .config("spark.databricks.delta.schema.autoMerge.enabled", "true") \
         .getOrCreate()
     
     return spark
