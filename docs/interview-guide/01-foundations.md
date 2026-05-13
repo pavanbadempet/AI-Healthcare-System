@@ -9,11 +9,11 @@
 
 ### What is Machine Learning?
 
-Instead of writing explicit rules ("if BMI > 30 AND age > 50 â†’ diabetes risk"), you give the computer EXAMPLES and let it figure out the rules itself.
+Instead of writing explicit rules ("if BMI > 30 AND age > 50 â†' diabetes risk"), you give the computer EXAMPLES and let it figure out the rules itself.
 
 ```
-Traditional Programming:    Rules + Data â†’ Answer
-Machine Learning:           Data + Answers â†’ Rules (model)
+Traditional Programming:    Rules + Data â†' Answer
+Machine Learning:           Data + Answers â†' Rules (model)
 ```
 
 **Example from your project:**
@@ -43,7 +43,7 @@ Regression (NOT your project):
     Output: $425,000  (a number, not a category)
 ```
 
-Your project does BINARY CLASSIFICATION â€” every model predicts one of two outcomes: sick or healthy.
+Your project does BINARY CLASSIFICATION â€" every model predicts one of two outcomes: sick or healthy.
 
 ---
 
@@ -51,15 +51,15 @@ Your project does BINARY CLASSIFICATION â€” every model predicts one of two
 
 ```
 253,680 patient records
-    â”œâ”€â”€ 80% â†’ Training Set (202,944 records)
-    â”‚         The model LEARNS from these
-    â”‚
-    â””â”€â”€ 20% â†’ Test Set (50,736 records)
+    â"œâ"€â"€ 80% â†' Training Set (202,944 records)
+    â"‚         The model LEARNS from these
+    â"‚
+    â""â"€â"€ 20% â†' Test Set (50,736 records)
               The model is TESTED on these
               It has NEVER seen these before
 ```
 
-**Why split?** If you test the model on the SAME data it trained on, it just memorizes the answers. That's like giving a student the exam answers during practice and testing them with the same exam â€” of course they'll score 100%, but they haven't actually learned anything.
+**Why split?** If you test the model on the SAME data it trained on, it just memorizes the answers. That's like giving a student the exam answers during practice and testing them with the same exam â€" of course they'll score 100%, but they haven't actually learned anything.
 
 **Real example from your code:**
 ```python
@@ -84,8 +84,8 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 ```
 253,680 total records
-â”œâ”€â”€ 218,334 records (86.1%) â†’ Label 0 = HEALTHY     â–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–ˆâ–‘
-â””â”€â”€  35,346 records (13.9%) â†’ Label 1 = DIABETIC    â–ˆâ–ˆâ–ˆâ–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘â–‘
+â"œâ"€â"€ 218,334 records (86.1%) â†' Label 0 = HEALTHY     â-ˆâ-ˆâ-ˆâ-ˆâ-ˆâ-ˆâ-ˆâ-ˆâ-ˆâ-ˆâ-ˆâ-ˆâ-ˆâ-ˆâ-ˆâ-ˆâ-ˆâ-ˆâ-ˆâ-ˆâ-'
+â""â"€â"€  35,346 records (13.9%) â†' Label 1 = DIABETIC    â-ˆâ-ˆâ-ˆâ-'â-'â-'â-'â-'â-'â-'â-'â-'â-'â-'â-'â-'â-'â-'â-'â-'â-'
 ```
 
 **Ratio**: 218,334 / 35,346 = **6.16 healthy people for every 1 diabetic person**
@@ -104,9 +104,9 @@ Accuracy = 218,334 / 253,680 = 86.1%
 86.1% accuracy... but it MISSED EVERY SINGLE DIABETIC PATIENT!
 ```
 
-**86.1% accuracy sounds great, but the model is completely useless.** It never catches the disease. It's like a smoke detector that never goes off â€” great for avoiding false alarms, catastrophic for actual fires.
+**86.1% accuracy sounds great, but the model is completely useless.** It never catches the disease. It's like a smoke detector that never goes off â€" great for avoiding false alarms, catastrophic for actual fires.
 
-This is the **accuracy paradox** â€” high accuracy can be meaningless when classes are imbalanced.
+This is the **accuracy paradox** â€" high accuracy can be meaningless when classes are imbalanced.
 
 ### How the Model Gets Fooled by Imbalance
 
@@ -150,7 +150,7 @@ scale_pos_weight = negative_count / positive_count
 # For kidney disease: calculated similarly
 ```
 
-**Analogy**: Imagine you're training a security guard. Without scale_pos_weight, every mistake costs $1 â€” whether they let a thief in or turn away a legitimate visitor. With scale_pos_weight=6.16, letting a thief in costs $6.16 but turning away a visitor costs $1. Now the guard will be MUCH more careful about letting potential thieves in, even if it means occasionally stopping a legitimate visitor.
+**Analogy**: Imagine you're training a security guard. Without scale_pos_weight, every mistake costs $1 â€" whether they let a thief in or turn away a legitimate visitor. With scale_pos_weight=6.16, letting a thief in costs $6.16 but turning away a visitor costs $1. Now the guard will be MUCH more careful about letting potential thieves in, even if it means occasionally stopping a legitimate visitor.
 
 ---
 
@@ -163,15 +163,15 @@ XGBoost = **eXtreme Gradient Boosting**. Let's break that down:
 ```
 Tree 1: Makes predictions. Gets 70% right.
          Identifies which patients it got WRONG.
-             â†“
+             â†"
 Tree 2: Focuses specifically on the patients Tree 1 got wrong.
          Combined accuracy: 78%.
-             â†“
+             â†"
 Tree 3: Focuses on the remaining mistakes.
          Combined accuracy: 83%.
-             â†“
+             â†"
 ... (100-1000 trees later)
-             â†“
+             â†"
 Final: All trees vote together. Combined accuracy: 89%.
 ```
 
@@ -187,10 +187,10 @@ Final: All trees vote together. Combined accuracy: 89%.
 
 | Algorithm | Strengths | Weaknesses | For Your Data? |
 |---|---|---|---|
-| **XGBoost** | Fast, handles imbalance natively (scale_pos_weight), works great on tabular data | Needs hyperparameter tuning | **YES â€” primary choice** |
+| **XGBoost** | Fast, handles imbalance natively (scale_pos_weight), works great on tabular data | Needs hyperparameter tuning | **YES â€" primary choice** |
 | **Random Forest** | Simple, hard to overfit | No native imbalance handling, slower | Close second, but no scale_pos_weight |
 | **Logistic Regression** | Simple, interpretable | Can't capture complex non-linear patterns | Too simple for 9+ features |
-| **Neural Networks** | Best for images/text/huge datasets | Overfits on 253K tabular data, needs much more data, hard to interpret | **NO â€” proven worse on tabular data** |
+| **Neural Networks** | Best for images/text/huge datasets | Overfits on 253K tabular data, needs much more data, hard to interpret | **NO â€" proven worse on tabular data** |
 | **SVM** | Good for small datasets, clear decision boundary | Slow on large datasets, sensitive to scaling | Used for kidney/lungs (smaller datasets) |
 
 **The research backing**: The Grinsztajn et al. (2022) NeurIPS benchmark paper compared tree-based models (XGBoost, Random Forest) vs deep learning on 45 tabular datasets. Result: **tree-based models won on medium-sized tabular data** like yours.
@@ -207,7 +207,7 @@ model.predict([patient_data])
 
 model.predict_proba([patient_data])
 # Returns: [[0.06, 0.94]]
-#            â†‘       â†‘
+#            â†'       â†'
 #         6% chance  94% chance
 #         healthy    diabetic
 ```
@@ -251,7 +251,7 @@ Can't even learn training data.   Works on new data too.          Fails on new d
 
 Training accuracy: 60%            Training accuracy: 89%          Training accuracy: 99%
 Test accuracy: 58%                Test accuracy: 85%              Test accuracy: 65%
-        â†“                                 â†“                               â†“
+        â†"                                 â†"                               â†"
    "I don't know enough"          "I learned the real patterns"   "I memorized, not learned"
 ```
 
@@ -259,7 +259,7 @@ Test accuracy: 58%                Test accuracy: 85%              Test accuracy:
 - Training accuracy: ~89%
 - Test accuracy: ~85-89%
 - Real-world validation: 77% (48 actual patient records)
-- The gap is small â†’ Good fit, no overfitting
+- The gap is small â†' Good fit, no overfitting
 
 **How XGBoost prevents overfitting:**
 ```python
@@ -304,18 +304,18 @@ Precision = TP / (TP + FP) = 15 / (15 + 5) = 75%
 
 Recall = Sensitivity = TP / (TP + FN) = 15 / (15 + 5) = 75%
     "Of all actual diabetic patients, how many did the model catch?"
-    (Important for: NOT MISSING sick patients â€” THIS IS CRITICAL IN HEALTHCARE)
+    (Important for: NOT MISSING sick patients â€" THIS IS CRITICAL IN HEALTHCARE)
 
 Specificity = TN / (TN + FP) = 75 / (75 + 5) = 93.75%
     "Of all healthy patients, how many did the model correctly identify as healthy?"
 
 F1 Score = 2 * (Precision * Recall) / (Precision + Recall) = 75%
-    "Harmonic mean of precision and recall â€” balances both"
+    "Harmonic mean of precision and recall â€" balances both"
 ```
 
 **In healthcare, RECALL (Sensitivity) is the most important metric.** Missing a diabetic patient (FN) is much worse than a false alarm (FP). A false alarm means one extra doctor visit. A missed diagnosis means untreated disease.
 
-**That's exactly why scale_pos_weight matters** â€” it pushes the model toward higher recall by penalizing missed positives.
+**That's exactly why scale_pos_weight matters** â€" it pushes the model toward higher recall by penalizing missed positives.
 
 ---
 
@@ -326,49 +326,49 @@ F1 Score = 2 * (Precision * Recall) / (Precision + Recall) = 75%
 ```
 EXTRACT                    TRANSFORM                       LOAD
 Get raw data               Clean and reshape it            Put it somewhere useful
-â”€â”€â”€â”€â”€â”€â”€â”€â”€                  â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€              â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-Download CSV from CDC  â†’   Rename columns            â†’     Save as Parquet file
-                          Handle missing values              â†“
+â"€â"€â"€â"€â"€â"€â"€â"€â"€                  â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€              â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
+Download CSV from CDC  â†'   Rename columns            â†'     Save as Parquet file
+                          Handle missing values              â†"
                           Convert types                  Train ML model
-                          Feature engineering                â†“
+                          Feature engineering                â†"
                           Split train/test              Save as .pkl file
-                                                           â†“
+                                                           â†"
                                                        Load at API startup
 ```
 
 **Your Healthcare ETL:**
 ```
 CDC BRFSS CSV (raw, 253K rows, messy column names)
-    â†“ EXTRACT
+    â†" EXTRACT
 Read into Pandas DataFrame
-    â†“ TRANSFORM
-    â”œâ”€â”€ Rename: "HighBP" â†’ "hypertension"
-    â”œâ”€â”€ Rename: "HighChol" â†’ "high_chol"
-    â”œâ”€â”€ Convert: age codes â†’ age buckets (1-13)
-    â”œâ”€â”€ Drop: irrelevant columns
-    â”œâ”€â”€ Handle: missing values (fill or drop)
-    â””â”€â”€ Split: 80% train, 20% test
-    â†“ LOAD
-    â”œâ”€â”€ Train XGBoost model
-    â”œâ”€â”€ Save model to diabetes_model.pkl
-    â””â”€â”€ Load model in FastAPI at startup
+    â†" TRANSFORM
+    â"œâ"€â"€ Rename: "HighBP" â†' "hypertension"
+    â"œâ"€â"€ Rename: "HighChol" â†' "high_chol"
+    â"œâ"€â"€ Convert: age codes â†' age buckets (1-13)
+    â"œâ"€â"€ Drop: irrelevant columns
+    â"œâ"€â"€ Handle: missing values (fill or drop)
+    â""â"€â"€ Split: 80% train, 20% test
+    â†" LOAD
+    â"œâ"€â"€ Train XGBoost model
+    â"œâ"€â"€ Save model to diabetes_model.pkl
+    â""â"€â"€ Load model in FastAPI at startup
 ```
 
 ### What is ELT? (And How It Differs)
 
 ```
-ETL: Extract â†’ Transform â†’ Load
+ETL: Extract â†' Transform â†' Load
      Transform happens OUTSIDE the target (in Spark, Python, etc.)
      Used when: transformation is complex, target is simple storage
 
-ELT: Extract â†’ Load â†’ Transform
+ELT: Extract â†' Load â†' Transform
      Transform happens INSIDE the target (in Snowflake, BigQuery, etc.)
      Used when: target has powerful compute
 ```
 
 **Your Nissan project used ELT:**
 ```
-Raw CSV files â†’ Load into Snowflake â†’ Transform using Snowflake SQL
+Raw CSV files â†' Load into Snowflake â†' Transform using Snowflake SQL
 ```
 
 ---
@@ -398,8 +398,8 @@ Column "diagnosis": [1, 0, 1, ...]
 
 File size: ~3 MB (compressed!)
 Read speed: Fast (reads ONLY the columns you need)
-Types: Embedded (int64, float64, string â€” no parsing needed)
-Statistics: Min/max per column chunk â†’ skip irrelevant data
+Types: Embedded (int64, float64, string â€" no parsing needed)
+Statistics: Min/max per column chunk â†' skip irrelevant data
 ```
 
 **Why your project uses Parquet:**
@@ -418,7 +418,7 @@ df = pd.read_parquet("data.parquet", columns=["age", "bmi"])  # 0.1 seconds
 **API (Application Programming Interface)** = A way for programs to talk to each other.
 
 ```
-Your Frontend (React)  â†â†’  Your Backend (FastAPI)  â†â†’  Your Database (SQLite)
+Your Frontend (React)  â†â†'  Your Backend (FastAPI)  â†â†'  Your Database (SQLite)
 
 The frontend doesn't talk to the database directly.
 It sends HTTP requests to the API, which talks to the database.
@@ -426,10 +426,10 @@ It sends HTTP requests to the API, which talks to the database.
 
 **REST** = A set of rules for designing APIs:
 ```
-GET    /api/patients/123     â†’ Read patient 123
-POST   /api/predictions      â†’ Create a new prediction
-PUT    /api/patients/123     â†’ Update patient 123
-DELETE /api/patients/123     â†’ Delete patient 123
+GET    /api/patients/123     â†' Read patient 123
+POST   /api/predictions      â†' Create a new prediction
+PUT    /api/patients/123     â†' Update patient 123
+DELETE /api/patients/123     â†' Delete patient 123
 ```
 
 **FastAPI** = A Python framework for building APIs:
@@ -458,21 +458,21 @@ async def predict_diabetes(bmi: float, age: int, blood_pressure: int):
 
 ### What is JWT? (JSON Web Token)
 
-**The problem**: After a user logs in, how does the server know they're logged in on future requests? The server is stateless â€” it doesn't remember anything between requests.
+**The problem**: After a user logs in, how does the server know they're logged in on future requests? The server is stateless â€" it doesn't remember anything between requests.
 
 **The solution**: Give the user a signed token they include in every request.
 
 ```
 1. User logs in:
    POST /login {username: "pavan", password: "secret123"}
-       â†“
+       â†"
    Server verifies password (bcrypt compare)
-       â†“
+       â†"
    Server creates JWT token:
    eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwYXZhbiIsImV4cCI6MTcxOH0.abc123
-   â†‘                      â†‘                                      â†‘
+   â†'                      â†'                                      â†'
    Header (algorithm)      Payload (user info + expiry)           Signature
-       â†“
+       â†"
    Returns token to frontend
 
 2. Frontend stores token in localStorage
@@ -480,9 +480,9 @@ async def predict_diabetes(bmi: float, age: int, blood_pressure: int):
 3. Every future request includes the token:
    GET /api/my-records
    Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
-       â†“
-   Server decodes token â†’ extracts username â†’ knows who's asking
-       â†“
+       â†"
+   Server decodes token â†' extracts username â†' knows who's asking
+       â†"
    Returns ONLY that user's records
 ```
 
@@ -524,7 +524,7 @@ GOOD: users table
 **Key properties:**
 1. **One-way**: You CANNOT reverse the hash back to the password
 2. **Salted**: Even if two users have the same password, their hashes are different
-3. **Slow on purpose**: Takes ~100ms to hash â€” prevents brute-force attacks (attackers can only try ~10 passwords/second instead of millions)
+3. **Slow on purpose**: Takes ~100ms to hash â€" prevents brute-force attacks (attackers can only try ~10 passwords/second instead of millions)
 
 ```python
 import bcrypt
@@ -538,7 +538,7 @@ hashed = bcrypt.hashpw(password.encode(), salt)
 # Login: compare the password
 entered_password = "secret123"
 if bcrypt.checkpw(entered_password.encode(), hashed):
-    print("Password correct!")  # âœ“
+    print("Password correct!")  # âœ"
 else:
     print("Wrong password!")
 ```
@@ -553,25 +553,25 @@ Middleware = code that runs BEFORE and AFTER every request, like airport securit
 
 ```
 Client Request
-    â†“
+    â†"
 [Middleware 1: CORS]          "Are you allowed to call this API?"
-    â†“
+    â†"
 [Middleware 2: Rate Limit]    "Have you made too many requests?"
-    â†“
+    â†"
 [Middleware 3: TrustedHost]   "Are you calling from a trusted domain?"
-    â†“
+    â†"
 [Middleware 4: Security]      "Let me add security headers to the response"
-    â†“
+    â†"
 [Middleware 5: Exception]     "If anything crashes, I'll catch it safely"
-    â†“
+    â†"
 [Middleware 6: Request ID]    "Let me give this request a tracking UUID"
-    â†“
+    â†"
 [Middleware 7: Timing]        "Let me measure how long this takes"
-    â†“
+    â†"
 YOUR ACTUAL ROUTE HANDLER    "Process the request"
-    â†“
+    â†"
 [Back through middleware in reverse order]
-    â†“
+    â†"
 Client Response (with security headers, timing info, etc.)
 ```
 
@@ -642,12 +642,12 @@ Server: " recommend"  (300ms later)
 
 ```
 LoginPage component knows the user is logged in
-    â†“
+    â†"
 How does the NavBar component know? Pass as props?
-    â†“
+    â†"
 How does the PredictionForm know? Pass through 5 levels of components?
-    â†“
-This is called "prop drilling" â€” passing data through components that don't need it
+    â†"
+This is called "prop drilling" â€" passing data through components that don't need it
 ```
 
 **Zustand creates a global store** that any component can read/write:
@@ -698,10 +698,10 @@ function LoginPage() {
 | 21 | Frontend routes | Next.js App Router pages |
 | 1M+ | Movie records (Nova project) | TMDB/Kaggle dataset |
 | 50K+ | Movies in serving catalog (Nova) | After quality filtering |
-| 30% | Spark optimization (TCS) | 45 min â†’ 31 min |
+| 30% | Spark optimization (TCS) | 45 min â†' 31 min |
 | 60% | Manual effort reduction (Nissan) | Automated with Lambda |
 | 25% | Intervention reduction (AutoSys) | Automated dependency chains |
-| 2+ years | Professional experience | TCS, Nov 2023 â€” Present |
+| 2+ years | Professional experience | TCS, Nov 2023 â€" Present |
 
 
 ---
@@ -713,34 +713,34 @@ function LoginPage() {
 |---|---|
 | **FastAPI** | Async Python web framework with automatic docs and Pydantic validation |
 | **Next.js** | React framework with server-side rendering, file-based routing, Turbopack |
-| **XGBoost** | Gradient-boosted decision tree algorithm â€” best for tabular data |
-| **SVM** | Support Vector Machine â€” finds optimal boundary, good for small datasets |
-| **Random Forest** | Ensemble of decision trees â€” reduces overfitting via bagging |
-| **JWT** | JSON Web Token â€” stateless auth token (header.payload.signature) |
-| **bcrypt** | One-way password hashing with salt â€” industry standard |
-| **OAuth2** | Authentication framework â€” we use Password grant + Bearer tokens |
-| **CORS** | Cross-Origin Resource Sharing â€” controls which domains call your API |
-| **SSE** | Server-Sent Events â€” server pushes data to client over HTTP |
-| **WebSocket** | Full-duplex bidirectional communication â€” more complex than SSE |
-| **RAG** | Retrieval-Augmented Generation â€” inject relevant docs into AI prompts |
+| **XGBoost** | Gradient-boosted decision tree algorithm â€" best for tabular data |
+| **SVM** | Support Vector Machine â€" finds optimal boundary, good for small datasets |
+| **Random Forest** | Ensemble of decision trees â€" reduces overfitting via bagging |
+| **JWT** | JSON Web Token â€" stateless auth token (header.payload.signature) |
+| **bcrypt** | One-way password hashing with salt â€" industry standard |
+| **OAuth2** | Authentication framework â€" we use Password grant + Bearer tokens |
+| **CORS** | Cross-Origin Resource Sharing â€" controls which domains call your API |
+| **SSE** | Server-Sent Events â€" server pushes data to client over HTTP |
+| **WebSocket** | Full-duplex bidirectional communication â€" more complex than SSE |
+| **RAG** | Retrieval-Augmented Generation â€" inject relevant docs into AI prompts |
 | **Pydantic** | Data validation library using Python type hints |
-| **SQLAlchemy** | Python ORM â€” maps classes to database tables |
+| **SQLAlchemy** | Python ORM â€" maps classes to database tables |
 | **Zustand** | Lightweight React state management (alternative to Redux) |
 | **Framer Motion** | React animation library for smooth transitions |
-| **scale_pos_weight** | XGBoost parameter â€” weights minority class to handle imbalance |
+| **scale_pos_weight** | XGBoost parameter â€" weights minority class to handle imbalance |
 | **predict_proba** | Returns class probabilities instead of binary 0/1 |
 | **StandardScaler** | Normalizes features to mean=0, std=1 (required for SVM) |
-| **Parquet** | Columnar file format â€” 10x faster reads than CSV |
+| **Parquet** | Columnar file format â€" 10x faster reads than CSV |
 | **Uvicorn** | ASGI server that runs FastAPI applications |
-| **ASGI** | Async Server Gateway Interface â€” Python's async web standard |
+| **ASGI** | Async Server Gateway Interface â€" Python's async web standard |
 | **Middleware** | Code that runs between request and response (auth, logging, etc.) |
 | **Dependency Injection** | FastAPI auto-provides function args (db sessions, auth) |
 | **Lifespan** | FastAPI startup/shutdown hook for loading models |
-| **ORM** | Object-Relational Mapping â€” write Python, not SQL |
+| **ORM** | Object-Relational Mapping â€" write Python, not SQL |
 | **HIPAA** | US law governing health data privacy and security |
-| **PII** | Personally Identifiable Information â€” names, DOBs, health data |
-| **Sensitivity** | True positive rate â€” % of sick patients correctly identified |
-| **Specificity** | True negative rate â€” % of healthy patients correctly identified |
+| **PII** | Personally Identifiable Information â€" names, DOBs, health data |
+| **Sensitivity** | True positive rate â€" % of sick patients correctly identified |
+| **Specificity** | True negative rate â€" % of healthy patients correctly identified |
 
 ---
 
@@ -767,12 +767,12 @@ function LoginPage() {
 
 ```
 Next.js Frontend (21 routes, Zustand auth, Framer Motion animations)
-        â†• HTTP + SSE
+        â†* HTTP + SSE
 FastAPI Backend (7 middleware layers, JWT auth, Pydantic validation)
-        â†•
+        â†*
 3 services:
-  1. ML Prediction (5 XGBoost/SVM models â†’ confidence + risk + disclaimer)
-  2. AI Chat (RAG + Gemini â†’ SSE streaming)
+  1. ML Prediction (5 XGBoost/SVM models â†' confidence + risk + disclaimer)
+  2. AI Chat (RAG + Gemini â†' SSE streaming)
   3. Data (SQLAlchemy + SQLite/PostgreSQL)
 ```
 
@@ -784,9 +784,9 @@ FastAPI Backend (7 middleware layers, JWT auth, Pydantic validation)
 |---|---|
 | Why Next.js over React? | App Router layouts, SSR, file routing, Turbopack |
 | Why FastAPI over Flask? | Async, auto-docs, Pydantic, 10x faster |
-| Why FastAPI over Django? | Django too heavy for REST API â€” don't need admin/templates |
+| Why FastAPI over Django? | Django too heavy for REST API â€" don't need admin/templates |
 | Why XGBoost over neural nets? | Tabular data, handles imbalance, fast training |
-| Why SVM over XGBoost (kidney/lungs)? | Small datasets â€” SVM generalizes better |
+| Why SVM over XGBoost (kidney/lungs)? | Small datasets â€" SVM generalizes better |
 | Why JWT over sessions? | Stateless, scalable, no server-side storage |
 | Why SSE over WebSocket? | Unidirectional streaming, simpler, auto-reconnect |
 | Why Zustand over Redux? | Less boilerplate, sufficient for auth state |
@@ -800,16 +800,16 @@ FastAPI Backend (7 middleware layers, JWT auth, Pydantic validation)
 ## Common Follow-up Answers
 
 **"What's your biggest achievement?"**
-â†’ Fixing class imbalance: one parameter (`scale_pos_weight=6.16`) took disease detection from 0% to ~60%.
+â†' Fixing class imbalance: one parameter (`scale_pos_weight=6.16`) took disease detection from 0% to ~60%.
 
 **"What's your biggest failure?"**
-â†’ Initially shipped with 86.7% accuracy thinking it was great, only to discover it detected zero diseases. Taught me that accuracy alone is meaningless.
+â†' Initially shipped with 86.7% accuracy thinking it was great, only to discover it detected zero diseases. Taught me that accuracy alone is meaningless.
 
 **"How do you handle deadlines?"**
-â†’ I prioritize: get core prediction working first, then add auth, then frontend polish, then tests. Each phase is independently deployable.
+â†' I prioritize: get core prediction working first, then add auth, then frontend polish, then tests. Each phase is independently deployable.
 
 **"How do you learn new technologies?"**
-â†’ I build. This project forced me to learn FastAPI, Next.js App Router, XGBoost tuning, SSE streaming, and RAG â€” all by implementing them in a real system.
+â†' I build. This project forced me to learn FastAPI, Next.js App Router, XGBoost tuning, SSE streaming, and RAG â€" all by implementing them in a real system.
 
 
 ---
@@ -826,18 +826,18 @@ FastAPI Backend (7 middleware layers, JWT auth, Pydantic validation)
 **Idempotent** = Running the same operation multiple times produces the same result.
 
 ```python
-# NOT idempotent â€” appends duplicates:
+# NOT idempotent â€" appends duplicates:
 df.write.mode("append").parquet("output/")
-# Run twice â†’ 2x data!
+# Run twice â†' 2x data!
 
-# Idempotent â€” safe to re-run:
+# Idempotent â€" safe to re-run:
 df.write.mode("overwrite").parquet("output/partition_date=2024-06-15/")
-# Run twice â†’ same result
+# Run twice â†' same result
 
-# Even better â€” DELETE + INSERT pattern:
+# Even better â€" DELETE + INSERT pattern:
 DELETE FROM target WHERE batch_date = '2024-06-15';
 INSERT INTO target SELECT * FROM staging WHERE batch_date = '2024-06-15';
-# Run twice â†’ same result
+# Run twice â†' same result
 ```
 
 **Why it matters**: Pipelines WILL fail. When you re-run them, you must not create duplicates. At Nissan, every pipeline I built was idempotent.
@@ -855,7 +855,7 @@ INSERT INTO target SELECT * FROM staging WHERE batch_date = '2024-06-15';
 | Query speed | Slow (full scan) | Fast (indexed) | Fast (partition pruning) |
 | Cost | Cheap (just storage) | Expensive (compute + storage) | Medium |
 | Example | S3 bucket of CSVs | Snowflake, Redshift | Delta Lake, Apache Iceberg |
-| In my work | Healthcare raw data | Nissan â†’ Snowflake | Nova â†’ Delta Lake |
+| In my work | Healthcare raw data | Nissan â†' Snowflake | Nova â†' Delta Lake |
 
 ---
 
@@ -865,7 +865,7 @@ I implemented this in Nova:
 
 ```
 BRONZE (Raw)          SILVER (Validated)      GOLD (Curated)
-â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€          â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€      â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€          â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€      â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 Raw CSV ingestion     Schema validation       Business metrics
 No transforms        Null handling            Feature engineering
 Append-only           Deduplication           SCD Type 2 history
@@ -884,7 +884,7 @@ If something breaks in Gold, you rebuild from Silver. If Silver is wrong, you re
 
 ### Q: What is SCD Type 2?
 
-**Slowly Changing Dimension Type 2** â€” Track history of dimension changes.
+**Slowly Changing Dimension Type 2** â€" Track history of dimension changes.
 
 ```sql
 -- Without SCD: We lose history
@@ -926,9 +926,9 @@ CDC captures only the CHANGES (inserts, updates, deletes) from a source system i
 
 ### Q: What is the CAP theorem?
 
-**C**onsistency â€” Every read returns the latest write
-**A**vailability â€” Every request gets a response
-**P**artition tolerance â€” System works despite network failures
+**C**onsistency â€" Every read returns the latest write
+**A**vailability â€" Every request gets a response
+**P**artition tolerance â€" System works despite network failures
 
 **You can only have 2 of 3:**
 
@@ -939,8 +939,8 @@ CDC captures only the CHANGES (inserts, updates, deletes) from a source system i
 | MongoDB | CP (default) | Consistent reads, but writes pause during elections |
 
 **In my projects:**
-- Healthcare (SQLite/PostgreSQL): CP â€” consistency matters for patient data
-- Nova (Delta Lake): CP â€” ACID writes ensure data integrity
+- Healthcare (SQLite/PostgreSQL): CP â€" consistency matters for patient data
+- Nova (Delta Lake): CP â€" ACID writes ensure data integrity
 
 ---
 
@@ -1002,16 +1002,16 @@ Shard 3: customer_id 2001-3000
 
 ```
 ROW-BASED (CSV, MySQL):              COLUMNAR (Parquet, Snowflake):
-â”Œâ”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”              â”Œâ”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”
-â”‚  id  â”‚ name â”‚ age  â”‚              â”‚ id   â”‚ id   â”‚ id   â”‚
-â”‚  1   â”‚ John â”‚  25  â”‚              â”‚  1   â”‚  2   â”‚  3   â”‚
-â”‚  2   â”‚ Jane â”‚  30  â”‚              â”œâ”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”¤
-â”‚  3   â”‚ Bob  â”‚  35  â”‚              â”‚ name â”‚ name â”‚ name â”‚
-â””â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”˜              â”‚ John â”‚ Jane â”‚ Bob  â”‚
-                                    â”œâ”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”¤
-Row: reads ALL columns              â”‚ age  â”‚ age  â”‚ age  â”‚
-Good for: SELECT * WHERE id=1       â”‚  25  â”‚  30  â”‚  35  â”‚
-                                    â””â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”˜
+â"Œâ"€â"€â"€â"€â"€â"€â"¬â"€â"€â"€â"€â"€â"€â"¬â"€â"€â"€â"€â"€â"€â"              â"Œâ"€â"€â"€â"€â"€â"€â"¬â"€â"€â"€â"€â"€â"€â"¬â"€â"€â"€â"€â"€â"€â"
+â"‚  id  â"‚ name â"‚ age  â"‚              â"‚ id   â"‚ id   â"‚ id   â"‚
+â"‚  1   â"‚ John â"‚  25  â"‚              â"‚  1   â"‚  2   â"‚  3   â"‚
+â"‚  2   â"‚ Jane â"‚  30  â"‚              â"œâ"€â"€â"€â"€â"€â"€â"¼â"€â"€â"€â"€â"€â"€â"¼â"€â"€â"€â"€â"€â"€â"¤
+â"‚  3   â"‚ Bob  â"‚  35  â"‚              â"‚ name â"‚ name â"‚ name â"‚
+â""â"€â"€â"€â"€â"€â"€â"´â"€â"€â"€â"€â"€â"€â"´â"€â"€â"€â"€â"€â"€â"˜              â"‚ John â"‚ Jane â"‚ Bob  â"‚
+                                    â"œâ"€â"€â"€â"€â"€â"€â"¼â"€â"€â"€â"€â"€â"€â"¼â"€â"€â"€â"€â"€â"€â"¤
+Row: reads ALL columns              â"‚ age  â"‚ age  â"‚ age  â"‚
+Good for: SELECT * WHERE id=1       â"‚  25  â"‚  30  â"‚  35  â"‚
+                                    â""â"€â"€â"€â"€â"€â"€â"´â"€â"€â"€â"€â"€â"€â"´â"€â"€â"€â"€â"€â"€â"˜
                                     
                                     Column: reads only needed columns
                                     Good for: SELECT AVG(age) FROM table
@@ -1040,13 +1040,13 @@ Tracking WHERE data came from and HOW it was transformed:
 
 ```
 BRFSS_2015.csv (CDC source)
-    â†“ Extract
+    â†" Extract
 data/raw/diabetes.csv
-    â†“ Column rename (HighBP â†’ hypertension)
+    â†" Column rename (HighBP â†' hypertension)
 data/processed/diabetes.parquet
-    â†“ Train/test split, class balancing
+    â†" Train/test split, class balancing
 diabetes_model.pkl
-    â†“ predict_proba()
+    â†" predict_proba()
 API response: {"prediction": "High Risk", "confidence": 94.2}
 ```
 
@@ -1074,12 +1074,12 @@ In Nova, the `pipeline_manifest.json` tracks:
 
 **My usage:**
 - Batch: Healthcare model training, Nova catalog ETL
-- Streaming: Nova behavior events (Kafka â†’ Spark Structured Streaming â†’ Delta)
+- Streaming: Nova behavior events (Kafka â†' Spark Structured Streaming â†' Delta)
 
 ### Q: What is Kafka and how does it work?
 
 ```
-Producer â†’ Topic (partitioned) â†’ Consumer Group
+Producer â†' Topic (partitioned) â†' Consumer Group
 ```
 
 - **Producer**: Sends messages (events) to a topic
@@ -1090,8 +1090,8 @@ Producer â†’ Topic (partitioned) â†’ Consumer Group
 
 **In Nova:**
 ```
-Frontend (click/view event) â†’ Kafka topic: nova.content_events â†’ 
-    Spark Structured Streaming â†’ gold.fact_content_event (Delta table)
+Frontend (click/view event) â†' Kafka topic: nova.content_events â†' 
+    Spark Structured Streaming â†' gold.fact_content_event (Delta table)
 ```
 
 ### Q: What is exactly-once semantics?
@@ -1104,7 +1104,7 @@ Three delivery guarantees:
 **How to achieve exactly-once:**
 - Kafka: Idempotent producers + transactional consumers
 - Spark Structured Streaming: Checkpointing + WAL
-- Application level: Idempotent writes (what I do â€” safe to re-process)
+- Application level: Idempotent writes (what I do â€" safe to re-process)
 
 ---
 
@@ -1145,7 +1145,7 @@ Three delivery guarantees:
 | My experience | **Nissan project** | Aware | Aware | Aware |
 
 **When asked "Why did you use Snowflake at Nissan?"**
-> "Snowflake separated compute from storage â€” we could scale down warehouses at night (saving cost) and scale up during batch windows. Its COPY INTO command made S3 â†’ Snowflake loading simple. The VARIANT type handled our semi-structured data without pre-flattening."
+> "Snowflake separated compute from storage â€" we could scale down warehouses at night (saving cost) and scale up during batch windows. Its COPY INTO command made S3 â†' Snowflake loading simple. The VARIANT type handled our semi-structured data without pre-flattening."
 
 ---
 
@@ -1176,7 +1176,7 @@ Three delivery guarantees:
 | My usage | **Nomura (daily)** | **Both projects** | Aware | Aware |
 
 **When asked "When do you use Spark vs Pandas?"**
-> "Pandas for anything under ~5GB that fits in RAM â€” fast prototyping, data exploration, simple transforms. Spark for anything bigger, anything that needs to scale, or anything that runs in production with reliability requirements. At Nomura, all production ETL was Spark. For local data exploration and testing, I used Pandas."
+> "Pandas for anything under ~5GB that fits in RAM â€" fast prototyping, data exploration, simple transforms. Spark for anything bigger, anything that needs to scale, or anything that runs in production with reliability requirements. At Nomura, all production ETL was Spark. For local data exploration and testing, I used Pandas."
 
 ---
 
@@ -1248,7 +1248,7 @@ Three delivery guarantees:
 
 | | Delta Lake | Iceberg | Hudi |
 |---|---|---|---|
-| Developed by | Databricks | Netflix â†’ Apache | Uber â†’ Apache |
+| Developed by | Databricks | Netflix â†' Apache | Uber â†' Apache |
 | Storage | Parquet + JSON log | Parquet + metadata | Parquet + timeline |
 | ACID | Yes | Yes | Yes |
 | Time travel | Yes (version history) | Yes (snapshots) | Yes (timeline) |
@@ -1258,7 +1258,7 @@ Three delivery guarantees:
 | My experience | **Nova project** | Aware | Aware |
 
 **When asked "Why Delta Lake?"**
-> "Delta Lake adds ACID transactions to Parquet â€” I can do MERGE operations, time travel, and Change Data Feed. In Nova, I use Delta for the medallion architecture: Bronze (raw ingest with ACID), Silver (validated with MERGE), Gold (curated with SCD Type 2). The transaction log prevents corrupt partial writes."
+> "Delta Lake adds ACID transactions to Parquet â€" I can do MERGE operations, time travel, and Change Data Feed. In Nova, I use Delta for the medallion architecture: Bronze (raw ingest with ACID), Silver (validated with MERGE), Gold (curated with SCD Type 2). The transaction log prevents corrupt partial writes."
 
 ---
 

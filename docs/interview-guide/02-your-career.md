@@ -8,7 +8,7 @@
 ## YOUR CAREER NARRATIVE (Memorize This)
 
 ### 30-Second Pitch:
-> "I'm a Data Engineer with 2+ years at TCS, where I've built large-scale Spark ETL pipelines for Nomura Capital â€” processing capital markets data (trades, risk, valuations) â€” and architected serverless batch pipelines for Nissan using AWS Lambda and Step Functions. I've optimized Spark execution time by 30% through broadcast joins and partition pruning, and led the migration from YARN to Kubernetes. On the AI side, I've built two full-stack projects: a healthcare prediction system with XGBoost on 253K CDC records, and a recommendation platform with FAISS vector search and Delta Lake pipelines on 1M+ movie records. I combine strong data engineering fundamentals with practical AI/ML skills."
+> "I'm a Data Engineer with 2+ years at TCS, where I've built large-scale Spark ETL pipelines for Nomura Capital â€" processing capital markets data (trades, risk, valuations) â€" and architected serverless batch pipelines for Nissan using AWS Lambda and Step Functions. I've optimized Spark execution time by 30% through broadcast joins and partition pruning, and led the migration from YARN to Kubernetes. On the AI side, I've built two full-stack projects: a healthcare prediction system with XGBoost on 253K CDC records, and a recommendation platform with FAISS vector search and Delta Lake pipelines on 1M+ movie records. I combine strong data engineering fundamentals with practical AI/ML skills."
 
 ### Why This Narrative Works:
 1. **Leads with professional experience** (TCS, Nomura, Nissan)
@@ -23,7 +23,7 @@
 
 ### Q: Describe your work at Nomura Capital.
 
-> "I engineered and maintained large-scale Spark ETL pipelines for capital markets datasets at Nomura. The data included trade feeds, reference data, risk feeds, and valuation feeds. I used Spark SQL with complex analytical queries â€” multi-way joins between fact and dimension tables, window functions for running calculations, and aggregations for downstream risk analytics and reporting."
+> "I engineered and maintained large-scale Spark ETL pipelines for capital markets datasets at Nomura. The data included trade feeds, reference data, risk feeds, and valuation feeds. I used Spark SQL with complex analytical queries â€" multi-way joins between fact and dimension tables, window functions for running calculations, and aggregations for downstream risk analytics and reporting."
 
 ### Q: How did you achieve the 30% execution time improvement?
 
@@ -44,7 +44,7 @@
 >    # Spark reads only January+ partitions, not the entire dataset
 >    ```
 >
-> 3. **Predicate pushdown**: Filters pushed down to the Parquet reader level â€” only relevant row groups are scanned.
+> 3. **Predicate pushdown**: Filters pushed down to the Parquet reader level â€" only relevant row groups are scanned.
 >
 > 4. **Intermediate Parquets**: Instead of one massive transformation, I broke the DAG into stages and persisted intermediate results as Parquet. This prevents recomputation on failure and allows checkpoint-resume.
 >
@@ -57,10 +57,10 @@
 > **Why?** YARN was tied to HDFS. K8s gives us container orchestration, auto-scaling, and cloud-portable workloads.
 >
 > **Challenges:**
-> - **Storage**: HDFS â†’ MinIO (S3-compatible). Had to update all Spark read/write paths from `hdfs://` to `s3a://`
+> - **Storage**: HDFS â†' MinIO (S3-compatible). Had to update all Spark read/write paths from `hdfs://` to `s3a://`
 > - **Spark connectors**: Needed `spark-hadoop-aws` JAR and correct `fs.s3a.*` configurations
-> - **Resource management**: YARN's memory/CPU allocation â†’ K8s resource requests/limits
-> - **Dynamic allocation**: YARN's dynamic executor allocation â†’ K8s pod autoscaling
+> - **Resource management**: YARN's memory/CPU allocation â†' K8s resource requests/limits
+> - **Dynamic allocation**: YARN's dynamic executor allocation â†' K8s pod autoscaling
 >
 > **Result**: Same Spark jobs, portable between on-prem MinIO and cloud S3.
 
@@ -69,18 +69,18 @@
 > AutoSys is an enterprise job scheduler (like Airflow but for large enterprises). I used it to:
 > - Define **dependency chains**: Job B starts only after Job A completes successfully
 > - Handle **reruns**: Failed jobs can be re-triggered without re-running the entire chain
-> - **Recovery logic**: On failure, send alert â†’ retry 3x â†’ escalate to on-call
+> - **Recovery logic**: On failure, send alert â†' retry 3x â†' escalate to on-call
 > - **Scheduling**: Daily batch windows with SLA monitoring
 >
-> This reduced manual intervention by 25% â€” operators no longer needed to manually trigger dependent jobs.
+> This reduced manual intervention by 25% â€" operators no longer needed to manually trigger dependent jobs.
 
 ### Q: Describe the Nissan project.
 
 > Architected daily batch pipelines using **AWS Lambda** and **Step Functions**:
 >
 > ```
-> S3 Upload â†’ Lambda (validate schema) â†’ Step Function (orchestrate)
->     â†’ Lambda (transform) â†’ Lambda (quality checks) â†’ Snowflake
+> S3 Upload â†' Lambda (validate schema) â†' Step Function (orchestrate)
+>     â†' Lambda (transform) â†' Lambda (quality checks) â†' Snowflake
 > ```
 >
 > **Key features:**
@@ -106,7 +106,7 @@
 >     # INSERT fresh data
 >     data.write.mode("append").save("snowflake://target")
 > ```
-> This means running the same batch twice produces the same result â€” no duplicates, no data corruption.
+> This means running the same batch twice produces the same result â€" no duplicates, no data corruption.
 
 ---
 
@@ -116,15 +116,15 @@
 
 ```
 Driver Program
-    â†“
+    â†"
 Creates SparkContext
-    â†“
+    â†"
 Submits job DAG
-    â†“
-DAG Scheduler â†’ Stages (shuffle boundaries)
-    â†“
-Task Scheduler â†’ Tasks (per partition)
-    â†“
+    â†"
+DAG Scheduler â†' Stages (shuffle boundaries)
+    â†"
+Task Scheduler â†' Tasks (per partition)
+    â†"
 Executor 1: [Task1, Task2, ...]
 Executor 2: [Task3, Task4, ...]
 Executor N: [TaskM, ...]
@@ -135,17 +135,17 @@ Executor N: [TaskM, ...]
 - **Executor**: Worker process that runs tasks and caches data
 - **Stage**: Set of tasks that can run without shuffle
 - **Shuffle**: Data redistribution across executors (expensive)
-- **Partition**: Unit of parallelism â€” each partition = one task
+- **Partition**: Unit of parallelism â€" each partition = one task
 
 ### Q: What causes a shuffle and how do you avoid it?
 
 **Causes:** `groupBy`, `join`, `repartition`, `distinct`, `orderBy`
 
 **Avoidance techniques:**
-1. **Broadcast join** â€” Small table broadcast to all executors, no shuffle
-2. **Partition-aligned joins** â€” Both tables partitioned by join key
-3. **map-side aggregation** â€” `reduceByKey` instead of `groupByKey`
-4. **Bucket joins** â€” Pre-bucket tables by join key during write
+1. **Broadcast join** â€" Small table broadcast to all executors, no shuffle
+2. **Partition-aligned joins** â€" Both tables partitioned by join key
+3. **map-side aggregation** â€" `reduceByKey` instead of `groupByKey`
+4. **Bucket joins** â€" Pre-bucket tables by join key during write
 
 ### Q: Difference between `repartition()` and `coalesce()`?
 
@@ -187,14 +187,14 @@ FROM trades;
 
 ### Q: How do you handle data skew?
 
-> Data skew = one partition has much more data than others â†’ one executor takes much longer.
+> Data skew = one partition has much more data than others â†' one executor takes much longer.
 >
-> **Detection**: Spark UI â†’ Stages tab â†’ check task duration variance
+> **Detection**: Spark UI â†' Stages tab â†' check task duration variance
 >
 > **Solutions:**
 > 1. **Salting**: Add random prefix to skewed key, join on salted key, then remove
 > 2. **Broadcast join**: If one side is small enough
-> 3. **Adaptive Query Execution (AQE)**: `spark.sql.adaptive.enabled=true` â€” Spark auto-coalesces small partitions
+> 3. **Adaptive Query Execution (AQE)**: `spark.sql.adaptive.enabled=true` â€" Spark auto-coalesces small partitions
 > 4. **Custom partitioning**: Repartition by a more evenly distributed column
 
 ---
@@ -246,7 +246,7 @@ running AS (
 SELECT * FROM running;
 ```
 
-CTEs make complex queries readable, reusable, and debuggable â€” you can test each CTE independently.
+CTEs make complex queries readable, reusable, and debuggable â€" you can test each CTE independently.
 
 ---
 
@@ -256,14 +256,14 @@ CTEs make complex queries readable, reusable, and debuggable â€” you can te
 
 ```
 S3 Event Trigger
-    â†“
+    â†"
 Lambda: validate_schema()
-    â†“ (success)
+    â†" (success)
 Step Function orchestrates:
-    â”œâ”€â”€ Lambda: transform_data()
-    â”œâ”€â”€ Lambda: quality_checks()
-    â”œâ”€â”€ Lambda: load_to_snowflake()
-    â””â”€â”€ On failure â†’ SNS â†’ CloudWatch Alert
+    â"œâ"€â"€ Lambda: transform_data()
+    â"œâ"€â"€ Lambda: quality_checks()
+    â"œâ"€â"€ Lambda: load_to_snowflake()
+    â""â"€â"€ On failure â†' SNS â†' CloudWatch Alert
 ```
 
 **Why Lambda?** Serverless, pay-per-execution, auto-scales. Perfect for batch ETL that runs once daily.
@@ -292,7 +292,7 @@ Step Function orchestrates:
 
 | DE Skill | Healthcare Implementation |
 |---|---|
-| **ETL pipeline** | CSV â†’ Parquet â†’ Feature engineering â†’ Model training |
+| **ETL pipeline** | CSV â†' Parquet â†' Feature engineering â†' Model training |
 | **Data quality** | Pydantic schema validation on every API request |
 | **Data processing** | 253K records, column mapping, age bucketing |
 | **Batch processing** | Train scripts process full dataset in batch |
@@ -304,13 +304,13 @@ Step Function orchestrates:
 
 | DE Skill | Nova Implementation |
 |---|---|
-| **Delta Lake** | Bronze â†’ Silver â†’ Gold medallion architecture |
+| **Delta Lake** | Bronze â†' Silver â†' Gold medallion architecture |
 | **PySpark ETL** | Full pipeline with schema contracts and ACID writes |
 | **Data quality** | Quarantine bad records, quality scoring, metadata completeness |
 | **SCD Type 2** | Track dimension history (movie metadata changes over time) |
-| **Streaming** | Kafka â†’ Spark Structured Streaming for behavior events |
+| **Streaming** | Kafka â†' Spark Structured Streaming for behavior events |
 | **Incremental** | Embedding jobs only for new/changed content |
-| **Multi-tenant** | tenant_id, catalog_id â€” same pipeline serves multiple customers |
+| **Multi-tenant** | tenant_id, catalog_id â€" same pipeline serves multiple customers |
 | **Artifact management** | Model versioning via HuggingFace + promotion gates |
 
 ---
@@ -319,14 +319,14 @@ Step Function orchestrates:
 
 ### Q: "Why should we hire a Data Engineer who does AI?"
 
-> "In the AI era, every company is building ML pipelines. The bottleneck isn't the model â€” it's the data. You need someone who can:
+> "In the AI era, every company is building ML pipelines. The bottleneck isn't the model â€" it's the data. You need someone who can:
 > 1. Build the ETL that feeds training data
 > 2. Ensure data quality (garbage in = garbage out)
 > 3. Serve model artifacts efficiently
 > 4. Monitor data drift and model performance
 > 5. Scale pipelines from prototype to production
 >
-> I've done all of this â€” Spark ETL for Nomura's capital markets, Delta Lake pipelines for recommendations, and ML serving with FastAPI. I'm not just a modeler who can't deploy, or an engineer who can't understand the ML. I bridge both."
+> I've done all of this â€" Spark ETL for Nomura's capital markets, Delta Lake pipelines for recommendations, and ML serving with FastAPI. I'm not just a modeler who can't deploy, or an engineer who can't understand the ML. I bridge both."
 
 ### Q: "What's the difference between a Data Engineer and an ML Engineer?"
 
@@ -340,7 +340,7 @@ Step Function orchestrates:
 
 ### Q: "Where do you see yourself in 3-5 years?"
 
-> "I see myself as a **Senior Data/AI Engineer** or **ML Platform Engineer** â€” the person who builds the infrastructure that powers AI at scale. Think: the team that builds Spark pipelines to feed training data, serves model artifacts, and monitors production ML systems. At companies like Google, this role is called 'ML Infrastructure Engineer.' I want to be the bridge between data engineering and machine learning."
+> "I see myself as a **Senior Data/AI Engineer** or **ML Platform Engineer** â€" the person who builds the infrastructure that powers AI at scale. Think: the team that builds Spark pipelines to feed training data, serves model artifacts, and monitors production ML systems. At companies like Google, this role is called 'ML Infrastructure Engineer.' I want to be the bridge between data engineering and machine learning."
 
 ---
 
@@ -375,23 +375,23 @@ Step Function orchestrates:
 **If asked "What do you mean by scalable?"**
 > "Scalable means the pipeline can handle 10x data without rewriting code. For example, at Nomura, our Spark jobs processed daily trade feeds that could range from 100K to 5M records depending on market activity. The pipeline handled both without changes because Spark's partitioning and dynamic allocation scaled the compute automatically. I also used partition pruning so queries on specific dates don't scan the entire dataset."
 
-**If asked "ETL vs ELT â€” what's the difference and which do you use?"**
-> - **ETL** (Extract, Transform, Load): Transform data BEFORE loading into target. Used at Nomura â€” Spark transforms trade data, then writes to destination.
-> - **ELT** (Extract, Load, Transform): Load raw data first, transform inside the target (e.g., Snowflake). Used at Nissan â€” raw files loaded to Snowflake, then SQL transforms inside Snowflake.
+**If asked "ETL vs ELT â€" what's the difference and which do you use?"**
+> - **ETL** (Extract, Transform, Load): Transform data BEFORE loading into target. Used at Nomura â€" Spark transforms trade data, then writes to destination.
+> - **ELT** (Extract, Load, Transform): Load raw data first, transform inside the target (e.g., Snowflake). Used at Nissan â€" raw files loaded to Snowflake, then SQL transforms inside Snowflake.
 > - I've done BOTH. ETL when the transformation is complex (multi-way joins, window functions). ELT when the target has powerful compute (Snowflake).
 
 **If asked "What on-prem vs cloud experience?"**
-> - **On-prem**: Nomura â€” YARN cluster with HDFS, later migrated to Kubernetes + MinIO
-> - **Cloud**: Nissan â€” AWS Lambda, Step Functions, S3, CloudWatch, Snowflake
+> - **On-prem**: Nomura â€" YARN cluster with HDFS, later migrated to Kubernetes + MinIO
+> - **Cloud**: Nissan â€" AWS Lambda, Step Functions, S3, CloudWatch, Snowflake
 
 ---
 
-## EXPERIENCE â€” NOMURA CAPITAL
+## EXPERIENCE â€" NOMURA CAPITAL
 
 ### Bullet 1: "Engineered and maintained large-scale Spark ETL pipelines using Spark SQL..."
 
 **If asked "How large-scale? Give me numbers."**
-> "The capital markets datasets included daily trade feeds (hundreds of thousands of records per day), reference data tables (instrument master, counterparty master â€” millions of rows), risk feeds, and valuation feeds. We processed these through multi-way joins â€” a typical pipeline would join trade facts to 4-5 dimension tables (instrument, counterparty, book, date, currency) using star schema patterns."
+> "The capital markets datasets included daily trade feeds (hundreds of thousands of records per day), reference data tables (instrument master, counterparty master â€" millions of rows), risk feeds, and valuation feeds. We processed these through multi-way joins â€" a typical pipeline would join trade facts to 4-5 dimension tables (instrument, counterparty, book, date, currency) using star schema patterns."
 
 **If asked "What kind of SQL queries?"**
 ```sql
@@ -421,31 +421,31 @@ WHERE t.trade_date >= '2024-01-01'
 ```
 
 **If asked "What window functions did you use?"**
-> - `ROW_NUMBER()` â€” Deduplication (keep latest record per key)
-> - `LAG/LEAD` â€” Day-over-day comparisons
-> - `SUM/AVG OVER` â€” Running totals, moving averages
-> - `RANK/DENSE_RANK` â€” Top-N per group (top 5 trades per instrument)
-> - `FIRST_VALUE/LAST_VALUE` â€” First/last trade per day
+> - `ROW_NUMBER()` â€" Deduplication (keep latest record per key)
+> - `LAG/LEAD` â€" Day-over-day comparisons
+> - `SUM/AVG OVER` â€" Running totals, moving averages
+> - `RANK/DENSE_RANK` â€" Top-N per group (top 5 trades per instrument)
+> - `FIRST_VALUE/LAST_VALUE` â€" First/last trade per day
 
 ---
 
 ### Bullet 2: "Analyzed Spark execution metrics to improve execution time by 30%..."
 
 **If asked "Walk me through the debugging process."**
-> 1. **Spark UI â†’ SQL tab**: Identified slow stages with high shuffle read/write
+> 1. **Spark UI â†' SQL tab**: Identified slow stages with high shuffle read/write
 > 2. **Execution plan**: `EXPLAIN EXTENDED` showed hash joins where broadcast was possible
-> 3. **Stage timeline**: One stage was 10x slower than others â€” classic skew
-> 4. **GC metrics**: Executors were spending 20% time in garbage collection â€” too much data in memory
+> 3. **Stage timeline**: One stage was 10x slower than others â€" classic skew
+> 4. **GC metrics**: Executors were spending 20% time in garbage collection â€" too much data in memory
 >
 > **Fixes applied:**
-> - Broadcast joins for dimension tables < 100MB â†’ eliminated shuffle
-> - Partition pruning via `trade_date` column â†’ skipped 90% of data
-> - Predicate pushdown to Parquet reader â†’ fewer row groups scanned
-> - Intermediate Parquet checkpoints â†’ prevented recomputation
-> - `spark.sql.adaptive.enabled=true` â†’ auto-coalesce small partitions
+> - Broadcast joins for dimension tables < 100MB â†' eliminated shuffle
+> - Partition pruning via `trade_date` column â†' skipped 90% of data
+> - Predicate pushdown to Parquet reader â†' fewer row groups scanned
+> - Intermediate Parquet checkpoints â†' prevented recomputation
+> - `spark.sql.adaptive.enabled=true` â†' auto-coalesce small partitions
 
 **If asked "How do you measure 30%?"**
-> "Compared wall-clock execution time of the same pipeline on the same data before and after optimizations. A job that took 45 minutes consistently ran in 31 minutes after â€” a 31% improvement."
+> "Compared wall-clock execution time of the same pipeline on the same data before and after optimizations. A job that took 45 minutes consistently ran in 31 minutes after â€" a 31% improvement."
 
 ---
 
@@ -479,7 +479,7 @@ WHERE t.trade_date >= '2024-01-01'
 >    spark.hadoop.fs.s3a.path.style.access=true  # Required for MinIO
 >    ```
 >
-> 3. **Resource management**: YARN's memory model (on-heap + off-heap) â†’ K8s resource requests/limits. Had to tune:
+> 3. **Resource management**: YARN's memory model (on-heap + off-heap) â†' K8s resource requests/limits. Had to tune:
 >    ```
 >    spark.kubernetes.executor.request.cores=2
 >    spark.kubernetes.executor.limit.cores=4
@@ -577,10 +577,10 @@ def quality_checks(df: pd.DataFrame) -> dict:
 
 ---
 
-## EXPERIENCE â€” TCS iON INTERNSHIP
+## EXPERIENCE â€" TCS iON INTERNSHIP
 
 **If asked "What model did you build?"**
-> "An ensemble attrition prediction model â€” combining Random Forest, Gradient Boosting, and Logistic Regression with a voting classifier. Achieved 86% accuracy on validation data. The FastAPI service I built exposed it as a REST endpoint for HR teams to check attrition risk per employee."
+> "An ensemble attrition prediction model â€" combining Random Forest, Gradient Boosting, and Logistic Regression with a voting classifier. Achieved 86% accuracy on validation data. The FastAPI service I built exposed it as a REST endpoint for HR teams to check attrition risk per employee."
 
 ---
 
@@ -591,8 +591,8 @@ def quality_checks(df: pd.DataFrame) -> dict:
 **If asked "What's the ETL pipeline?"**
 > 1. **Extract**: Download BRFSS 2015 CDC CSV from Kaggle
 > 2. **Transform**: 
->    - Rename columns (HighBP â†’ hypertension, HighChol â†’ high_chol)
->    - Convert age to buckets (18-24 â†’ 1, 25-29 â†’ 2, ...)
+>    - Rename columns (HighBP â†' hypertension, HighChol â†' high_chol)
+>    - Convert age to buckets (18-24 â†' 1, 25-29 â†' 2, ...)
 >    - Handle class imbalance (scale_pos_weight=6.16)
 >    - Train/test split (80/20)
 > 3. **Load**: Train XGBoost model, save as .pkl file, load at API startup
@@ -605,9 +605,9 @@ def quality_checks(df: pd.DataFrame) -> dict:
 >    - Schema validation and null handling
 >    - Feature engineering (content_quality_score, metadata_completeness)
 >    - Quarantine bad records
->    - Delta Lake: Bronze â†’ Silver â†’ Gold
+>    - Delta Lake: Bronze â†' Silver â†' Gold
 > 3. **Load**: 
->    - SBERT embeddings â†’ FAISS vector index
+>    - SBERT embeddings â†' FAISS vector index
 >    - Parquet serving artifacts
 >    - Publish to HuggingFace for deployment
 
@@ -619,7 +619,7 @@ def quality_checks(df: pd.DataFrame) -> dict:
 > "The Prime Minister's Scholarship is a merit-based scholarship awarded by the Government of India. I received it for all 4 years of my B.Tech (2019-2023) based on academic performance."
 
 **If asked "What's your minor in AI/ML?"**
-> "My B.Tech was Computer Science with a minor specialization in AI/ML. I took additional courses in Machine Learning, Deep Learning, NLP, and Data Mining â€” which gave me the theoretical foundation for the ML work in my projects."
+> "My B.Tech was Computer Science with a minor specialization in AI/ML. I took additional courses in Machine Learning, Deep Learning, NLP, and Data Mining â€" which gave me the theoretical foundation for the ML work in my projects."
 
 ---
 
@@ -631,7 +631,7 @@ def quality_checks(df: pd.DataFrame) -> dict:
 |---|---|---|
 | Python | 8/10 | Daily use for 2+ years, ETL + API + ML |
 | SQL | 8/10 | Complex analytical queries, window functions, CTEs |
-| Spark/PySpark | 7/10 | Daily at Nomura, optimized 30%, YARNâ†’K8s migration |
+| Spark/PySpark | 7/10 | Daily at Nomura, optimized 30%, YARNâ†'K8s migration |
 | Scala | 5/10 | Can read/modify, not primary language |
 | Java | 5/10 | Academic, basic proficiency |
 | AWS | 7/10 | Lambda, Step Functions, S3, CloudWatch, Glue |

@@ -2,11 +2,11 @@
 
 ## Q: Give me a 2-minute elevator pitch of your project.
 
-I built a **full-stack AI Healthcare System** that uses machine learning to predict 5 diseases â€” diabetes, heart disease, liver disease, chronic kidney disease, and lung cancer.
+I built a **full-stack AI Healthcare System** that uses machine learning to predict 5 diseases â€" diabetes, heart disease, liver disease, chronic kidney disease, and lung cancer.
 
 The **frontend** is a Next.js 16 app with a professional dark medical theme, 21 routes, and real-time streaming AI chat. The **backend** is FastAPI with JWT authentication, role-based access control, and 5 ML prediction endpoints that return not just yes/no, but confidence scores and risk levels.
 
-Each model was trained on real medical datasets â€” BRFSS (253K CDC records), Indian Liver Patient Dataset, UCI Chronic Kidney Disease, and Lung Cancer Survey data. I handled class imbalance using `scale_pos_weight` in XGBoost, validated predictions against 48 real patient records (77% accuracy), and every prediction includes a medical disclaimer.
+Each model was trained on real medical datasets â€" BRFSS (253K CDC records), Indian Liver Patient Dataset, UCI Chronic Kidney Disease, and Lung Cancer Survey data. I handled class imbalance using `scale_pos_weight` in XGBoost, validated predictions against 48 real patient records (77% accuracy), and every prediction includes a medical disclaimer.
 
 The system also has a **RAG-powered AI chatbot** using Google Gemini that can answer health questions with personalized context from the patient's records. It streams responses in real-time using Server-Sent Events.
 
@@ -56,7 +56,7 @@ Three reasons:
    - Explainability requirements (can't just say "trust me")
    - High cost of false negatives (missed disease is worse than false alarm)
 
-3. **Portfolio Value**: Healthcare AI demonstrates maturity â€” handling real-world data issues, security considerations, and ethical responsibilities that simple CRUD apps don't.
+3. **Portfolio Value**: Healthcare AI demonstrates maturity â€" handling real-world data issues, security considerations, and ethical responsibilities that simple CRUD apps don't.
 
 ---
 
@@ -74,7 +74,7 @@ Three reasons:
 | ML | **scikit-learn (SVM)** | Best for small high-dimensional datasets |
 | AI | **Google Gemini** | Multimodal, fast, good medical knowledge |
 | Auth | **JWT + bcrypt** | Stateless auth, secure password hashing |
-| Streaming | **SSE** | Simpler than WebSockets for unidirectional serverâ†’client |
+| Streaming | **SSE** | Simpler than WebSockets for unidirectional serverâ†'client |
 
 ---
 
@@ -107,7 +107,7 @@ Mine is a **complete production system**:
 ## Q: Walk me through the user flow.
 
 1. **Landing**: User arrives at the homepage, sees system overview
-2. **Login**: Enters credentials â†’ JWT token stored in browser
+2. **Login**: Enters credentials â†' JWT token stored in browser
 3. **Dashboard**: Sees health stats overview, recent predictions
 4. **Predict**: Selects a disease model (e.g., Diabetes)
 5. **Form**: Fills in health metrics (BMI, BP, cholesterol, etc.)
@@ -154,19 +154,19 @@ Mine is a **complete production system**:
 ## Q: Why different algorithms for different diseases?
 
 **XGBoost for Diabetes & Heart** (large datasets):
-- 253K records â€” enough data for gradient boosting
-- Tabular data with mixed feature types â€” XGBoost handles natively
+- 253K records â€" enough data for gradient boosting
+- Tabular data with mixed feature types â€" XGBoost handles natively
 - `scale_pos_weight` handles class imbalance without resampling
 - Fast training (~3 seconds)
 
 **SVM for Kidney & Lungs** (small datasets):
-- Only 400 and 309 records â€” deep learning would overfit
+- Only 400 and 309 records â€" deep learning would overfit
 - SVM finds optimal decision boundary even with limited data
 - RBF kernel captures non-linear patterns
 - StandardScaler required (SVM is distance-based)
 
 **Random Forest for Liver** (medium dataset):
-- 30K records â€” medium size
+- 30K records â€" medium size
 - Log transform needed for skewed enzyme values
 - Random Forest handles non-linearity well
 - Less prone to overfitting than single decision tree
@@ -180,11 +180,11 @@ In BRFSS diabetes data: 86% healthy, 14% diabetic.
 In BRFSS heart data: 90% healthy, 10% have heart disease.
 
 If a model just predicts "healthy" for everyone:
-- Diabetes: 86% accuracy â€” looks great!
-- Heart: 90% accuracy â€” looks amazing!
-- But it detects **ZERO** sick patients â€” completely useless.
+- Diabetes: 86% accuracy â€" looks great!
+- Heart: 90% accuracy â€" looks amazing!
+- But it detects **ZERO** sick patients â€" completely useless.
 
-**The fix â€” `scale_pos_weight`:**
+**The fix â€" `scale_pos_weight`:**
 ```python
 neg_count = (Y_train == 0).sum()   # 174,595 healthy
 pos_count = (Y_train == 1).sum()   # 28,349 diabetic
@@ -205,7 +205,7 @@ model = xgb.XGBClassifier(
 | Useful for screening? | NO | YES |
 
 **Why accuracy dropped but the model got BETTER:**
-The old model just said "healthy" for everyone. The new model actually identifies at-risk patients, at the cost of some false positives. In medical screening, **false positives are safer than false negatives** â€” a false positive means the patient sees a doctor unnecessarily. A false negative means a sick patient goes undiagnosed.
+The old model just said "healthy" for everyone. The new model actually identifies at-risk patients, at the cost of some false positives. In medical screening, **false positives are safer than false negatives** â€" a false positive means the patient sees a doctor unnecessarily. A false negative means a sick patient goes undiagnosed.
 
 ---
 
@@ -220,7 +220,7 @@ df = pd.read_parquet("data/processed/diabetes.parquet")
 
 # 2. COLUMN MAPPING (dataset-specific)
 df = df.rename(columns=DIABETES_DATASET_MAP)
-# HighBP â†’ hypertension, HighChol â†’ high_chol, etc.
+# HighBP â†' hypertension, HighChol â†' high_chol, etc.
 
 # 3. FEATURE SELECTION
 X = df[DIABETES_FEATURES]  # 9 features
@@ -259,17 +259,17 @@ with open("diabetes_model.pkl", "wb") as f:
 ## Q: What preprocessing does each model need?
 
 ### Diabetes
-- Age â†’ bucket (0-13 categories): `18-24=1, 25-29=2, ... 80+=13`
+- Age â†' bucket (0-13 categories): `18-24=1, 25-29=2, ... 80+=13`
 - Columns renamed from BRFSS to canonical names
 - No scaling needed (XGBoost is tree-based)
 
 ### Heart
 - BRFSS columns mapped to Cleveland schema:
   ```python
-  # BRFSS column â†’ Cleveland column name
-  high_bp â†’ cp, bmi â†’ trestbps, high_chol â†’ chol,
-  smoker â†’ fbs, gen_hlth â†’ restecg, phys_activity â†’ thalach,
-  stroke â†’ exang, diabetes â†’ oldpeak, hvy_alcohol â†’ slope
+  # BRFSS column â†' Cleveland column name
+  high_bp â†' cp, bmi â†' trestbps, high_chol â†' chol,
+  smoker â†' fbs, gen_hlth â†' restecg, phys_activity â†' thalach,
+  stroke â†' exang, diabetes â†' oldpeak, hvy_alcohol â†' slope
   ```
 - No scaling needed (XGBoost)
 
@@ -296,22 +296,22 @@ with open("diabetes_model.pkl", "wb") as f:
 ## Q: How does predict_proba work and why is it important?
 
 ```python
-# model.predict() â†’ Binary: 0 or 1
+# model.predict() â†' Binary: 0 or 1
 prediction = model.predict([[features]])[0]  # Returns: 1
 
-# model.predict_proba() â†’ Probabilities per class
+# model.predict_proba() â†' Probabilities per class
 proba = model.predict_proba([[features]])[0]
 # Returns: [0.058, 0.942]
-# â†’ 5.8% chance healthy, 94.2% chance disease
+# â†' 5.8% chance healthy, 94.2% chance disease
 ```
 
 **Why it matters:**
 - A prediction of "Disease" with 51% confidence is VERY different from 99% confidence
 - Doctors need to know HOW SURE the model is
 - Risk level thresholds:
-  - <40% â†’ Low risk (green) â†’ "Probably fine, but monitor"
-  - 40-75% â†’ Moderate risk (amber) â†’ "Worth investigating"
-  - >75% â†’ High risk (red) â†’ "See a doctor soon"
+  - <40% â†' Low risk (green) â†' "Probably fine, but monitor"
+  - 40-75% â†' Moderate risk (amber) â†' "Worth investigating"
+  - >75% â†' High risk (red) â†' "See a doctor soon"
 
 ---
 
@@ -372,9 +372,9 @@ def initialize_models():
 ```
 
 **Key decisions:**
-- Models loaded into **RAM at startup** â€” prediction takes ~2ms
+- Models loaded into **RAM at startup** â€" prediction takes ~2ms
 - NOT loaded per-request (would be ~200ms each time)
-- If a model file is missing/corrupt â†’ that endpoint returns 503, others still work
+- If a model file is missing/corrupt â†' that endpoint returns 503, others still work
 - Total model size: ~1.6MB (small enough for git)
 
 ---
@@ -391,7 +391,7 @@ def initialize_models():
 | SMOTE oversampling | +2-5% | Low |
 
 **Why I didn't:**
-77% on real records is already clinically useful for a **screening** tool. The purpose isn't to replace diagnosis â€” it's to flag at-risk patients for further evaluation. Over-engineering accuracy past 80% has diminishing returns for a portfolio project.
+77% on real records is already clinically useful for a **screening** tool. The purpose isn't to replace diagnosis â€" it's to flag at-risk patients for further evaluation. Over-engineering accuracy past 80% has diminishing returns for a portfolio project.
 
 
 ---
@@ -402,15 +402,15 @@ def initialize_models():
 FastAPI application with modular design:
 
 ```
-Request â†’ Middleware Stack (7 layers) â†’ Router â†’ Handler â†’ Response
-                                           â†“
+Request â†' Middleware Stack (7 layers) â†' Router â†' Handler â†' Response
+                                           â†"
                               Database / ML Model / AI Service
 ```
 
 **40+ modules** organized by responsibility:
 - **Core**: `main.py`, `database.py`, `models.py`, `schemas.py`
 - **Auth**: `auth.py`, `security.py`
-- **Prediction**: `prediction.py`, `features.py`, 5Ã— `train_*.py`
+- **Prediction**: `prediction.py`, `features.py`, 5Ã- `train_*.py`
 - **AI/Chat**: `core_ai.py`, `prompt_registry.py`, `chat.py`, `streaming_chat.py`, `rag.py`, `chat_context.py`, `agent.py`
 - **Services**: `admin.py`, `appointments.py`, `payments.py`, `report.py`, `pdf_service.py`, `email_service.py`, `vision_service.py`
 - **Enterprise**: `compliance.py`, `enterprise_features.py`, `telemetry.py`
@@ -430,14 +430,14 @@ Request â†’ Middleware Stack (7 layers) â†’ Router â†’ Handler â
 
 **FastAPI specific wins:**
 ```python
-# Pydantic validates AUTOMATICALLY â€” no manual checking
+# Pydantic validates AUTOMATICALLY â€" no manual checking
 class DiabetesInput(BaseModel):
     hypertension: int
     bmi: float
     age: float
 
 @router.post("/predict/diabetes")
-def predict(data: DiabetesInput):  # Invalid input â†’ 422 automatically
+def predict(data: DiabetesInput):  # Invalid input â†' 422 automatically
     ...
 ```
 
@@ -446,7 +446,7 @@ def predict(data: DiabetesInput):  # Invalid input â†’ 422 automatically
 ## Q: Explain the middleware stack in detail.
 
 ```python
-# Order matters â€” last added runs FIRST
+# Order matters â€" last added runs FIRST
 app.add_middleware(LoggingMiddleware)        # 7. Log every request
 app.add_middleware(ExceptionMiddleware)       # 6. Catch unhandled errors
 app.add_middleware(GZipMiddleware)            # 5. Compress responses >1KB
@@ -458,7 +458,7 @@ app.add_middleware(RateLimitMiddleware)       # 1. Block excessive requests
 
 **Execution order** (first to last):
 ```
-Request â†’ RateLimit â†’ TrustedHost â†’ CORS â†’ SecurityHeaders â†’ GZip â†’ Exception â†’ Logging â†’ Route
+Request â†' RateLimit â†' TrustedHost â†' CORS â†' SecurityHeaders â†' GZip â†' Exception â†' Logging â†' Route
 ```
 
 Each middleware explained:
@@ -474,7 +474,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 Skips static/health endpoints. Returns 429 if limit exceeded.
 
 ### 2. TrustedHostMiddleware
-Only allows `127.0.0.1` and `aio-health-backend.onrender.com`. Blocks requests with other `Host` headers â†’ prevents host header injection.
+Only allows `127.0.0.1` and `aio-health-backend.onrender.com`. Blocks requests with other `Host` headers â†' prevents host header injection.
 
 ### 3. CORSMiddleware
 ```python
@@ -564,7 +564,7 @@ bcrypt.checkpw(password.encode(), stored_hash)
 ## Q: How does dependency injection work in FastAPI?
 
 ```python
-# Database session â€” created per request, always closed
+# Database session â€" created per request, always closed
 def get_db():
     db = SessionLocal()
     try:
@@ -572,12 +572,12 @@ def get_db():
     finally:
         db.close()        # Always cleanup, even on error
 
-# Auth â€” decoded from JWT token
+# Auth â€" decoded from JWT token
 def get_current_user(token = Depends(oauth2_scheme), db = Depends(get_db)):
     user = verify_and_get_user(token, db)
     return user
 
-# Route handler â€” FastAPI auto-provides both dependencies
+# Route handler â€" FastAPI auto-provides both dependencies
 @router.get("/records")
 def get_records(
     db: Session = Depends(get_db),
@@ -634,23 +634,23 @@ def predict_diabetes(data: schemas.DiabetesInput):
 It's the **single gateway** for ALL external AI calls. Architecture rule: **no route handler should ever call Gemini/OpenAI directly**.
 
 ```
-Route Handler â†’ core_ai.generate() â†’ Gemini API
-                                    â†’ Ollama (fallback)
+Route Handler â†' core_ai.generate() â†' Gemini API
+                                    â†' Ollama (fallback)
 ```
 
 **Benefits:**
-1. **Single point of change** â€” Switch AI providers by editing one file
-2. **Centralized error handling** â€” Retries, timeouts, fallbacks
-3. **Rate limiting** â€” Control AI API costs
-4. **API key management** â€” One place for all secrets
-5. **Testability** â€” Mock one function to disable all AI calls
+1. **Single point of change** â€" Switch AI providers by editing one file
+2. **Centralized error handling** â€" Retries, timeouts, fallbacks
+3. **Rate limiting** â€" Control AI API costs
+4. **API key management** â€" One place for all secrets
+5. **Testability** â€" Mock one function to disable all AI calls
 
 ---
 
 ## Q: What is the Prompt Registry?
 
 ```python
-# prompt_registry.py â€” ALL system prompts live here
+# prompt_registry.py â€" ALL system prompts live here
 SYSTEM_PROMPTS = {
     "health_chat": """You are a medical AI assistant. 
         Always include disclaimers. Never diagnose.
@@ -689,7 +689,7 @@ app = FastAPI(lifespan=lifespan)
 
 **Why lifespan over @app.on_event?**
 - `on_event` is deprecated in newer FastAPI
-- Lifespan is a context manager â€” guaranteed cleanup
+- Lifespan is a context manager â€" guaranteed cleanup
 - Models loaded ONCE at startup, not per-request
 - Startup failures prevent the app from accepting requests
 
@@ -701,44 +701,44 @@ app = FastAPI(lifespan=lifespan)
 
 ```
 frontend/
-â”œâ”€â”€ src/
-â”‚   â”œâ”€â”€ app/                          # Next.js App Router
-â”‚   â”‚   â”œâ”€â”€ layout.tsx                # Root layout (fonts, providers)
-â”‚   â”‚   â”œâ”€â”€ page.tsx                  # Landing (redirects to dashboard)
-â”‚   â”‚   â”œâ”€â”€ globals.css               # Design tokens (CSS variables)
-â”‚   â”‚   â”œâ”€â”€ login/page.tsx            # Public: login form
-â”‚   â”‚   â”œâ”€â”€ signup/page.tsx           # Public: registration
-â”‚   â”‚   â””â”€â”€ (protected)/             # Auth-guarded route group
-â”‚   â”‚       â”œâ”€â”€ layout.tsx            # Shared sidebar + topbar
-â”‚   â”‚       â”œâ”€â”€ dashboard/page.tsx    # Stats overview
-â”‚   â”‚       â”œâ”€â”€ predict/
-â”‚   â”‚       â”‚   â”œâ”€â”€ page.tsx          # Disease selection hub
-â”‚   â”‚       â”‚   â”œâ”€â”€ diabetes/         # Diabetes form
-â”‚   â”‚       â”‚   â”œâ”€â”€ heart/            # Heart disease form
-â”‚   â”‚       â”‚   â”œâ”€â”€ liver/            # Liver disease form
-â”‚   â”‚       â”‚   â”œâ”€â”€ kidney/           # Kidney disease form
-â”‚   â”‚       â”‚   â””â”€â”€ lungs/            # Lung cancer form
-â”‚   â”‚       â”œâ”€â”€ chat/page.tsx         # AI chatbot
-â”‚   â”‚       â”œâ”€â”€ profile/page.tsx      # User profile
-â”‚   â”‚       â”œâ”€â”€ admin/page.tsx        # Admin panel
-â”‚   â”‚       â”œâ”€â”€ patients/page.tsx     # Patient records
-â”‚   â”‚       â”œâ”€â”€ pricing/page.tsx      # Subscription plans
-â”‚   â”‚       â”œâ”€â”€ telemedicine/page.tsx  # Appointments
-â”‚   â”‚       â”œâ”€â”€ capacity/page.tsx     # Hospital capacity
-â”‚   â”‚       â”œâ”€â”€ infrastructure/page.tsx # System monitoring
-â”‚   â”‚       â””â”€â”€ about/page.tsx        # About page
-â”‚   â”œâ”€â”€ components/
-â”‚   â”‚   â”œâ”€â”€ layout/
-â”‚   â”‚   â”‚   â”œâ”€â”€ Sidebar.tsx           # Navigation sidebar
-â”‚   â”‚   â”‚   â””â”€â”€ TopBar.tsx            # Top navigation
-â”‚   â”‚   â”œâ”€â”€ predict/
-â”‚   â”‚   â”‚   â””â”€â”€ PredictionForm.tsx    # Reusable prediction component
-â”‚   â”‚   â””â”€â”€ chat/
-â”‚   â”‚       â””â”€â”€ ChatInterface.tsx     # Streaming chat UI
-â”‚   â””â”€â”€ lib/
-â”‚       â”œâ”€â”€ api.ts                    # API client (all backend calls)
-â”‚       â”œâ”€â”€ store.ts                  # Zustand auth store
-â”‚       â””â”€â”€ useTelemetry.ts           # Usage tracking hook
+â"œâ"€â"€ src/
+â"‚   â"œâ"€â"€ app/                          # Next.js App Router
+â"‚   â"‚   â"œâ"€â"€ layout.tsx                # Root layout (fonts, providers)
+â"‚   â"‚   â"œâ"€â"€ page.tsx                  # Landing (redirects to dashboard)
+â"‚   â"‚   â"œâ"€â"€ globals.css               # Design tokens (CSS variables)
+â"‚   â"‚   â"œâ"€â"€ login/page.tsx            # Public: login form
+â"‚   â"‚   â"œâ"€â"€ signup/page.tsx           # Public: registration
+â"‚   â"‚   â""â"€â"€ (protected)/             # Auth-guarded route group
+â"‚   â"‚       â"œâ"€â"€ layout.tsx            # Shared sidebar + topbar
+â"‚   â"‚       â"œâ"€â"€ dashboard/page.tsx    # Stats overview
+â"‚   â"‚       â"œâ"€â"€ predict/
+â"‚   â"‚       â"‚   â"œâ"€â"€ page.tsx          # Disease selection hub
+â"‚   â"‚       â"‚   â"œâ"€â"€ diabetes/         # Diabetes form
+â"‚   â"‚       â"‚   â"œâ"€â"€ heart/            # Heart disease form
+â"‚   â"‚       â"‚   â"œâ"€â"€ liver/            # Liver disease form
+â"‚   â"‚       â"‚   â"œâ"€â"€ kidney/           # Kidney disease form
+â"‚   â"‚       â"‚   â""â"€â"€ lungs/            # Lung cancer form
+â"‚   â"‚       â"œâ"€â"€ chat/page.tsx         # AI chatbot
+â"‚   â"‚       â"œâ"€â"€ profile/page.tsx      # User profile
+â"‚   â"‚       â"œâ"€â"€ admin/page.tsx        # Admin panel
+â"‚   â"‚       â"œâ"€â"€ patients/page.tsx     # Patient records
+â"‚   â"‚       â"œâ"€â"€ pricing/page.tsx      # Subscription plans
+â"‚   â"‚       â"œâ"€â"€ telemedicine/page.tsx  # Appointments
+â"‚   â"‚       â"œâ"€â"€ capacity/page.tsx     # Hospital capacity
+â"‚   â"‚       â"œâ"€â"€ infrastructure/page.tsx # System monitoring
+â"‚   â"‚       â""â"€â"€ about/page.tsx        # About page
+â"‚   â"œâ"€â"€ components/
+â"‚   â"‚   â"œâ"€â"€ layout/
+â"‚   â"‚   â"‚   â"œâ"€â"€ Sidebar.tsx           # Navigation sidebar
+â"‚   â"‚   â"‚   â""â"€â"€ TopBar.tsx            # Top navigation
+â"‚   â"‚   â"œâ"€â"€ predict/
+â"‚   â"‚   â"‚   â""â"€â"€ PredictionForm.tsx    # Reusable prediction component
+â"‚   â"‚   â""â"€â"€ chat/
+â"‚   â"‚       â""â"€â"€ ChatInterface.tsx     # Streaming chat UI
+â"‚   â""â"€â"€ lib/
+â"‚       â"œâ"€â"€ api.ts                    # API client (all backend calls)
+â"‚       â"œâ"€â"€ store.ts                  # Zustand auth store
+â"‚       â""â"€â"€ useTelemetry.ts           # Usage tracking hook
 ```
 
 ---
@@ -752,7 +752,7 @@ frontend/
 | Code splitting | Manual | Automatic per-route |
 | Bundler | Webpack/Vite | Turbopack (10x faster) |
 | Layouts | Manual nesting | App Router layout system |
-| API routes | Need separate backend | Built-in (not used â€” we have FastAPI) |
+| API routes | Need separate backend | Built-in (not used â€" we have FastAPI) |
 
 **Key reason**: The `(protected)` route group. All 11 authenticated pages share a sidebar layout **without** duplicating code. The parentheses in the folder name mean it doesn't appear in the URL.
 
@@ -762,16 +762,16 @@ frontend/
 
 ```
 app/
-â”œâ”€â”€ login/page.tsx          â†’ /login (no sidebar)
-â”œâ”€â”€ signup/page.tsx         â†’ /signup (no sidebar)
-â””â”€â”€ (protected)/
-    â”œâ”€â”€ layout.tsx          â†’ Wraps ALL children with sidebar + topbar
-    â”œâ”€â”€ dashboard/page.tsx  â†’ /dashboard (has sidebar)
-    â”œâ”€â”€ predict/page.tsx    â†’ /predict (has sidebar)
-    â””â”€â”€ admin/page.tsx      â†’ /admin (has sidebar)
+â"œâ"€â"€ login/page.tsx          â†' /login (no sidebar)
+â"œâ"€â"€ signup/page.tsx         â†' /signup (no sidebar)
+â""â"€â"€ (protected)/
+    â"œâ"€â"€ layout.tsx          â†' Wraps ALL children with sidebar + topbar
+    â"œâ"€â"€ dashboard/page.tsx  â†' /dashboard (has sidebar)
+    â"œâ"€â"€ predict/page.tsx    â†' /predict (has sidebar)
+    â""â"€â"€ admin/page.tsx      â†' /admin (has sidebar)
 ```
 
-The `(protected)` folder is a **route group** â€” it organizes code without affecting URLs. The `layout.tsx` inside it wraps every child page with the sidebar and topbar. If a user isn't authenticated, this layout redirects to `/login`.
+The `(protected)` folder is a **route group** â€" it organizes code without affecting URLs. The `layout.tsx` inside it wraps every child page with the sidebar and topbar. If a user isn't authenticated, this layout redirects to `/login`.
 
 ---
 
@@ -852,15 +852,15 @@ interface Field {
 ```
 
 **Features inside PredictionForm:**
-1. **CustomSelect** â€” Styled dropdown that replaces ugly native OS selects
-2. **Validation** â€” Checks all fields before submit
-3. **Loading animation** â€” Spinning icon + progress bar
-4. **Confidence bar** â€” Animated fill with color coding:
+1. **CustomSelect** â€" Styled dropdown that replaces ugly native OS selects
+2. **Validation** â€" Checks all fields before submit
+3. **Loading animation** â€" Spinning icon + progress bar
+4. **Confidence bar** â€" Animated fill with color coding:
    - Green (<40%) = Low risk
    - Amber (40-75%) = Moderate risk
    - Red (>75%) = High risk
-5. **Risk level badge** â€” "LOW" / "MODERATE" / "HIGH" with color
-6. **Medical disclaimer** â€” Always shown below results
+5. **Risk level badge** â€" "LOW" / "MODERATE" / "HIGH" with color
+6. **Medical disclaimer** â€" Always shown below results
 
 ---
 
@@ -868,19 +868,19 @@ interface Field {
 
 ```
 User types message
-    â†“
+    â†"
 Frontend sends POST /chat/stream
-    â†“
+    â†"
 Backend returns text/event-stream
-    â†“
+    â†"
 Frontend reads with ReadableStream
-    â†“
+    â†"
 Each chunk: data: {"token":"word","status":"streaming"}
-    â†“
+    â†"
 Append token to UI in real-time
-    â†“
+    â†"
 Final chunk: {"status":"complete"}
-    â†“
+    â†"
 Stop reading
 ```
 
@@ -919,8 +919,8 @@ export function streamChat(message, history, onChunk, onDone, onError) {
 ```
 
 **Why SSE over WebSockets?**
-- Chat streaming is **unidirectional** (server â†’ client only during response)
-- SSE uses standard HTTP â€” no upgrade handshake needed
+- Chat streaming is **unidirectional** (server â†' client only during response)
+- SSE uses standard HTTP â€" no upgrade handshake needed
 - Works through proxies and load balancers without special config
 - Browser has built-in reconnection
 - Simpler error handling
@@ -940,7 +940,7 @@ I use **CSS custom properties** (variables) for a consistent medical dark theme:
   --bg-card-hover: #171717;     /* Hover states */
   --bg-elevated: #1a1a1a;       /* Modals, overlays */
 
-  /* Status Colors (3 states Ã— 3 variants each) */
+  /* Status Colors (3 states Ã- 3 variants each) */
   --danger: #ef4444;            /* High risk */
   --danger-muted: rgba(239, 68, 68, 0.1);
   --danger-border: rgba(239, 68, 68, 0.3);
@@ -954,7 +954,7 @@ I use **CSS custom properties** (variables) for a consistent medical dark theme:
 ```
 
 **Why CSS variables over Tailwind config?**
-- Full runtime control â€” can change theme without rebuild
+- Full runtime control â€" can change theme without rebuild
 - Works with Framer Motion animations
 - Component-level overrides possible
 - No Tailwind class name bloat for complex color schemes
@@ -963,9 +963,9 @@ I use **CSS custom properties** (variables) for a consistent medical dark theme:
 
 ## Q: How do you handle responsive design?
 
-1. **Grid system**: `grid-cols-1 lg:grid-cols-12` â€” single column on mobile, 12-column on desktop
+1. **Grid system**: `grid-cols-1 lg:grid-cols-12` â€" single column on mobile, 12-column on desktop
 2. **Sidebar**: Collapses to hamburger menu on mobile
-3. **Prediction form**: 2-column grid â†’ 1-column on small screens
+3. **Prediction form**: 2-column grid â†' 1-column on small screens
 4. **Results panel**: Stacks below form on mobile with `scrollIntoView()`:
    ```typescript
    useEffect(() => {
@@ -987,7 +987,7 @@ I use **CSS custom properties** (variables) for a consistent medical dark theme:
 | Loading spinner | Framer Motion | `animate={{ rotate: 360 }}` infinite |
 | Button progress | Framer Motion | `animate={{ width: "100%" }}` linear |
 | Dropdown open/close | Framer Motion | `AnimatePresence` with y-offset |
-| Error messages | Framer Motion | Height animation (0 â†’ auto) |
+| Error messages | Framer Motion | Height animation (0 â†' auto) |
 
 ---
 
@@ -1017,16 +1017,16 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 ```
 
 **Key design decisions:**
-- **Auto-injects auth** â€” No need to pass token manually
-- **Type-safe** â€” Generic `<T>` return type
-- **Error parsing** â€” Handles both string errors and Pydantic validation arrays
-- **Centralized** â€” Change base URL in one place for deployment
+- **Auto-injects auth** â€" No need to pass token manually
+- **Type-safe** â€" Generic `<T>` return type
+- **Error parsing** â€" Handles both string errors and Pydantic validation arrays
+- **Centralized** â€" Change base URL in one place for deployment
 
 
 ---
 
 
-> Everything about how the AI chatbot works â€” RAG, Gemini, streaming, prompts, fallbacks.
+> Everything about how the AI chatbot works â€" RAG, Gemini, streaming, prompts, fallbacks.
 
 ---
 
@@ -1036,29 +1036,29 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 
 ```
 User types: "What diet should I follow for diabetes?"
-    â†“
+    â†"
 Step 1: Frontend sends POST /chat/stream with message + auth token
-    â†“
+    â†"
 Step 2: Backend extracts user_id from JWT token
-    â†“
-Step 3: RAG Search â€” find relevant patient records in vector store
-         Query: "diet diabetes" â†’ Finds: "Patient has diabetes prediction: High Risk"
-    â†“
-Step 4: Prompt Building â€” combine system prompt + RAG context + user message + history
+    â†"
+Step 3: RAG Search â€" find relevant patient records in vector store
+         Query: "diet diabetes" â†' Finds: "Patient has diabetes prediction: High Risk"
+    â†"
+Step 4: Prompt Building â€" combine system prompt + RAG context + user message + history
          System prompt: "You are a medical AI assistant..."
          Context: "This patient was assessed as High Risk for diabetes"
          User: "What diet should I follow for diabetes?"
          History: [previous messages]
-    â†“
-Step 5: Gemini API Call â€” send assembled prompt, request streaming
-    â†“
-Step 6: SSE Streaming â€” each token streamed back as Server-Sent Event
+    â†"
+Step 5: Gemini API Call â€" send assembled prompt, request streaming
+    â†"
+Step 6: SSE Streaming â€" each token streamed back as Server-Sent Event
          data: {"token": "For", "status": "streaming"}
          data: {"token": " diabetes", "status": "streaming"}
          data: {"token": " management", "status": "streaming"}
          ...
          data: {"status": "complete"}
-    â†“
+    â†"
 Step 7: Frontend renders tokens in real-time as they arrive
 ```
 
@@ -1078,7 +1078,7 @@ AI (without RAG): "Here's a general healthy diet: fruits, vegetables, lean prote
 ### The Solution With RAG:
 ```
 User: "What should I eat?"
-RAG Search: Finds patient record â†’ "Diabetes: High Risk, BMI: 35, Age: 55"
+RAG Search: Finds patient record â†' "Diabetes: High Risk, BMI: 35, Age: 55"
 AI (with RAG): "Given your diabetes risk assessment (High Risk) and BMI of 35, 
                 I recommend focusing on low-glycemic foods: non-starchy vegetables,
                 whole grains, lean proteins. Avoid sugary drinks and refined carbs.
@@ -1103,7 +1103,7 @@ def store_health_record(user_id: int, record_type: str, prediction: str):
 def search_context(query: str, user_id: int, top_k: int = 5) -> list[str]:
     query_embedding = compute_embedding(query)
     
-    # Search vector store â€” find records most similar to the question
+    # Search vector store â€" find records most similar to the question
     results = vector_store.search(
         query_embedding,
         filter={"user_id": user_id},  # Only this patient's records!
@@ -1137,7 +1137,7 @@ Remember: Always include a medical disclaimer. Never provide definitive diagnose
 | Approach | RAG | Fine-Tuning |
 |---|---|---|
 | Data needed | Just store records | Thousands of training examples |
-| Update speed | Instant (add record â†’ searchable) | Hours/days to retrain |
+| Update speed | Instant (add record â†' searchable) | Hours/days to retrain |
 | Cost | ~$0 (vector store is local) | $100+ per fine-tune |
 | Patient-specific | Yes (filter by user_id) | No (model-level) |
 | Privacy | Records stay in YOUR database | Records sent to OpenAI/Google |
@@ -1149,7 +1149,7 @@ Remember: Always include a medical disclaimer. Never provide definitive diagnose
 
 ### What is SSE?
 
-**SSE (Server-Sent Events)** = Server pushes data to client over a standard HTTP connection. Unlike WebSocket, it's unidirectional (server â†’ client only).
+**SSE (Server-Sent Events)** = Server pushes data to client over a standard HTTP connection. Unlike WebSocket, it's unidirectional (server â†' client only).
 
 ### Backend Implementation:
 
@@ -1275,21 +1275,21 @@ export async function streamChat(
 
 | Feature | SSE | WebSocket |
 |---|---|---|
-| Direction | Server â†’ Client only | Bidirectional |
+| Direction | Server â†' Client only | Bidirectional |
 | Protocol | Standard HTTP | WebSocket upgrade handshake |
 | Auto-reconnect | Built-in | Must implement manually |
 | Proxy support | Works through all proxies | Some proxies block |
 | Complexity | Simple | Complex |
 | My use case | Chat streaming (server sends tokens) | Not needed |
 
-**Decision**: Chat is unidirectional â€” the server streams tokens to the client. SSE is simpler, auto-reconnects, and works through all HTTP proxies. WebSocket adds complexity with zero benefit for this use case.
+**Decision**: Chat is unidirectional â€" the server streams tokens to the client. SSE is simpler, auto-reconnects, and works through all HTTP proxies. WebSocket adds complexity with zero benefit for this use case.
 
 ---
 
 ## Q: What is core_ai.py and why can't route handlers call AI directly?
 
 ### The Rule (from AGENTS.md):
-> "All AI inference must go through `backend/core_ai.py` â€” never call provider APIs directly."
+> "All AI inference must go through `backend/core_ai.py` â€" never call provider APIs directly."
 
 ### What core_ai.py Does:
 
@@ -1305,7 +1305,7 @@ logger = logging.getLogger(__name__)
 _model = None
 
 def get_model():
-    """Singleton pattern â€” one model instance for the entire app."""
+    """Singleton pattern â€" one model instance for the entire app."""
     global _model
     if _model is None:
         api_key = os.getenv("GEMINI_API_KEY")
@@ -1317,7 +1317,7 @@ def get_model():
     return _model
 
 def generate(prompt: str, stream: bool = False):
-    """Central AI gateway â€” all AI calls go through here."""
+    """Central AI gateway â€" all AI calls go through here."""
     model = get_model()
     try:
         return model.generate_content(prompt, stream=stream)
@@ -1344,7 +1344,7 @@ def _fallback_ollama(prompt: str):
 
 1. **Provider abstraction**: Switch from Gemini to OpenAI by changing ONE function. No route handler changes.
 
-2. **Centralized error handling**: Retries, timeouts, and fallback chain (Gemini â†’ Ollama â†’ error message) in one place.
+2. **Centralized error handling**: Retries, timeouts, and fallback chain (Gemini â†' Ollama â†' error message) in one place.
 
 3. **Cost control**: Add rate limiting, usage tracking, token counting in one place:
    ```python
@@ -1368,7 +1368,7 @@ def _fallback_ollama(prompt: str):
 ## Q: What are system prompts and how does prompt_registry.py work?
 
 ### The Rule:
-> "Prompts are owned by `prompt_registry.py` â€” never inline system prompts in route handlers."
+> "Prompts are owned by `prompt_registry.py` â€" never inline system prompts in route handlers."
 
 ### How It Works:
 
@@ -1379,7 +1379,7 @@ HEALTH_CHAT_SYSTEM_PROMPT = """You are a medical AI assistant for the AI Healthc
 
 RULES YOU MUST FOLLOW:
 1. Always include a medical disclaimer at the end of your response
-2. Never provide definitive diagnoses â€” say "may indicate" not "you have"
+2. Never provide definitive diagnoses â€" say "may indicate" not "you have"
 3. Recommend consulting a healthcare professional for serious concerns
 4. Use evidence-based information from medical literature
 5. Be empathetic and supportive in tone
@@ -1432,15 +1432,15 @@ def build_chat_prompt(user_message: str, context: list[str], history: list) -> s
 
 ```
 User sends message
-    â†“
+    â†"
 Try Gemini API (cloud)
-    â”œâ”€â”€ Success â†’ Stream response back
-    â””â”€â”€ Fail (timeout, API key invalid, quota exceeded)
-        â†“
+    â"œâ"€â"€ Success â†' Stream response back
+    â""â"€â"€ Fail (timeout, API key invalid, quota exceeded)
+        â†"
     Try Ollama (local LLM on localhost:11434)
-        â”œâ”€â”€ Success â†’ Return local response
-        â””â”€â”€ Fail (Ollama not running)
-            â†“
+        â"œâ"€â"€ Success â†' Return local response
+        â""â"€â"€ Fail (Ollama not running)
+            â†"
         Return friendly error:
         "AI chat is temporarily unavailable. 
          Your prediction results are still accessible."
@@ -1473,22 +1473,22 @@ This means the system **degrades gracefully** instead of going completely down.
 ---
 
 
-> Everything about the database layer â€” schema, ORM, sessions, migrations, queries.
+> Everything about the database layer â€" schema, ORM, sessions, migrations, queries.
 
 ---
 
 ## Q: What database do you use and why?
 
 ### Development: SQLite
-- **Zero configuration** â€” `pip install` and it works. No database server to install.
-- **Single file** â€” entire database is `healthcare.db`. Easy to delete and recreate.
-- **Fast for reads** â€” perfect for single-user development.
-- **Limitation** â€” single writer at a time (no concurrent writes).
+- **Zero configuration** â€" `pip install` and it works. No database server to install.
+- **Single file** â€" entire database is `healthcare.db`. Easy to delete and recreate.
+- **Fast for reads** â€" perfect for single-user development.
+- **Limitation** â€" single writer at a time (no concurrent writes).
 
 ### Production: PostgreSQL
-- **Concurrent writes** â€” multiple users can write simultaneously.
-- **Connection pooling** â€” handles 100+ concurrent connections.
-- **ACID compliance** â€” full transactional integrity for patient data.
+- **Concurrent writes** â€" multiple users can write simultaneously.
+- **Connection pooling** â€" handles 100+ concurrent connections.
+- **ACID compliance** â€" full transactional integrity for patient data.
 - **Just change one environment variable:**
   ```bash
   # Development (default)
@@ -1506,7 +1506,7 @@ import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-# This ONE line reads the env variable â€” same code for SQLite and PostgreSQL
+# This ONE line reads the env variable â€" same code for SQLite and PostgreSQL
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./healthcare.db")
 
 # SQLAlchemy handles the difference internally
@@ -1561,10 +1561,10 @@ class User(Base):
 ```
 
 **Why these fields?**
-- `hashed_password`: bcrypt with salt â€” even if database is stolen, passwords are safe
-- `role`: Role-based access control â€” admin sees all, patient sees only their own
+- `hashed_password`: bcrypt with salt â€" even if database is stolen, passwords are safe
+- `role`: Role-based access control â€" admin sees all, patient sees only their own
 - `plan_tier`: Subscription tiers for premium features (not enforced yet)
-- `index=True` on username/email: Database creates B-tree index â†’ O(log n) lookups instead of O(n) full scan
+- `index=True` on username/email: Database creates B-tree index â†' O(log n) lookups instead of O(n) full scan
 
 ### Health Records Table:
 
@@ -1590,7 +1590,7 @@ class HealthRecord(Base):
 **Why JSON column for `data`?**
 - Each disease has different input fields (diabetes: 9 features, kidney: 24 features)
 - JSON column stores any shape of data without schema changes
-- Alternative: separate table per disease â€” more normalized but more complex
+- Alternative: separate table per disease â€" more normalized but more complex
 
 ### Appointments Table:
 
@@ -1624,7 +1624,7 @@ def get_db():
     try:
         yield db       # Provide session to the route handler
     finally:
-        db.close()     # ALWAYS close â€” prevents connection leaks
+        db.close()     # ALWAYS close â€" prevents connection leaks
 ```
 
 ### How It's Used in Route Handlers:
@@ -1654,13 +1654,13 @@ def signup(
     db.refresh(user)     # Reload with generated ID
     
     return {"id": user.id, "username": user.username}
-    # After return â†’ finally block closes the session
+    # After return â†' finally block closes the session
 ```
 
 ### Why Dependency Injection?
 
 ```python
-# WITHOUT DI (bad â€” session leak risk):
+# WITHOUT DI (bad â€" session leak risk):
 @router.get("/records")
 def get_records():
     db = SessionLocal()
@@ -1668,7 +1668,7 @@ def get_records():
     db.close()  # What if the query throws an error? Session LEAKS!
     return records
 
-# WITH DI (good â€” guaranteed cleanup):
+# WITH DI (good â€" guaranteed cleanup):
 @router.get("/records")
 def get_records(db: Session = Depends(get_db)):
     return db.query(Record).all()
@@ -1676,10 +1676,10 @@ def get_records(db: Session = Depends(get_db)):
 ```
 
 **Benefits:**
-1. **No session leaks** â€” `finally` guarantees cleanup
-2. **Testable** â€” override `get_db` with a test database in tests
-3. **DRY** â€” don't write session open/close in every handler
-4. **FastAPI auto-handles** â€” just declare `db: Session = Depends(get_db)`
+1. **No session leaks** â€" `finally` guarantees cleanup
+2. **Testable** â€" override `get_db` with a test database in tests
+3. **DRY** â€" don't write session open/close in every handler
+4. **FastAPI auto-handles** â€" just declare `db: Session = Depends(get_db)`
 
 ---
 
@@ -1797,10 +1797,10 @@ def save_prediction(db: Session, user_id: int, disease: str,
 ### ORM = Object-Relational Mapping
 
 ```python
-# WITHOUT ORM (raw SQL â€” vulnerable to injection):
+# WITHOUT ORM (raw SQL â€" vulnerable to injection):
 username = request.form["username"]
 cursor.execute(f"SELECT * FROM users WHERE username = '{username}'")
-# If username = "admin'; DROP TABLE users; --" â†’ DATABASE DESTROYED
+# If username = "admin'; DROP TABLE users; --" â†' DATABASE DESTROYED
 
 # WITH SQLAlchemy ORM (safe):
 user = db.query(User).filter(User.username == username).first()
@@ -1818,9 +1818,9 @@ db.query(User).filter(User.role == "admin").order_by(User.created_at.desc()).lim
 SELECT * FROM users WHERE role = 'admin' ORDER BY created_at DESC LIMIT 10
 
 # The translation happens via Dialect:
-# SQLite dialect â†’ SQLite SQL
-# PostgreSQL dialect â†’ PostgreSQL SQL
-# Same Python code â†’ different SQL based on DATABASE_URL
+# SQLite dialect â†' SQLite SQL
+# PostgreSQL dialect â†' PostgreSQL SQL
+# Same Python code â†' different SQL based on DATABASE_URL
 ```
 
 ---
@@ -1836,7 +1836,7 @@ SELECT * FROM users WHERE role = 'admin' ORDER BY created_at DESC LIMIT 10
 # 2. Set environment variable
 export DATABASE_URL="postgresql://user:pass@ep-cool.neon.tech/healthcare"
 
-# 3. Start the app â€” it auto-creates tables and runs migrations
+# 3. Start the app â€" it auto-creates tables and runs migrations
 uvicorn backend.main:app --host 0.0.0.0 --port 8000
 
 # 4. Migrate existing data (if needed)
@@ -1879,22 +1879,22 @@ First, understand the difference:
 
 ```
 Step 1: User enters username + password on the login page
-            â†“
+            â†"
 Step 2: Frontend sends POST /login with credentials
         Body: username=pavan&password=secret123
         Format: application/x-www-form-urlencoded (this is the OAuth2 spec format,
-                not JSON â€” because OAuth2 standard requires form-encoded login)
-            â†“
+                not JSON â€" because OAuth2 standard requires form-encoded login)
+            â†"
 Step 3: Backend receives the request
         Looks up "pavan" in the database
         Finds: hashed_password = "$2b$12$LJ3qPe7x8Vk9J4..."
-            â†“
+            â†"
 Step 4: bcrypt.checkpw("secret123", stored_hash)
         bcrypt takes the entered password, applies the SAME salt
         from the stored hash, hashes it, and compares.
-        If they match â†’ password is correct
-        If not â†’ return 401 Unauthorized
-            â†“
+        If they match â†' password is correct
+        If not â†' return 401 Unauthorized
+            â†"
 Step 5: Create JWT token
         payload = {
             "sub": "pavan",       # Who this token belongs to
@@ -1904,14 +1904,14 @@ Step 5: Create JWT token
         token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
         # SECRET_KEY = a long random string only the server knows
         # HS256 = HMAC-SHA256 signing algorithm
-            â†“
+            â†"
 Step 6: Return token to frontend
         {"access_token": "eyJhbGciOiJIUzI1NiJ9.eyJ...", "token_type": "bearer"}
-            â†“
+            â†"
 Step 7: Frontend stores token in localStorage
         Every future request includes:
         Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJ...
-            â†“
+            â†"
 Step 8: On every API call, backend middleware:
         a) Extracts the token from Authorization header
         b) Decodes it with SECRET_KEY
@@ -1926,7 +1926,7 @@ A JWT is a string with 3 parts separated by dots:
 
 ```
 eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwYXZhbiIsImV4cCI6MTcxOH0.abc123signature
-â†‘ HEADER                â†‘ PAYLOAD                              â†‘ SIGNATURE
+â†' HEADER                â†' PAYLOAD                              â†' SIGNATURE
 
 HEADER (base64 encoded):
 {
@@ -1948,15 +1948,15 @@ HMAC-SHA256(
 )
 ```
 
-**Why is the signature important?** If someone intercepts the token and changes "patient" to "admin" in the payload, the signature won't match anymore. The server recalculates the signature using the secret key and compares â€” if they don't match, the token is rejected. You can't forge a valid token without knowing the SECRET_KEY.
+**Why is the signature important?** If someone intercepts the token and changes "patient" to "admin" in the payload, the signature won't match anymore. The server recalculates the signature using the secret key and compares â€" if they don't match, the token is rejected. You can't forge a valid token without knowing the SECRET_KEY.
 
 **Why JWT over sessions?**
 
 | Feature | JWT (your project) | Sessions |
 |---|---|---|
 | Where stored | Client (localStorage) | Server (in memory or database) |
-| Server state | Stateless â€” nothing stored | Stateful â€” session table |
-| Scaling | Easy â€” any server can verify | Hard â€” need shared session store |
+| Server state | Stateless â€" nothing stored | Stateful â€" session table |
+| Scaling | Easy â€" any server can verify | Hard â€" need shared session store |
 | Database hit per request | None (just decode token) | Yes (lookup session ID) |
 | Revocation | Hard (wait for expiry) | Easy (delete from server) |
 | Mobile-friendly | Yes (just send header) | Harder (cookies are complex on mobile) |
@@ -2002,13 +2002,13 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 **The problem**: If you store passwords as plain text and your database gets hacked:
 
 ```
-BAD â€” plain text passwords:
+BAD â€" plain text passwords:
 | username | password    |
 |----------|-------------|
 | pavan    | secret123   |  â† Hacker reads this directly
 | alice    | mypassword  |  â† Every password exposed
 
-GOOD â€” bcrypt hashed passwords:
+GOOD â€" bcrypt hashed passwords:
 | username | hashed_password                                          |
 |----------|----------------------------------------------------------|
 | pavan    | $2b$12$LJ3qPe7x8Vk9J4nZ1mD5Oe3xYz.KN1aBc2dEf3gH4iJ5kL |
@@ -2018,25 +2018,25 @@ GOOD â€” bcrypt hashed passwords:
 **How bcrypt works (step by step):**
 
 ```
-1. SIGNUP â€” User enters password "secret123"
-        â†“
+1. SIGNUP â€" User enters password "secret123"
+        â†"
 2. bcrypt generates a RANDOM SALT: "$2b$12$LJ3qPe7x8Vk9J4nZ1mD5O"
    (Salt = random string added to the password before hashing.
     This means even if two users have the SAME password "secret123",
     their hashes will be DIFFERENT because different salts.)
-        â†“
+        â†"
 3. bcrypt hashes: hash("secret123" + salt) using Blowfish cipher
    This takes ~100ms ON PURPOSE (see "Why intentionally slow?" below)
-        â†“
+        â†"
 4. Store in database: "$2b$12$LJ3qPe7x8Vk9J4nZ1mD5Oe3xYz.KN1aBc..."
    The stored string contains: algorithm ($2b) + cost ($12) + salt + hash
-        â†“
-5. LOGIN â€” User enters password "secret123" again
-        â†“
+        â†"
+5. LOGIN â€" User enters password "secret123" again
+        â†"
 6. bcrypt extracts the salt from the stored hash
    Re-hashes: hash("secret123" + same_salt)
    Compares: does the new hash match the stored hash?
-   If yes â†’ password correct. If no â†’ wrong password.
+   If yes â†' password correct. If no â†' wrong password.
 ```
 
 **Why intentionally slow?** At 100ms per hash, an attacker can only try ~10 passwords per second. With a fast hash like MD5 (which takes microseconds), an attacker could try BILLIONS of passwords per second. The slowness IS the security.
@@ -2056,7 +2056,7 @@ entered_password = "secret123"
 stored_hash = user.hashed_password.encode('utf-8')  # From database
 
 if bcrypt.checkpw(entered_password.encode('utf-8'), stored_hash):
-    # Password correct â†’ create JWT token
+    # Password correct â†' create JWT token
     token = create_token(user.username, user.role)
     return {"access_token": token}
 else:
@@ -2076,7 +2076,7 @@ def get_my_records(
     current_user: User = Depends(get_current_user),  # Auth check
     db: Session = Depends(get_db)
 ):
-    # Filter by current_user.id â€” can NEVER see another patient's data
+    # Filter by current_user.id â€" can NEVER see another patient's data
     return db.query(HealthRecord).filter(
         HealthRecord.user_id == current_user.id
     ).all()
@@ -2100,14 +2100,14 @@ def get_all_records(
 
 | Attack | What It Is (Simply) | How Your System Prevents It |
 |---|---|---|
-| **SQL Injection** | Attacker puts SQL code in input fields: `username = "'; DROP TABLE users; --"`. If you build SQL strings with user input, the attacker's SQL executes. | **SQLAlchemy ORM** â€” NEVER builds SQL strings from user input. All values are parameterized: `WHERE username = ?` (the `?` is filled in safely by the database driver). |
-| **XSS (Cross-Site Scripting)** | Attacker injects JavaScript into your page: `<script>steal(cookies)</script>`. If the page renders this, the script runs in every visitor's browser. | **React auto-escapes** â€” All text rendered via JSX is escaped. `<script>` becomes `&lt;script&gt;` (visible text, not executable code). |
-| **CSRF (Cross-Site Request Forgery)** | Attacker tricks your browser into making requests to your API while you're logged in (e.g., a hidden form on an evil site that submits to your `/delete-account` endpoint). Works because browsers auto-attach cookies. | **JWT in headers, not cookies** â€” Your API doesn't use cookies. The JWT token is sent in the `Authorization` header, which browsers don't auto-attach. A malicious site can't add custom headers to cross-origin requests. |
-| **Clickjacking** | Attacker loads your site in an invisible iframe, puts fake buttons on top. User thinks they're clicking "Play Video" but actually clicking "Delete My Account" on your hidden site. | **`X-Frame-Options: DENY`** header â€” Browsers refuse to load your site in any iframe. The SecurityHeadersMiddleware adds this to every response. |
-| **Brute Force** | Attacker tries thousands of password combinations rapidly until one works. | **Rate limiting** â€” After too many requests from the same IP, further requests are blocked. Also, **bcrypt is slow by design** â€” each password check takes ~100ms, limiting attacker to ~10 attempts/second. |
+| **SQL Injection** | Attacker puts SQL code in input fields: `username = "'; DROP TABLE users; --"`. If you build SQL strings with user input, the attacker's SQL executes. | **SQLAlchemy ORM** â€" NEVER builds SQL strings from user input. All values are parameterized: `WHERE username = ?` (the `?` is filled in safely by the database driver). |
+| **XSS (Cross-Site Scripting)** | Attacker injects JavaScript into your page: `<script>steal(cookies)</script>`. If the page renders this, the script runs in every visitor's browser. | **React auto-escapes** â€" All text rendered via JSX is escaped. `<script>` becomes `&lt;script&gt;` (visible text, not executable code). |
+| **CSRF (Cross-Site Request Forgery)** | Attacker tricks your browser into making requests to your API while you're logged in (e.g., a hidden form on an evil site that submits to your `/delete-account` endpoint). Works because browsers auto-attach cookies. | **JWT in headers, not cookies** â€" Your API doesn't use cookies. The JWT token is sent in the `Authorization` header, which browsers don't auto-attach. A malicious site can't add custom headers to cross-origin requests. |
+| **Clickjacking** | Attacker loads your site in an invisible iframe, puts fake buttons on top. User thinks they're clicking "Play Video" but actually clicking "Delete My Account" on your hidden site. | **`X-Frame-Options: DENY`** header â€" Browsers refuse to load your site in any iframe. The SecurityHeadersMiddleware adds this to every response. |
+| **Brute Force** | Attacker tries thousands of password combinations rapidly until one works. | **Rate limiting** â€" After too many requests from the same IP, further requests are blocked. Also, **bcrypt is slow by design** â€" each password check takes ~100ms, limiting attacker to ~10 attempts/second. |
 | **Information Disclosure** | Attacker triggers an error to see stack traces, file paths, or database queries in the error response. This reveals your tech stack, file structure, and potential vulnerabilities. | **ExceptionMiddleware** catches ALL unhandled errors. Returns a UUID error ID to the user: `{"detail": "Error: a1b2c3d4"}`. The actual stack trace is logged server-side only. No file paths, no SQL queries, no PII in the response. |
-| **Password Theft** | Attacker gets database access (SQL injection, backup theft, insider). If passwords are in plain text, every account is compromised. | **bcrypt hashing** â€” Even with full database access, attacker sees `$2b$12$LJ3q...`, NOT the actual password. The hash is one-way â€” you cannot reverse it back to the password. |
-| **Token Theft** | Attacker intercepts the JWT token (network sniffing, XSS). | **HTTPS in production** encrypts all traffic â€” tokens can't be intercepted. **24-hour expiry** limits the damage window. **No sensitive data in token** â€” even if stolen, it only contains username and role, not passwords or health data. |
+| **Password Theft** | Attacker gets database access (SQL injection, backup theft, insider). If passwords are in plain text, every account is compromised. | **bcrypt hashing** â€" Even with full database access, attacker sees `$2b$12$LJ3q...`, NOT the actual password. The hash is one-way â€" you cannot reverse it back to the password. |
+| **Token Theft** | Attacker intercepts the JWT token (network sniffing, XSS). | **HTTPS in production** encrypts all traffic â€" tokens can't be intercepted. **24-hour expiry** limits the damage window. **No sensitive data in token** â€" even if stolen, it only contains username and role, not passwords or health data. |
 
 ---
 
@@ -2140,7 +2140,7 @@ HIPAA has three types of safeguards:
 - Secure disposal of hardware
 
 **Your honest answer in an interview:**
-> "My system implements the technical safeguards: JWT auth with role-based access control, bcrypt password hashing, HTTPS encryption, audit logging, and PII protection in error messages. Full HIPAA compliance also requires administrative and physical safeguards â€” staff training, risk assessments, and third-party audits â€” which are organizational, not code. I'm aware of the full picture, but my focus was on building the technical foundation."
+> "My system implements the technical safeguards: JWT auth with role-based access control, bcrypt password hashing, HTTPS encryption, audit logging, and PII protection in error messages. Full HIPAA compliance also requires administrative and physical safeguards â€" staff training, risk assessments, and third-party audits â€" which are organizational, not code. I'm aware of the full picture, but my focus was on building the technical foundation."
 
 ---
 
@@ -2152,12 +2152,12 @@ HIPAA has three types of safeguards:
 > "Never log or expose PII in error messages or debug output."
 
 ```python
-# BAD â€” PII in error log (HIPAA violation):
+# BAD â€" PII in error log (HIPAA violation):
 logger.error(f"Failed prediction for {user.full_name}, DOB: {user.dob}, "
              f"health data: {patient_data}")
 # If logs are compromised, attacker sees: "John Smith, DOB: 1980-05-15, BMI: 35"
 
-# GOOD â€” generic error with tracking ID:
+# GOOD â€" generic error with tracking ID:
 error_id = str(uuid.uuid4())[:8]  # Generate: "a1b2c3d4"
 logger.error(f"Prediction error [{error_id}]: model={disease_type}, "
              f"user_id={user.id}")
@@ -2188,59 +2188,59 @@ return JSONResponse(
 
 ## Q: What are your 7 middleware layers?
 
-**Middleware** = Code that runs BEFORE your route handler processes a request and AFTER it sends a response. Like security checkpoints at an airport â€” every request passes through all of them.
+**Middleware** = Code that runs BEFORE your route handler processes a request and AFTER it sends a response. Like security checkpoints at an airport â€" every request passes through all of them.
 
 ```
                                     Request arrives from client
-                                              â†“
+                                              â†"
 Layer 1: CORS Middleware
          "Is this request coming from an ALLOWED origin?"
          Your frontend (localhost:3000) is allowed.
          A random malicious site (evil.com) is blocked.
          CORS = Cross-Origin Resource Sharing.
-                                              â†“
+                                              â†"
 Layer 2: Rate Limiting Middleware
          "Has this IP made too many requests recently?"
-         If yes â†’ 429 Too Many Requests (blocks brute force attacks)
-         If no â†’ let it through
-                                              â†“
+         If yes â†' 429 Too Many Requests (blocks brute force attacks)
+         If no â†' let it through
+                                              â†"
 Layer 3: TrustedHost Middleware
          "Is the Host header a trusted domain?"
          Allows: localhost, 127.0.0.1, your-app.render.com
          Blocks: Host header attacks where attacker sets Host to evil.com
-                                              â†“
+                                              â†"
 Layer 4: Security Headers Middleware
          Adds defensive headers to EVERY response:
          X-Frame-Options: DENY          (prevent clickjacking)
          X-Content-Type-Options: nosniff (prevent MIME sniffing)
          X-XSS-Protection: 1           (legacy XSS filter)
-                                              â†“
+                                              â†"
 Layer 5: Exception Middleware
          Wraps everything in try/catch.
          If ANY unhandled error occurs anywhere:
-         â†’ Log the full stack trace server-side
-         â†’ Return generic error with UUID to client
-         â†’ NEVER expose internal details to the user
-                                              â†“
+         â†' Log the full stack trace server-side
+         â†' Return generic error with UUID to client
+         â†' NEVER expose internal details to the user
+                                              â†"
 Layer 6: Request ID Middleware
          Generates a UUID for this request: "req-a1b2c3d4"
          Attaches it to logs, headers, and error messages.
          If user reports a bug: "I got error a1b2c3d4"
          You can search logs for exactly that request.
-                                              â†“
+                                              â†"
 Layer 7: Timing Middleware
          Records: start_time = now()
          After response: elapsed = now() - start_time
          Adds header: X-Process-Time: 0.009
          Logs: "GET /predict/diabetes completed in 9ms"
          This is how you know prediction takes ~9ms.
-                                              â†“
+                                              â†"
                                     YOUR ROUTE HANDLER
                                     (predict_diabetes, login, etc.)
-                                              â†“
+                                              â†"
                                     Response goes back through
                                     all layers in reverse order
-                                              â†“
+                                              â†"
                                     Client receives response
 ```
 
@@ -2251,28 +2251,28 @@ Layer 7: Timing Middleware
 ## Q: Draw the system architecture.
 
 ```
-â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”     HTTP/SSE      â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-â”‚                  â”‚ â†â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â†’  â”‚         FastAPI Backend       â”‚
-â”‚   Next.js 16     â”‚                    â”‚                              â”‚
-â”‚   Frontend       â”‚                    â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”‚
-â”‚                  â”‚                    â”‚  â”‚ Auth    â”‚  â”‚ Predict  â”‚  â”‚
-â”‚  - 21 Routes     â”‚                    â”‚  â”‚ (JWT)   â”‚  â”‚ (5 ML)   â”‚  â”‚
-â”‚  - Zustand       â”‚                    â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â”‚
-â”‚  - Framer Motion â”‚                    â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”‚
-â”‚  - SSE Chat      â”‚                    â”‚  â”‚ Chat    â”‚  â”‚ Admin    â”‚  â”‚
-â”‚                  â”‚                    â”‚  â”‚ (RAG)   â”‚  â”‚ Routes   â”‚  â”‚
-â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜                    â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â”‚
-                                        â”‚  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”  â”‚
-                                        â”‚  â”‚Payments â”‚  â”‚ Reports  â”‚  â”‚
-                                        â”‚  â”‚(Razorpay)â”‚ â”‚ (PDF)    â”‚  â”‚
-                                        â”‚  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜  â”‚
-                                        â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
-                                              â”‚      â”‚         â”‚
-                                              â–¼      â–¼         â–¼
-                                        â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â” â”Œâ”€â”€â”€â”€â” â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-                                        â”‚ SQLite â”‚ â”‚.pklâ”‚ â”‚ Gemini  â”‚
-                                        â”‚   DB   â”‚ â”‚ ML â”‚ â”‚  API    â”‚
-                                        â””â”€â”€â”€â”€â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”˜ â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+â"Œâ"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"     HTTP/SSE      â"Œâ"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"
+â"‚                  â"‚ â†â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â†'  â"‚         FastAPI Backend       â"‚
+â"‚   Next.js 16     â"‚                    â"‚                              â"‚
+â"‚   Frontend       â"‚                    â"‚  â"Œâ"€â"€â"€â"€â"€â"€â"€â"€â"€â"  â"Œâ"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"  â"‚
+â"‚                  â"‚                    â"‚  â"‚ Auth    â"‚  â"‚ Predict  â"‚  â"‚
+â"‚  - 21 Routes     â"‚                    â"‚  â"‚ (JWT)   â"‚  â"‚ (5 ML)   â"‚  â"‚
+â"‚  - Zustand       â"‚                    â"‚  â""â"€â"€â"€â"€â"€â"€â"€â"€â"€â"˜  â""â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"˜  â"‚
+â"‚  - Framer Motion â"‚                    â"‚  â"Œâ"€â"€â"€â"€â"€â"€â"€â"€â"€â"  â"Œâ"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"  â"‚
+â"‚  - SSE Chat      â"‚                    â"‚  â"‚ Chat    â"‚  â"‚ Admin    â"‚  â"‚
+â"‚                  â"‚                    â"‚  â"‚ (RAG)   â"‚  â"‚ Routes   â"‚  â"‚
+â""â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"˜                    â"‚  â""â"€â"€â"€â"€â"€â"€â"€â"€â"€â"˜  â""â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"˜  â"‚
+                                        â"‚  â"Œâ"€â"€â"€â"€â"€â"€â"€â"€â"€â"  â"Œâ"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"  â"‚
+                                        â"‚  â"‚Payments â"‚  â"‚ Reports  â"‚  â"‚
+                                        â"‚  â"‚(Razorpay)â"‚ â"‚ (PDF)    â"‚  â"‚
+                                        â"‚  â""â"€â"€â"€â"€â"€â"€â"€â"€â"€â"˜  â""â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"˜  â"‚
+                                        â""â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"˜
+                                              â"‚      â"‚         â"‚
+                                              â-¼      â-¼         â-¼
+                                        â"Œâ"€â"€â"€â"€â"€â"€â"€â"€â" â"Œâ"€â"€â"€â"€â" â"Œâ"€â"€â"€â"€â"€â"€â"€â"€â"€â"
+                                        â"‚ SQLite â"‚ â"‚.pklâ"‚ â"‚ Gemini  â"‚
+                                        â"‚   DB   â"‚ â"‚ ML â"‚ â"‚  API    â"‚
+                                        â""â"€â"€â"€â"€â"€â"€â"€â"€â"˜ â""â"€â"€â"€â"€â"˜ â""â"€â"€â"€â"€â"€â"€â"€â"€â"€â"˜
 ```
 
 ## Q: How would you scale this to 10,000 concurrent users?
@@ -2286,29 +2286,29 @@ Layer 7: Timing Middleware
 ### Scaled Architecture:
 
 ```
-            â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-            â”‚  CDN     â”‚  (Vercel/CloudFront)
-            â”‚ Frontend â”‚
-            â””â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”˜
-                 â”‚
-         â”Œâ”€â”€â”€â”€â”€â”€â”€â”´â”€â”€â”€â”€â”€â”€â”€â”
-         â”‚  Load Balancer â”‚  (Nginx / AWS ALB)
-         â””â”€â”€â”€â”€â”€â”€â”€â”¬â”€â”€â”€â”€â”€â”€â”€â”˜
-         â”Œâ”€â”€â”€â”€â”€â”€â”€â”¼â”€â”€â”€â”€â”€â”€â”€â”
-         â”‚       â”‚       â”‚
-    â”Œâ”€â”€â”€â”€â–¼â”€â”€â”â”Œâ”€â”€â”€â–¼â”€â”€â”â”Œâ”€â”€â”€â–¼â”€â”€â”
-    â”‚ API 1 â”‚â”‚API 2 â”‚â”‚API 3 â”‚  (3+ Uvicorn workers)
-    â””â”€â”€â”€â”¬â”€â”€â”€â”˜â””â”€â”€â”¬â”€â”€â”€â”˜â””â”€â”€â”¬â”€â”€â”€â”˜
-        â”‚       â”‚       â”‚
-    â”Œâ”€â”€â”€â–¼â”€â”€â”€â”€â”€â”€â”€â–¼â”€â”€â”€â”€â”€â”€â”€â–¼â”€â”€â”€â”
-    â”‚    PostgreSQL + Redis   â”‚
-    â”‚   (Connection pooling)  â”‚
-    â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+            â"Œâ"€â"€â"€â"€â"€â"€â"€â"€â"€â"
+            â"‚  CDN     â"‚  (Vercel/CloudFront)
+            â"‚ Frontend â"‚
+            â""â"€â"€â"€â"€â"¬â"€â"€â"€â"€â"€â"˜
+                 â"‚
+         â"Œâ"€â"€â"€â"€â"€â"€â"€â"´â"€â"€â"€â"€â"€â"€â"€â"
+         â"‚  Load Balancer â"‚  (Nginx / AWS ALB)
+         â""â"€â"€â"€â"€â"€â"€â"€â"¬â"€â"€â"€â"€â"€â"€â"€â"˜
+         â"Œâ"€â"€â"€â"€â"€â"€â"€â"¼â"€â"€â"€â"€â"€â"€â"€â"
+         â"‚       â"‚       â"‚
+    â"Œâ"€â"€â"€â"€â-¼â"€â"€â"â"Œâ"€â"€â"€â-¼â"€â"€â"â"Œâ"€â"€â"€â-¼â"€â"€â"
+    â"‚ API 1 â"‚â"‚API 2 â"‚â"‚API 3 â"‚  (3+ Uvicorn workers)
+    â""â"€â"€â"€â"¬â"€â"€â"€â"˜â""â"€â"€â"¬â"€â"€â"€â"˜â""â"€â"€â"¬â"€â"€â"€â"˜
+        â"‚       â"‚       â"‚
+    â"Œâ"€â"€â"€â-¼â"€â"€â"€â"€â"€â"€â"€â-¼â"€â"€â"€â"€â"€â"€â"€â-¼â"€â"€â"€â"
+    â"‚    PostgreSQL + Redis   â"‚
+    â"‚   (Connection pooling)  â"‚
+    â""â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"˜
 ```
 
 | Layer | Change | Why |
 |---|---|---|
-| Database | SQLite â†’ PostgreSQL | Concurrent writes, connection pooling |
+| Database | SQLite â†' PostgreSQL | Concurrent writes, connection pooling |
 | Cache | Add Redis | Session cache, rate limiting, query cache |
 | Backend | Multiple workers | Handle concurrent requests |
 | Load balancer | Nginx | Distribute requests across workers |
@@ -2320,15 +2320,15 @@ Layer 7: Timing Middleware
 
 **5 steps, ~2 hours of work:**
 
-1. **Training script** â€” `backend/train_parkinsons.py`
+1. **Training script** â€" `backend/train_parkinsons.py`
    - Load dataset, preprocess, train, save `.pkl`
 
-2. **Feature names** â€” `backend/features.py`
+2. **Feature names** â€" `backend/features.py`
    ```python
    PARKINSONS_FEATURES = ["tremor", "rigidity", "bradykinesia", ...]
    ```
 
-3. **Pydantic schema** â€” `backend/schemas.py`
+3. **Pydantic schema** â€" `backend/schemas.py`
    ```python
    class ParkinsonsInput(BaseModel):
        tremor: int
@@ -2336,28 +2336,28 @@ Layer 7: Timing Middleware
        ...
    ```
 
-4. **Prediction endpoint** â€” `backend/prediction.py`
+4. **Prediction endpoint** â€" `backend/prediction.py`
    ```python
    @router.post("/predict/parkinsons")
    def predict_parkinsons(data: ParkinsonsInput):
        ...
    ```
 
-5. **Frontend page** â€” `frontend/src/app/(protected)/predict/parkinsons/page.tsx`
+5. **Frontend page** â€" `frontend/src/app/(protected)/predict/parkinsons/page.tsx`
    - Just pass field configs to `PredictionForm` component
 
 ## Q: How would you handle model versioning?
 
 ```
 s3://models/
-â”œâ”€â”€ diabetes/
-â”‚   â”œâ”€â”€ v1/model.pkl        # Original
-â”‚   â”œâ”€â”€ v2/model.pkl        # Class-balanced
-â”‚   â””â”€â”€ v3/model.pkl        # Hyperparameter tuned
-â”œâ”€â”€ heart/
-â”‚   â”œâ”€â”€ v1/model.pkl
-â”‚   â””â”€â”€ v2/model.pkl
-â””â”€â”€ manifest.json           # Which version is active
+â"œâ"€â"€ diabetes/
+â"‚   â"œâ"€â"€ v1/model.pkl        # Original
+â"‚   â"œâ"€â"€ v2/model.pkl        # Class-balanced
+â"‚   â""â"€â"€ v3/model.pkl        # Hyperparameter tuned
+â"œâ"€â"€ heart/
+â"‚   â"œâ"€â"€ v1/model.pkl
+â"‚   â""â"€â"€ v2/model.pkl
+â""â"€â"€ manifest.json           # Which version is active
 ```
 
 **A/B testing:**
@@ -2368,8 +2368,8 @@ s3://models/
 ## Q: What if Gemini API goes down?
 
 **Fallback chain:**
-1. Try Gemini API â†’ if timeout/error
-2. Try Ollama (local LLM) â†’ if not available
+1. Try Gemini API â†' if timeout/error
+2. Try Ollama (local LLM) â†' if not available
 3. Return friendly error: "AI chat is temporarily unavailable. Your prediction results are still available."
 
 **Key**: Prediction endpoints DON'T depend on Gemini. They use local ML models. Chat is the only feature that needs the AI API.
@@ -2379,32 +2379,32 @@ s3://models/
 ```
 1. User clicks "Execute Clinical Assessment"
 2. React handleSubmit() validates form
-3. predictDiabetes() â†’ apiFetch('/predict/diabetes', {body: data})
+3. predictDiabetes() â†' apiFetch('/predict/diabetes', {body: data})
 4. apiFetch injects Authorization header
 5. fetch() sends HTTP POST
 
 --- BACKEND ---
-6. RateLimitMiddleware â†’ check IP isn't blocked
-7. TrustedHostMiddleware â†’ verify Host header
-8. CORSMiddleware â†’ add CORS headers
-9. SecurityHeadersMiddleware â†’ add X-Frame-Options
-10. GZipMiddleware â†’ (will compress response)
-11. ExceptionMiddleware â†’ try/catch wrapper
-12. LoggingMiddleware â†’ start timer
+6. RateLimitMiddleware â†' check IP isn't blocked
+7. TrustedHostMiddleware â†' verify Host header
+8. CORSMiddleware â†' add CORS headers
+9. SecurityHeadersMiddleware â†' add X-Frame-Options
+10. GZipMiddleware â†' (will compress response)
+11. ExceptionMiddleware â†' try/catch wrapper
+12. LoggingMiddleware â†' start timer
 
-13. FastAPI routing â†’ /predict/diabetes
+13. FastAPI routing â†' /predict/diabetes
 14. Pydantic validates DiabetesInput schema
-    â†’ Missing field? Return 422 with field name
+    â†' Missing field? Return 422 with field name
 15. predict_diabetes() handler runs
-16. Check diabetes_model is loaded â†’ else 503
-17. Feature engineering (age â†’ bucket)
-18. model.predict([features]) â†’ 0 or 1
-19. model.predict_proba([features]) â†’ [0.06, 0.94]
+16. Check diabetes_model is loaded â†' else 503
+17. Feature engineering (age â†' bucket)
+18. model.predict([features]) â†' 0 or 1
+19. model.predict_proba([features]) â†' [0.06, 0.94]
 20. Map to risk_level: 94.2% = "High"
 21. Build response JSON
 
-22. LoggingMiddleware â†’ log "POST /predict/diabetes - 200 (9ms)"
-23. GZipMiddleware â†’ compress if >1KB
+22. LoggingMiddleware â†' log "POST /predict/diabetes - 200 (9ms)"
+23. GZipMiddleware â†' compress if >1KB
 24. Response sent
 
 --- FRONTEND ---
@@ -2437,16 +2437,16 @@ s3://models/
 **Three-layer testing pyramid:**
 
 ```
-        â”Œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”
-        â”‚  E2E /   â”‚    48 real-world records (77% accuracy)
-        â”‚Validationâ”‚
-        â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
-        â”‚Integrationâ”‚   28 checks (API + edge cases + auth)
-        â”‚  Tests    â”‚
-        â”œâ”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”¤
-        â”‚   Unit   â”‚   141 tests (models, routes, services)
-        â”‚   Tests  â”‚
-        â””â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”˜
+        â"Œâ"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"
+        â"‚  E2E /   â"‚    48 real-world records (77% accuracy)
+        â"‚Validationâ"‚
+        â"œâ"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"¤
+        â"‚Integrationâ"‚   28 checks (API + edge cases + auth)
+        â"‚  Tests    â"‚
+        â"œâ"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"¤
+        â"‚   Unit   â"‚   141 tests (models, routes, services)
+        â"‚   Tests  â"‚
+        â""â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"˜
 ```
 
 | Layer | Count | What it tests | Speed |
@@ -2534,7 +2534,7 @@ def mock_genai(monkeypatch):
 ## Q: Show me the integration test.
 
 ```python
-# backend/test_enriched.py â€” 28 checks
+# backend/test_enriched.py â€" 28 checks
 
 # 1. Health check
 r = httpx.get("http://127.0.0.1:8000/healthz")
@@ -2547,7 +2547,7 @@ assert "confidence" in r.json()
 assert "risk_level" in r.json()
 assert "disclaimer" in r.json()
 
-# 3. Edge cases â€” missing fields return 422
+# 3. Edge cases â€" missing fields return 422
 r = httpx.post("/predict/diabetes", json={"hypertension": 1})
 assert r.status_code == 422
 
@@ -2630,7 +2630,7 @@ python backend/test_predictions.py
 ---
 
 
-> How the application goes from your laptop to the internet â€” every step explained.
+> How the application goes from your laptop to the internet â€" every step explained.
 
 ---
 
@@ -2640,38 +2640,38 @@ python backend/test_predictions.py
 
 ```
 YOUR LAPTOP (Development)
-â”œâ”€â”€ Frontend: Next.js on localhost:3000
-â”œâ”€â”€ Backend: FastAPI on 127.0.0.1:8000
-â””â”€â”€ Database: SQLite file (healthcare.db)
+â"œâ"€â"€ Frontend: Next.js on localhost:3000
+â"œâ"€â"€ Backend: FastAPI on 127.0.0.1:8000
+â""â"€â"€ Database: SQLite file (healthcare.db)
 
-                    â†“ git push â†’ GitHub â†’ deploy
+                    â†" git push â†' GitHub â†' deploy
 
 THE INTERNET (Production)
-â”œâ”€â”€ Frontend: Vercel (free tier)
-â”‚   â””â”€â”€ https://your-app.vercel.app
-â”‚   â””â”€â”€ Built from /frontend folder
-â”‚   â””â”€â”€ Connects to backend API via NEXT_PUBLIC_API_URL
-â”‚
-â”œâ”€â”€ Backend: Render (free tier)
-â”‚   â””â”€â”€ https://your-api.onrender.com
-â”‚   â””â”€â”€ Runs: uvicorn backend.main:app --host 0.0.0.0 --port 8000
-â”‚   â””â”€â”€ Docker container with all dependencies
-â”‚
-â””â”€â”€ Database: Neon (managed PostgreSQL)
-    â””â”€â”€ postgresql://user:pass@ep-cool.neon.tech/healthcare
-    â””â”€â”€ Free tier: 0.5GB storage, auto-suspend after 5 min idle
+â"œâ"€â"€ Frontend: Vercel (free tier)
+â"‚   â""â"€â"€ https://your-app.vercel.app
+â"‚   â""â"€â"€ Built from /frontend folder
+â"‚   â""â"€â"€ Connects to backend API via NEXT_PUBLIC_API_URL
+â"‚
+â"œâ"€â"€ Backend: Render (free tier)
+â"‚   â""â"€â"€ https://your-api.onrender.com
+â"‚   â""â"€â"€ Runs: uvicorn backend.main:app --host 0.0.0.0 --port 8000
+â"‚   â""â"€â"€ Docker container with all dependencies
+â"‚
+â""â"€â"€ Database: Neon (managed PostgreSQL)
+    â""â"€â"€ postgresql://user:pass@ep-cool.neon.tech/healthcare
+    â""â"€â"€ Free tier: 0.5GB storage, auto-suspend after 5 min idle
 ```
 
 ### What is Docker? (Explained Simply)
 
-**Problem**: "It works on my machine!" â€” Your app works on your laptop but breaks on the server because of different Python versions, missing packages, or OS differences.
+**Problem**: "It works on my machine!" â€" Your app works on your laptop but breaks on the server because of different Python versions, missing packages, or OS differences.
 
-**Solution**: Docker packages your application + ALL its dependencies into a container â€” a standardized box that runs identically everywhere.
+**Solution**: Docker packages your application + ALL its dependencies into a container â€" a standardized box that runs identically everywhere.
 
-**Analogy**: Shipping containers in the real world. Before containers, cargo was loaded loosely onto ships â€” things broke, got mixed up, were hard to move. Shipping containers standardized everything. Docker does the same for software.
+**Analogy**: Shipping containers in the real world. Before containers, cargo was loaded loosely onto ships â€" things broke, got mixed up, were hard to move. Shipping containers standardized everything. Docker does the same for software.
 
 ```dockerfile
-# Dockerfile â€” recipe for building the container
+# Dockerfile â€" recipe for building the container
 
 # Step 1: Start from a known base image (Python 3.11 on Linux)
 FROM python:3.11-slim
@@ -2700,7 +2700,7 @@ CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
 - **Image**: The blueprint (your Dockerfile baked into a binary). Like a recipe.
 - **Container**: A running instance of an image. Like the actual cake made from the recipe.
 - **Registry**: Where images are stored (Docker Hub, GitHub Container Registry). Like a recipe book.
-- **Layer**: Each instruction in Dockerfile creates a layer. Layers are cached â€” if `requirements.txt` hasn't changed, Docker reuses the cached layer instead of reinstalling everything.
+- **Layer**: Each instruction in Dockerfile creates a layer. Layers are cached â€" if `requirements.txt` hasn't changed, Docker reuses the cached layer instead of reinstalling everything.
 
 ### What is Docker Compose?
 
@@ -2744,7 +2744,7 @@ volumes:
 **Run everything with ONE command:**
 ```bash
 docker-compose up -d
-# Starts: PostgreSQL â†’ Backend â†’ Frontend
+# Starts: PostgreSQL â†' Backend â†' Frontend
 # -d = detached (runs in background)
 ```
 
@@ -2762,7 +2762,7 @@ import os
 
 # ONE line of code handles both environments:
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./healthcare.db")
-#                        â†‘                â†‘
+#                        â†'                â†'
 #                   If env var exists     If env var is NOT set
 #                   (production)          (development default)
 ```
@@ -2780,7 +2780,7 @@ DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./healthcare.db")
 ### How environment variables are managed:
 
 ```bash
-# LOCAL DEVELOPMENT â€” .env file (NEVER committed to git!)
+# LOCAL DEVELOPMENT â€" .env file (NEVER committed to git!)
 # .env
 DATABASE_URL=sqlite:///./healthcare.db
 SECRET_KEY=dev-fallback-key-not-for-production
@@ -2791,13 +2791,13 @@ GEMINI_API_KEY=AIzaSy...your-key...
 *.db          # Don't commit SQLite database
 __pycache__/  # Don't commit compiled Python files
 
-# PRODUCTION â€” Set in Render/Vercel dashboard
-# Render â†’ Service â†’ Environment â†’ Add Variable
+# PRODUCTION â€" Set in Render/Vercel dashboard
+# Render â†' Service â†' Environment â†' Add Variable
 # DATABASE_URL = postgresql://...
 # SECRET_KEY = (generated secure random string)
 ```
 
-**Security rule**: NEVER commit `.env` to git. If you accidentally commit a secret, rotate it immediately â€” git history retains it forever even after deletion.
+**Security rule**: NEVER commit `.env` to git. If you accidentally commit a secret, rotate it immediately â€" git history retains it forever even after deletion.
 
 ---
 
@@ -2808,17 +2808,17 @@ __pycache__/  # Don't commit compiled Python files
 
 ```
 Developer pushes code
-        â†“
+        â†"
 GitHub Actions runs:
-  â”œâ”€â”€ Install dependencies
-  â”œâ”€â”€ Run linting (code style checks)
-  â”œâ”€â”€ Run pytest (141 unit tests + 28 integration)
-  â”‚     â”œâ”€â”€ All pass? â†’ Continue
-  â”‚     â””â”€â”€ Any fail? â†’ STOP. Don't deploy. Notify developer.
-  â””â”€â”€ All green? â†’ Deploy automatically
-        â†“
-Render pulls latest code â†’ Builds Docker image â†’ Deploys
-Vercel pulls latest code â†’ Builds Next.js â†’ Deploys
+  â"œâ"€â"€ Install dependencies
+  â"œâ"€â"€ Run linting (code style checks)
+  â"œâ"€â"€ Run pytest (141 unit tests + 28 integration)
+  â"‚     â"œâ"€â"€ All pass? â†' Continue
+  â"‚     â""â"€â"€ Any fail? â†' STOP. Don't deploy. Notify developer.
+  â""â"€â"€ All green? â†' Deploy automatically
+        â†"
+Render pulls latest code â†' Builds Docker image â†' Deploys
+Vercel pulls latest code â†' Builds Next.js â†' Deploys
 ```
 
 ### What a GitHub Actions workflow looks like:
@@ -2858,18 +2858,18 @@ jobs:
 
 ```
 1. You push code to GitHub
-        â†“
+        â†"
 2. Render detects the push (webhook)
-        â†“
+        â†"
 3. Render builds your Docker image
    - Installs Python 3.11
    - pip install -r requirements.txt
    - Copies your code
-        â†“
+        â†"
 4. Render starts the container
    - Runs: uvicorn backend.main:app --host 0.0.0.0 --port 8000
    - Sets environment variables from dashboard
-        â†“
+        â†"
 5. Render routes traffic to your container
    - URL: https://your-api.onrender.com
    - Free tier: spins down after 15 minutes of inactivity
@@ -2913,7 +2913,7 @@ jobs:
 
 ### Bug: Models were 0 bytes after cloning
 
-**Symptom**: Fresh `git clone` â†’ all models fail to load â†’ every prediction returns 503.
+**Symptom**: Fresh `git clone` â†' all models fail to load â†' every prediction returns 503.
 
 **Root cause**: `.gitignore` contained `*.pkl`, which silently prevented model files from being committed. Git tracked them as empty stubs.
 
@@ -2927,9 +2927,9 @@ jobs:
 
 ### Bug: 87% accuracy but 0% disease detection
 
-**Symptom**: Diabetes model had 86.7% accuracy. Sounds great. But tested with 5 known diabetic patients â€” detected ZERO.
+**Symptom**: Diabetes model had 86.7% accuracy. Sounds great. But tested with 5 known diabetic patients â€" detected ZERO.
 
-**Root cause**: Dataset is 86% healthy. Model learned to always say "healthy" â†’ 86% accuracy by default.
+**Root cause**: Dataset is 86% healthy. Model learned to always say "healthy" â†' 86% accuracy by default.
 
 **Fix**: Added `scale_pos_weight=6.16` to XGBoost. Accuracy dropped to 71.7%, but now it actually catches diabetic patients.
 
@@ -2939,7 +2939,7 @@ jobs:
 
 ### Bug: Lungs model returning wrong predictions
 
-**Symptom**: Healthy patients classified as sick, sick patients classified as healthy â€” inverted results.
+**Symptom**: Healthy patients classified as sick, sick patients classified as healthy â€" inverted results.
 
 **Root cause**: The original survey dataset used `1=No, 2=Yes` encoding. My preprocessing converted to `0/1`, but the training data still had `1/2` values. Mismatch between training and inference encoding.
 
@@ -2953,7 +2953,7 @@ jobs:
 
 **Symptom**: After retraining heart model, it stopped detecting any disease.
 
-**Root cause**: The BRFSS dataset has different column names than the Cleveland Heart Disease dataset the API expects. Column mapping was wrong â€” BMI was being used as "trestbps" (blood pressure), cholesterol as "fbs" (fasting blood sugar), etc.
+**Root cause**: The BRFSS dataset has different column names than the Cleveland Heart Disease dataset the API expects. Column mapping was wrong â€" BMI was being used as "trestbps" (blood pressure), cholesterol as "fbs" (fasting blood sugar), etc.
 
 **Fix**: Created a careful column mapping in `train_heart.py` that maps BRFSS fields to Cleveland schema fields.
 
@@ -2965,7 +2965,7 @@ jobs:
 
 **Symptom**: After stopping the server with `Stop-Process -Force`, model files sometimes become corrupted (0 bytes or truncated).
 
-**Root cause**: The project is on OneDrive. `Stop-Process -Force` kills Python while OneDrive is syncing the `.pkl` file â†’ file gets corrupted.
+**Root cause**: The project is on OneDrive. `Stop-Process -Force` kills Python while OneDrive is syncing the `.pkl` file â†' file gets corrupted.
 
 **Fix**: Use graceful shutdown (Ctrl+C) instead of force kill. Retrain models after corruption.
 
@@ -2978,22 +2978,22 @@ jobs:
 ### 1. Accuracy vs. Sensitivity
 - **Chose**: Lower accuracy (71.7%) with disease detection
 - **Rejected**: Higher accuracy (86.7%) that misses all diseases
-- **Why**: In medical screening, catching a sick patient is more important than overall accuracy. A false positive â†’ patient sees a doctor (minor inconvenience). A false negative â†’ disease goes undetected (potentially fatal).
+- **Why**: In medical screening, catching a sick patient is more important than overall accuracy. A false positive â†' patient sees a doctor (minor inconvenience). A false negative â†' disease goes undetected (potentially fatal).
 
 ### 2. SQLite vs. PostgreSQL
 - **Chose**: SQLite for development
 - **Rejected**: PostgreSQL everywhere
-- **Why**: SQLite is zero-config â€” clone and run. No database server to install. The code is database-agnostic via SQLAlchemy, so switching to PostgreSQL for production is one env variable change.
+- **Why**: SQLite is zero-config â€" clone and run. No database server to install. The code is database-agnostic via SQLAlchemy, so switching to PostgreSQL for production is one env variable change.
 
 ### 3. SSE vs. WebSocket for chat
 - **Chose**: Server-Sent Events
 - **Rejected**: WebSockets
-- **Why**: Chat streaming is unidirectional (server â†’ client). SSE is simpler, works over standard HTTP, auto-reconnects, and doesn't need WebSocket upgrade handshake. WebSockets would add complexity with zero benefit.
+- **Why**: Chat streaming is unidirectional (server â†' client). SSE is simpler, works over standard HTTP, auto-reconnects, and doesn't need WebSocket upgrade handshake. WebSockets would add complexity with zero benefit.
 
 ### 4. Models in git vs. cloud storage
 - **Chose**: Commit `.pkl` files to git
 - **Rejected**: S3/GCS model storage
-- **Why**: Total model size is ~1.6MB â€” trivial for git. Simpler deployment (no S3 credentials needed). For larger models (>100MB), I'd switch to cloud storage.
+- **Why**: Total model size is ~1.6MB â€" trivial for git. Simpler deployment (no S3 credentials needed). For larger models (>100MB), I'd switch to cloud storage.
 
 ### 5. Monolith vs. Microservices
 - **Chose**: Single FastAPI app
@@ -3018,47 +3018,47 @@ jobs:
 
 ## Q: What did you learn from this project?
 
-1. **Class imbalance is the #1 hidden bug in medical ML** â€” high accuracy can mean zero disease detection. Always check sensitivity.
+1. **Class imbalance is the #1 hidden bug in medical ML** â€" high accuracy can mean zero disease detection. Always check sensitivity.
 
-2. **Model file management is harder than training** â€” `.gitignore` rules, cloud sync corruption, and force-kill can all destroy models.
+2. **Model file management is harder than training** â€" `.gitignore` rules, cloud sync corruption, and force-kill can all destroy models.
 
-3. **Medical AI MUST include disclaimers** â€” binary yes/no predictions without confidence scores or disclaimers are irresponsible.
+3. **Medical AI MUST include disclaimers** â€" binary yes/no predictions without confidence scores or disclaimers are irresponsible.
 
-4. **Reusable components save massive time** â€” PredictionForm handles all 5 diseases with zero code duplication.
+4. **Reusable components save massive time** â€" PredictionForm handles all 5 diseases with zero code duplication.
 
-5. **Test from a fresh clone** â€” "Works on my machine" is the most dangerous phrase in software engineering.
+5. **Test from a fresh clone** â€" "Works on my machine" is the most dangerous phrase in software engineering.
 
-6. **Feature encoding must match** â€” A shift of +1 in categorical encoding can completely invert predictions.
+6. **Feature encoding must match** â€" A shift of +1 in categorical encoding can completely invert predictions.
 
-7. **Middleware order matters** â€” FastAPI processes middleware in reverse order of addition. Getting this wrong breaks security.
+7. **Middleware order matters** â€" FastAPI processes middleware in reverse order of addition. Getting this wrong breaks security.
 
 ---
 
 ## Q: How would you explain this to a non-technical person?
 
-> "I built a website where you enter your health numbers â€” like blood pressure, BMI, and cholesterol â€” and it tells you if you might be at risk for diseases like diabetes or heart disease. It also shows how confident it is â€” like 'we're 94% sure you should see a doctor.' It has an AI chatbot that answers health questions too. It's like a health checkup you can do from home, but it always reminds you to see a real doctor."
+> "I built a website where you enter your health numbers â€" like blood pressure, BMI, and cholesterol â€" and it tells you if you might be at risk for diseases like diabetes or heart disease. It also shows how confident it is â€" like 'we're 94% sure you should see a doctor.' It has an AI chatbot that answers health questions too. It's like a health checkup you can do from home, but it always reminds you to see a real doctor."
 
 ---
 
 ## Q: What motivates you about this work?
 
-> "A single line of code in the class balancing fix â€” `scale_pos_weight=6.16` â€” took the model from detecting zero diabetic patients to catching most of them. That one parameter could be the difference between someone getting treated early or being undiagnosed for years. That's what motivates me about healthcare AI â€” the impact per line of code is enormous."
+> "A single line of code in the class balancing fix â€" `scale_pos_weight=6.16` â€" took the model from detecting zero diabetic patients to catching most of them. That one parameter could be the difference between someone getting treated early or being undiagnosed for years. That's what motivates me about healthcare AI â€" the impact per line of code is enormous."
 
 
 ---
 
 
-> When interviewers say "Walk me through your code" â€” this is exactly what to show.
+> When interviewers say "Walk me through your code" â€" this is exactly what to show.
 
 ---
 
 ## Walkthrough 1: The Prediction Pipeline (Most Important)
 
-### Show this flow: Form â†’ API â†’ Model â†’ Response
+### Show this flow: Form â†' API â†' Model â†' Response
 
 **Start at the frontend** (`predict/diabetes/page.tsx`):
 ```tsx
-// Each disease page is 30 lines â€” just field configs + API call
+// Each disease page is 30 lines â€" just field configs + API call
 <PredictionForm
   title="Diabetes Risk Assessment"
   fields={[
@@ -3109,13 +3109,13 @@ def predict_diabetes(data: schemas.DiabetesInput):
 ```
 
 **Point out**: 
-- "Pydantic validates input automatically â€” missing fields return 422"
+- "Pydantic validates input automatically â€" missing fields return 422"
 - "predict_proba gives us confidence, not just yes/no"
 - "Medical disclaimer is always included per healthcare compliance rules"
 
 **Then show the training script** (`train_diabetes.py`):
 ```python
-# Class balancing â€” THE key technique
+# Class balancing â€" THE key technique
 neg = (Y_train == 0).sum()   # 174,595
 pos = (Y_train == 1).sum()   # 28,349
 weight = neg / pos            # 6.16
@@ -3133,7 +3133,7 @@ model.fit(X_train, Y_train)
 **Show `main.py` lines 130-178**:
 
 ```python
-# Order matters â€” last added runs FIRST
+# Order matters â€" last added runs FIRST
 app.add_middleware(LoggingMiddleware)           # 7
 app.add_middleware(ExceptionMiddleware)          # 6
 app.add_middleware(GZipMiddleware)               # 5
@@ -3144,8 +3144,8 @@ app.add_middleware(RateLimitMiddleware)          # 1
 ```
 
 **Point out**: 
-- "7 layers of defense â€” rate limiting, host validation, CORS, security headers, compression, error masking, logging"
-- "Exception middleware returns UUID error ID â€” never exposes stack traces"
+- "7 layers of defense â€" rate limiting, host validation, CORS, security headers, compression, error masking, logging"
+- "Exception middleware returns UUID error ID â€" never exposes stack traces"
 - "This is enterprise-grade middleware architecture"
 
 ---
@@ -3173,9 +3173,9 @@ async def stream_chat(request: ChatStreamRequest):
 ```
 
 **Point out**:
-- "RAG injects patient-specific context â€” AI knows the patient's history"
-- "SSE streaming â€” tokens appear in real-time, not all at once"
-- "Prompts come from the registry, never inline â€” maintainable and testable"
+- "RAG injects patient-specific context â€" AI knows the patient's history"
+- "SSE streaming â€" tokens appear in real-time, not all at once"
+- "Prompts come from the registry, never inline â€" maintainable and testable"
 
 ---
 
@@ -3196,8 +3196,8 @@ def get_current_user(token = Depends(oauth2_scheme)):
 ```
 
 **Point out**:
-- "bcrypt + salt â€” industry standard password security"
-- "JWT is stateless â€” no server-side session storage needed"
+- "bcrypt + salt â€" industry standard password security"
+- "JWT is stateless â€" no server-side session storage needed"
 - "Dependency injection ensures auth is never forgotten on protected routes"
 
 ---
@@ -3213,12 +3213,12 @@ def test_predict_diabetes_success(client, mock_model):
     assert response.status_code == 200
     assert response.json()["confidence"] == 90.0
 
-# 2. Edge case â€” model unavailable
+# 2. Edge case â€" model unavailable
 def test_predict_model_unavailable(client):
     response = client.post("/predict/diabetes", json={...})
     assert response.status_code == 503
 
-# 3. Validation â€” missing fields
+# 3. Validation â€" missing fields
 def test_predict_invalid_input(client):
     response = client.post("/predict/diabetes", json={"hypertension": 1})
     assert response.status_code == 422
@@ -3227,7 +3227,7 @@ def test_predict_invalid_input(client):
 # 77% match ground truth labels
 ```
 
-**Point out**: "Three testing layers â€” unit, integration, real-world validation. 141 + 28 + 48 = 217 total checks."
+**Point out**: "Three testing layers â€" unit, integration, real-world validation. 141 + 28 + 48 = 217 total checks."
 
 ---
 
@@ -3237,9 +3237,9 @@ When asked "which files are most important?":
 
 | Priority | File | Why |
 |---|---|---|
-| 1 | `prediction.py` | Core business logic â€” 5 prediction endpoints |
-| 2 | `main.py` | Architecture decisions â€” middleware, lifespan, routing |
-| 3 | `PredictionForm.tsx` | Reusable component pattern â€” handles all 5 diseases |
+| 1 | `prediction.py` | Core business logic â€" 5 prediction endpoints |
+| 2 | `main.py` | Architecture decisions â€" middleware, lifespan, routing |
+| 3 | `PredictionForm.tsx` | Reusable component pattern â€" handles all 5 diseases |
 | 4 | `api.ts` | API client with auto-auth injection |
 | 5 | `train_diabetes.py` | Class balancing technique |
 | 6 | `auth.py` | JWT + bcrypt security |
@@ -3259,7 +3259,7 @@ When asked "which files are most important?":
 
 ### Q: Walk me through exactly what happens when someone predicts diabetes. Show me the real code.
 
-**Step 1 â€” Frontend form submission** (`frontend/src/components/predict/PredictionForm.tsx`, line 40):
+**Step 1 â€" Frontend form submission** (`frontend/src/components/predict/PredictionForm.tsx`, line 40):
 ```tsx
 const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -3274,7 +3274,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         if (val === undefined || isNaN(val)) {
             setError(`Please provide a valid value for ${field.label}`);
             setLoading(false);
-            return;  // Stop â€” don't send invalid data
+            return;  // Stop â€" don't send invalid data
         }
         parsedData[field.name] = Number(val);
     }
@@ -3290,7 +3290,7 @@ const handleSubmit = async (e: React.FormEvent) => {
 };
 ```
 
-**Step 2 â€” API client sends request** (`frontend/src/lib/api.ts`, line 223):
+**Step 2 â€" API client sends request** (`frontend/src/lib/api.ts`, line 223):
 ```typescript
 export async function predictDiabetes(data: Record<string, number>): Promise<PredictionResult> {
     return apiFetch('/predict/diabetes', { method: 'POST', body: JSON.stringify(data) });
@@ -3317,7 +3317,7 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
 }
 ```
 
-**Step 3 â€” Backend receives and validates** (`backend/schemas.py`):
+**Step 3 â€" Backend receives and validates** (`backend/schemas.py`):
 ```python
 class DiabetesInput(BaseModel):
     hypertension: int       # 0 or 1
@@ -3330,12 +3330,12 @@ class DiabetesInput(BaseModel):
     gender: int             # 0=Female, 1=Male
     age: float              # Years (will be converted to bucket)
 ```
-If ANY field is missing or wrong type â†’ FastAPI auto-returns 422:
+If ANY field is missing or wrong type â†' FastAPI auto-returns 422:
 ```json
 {"detail": [{"loc": ["body", "bmi"], "msg": "field required", "type": "value_error.missing"}]}
 ```
 
-**Step 4 â€” Prediction logic** (`backend/prediction.py`, line 217-240):
+**Step 4 â€" Prediction logic** (`backend/prediction.py`, line 217-240):
 ```python
 @router.post("/predict/diabetes", response_model=Dict[str, Any])
 def predict_diabetes(data: schemas.DiabetesInput) -> Dict[str, Any]:
@@ -3344,7 +3344,7 @@ def predict_diabetes(data: schemas.DiabetesInput) -> Dict[str, Any]:
         raise HTTPException(status_code=503, detail="Diabetes Model not available")
     try:
         # FEATURE ENGINEERING: Convert age to BRFSS bucket
-        age_bucket = get_age_bucket(data.age)  # 55 years â†’ bucket 7
+        age_bucket = get_age_bucket(data.age)  # 55 years â†' bucket 7
         
         # BUILD FEATURE VECTOR (must match training order exactly!)
         input_list = [
@@ -3364,7 +3364,7 @@ def predict_diabetes(data: schemas.DiabetesInput) -> Dict[str, Any]:
         if isinstance(prediction, (list, tuple, np.ndarray)):
             prediction = prediction[0]
         if hasattr(prediction, 'item'):
-            prediction = prediction.item()  # numpy scalar â†’ Python int
+            prediction = prediction.item()  # numpy scalar â†' Python int
         
         result = "High Risk" if prediction == 1 or prediction == 2 else "Low Risk"
         
@@ -3383,13 +3383,13 @@ def predict_diabetes(data: schemas.DiabetesInput) -> Dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(e))
 ```
 
-**Step 5 â€” Confidence calculation** (`backend/prediction.py`, line 133-148):
+**Step 5 â€" Confidence calculation** (`backend/prediction.py`, line 133-148):
 ```python
 def _get_confidence(model, input_data):
     """Extract prediction probability from model."""
     try:
         proba = model.predict_proba(input_data)[0]
-        # proba = [0.058, 0.942]  â†’ 5.8% healthy, 94.2% disease
+        # proba = [0.058, 0.942]  â†' 5.8% healthy, 94.2% disease
         disease_prob = float(proba[1]) if len(proba) > 1 else float(proba[0])
         confidence = round(disease_prob * 100, 1)  # 94.2
         
@@ -3406,7 +3406,7 @@ def _get_confidence(model, input_data):
         return None, None  # Graceful fallback
 ```
 
-**Step 6 â€” Frontend displays result** (`frontend/src/components/predict/PredictionForm.tsx`, line 337):
+**Step 6 â€" Frontend displays result** (`frontend/src/components/predict/PredictionForm.tsx`, line 337):
 ```tsx
 {/* Confidence Bar */}
 <motion.div 
@@ -3480,7 +3480,7 @@ def train():
     
     # 3. SPLIT: 80% train, 20% test, reproducible
     X = df[FEATURES]
-    Y = (df['diabetes'] >= 1).astype(int)  # 1 or 2 â†’ positive
+    Y = (df['diabetes'] >= 1).astype(int)  # 1 or 2 â†' positive
     X_train, X_test, Y_train, Y_test = train_test_split(
         X, Y, test_size=0.2, random_state=42
     )
@@ -3520,7 +3520,7 @@ if __name__ == "__main__":
 
 ### Q: Why does each model need different preprocessing? Show real examples.
 
-**Diabetes** â€” age bucketing only:
+**Diabetes** â€" age bucketing only:
 ```python
 # prediction.py, line 115-129
 def get_age_bucket(age: float) -> int:
@@ -3530,7 +3530,7 @@ def get_age_bucket(age: float) -> int:
     else: return 13
 ```
 
-**Liver** â€” log transform + scaling:
+**Liver** â€" log transform + scaling:
 ```python
 # prediction.py, line 286-292
 skewed = ['Total_Bilirubin', 'Alkaline_Phosphotase', 
@@ -3540,9 +3540,9 @@ for col in skewed:
 
 X_scaled = liver_scaler.transform(df)  # StandardScaler
 ```
-**Why log transform?** Bilirubin ranges from 0.1 to 75.0 â€” extreme skew. Log compresses the range so the model isn't dominated by outliers.
+**Why log transform?** Bilirubin ranges from 0.1 to 75.0 â€" extreme skew. Log compresses the range so the model isn't dominated by outliers.
 
-**Kidney/Lungs** â€” StandardScaler only:
+**Kidney/Lungs** â€" StandardScaler only:
 ```python
 # prediction.py, line 172-173
 df = pd.DataFrame([input_list], columns=feature_names)
@@ -3633,7 +3633,7 @@ class ExceptionMiddleware(BaseHTTPMiddleware):
                 content={"detail": f"Error: {error_id}"}  # UUID only to client
             )
 ```
-**Why?** Client sees `"Error: a3f2b1c9"` â€” no stack traces, no PII leakage. Dev can search logs by error ID.
+**Why?** Client sees `"Error: a3f2b1c9"` â€" no stack traces, no PII leakage. Dev can search logs by error ID.
 
 **LoggingMiddleware** (`backend/main.py`, line 157-163):
 ```python
@@ -3710,7 +3710,7 @@ export default function DiabetesPage() {
 - Mobile-responsive layout
 - Scroll to results on mobile
 
-**Impact**: 5 diseases Ã— ~200 lines each = 1,000 lines saved. One bug fix applies to all 5.
+**Impact**: 5 diseases Ã- ~200 lines each = 1,000 lines saved. One bug fix applies to all 5.
 
 ---
 
@@ -3718,7 +3718,7 @@ export default function DiabetesPage() {
 
 ### Q: Show me actual API responses from the live system.
 
-**Diabetes â€” High Risk:**
+**Diabetes â€" High Risk:**
 ```json
 {
     "prediction": "High Risk",
@@ -3729,7 +3729,7 @@ export default function DiabetesPage() {
 }
 ```
 
-**Heart â€” Healthy (but moderate confidence):**
+**Heart â€" Healthy (but moderate confidence):**
 ```json
 {
     "prediction": "Healthy Heart",
@@ -3740,7 +3740,7 @@ export default function DiabetesPage() {
 }
 ```
 
-**Lungs â€” Very high confidence:**
+**Lungs â€" Very high confidence:**
 ```json
 {
     "prediction": "Respiratory Issue Detected",
@@ -3833,7 +3833,7 @@ class HealthRecord(Base):
 | Total model size | ~1.6 MB | All 8 files |
 | Frontend routes | 21 | Including 5 predict pages |
 | Backend modules | 40+ | Python files |
-| Middleware layers | 7 | Rate limit â†’ Logging |
+| Middleware layers | 7 | Rate limit â†' Logging |
 | CSS variables | ~25 | Design tokens |
 | Lines of code | ~15,000+ | Full stack |
 

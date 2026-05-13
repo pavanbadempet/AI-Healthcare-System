@@ -1,4 +1,4 @@
-﻿# Chapter 5 - Coding Practice: Python, SQL, DSA and PySpark
+# Chapter 5 - Coding Practice: Python, SQL, DSA and PySpark
 
 > Data Engineer interviews ALWAYS have a coding round. Here are the patterns they ask.
 
@@ -9,28 +9,49 @@
 ### Pattern 1: File Processing (Very Common for DE)
 
 **Q: Read a CSV, find duplicates, write clean data to Parquet.**
+
+**What the interviewer is testing**: Can you handle real-world data tasks? Do you think about data quality? Do you know Parquet vs CSV?
+
+**How to think about it (say this out loud):**
+> "First, I'd read the file. Then identify duplicates - I need to know: what makes a row a duplicate? Same ID? Same all columns? Let me ask... OK, same ID. I'll keep the last occurrence. Then write clean data to Parquet for better compression and query speed."
+
 ```python
 import pandas as pd
 
 def process_file(input_path: str, output_path: str) -> dict:
+    # Step 1: Read raw data
     df = pd.read_csv(input_path)
     
-    # Find duplicates
+    # Step 2: Find duplicates based on "id" column
+    # keep=False marks ALL duplicate rows (not just the extra ones)
     dupes = df[df.duplicated(subset=["id"], keep=False)]
     print(f"Found {len(dupes)} duplicate rows")
     
-    # Remove duplicates (keep last)
+    # Step 3: Remove duplicates, keep the LAST occurrence
+    # Why "last"? In incremental data, the latest record is most up-to-date
     clean = df.drop_duplicates(subset=["id"], keep="last")
     
-    # Write to Parquet
+    # Step 4: Write to Parquet (columnar, compressed, typed)
     clean.to_parquet(output_path, index=False)
     
+    # Step 5: Return summary for logging/monitoring
     return {
         "input_rows": len(df),
         "duplicates_removed": len(df) - len(clean),
         "output_rows": len(clean)
     }
 ```
+
+**Edge cases to mention:**
+- What if the CSV is too large for memory? Use `pd.read_csv(path, chunksize=10000)` to process in chunks
+- What if there are encoding issues? `pd.read_csv(path, encoding='utf-8')` or `encoding='latin-1'`
+- What if "id" column doesn't exist? Add validation: `assert "id" in df.columns`
+- What if ALL rows are duplicates? The function still works - returns 1 row per unique ID
+
+**Follow-up they might ask:**
+- "Why Parquet over CSV?" - Columnar storage, 5-10x compression, embedded types, column pruning
+- "How would you handle this at scale (100GB)?" - Use PySpark instead of Pandas
+- "What if duplicates span across multiple daily files?" - Use a window function or merge with existing data
 
 ### Pattern 2: Data Validation
 
@@ -136,7 +157,7 @@ def flatten_json(nested: dict, prefix: str = "") -> dict:
 
 # Example:
 # flatten_json({"a": {"b": 1, "c": {"d": 2}}})
-# â†’ {"a.b": 1, "a.c.d": 2}
+# â†' {"a.b": 1, "a.c.d": 2}
 ```
 
 ### Pattern 6: Batch Processing Simulation
@@ -165,9 +186,35 @@ def process_in_batches(records: list, batch_size: int = 1000):
 
 ## SQL CODING PATTERNS
 
-### Pattern 1: Window Functions (Most Asked)
+### Pattern 1: Window Functions (Most Asked - know this COLD)
+
+**What is a window function?** A function that performs a calculation ACROSS a set of rows related to the current row - WITHOUT collapsing rows like GROUP BY does.
+
+```sql
+-- GROUP BY collapses rows (10 rows become 3):
+SELECT department, AVG(salary) FROM employees GROUP BY department;
+-- Returns: Engineering: 95K, Sales: 75K, HR: 65K  (3 rows)
+
+-- Window function KEEPS all rows (10 rows stay 10):
+SELECT name, department, salary,
+       AVG(salary) OVER (PARTITION BY department) AS dept_avg
+FROM employees;
+-- Returns all 10 employees, each with their department's average
+```
+
+**The syntax:**
+```sql
+FUNCTION() OVER (
+    PARTITION BY column    -- Like GROUP BY, but keeps rows
+    ORDER BY column        -- Order within each partition
+    ROWS BETWEEN ...       -- Optional: define the window frame
+)
+```
 
 **Q: Find the second highest salary per department.**
+
+**How to think about it:** "I need to rank salaries within each department, then pick rank 2. I'll use DENSE_RANK because if two people tie for #1, I still want a #2."
+
 ```sql
 WITH ranked AS (
     SELECT 
@@ -175,8 +222,8 @@ WITH ranked AS (
         employee_name,
         salary,
         DENSE_RANK() OVER (
-            PARTITION BY department_id 
-            ORDER BY salary DESC
+            PARTITION BY department_id   -- Rank within each department
+            ORDER BY salary DESC         -- Highest salary = rank 1
         ) AS rank
     FROM employees
 )
@@ -184,6 +231,17 @@ SELECT department_id, employee_name, salary
 FROM ranked
 WHERE rank = 2;
 ```
+
+**Why DENSE_RANK not ROW_NUMBER or RANK?**
+```
+Salaries: 100K, 100K, 90K, 80K
+
+ROW_NUMBER:  1, 2, 3, 4    -- 100K gets ranks 1 AND 2 (arbitrary)
+RANK:        1, 1, 3, 4    -- Skips rank 2 entirely!
+DENSE_RANK:  1, 1, 2, 3    -- 90K gets rank 2 (what we want)
+```
+
+**Follow-up:** "What if no one has the second highest?" - The query returns empty. Use LEFT JOIN or COALESCE to handle.
 
 **Q: Running total of sales per month.**
 ```sql
@@ -328,7 +386,7 @@ result.write.partitionBy("trade_date").mode("overwrite").parquet("s3://output/")
 **Q: Find two numbers in an array that sum to a target.**
 ```python
 def two_sum(nums: list[int], target: int) -> list[int]:
-    seen = {}  # value â†’ index
+    seen = {}  # value â†' index
     for i, num in enumerate(nums):
         complement = target - num
         if complement in seen:
@@ -354,7 +412,7 @@ from collections import defaultdict
 def group_anagrams(words: list[str]) -> list[list[str]]:
     groups = defaultdict(list)
     for word in words:
-        key = ''.join(sorted(word))  # "eat" â†’ "aet"
+        key = ''.join(sorted(word))  # "eat" â†' "aet"
         groups[key].append(word)
     return list(groups.values())
 
@@ -578,7 +636,7 @@ def search_insert(nums: list[int], target: int) -> int:
 
 ### 10. Dynamic Programming (Rare for DE, but know basics)
 
-**Q: Climbing stairs â€” how many ways to reach step n?**
+**Q: Climbing stairs â€" how many ways to reach step n?**
 ```python
 def climb_stairs(n: int) -> int:
     if n <= 2:
@@ -603,18 +661,18 @@ def climb_stairs(n: int) -> int:
 | O(2^n) | Exponential | Recursive subsets |
 
 **When they ask "What's the time complexity?":**
-- Single loop â†’ O(n)
-- Nested loops â†’ O(n^2)
-- Binary search / divide â†’ O(log n)
-- Sort then search â†’ O(n log n)
-- Hash map lookup â†’ O(1) average
-- Spark shuffle â†’ O(n) data transfer across network
+- Single loop â†' O(n)
+- Nested loops â†' O(n^2)
+- Binary search / divide â†' O(log n)
+- Sort then search â†' O(n log n)
+- Hash map lookup â†' O(1) average
+- Spark shuffle â†' O(n) data transfer across network
 
 ---
 
 ## PYTHON-SPECIFIC KNOWLEDGE
 
-### Q: List vs Tuple vs Set vs Dict â€” when to use each?
+### Q: List vs Tuple vs Set vs Dict â€" when to use each?
 
 | Type | Mutable | Ordered | Duplicates | Lookup | Use Case |
 |---|---|---|---|---|---|
@@ -626,17 +684,17 @@ def climb_stairs(n: int) -> int:
 ### Q: What is a generator and why use it?
 
 ```python
-# Regular function â€” loads ALL data into memory
+# Regular function â€" loads ALL data into memory
 def read_all(path):
-    return open(path).readlines()  # 10GB file â†’ 10GB RAM!
+    return open(path).readlines()  # 10GB file â†' 10GB RAM!
 
-# Generator â€” yields one line at a time
+# Generator â€" yields one line at a time
 def read_lines(path):
     with open(path) as f:
         for line in f:
             yield line  # Only 1 line in memory at a time
 
-# Usage â€” memory efficient
+# Usage â€" memory efficient
 for line in read_lines("huge_file.csv"):
     process(line)
 ```
@@ -662,7 +720,7 @@ def process_data(df):
     # ... expensive operation
     return df.transform(...)
 
-# process_data(df) â†’ "process_data took 3.45s"
+# process_data(df) â†' "process_data took 3.45s"
 ```
 
 ### Q: What is `__init__`, `__str__`, `__repr__`?
@@ -683,13 +741,13 @@ class Pipeline:
 ### Q: Exception handling best practices?
 
 ```python
-# Bad â€” catches everything, hides bugs:
+# Bad â€" catches everything, hides bugs:
 try:
     process()
 except:
     pass
 
-# Good â€” specific exceptions, logging:
+# Good â€" specific exceptions, logging:
 try:
     df = spark.read.parquet(path)
 except FileNotFoundError:
