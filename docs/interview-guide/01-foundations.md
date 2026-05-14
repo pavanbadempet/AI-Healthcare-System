@@ -4598,6 +4598,40 @@ For ANY tool you haven't used, follow this 4-step answer:
 
 ---
 
+**9. "How does the Medallion architecture handle late-arriving data?"**
+> "Late events arrive in Bronze as-is (with their original timestamp). In the Bronze → Silver transformation, I use a watermark window: events up to 2 hours late are still processed into Silver. Events older than 2 hours go to a 'late_arrivals' table for batch reprocessing. The Silver layer uses MERGE (upsert) so late arrivals update existing records without duplication."
+
+---
+
+**10. "How do you handle the cold-start problem in recommendations?"**
+> "Three strategies:
+> (1) **New users** (no history): Show popularity-based recommendations (most watched, highest rated). As they interact, blend in collaborative signals.
+> (2) **New items** (no ratings): Use content-based similarity (SBERT embeddings of movie descriptions). A new movie with a description similar to existing popular movies gets recommended.
+> (3) **Fallback**: If both fail (new user + new item), show editorially curated 'staff picks.' The system always has something to show."
+
+---
+
+**11. "What's your FAISS index structure?"**
+> "We use IndexFlatIP (inner product) for exact search on our 50K movie embeddings. Each embedding is 768-dimensional (SBERT output). Index size: ~150MB in memory. Search latency: <10ms for top-50 nearest neighbors.
+> For 1M+ items, I'd switch to IndexIVFFlat (inverted file index): partition vectors into 1000 clusters, search only the nearest 10 clusters. Trades 2-3% accuracy for 10x speed improvement."
+
+---
+
+**12. "How do you evaluate recommendation quality?"**
+> "Three metrics:
+> (1) **Precision@K**: Of the top-K recommended movies, how many did the user actually watch? Target: >30% at K=10.
+> (2) **NDCG** (Normalized Discounted Cumulative Gain): Are the best recommendations at the top of the list? Higher NDCG = better ranking.
+> (3) **Coverage**: What percentage of the catalog gets recommended to at least one user? Low coverage = filter bubble problem.
+> (4) **A/B testing** (design): Show different scoring weights to different user segments, measure click-through rate and watch time."
+
+---
+
+**13. "How does Kafka guarantee ordering for your recommendation pipeline?"**
+> "Kafka guarantees ordering WITHIN a partition. I partition user events by user_id, so all events from the same user arrive in order. This matters because the recommendation model needs chronological user history. Across users, ordering doesn't matter -- each user's recommendations are independent.
+> Consumer group: single consumer per partition ensures at-least-once delivery. Idempotent writes to Delta Lake handle duplicates."
+
+---
+
 ### 🔄 CROSS-PROJECT: Why Different Stacks for Different Projects?
 
 **"Your projects use completely different stacks. Why?"**
@@ -4608,3 +4642,74 @@ For ANY tool you haven't used, follow this 4-step answer:
 > - **Nova Movie Recommendation System** (streaming + ML): Kafka + Spark Streaming + Delta Lake because user behavior events flow continuously, need replay, and feed the recommendation model. The Medallion architecture ensures data quality at each layer.
 > 
 > A great data engineer doesn't use one stack for everything. They pick the right tools for the requirements: latency, volume, complexity, team skills, and cost."
+
+---
+
+## PART 30: BEHAVIORAL STAR STORIES (Mapped to Your Real Projects)
+
+> Every behavioral interview needs STAR stories (Situation, Task, Action, Result). Here are 8 stories from YOUR projects.
+
+---
+
+### STORY 1: "Tell me about a time you dealt with a production failure."
+> **Situation**: At Nomura, the fct_drt (Daily Reconciliation Trades) feed for NCFA failed at 3 AM due to malformed upstream data — a corporate action event caused duplicate trade IDs.
+> **Task**: Downstream jobs (fct_settlement, fct_market_risk) were blocked. P&L reports for the Americas desk were due by 6 AM.
+> **Action**: I checked Spark logs, identified the duplicate trade IDs causing a unique constraint violation. Wrote a deduplication query (`ROW_NUMBER() OVER (PARTITION BY trade_id ORDER BY event_timestamp DESC)`), applied it to the raw feed, re-triggered the DRT job. Updated the AutoSys chain to unblock downstream.
+> **Result**: P&L reports delivered by 5:45 AM — within SLA. Added a permanent duplicate check to the DRT validation step. Zero recurrence in 6 months.
+
+---
+
+### STORY 2: "Tell me about a time you optimized something significantly."
+> **Situation**: At Nomura, the end-of-day P&L Spark job took 45 minutes, causing overnight processing to miss the 6 AM SLA on high-volume days.
+> **Task**: Reduce execution time to consistently hit the SLA.
+> **Action**: Profiled the Spark job using the Spark UI. Found: (1) Shuffle joins between fct_trade (500M rows) and dim_instrument (50K rows, 30MB). Switched to broadcast join — eliminated shuffle entirely. (2) fct_trade wasn't partitioned by trade_date — every query scanned the full table. Added date partitioning. (3) Default 200 shuffle partitions were creating 200 tiny tasks. Tuned to 2000 partitions matching data volume.
+> **Result**: Execution time dropped from 45 minutes to 12 minutes (73% improvement). SLA never missed again. Applied the same pattern to 8 other Spark jobs.
+
+---
+
+### STORY 3: "Tell me about a time you led a technical initiative."
+> **Situation**: At Nomura, our Spark cluster was on YARN with fixed capacity. Month-end processing required 3x compute, but we couldn't scale YARN without buying servers (3-month lead time).
+> **Task**: Design and execute migration to Kubernetes to enable dynamic scaling.
+> **Action**: (1) Set up K8s cluster with MinIO (S3-compatible) as the storage layer. (2) Migrated Spark configurations from YARN resource allocation to K8s pod specs. (3) Ran parallel pipelines (YARN + K8s) for 2 weeks, comparing every output table for consistency. (4) Built HPA (Horizontal Pod Autoscaler) rules for Spark executors. (5) Created runbooks for the ops team.
+> **Result**: 0.01% output variance (acceptable for floating-point differences). 30% cost reduction from better resource packing. Month-end now auto-scales without manual intervention. Zero downtime cutover.
+
+---
+
+### STORY 4: "Tell me about a time you worked under a tight deadline."
+> **Situation**: At Nissan, a new regulatory requirement demanded an additional data feed be added to the pipeline within 2 weeks. The feed had a completely different schema (XML instead of CSV).
+> **Task**: Build the ingestion, transformation, and loading pipeline for the new feed.
+> **Action**: (1) Day 1-2: Analyzed XML schema, wrote Lambda parser using `lxml`. (2) Day 3-5: Built schema validation, null handling, and Parquet conversion. (3) Day 6-8: Added to Step Functions workflow, created Snowflake tables and views. (4) Day 9-10: Integration testing against staging Snowflake. (5) Day 11-12: Production deployment via CodePipeline. (6) Day 13-14: Monitoring and documentation.
+> **Result**: Delivered on day 12 — 2 days ahead of deadline. Feed processing within existing SLA. Reused the same Lambda template for 3 subsequent feed additions.
+
+---
+
+### STORY 5: "Tell me about a time you disagreed with a teammate."
+> **Situation**: At Nomura, a senior engineer wanted to rewrite all Spark jobs from PySpark to Scala for "better performance."
+> **Task**: Evaluate the technical claim and present an evidence-based recommendation.
+> **Action**: I benchmarked 5 production jobs in both PySpark and Scala. For DataFrame operations (95% of our code), performance was identical — Catalyst optimizer generates the same execution plan. The only difference was in UDFs, where Scala was 3x faster. I presented the benchmarks to the team, showing that switching to `pandas_udf` (vectorized UDF) in PySpark achieved similar performance without the Scala rewrite.
+> **Result**: Team agreed to stay on PySpark but adopt `pandas_udf` for all UDFs. Saved months of rewrite effort. The 5% of UDF code got a 10x speedup from vectorization. Senior engineer acknowledged the data-driven approach.
+
+---
+
+### STORY 6: "Tell me about a time you learned something new quickly."
+> **Situation**: For the Nova Movie Recommendation System, I needed to implement vector search with FAISS — a library I'd never used.
+> **Task**: Build a production-quality similarity search engine in 1 week.
+> **Action**: (1) Day 1: Read FAISS documentation and benchmarks. (2) Day 2: Built prototype with IndexFlatL2 on 1000 movies. (3) Day 3: Switched to IndexFlatIP (inner product) for cosine similarity — better for text embeddings. (4) Day 4-5: Integrated with SBERT embeddings, tested on 50K movies. (5) Day 6-7: Added batch indexing, serialization (save/load index), and query API.
+> **Result**: Working FAISS search engine with <10ms latency, deployed in the recommendation pipeline. The learning approach — prototype first, then optimize — is my standard pattern for any new technology.
+
+---
+
+### STORY 7: "Tell me about a time you dealt with ambiguity."
+> **Situation**: At Nissan, stakeholders asked for a "data quality dashboard" but couldn't define what metrics they wanted.
+> **Task**: Define the requirements and deliver a useful dashboard.
+> **Action**: (1) Met with 3 stakeholder groups (supply chain, sales, finance) individually. Asked: "What data problems cost you time?" (2) Identified common themes: missing values, late data, unexpected value ranges. (3) Defined 5 metrics: null rate, data freshness, row count anomaly, value distribution shift, schema compliance. (4) Built CloudWatch custom metrics + Snowflake views feeding Tableau dashboards.
+> **Result**: Dashboard adopted by all 3 teams within 2 weeks. The null rate metric alone caught 4 upstream issues that month. Stakeholders said it was "exactly what they needed but couldn't articulate."
+
+---
+
+### STORY 8: "Tell me about cross-team collaboration."
+> **Situation**: At Nomura, the NCFA DRT reconciliation breaks were increasing — 50+ breaks per day vs the normal 5-10. Root cause was unclear.
+> **Task**: Work with the trading systems team (different department) and operations team to diagnose and fix.
+> **Action**: (1) Pulled 30-day break trend data — spikes correlated with a recent trading system upgrade. (2) Scheduled cross-team meeting with trading systems engineers. Found: their upgrade changed timestamp precision from seconds to milliseconds, causing our join on `trade_timestamp` to miss matches. (3) Updated our DRT join logic to truncate timestamps to seconds before matching. (4) Added a timestamp precision check to the DRT validation step.
+> **Result**: Breaks dropped from 50+ to <5 per day (back to normal). Added timestamp format validation to prevent future surprises. Documented the cross-team dependency for future system upgrades.
+
