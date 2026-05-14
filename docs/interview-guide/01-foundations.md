@@ -4061,6 +4061,120 @@ For ANY tool you haven't used, follow this 4-step answer:
 
 ---
 
+**13. "Walk me through the full AWS stack you used at Nissan."**
+> "Complete stack:
+> - **S3**: Landing zone (raw files), processed zone (Parquet), archive zone (Glacier after 365 days)
+> - **Lambda**: Processing layer -- schema validation, data cleansing, Parquet conversion, Snowflake loading
+> - **Step Functions**: Orchestration -- 7-step pipeline with error handling, retries, and parallel branches
+> - **EventBridge**: Schedule triggers (nightly batch) + S3 event triggers (file arrival)
+> - **SNS**: Alerting -- pipeline success/failure notifications to Slack and email
+> - **CloudWatch**: Monitoring -- Lambda duration, error rates, memory usage, custom metrics
+> - **IAM**: Security -- least-privilege roles per Lambda function, cross-account S3 access for upstream systems
+> - **KMS**: Encryption -- S3 server-side encryption (SSE-KMS) for data at rest, TLS for data in transit
+> - **VPC**: Networking -- Lambda in VPC for Snowflake private connectivity (PrivateLink), NAT gateway for internet
+> - **Glue Data Catalog**: Metadata -- schema registry for all S3 datasets, queryable via Athena
+> - **Athena**: Ad-hoc exploration -- analysts query raw S3 data without Snowflake for quick checks
+> - **CodePipeline + CodeBuild**: CI/CD -- automated testing and deployment of Lambda functions"
+
+---
+
+**14. "Why did you use Pandas in Lambda instead of Spark?"**
+> "Our files were 10-80MB each. Pandas handles this in 2-5 seconds on a single Lambda instance. Spark adds: (1) JVM startup overhead (30+ seconds). (2) Cluster management. (3) Higher cost per invocation. Spark is for distributed processing of GB/TB-scale data. Pandas is perfect for single-file processing at MB-scale. Using Spark here would be like using a truck to deliver a letter."
+
+**Counter:** "What if you needed to join across files?"
+> "For cross-file joins (e.g., join today's sales with yesterday's inventory), I'd either: (1) Do the join in Snowflake AFTER loading (SQL is made for this), or (2) Use Glue/EMR if the join is too large for Snowflake. Most of our cross-file logic lived in Snowflake views and stored procedures."
+
+---
+
+**15. "How did EventBridge trigger your pipelines?"**
+> "Two trigger types: (1) **Schedule-based**: EventBridge cron rule triggers Step Functions at 2 AM daily for batch processing. (2) **Event-based**: S3 PutObject event → EventBridge rule → Lambda function for real-time file processing. The beauty is decoupling -- upstream systems just drop files in S3, they don't know or care about our pipeline."
+
+---
+
+**16. "How did you handle Snowflake loading from Lambda?"**
+> "Two approaches depending on file size: (1) **Small files (<50MB)**: Lambda uses the Snowflake Python connector to execute COPY INTO directly. (2) **Large batches**: Lambda writes Parquet to the S3 processed zone, then Snowpipe auto-ingests. Snowpipe is Snowflake's continuous data loading service -- it watches an S3 path and loads new files automatically."
+
+---
+
+**17. "Why not dbt for the Snowflake transformations?"**
+> "We used dbt concepts (staging → intermediate → mart) but implemented them as Snowflake stored procedures and views. The team was more comfortable with SQL procedures than dbt's Jinja templating. If I were starting today, I'd use dbt Cloud for the transformation layer -- it adds version control, documentation, lineage, and testing for free."
+
+---
+
+**18. "Explain your S3 data lake zone architecture."**
+> "Three zones:
+> ```
+> s3://nissan-data-lake/
+> ├── landing/        ← Raw files exactly as received (CSV, JSON, XML)
+> │                     Retention: 90 days, then deleted
+> ├── processed/      ← Cleaned, validated, Parquet format, partitioned by date
+> │                     Retention: permanent (Standard → IA after 90 days → Glacier after 365)
+> └── failed/         ← Dead letter queue -- files that failed validation
+>                       Manual review, reprocess after fix
+> ```
+> Landing zone is the insurance policy. If our transformation has a bug, we re-process from landing. Processed zone is the source of truth for Snowflake loading."
+
+---
+
+**19. "How did you test Lambda functions before deployment?"**
+> "Three-layer testing: (1) **Unit tests**: pytest with mocked S3/Snowflake calls -- validates transformation logic. (2) **Integration tests**: Deploy to staging environment, process test files against staging Snowflake DB, validate row counts and data types. (3) **Canary deployment**: Deploy to prod, process one file, compare output with staging. If match, enable full processing. CodePipeline automated all three steps."
+
+---
+
+**20. "What was your on-call process for Nissan?"**
+> "CloudWatch alarms → SNS topic → PagerDuty. Three severity levels:
+> - **P1 (critical)**: Pipeline SLA missed (data not ready by 6 AM). Immediate page. Resolution: identify failed Lambda, check CloudWatch logs, re-trigger Step Function.
+> - **P2 (high)**: Partial failure (some files failed, others succeeded). Alert to Slack. Resolution: check dead letter queue, fix and reprocess failed files.
+> - **P3 (low)**: Performance degradation (Lambda taking 3x normal time). Email alert. Resolution: investigate next business day."
+
+---
+
+**21. "How did you handle Snowflake RBAC?"**
+> "Role-based access control:
+> ```sql
+> -- ETL service account: read/write to raw + clean schemas
+> GRANT USAGE ON WAREHOUSE etl_wh TO ROLE etl_role;
+> GRANT ALL ON SCHEMA raw TO ROLE etl_role;
+> GRANT ALL ON SCHEMA clean TO ROLE etl_role;
+>
+> -- Analysts: read-only on mart schema, their own warehouse
+> GRANT USAGE ON WAREHOUSE analyst_wh TO ROLE analyst_role;
+> GRANT SELECT ON ALL TABLES IN SCHEMA mart TO ROLE analyst_role;
+>
+> -- Finance team: read-only on finance-specific views only
+> GRANT SELECT ON VIEW mart.v_finance_summary TO ROLE finance_role;
+> ```
+> Principle of least privilege. ETL can write. Analysts can read marts. Finance sees only their views."
+
+---
+
+**22. "How did you handle schema changes from upstream?"**
+> "Schema validation Lambda checks every incoming file against expected schema stored in Glue Data Catalog. Three scenarios:
+> (1) **New column added**: Log warning, add column to Parquet with NULL default, continue processing. Alert team to update downstream.
+> (2) **Column removed**: HALT pipeline, alert P1. Missing columns could break Snowflake views/dashboards.
+> (3) **Data type changed**: HALT pipeline, alert P1. Type mismatches cause silent data corruption.
+> This caught 12 upstream breaking changes in 6 months -- every one before it hit production."
+
+---
+
+**23. "What Snowflake performance optimizations did you implement?"**
+> "Five optimizations:
+> (1) **Clustering keys**: On partition_date for all fact tables. 90% of queries filter by date -- clustering skips irrelevant micro-partitions.
+> (2) **Materialized views**: For 5 most-used dashboard queries. Pre-computed, auto-refreshed on data change. Dashboard loads went from 8 seconds to <1 second.
+> (3) **Multi-warehouse strategy**: Separate warehouses for ETL (Medium, 2 AM), analyst queries (Small, business hours), month-end reporting (Large, on-demand). No contention between workloads.
+> (4) **Auto-suspend**: Warehouses suspend after 5 minutes of inactivity. Analysts don't accidentally leave a Large warehouse running overnight.
+> (5) **Result caching**: Repeated dashboard queries return instantly from 24-hour cache. Zero compute cost for unchanged data."
+
+---
+
+**24. "How did you use Athena alongside Snowflake?"**
+> "Different purposes:
+> - **Athena**: Ad-hoc exploration of raw S3 data. 'What does this new file format look like?' No infrastructure, no loading -- just point at S3 and query. Used by data engineers for debugging.
+> - **Snowflake**: Production analytics. Cleaned, validated, optimized data. Used by business analysts for dashboards and reports.
+> Glue Data Catalog served both -- Athena reads the same catalog that describes our S3 datasets."
+
+---
+
 ### 🏦 NOMURA -- Capital Markets Data Platform (Every Decision Defended)
 
 **What it is:** Enterprise-scale on-prem data processing platform handling **100+ automated and manual feed processes** across multiple Nomura regional entities, serving portfolio analytics, risk calculations, P&L, and regulatory reporting for investment banking
@@ -4230,6 +4344,142 @@ For ANY tool you haven't used, follow this 4-step answer:
 
 **10. "Why not a NoSQL database like Cassandra for trade data?"**
 > "Trade data is inherently relational: a trade has an instrument, a counterparty, a desk, a date. Relational schemas (star/snowflake) model this naturally. Cassandra is for: high write throughput (IoT sensors), denormalized access patterns (key-value lookups). Our access pattern was complex analytical queries (GROUP BY desk, instrument, date range) -- SQL excels at this."
+
+---
+
+**11. "Walk me through a typical day operating the Nomura platform."**
+> "Morning starts with checking AutoSys dashboards:
+> - **5:30 AM**: NSC (Tokyo) feeds should be complete. Check fct_pre_derivatives, fct_swap, fct_equity for NSC region. Verify row counts against previous day (±5% threshold).
+> - **7:00 AM**: NFPS (London) feeds starting. Monitor fct_settlement, fct_pre_fx, fct_foreign_bond for EMEA.
+> - **8:00 AM**: NCFA (Americas) feeds from previous night should be complete. Verify fct_trade, fct_drt, fct_cash for Americas.
+> - **9:00 AM**: Cross-region reconciliation runs. Automated checks: do NCFA + NFPS + NSC balances match global aggregate?
+> - **10:00 AM**: Risk reports consumed by front office. P&L dashboards updated. Any discrepancy = immediate escalation.
+> - **Ongoing**: Monitor for late feeds, reprocess failures, handle ad-hoc requests from risk managers."
+
+---
+
+**12. "What happens when a feed fails? Walk me through a real scenario."**
+> "Example: fct_drt (Daily Reconciliation Trades) for NCFA fails at 3 AM.
+> (1) **Detection**: AutoSys detects non-zero exit code. Sends alert to on-call (email + Slack).
+> (2) **Impact assessment**: DRT must complete before fct_settlement and fct_market_risk can run. Those downstream jobs are now BLOCKED.
+> (3) **Diagnosis**: Check Spark logs. Common causes: upstream system sent malformed data, HDFS disk full, executor OOM.
+> (4) **Fix**: If data issue → contact upstream team, get corrected file, re-trigger. If infra issue → restart executors, clear HDFS temp files, re-trigger.
+> (5) **Re-trigger**: AutoSys re-runs DRT. On success, downstream jobs (settlement, market_risk) automatically start.
+> (6) **Post-mortem**: If SLA impacted, write incident report. Root cause analysis. Prevention: add validation check for the specific failure mode."
+
+---
+
+**13. "How did you handle DRT (Daily Reconciliation Trades) specifically?"**
+> "DRT is critical -- it reconciles what the trading system says was traded vs what settlement says was settled. Process:
+> (1) Load fct_drt from trading system feed.
+> (2) Load fct_settlement from settlement system feed.
+> (3) Join on trade_id, compare quantities and amounts.
+> (4) **Breaks** (mismatches) flagged: trade exists in DRT but not settlement, or amounts differ.
+> (5) Breaks report sent to operations team for manual investigation.
+> (6) Once breaks are resolved (or accepted), mark DRT as reconciled.
+> This is a MANUAL gate -- downstream risk calculations don't run until DRT reconciliation is signed off. Some days there are zero breaks. Some days there are hundreds (usually after a system upgrade or corporate action)."
+
+---
+
+**14. "What happens during month-end processing?"**
+> "Month-end is the highest-stress period:
+> - **Data volume**: 3-5x normal (historical recalculations, adjusted positions, late trades).
+> - **SLA tightening**: Reports must be ready earlier for finance close. Normal SLA: T+2 hours. Month-end SLA: T+1 hour.
+> - **Additional jobs**: P&L attribution (why did P&L change?), NAV calculations for funds, regulatory submissions.
+> - **Capacity**: Spark cluster scaled up -- request additional YARN resources. After K8s migration, HPA auto-scales pods.
+> - **Manual validation**: Finance team manually verifies P&L figures. If they find issues, we re-run with corrections.
+> - **Weekend processing**: Month-end falling on Friday means weekend batch runs. On-call engineer monitors Saturday processing."
+
+---
+
+**15. "What were your Spark configuration settings?"**
+> "Key configs tuned for our workload:
+> ```
+> spark.executor.memory=8g
+> spark.executor.cores=4
+> spark.executor.instances=100  (dynamic: 20 min, 150 max)
+> spark.sql.shuffle.partitions=200  (tuned from default 200 based on data volume)
+> spark.sql.autoBroadcastJoinThreshold=100MB  (broadcast all dim tables)
+> spark.sql.adaptive.enabled=true  (AQE for skew handling)
+> spark.sql.adaptive.coalescePartitions.enabled=true
+> spark.serializer=org.apache.spark.serializer.KryoSerializer
+> spark.speculation=true  (re-launch slow tasks)
+> spark.hadoop.fs.s3a.endpoint=http://minio:9000  (after MinIO migration)
+> ```
+> The most impactful tuning: broadcast join threshold from 10MB (default) to 100MB. All 20+ dimension tables are <100MB, so every fact-dim join became a broadcast join -- eliminating shuffle entirely."
+
+---
+
+**16. "Describe a complex AutoSys job chain."**
+> "End-of-day P&L chain (simplified):
+> ```
+> [1] Extract: Pull raw feeds from trading systems
+>     ├── [2a] Load DRT (Americas)
+>     ├── [2b] Load Pre-Derivatives
+>     └── [2c] Load Pre-FX
+>           │
+> [3] DRT Reconciliation (MANUAL GATE - waits for sign-off)
+>           │
+> [4] Transform: Spark jobs enrich with dimensions
+>     ├── [5a] Calculate P&L by desk
+>     ├── [5b] Calculate Market Risk (VaR)
+>     └── [5c] Calculate Counterparty Exposure
+>           │
+> [6] Aggregate: Roll up by region (NCFA + NFPS + NSC)
+>           │
+> [7] Report: Generate P&L reports, risk dashboards
+>           │
+> [8] Notify: Email reports to front office, archive to HDFS
+> ```
+> Each step has: success condition, failure retry (3x), timeout, escalation contact. If step 2a fails, steps 3-8 are blocked. AutoSys handles this dependency logic."
+
+---
+
+**17. "What was on-call like at Nomura?"**
+> "Weekly rotation among 4 engineers:
+> - **Night**: Asia feeds (NSC) process at midnight local time. Most issues are data quality (malformed records, schema changes from upstream).
+> - **Morning**: Europe (NFPS) and Americas (NCFA) feeds. Cross-region reconciliation failures.
+> - **Escalation path**: L1 (on-call engineer, 15-min response) → L2 (senior engineer, 30-min) → L3 (lead/manager, 1-hour).
+> - **Runbooks**: Every feed had a runbook: common failure modes, diagnostic queries, re-trigger commands.
+> - **Most common issues**: (1) HDFS disk >85% → clean old snapshots. (2) Executor OOM → increase memory or reduce partition size. (3) Upstream sent wrong file → contact upstream, get corrected file."
+
+---
+
+**18. "How did you handle capacity planning on-prem?"**
+> "Unlike cloud (auto-scale), on-prem means physical servers. Planning process:
+> (1) **Monitor trends**: Monthly data volume growth rate (~15% YoY for Nomura). Spark resource utilization dashboards.
+> (2) **Project forward**: At current growth, we'll exhaust HDFS capacity in 8 months. Need procurement lead time of 3 months.
+> (3) **Request hardware**: Submit capacity request 5 months ahead. Budget approval, procurement, rack-and-stack, configure.
+> (4) **Optimize first**: Before buying hardware, optimize: compress data (Parquet + Snappy = 65% reduction), archive old data, tune Spark to use less memory.
+> This is why we migrated to K8s + MinIO -- it's still on-prem hardware, but K8s packs workloads more efficiently (30% better utilization)."
+
+---
+
+**19. "How did you handle cross-region data joins?"**
+> "Example: Global P&L report needs to join fct_trade from NCFA, NFPS, and NSC.
+> - All three regions write to the same HDFS cluster (Parquet, partitioned by trade_date AND region).
+> - Spark reads all three partitions, joins against shared dimension tables (dim_instrument, dim_currency, dim_desk).
+> - Currency conversion: fct_trade from NSC is in JPY, NFPS in EUR, NCFA in USD. Join against dim_currency for exchange rates, convert everything to USD for global view.
+> - Time zone alignment: NSC trade_date is JST, NFPS is GMT, NCFA is EST. Normalize to UTC in the Silver layer."
+
+---
+
+**20. "What data governance did you implement?"**
+> "Five pillars:
+> (1) **Data catalog**: Every table documented with owner, description, SLA, data classification (public/internal/restricted/confidential).
+> (2) **Lineage**: Column-level tracking from source feed → Spark transformation → final report. Required for MiFID II ('show me where this P&L number came from').
+> (3) **Access control**: RBAC per region and desk. NCFA traders can't see NSC data. Compliance team has read-all access.
+> (4) **Data quality**: Automated checks on every load. Quality score per table. Tables below 95% quality score trigger investigation.
+> (5) **Retention policy**: Trade data retained 7 years (regulatory requirement). Archived to tape after 2 years. Dimension snapshots (SCD Type 2) retained indefinitely."
+
+---
+
+**21. "How did you handle weekend and holiday processing?"**
+> "Markets close on weekends, but data processing doesn't stop:
+> - **Saturday**: Month-end and quarter-end catch-up processing. Recalculations, adjustments, late trade bookings.
+> - **Sunday**: Pre-positioning for Monday open. Reference data refresh (dim_instrument, dim_rating updates from Moody's/Fitch).
+> - **Holidays**: Different holidays per region (US Thanksgiving ≠ Tokyo holidays ≠ UK bank holidays). AutoSys has regional calendar configurations. If NCFA is on holiday, NCFA feeds don't run, but NFPS and NSC still process.
+> - **On-call**: Weekend on-call is mandatory for month-end. Reduced scope otherwise (emergency only)."
 
 ---
 
