@@ -309,5 +309,3 @@ def get_prompt(name: str, version: str | None = None) -> str:
 def register_prompt(name: str, version: str, template: str, **kwargs) -> PromptVersion:
     """Convenience: register a new prompt version."""
     return get_prompt_registry().register(name, version, template, **kwargs)
-#   i 1 8 n   p r o m p t   s u p p o r t   -   W I P  
- 
