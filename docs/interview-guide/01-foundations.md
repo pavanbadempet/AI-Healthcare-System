@@ -4548,6 +4548,110 @@ For ANY tool you haven't used, follow this 4-step answer:
 
 ---
 
+**10. "Walk me through your ML pipeline end-to-end."**
+> "Full pipeline:
+> (1) **Data acquisition**: CDC BRFSS dataset (253K records, 21 features) -- publicly available health survey data.
+> (2) **Preprocessing**: Handle missing values (median imputation for numeric, mode for categorical), encode categoricals (label encoding for ordinal like age buckets, one-hot for nominal), normalize continuous features (StandardScaler).
+> (3) **Feature engineering**: BMI category (underweight/normal/overweight/obese), age buckets (18-24, 25-29, ... 80+), smoking pack-years, exercise frequency score.
+> (4) **Train/test split**: 80/20 stratified split (preserve class distribution -- diabetes has 15% prevalence).
+> (5) **Model training**: XGBoost with hyperparameter tuning (GridSearchCV: max_depth, learning_rate, n_estimators, min_child_weight).
+> (6) **Evaluation**: Accuracy, precision, recall, F1, ROC-AUC, confusion matrix. Focus on RECALL for disease detection -- missing a positive is worse than a false alarm.
+> (7) **Deployment**: Save model as joblib. FastAPI loads model at startup. API accepts feature vector, returns prediction + probability + SHAP explanation."
+
+---
+
+**11. "How do you handle class imbalance in health data?"**
+> "Diabetes prevalence is ~15% in BRFSS. Three approaches:
+> (1) **SMOTE** (Synthetic Minority Oversampling): Generate synthetic positive samples. Used in training, NOT in test set.
+> (2) **Class weights**: XGBoost `scale_pos_weight` parameter = (negative count / positive count). Penalizes misclassifying positive cases more heavily.
+> (3) **Threshold tuning**: Default threshold is 0.5. For disease detection, lower to 0.3 -- catches more true positives at the cost of more false positives. In healthcare, a false positive (unnecessary test) is better than a false negative (missed disease).
+> I used class weights + threshold tuning (not SMOTE) because SMOTE can create unrealistic synthetic samples."
+
+---
+
+**12. "How do you explain model predictions to doctors?"**
+> "SHAP (SHapley Additive exPlanations):
+> ```python
+> import shap
+> explainer = shap.TreeExplainer(model)
+> shap_values = explainer.shap_values(patient_features)
+>
+> # For this patient:
+> # BMI = +0.35 (high BMI pushes prediction toward diabetes)
+> # Age = +0.22 (older age increases risk)
+> # PhysicalActivity = -0.18 (exercise reduces risk)
+> ```
+> The doctor sees: 'This patient has a 73% diabetes risk. The main factors are: high BMI (+35%), age (+22%), offset by physical activity (-18%).'
+> This is NOT a black box. The doctor can verify: 'Yes, this patient is obese and sedentary. The model's reasoning makes clinical sense.'"
+
+---
+
+**13. "How do you prevent data leakage?"**
+> "Three rules:
+> (1) **Split BEFORE preprocessing**: Never fit StandardScaler on the full dataset then split. Fit on train, transform both train and test.
+> (2) **No target leakage**: Don't include features that are derived from the target (e.g., 'diabetes_medication' as a feature for predicting diabetes -- if they're on medication, they already have it).
+> (3) **Temporal awareness**: If data has timestamps, split chronologically (train on past, test on future), not randomly.
+> I implemented this with sklearn Pipeline to guarantee preprocessing → split → train order."
+
+---
+
+**14. "How would you monitor this model in production?"**
+> "Four monitoring dimensions:
+> (1) **Data drift**: Compare incoming feature distributions against training data. If BMI distribution shifts (e.g., new hospital serves younger patients), flag for retraining.
+> (2) **Prediction drift**: If model suddenly predicts 40% positive rate vs historical 15%, something changed.
+> (3) **Performance monitoring**: Track accuracy/recall against ground truth labels (requires feedback loop -- did the patient actually develop diabetes?).
+> (4) **Latency**: API response time. XGBoost prediction takes <5ms. If it spikes, check model size or server issues.
+> Tool I'd use in production: Evidently AI or WhyLabs for drift detection."
+
+---
+
+**15. "What's the difference between your project and a production healthcare system?"**
+> "Key gaps I acknowledge:
+> (1) **Regulatory**: No HIPAA compliance (encryption at rest, audit logs, BAA agreements). Production would use AWS HealthLake or Azure Health Data Services.
+> (2) **Data**: CDC survey data, not clinical EHR data. Production would integrate with HL7 FHIR APIs.
+> (3) **Validation**: My model is validated on a test set. Production requires clinical validation (prospective study, IRB approval).
+> (4) **Scale**: SQLite → PostgreSQL + read replicas. Single server → Kubernetes deployment with load balancing.
+> (5) **Disclaimer**: I always include 'This is not medical advice. Consult a healthcare professional.' Production would have legal review.
+> But the engineering patterns (API design, model serving, testing, monitoring) transfer directly."
+
+---
+
+**16. "How do you handle feature engineering for health data?"**
+> "Domain-specific features make a huge difference:
+> (1) **BMI categorization**: Raw BMI is continuous. Bucketing into WHO categories (Underweight <18.5, Normal 18.5-24.9, Overweight 25-29.9, Obese ≥30) captures the non-linear relationship with disease risk.
+> (2) **Age buckets**: Age has non-linear effects. 5-year buckets capture risk jumps (diabetes risk spikes after 45).
+> (3) **Interaction features**: BMI × PhysicalInactivity (obese AND inactive is much higher risk than either alone).
+> (4) **Composite scores**: Combine smoking, alcohol, exercise into a 'lifestyle risk score.'
+> Feature importance showed BMI, Age, and HighBP as the top 3 predictors -- matching clinical literature."
+
+---
+
+**17. "Why not deploy on AWS SageMaker?"**
+> "SageMaker is for production ML at scale (multi-model endpoints, A/B testing, automatic scaling, model registry). My project is a portfolio demonstration with a single XGBoost model serving <100 requests/minute. SageMaker would add: (1) ~$50/month minimum cost vs $0 for a VPS. (2) AWS-specific lock-in. (3) Complexity for a simple inference endpoint. FastAPI + uvicorn on a single server handles this perfectly. If scaling to production with multiple models, A/B testing, and canary deployments, I'd switch to SageMaker or Vertex AI."
+
+---
+
+**18. "How do you version your ML models?"**
+> "Three-layer versioning:
+> (1) **Code**: Git tracks training scripts, preprocessing logic, and hyperparameters.
+> (2) **Data**: Dataset version tracked (BRFSS 2022 vs 2023). Training data hash stored with model metadata.
+> (3) **Model artifacts**: Each model saved as `model_v{version}_{date}_{accuracy}.joblib`. Model registry tracks: training date, dataset version, hyperparameters, evaluation metrics.
+> For production, I'd use MLflow: tracks experiments, registers models, serves versioned endpoints. The project structure already supports this -- swap joblib for mlflow.sklearn.log_model."
+
+---
+
+**19. "How do you secure the healthcare API?"**
+> "Defense-in-depth:
+> (1) **Authentication**: JWT tokens (30-min expiry, refresh rotation).
+> (2) **Authorization**: Role-based (admin, doctor, patient). Patients can only see their own predictions.
+> (3) **Input validation**: Pydantic schemas reject malformed requests. Feature values validated against expected ranges (BMI: 10-80, Age: 18-100).
+> (4) **Rate limiting**: 100 requests/minute per user. Prevents abuse and protects model inference resources.
+> (5) **CORS**: Whitelist frontend domain only. No wildcard origins.
+> (6) **SQL injection**: SQLAlchemy ORM with parameterized queries. No raw SQL with user input.
+> (7) **Logging**: All predictions logged with timestamp, user_id, input features (hashed for PII), and result. Audit trail for compliance."
+
+---
+
 ### 🎬 NOVA -- Movie Recommendation System (Every Decision Defended)
 
 **What it is:** Streaming ML-powered movie recommendation engine with hybrid retrieval (collaborative + content-based)
@@ -4713,3 +4817,142 @@ For ANY tool you haven't used, follow this 4-step answer:
 > **Action**: (1) Pulled 30-day break trend data — spikes correlated with a recent trading system upgrade. (2) Scheduled cross-team meeting with trading systems engineers. Found: their upgrade changed timestamp precision from seconds to milliseconds, causing our join on `trade_timestamp` to miss matches. (3) Updated our DRT join logic to truncate timestamps to seconds before matching. (4) Added a timestamp precision check to the DRT validation step.
 > **Result**: Breaks dropped from 50+ to <5 per day (back to normal). Added timestamp format validation to prevent future surprises. Documented the cross-team dependency for future system upgrades.
 
+---
+
+## PART 31: GOTCHA / TRAP QUESTIONS (With Answers)
+
+> These are questions designed to trip you up. Knowing them in advance = instant credibility.
+
+---
+
+**1. "What's a technology you DON'T like?"**
+> TRAP: They want to see if you bash tools. NEVER bash a technology.
+> **Answer**: "I don't dislike any technology -- I dislike misapplied technology. For example, using Spark for a 10MB file is a poor choice. Using Lambda for a 30-minute batch job hits timeout limits. The tool is never bad; the application can be. I've seen teams choose Kafka when SQS would suffice, adding unnecessary operational overhead."
+
+---
+
+**2. "What's your biggest weakness as a data engineer?"**
+> TRAP: Don't say "I work too hard" or a disqualifying weakness.
+> **Answer**: "I tend to over-engineer monitoring before it's needed. At Nissan, I spent 3 days building CloudWatch dashboards before the pipeline was even in production. I've learned to ship first with basic alerting, then add observability as usage patterns emerge. Now I follow the 'instrument what hurts' approach instead of 'instrument everything.'"
+
+---
+
+**3. "Rate yourself 1-10 on Spark."**
+> TRAP: If you say 10, they'll ask impossible questions. If you say 5, you seem junior.
+> **Answer**: "7-8. I'm confident writing production PySpark pipelines, tuning performance (broadcast joins, partitioning, AQE), and debugging Spark UI. Areas I'm growing: Spark internals (custom accumulators, shuffle service internals), and I haven't worked with Spark on GPUs (RAPIDS). The move from 7 to 10 is about depth in edge cases and internal architecture."
+
+---
+
+**4. "Have you used [tool you haven't used]?"**
+> TRAP: Don't lie, don't dismiss.
+> **Answer framework** (The Bridge):
+> "I haven't used [X] directly, but I've used [Y which is similar]. The core concepts transfer: [explain overlap]. If I needed to use [X], the learning curve would be [short/moderate] because [reasoning]."
+> **Example**: "I haven't used Airflow directly, but I've orchestrated complex dependency chains with AutoSys at Nomura (50+ job chains, dependency management, failure recovery). The concepts -- DAGs, task dependencies, retry logic, SLA monitoring -- are identical. Airflow adds a Python API and web UI. I could be productive in Airflow within a week."
+
+---
+
+**5. "Why are you leaving TCS?"**
+> TRAP: Don't badmouth TCS.
+> **Answer**: "TCS gave me an excellent foundation -- I worked on enterprise-scale systems at Nomura and Nissan that most engineers never see. I'm looking for my next challenge: deeper ownership of the data architecture, more cloud-native work, and an environment where I can contribute to system design decisions. I'm grateful for TCS, and I'm ready for the next level."
+
+---
+
+**6. "Why should we hire you over someone with 5 years of experience?"**
+> **Answer**: "Two things a 5-year engineer may not have: (1) **Modern stack**: I've built with Delta Lake, FAISS, Kafka streaming, K8s -- technologies that many 5-year engineers haven't adopted yet because their companies are still on legacy systems. (2) **Full-stack AI**: I don't just move data -- I build ML models on top of it. The healthcare prediction system and Nova recommendation engine show I can go from raw data to deployed model. The combination of enterprise data engineering (Nomura, Nissan) + modern AI/ML is rare."
+
+---
+
+**7. "Your resume says 30% improvement. How did you measure that?"**
+> **Answer**: "Spark job execution time before and after optimization. Before: average 45 minutes across 30 consecutive runs. After: average 12 minutes across 30 consecutive runs. Measured using Spark History Server metrics, not wall-clock estimates. The 73% improvement is conservative (I reported 30% because some runs improved more than others and I wanted a defensible number)."
+
+---
+
+**8. "Can you code this right now?" (Live coding)**
+> TRAP: Panic and freeze.
+> **Answer protocol**: (1) Clarify requirements. (2) Write pseudocode first. (3) Talk through your approach OUT LOUD. (4) Code it. (5) Test with edge cases. (6) Discuss complexity.
+> "Let me make sure I understand the requirements... I'd approach this by... Let me start with the core logic, then handle edge cases..."
+
+---
+
+**9. "What happens if your pipeline is late and the dashboard shows stale data?"**
+> **Answer**: "Immediate steps: (1) Check monitoring dashboard -- which step failed? (2) Is it recoverable? If Lambda timeout, increase memory and re-trigger. If data quality issue, check dead letter queue. (3) Communicate: notify stakeholders with ETA. 'P&L dashboard will be 30 minutes late due to upstream delay.' (4) Post-fix: update SLA monitoring to alert BEFORE the SLA is missed, not after."
+
+---
+
+**10. "Design a data pipeline for [vague requirement]."**
+> TRAP: Jumping straight to tools.
+> **Answer protocol**:
+> (1) **Clarify**: "What's the data volume? Latency requirement? Who consumes it?"
+> (2) **Requirements**: Batch or streaming? SLA? Data quality needs?
+> (3) **Architecture**: Draw the flow (source → ingestion → processing → serving → consumption).
+> (4) **Tool selection**: THEN pick tools with justification.
+> (5) **Trade-offs**: "I chose X over Y because..."
+> (6) **Monitoring**: "I'd monitor with..."
+> Never say "I'd use Kafka" without first asking if it's streaming or batch.
+
+---
+
+**11. "What's a project you're NOT proud of?"**
+> **Answer**: "Early in my career, I wrote a data pipeline that worked but was brittle -- no tests, no monitoring, manual re-runs on failure. When an upstream schema changed, the pipeline silently loaded corrupt data for 3 days before anyone noticed. That experience is why my Healthcare project has 141 tests and why every pipeline I build now has data quality checks, dead letter queues, and automated alerting. I learned that 'it works' and 'it's production-ready' are very different things."
+
+---
+
+**12. "Do you prefer working alone or in a team?"**
+> **Answer**: "Both, depending on the phase. I prefer working alone for deep technical work -- writing Spark jobs, debugging performance, designing schemas. I prefer team collaboration for architecture decisions, code reviews, and cross-system dependencies. At Nomura, the DRT timestamp issue was only solved through cross-team collaboration. The best engineers switch between solo and collaborative modes."
+
+---
+
+**13. "What would you do in the first 30 days at our company?"**
+> **Answer**: "Week 1: Understand the data architecture -- what systems produce data, where it flows, who consumes it. Read existing pipeline code. Meet the team. Week 2-3: Take on a small ticket to learn the codebase hands-on. Set up local development. Ask lots of questions. Week 4: Identify one improvement (performance, monitoring, documentation) and propose it. I'm not trying to change everything -- I'm trying to understand everything first."
+
+---
+
+**14. "What questions do you have about this role?"**
+> See Part 32 below.
+
+---
+
+**15. "Where do you see yourself in 5 years?"**
+> **Answer**: "In 5 years, I want to be designing data architectures, not just implementing them. I want to be the person who says 'here's why we should use Delta Lake instead of raw Parquet' or 'here's the migration plan from on-prem to cloud.' That means growing from a data engineer who writes excellent pipelines to a senior/staff engineer who shapes the platform strategy. This role is the next step on that path."
+
+---
+
+## PART 32: QUESTIONS TO ASK THE INTERVIEWER
+
+> Asking smart questions shows you're evaluating THEM too. Pick 3-4 from this list.
+
+---
+
+### Technical Questions (Ask the hiring manager or tech lead)
+
+**1.** "What does the current data stack look like? What are you considering changing?"
+> Shows you're thinking about architecture evolution, not just current state.
+
+**2.** "How many data engineers are on the team, and what does ownership look like?"
+> Reveals if you'll own pipelines end-to-end or just implement tickets.
+
+**3.** "What's the biggest data engineering challenge you're facing right now?"
+> Shows you want to contribute to real problems, not just join.
+
+**4.** "How do you handle data quality? Is there an established framework or is it ad-hoc?"
+> Shows production maturity awareness. Most companies struggle with this.
+
+**5.** "What does the on-call rotation look like for data pipelines?"
+> Practical question that shows you've been on-call before.
+
+### Culture & Growth Questions (Ask HR or hiring manager)
+
+**6.** "How does a data engineer grow from mid to senior here? What does the career ladder look like?"
+> Shows long-term thinking.
+
+**7.** "What's the balance between building new pipelines vs maintaining existing ones?"
+> Reveals if you'll be innovating or firefighting.
+
+**8.** "How does the data engineering team interact with data science and analytics?"
+> Shows you understand the broader data org.
+
+**9.** "What's the deployment process? CI/CD, code review, staging environments?"
+> Shows you care about engineering practices, not just coding.
+
+**10.** "Can you tell me about a recent project the team shipped that you're proud of?"
+> Flips the interview. If they struggle to answer, it's a red flag.
