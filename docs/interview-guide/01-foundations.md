@@ -3504,3 +3504,206 @@ SELECT salary * 12 AS annual FROM employees ORDER BY annual DESC;
 ```
 
 **Memory trick:** "**F**red **W**ants **G**ood **H**ot **S**oup **O**rdered **L**ast" = FROM WHERE GROUP HAVING SELECT ORDER LIMIT
+
+---
+
+## PART 24: AZURE DATA ENGINEERING
+
+> Many companies use Azure instead of AWS. Know the service mappings.
+
+### Azure Services Mapped to AWS (What You Already Know)
+
+| AWS Service | Azure Equivalent | What it does | Your bridge |
+|---|---|---|---|
+| **S3** | **Azure Blob / ADLS Gen2** | Object/file storage | "Same as S3 but with hierarchical namespace" |
+| **Lambda** | **Azure Functions** | Serverless compute | "Same event-driven model as Lambda" |
+| **Step Functions** | **Azure Data Factory (ADF)** | Workflow orchestration | "ADF is like Step Functions + Glue combined" |
+| **EMR** | **Azure HDInsight / Synapse Spark** | Managed Spark | "Same Spark engine, different management UI" |
+| **Glue** | **Azure Data Factory** | Serverless ETL | "ADF handles both orchestration and ETL" |
+| **Redshift** | **Azure Synapse Analytics** | Data warehouse | "Synapse = Redshift equivalent with Spark built in" |
+| **Kinesis** | **Azure Event Hubs** | Real-time streaming | "Same as Kinesis, Kafka-compatible API" |
+| **Athena** | **Azure Synapse Serverless SQL** | Serverless SQL on files | "Query Parquet files without a cluster" |
+| **CloudWatch** | **Azure Monitor** | Monitoring/logging | "Same observability model" |
+| **IAM** | **Azure Active Directory (AAD)** | Identity management | "RBAC + service principals" |
+
+### Azure-Specific Interview Questions
+
+**Q: "What is ADLS Gen2?"**
+> "Azure Data Lake Storage Gen2. It's Blob Storage with a hierarchical namespace (real directories, not just prefixes like S3). This enables atomic directory operations, better Spark performance (file listing is faster), and fine-grained POSIX-style ACLs. It's the standard storage for Azure data lakes."
+
+**Q: "What is Azure Data Factory?"**
+> "ADF is Azure's orchestration AND ETL tool. It combines what AWS does with Step Functions (orchestration) and Glue (data movement). It has visual pipeline designer, 90+ built-in connectors (Salesforce, SAP, SQL Server), and native integration with Synapse and Databricks."
+
+**Q: "Synapse vs Databricks on Azure?"**
+
+| | Azure Synapse | Databricks on Azure |
+|---|---|---|
+| **Best for** | SQL-heavy analytics, BI | Spark-heavy processing, ML |
+| **SQL engine** | Dedicated SQL pools (MPP) | Spark SQL |
+| **Integration** | Tight with Power BI, ADF | Better notebook experience |
+| **Cost model** | DWU-based (can be expensive) | DBU-based (pay per compute) |
+| **Your bridge** | "Like Snowflake + Spark in one" | "Managed Spark + Delta Lake" |
+
+**Your bridge answer:**
+> "I haven't used Azure directly, but every Azure service maps 1:1 to an AWS service I've used. ADLS Gen2 = S3 with hierarchical namespace. ADF = Step Functions + Glue. Synapse = Redshift with Spark. The data engineering principles -- partitioning, Delta Lake, Airflow orchestration, idempotent pipelines -- are identical across clouds. I'd be productive on Azure within a week."
+
+---
+
+## PART 25: DATABRICKS DATA ENGINEERING
+
+> Databricks is the #1 platform companies hire DEs for. Know it cold.
+
+### What is Databricks?
+
+**In one sentence:** Databricks is a managed platform that wraps Apache Spark + Delta Lake + MLflow with a notebook UI, auto-scaling clusters, and Unity Catalog for governance.
+
+**Analogy:** If Spark is a car engine, Databricks is the entire car -- engine (Spark) + dashboard (notebooks) + GPS (Unity Catalog) + mechanic (managed clusters).
+
+### Databricks Concepts Every DE Must Know
+
+| Concept | What it is | Your bridge |
+|---|---|---|
+| **Workspace** | Shared environment with notebooks, repos, jobs | "Like Jupyter Hub but for teams" |
+| **Cluster** | Managed Spark cluster (auto-terminates, auto-scales) | "Like EMR but zero-config" |
+| **Notebook** | Interactive code editor (Python, SQL, Scala, R) | "Like Jupyter notebooks" |
+| **Job** | Scheduled notebook/pipeline execution | "Like an Airflow DAG" |
+| **Delta Live Tables (DLT)** | Declarative ETL framework | "You define WHAT, Databricks handles HOW" |
+| **Unity Catalog** | Centralized governance (access control, lineage) | "Like AWS Lake Formation" |
+| **Medallion Architecture** | Bronze -> Silver -> Gold pattern | "ALREADY USE THIS in Nova" |
+| **Photon** | C++ execution engine (faster than JVM Spark) | "2-8x faster, zero code changes" |
+| **DBFS** | Databricks File System (abstraction over cloud storage) | "Mount point for S3/ADLS/GCS" |
+| **Repos** | Git integration in Databricks | "Version control for notebooks" |
+
+### Databricks Interview Questions
+
+**Q: "What are Delta Live Tables (DLT)?"**
+> "DLT is a declarative ETL framework. Instead of writing imperative Spark code ('read this, transform that, write here'), you declare the table definition and quality expectations. Databricks handles the orchestration, incremental processing, and error handling automatically."
+
+```python
+# Traditional Spark ETL (imperative):
+df = spark.read.parquet("raw/events/")
+df_clean = df.filter(col("event_id").isNotNull()).dropDuplicates(["event_id"])
+df_clean.write.format("delta").mode("overwrite").save("silver/events/")
+
+# Delta Live Tables (declarative):
+@dlt.table
+@dlt.expect_or_drop("valid_event_id", "event_id IS NOT NULL")
+def silver_events():
+    return dlt.read("bronze_events").dropDuplicates(["event_id"])
+# Databricks handles: scheduling, incremental, retries, lineage
+```
+
+**Q: "What is Unity Catalog?"**
+> "Centralized governance for all data assets across workspaces. It provides: (1) fine-grained access control (column-level, row-level), (2) data lineage (which tables feed which), (3) data discovery (search for tables across the organization), (4) audit logging (who accessed what). It's Databricks' answer to 'who owns this data and who can see it?'"
+
+**Q: "What is Photon?"**
+> "A C++ vectorized execution engine that replaces the JVM for Spark SQL. It's 2-8x faster for scan-heavy queries, with zero code changes. You just enable it on the cluster. It's especially fast for Delta Lake operations (MERGE, OPTIMIZE, Z-ORDER)."
+
+**Your bridge answer:**
+> "I already use the core technologies that Databricks wraps: PySpark, Delta Lake, and the Medallion architecture. My Nova project implements Bronze->Silver->Gold with Delta MERGE and OPTIMIZE -- these are the same primitives Databricks uses. The Databricks-specific additions (notebooks, DLT, Unity Catalog, Photon) are management layers on top of what I already know. I'd be productive in Databricks within days."
+
+---
+
+## PART 26: ON-PREMISES DATA ENGINEERING
+
+> Some companies (finance, healthcare, government) run everything on-prem. This is your Nomura experience.
+
+### On-Prem vs Cloud
+
+| | On-Premises | Cloud |
+|---|---|---|
+| **Hardware** | You own and maintain servers | Cloud provider manages |
+| **Scaling** | Buy more servers (weeks/months) | Spin up instances (minutes) |
+| **Cost model** | CapEx (buy upfront) | OpEx (pay as you go) |
+| **Control** | Full control over hardware and network | Limited to provider's offerings |
+| **Security** | Data never leaves your building | Data in provider's data center |
+| **Your experience** | Nomura: Hadoop/Spark on bare metal | Nissan: AWS Lambda + Snowflake |
+
+### On-Prem Stack Mapping
+
+| On-Prem Tool | Cloud Equivalent | Your experience |
+|---|---|---|
+| **HDFS** | S3 / ADLS Gen2 | Nomura: HDFS for trade data |
+| **YARN** | K8s / EMR | Nomura: YARN resource management |
+| **Hadoop MapReduce** | Spark on EMR/Databricks | Legacy, migrated to Spark |
+| **Oozie** | Airflow / Step Functions | Legacy orchestration |
+| **Hive** | Athena / Synapse Serverless | SQL on Hadoop |
+| **HBase** | DynamoDB / Cosmos DB | NoSQL on Hadoop |
+| **Kafka (on-prem)** | Confluent Cloud / MSK | Same Kafka, self-managed |
+| **MinIO** | S3 | S3-compatible on-prem storage |
+
+### On-Prem Interview Questions
+
+**Q: "You migrated from on-prem to cloud. Walk me through it."**
+> "At Nomura, I migrated Spark from YARN to Kubernetes:
+> 1. **Storage migration**: HDFS -> MinIO (S3-compatible). Changed `hdfs://` paths to `s3a://` in Spark configs.
+> 2. **Compute migration**: YARN -> K8s. Packaged Spark jobs as Docker images. Translated YARN memory configs to K8s resource requests/limits.
+> 3. **Orchestration**: Kept Airflow (cloud-agnostic). Updated connection configs for new storage endpoints.
+> 4. **Testing**: Ran parallel pipelines (YARN + K8s) for 2 weeks. Compared outputs. Validated within 0.01% tolerance.
+> 5. **Cutover**: Decommissioned YARN cluster after 1 month of stable K8s operation."
+
+**Q: "Why would a company stay on-prem?"**
+> "Three reasons: (1) **Regulatory**: Healthcare (HIPAA) and finance (PCI-DSS, SOX) may require data to stay on-premise. (2) **Latency**: Trading systems need microsecond latency -- can't afford network hops to cloud. (3) **Cost at scale**: If you run 24/7 at massive scale, owning hardware can be cheaper than cloud. The trend is hybrid: sensitive data on-prem, analytics in cloud."
+
+**Q: "What's the biggest challenge of on-prem?"**
+> "Capacity planning. In cloud, you scale in minutes. On-prem, ordering and setting up new servers takes weeks. If you underestimate Black Friday traffic, you can't spin up 100 extra nodes. I mitigate this with: (1) auto-scaling within existing capacity, (2) 30% headroom in provisioning, (3) workload prioritization (kill non-critical jobs to free resources for critical ones)."
+
+**Memory trick:** On-prem = **O**wn everything, **N**o elastic scaling, **P**hysical hardware, **R**egulatory compliance, **E**xpensive upfront, **M**ore control.
+
+---
+
+## PART 27: SNOWFLAKE DE (Deep Interview Coverage)
+
+> You used Snowflake at Nissan. Here are the questions that go beyond basics.
+
+### Advanced Snowflake Questions
+
+**Q: "What are Snowflake Streams and Tasks?"**
+> "Streams track changes (INSERT/UPDATE/DELETE) on a table -- like CDC. Tasks are scheduled SQL jobs. Together, they create an incremental pipeline without Airflow:
+> 
+> Stream watches `raw_trades` table -> detects new inserts -> Task runs every 15 minutes -> processes new rows -> writes to `clean_trades`.
+> 
+> This is Snowflake-native orchestration. For simple pipelines, it replaces Airflow entirely."
+
+```sql
+-- Create a stream to track changes on raw_trades
+CREATE STREAM raw_trades_stream ON TABLE raw_trades;
+
+-- Create a task that runs every 15 minutes
+CREATE TASK process_trades
+  WAREHOUSE = 'ETL_WH'
+  SCHEDULE = '15 MINUTE'
+WHEN SYSTEM$STREAM_HAS_DATA('raw_trades_stream')
+AS
+  INSERT INTO clean_trades
+  SELECT trade_id, instrument_id, amount, trade_date
+  FROM raw_trades_stream
+  WHERE amount > 0 AND trade_id IS NOT NULL;
+
+-- Start the task
+ALTER TASK process_trades RESUME;
+```
+
+**Q: "What's the difference between transient and permanent tables?"**
+> "Permanent tables have Fail-Safe (7 days of data protection after Time Travel expires). Transient tables skip Fail-Safe. Use transient for staging/temp tables -- saves storage cost. Permanent for production tables -- data protection."
+
+**Q: "How do you load semi-structured data (JSON) into Snowflake?"**
+```sql
+-- Load raw JSON into a VARIANT column
+CREATE TABLE raw_events (data VARIANT);
+
+COPY INTO raw_events
+FROM @my_s3_stage/events/
+FILE_FORMAT = (TYPE = 'JSON');
+
+-- Query nested JSON with dot notation
+SELECT
+    data:user_id::STRING AS user_id,
+    data:event_type::STRING AS event_type,
+    data:metadata.browser::STRING AS browser,
+    data:timestamp::TIMESTAMP AS event_time
+FROM raw_events;
+```
+
+**Q: "What's Snowflake's query result caching?"**
+> "Snowflake caches query results for 24 hours. If you run the same query twice, the second execution returns instantly from cache (no warehouse compute needed). This means: (1) dashboards that refresh every hour don't re-query data, (2) you pay ZERO compute for repeated queries. Cache invalidates when underlying data changes."
