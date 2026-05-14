@@ -1486,6 +1486,21 @@ with DAG(
 **How to bridge AutoSys to Airflow:**
 > "At TCS I used AutoSys for job scheduling -- same concept as Airflow. The difference is Airflow defines DAGs in Python code (version-controlled, testable), while AutoSys uses JIL configuration files. I managed 50+ daily job chains in AutoSys with dependency management and failure recovery. Airflow is the same workflow orchestration paradigm -- I'd ramp up in days, not weeks."
 
+**Airflow Counter-Question Drill-Down (they go 5 levels deep):**
+
+**Level 3:** "How do you pass data between tasks?"
+> "XComs (cross-communication). Task A pushes a value, Task B pulls it. But XComs are for SMALL data only (stored in Airflow's metadata DB). For large data, Task A writes to S3, pushes the S3 path via XCom, Task B reads from S3."
+
+**Level 4:** "Your DAG has 50 tasks. One fails at 3 AM. What happens?"
+> "Airflow retries based on default_args (e.g., 3 retries, 5-min delay). If all retries fail, on_failure_callback triggers (Slack/PagerDuty alert). Downstream tasks are skipped (upstream_failed state). I fix the issue, then manually trigger the failed task from the Airflow UI -- only that task re-runs, not the whole DAG."
+
+**Level 5:** "How do you test DAGs before deploying to production?"
+> "Three layers: (1) Unit test the Python functions that tasks call. (2) DAG integrity test -- import the DAG and verify it has no import errors and correct dependencies. (3) Run against a staging environment with test data. I never deploy untested DAGs to production."
+
+**Why Airflow not Cron?** Cron has no dependency management, no retry logic, no monitoring UI, no backfill. For a single script, cron is fine. For 50 interconnected tasks with failure handling, Airflow.
+
+**Memory trick:** Airflow = **A**utomates **I**nterdependent **R**unnable **F**lows, **L**ogs **O**utput, **W**atches failures
+
 ---
 
 ### What is dbt (data build tool)?
@@ -2005,6 +2020,21 @@ Data Pipeline Output
 **Your Nova implementation:**
 > "In Nova, user behavior events (views, clicks, ratings) flow through Kafka topics. Spark Structured Streaming consumes them in micro-batches and writes to Delta Lake Bronze tables. We use at-least-once delivery with deduplication at the Silver layer -- Delta Lake MERGE on event_id ensures no duplicates even if Kafka replays."
 
+**Kafka Counter-Question Drill-Down:**
+
+**Level 3:** "Explain partitions and consumer groups."
+> "A topic is split into partitions for parallelism. Within a consumer group, each partition is read by exactly one consumer. So 10 partitions + 10 consumers = max parallelism. Add an 11th consumer? It sits idle."
+
+**Level 4:** "What happens if a consumer crashes mid-processing?"
+> "Depends on commit strategy. Auto-commit: might lose events (at-most-once). Manual commit after processing: might reprocess events (at-least-once). For exactly-once: use Kafka transactions + idempotent producer + consumer offset management."
+
+**Level 5:** "How do you guarantee exactly-once end-to-end?"
+> "Kafka alone gives exactly-once within Kafka. For end-to-end, the consumer must also be idempotent. In Nova, we use Delta Lake MERGE as the consumer -- even if Kafka replays events, the MERGE on event_id prevents duplicates."
+
+**Why Kafka not RabbitMQ?** RabbitMQ deletes messages after consumption. Kafka retains. RabbitMQ is for task queues (send email, process image), Kafka for event streaming (replay, fan-out, audit trail).
+
+**Memory trick:** Kafka = **K**eeps **A**ll **F**acts, **K**onsumers **A**ccess anytime
+
 ---
 
 ### Docker and Kubernetes (What DE Needs to Know)
@@ -2385,6 +2415,22 @@ filtered_df.count()    # Trigger the cache
 # Always unpersist when done:
 filtered_df.unpersist()
 ```
+
+**Spark Counter-Question Drill-Down:**
+
+**Level 4:** "How do you minimize shuffles?"
+> "Three ways: (1) Broadcast joins -- send the small table to every executor, no shuffle needed. (2) Pre-partition data by the join key. (3) Use coalesce() instead of repartition() when reducing partitions -- coalesce avoids a full shuffle."
+
+**Level 5:** "What if the 'small' table is 500MB? Is broadcast still viable?"
+> "Default broadcast threshold is 10MB, tunable to ~100MB safely. At 500MB, broadcasting to 50 executors means 25GB total memory. I'd either: (1) filter the dimension table first to reduce size, (2) use a sort-merge join with AQE enabled for automatic skew handling, or (3) bucket both tables by the join key so they're pre-co-located."
+
+**Level 5 follow-up:** "What happens when you call .collect() on a 100GB DataFrame?"
+> "It tries to pull all 100GB to the driver's memory. The driver has maybe 4-8GB. Result: OutOfMemoryError. Never .collect() large DataFrames. Use .take(10) to sample, .write() to persist results, or aggregate first and THEN collect the small result."
+
+**Level 5 follow-up:** "Explain transformations vs actions."
+> "Transformations are LAZY -- they build a plan but don't execute (filter, select, join, groupBy). Actions TRIGGER execution (count, collect, write, show). Spark waits until an action to optimize and run the full chain. This lazy evaluation lets Catalyst optimize the entire pipeline, not just individual steps."
+
+**Memory trick:** SPARK = **S**tages **P**artition **A**cross, **R**eading in **K**lusters
 
 ---
 
@@ -2816,6 +2862,17 @@ SELECT * FROM trades AT (TIMESTAMP => '2024-01-01 06:00:00');
 -- Restore a dropped table
 UNDROP TABLE trades;
 ```
+
+**Snowflake Counter-Question Drill-Down:**
+
+**Level 5:** "How do you optimize a slow Snowflake query?"
+> "Step 1: Check the query profile (Snowflake UI). Look for: (a) full table scans (add clustering key or WHERE clause), (b) spilling to storage (increase warehouse size), (c) large joins (filter before joining), (d) high remote I/O (data not pruned). Step 2: EXPLAIN the query. Step 3: Consider materializing complex CTEs as temp tables."
+
+**Why Snowflake not Redshift?** Snowflake separates compute/storage (scale independently), handles concurrency natively (separate warehouses), and is multi-cloud. Redshift couples compute/storage (older model) and requires manual concurrency management.
+
+**Analogy:** Traditional warehouse (Redshift) = owning a factory (pay 24/7). Snowflake = renting factory time by the hour. Need a bigger factory? Scale up for one hour, scale back down.
+
+**Memory trick:** Snowflake = **S**eparated **N**odes, **O**n-demand **W**arehouses, **F**ast **L**oads, **A**uto **K**lustering, **E**lastic
 > "I used Time Travel at Nissan for debugging. When a data issue was reported, I'd compare current data with yesterday's snapshot to find when the problem was introduced."
 
 ---
