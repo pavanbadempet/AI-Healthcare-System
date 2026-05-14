@@ -3177,3 +3177,330 @@ git rebase -i HEAD~3           # Clean up last 3 commits before push
 > 6. **Optimize file formats**: Ensure Parquet with Snappy compression (not CSV/JSON)
 > 7. **Partition pruning**: Make sure queries are leveraging partition filters
 > 8. **Schedule off-peak**: Run big jobs during off-peak hours (cheaper spot prices)
+
+---
+
+## PART 20: SQL DEEP CONCEPTS (Frequently Asked, Often Missed)
+
+### Indexing (Clustered vs Non-Clustered)
+
+**What is an index?** A data structure that speeds up lookups, like a book's index. Without it, the database scans every row (full table scan).
+
+| Type | What it does | Analogy | When to use |
+|---|---|---|---|
+| **Clustered** | Physically reorders table rows by the index column | A phone book (sorted by last name) | Primary key, columns used in range queries (date ranges) |
+| **Non-clustered** | Creates a separate lookup table pointing to rows | A book's back-of-book index | Columns used in WHERE/JOIN but not the primary sort |
+| **Composite** | Index on multiple columns | Phone book sorted by (last name, first name) | Multi-column WHERE clauses |
+| **Covering** | Index includes all columns needed by the query | Index has the answer, no need to read the table | Frequently-run queries with few columns |
+
+```sql
+-- Create an index on trade_date for fast date range queries
+CREATE INDEX idx_trades_date ON trades (trade_date);
+
+-- Composite index for queries that filter by BOTH columns
+CREATE INDEX idx_trades_date_inst ON trades (trade_date, instrument_id);
+
+-- Check if your query uses the index
+EXPLAIN SELECT * FROM trades WHERE trade_date = '2024-01-01';
+-- Look for "Index Scan" (good) vs "Seq Scan" (bad - full table scan)
+```
+
+**Counter-questions:**
+
+**"When should you NOT add an index?"**
+> "Indexes slow down writes (INSERT/UPDATE/DELETE must update the index too). Don't index: columns rarely queried, low-cardinality columns (boolean has only 2 values), or tables that are write-heavy with rare reads."
+
+**"What's the difference between clustered and non-clustered?"**
+> "A table can have only ONE clustered index (because data can only be physically sorted one way). It can have MANY non-clustered indexes. Clustered is faster for range queries (sequential disk reads). Non-clustered is faster for point lookups."
+
+**Analogy:** Clustered = a dictionary (words sorted A-Z, the data IS the index). Non-clustered = a book index at the back (separate from the content, points to page numbers).
+
+**Memory trick:** **C**lustered = **C**ontent sorted. **N**on-clustered = **N**ote pointing to content.
+
+### WHERE vs HAVING (Asked in Every SQL Screen)
+
+```sql
+-- WHERE filters BEFORE grouping (filters individual rows)
+SELECT department, AVG(salary)
+FROM employees
+WHERE hire_date > '2020-01-01'    -- Filter rows BEFORE aggregation
+GROUP BY department;
+
+-- HAVING filters AFTER grouping (filters aggregated results)
+SELECT department, AVG(salary) AS avg_sal
+FROM employees
+GROUP BY department
+HAVING AVG(salary) > 80000;       -- Filter groups AFTER aggregation
+```
+
+**Rule:** Use WHERE for columns. Use HAVING for aggregates (SUM, AVG, COUNT).
+
+**Counter-question:** "Can you use WHERE instead of HAVING?"
+> "No. WHERE runs before GROUP BY, so it can't reference aggregated values. HAVING runs after GROUP BY, so it CAN filter on aggregates. Common mistake: `WHERE COUNT(*) > 5` -- this errors. Must be `HAVING COUNT(*) > 5`."
+
+**Memory trick:** **W**HERE = **W**hich rows to include. **H**AVING = **H**ow many/much after grouping.
+
+### NULL Handling (Causes More Bugs Than Anything)
+
+```sql
+-- NULL is NOT equal to anything, not even NULL
+SELECT * FROM orders WHERE status = NULL;       -- WRONG: returns 0 rows
+SELECT * FROM orders WHERE status IS NULL;      -- CORRECT
+
+-- NULL in aggregations: ignored by SUM, COUNT(col), AVG
+SELECT AVG(salary) FROM employees;              -- Ignores NULLs
+SELECT COUNT(salary) FROM employees;            -- Counts non-NULL only
+SELECT COUNT(*) FROM employees;                 -- Counts ALL rows including NULL
+
+-- COALESCE: replace NULL with a default value
+SELECT COALESCE(phone, email, 'no contact') AS contact FROM customers;
+-- Returns phone if not NULL, else email, else 'no contact'
+
+-- NVL (Oracle) / IFNULL (MySQL) / ISNULL (SQL Server):
+SELECT ISNULL(salary, 0) FROM employees;        -- Replace NULL salary with 0
+```
+
+**Counter-question:** "What happens when you JOIN on a NULL key?"
+> "NULL = NULL evaluates to UNKNOWN (not TRUE). So rows with NULL keys NEVER match in a JOIN. All NULLs go to the same partition in Spark, causing massive data skew. Fix: filter out NULLs before joining, or use COALESCE to replace NULLs with a default value."
+
+**Memory trick:** NULL = **N**ot **U**sual **L**ogic **L**ength -- nothing equals NULL, not even NULL.
+
+### Normalization (1NF through BCNF)
+
+| Form | Rule | Example violation | Fix |
+|---|---|---|---|
+| **1NF** | Every cell has a single value (no arrays) | tags = "python, spark, sql" | Split into a separate tags table |
+| **2NF** | 1NF + no partial dependencies (non-key depends on FULL primary key) | In (order_id, product_id) -> customer_name depends only on order_id | Move customer_name to orders table |
+| **3NF** | 2NF + no transitive dependencies (non-key depends on another non-key) | zip_code -> city (city depends on zip, not on PK) | Move city to a zip_codes table |
+| **BCNF** | 3NF + every determinant is a candidate key | Rare edge case | Usually 3NF is sufficient |
+
+**When to normalize (OLTP):** Transaction systems (e-commerce orders, user accounts). Reduces data redundancy, ensures consistency.
+
+**When to denormalize (OLAP):** Analytics systems (dashboards, reports). Fewer joins = faster queries. Trade storage for speed.
+
+**Counter-question:** "Why do we denormalize for analytics?"
+> "A normalized database with 10 tables requires 10 JOINs for one dashboard query. That's slow. A denormalized star schema puts everything in 2-3 tables with 1-2 JOINs. We sacrifice storage (repeating 'customer_name' in every row) for query speed. Storage is cheap; analyst time is expensive."
+
+**Analogy:** Normalization = organizing your closet by category (shirts here, pants there, socks in a drawer). Efficient storage, slower to get dressed. Denormalization = laying out tomorrow's outfit on a chair. Redundant, but fast in the morning.
+
+**Memory trick:** 1NF = **1** value per cell. 2NF = **2**nd: no **p**artial deps. 3NF = **3**rd: no **t**ransitive deps.
+
+---
+
+## PART 21: SPARK CONCEPTS OFTEN MISSED
+
+### Narrow vs Wide Transformations
+
+| | Narrow | Wide |
+|---|---|---|
+| **Data movement** | Within same partition | Across partitions (SHUFFLE) |
+| **Examples** | map, filter, select, withColumn | groupBy, join, repartition, orderBy |
+| **Cost** | Cheap (no network) | Expensive (network + disk I/O) |
+| **Stage boundary?** | No | Yes (creates new stage) |
+
+```python
+# Narrow: each partition processes independently, no data moves
+df.filter(col("amount") > 0)      # Narrow -- stays in same partition
+df.select("id", "amount")          # Narrow
+df.withColumn("tax", col("amount") * 0.1)  # Narrow
+
+# Wide: data must move between partitions
+df.groupBy("category").sum()       # Wide -- all same-category rows must co-locate
+df.join(other_df, "key")           # Wide -- matching keys must co-locate
+df.orderBy("amount")               # Wide -- global sort requires all data to move
+```
+
+**Counter-question:** "Why does this matter?"
+> "Narrow transformations can be pipelined (chained without writing to disk). Wide transformations force a shuffle -- disk write, network transfer, disk read. A pipeline with 5 narrows and 1 wide has 2 stages. A pipeline with 5 wides has 6 stages and 5 shuffles. Minimizing wide transformations = faster jobs."
+
+**Analogy:** Narrow = each worker does their own task at their own desk. Wide = everyone has to get up, walk to a different room, and reorganize.
+
+### repartition() vs coalesce()
+
+| | repartition() | coalesce() |
+|---|---|---|
+| **Can increase partitions?** | Yes | No (only decrease) |
+| **Full shuffle?** | Yes (expensive) | No (merges adjacent partitions) |
+| **Use when** | Need specific partition count or partition by column | Reducing partitions before write |
+
+```python
+# BAD: Full shuffle just to reduce partitions
+df.repartition(10).write.parquet("output/")       # Shuffles ALL data
+
+# GOOD: Merge adjacent partitions, no shuffle
+df.coalesce(10).write.parquet("output/")           # Just merges, no shuffle
+
+# WHEN to use repartition:
+df.repartition("customer_id")                      # Partition BY a column for co-located joins
+df.repartition(200)                                # When you need MORE partitions (can't coalesce UP)
+```
+
+**Counter-question:** "When would coalesce cause problems?"
+> "If you coalesce from 1000 partitions to 10, each output partition holds 100x more data. This might cause OOM if partitions become too large. Also, coalesce creates uneven partitions (it merges existing ones, not rebalances). If evenness matters, use repartition."
+
+**Memory trick:** **C**oalesce = **C**heap (no shuffle). **R**epartition = **R**edistribute (full shuffle).
+
+### Spark SQL Query Optimization
+
+**Q: "Your Spark SQL query is slow. How do you debug it?"**
+
+> Step-by-step:
+> 1. **Check the query plan**: `df.explain(True)` -- look for BroadcastHashJoin (good) vs SortMergeJoin (potentially slow)
+> 2. **Check the Spark UI**: Stages tab -- which stage takes longest? Is it a shuffle?
+> 3. **Check partition sizes**: `df.rdd.getNumPartitions()` -- too few partitions = too much data per task. Too many = overhead.
+> 4. **Check for data skew**: In Spark UI, look at task durations. If one task takes 10x longer, you have skew.
+> 5. **Check for full table scans**: Is predicate pushdown working? Are filters pushed to the Parquet/Delta level?
+
+```python
+# See the full query plan
+df.explain("formatted")
+
+# Good plan:
+# +- BroadcastHashJoin [id], [id]    <-- Small table broadcast, no shuffle
+#    +- FileScan parquet [trade_date = 2024-01-01]  <-- Predicate pushdown
+
+# Bad plan:
+# +- SortMergeJoin [id], [id]        <-- Full shuffle on both sides
+#    +- FileScan parquet [no pushdown filters]  <-- Reading everything
+```
+
+---
+
+## PART 22: BACK-OF-ENVELOPE ESTIMATION (System Design Must-Know)
+
+> In system design rounds, they expect you to do quick math to justify your architecture choices.
+
+### Numbers Every DE Should Know
+
+| Metric | Value | Use for |
+|---|---|---|
+| 1 KB | ~1 short text record | Estimating message sizes |
+| 1 MB | ~1000 records | Small file size |
+| 1 GB | ~1M records (1KB each) | Medium dataset |
+| 1 TB | ~1B records | Large dataset |
+| 1 Parquet row (avg) | ~100-500 bytes | Estimating storage |
+| S3 read latency | ~10-50ms per file | Why too many small files is bad |
+| Kafka throughput | ~1M messages/sec per broker | Sizing Kafka clusters |
+| Spark task | processes ~128MB per task | Sizing partition count |
+| Network throughput | ~1 Gbps (125 MB/s) per node | Shuffle estimation |
+
+### Example Estimation: "How much storage for 1 year of clickstream data?"
+
+```
+Given: 10K events/second peak, 100 bytes per event average
+
+Daily volume: 10,000 events/sec x 86,400 sec/day = 864M events/day
+Daily storage (raw): 864M x 100 bytes = 86.4 GB/day
+Daily storage (Parquet compressed ~5x): 86.4 / 5 = ~17 GB/day
+Yearly storage: 17 GB x 365 = ~6.2 TB/year
+
+With 3 copies (Bronze + Silver + Gold): ~18 TB/year
+With S3 Standard pricing ($0.023/GB): ~$400/month
+
+"So we need about 18TB/year, costing roughly $400/month in S3. This is manageable -- no need for special cost optimization at this scale."
+```
+
+### Example Estimation: "How many Spark executors for a 1TB join?"
+
+```
+Data: 1TB
+Target partition size: 200MB
+Partitions needed: 1TB / 200MB = 5,000 partitions
+
+Executor config: 4 cores each
+Tasks per executor: 4 (one per core)
+Executors needed: 5,000 / 4 = 1,250 (but tasks run in waves)
+
+With 50 executors: 5,000 / (50 x 4) = 25 waves
+Time per wave: ~30 seconds (read + transform)
+Total: 25 x 30s = ~12.5 minutes
+
+"A 1TB join with 50 executors takes roughly 12 minutes. If SLA is 30 minutes, 50 executors is sufficient."
+```
+
+---
+
+## PART 23: PATTERNS OFTEN MISSED
+
+### Write-Audit-Publish (WAP) Pattern
+
+**What it is:** Don't write data directly to production tables. Write to staging, audit quality, THEN publish to production.
+
+```
+Pipeline Output
+    |
+[WRITE to staging table]    -- Isolated, not visible to users
+    |
+[AUDIT quality checks]     -- Row count, nulls, distributions, freshness
+    |
+    +--- PASS --> [PUBLISH to production]  (atomic swap or MERGE)
+    |
+    +--- FAIL --> [ALERT + QUARANTINE]     (production unchanged)
+```
+
+**Why it matters:** Without WAP, bad data goes directly to production dashboards. With WAP, production is NEVER corrupted -- the bad data stays in staging.
+
+**Your answer:** "In my Healthcare project, the prediction pipeline validates inputs before serving results. This is the same principle as WAP -- never expose unvalidated data to users."
+
+### Horizontal vs Vertical Scaling
+
+| | Vertical (Scale UP) | Horizontal (Scale OUT) |
+|---|---|---|
+| **How** | Bigger machine (more CPU/RAM) | More machines |
+| **Cost** | Gets expensive fast (16GB->128GB = 8x cost) | Linear (add more $200 nodes) |
+| **Limit** | Physical hardware limit | Theoretically unlimited |
+| **Complexity** | Simple (same code) | Complex (distributed systems) |
+| **Examples** | Bigger Snowflake warehouse | More Spark executors |
+| **Your experience** | "First attempt: bigger instance" | "Production: Spark cluster scales out" |
+
+**Counter-question:** "Which do you try first?"
+> "Vertical first. It's the cheapest and fastest fix. If a Spark job is slow, try doubling executor memory before adding more executors. If you're already at the maximum instance size or need fault tolerance, scale horizontally."
+
+**Analogy:** Vertical = getting a bigger truck. Horizontal = getting more trucks. At some point, you can't build a bigger truck.
+
+### OLTP vs OLAP (The Most Basic Question They'll Ask)
+
+| | OLTP | OLAP |
+|---|---|---|
+| **Purpose** | Run the business (transactions) | Analyze the business (reporting) |
+| **Operations** | Many small reads/writes | Few large reads |
+| **Schema** | Normalized (3NF) | Denormalized (Star schema) |
+| **Storage** | Row-oriented (PostgreSQL, MySQL) | Column-oriented (Snowflake, Parquet) |
+| **Latency** | Milliseconds | Seconds to minutes |
+| **Users** | Application users | Analysts, data scientists |
+| **Your experience** | Healthcare: SQLite stores user data | Nissan: Snowflake for reporting |
+
+**Counter-question:** "Can you use one system for both?"
+> "Not well. OLTP is optimized for writes (row storage, indexes on primary key). OLAP is optimized for reads (columnar storage, no write optimization). Trying to run analytics on an OLTP database kills performance for both workloads. That's why we extract data from OLTP systems and load it into OLAP systems."
+
+**Memory trick:** OL**T**P = **T**ransactions (write-heavy). OL**A**P = **A**nalytics (read-heavy).
+
+### SQL Execution Order (Why Your Query Doesn't Work)
+
+```sql
+-- You WRITE it in this order:
+SELECT department, COUNT(*) AS cnt    -- 5. Select
+FROM employees                         -- 1. From (which table?)
+WHERE salary > 50000                   -- 2. Where (filter rows)
+GROUP BY department                    -- 3. Group By (aggregate)
+HAVING COUNT(*) > 5                    -- 4. Having (filter groups)
+ORDER BY cnt DESC                      -- 6. Order By (sort)
+LIMIT 10;                              -- 7. Limit (top N)
+```
+
+**Execution order: FROM -> WHERE -> GROUP BY -> HAVING -> SELECT -> ORDER BY -> LIMIT**
+
+**Why this matters:** You can't use a column alias in WHERE (it doesn't exist yet). You CAN use it in ORDER BY (SELECT runs before ORDER BY).
+
+```sql
+-- WRONG: alias not available in WHERE
+SELECT salary * 12 AS annual FROM employees WHERE annual > 100000;
+
+-- CORRECT: use the expression
+SELECT salary * 12 AS annual FROM employees WHERE salary * 12 > 100000;
+
+-- CORRECT: use alias in ORDER BY (SELECT runs before ORDER BY)
+SELECT salary * 12 AS annual FROM employees ORDER BY annual DESC;
+```
+
+**Memory trick:** "**F**red **W**ants **G**ood **H**ot **S**oup **O**rdered **L**ast" = FROM WHERE GROUP HAVING SELECT ORDER LIMIT
