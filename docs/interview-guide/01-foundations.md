@@ -2479,3 +2479,284 @@ spark = SparkSession.builder \
     .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer") \
     .getOrCreate()
 ```
+
+---
+
+## PART 12: STATISTICS & ANALYTICS (For Data Analyst / Analytics Roles)
+
+> Every DA interview tests statistics. You don't need a PhD -- just these core concepts explained clearly.
+
+### Descriptive Statistics (Know These Cold)
+
+| Measure | What it tells you | When to use | Python |
+|---|---|---|---|
+| **Mean** | Average value | Symmetric data, no outliers | `df["col"].mean()` |
+| **Median** | Middle value (50th percentile) | Skewed data, has outliers | `df["col"].median()` |
+| **Mode** | Most frequent value | Categorical data | `df["col"].mode()` |
+| **Std Dev** | How spread out values are | Understanding variability | `df["col"].std()` |
+| **Variance** | Std dev squared | Statistical calculations | `df["col"].var()` |
+| **IQR** | P75 - P25 (middle 50% spread) | Outlier detection | `df["col"].quantile(0.75) - df["col"].quantile(0.25)` |
+
+**Q: "When do you use mean vs median?"**
+> "Mean for symmetric data (heights, test scores). Median for skewed data (salaries, house prices). Example: if 10 employees earn $50K and the CEO earns $5M, the mean salary is $500K (misleading), but the median is $50K (accurate). In data quality checks, I compare mean and median -- if they differ by >20%, the distribution is skewed and I investigate outliers."
+
+**Outlier Detection:**
+```python
+# IQR method (standard approach)
+Q1 = df["amount"].quantile(0.25)
+Q3 = df["amount"].quantile(0.75)
+IQR = Q3 - Q1
+lower = Q1 - 1.5 * IQR
+upper = Q3 + 1.5 * IQR
+outliers = df[(df["amount"] < lower) | (df["amount"] > upper)]
+```
+
+### Correlation (What Moves Together)
+
+| Value | Meaning | Example |
+|---|---|---|
+| **+1.0** | Perfect positive (both go up) | Height and weight |
+| **0.0** | No relationship | Shoe size and salary |
+| **-1.0** | Perfect negative (one up, other down) | Price and demand |
+
+```python
+# Correlation matrix
+df[["bmi", "age", "blood_pressure", "diabetes_risk"]].corr()
+
+# Your Healthcare project:
+# BMI and diabetes have correlation ~0.4 (moderate positive)
+# This is why BMI is a top feature in your XGBoost model
+```
+
+**Q: "Does correlation mean causation?"**
+> "No. Ice cream sales and drowning deaths are correlated (both increase in summer), but ice cream doesn't cause drowning. In my Healthcare project, BMI correlates with diabetes risk, but we say 'BMI is ASSOCIATED with higher risk,' not 'BMI CAUSES diabetes.' The model finds patterns, not causes."
+
+### A/B Testing (Every Company Asks This)
+
+**What is it?** Split users into two groups. Group A sees the current version. Group B sees a change. Measure which performs better.
+
+**The process:**
+```
+1. Hypothesis: "Changing the button color to green will increase clicks by 5%"
+2. Split: 50% users see red button (control), 50% see green (treatment)
+3. Metric: Click-through rate (CTR)
+4. Duration: Run for 2 weeks (enough data for statistical significance)
+5. Analyze: Is the difference real or just random noise?
+```
+
+**Statistical significance:**
+- **p-value < 0.05** = the result is statistically significant (not likely due to chance)
+- **p-value > 0.05** = no significant difference (could be random)
+- **Confidence interval** = range where the true value likely falls
+
+```python
+from scipy import stats
+
+# Two-sample t-test
+control_clicks = [12, 15, 14, 13, 16, ...]
+treatment_clicks = [18, 20, 17, 19, 21, ...]
+
+t_stat, p_value = stats.ttest_ind(control_clicks, treatment_clicks)
+if p_value < 0.05:
+    print("Significant! Green button wins.")
+else:
+    print("Not significant. Keep the red button.")
+```
+
+**Q: "What can go wrong with A/B tests?"**
+> 1. **Sample size too small**: Not enough data to detect a real difference
+> 2. **Running too short**: Weekday vs weekend patterns not captured
+> 3. **Multiple comparisons**: Testing 20 metrics, one will be "significant" by chance
+> 4. **Selection bias**: Groups not truly random
+> 5. **Novelty effect**: Users click the new button just because it's new
+
+### KPIs and Business Metrics (Data Analyst Must-Know)
+
+| KPI | Formula | Domain |
+|---|---|---|
+| **Conversion Rate** | Purchases / Visitors x 100 | E-commerce |
+| **Churn Rate** | Lost Customers / Total Customers x 100 | SaaS, subscription |
+| **DAU/MAU** | Daily Active Users / Monthly Active Users | Product engagement |
+| **ARPU** | Total Revenue / Total Users | Revenue per user |
+| **LTV** | ARPU x Average Customer Lifespan | Customer lifetime value |
+| **CAC** | Marketing Spend / New Customers Acquired | Cost to acquire |
+| **NPS** | % Promoters - % Detractors | Customer satisfaction |
+| **SLA Compliance** | Tasks Within SLA / Total Tasks x 100 | Operations |
+
+**Q: "How do you choose which KPI to track?"**
+> "Start with the business question. 'Are we growing?' -> DAU/MAU. 'Are we profitable?' -> LTV:CAC ratio (should be >3:1). 'Are customers happy?' -> NPS and churn rate. I always define KPIs BEFORE building dashboards -- data without context is just numbers."
+
+### Tableau / Power BI Concepts (Know the Vocabulary)
+
+| Concept | What it is | When asked about it |
+|---|---|---|
+| **Dimension** | Categorical data (region, product, date) | GROUP BY equivalent |
+| **Measure** | Numerical data (sales, count, avg) | SUM/AVG equivalent |
+| **Calculated Field** | Custom formula in the tool | Like a SQL computed column |
+| **LOD Expression** | Level of Detail -- compute at a different grain | FIXED, INCLUDE, EXCLUDE |
+| **Filter Order** | Extract -> Data Source -> Context -> Dimension -> Measure | Why filters behave unexpectedly |
+| **Dashboard Action** | Click/hover triggers filter/highlight/URL | Interactive dashboards |
+| **Data Blending** | Join data from different sources in Tableau | Like a SQL JOIN but visual |
+
+**Your bridge answer:**
+> "I've built dashboards using Next.js with custom charts (my Healthcare project has interactive health predictions). The concepts transfer: I understand dimensions vs measures, filtering, aggregation, and drill-down. I'd learn Tableau's specific UI in a week -- the analytical thinking is the same."
+
+---
+
+## PART 13: ML ENGINEERING & MLOPS (For AI/ML Data Engineer Roles)
+
+> If the role mentions "AI" or "ML," they'll test these concepts.
+
+### Model Deployment Patterns
+
+| Pattern | How it works | When to use | Your implementation |
+|---|---|---|---|
+| **REST API** | Model loaded in FastAPI, predictions via HTTP | Real-time, low latency | Healthcare: FastAPI serves XGBoost predictions |
+| **Batch Inference** | Run model on a batch of data, save results | Large-scale scoring, not time-critical | Healthcare: bulk prediction endpoint |
+| **Streaming** | Model runs on each event as it arrives | Real-time scoring per event | Nova: could score recommendations per click |
+| **Edge** | Model runs on device (mobile, IoT) | No network, low latency | Not applicable to your projects |
+
+**Your Healthcare deployment:**
+```python
+# Model loaded ONCE at startup (not per-request)
+@app.on_event("startup")
+def load_models():
+    global models
+    models = initialize_models()  # Load XGBoost from .pkl files
+
+# Each prediction: ~9ms latency
+@app.post("/api/predict/diabetes")
+async def predict_diabetes(data: HealthInput):
+    features = preprocess(data)
+    prediction = models["diabetes"].predict_proba(features)
+    return {"risk_score": float(prediction[0][1])}
+```
+
+### Experiment Tracking
+
+**What it is:** Track every model training run: hyperparameters, metrics, code version, data version.
+
+**Why it matters:** "Which model did we deploy? What data was it trained on? Can we reproduce last month's results?" Without tracking, it's chaos.
+
+| Tool | What it does | Open source? |
+|---|---|---|
+| **MLflow** | Track experiments, package models, deploy | Yes |
+| **Weights & Biases** | Track experiments, visualize, collaborate | Freemium |
+| **Neptune** | Track experiments, compare runs | Freemium |
+
+```python
+# MLflow example (what you'd write in an interview):
+import mlflow
+
+with mlflow.start_run(run_name="xgboost_diabetes_v3"):
+    # Log parameters
+    mlflow.log_param("n_estimators", 100)
+    mlflow.log_param("max_depth", 6)
+    mlflow.log_param("scale_pos_weight", 3.0)
+    mlflow.log_param("train_size", 253680)
+
+    # Train model
+    model = XGBClassifier(**params)
+    model.fit(X_train, y_train)
+
+    # Log metrics
+    mlflow.log_metric("accuracy", 0.85)
+    mlflow.log_metric("auc_roc", 0.89)
+    mlflow.log_metric("f1_score", 0.78)
+
+    # Log model artifact
+    mlflow.xgboost.log_model(model, "diabetes_model")
+```
+
+### Feature Stores
+
+**What it is:** A centralized repository of curated features that can be reused across models and teams.
+
+**Analogy:** Like a shared ingredient pantry in a restaurant. Instead of each chef preparing their own garlic, everyone uses the same pre-minced garlic from the pantry. Consistency + efficiency.
+
+| Concept | Meaning |
+|---|---|
+| **Feature** | A processed input to a model (e.g., "avg_bmi_last_30_days") |
+| **Online Store** | Low-latency serving for real-time predictions (Redis/DynamoDB) |
+| **Offline Store** | Batch serving for training (S3/data warehouse) |
+| **Feature Pipeline** | Code that computes features from raw data |
+| **Point-in-Time Join** | Join features AS OF a specific timestamp (prevent data leakage) |
+
+**Your bridge answer:**
+> "In my Healthcare project, features are computed inline during prediction (BMI, age, blood pressure directly from user input). In Nova, features are pre-computed in the Gold layer (user_avg_rating, movie_popularity_score). These Gold tables are conceptually a feature store -- a curated set of ML-ready features. For a larger team, I'd formalize this with Feast or Tecton."
+
+### Model Monitoring (Post-Deployment)
+
+| What to monitor | How | Alert threshold |
+|---|---|---|
+| **Prediction latency** | P50, P95, P99 response times | P95 > 100ms |
+| **Prediction distribution** | Are predictions shifting? | >10% change vs baseline |
+| **Feature drift** | Are input distributions changing? | PSI > 0.2 |
+| **Data quality** | Null rates, out-of-range values | >1% nulls in required fields |
+| **Model accuracy** | Compare predictions to actual outcomes | Accuracy drops >5% |
+
+**Your Healthcare project answer:**
+> "I monitor model health through the 7-layer middleware stack. Every prediction is logged with latency metrics. If prediction distributions shift (e.g., suddenly predicting 80% positive instead of the usual 30%), an alert fires. For retraining, I'd compare the BRFSS training distribution against recent API inputs to detect feature drift."
+
+---
+
+## PART 14: DATA ANALYST SPECIFIC PATTERNS
+
+### The "Walk Me Through Your Analysis" Framework (CRISP-DM)
+
+Every DA answer should follow this structure:
+
+```
+1. BUSINESS UNDERSTANDING: What problem are we solving?
+   "The marketing team wants to reduce churn by identifying at-risk customers."
+
+2. DATA UNDERSTANDING: What data do we have?
+   "Customer table (demographics), transactions (last 12 months), support tickets."
+
+3. DATA PREPARATION: How did you clean and transform?
+   "Joined 3 tables, handled nulls (15% in phone number -- not impactful),
+    created features: days_since_last_purchase, total_spend_90d, support_ticket_count."
+
+4. ANALYSIS: What did you find?
+   "Customers with 0 purchases in 60 days AND >2 support tickets have 78% churn rate.
+    That's 3x the overall churn rate of 26%."
+
+5. PRESENTATION: How did you communicate results?
+   "Built a dashboard with churn risk tiers. Shared with marketing in a 15-min presentation.
+    Recommended a targeted retention campaign for the 'high risk' tier (2,300 customers)."
+
+6. ACTION: What happened?
+   "Marketing ran the campaign. Churn in the targeted segment dropped from 78% to 45%.
+    Estimated revenue saved: $340K over 6 months."
+```
+
+### Common DA Interview Questions
+
+**Q: "You have a dataset of 1M customer transactions. Where do you start?"**
+> 1. **Shape and size**: How many rows, columns? `df.shape`
+> 2. **Data types**: Are dates stored as strings? Are numeric columns correct? `df.dtypes`
+> 3. **Nulls**: Which columns have missing data? How much? `df.isnull().sum()`
+> 4. **Distributions**: Are there outliers? Is data skewed? `df.describe()`
+> 5. **Cardinality**: How many unique values per column? `df.nunique()`
+> 6. **Sample**: Look at 5-10 rows. Does the data make sense? `df.head(10)`
+
+**Q: "Sales dropped 15% last month. What do you investigate?"**
+> 1. **Is it real?** Check data quality -- any missing data, pipeline issues, duplicate removals?
+> 2. **Is it seasonal?** Compare to same month last year, not just last month
+> 3. **Where is the drop?** Slice by region, product, channel, customer segment
+> 4. **What changed?** New competitor? Price increase? Marketing campaign ended?
+> 5. **How big is the impact?** Is 15% within normal variation or truly anomalous?
+> 6. **Present findings**: "Sales dropped 15% overall, but it's concentrated in the West region (-32%). East and Central are flat. The West region's top sales rep left in March."
+
+**Q: "How do you handle missing data?"**
+
+| Strategy | When to use | Code |
+|---|---|---|
+| **Drop rows** | <5% missing, missing at random | `df.dropna()` |
+| **Fill with mean/median** | Numeric, missing at random | `df["col"].fillna(df["col"].median())` |
+| **Fill with mode** | Categorical data | `df["col"].fillna(df["col"].mode()[0])` |
+| **Forward fill** | Time series (use last known value) | `df["col"].fillna(method="ffill")` |
+| **Flag as missing** | Missingness itself is informative | `df["col_missing"] = df["col"].isnull().astype(int)` |
+| **Model-based imputation** | Complex patterns | `from sklearn.impute import KNNImputer` |
+
+> "In my Healthcare project, I analyzed missing patterns before deciding. Some features had <1% missing (dropped those rows). Age had 0% missing. The BRFSS dataset was already clean, but I validated this explicitly in my test suite (141 tests include null checks)."
