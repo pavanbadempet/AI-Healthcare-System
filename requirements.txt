@@ -6,7 +6,7 @@
 # =======================================================
 
 # --- Frontend Framework ---
-streamlit>=1.35.0
+streamlit>=1.57.0
 streamlit-lottie>=0.0.5
 streamlit-option-menu>=0.3.13
 extra-streamlit-components>=0.1.71
