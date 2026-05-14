@@ -2207,3 +2207,275 @@ When they ask about a tool you haven't used directly:
 | **Kafka Connect** | Custom producers/consumers | "Connect is managed connectors. I built the same integration manually -- the concepts (sources, sinks, transforms) are identical." |
 
 **The magic phrase:** "I haven't used [X] directly, but the underlying concept is identical to [Y] which I've used extensively. The API would be new, but the engineering principles transfer directly. I'd be productive within [timeframe]."
+
+---
+
+## PART 9: SPARK INTERNALS (The #1 DE Interview Topic)
+
+> If you understand how Spark EXECUTES your code, you can answer any optimization question. This is what separates a "PySpark user" from a "Spark engineer."
+
+### How Spark Executes Your Code (The Full Picture)
+
+```
+Your PySpark Code
+    |
+[Logical Plan] -- What you WANT to do (abstract)
+    |
+[Catalyst Optimizer] -- Rewrites your plan to be more efficient
+    |
+[Physical Plan] -- HOW Spark will actually do it
+    |
+[DAG of Stages] -- Groups of tasks separated by shuffles
+    |
+[Tasks] -- Individual units of work, one per partition
+    |
+[Executors] -- JVM processes on worker nodes that run tasks
+```
+
+**Analogy:** You write a recipe (logical plan). A chef (Catalyst) rewrites it to be more efficient (physical plan). The kitchen is organized into stations (stages). Each cook (executor) handles one dish (task) at a time.
+
+### Jobs, Stages, and Tasks
+
+**Job** = triggered by an ACTION (`.count()`, `.collect()`, `.write()`)
+**Stage** = a group of tasks that can run without shuffling data
+**Task** = one unit of work on one partition
+
+```python
+# This code creates 1 Job, 2 Stages, and N tasks
+df = spark.read.parquet("trades/")          # Stage 1: read
+result = df.groupBy("instrument_id")        # <-- SHUFFLE boundary (new stage)
+            .agg(sum("amount"))             # Stage 2: aggregate
+result.write.parquet("output/")             # ACTION triggers the job
+```
+
+**Stage boundaries happen at SHUFFLES.** Shuffles happen when data needs to move between partitions:
+- `groupBy()` -- data with same key must go to same partition
+- `join()` -- matching rows must be co-located
+- `repartition()` -- explicitly redistributing data
+- `orderBy()` -- global sort requires all data to move
+
+**Q: "Why are shuffles expensive?"**
+> "A shuffle is Spark's most expensive operation. It requires: (1) writing all map-side data to disk, (2) network transfer across nodes, (3) reading and merging on the reduce side. For a 100GB dataset with 200 partitions, a shuffle moves 100GB over the network. I minimize shuffles by: broadcast joins for small tables, pre-partitioning data, and using coalesce instead of repartition when reducing partitions."
+
+### The Catalyst Optimizer (What Makes Spark Smart)
+
+Catalyst automatically optimizes your queries. You don't need to do it manually.
+
+**Predicate Pushdown:** Filters are pushed as close to the data source as possible.
+```python
+# You write:
+df = spark.read.parquet("trades/").filter(col("trade_date") == "2024-01-01")
+
+# Spark actually does:
+# Read ONLY the 2024-01-01 partition from Parquet (skips all other files)
+# This is predicate pushdown -- the filter happens at read time, not after
+```
+
+**Column Pruning:** Only reads the columns you actually use.
+```python
+# You write:
+df = spark.read.parquet("trades/").select("trade_id", "amount")
+
+# Spark actually does:
+# Reads ONLY trade_id and amount columns from Parquet (skips 48 other columns)
+# Parquet's columnar format makes this extremely efficient
+```
+
+**Join Reordering:** Puts the smaller table on the build side of a hash join.
+
+**Constant Folding:** Pre-computes constant expressions at compile time.
+
+### Memory Model (Why Your Jobs OOM)
+
+Each Spark executor has memory divided into:
+
+```
+Executor Memory (e.g., 4GB)
+|
++-- Execution Memory (shuffle, sort, join) -- 60% default
+|     This is where shuffles, joins, and aggregations happen
+|     If full: spills to disk (SLOW)
+|
++-- Storage Memory (cache, broadcast) -- 40% default
+|     Where .cache() and broadcast variables live
+|     If full: evicts cached data
+|
++-- User Memory (your Python objects) -- 300MB overhead
+|     Your UDFs, variables, etc.
+|
++-- Reserved (Spark internals) -- 300MB fixed
+```
+
+**Q: "Your job is running out of memory. What do you do?"**
+> 1. **Check Spark UI**: Are tasks spilling to disk? (look for "Spill (Disk)" in Stages tab)
+> 2. **Data skew?** One partition has 10x more data than others. Fix: salted join or repartition
+> 3. **Too many partitions cached?** `.unpersist()` DataFrames you no longer need
+> 4. **Broadcast too large?** Default 10MB threshold. If broadcasting 500MB table, that's OOM
+> 5. **Increase memory**: `spark.executor.memory=8g` (last resort -- fix the root cause first)
+
+### Data Skew (The Silent Killer)
+
+**What is it?** When one partition has much more data than others. One task takes 10x longer, making the whole stage wait.
+
+```
+Normal:  Partition 1: 1M rows | Partition 2: 1M rows | Partition 3: 1M rows
+Skewed:  Partition 1: 100K    | Partition 2: 100K    | Partition 3: 9.8M   <-- bottleneck!
+```
+
+**Common causes:**
+- `groupBy("country")` when 80% of data is from one country
+- `join` on a key with null values (all nulls go to one partition)
+- Uneven partitioning by date (Black Friday has 10x normal volume)
+
+**Solutions:**
+```python
+# Solution 1: Salted join (split hot key across multiple partitions)
+df_skewed = df.withColumn("salt", (rand() * 10).cast("int"))
+df_dimension = df_dim.crossJoin(spark.range(10).withColumnRenamed("id", "salt"))
+result = df_skewed.join(df_dimension, ["key", "salt"])
+
+# Solution 2: Adaptive Query Execution (Spark 3.0+)
+spark.conf.set("spark.sql.adaptive.enabled", "true")
+spark.conf.set("spark.sql.adaptive.skewJoin.enabled", "true")
+# AQE detects skew at runtime and splits large partitions automatically
+
+# Solution 3: Broadcast the small side
+from pyspark.sql.functions import broadcast
+result = big_table.join(broadcast(small_table), "key")
+# Sends small_table to every executor -- no shuffle at all
+```
+
+### Adaptive Query Execution (AQE) -- Spark 3.0+ Game Changer
+
+**What it does:** Re-optimizes the query plan AT RUNTIME based on actual data statistics (not just estimates).
+
+| Feature | What it does | Before AQE |
+|---|---|---|
+| **Coalesce shuffle partitions** | Merges small partitions after shuffle | You manually set `spark.sql.shuffle.partitions=200` |
+| **Skew join optimization** | Splits skewed partitions automatically | You manually salt keys |
+| **Dynamic join strategy** | Switches to broadcast join if table is small enough | You manually add `broadcast()` |
+
+```python
+# Enable AQE (should ALWAYS be on in Spark 3.0+)
+spark.conf.set("spark.sql.adaptive.enabled", "true")
+spark.conf.set("spark.sql.adaptive.coalescePartitions.enabled", "true")
+spark.conf.set("spark.sql.adaptive.skewJoin.enabled", "true")
+```
+
+**Your interview answer:**
+> "I always enable AQE in Spark 3.x. It handles the three most common performance issues automatically: coalescing small partitions after shuffles, splitting skewed partitions, and dynamically switching to broadcast joins. Before AQE, I had to manually tune shuffle partitions and salt skewed keys. AQE does this at runtime with actual data sizes, not estimates."
+
+### Spark Caching Strategy
+
+```python
+# When to cache:
+df.cache()    # When you reuse a DataFrame multiple times
+df.persist(StorageLevel.MEMORY_AND_DISK)  # When data might not fit in memory
+
+# When NOT to cache:
+# - DataFrames used only once (caching adds overhead)
+# - Very large DataFrames (evicts other useful cached data)
+# - Before a filter (cache AFTER filtering to store less data)
+
+# Good pattern:
+filtered_df = raw_df.filter(col("active") == True)
+filtered_df.cache()    # Cache the FILTERED version (smaller)
+filtered_df.count()    # Trigger the cache
+
+# Always unpersist when done:
+filtered_df.unpersist()
+```
+
+---
+
+## PART 10: AWS SERVICES FOR DATA ENGINEERING
+
+> Your Nissan project used AWS (Lambda, Step Functions, S3, Snowflake). Know these cold.
+
+### AWS Services Comparison (What DE Uses)
+
+| Service | What it does | When to use | Your experience |
+|---|---|---|---|
+| **S3** | Object storage (files) | Store raw/processed data, data lake | Nissan: landing zone for files |
+| **Lambda** | Serverless functions (15 min max) | Small transforms, triggers, validation | Nissan: schema validation |
+| **Step Functions** | Workflow orchestration | Multi-step serverless pipelines | Nissan: ETL orchestration |
+| **EMR** | Managed Spark/Hadoop cluster | Large-scale data processing | Nomura: Spark on EMR |
+| **Glue** | Serverless Spark ETL | Simple ETL without managing clusters | Alternative to EMR for small jobs |
+| **Redshift** | Data warehouse | SQL analytics at scale | Alternative to Snowflake |
+| **Kinesis** | Real-time streaming | Ingest streaming data | Alternative to Kafka on AWS |
+| **Athena** | Serverless SQL on S3 | Ad-hoc queries on data lake files | Query Parquet files without a cluster |
+| **CloudWatch** | Monitoring and logging | Pipeline monitoring and alerts | Nissan: Lambda monitoring |
+| **IAM** | Access management | Control who can access what | Nissan: Lambda execution roles |
+
+### Q: "Why Lambda + Step Functions instead of Airflow?"
+
+> "The Nissan pipeline was fully AWS-native: S3 triggers, Lambda processing, Snowflake loading. Step Functions was the natural choice because:
+> 1. **Serverless**: Zero infrastructure to manage (no Airflow server to maintain)
+> 2. **Pay-per-use**: Only pay when steps execute (Airflow runs 24/7)
+> 3. **Visual**: Step Functions has a visual workflow designer for non-technical stakeholders
+> 4. **AWS integration**: Native integration with Lambda, S3, SNS
+>
+> Trade-off: Step Functions is limited to AWS. For a multi-cloud or complex pipeline (like Nomura's Spark jobs), I'd use Airflow for its flexibility."
+
+### Q: "S3 vs HDFS?"
+
+> "S3 is object storage (accessed via HTTP, eventual consistency, infinite scale, pay-per-GB). HDFS is file storage (block-based, strong consistency, requires managing a cluster).
+>
+> At Nomura, we migrated from HDFS to S3-compatible storage (MinIO) during the YARN-to-K8s migration. The benefit: decoupled compute and storage. Spark executors can scale independently from storage. The trade-off: slightly higher latency per read, but the flexibility is worth it."
+
+### Q: "When would you use Glue vs EMR?"
+
+| | AWS Glue | EMR |
+|---|---|---|
+| **Management** | Fully serverless | You manage the cluster |
+| **Cost** | Per-DPU-hour ($0.44) | Per-instance-hour ($0.20+) |
+| **Customization** | Limited | Full control |
+| **Scale** | Auto-scales | You configure scaling |
+| **Best for** | Simple ETL, catalog crawling | Complex processing, ML, custom libs |
+
+> "Glue for simple CSV-to-Parquet transforms and catalog management. EMR for anything requiring custom libraries, complex Spark tuning, or ML workloads. At Nomura, we used EMR because we needed fine-grained Spark configuration and custom JAR dependencies."
+
+### Q: "Explain S3 storage classes."
+
+| Class | Use case | Cost | Retrieval |
+|---|---|---|---|
+| **S3 Standard** | Frequently accessed data | $0.023/GB | Instant |
+| **S3 IA (Infrequent Access)** | Data accessed monthly | $0.0125/GB | Instant |
+| **S3 Glacier** | Archive (rarely accessed) | $0.004/GB | Minutes to hours |
+| **S3 Glacier Deep Archive** | Long-term archive | $0.00099/GB | 12-48 hours |
+
+> "In a data lake: Bronze layer in S3 Standard (frequently queried). Silver/Gold in S3 Standard. Old partitions (>90 days) lifecycle to S3 IA. Compliance archives (>1 year) to Glacier. This saves ~40% on storage costs."
+
+---
+
+## PART 11: SPARK CONFIGURATION CHEAT SHEET
+
+> The exact configs interviewers ask about. Know what each does and when to tune it.
+
+| Config | Default | What it does | When to change |
+|---|---|---|---|
+| `spark.executor.memory` | 1g | Memory per executor | Increase for large joins/shuffles |
+| `spark.executor.cores` | 1 | CPU cores per executor | 3-5 cores is optimal |
+| `spark.executor.instances` | 2 | Number of executors | Scale based on data volume |
+| `spark.sql.shuffle.partitions` | 200 | Partitions after shuffle | Reduce for small data, increase for large |
+| `spark.sql.adaptive.enabled` | false (2.x), true (3.x) | Enable AQE | ALWAYS set to true |
+| `spark.sql.autoBroadcastJoinThreshold` | 10MB | Max table size for broadcast | Increase to 100MB for medium dims |
+| `spark.default.parallelism` | 2x cores | Default partitions for RDDs | Match to your data size |
+| `spark.memory.fraction` | 0.6 | % of heap for execution+storage | Increase if heavy caching |
+| `spark.serializer` | JavaSerializer | How data is serialized | Use KryoSerializer (10x faster) |
+| `spark.sql.files.maxPartitionBytes` | 128MB | Max bytes per file partition | Keep at 128-256MB |
+
+**Your standard production config:**
+```python
+spark = SparkSession.builder \
+    .config("spark.executor.memory", "4g") \
+    .config("spark.executor.cores", "4") \
+    .config("spark.executor.instances", "10") \
+    .config("spark.sql.shuffle.partitions", "200") \
+    .config("spark.sql.adaptive.enabled", "true") \
+    .config("spark.sql.adaptive.coalescePartitions.enabled", "true") \
+    .config("spark.sql.adaptive.skewJoin.enabled", "true") \
+    .config("spark.sql.autoBroadcastJoinThreshold", "100MB") \
+    .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer") \
+    .getOrCreate()
+```
