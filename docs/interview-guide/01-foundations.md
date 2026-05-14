@@ -3922,9 +3922,10 @@ For ANY tool you haven't used, follow this 4-step answer:
 
 ---
 
-### 🏭 NISSAN PROJECT -- Every Decision Defended
+### 🏭 NISSAN -- Serverless Data Pipeline (Every Decision Defended)
 
-**Architecture reminder:** S3 → Lambda → Step Functions → Snowflake → Tableau
+**What it is:** Serverless batch ETL pipeline for automotive data analytics
+**Architecture:** S3 → Lambda → Step Functions → Snowflake → Tableau
 
 ---
 
@@ -4025,9 +4026,10 @@ For ANY tool you haven't used, follow this 4-step answer:
 
 ---
 
-### 🏦 NOMURA PROJECT -- Every Decision Defended
+### 🏦 NOMURA -- Capital Markets Data Platform (Every Decision Defended)
 
-**Architecture reminder:** HDFS → Spark on YARN → MinIO/K8s migration → AutoSys orchestration
+**What it is:** Large-scale trade data processing and analytics for investment banking
+**Architecture:** HDFS → Spark on YARN → MinIO/K8s migration → AutoSys orchestration
 
 ---
 
@@ -4084,9 +4086,10 @@ For ANY tool you haven't used, follow this 4-step answer:
 
 ---
 
-### 🏥 HEALTHCARE PROJECT -- Every Decision Defended
+### 🏥 AI HEALTHCARE SYSTEM -- Disease Prediction Platform (Every Decision Defended)
 
-**Architecture reminder:** FastAPI → XGBoost → SQLite → Next.js → SSE
+**What it is:** Full-stack AI system predicting diabetes, heart disease, and Parkinson's using XGBoost with 141 automated tests
+**Architecture:** FastAPI → XGBoost → SQLite → Next.js → SSE
 
 ---
 
@@ -4148,9 +4151,10 @@ For ANY tool you haven't used, follow this 4-step answer:
 
 ---
 
-### 🎬 NOVA PROJECT -- Every Decision Defended
+### 🎬 NOVA -- Movie Recommendation System (Every Decision Defended)
 
-**Architecture reminder:** Kafka → Spark Structured Streaming → Delta Lake (Medallion) → FAISS → SBERT
+**What it is:** Streaming ML-powered movie recommendation engine with hybrid retrieval (collaborative + content-based)
+**Architecture:** Kafka → Spark Structured Streaming → Delta Lake (Medallion) → FAISS → SBERT
 
 ---
 
@@ -4201,9 +4205,9 @@ For ANY tool you haven't used, follow this 4-step answer:
 
 **"Your projects use completely different stacks. Why?"**
 > "Because the right tool depends on the problem:
-> - **Nissan** (file-based batch ETL): Serverless (Lambda + Step Functions) because the workload is bursty and simple. Running 24/7 Spark clusters would waste money.
-> - **Nomura** (large-scale continuous processing): Spark on YARN because trade data is massive, processing is continuous, and low latency matters. Lambda can't handle 500GB joins.
-> - **Healthcare** (real-time API): FastAPI because it's a web application serving predictions on-demand to doctors. Not a batch pipeline.
-> - **Nova** (streaming + ML): Kafka + Spark Streaming + Delta Lake because events flow continuously, need replay, and feed ML models. The Medallion architecture ensures data quality at each layer.
+> - **Nissan Serverless Data Pipeline** (file-based batch ETL): Serverless (Lambda + Step Functions) because the workload is bursty and simple. Running 24/7 Spark clusters would waste money.
+> - **Nomura Capital Markets Platform** (large-scale continuous processing): Spark on YARN because trade data is massive, processing is continuous, and low latency matters. Lambda can't handle 500GB joins.
+> - **AI Healthcare System** (real-time disease prediction API): FastAPI because it's a web application serving XGBoost predictions on-demand to doctors. Not a batch pipeline.
+> - **Nova Movie Recommendation System** (streaming + ML): Kafka + Spark Streaming + Delta Lake because user behavior events flow continuously, need replay, and feed the recommendation model. The Medallion architecture ensures data quality at each layer.
 > 
 > A great data engineer doesn't use one stack for everything. They pick the right tools for the requirements: latency, volume, complexity, team skills, and cost."
