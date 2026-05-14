@@ -2760,3 +2760,243 @@ Every DA answer should follow this structure:
 | **Model-based imputation** | Complex patterns | `from sklearn.impute import KNNImputer` |
 
 > "In my Healthcare project, I analyzed missing patterns before deciding. Some features had <1% missing (dropped those rows). Age had 0% missing. The BRFSS dataset was already clean, but I validated this explicitly in my test suite (141 tests include null checks)."
+
+---
+
+## PART 15: SNOWFLAKE DEEP-DIVE (You Used This at Nissan)
+
+### Snowflake Architecture
+
+```
+[Cloud Services Layer]  -- Query optimization, metadata, security
+         |
+[Virtual Warehouses]    -- Compute (XS, S, M, L, XL, 2XL...)
+         |
+[Storage Layer]         -- Compressed columnar storage (micro-partitions)
+```
+
+**Key concept:** Compute and storage are SEPARATED. You can scale your warehouse up for a big job, then scale down. You only pay for compute when queries are running.
+
+### Snowflake Concepts Every DE Must Know
+
+| Concept | What it is | Your Nissan experience |
+|---|---|---|
+| **Virtual Warehouse** | A compute cluster (XS to 4XL) | "We used Medium for daily loads, XS for ad-hoc queries" |
+| **Database/Schema** | Logical grouping of tables | "RAW schema for landing, CLEAN for transformed" |
+| **Stage** | Location for files before loading (internal or S3) | "S3 external stage pointing to our landing zone" |
+| **COPY INTO** | Bulk load from stage to table | "Our primary ingestion command" |
+| **Micro-partitions** | 50-500MB compressed columnar chunks (automatic) | "Snowflake auto-partitions, no manual config" |
+| **Clustering Key** | Hint to co-locate similar data | "Clustered by trade_date for time-range queries" |
+| **Time Travel** | Query data as of a past timestamp (1-90 days) | "Used for debugging data issues" |
+| **Zero-Copy Clone** | Instant copy of a table (no data duplicated) | "Cloned production to dev for testing" |
+| **Streams** | CDC (change data capture) on a table | "Track INSERTs/UPDATEs/DELETEs for incremental processing" |
+| **Tasks** | Scheduled SQL execution (like a mini-Airflow) | "Hourly aggregation tasks" |
+| **Snowpipe** | Auto-ingest files as they land in S3 | "Alternative to our Lambda trigger" |
+| **Data Sharing** | Share tables with other Snowflake accounts (no copy) | "Not used at Nissan, but know the concept" |
+
+### Key Snowflake Interview Questions
+
+**Q: "How does Snowflake handle concurrency?"**
+> "Each virtual warehouse is an independent compute cluster. If two teams run heavy queries simultaneously, you create separate warehouses so they don't compete for resources. This is Snowflake's killer feature vs Redshift -- no query queuing, just spin up another warehouse."
+
+**Q: "What are micro-partitions?"**
+> "Snowflake automatically divides table data into 50-500MB compressed chunks called micro-partitions. Each partition stores column-level metadata (min/max, null count, distinct count). When you query `WHERE date = '2024-01-01'`, Snowflake checks metadata and skips partitions that can't contain that date. This is called PRUNING -- similar to Spark's predicate pushdown with Parquet."
+
+**Q: "When do you use a clustering key?"**
+> "When your table is large (>1TB) and queries consistently filter on a specific column (like date or region). Clustering co-locates similar values in the same micro-partitions, improving pruning. For our daily trade data at Nissan, we clustered by trade_date because 95% of queries filtered by date range."
+
+**Q: "Explain Snowflake's Time Travel."**
+```sql
+-- Query data as it was 1 hour ago
+SELECT * FROM trades AT (OFFSET => -3600);
+
+-- Query data as of a specific timestamp
+SELECT * FROM trades AT (TIMESTAMP => '2024-01-01 06:00:00');
+
+-- Restore a dropped table
+UNDROP TABLE trades;
+```
+> "I used Time Travel at Nissan for debugging. When a data issue was reported, I'd compare current data with yesterday's snapshot to find when the problem was introduced."
+
+---
+
+## PART 16: DATA ARCHITECTURE PATTERNS
+
+### Lambda Architecture
+
+```
+[Source Data]
+    |
++---+---+
+|       |
+[Batch Layer]           [Speed Layer]
+Spark batch job         Spark Structured Streaming
+Runs daily              Runs continuously
+Complete + accurate     Approximate + fast
+    |                       |
+    +-------+-------+-------+
+            |
+    [Serving Layer]
+    Merge batch + real-time views
+    Query: use real-time until batch catches up
+```
+
+**When to use:** When you need both historical accuracy AND real-time data. The batch layer re-computes everything daily (always correct). The speed layer handles what happened since the last batch run (fast but approximate).
+
+**Trade-off:** Complex -- you maintain two codepaths (batch AND streaming) for the same data.
+
+### Kappa Architecture (Simpler Alternative)
+
+```
+[Source Data]
+    |
+[Kafka]
+    |
+[Stream Processing Only]
+    Spark Structured Streaming / Flink
+    Process everything as a stream
+    Replay from Kafka for reprocessing
+    |
+[Serving Layer]
+```
+
+**When to use:** When streaming can handle all processing. No separate batch layer. Replay Kafka for historical reprocessing.
+
+**Trade-off:** Simpler architecture, but requires Kafka retention long enough for replays. Not suitable if batch corrections are frequent.
+
+**Your answer:** "Nova uses a Kappa-like pattern: events flow through Kafka into Spark Structured Streaming into Delta Lake. For reprocessing, we replay from Kafka. We don't maintain a separate batch path because Delta Lake's ACID guarantees give us the correctness that Lambda's batch layer provides."
+
+### Data Mesh (Organizational Pattern)
+
+**What it is:** Instead of one central data team owning all pipelines, each domain team owns their own data products.
+
+| Centralized (traditional) | Data Mesh |
+|---|---|
+| One data team builds all pipelines | Each team builds their own |
+| Bottleneck: data team is overwhelmed | Distributed: teams move independently |
+| Consistent tooling | Standardized interfaces, varied implementation |
+| Data warehouse is the product | "Data products" are the product |
+
+**The 4 principles:**
+1. **Domain ownership**: Trading team owns trade data, not the central data team
+2. **Data as a product**: Treat datasets like API products (SLAs, docs, quality)
+3. **Self-serve platform**: Central team provides tools, not pipelines
+4. **Federated governance**: Standards set centrally, implementation decentralized
+
+**Your answer:** "I haven't worked in a formal data mesh, but the principle maps to my experience. At Nomura, the trading desk owned their data definitions, and I built pipelines that consumed their data as a product. The key challenge is governance -- without central standards, you get inconsistent schemas and quality."
+
+### ELT vs ETL
+
+| | ETL (Extract-Transform-Load) | ELT (Extract-Load-Transform) |
+|---|---|---|
+| **Transform where?** | Before loading (Spark, Python) | After loading (in the warehouse) |
+| **Tools** | Spark, custom scripts | dbt, Snowflake SQL |
+| **Best when** | Complex transforms, ML features | SQL-heavy transforms, warehouse is powerful |
+| **Your experience** | Nomura (Spark transforms before loading) | Nissan (load to Snowflake, transform with SQL) |
+
+---
+
+## PART 17: DISTRIBUTED SYSTEMS CONCEPTS
+
+### CAP Theorem (Know This for System Design)
+
+**You can only have 2 of 3:**
+
+| Property | Meaning |
+|---|---|
+| **Consistency** | Every read gets the most recent write |
+| **Availability** | Every request gets a response (even if stale) |
+| **Partition Tolerance** | System works even if network splits nodes |
+
+**In practice:** Network partitions WILL happen, so you choose between CP or AP:
+- **CP (Consistency + Partition Tolerance)**: HBase, ZooKeeper -- always correct, might reject requests
+- **AP (Availability + Partition Tolerance)**: Cassandra, DynamoDB -- always responds, might be stale
+
+**DE context:** "Kafka is AP -- it prioritizes availability. Delta Lake adds consistency on top of S3 (which is eventually consistent). Snowflake is CP for queries but AP for writes (eventual consistency between warehouses)."
+
+### Eventual Consistency vs Strong Consistency
+
+**Analogy:** You post on Instagram. Your friend in another country sees it 2 seconds later. That's eventual consistency -- the data propagates, just not instantly.
+
+| | Strong | Eventual |
+|---|---|---|
+| **Guarantee** | Reads always see latest write | Reads might see stale data temporarily |
+| **Latency** | Higher (must confirm all replicas) | Lower (write to one, propagate later) |
+| **Examples** | PostgreSQL, Snowflake queries | S3, DynamoDB, Cassandra |
+
+---
+
+## PART 18: LINUX & GIT COMMANDS (Quick-Fire Round)
+
+### Linux Commands DEs Use Daily
+
+```bash
+# File operations
+ls -la           # List files with details
+head -n 20 file  # First 20 lines
+tail -f log.txt  # Watch a log file in real-time (follow mode)
+wc -l file.csv   # Count lines in a file
+du -sh folder/   # Folder size (human readable)
+
+# Text processing
+grep "ERROR" log.txt          # Find lines containing "ERROR"
+grep -c "ERROR" log.txt       # COUNT lines with "ERROR"
+awk -F',' '{print $1,$3}' f   # Print columns 1 and 3 from CSV
+sort file.txt | uniq -c       # Count unique values
+cut -d',' -f1,3 data.csv      # Extract columns 1 and 3
+
+# Process management
+ps aux | grep spark            # Find Spark processes
+kill -9 <PID>                  # Force kill a process
+nohup python job.py &          # Run in background, survive logout
+top                            # Monitor CPU/memory usage
+
+# Networking
+curl -X GET http://api/health  # Test an API endpoint
+netstat -tlnp                  # Show listening ports
+```
+
+### Git Commands for DE
+
+```bash
+git log --oneline -10          # Last 10 commits (compact)
+git diff HEAD~1                # Changes since last commit
+git stash / git stash pop      # Temporarily save/restore changes
+git blame file.py              # Who changed each line and when
+git bisect start               # Binary search for which commit broke something
+git rebase -i HEAD~3           # Clean up last 3 commits before push
+```
+
+---
+
+## PART 19: COST OPTIMIZATION (Senior-Level Topic)
+
+> Senior DEs are expected to think about cost, not just functionality.
+
+### Where Data Pipelines Waste Money
+
+| Waste | Fix | Savings |
+|---|---|---|
+| Spark cluster running 24/7 | Auto-scaling, shut down when idle | 40-60% |
+| Processing all data daily | Incremental / CDC processing | 70-90% |
+| Storing hot data forever | S3 lifecycle policies (Standard -> IA -> Glacier) | 30-50% |
+| Over-provisioned Snowflake warehouse | Right-size, auto-suspend after 5 min | 50% |
+| Reading all columns from Parquet | Column pruning (SELECT only what you need) | 30-40% |
+| Full table scans | Partitioning + predicate pushdown | 80-90% |
+| Redundant data copies | Delta Lake sharing / Snowflake data sharing | 30% |
+
+**Your Nissan answer:**
+> "At Nissan, I reduced pipeline costs by: (1) Using Lambda (pay-per-invocation) instead of an always-on server, (2) Snowflake warehouse auto-suspend after 5 minutes of inactivity, (3) S3 lifecycle policies moving old partitions to Infrequent Access after 90 days. This reduced our monthly data platform cost by approximately 40%."
+
+### The Cost Optimization Interview Question
+
+**Q: "Your Spark pipeline costs $50K/month. How do you reduce it?"**
+
+> 1. **Profile first**: Where is money spent? Compute? Storage? Data transfer?
+> 2. **Right-size executors**: Are we using 4XL instances but only using 30% CPU? Downsize.
+> 3. **Spot/preemptible instances**: Use for non-critical batch jobs (60-80% cheaper)
+> 4. **Incremental processing**: Don't reprocess 30 days of data when only today changed
+> 5. **Caching intermediate results**: Cache frequently-recomputed DataFrames
+> 6. **Optimize file formats**: Ensure Parquet with Snappy compression (not CSV/JSON)
+> 7. **Partition pruning**: Make sure queries are leveraging partition filters
+> 8. **Schedule off-peak**: Run big jobs during off-peak hours (cheaper spot prices)
