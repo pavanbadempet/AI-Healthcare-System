@@ -4057,41 +4057,85 @@ For ANY tool you haven't used, follow this 4-step answer:
 
 ### 🏦 NOMURA -- Capital Markets Data Platform (Every Decision Defended)
 
-**What it is:** Enterprise-scale trade data processing platform handling 200M+ daily trade events across equities, fixed income, and derivatives desks, serving portfolio analytics, risk calculations, and regulatory reporting for investment banking
+**What it is:** Enterprise-scale on-prem data processing platform handling **100+ automated and manual feed processes** across multiple Nomura regional entities, serving portfolio analytics, risk calculations, P&L, and regulatory reporting for investment banking
+
+**Regional entities you worked across:**
+| Entity | Full Name | Region | What you processed |
+|---|---|---|---|
+| **NCFA** | Nomura Corporate Funding Americas | Americas | US trade feeds, derivatives, repo, cash |
+| **NFPS** | Nomura Financial Products & Services | EMEA | European securities, settlements, FX |
+| **NSC** | Nomura Securities Co | Asia-Pacific | Japanese equities, fixed income, swaps |
+
+**The 100+ feed processes you managed (examples from each category):**
+
+| Category | Feed Processes | What they contain |
+|---|---|---|
+| **Derivatives** | Pre-Derivatives, Swap, PRISM | OTC derivatives positions, swap valuations, pricing |
+| **Collateral** | Pre-Collateral, CA (Corporate Actions) | Margin calls, collateral movements, corporate action events |
+| **FX** | Pre-FX | Foreign exchange positions, currency exposures |
+| **Securities** | Securities, Foreign Bond, Equity | Security master data, bond attributes, equity positions |
+| **Trading** | Trade, DRT (Daily Reconciliation Trades), SFT (Securities Financing Transactions) | Executed trades, trade reconciliation, repo/lending |
+| **Settlements** | Settlement, Cash, Deposit | Trade settlement status, cash movements, deposit records |
+| **Risk** | Market Risk, Counterparty (CParty), Obligor, Obligor Hierarchy | VaR calculations, counterparty exposure, credit risk |
+| **Ratings** | Moody's (MDYS), Fitch Rating | Credit ratings from external agencies |
+| **Funds** | NAM Fund (Nomura Asset Mgmt), HASEI | Fund positions, NAV calculations |
+| **Lending** | Pre-Loan, Pre-Repo Ledger | Securities lending, repo positions |
+| **Income** | Gross Income, Book | Revenue attribution, P&L by book |
+| **Reference** | B (Benchmark), GMI, VPIER, Reseller, CA Dodge | Benchmark data, global market indices, pricing sources |
+
 **Architecture:**
 ```
-[Trading Systems]  →  [Kafka (trade events)]  →  [Spark on YARN/K8s]
-                                                        │
-                                            [HDFS/MinIO (Parquet, partitioned by date)]
-                                                        │
-                                            [Star Schema: fct_trades + 8 dimensions]
-                                                        │
-                            +──────────────────+──────────────────+──────────────────+
-                            │                    │                    │                    │
-                     [Risk Analytics]    [P&L Dashboards]   [Regulatory Reports]  [Portfolio Mgmt]
-                                                        │
-                                            [AutoSys: 50+ daily job chains]
+[100+ Source Feeds: DRT, SFT, CA, PRISM, GMI, Derivatives, ...]
+    │
+    │  (from NCFA, NFPS, NSC -- multiple regions, different timezones)
+    │
+[AutoSys Job Chains: 50+ automated chains with dependency graphs]
+    │
+    ├── Manual processes (DRT reconciliation, CA processing)
+    └── Automated processes (Pre-Derivatives, Market Risk, Settlements)
+    │
+[Spark on YARN → migrated to K8s]
+    │
+    ├── ETL: Validate → Clean → Transform → Enrich with reference data
+    ├── Reconciliation: Cross-region balance checks (NCFA vs NFPS vs NSC)
+    └── Aggregation: P&L rollup by desk/book/region
+    │
+[HDFS/MinIO (Parquet, partitioned by trade_date + region)]
+    │
+[Star Schema: fct_trades + dim_instruments + dim_desks + dim_counterparties
+              + dim_exchanges + dim_currencies + dim_dates + dim_traders + dim_strategies]
+    │
+    ├── [Risk Analytics: VaR, counterparty exposure, credit risk]
+    ├── [P&L Dashboards: by desk, book, region, instrument type]
+    ├── [Regulatory Reports: MiFID II, SOX, Basel III]
+    └── [Portfolio Management: position views, NAV calculations]
 ```
 
 **Key metrics you should quote:**
-- Processed **200M+ trade events daily** across equities, fixed income, and derivatives
-- Managed **50+ AutoSys job chains** with complex dependency graphs and failure recovery
-- Star schema: **1 fact table (fct_trades) + 8 dimension tables** (instruments, desks, counterparties, exchanges, currencies, dates, traders, strategies)
+- Managed **100+ feed processes** (both automated and manual) across **3 regional entities** (NCFA, NFPS, NSC)
+- Processed **200M+ trade events daily** from derivatives, securities, FX, settlements, and risk systems
+- Managed **50+ AutoSys job chains** with complex dependency graphs (e.g., Pre-Derivatives must complete before Market Risk can run)
+- Star schema: **1 fact table + 8 dimension tables** serving 4 downstream systems (risk, P&L, regulatory, portfolio)
 - Spark cluster: **100+ executors** across 20 nodes, processing **500GB+ daily**
-- **YARN-to-K8s migration**: Zero downtime, 0.01% output variance, 30% cost reduction from better resource utilization
-- Query performance: **P&L reports generated in <45 seconds** (down from 12 minutes in legacy system)
+- **Cross-region reconciliation**: Automated balance checks between NCFA, NFPS, and NSC feeds -- discrepancies flagged within 30 minutes
+- **YARN-to-K8s migration**: Zero downtime, 0.01% output variance, 30% cost reduction
+- Query performance: **P&L reports in <45 seconds** (down from 12 minutes in legacy)
 - Data freshness SLA: **T+30 minutes** for intraday risk, **T+2 hours** for end-of-day
 
 **Production practices you implemented:**
-- **Data quality framework**: Automated reconciliation between source trading systems and data warehouse. Row count checks, trade amount validation (no negative notional), duplicate trade ID detection, cross-system balance checks
-- **Performance tuning**: Broadcast joins for dimension tables (<100MB each), partition pruning on trade_date (95% of queries filter by date), Parquet with Snappy compression (65% size reduction), AQE enabled for automatic skew handling
-- **Schema registry**: Maintained schema versions for trade events. Backward-compatible evolution (new fields added as nullable, no field removals without 30-day deprecation)
-- **SLA monitoring**: Custom dashboards tracking job execution times, data freshness per desk, and query latency. Automated escalation: L1 (email) → L2 (Slack) → L3 (PagerDuty) based on severity
-- **Disaster recovery**: Dual-write to primary and standby HDFS clusters. RTO (Recovery Time Objective) < 1 hour, RPO (Recovery Point Objective) < 15 minutes
-- **Access control**: RBAC (Role-Based Access Control) for data access. Traders see their desk's data only. Risk managers see cross-desk views. Compliance sees everything with audit trail
-- **Data lineage**: Column-level lineage tracked from source system to final report. Required for regulatory audits (MiFID II, SOX compliance)
-- **Incremental processing**: SCD Type 2 for slowly-changing dimensions (instrument attributes, desk mappings). Only process changed records, not full reloads
-- **CI/CD**: Spark jobs versioned in Git, tested in staging environment with anonymized data, deployed via Jenkins pipelines with rollback capability
+- **Feed dependency management**: DRT feeds must complete before settlement runs. Pre-Derivatives before Market Risk. Corporate Actions before position recalculation. All managed via AutoSys dependency chains with automatic retry on upstream failure
+- **Multi-region scheduling**: NCFA feeds arrive in US business hours, NSC in Tokyo hours, NFPS in London hours. Jobs staggered across timezones -- Asia processes complete by 6 AM Tokyo, Europe by 7 AM London, Americas by 6 AM NY
+- **Reconciliation framework**: Cross-system balance checks between source trading systems and data warehouse. If DRT (Daily Reconciliation Trades) balance doesn't match settlement balance, pipeline halts and alerts
+- **Manual process handling**: Some feeds (DRT reconciliation, CA processing) required manual validation before automated downstream processing. Built approval gates in the workflow
+- **Data quality framework**: Row count checks, trade amount validation (no negative notional), duplicate trade ID detection, obligor hierarchy consistency checks, rating agency data validation (Moody's/Fitch mapping)
+- **Performance tuning**: Broadcast joins for all dimension tables (<100MB each), partition pruning on trade_date (95% of queries filter by date), Parquet with Snappy compression (65% reduction), AQE for automatic skew handling
+- **Schema registry**: Maintained schema versions for each of the 100+ feeds. Backward-compatible evolution (new fields added as nullable). Breaking changes required 30-day deprecation notice
+- **SLA monitoring**: Custom dashboards tracking: job execution times per feed, data freshness per region, query latency per report. Escalation: L1 (email) → L2 (Slack) → L3 (PagerDuty)
+- **Disaster recovery**: Dual-write to primary and standby HDFS clusters. RTO < 1 hour, RPO < 15 minutes
+- **Access control**: RBAC per desk and region. NCFA traders see Americas data only. Risk managers see cross-region views. Compliance sees everything with full audit trail
+- **Data lineage**: Column-level lineage from source feed (e.g., PRISM derivative valuation) to final regulatory report. Required for MiFID II, SOX, Basel III audits
+- **Incremental processing**: SCD Type 2 for slowly-changing dimensions (instrument attributes, desk mappings, obligor hierarchy). Only process changed records
+- **CI/CD**: Spark jobs versioned in Git, tested in staging with anonymized data, deployed via Jenkins with rollback
 
 ---
 
