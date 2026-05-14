@@ -8,7 +8,7 @@
 ## YOUR CAREER NARRATIVE (Memorize This)
 
 ### 30-Second Pitch:
-> "I'm a Data Engineer with 2+ years at TCS, where I built enterprise-scale data platforms for two major clients. At Nomura Capital, I engineered Spark ETL pipelines processing 200M+ daily trade events across equities, fixed income, and derivatives -- designing the star schema, implementing data quality reconciliation, and leading the YARN-to-Kubernetes migration that cut infrastructure costs by 30%. At Nissan, I architected a serverless data platform using AWS Lambda, Step Functions, and Snowflake that processed 50+ daily data feeds with a 99.7% success rate and 6 AM SLA. On the AI side, I've built two full-stack projects: a healthcare prediction system with XGBoost achieving clinical-grade accuracy on 253K CDC records, and a movie recommendation engine with FAISS vector search, Delta Lake Medallion architecture, and Kafka streaming on 1M+ records. I combine production data engineering with practical AI/ML."
+> "I'm a Data Engineer with 2+ years at TCS, where I built enterprise-scale data platforms for two major clients. At Nomura Capital, I managed 100+ feed processes across three regional entities (NCFA, NFPS, NSC), building Spark ETL pipelines that produced 30+ fact tables joined against 20+ dimension tables -- processing 200M+ daily trade events covering derivatives, securities, FX, settlements, and risk. I led the YARN-to-Kubernetes migration that cut infrastructure costs by 30%. At Nissan, I architected a serverless data platform using AWS Lambda, Step Functions, and Snowflake that processed 50+ daily data feeds with a 99.7% success rate and 6 AM SLA. On the AI side, I've built two full-stack projects: an AI Healthcare System predicting diabetes, heart disease, and Parkinson's with XGBoost on 253K CDC records, and a Movie Recommendation System (Nova) with FAISS vector search, Delta Lake Medallion architecture, and Kafka streaming on 1M+ records. I combine production data engineering with practical AI/ML."
 
 ### Why This Narrative Works:
 1. **Leads with professional experience** (TCS, Nomura, Nissan)
@@ -23,7 +23,7 @@
 
 ### Q: Describe your work at Nomura Capital.
 
-> "I engineered and maintained enterprise-scale Spark ETL pipelines for Nomura's capital markets division, managing 100+ feed processes across three regional entities: NCFA (Americas), NFPS (EMEA), and NSC (Asia-Pacific). The feeds covered the full capital markets stack -- derivatives (Pre-Derivatives, Swap, PRISM), securities (Foreign Bond, Equity, SFT), trading (DRT, Trade, Cash), risk (Market Risk, Counterparty, Obligor Hierarchy), settlements, FX, collateral, and external ratings (Moody's, Fitch). I designed the star schema with fct_trades and 8 dimension tables, implemented cross-region reconciliation between NCFA, NFPS, and NSC feeds, and built the AutoSys dependency chains that ensured feeds like Pre-Derivatives completed before Market Risk could run. I also managed multi-timezone scheduling -- Asia feeds completed by 6 AM Tokyo, Europe by 7 AM London, Americas by 6 AM NY."
+> "I engineered and maintained enterprise-scale Spark ETL pipelines for Nomura's capital markets division, managing 100+ feed processes across three regional entities: NCFA (Americas), NFPS (EMEA), and NSC (Asia-Pacific). Each feed produced a fact table -- fct_trade, fct_drt, fct_sft, fct_swap, fct_prism, fct_settlement, fct_market_risk, fct_counterparty, fct_obligor, fct_corporate_actions, fct_pre_fx, fct_gross_income -- 30+ fact tables in total, joined against 20+ dimension tables (dim_instrument, dim_counterparty, dim_desk, dim_book, dim_trader, dim_exchange, dim_currency, dim_date, dim_obligor_hierarchy, dim_rating, dim_settlement_type, etc.). I implemented cross-region reconciliation between NCFA, NFPS, and NSC feeds, built the AutoSys dependency chains (Pre-Derivatives must complete before Market Risk runs), and managed multi-timezone scheduling -- Asia feeds by 6 AM Tokyo, Europe by 7 AM London, Americas by 6 AM NY."
 
 ### Q: How did you achieve the 30% execution time improvement?
 
@@ -232,7 +232,7 @@ SELECT * FROM ranked WHERE rn <= 3;
 | Query speed | Faster | Slower (more joins) |
 | Use case | Analytics/reporting | Storage-optimized |
 
-**At Nomura**: We used star schema with trade facts joined to instrument, counterparty, and date dimensions.
+**At Nomura**: We used star schema with 30+ fact tables (fct_trade, fct_drt, fct_swap, fct_settlement, fct_market_risk, etc.) joined to 20+ dimension tables (dim_instrument, dim_counterparty, dim_desk, dim_book, dim_date, dim_obligor, dim_rating, etc.).
 
 ### Q: What are CTEs and why use them?
 
@@ -395,7 +395,7 @@ Step Function orchestrates:
 ### Bullet 1: "Engineered and maintained large-scale Spark ETL pipelines using Spark SQL..."
 
 **If asked "How large-scale? Give me numbers."**
-> "The capital markets datasets included daily trade feeds (hundreds of thousands of records per day), reference data tables (instrument master, counterparty master " millions of rows), risk feeds, and valuation feeds. We processed these through multi-way joins " a typical pipeline would join trade facts to 4-5 dimension tables (instrument, counterparty, book, date, currency) using star schema patterns."
+> "The capital markets datasets included 100+ feed processes producing 30+ fact tables (fct_trade, fct_drt, fct_swap, fct_prism, fct_settlement, fct_market_risk, fct_counterparty, fct_obligor, etc.) from three regional entities (NCFA, NFPS, NSC). These joined against 20+ dimension tables (dim_instrument, dim_counterparty, dim_desk, dim_book, dim_currency, dim_exchange, dim_obligor_hierarchy, dim_rating, etc.). A typical pipeline would join a fact table like fct_trade to 5-8 dimensions for P&L, risk, or regulatory reporting."
 
 **If asked "What kind of SQL queries?"**
 ```sql

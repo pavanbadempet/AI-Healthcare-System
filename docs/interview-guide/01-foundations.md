@@ -1901,15 +1901,21 @@ Two competing philosophies for designing a data warehouse:
 
 **Star Schema (what you used at Nomura):**
 ```
-                    dim_instruments
-                         |
-dim_counterparties -- fct_trades -- dim_dates
-                         |
-                    dim_currencies
+                                 dim_instrument
+                                      |
+                    dim_counterparty --+-- dim_date
+                                      |
+                                 dim_currency
+                                      |
+              +-------+-------+-------+-------+-------+
+              |       |       |       |       |       |
+          fct_trade fct_drt fct_swap fct_settlement fct_market_risk ...
+
+  30+ fact tables joined against 20+ dimension tables
 ```
 
-**Fact table** = the measurements/events (trades, with amounts and quantities)
-**Dimension tables** = the context (WHO traded, WHAT instrument, WHEN, in what CURRENCY)
+**Fact tables** = the measurements/events (each feed produces its own fact table: fct_trade, fct_drt, fct_swap, fct_prism, fct_settlement, fct_market_risk, fct_counterparty, fct_obligor, etc.)
+**Dimension tables** = shared context across all facts (WHO traded, WHAT instrument, WHEN, in what CURRENCY, from which DESK, in which REGION)
 
 ```sql
 -- Star schema query: Daily P&L by asset class
@@ -2324,7 +2330,7 @@ Developer pushes code
 | **Maintenance** | More complex (multiple tables) | Simpler (one table) |
 | **Best for** | Analytics with many query patterns | Dashboards with fixed queries |
 
-**Your answer:** "At Nomura we used star schema because portfolio managers query the data in many different ways -- by instrument, by desk, by date, by counterparty. An OBT would require pre-deciding the grain. Star schema is more flexible. But for a specific dashboard with known queries, OBT can be simpler and faster."
+**Your answer:** "At Nomura we used star schema because we had 30+ fact tables (fct_trade, fct_drt, fct_swap, fct_settlement, fct_market_risk, etc.) all sharing 20+ dimension tables. Portfolio managers query in many different ways -- by instrument, by desk, by date, by counterparty, by region. An OBT would require pre-deciding the grain and duplicating every dimension into every fact table. Star schema lets each fact table stay lean while dimensions are shared. But for a specific dashboard with known queries, OBT can be simpler and faster."
 
 ---
 
@@ -4218,7 +4224,7 @@ For ANY tool you haven't used, follow this 4-step answer:
 ---
 
 **9. "Why star schema for trade data?"**
-> "Capital markets analytics requires fast aggregations: daily P&L by desk, risk exposure by instrument, volume by exchange. Star schema with fct_trades at the center and dim_instruments, dim_desks, dim_dates as dimensions means: (1) 1-2 joins for any query. (2) Analysts write simple SQL. (3) Pre-aggregated fact tables for dashboard performance."
+> "Capital markets analytics requires fast aggregations: daily P&L by desk, risk exposure by instrument, volume by exchange. We had 30+ fact tables (fct_trade, fct_drt, fct_swap, fct_settlement, fct_market_risk, etc.) sharing 20+ dimension tables (dim_instrument, dim_counterparty, dim_desk, dim_book, dim_date, dim_currency, dim_obligor, dim_rating, etc.). Shared dimensions mean consistent analytics across all fact tables -- a query on fct_trade joins the same dim_instrument as a query on fct_settlement. Analysts write simple SQL with 2-3 joins per query."
 
 ---
 
