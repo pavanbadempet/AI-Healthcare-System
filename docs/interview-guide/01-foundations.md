@@ -4066,22 +4066,48 @@ For ANY tool you haven't used, follow this 4-step answer:
 | **NFPS** | Nomura Financial Products & Services | EMEA | European securities, settlements, FX |
 | **NSC** | Nomura Securities Co | Asia-Pacific | Japanese equities, fixed income, swaps |
 
-**The 100+ feed processes you managed (examples from each category):**
+**The 100+ feed processes you managed (these produce FACT tables):**
 
-| Category | Feed Processes | What they contain |
+| Category | Fact Tables / Feed Processes | What they contain |
 |---|---|---|
-| **Derivatives** | Pre-Derivatives, Swap, PRISM | OTC derivatives positions, swap valuations, pricing |
-| **Collateral** | Pre-Collateral, CA (Corporate Actions) | Margin calls, collateral movements, corporate action events |
-| **FX** | Pre-FX | Foreign exchange positions, currency exposures |
-| **Securities** | Securities, Foreign Bond, Equity | Security master data, bond attributes, equity positions |
-| **Trading** | Trade, DRT (Daily Reconciliation Trades), SFT (Securities Financing Transactions) | Executed trades, trade reconciliation, repo/lending |
-| **Settlements** | Settlement, Cash, Deposit | Trade settlement status, cash movements, deposit records |
-| **Risk** | Market Risk, Counterparty (CParty), Obligor, Obligor Hierarchy | VaR calculations, counterparty exposure, credit risk |
-| **Ratings** | Moody's (MDYS), Fitch Rating | Credit ratings from external agencies |
-| **Funds** | NAM Fund (Nomura Asset Mgmt), HASEI | Fund positions, NAV calculations |
-| **Lending** | Pre-Loan, Pre-Repo Ledger | Securities lending, repo positions |
-| **Income** | Gross Income, Book | Revenue attribution, P&L by book |
-| **Reference** | B (Benchmark), GMI, VPIER, Reseller, CA Dodge | Benchmark data, global market indices, pricing sources |
+| **Derivatives** | fct_pre_derivatives, fct_swap, fct_prism | OTC derivatives positions, swap valuations, pricing |
+| **Collateral** | fct_pre_collateral, fct_corporate_actions (CA) | Margin calls, collateral movements, corporate action events |
+| **FX** | fct_pre_fx | Foreign exchange positions, currency exposures |
+| **Securities** | fct_securities, fct_foreign_bond, fct_equity | Security positions, bond attributes, equity holdings |
+| **Trading** | fct_trade, fct_drt, fct_sft | Executed trades, daily reconciliation, repo/securities lending |
+| **Settlements** | fct_settlement, fct_cash, fct_deposit | Settlement status, cash movements, deposit records |
+| **Risk** | fct_market_risk, fct_counterparty, fct_obligor | VaR, counterparty exposure, credit risk |
+| **Ratings** | fct_mdys_rating, fct_fitch_rating | Credit ratings from Moody's and Fitch |
+| **Funds** | fct_nam_fund, fct_hasei | Fund positions, NAV calculations |
+| **Lending** | fct_pre_loan, fct_pre_repo_ledger | Securities lending, repo positions |
+| **Income** | fct_gross_income, fct_book | Revenue attribution, P&L by book |
+| **Reference** | fct_benchmark, fct_gmi, fct_vpier, fct_reseller | Benchmark data, global indices, pricing sources |
+
+**The many DIMENSION tables that supported them:**
+
+| Dimension Table | What it stores | Example values |
+|---|---|---|
+| **dim_instrument** | Security/instrument master | ISIN, CUSIP, instrument type, maturity |
+| **dim_counterparty** | Trading counterparties | Counterparty name, LEI code, credit rating |
+| **dim_desk** | Trading desks | Desk code, desk name, business line |
+| **dim_book** | Trading books | Book ID, book name, owning desk |
+| **dim_trader** | Individual traders | Trader ID, name, desk assignment |
+| **dim_exchange** | Exchanges/venues | Exchange code (NYSE, TSE, LSE), timezone |
+| **dim_currency** | Currencies | ISO code (USD, JPY, EUR), exchange rates |
+| **dim_date** | Calendar dimension | Trade date, settlement date, business day flag |
+| **dim_strategy** | Trading strategies | Strategy code, strategy type, risk category |
+| **dim_region** | Geographic regions | NCFA, NFPS, NSC, country codes |
+| **dim_legal_entity** | Nomura legal entities | Entity code, jurisdiction, regulator |
+| **dim_product_type** | Product classifications | Equity, FI, Derivatives, FX, Repo |
+| **dim_settlement_type** | Settlement methods | DVP, FOP, T+1, T+2 |
+| **dim_custodian** | Custodian banks | Custodian name, account details |
+| **dim_broker** | External brokers | Broker code, commission schedule |
+| **dim_account** | Trading accounts | Account ID, account type, owning entity |
+| **dim_portfolio** | Portfolio groupings | Portfolio ID, fund association, mandate |
+| **dim_obligor** | Credit obligors | Obligor ID, industry, country |
+| **dim_obligor_hierarchy** | Obligor parent-child | Ultimate parent, subsidiary chain |
+| **dim_rating** | Rating agency mappings | Moody's ↔ Fitch ↔ S&P equivalences |
+| **dim_sector** | Industry sectors | GICS sector, sub-sector, industry group |
 
 **Architecture:**
 ```
@@ -4102,8 +4128,17 @@ For ANY tool you haven't used, follow this 4-step answer:
     │
 [HDFS/MinIO (Parquet, partitioned by trade_date + region)]
     │
-[Star Schema: fct_trades + dim_instruments + dim_desks + dim_counterparties
-              + dim_exchanges + dim_currencies + dim_dates + dim_traders + dim_strategies]
+[Data Warehouse Schema:]
+    │
+    ├── FACT TABLES (30+): fct_trade, fct_drt, fct_sft, fct_swap, fct_prism,
+    │   fct_settlement, fct_cash, fct_market_risk, fct_counterparty,
+    │   fct_obligor, fct_corporate_actions, fct_pre_fx, fct_gross_income, ...
+    │
+    └── DIMENSION TABLES (20+): dim_instrument, dim_counterparty, dim_desk,
+        dim_book, dim_trader, dim_exchange, dim_currency, dim_date,
+        dim_strategy, dim_region, dim_legal_entity, dim_product_type,
+        dim_settlement_type, dim_obligor, dim_obligor_hierarchy,
+        dim_rating, dim_sector, dim_custodian, dim_broker, dim_portfolio, ...
     │
     ├── [Risk Analytics: VaR, counterparty exposure, credit risk]
     ├── [P&L Dashboards: by desk, book, region, instrument type]
@@ -4113,9 +4148,9 @@ For ANY tool you haven't used, follow this 4-step answer:
 
 **Key metrics you should quote:**
 - Managed **100+ feed processes** (both automated and manual) across **3 regional entities** (NCFA, NFPS, NSC)
+- **30+ fact tables** (fct_trade, fct_drt, fct_swap, fct_market_risk, fct_settlement, etc.) joined against **20+ dimension tables** (dim_instrument, dim_counterparty, dim_desk, dim_book, dim_obligor, etc.)
 - Processed **200M+ trade events daily** from derivatives, securities, FX, settlements, and risk systems
 - Managed **50+ AutoSys job chains** with complex dependency graphs (e.g., Pre-Derivatives must complete before Market Risk can run)
-- Star schema: **1 fact table + 8 dimension tables** serving 4 downstream systems (risk, P&L, regulatory, portfolio)
 - Spark cluster: **100+ executors** across 20 nodes, processing **500GB+ daily**
 - **Cross-region reconciliation**: Automated balance checks between NCFA, NFPS, and NSC feeds -- discrepancies flagged within 30 minutes
 - **YARN-to-K8s migration**: Zero downtime, 0.01% output variance, 30% cost reduction
