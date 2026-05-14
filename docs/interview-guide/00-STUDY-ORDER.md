@@ -1,17 +1,17 @@
 # Interview Mastery Curriculum -- Study Order
 
-> **7 files. 313 KB. 6,400+ lines. Everything you need.**
+> **7 files. 561 KB. 9,800+ lines. Everything you need.**
 > Close any other interview files -- this is the ONLY folder that matters.
 
 ---
 
 ## THE 4-PHASE STUDY PLAN
 
-### Phase 1: Build the Foundation (3 hours)
+### Phase 1: Build the Foundation (4 hours)
 | Priority | Chapter | What you learn | Time |
 |---|---|---|---|
-| 1 | [01-foundations.md](01-foundations.md) | Every concept from zero: ML, Spark, SQL, Security, Frontend | 90 min |
-| 2 | [02-your-career.md](02-your-career.md) | TCS/Nomura/Nissan defense, resume line-by-line, Spark deep-dive | 90 min |
+| 1 | [01-foundations.md](01-foundations.md) | Every concept from zero: ML, Spark, SQL, Cloud (AWS/Azure), Snowflake, On-Prem, Platform Wars, Project Defenses (Parts 1-32) | 150 min |
+| 2 | [02-your-career.md](02-your-career.md) | TCS/Nomura/Nissan defense, resume line-by-line, Spark deep-dive, 30-sec pitch | 90 min |
 
 ### Phase 2: Master Your Projects (4 hours)
 | Priority | Chapter | What you learn | Time |
@@ -29,7 +29,23 @@
 |---|---|---|---|
 | 6 | [06-interview-mastery.md](06-interview-mastery.md) | 5 golden rules, scenarios, tradeoffs, salary, body language, scorecard | 120 min |
 
-**Total: ~12 hours for complete preparation.**
+**Total: ~13 hours for complete preparation.**
+
+---
+
+## WHAT'S IN 01-FOUNDATIONS.MD (32 Parts)
+
+| Part | Topic |
+|---|---|
+| 1-8 | Core DE Concepts (Spark, SQL, ETL, Data Modeling, etc.) |
+| 9-15 | Cloud Platforms (AWS, Azure, On-Prem) |
+| 16-20 | Tools Deep-Dives (Snowflake, Databricks, Kafka, Delta Lake) |
+| 21-27 | Trade-offs, Data Governance, Performance |
+| 28 | **Platform Wars** (Why X not Y -- every major comparison) |
+| 29 | **Project Justifications** (Nissan 24 Q&As, Nomura 21 Q&As, Healthcare 19 Q&As, Nova 13 Q&As) |
+| 30 | **8 STAR Behavioral Stories** (mapped to your real projects) |
+| 31 | **15 Gotcha/Trap Questions** (with safe answers) |
+| 32 | **10 Questions to Ask the Interviewer** |
 
 ---
 
@@ -37,41 +53,53 @@
 
 | If they ask about... | Go to |
 |---|---|
-| XGBoost, class imbalance, scale_pos_weight | Ch 1 (concepts) + Ch 3 (your implementation) |
-| Spark optimization, broadcast joins, partitioning | Ch 2 (Nomura work) + Ch 5 (PySpark patterns) |
-| FAISS, SBERT, vector search, embeddings | Ch 1 (concepts) + Ch 4 (Nova deep-dive) |
+| XGBoost, class imbalance, SHAP, model monitoring | Ch 1 (Part 29: Healthcare Q10-Q19) + Ch 3 |
+| Spark optimization, broadcast joins, partitioning | Ch 2 (Nomura work) + Ch 1 (Part 29: Nomura Q15) |
+| FAISS, SBERT, vector search, cold-start problem | Ch 1 (Part 29: Nova Q10-Q13) + Ch 4 |
 | Delta Lake, medallion, Bronze/Silver/Gold | Ch 4 (Nova) + Ch 5 (PySpark merge pattern) |
-| FastAPI, middleware, JWT, bcrypt | Ch 1 (concepts) + Ch 3 (Healthcare backend) |
+| FastAPI, middleware, JWT, bcrypt, API security | Ch 1 (Part 29: Healthcare Q19) + Ch 3 |
 | Next.js, Zustand, SSE streaming | Ch 3 (Healthcare frontend) |
 | SQL window functions, CTEs, joins | Ch 2 (Nomura SQL) + Ch 5 (SQL patterns) |
-| AWS Lambda, Step Functions, CloudWatch | Ch 2 (Nissan project) |
-| YARN to Kubernetes migration | Ch 2 (Nomura bullet 4) |
-| AutoSys vs Airflow | Ch 2 (Nomura bullet 3) + Ch 6 (counter-questions) |
-| Schema evolution | Ch 1 (foundations) + Ch 6 (scenario 3) |
-| Data quality, testing, validation | Ch 3 (Healthcare testing) + Ch 5 (PySpark pattern 4) |
-| Kafka, event streaming | Ch 4 (Nova Kafka section) |
-| SCD Type 2 | Ch 4 (Nova SCD section) |
-| "Tell me about yourself" | Ch 6 (HR section) |
+| AWS Lambda, Step Functions, S3, EventBridge, SNS | Ch 1 (Part 29: Nissan Q13-Q24) + Ch 2 |
+| Snowflake (RBAC, clustering, Snowpipe, multi-warehouse) | Ch 1 (Part 29: Nissan Q16, Q21, Q23) |
+| Athena, Glue Catalog | Ch 1 (Part 29: Nissan Q24) |
+| YARN to Kubernetes migration | Ch 2 (Nomura bullet 4) + Ch 1 (Part 29: Nomura) |
+| AutoSys dependency chains, job scheduling | Ch 1 (Part 29: Nomura Q16) + Ch 2 |
+| DRT reconciliation, feed failures, on-call | Ch 1 (Part 29: Nomura Q11-Q17) |
+| Month-end processing, cross-region joins | Ch 1 (Part 29: Nomura Q14, Q19) |
+| Data governance, lineage, RBAC | Ch 1 (Part 29: Nomura Q20) |
+| Spark configs (executor memory, broadcast threshold) | Ch 1 (Part 29: Nomura Q15) |
+| Schema evolution, upstream changes | Ch 1 (Part 29: Nissan Q22) |
+| Data quality, testing, validation | Ch 3 (Healthcare testing) + Ch 5 |
+| Kafka ordering, event streaming | Ch 1 (Part 29: Nova Q13) + Ch 4 |
+| Star schema, fact/dimension tables | Ch 1 (Kimball section) + Ch 2 |
+| "Tell me about yourself" / 30-sec pitch | Ch 2 (pitch) + Ch 6 (HR section) |
 | Salary negotiation | Ch 6 (salary scripts) |
-| "Why leave TCS?" | Ch 6 (behavioral) |
-| Production failure at 2 AM | Ch 6 (scenario 1) |
-| System design tradeoffs | Ch 6 (tradeoff discussions) |
+| "Why leave TCS?" | Ch 1 (Part 31: Gotcha Q5) |
+| Production failure at 2 AM | Ch 1 (Part 30: STAR Story 1) + Ch 6 |
+| "Rate yourself on Spark" | Ch 1 (Part 31: Gotcha Q3) |
+| "Biggest weakness" | Ch 1 (Part 31: Gotcha Q2) |
+| "Why hire you over 5-year exp?" | Ch 1 (Part 31: Gotcha Q6) |
+| System design (vague requirement) | Ch 1 (Part 31: Gotcha Q10) + Ch 6 |
+| Questions to ask THEM | Ch 1 (Part 32) |
 | Two Sum, binary search, DSA | Ch 5 (10 patterns) |
 | Resume bullet defense | Ch 2 (every bullet explained) |
+| NCFA, NFPS, NSC (Nomura regions) | Ch 1 (Part 29: Nomura) + Ch 2 |
+| DRT, SFT, PRISM, CA (Nomura feeds) | Ch 1 (Part 29: Nomura fact tables) |
 
 ---
 
 ## FILE SIZES
 
 ```
-01-foundations.md        49 KB   1,330 lines
-02-your-career.md        27 KB     643 lines
-03-healthcare-project.md 134 KB  3,200+ lines
-04-nova-project.md        22 KB    450 lines
-05-coding-practice.md     27 KB    900 lines
-06-interview-mastery.md   51 KB    898 lines
+01-foundations.md        264 KB  3,744 lines  (The Textbook)
+02-your-career.md         29 KB    522 lines  (Career Defense)
+03-healthcare-project.md 134 KB  3,109 lines  (Healthcare Deep-Dive)
+04-nova-project.md        22 KB    342 lines  (Nova Deep-Dive)
+05-coding-practice.md     41 KB  1,102 lines  (Code Drills)
+06-interview-mastery.md   67 KB    924 lines  (Interview Strategy)
 ----------------------------------------------
-TOTAL                    313 KB  6,400+ lines
+TOTAL                    561 KB  9,800+ lines
 ```
 
 **This is your ONE source of truth. No other interview files exist.**
