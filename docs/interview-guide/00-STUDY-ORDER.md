@@ -1,6 +1,6 @@
 # Interview Mastery Curriculum -- Study Order
 
-> **7 files. 561 KB. 9,800+ lines. Everything you need.**
+> **7 files. 599 KB. 10,600+ lines. Everything you need.**
 > Close any other interview files -- this is the ONLY folder that matters.
 
 ---
@@ -92,14 +92,22 @@
 ## FILE SIZES
 
 ```
-01-foundations.md        264 KB  3,744 lines  (The Textbook)
+01-foundations.md        272 KB  3,890 lines  (The Textbook: 35 Parts)
 02-your-career.md         29 KB    522 lines  (Career Defense)
 03-healthcare-project.md 134 KB  3,109 lines  (Healthcare Deep-Dive)
 04-nova-project.md        22 KB    342 lines  (Nova Deep-Dive)
 05-coding-practice.md     41 KB  1,102 lines  (Code Drills)
-06-interview-mastery.md   67 KB    924 lines  (Interview Strategy)
+06-interview-mastery.md   95 KB  1,562 lines  (Interview Strategy + Live Rounds)
 ----------------------------------------------
-TOTAL                    561 KB  9,800+ lines
+TOTAL                    599 KB  10,600+ lines
 ```
+
+### Ch6 Now Includes:
+- **8 Live SQL Problems** (using YOUR Nomura schema)
+- **5 Live PySpark Problems** (broadcast joins, Delta MERGE, SCD Type 2)
+- **3 Data Modeling Problems** (e-commerce, ride-sharing, YOUR Nomura schema)
+- **6 Advanced SQL Patterns** (recursive CTE, MERGE, LAG/LEAD, GROUPING SETS, gap detection, sessionization)
+- **Full Mock Interview Transcript** (30-minute conversation flow)
+- **Interview Day Timeline** (T-60 to post-interview checklist)
 
 **This is your ONE source of truth. No other interview files exist.**
