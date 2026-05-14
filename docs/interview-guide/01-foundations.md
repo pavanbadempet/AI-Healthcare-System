@@ -1602,6 +1602,21 @@ dbt run --full-refresh            # Drop and rebuild tables
 **How to bridge to your experience:**
 > "I haven't used dbt directly, but the concept maps to what I do in PySpark. dbt transforms data in the warehouse with SQL; I transform data in Spark with PySpark/SQL. Both use modular code, testing, and version control. The difference is dbt runs SQL inside Snowflake/BigQuery (push-down), while Spark pulls data out and processes it in a cluster. For SQL-heavy ELT workloads, dbt is simpler. For complex transformations with ML features, Spark is more powerful. I'd pick up dbt quickly."
 
+**dbt Counter-Question Drill-Down:**
+
+**"What does ref() actually do?"**
+> "ref('stg_trades') does two things: (1) resolves the actual table name in the target warehouse, and (2) creates a dependency -- dbt knows stg_trades must run BEFORE any model that ref()s it. It's like Python's import statement -- it both loads and declares a dependency."
+
+**"How do you handle incremental models in dbt?"**
+> "With the `incremental` materialization. Instead of rebuilding the full table, dbt only processes new rows since the last run. You define `is_incremental()` in Jinja to add a WHERE clause filtering by a timestamp. This turns a 2-hour full rebuild into a 5-minute incremental append."
+
+**"dbt vs stored procedures?"**
+> "Stored procedures live inside the database -- no version control, no tests, no lineage, hard to review. dbt models are SQL files in Git -- versioned, tested with schema.yml, auto-documented, with lineage graphs. It's the difference between writing scripts in production vs having a proper SDLC."
+
+**Analogy:** dbt is to SQL what React is to HTML. It adds components (models), imports (ref()), testing (schema.yml), and build tools (dbt run) to what would otherwise be a mess of raw SQL files.
+
+**Memory trick:** dbt = **d**efined, **b**uildable, **t**ested SQL
+
 ---
 
 ### Data Lake vs Data Warehouse vs Lakehouse
@@ -1626,6 +1641,21 @@ This is asked in EVERY DE interview. Know the tradeoffs cold:
 
 **Interview answer:**
 > "I've worked with all three patterns. At Nissan, we loaded clean data into Snowflake for reporting -- classic warehouse. At Nomura, trade data landed as Parquet in S3 -- a data lake that Spark queried directly. In my Nova project, I used Delta Lake which is a lakehouse -- raw data in Bronze (lake), validated data in Silver (warehouse-like), and ML-ready features in Gold. The lakehouse gives you cheap storage with ACID transactions and time travel."
+
+**Counter-questions:**
+
+**"Why not just use a data warehouse for everything?"**
+> "Warehouses are expensive for raw/unstructured data. You don't want to pay Snowflake compute prices to store raw JSON logs. A lakehouse keeps raw data cheap (S3) and only pays for compute when you query it."
+
+**"What's the medallion architecture?"**
+> "Three layers. Bronze = raw data, exactly as received (your insurance policy). Silver = cleaned, deduplicated, validated (your reliable source). Gold = business-ready aggregations (what analysts query). Think of it as: pantry (Bronze) -> prepped ingredients (Silver) -> plated dish (Gold)."
+
+**"Why keep Bronze if you have Silver?"**
+> "Because cleaning logic has bugs. If your Silver transformation drops 5% of records due to a bad filter, you can re-derive Silver from Bronze. Without Bronze, you'd have to re-extract from the source system -- which may not have history or may have changed."
+
+**Analogy:** Lake = a reservoir (stores everything, no treatment). Warehouse = a water treatment plant (clean, filtered, ready to drink). Lakehouse = a reservoir WITH a treatment plant built on top.
+
+**Memory trick:** **B**ronze = **B**ackup, **S**ilver = **S**anitized, **G**old = **G**o-to-market
 
 ---
 
@@ -1653,6 +1683,21 @@ Source -> Kafka (streaming buffer) -> Spark Structured Streaming (micro-batch)
                                      Gold tables (batch analytics)
 ```
 > "Most production systems are hybrid. We stream events into Kafka for low-latency capture, then Spark Structured Streaming processes them in micro-batches (every 30 seconds) and writes to Delta Lake. Downstream analytics still runs as daily batch. This gives us near-real-time data capture without the complexity of true event-at-a-time processing."
+
+**Counter-questions:**
+
+**"When would you choose streaming over batch?"**
+> "When the business NEEDS low-latency data: fraud detection (seconds matter), real-time pricing, live dashboards for trading desks. If 'real-time' means 'fresher than daily,' I'd try hourly batch first -- it's 10x simpler and cheaper."
+
+**"What's the hardest part of streaming?"**
+> "State management. In batch, you process a file and you're done. In streaming, you need to track: what events have I seen? How do I handle late arrivals? How do I maintain running aggregations across restarts? This is why Spark Structured Streaming's checkpoint mechanism and Delta Lake's ACID writes are so valuable -- they handle state recovery automatically."
+
+**"What's micro-batch vs true streaming?"**
+> "Micro-batch: collect events for 30 seconds, process the batch. Latency = seconds. Spark Structured Streaming does this. True streaming: process each event individually as it arrives. Latency = milliseconds. Flink does this. Tradeoff: throughput vs latency. Micro-batch has higher throughput because it amortizes overhead across many events."
+
+**Analogy:** Batch = taking the bus (scheduled, efficient, wait for it). Streaming = taking a taxi (on-demand, immediate, expensive). Micro-batch = a shuttle that leaves every 30 seconds (good compromise).
+
+**Memory trick:** Batch = **B**ig chunks, **A**fter the fact. Stream = **S**mall events, **T**his instant.
 
 ---
 
@@ -1694,6 +1739,21 @@ def process_batch(date, data):
     data.write.mode("append").save("snowflake://target")
 # Safe to re-run: always produces the same result
 ```
+
+**Counter-questions:**
+
+**"Why is idempotency important?"**
+> "Because pipelines WILL fail and be re-run. Network blip at 3 AM? Re-run. Upstream data arrived late? Re-run. If re-running creates duplicates or corrupts data, you have a production incident. Idempotent pipelines make re-runs SAFE."
+
+**"What if two pipeline instances run simultaneously?"**
+> "Delta Lake's MERGE uses optimistic concurrency control. If two jobs try to MERGE the same partition, one succeeds and the other gets a ConcurrentAppendException and retries. At the file level, S3's atomic PUT ensures no partial files."
+
+**"Isn't DELETE then INSERT risky? What if it crashes between them?"**
+> "Yes! That's why Delta Lake MERGE is better -- it's atomic. The DELETE+INSERT pattern works if wrapped in a transaction (Snowflake supports this). Without a transaction, you risk a window where data is deleted but not yet re-inserted."
+
+**Analogy:** Idempotent = a light switch. Flipping it twice = same as flipping once. The room is lit either way. Non-idempotent = a coin counter. Running through twice = doubled count.
+
+**Memory trick:** **I**dempotent = **I**dentical results, **D**espite **E**xtra runs
 
 ---
 
@@ -1741,6 +1801,21 @@ OPTIMIZE delta.`/data/trades/` ZORDER BY (instrument_id)  -- Also co-locate rela
 ```
 
 **Z-Ordering** arranges data within files so that rows with similar values are stored near each other. This makes filter queries faster because Spark can skip entire file sections.
+
+**Partitioning Counter-Question Drill-Down:**
+
+**"How do you choose a partition key?"**
+> "Pick the column you filter by most. If 90% of queries have WHERE date = ..., partition by date. Bad partition keys: high-cardinality columns (user_id with 100M unique values = 100M tiny files). Rule: partition should create 100-1000 partitions, each 128MB-1GB."
+
+**"What's the small files problem?"**
+> "Too many small files (<10MB each) kills performance: slow S3 LIST operations, too many file handles for Spark, poor compression. Cause: over-partitioning, frequent appends. Fix: Delta Lake OPTIMIZE compacts small files into 128MB targets. Run OPTIMIZE daily."
+
+**"Z-ordering vs partitioning -- when to use which?"**
+> "Partition by the column with FEW distinct values that you ALWAYS filter by (date, region). Z-order by columns with MANY values that you SOMETIMES filter by (customer_id, product_id). You can partition by date AND Z-order by customer_id -- they're complementary."
+
+**Analogy:** Partitioning = organizing a library by floor (Fiction on floor 1, Science on floor 2). Z-ordering = organizing bookshelves within each floor by author AND genre so you can find books by either.
+
+**Memory trick:** Partition = **P**hysical folders. Z-Order = **Z**one within folders.
 
 ---
 
@@ -1854,6 +1929,21 @@ ORDER BY 1, 2;
 **Why Kimball for Nomura:**
 > "We used Kimball's star schema because capital markets analytics is query-heavy -- portfolio managers need fast aggregations (daily P&L, risk exposure by desk). Denormalized dimensions mean fewer joins, which means faster queries. The trade-off is some data redundancy in dimensions, but for analytics that's acceptable."
 
+**Counter-questions:**
+
+**"What's a surrogate key?"**
+> "A surrogate key is an auto-generated integer (1, 2, 3...) used as the primary key in a dimension table, INSTEAD of the natural business key. Why? Because natural keys can change (customer email changes), but surrogate keys never change. SCD Type 2 requires surrogate keys -- same customer_id has multiple rows with different surrogate keys."
+
+**"What's a degenerate dimension?"**
+> "A dimension that lives IN the fact table, not in a separate dimension table. Example: order_number in fct_orders. It's dimensional (you can filter by it), but creating a separate table for it adds no useful attributes. Common in transactional data."
+
+**"Snowflake schema vs star schema?"**
+> "A snowflake schema normalizes dimensions further. dim_products has a foreign key to dim_categories, which has a foreign key to dim_departments. Star schema denormalizes: dim_products has category_name and department_name directly. Star = fewer joins, faster queries, slightly more storage. Snowflake = more joins, slower queries, less storage. In analytics, query speed wins."
+
+**Analogy:** Star schema = a compass (fact at center, dimensions pointing outward, simple to navigate). Snowflake schema = a family tree (branches upon branches, harder to traverse).
+
+**Memory trick:** **F**act = **F**igures (numbers). **D**imension = **D**escriptors (context).
+
 ---
 
 ### Slowly Changing Dimensions -- All 4 Types (Complete Reference)
@@ -1907,6 +1997,21 @@ Result:
 |-------------|---------------|---------------|
 | 123         | San Francisco | New York      |
 ```
+
+**SCD Counter-Question Drill-Down:**
+
+**"How do you decide which SCD type to use?"**
+> "Ask: 'Do we need history?' No → Type 1 (overwrite). Yes, full history → Type 2 (new row). Only previous value → Type 3 (extra column). For regulatory data (healthcare, finance), always Type 2 -- auditors need the full trail."
+
+**"How does Type 2 affect query performance?"**
+> "More rows per entity means larger dimension tables. A customer active for 5 years with monthly address changes = 60 rows. Fix: always filter by `is_current = true` for current-state queries. Add an index on (entity_id, is_current) for fast lookups."
+
+**"How do you implement SCD Type 2 at scale in Spark?"**
+> "Delta Lake MERGE. Match on business key. When matched AND values changed: update existing row (set valid_to, is_current=false), insert new row (valid_from=today, is_current=true). Atomic operation, handles millions of records."
+
+**Analogy:** Type 0 = carved in stone (never changes). Type 1 = whiteboard (erase and rewrite). Type 2 = photo album (keep all versions). Type 3 = before/after photo (only two snapshots).
+
+**Memory trick:** SCD type number = how many versions you keep. Type 0 = zero changes. Type 1 = one version. Type 2 = two+ versions. Type 3 = three columns (current + previous + original).
 
 ---
 
@@ -2076,6 +2181,21 @@ CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
 
 **Your YARN-to-K8s migration answer:**
 > "At Nomura, I migrated Spark from YARN to Kubernetes. Think of it as moving from a dedicated office building (YARN on fixed hardware) to a flexible coworking space (K8s with auto-scaling). The challenges were: (1) packaging Spark JARs into Docker images, (2) configuring S3A connectors for MinIO instead of HDFS, (3) translating YARN's memory model to K8s resource requests/limits. The result: same Spark jobs, now portable between on-prem and cloud."
+
+**Docker/K8s Counter-Question Drill-Down:**
+
+**"What's a multi-stage Docker build?"**
+> "Build the app in one stage (with compilers, dev tools), copy only the artifact to the final stage (slim image). Result: 1.2GB image becomes 200MB. Smaller images = faster deploys, smaller attack surface."
+
+**"How do you handle secrets in Kubernetes?"**
+> "Never bake secrets into Docker images. Use K8s Secrets (stored in etcd, base64 encoded) or external secret managers (AWS Secrets Manager, Vault). Mount secrets as environment variables or files in the pod."
+
+**"What happens if a pod crashes?"**
+> "K8s automatically restarts it (restartPolicy: Always). If it keeps crashing (CrashLoopBackOff), investigate logs: `kubectl logs pod-name`. For Spark: the driver requests a new executor pod from K8s to replace the failed one."
+
+**Analogy:** Docker = a shipping container (same box, different trucks). K8s = the shipping port (routes containers, replaces damaged ones, scales fleet). Dockerfile = the packing instructions.
+
+**Memory trick:** Docker = **D**elivers **O**bjects **C**onsistently, **K**8s = **K**eeps **E**verything **R**unning
 
 ---
 
