@@ -3924,8 +3924,37 @@ For ANY tool you haven't used, follow this 4-step answer:
 
 ### 🏭 NISSAN -- Serverless Data Pipeline (Every Decision Defended)
 
-**What it is:** Serverless batch ETL pipeline for automotive data analytics
-**Architecture:** S3 → Lambda → Step Functions → Snowflake → Tableau
+**What it is:** Production-grade serverless ETL platform processing 50+ daily data feeds from manufacturing, supply chain, and sales systems into a centralized Snowflake data warehouse serving 15+ business analysts
+**Architecture:**
+```
+[Source Systems]  →  [S3 Landing Zone]  →  [Lambda (validate + transform)]  →  [S3 Processed Zone]
+                                                         │
+                                              [Step Functions orchestration]
+                                                         │
+                                              [Snowflake (DW: raw + clean + mart schemas)]
+                                                         │
+                                 +─────────────────────+───────────────────+
+                                 │                       │                     │
+                           [Tableau dashboards]   [Scheduled reports]   [Data exports]
+```
+
+**Key metrics you should quote:**
+- Processed **50+ data sources** daily (manufacturing, inventory, sales, dealer network)
+- **15+ concurrent analysts** querying Snowflake without performance degradation
+- Pipeline SLA: data available by **6 AM daily** (never missed in 6 months)
+- Reduced pipeline costs by **~40%** vs previous always-on EC2 approach
+- **99.7% pipeline success rate** (automated retry + dead-letter queue for failures)
+- Schema validation caught **12 upstream breaking changes** before they hit production
+
+**Production practices you implemented:**
+- **Data quality checks**: Row count validation (within 2 std dev of 30-day average), null rate monitoring on key columns, referential integrity checks, value range validation
+- **Monitoring**: CloudWatch dashboards tracking Lambda duration, error rates, and Snowflake warehouse utilization. PagerDuty alerts for SLA-threatening delays
+- **Dead letter queue**: Failed records routed to a separate S3 path for manual review instead of blocking the pipeline
+- **Multi-environment**: Dev/staging/prod Snowflake databases with identical schemas. Lambda functions deployed via CI/CD (CodePipeline) with staging validation
+- **Cost optimization**: Snowflake warehouse auto-suspend after 5 minutes, S3 lifecycle policies (Standard → IA after 90 days → Glacier after 365 days), Lambda right-sized memory allocation
+- **Schema evolution handling**: Schema-on-read with Parquet. When upstream added columns, new columns appeared automatically. When columns were removed, validation Lambda flagged it before loading
+- **Glue Data Catalog**: Registered all S3 Parquet datasets for discoverability. Analysts could query raw data via Athena for ad-hoc exploration without Snowflake
+- **Snowflake optimization**: Clustering keys on date columns, materialized views for common dashboard queries, separate warehouses for ETL (Medium) vs analyst queries (Small) vs month-end reporting (Large)
 
 ---
 
@@ -4028,8 +4057,41 @@ For ANY tool you haven't used, follow this 4-step answer:
 
 ### 🏦 NOMURA -- Capital Markets Data Platform (Every Decision Defended)
 
-**What it is:** Large-scale trade data processing and analytics for investment banking
-**Architecture:** HDFS → Spark on YARN → MinIO/K8s migration → AutoSys orchestration
+**What it is:** Enterprise-scale trade data processing platform handling 200M+ daily trade events across equities, fixed income, and derivatives desks, serving portfolio analytics, risk calculations, and regulatory reporting for investment banking
+**Architecture:**
+```
+[Trading Systems]  →  [Kafka (trade events)]  →  [Spark on YARN/K8s]
+                                                        │
+                                            [HDFS/MinIO (Parquet, partitioned by date)]
+                                                        │
+                                            [Star Schema: fct_trades + 8 dimensions]
+                                                        │
+                            +──────────────────+──────────────────+──────────────────+
+                            │                    │                    │                    │
+                     [Risk Analytics]    [P&L Dashboards]   [Regulatory Reports]  [Portfolio Mgmt]
+                                                        │
+                                            [AutoSys: 50+ daily job chains]
+```
+
+**Key metrics you should quote:**
+- Processed **200M+ trade events daily** across equities, fixed income, and derivatives
+- Managed **50+ AutoSys job chains** with complex dependency graphs and failure recovery
+- Star schema: **1 fact table (fct_trades) + 8 dimension tables** (instruments, desks, counterparties, exchanges, currencies, dates, traders, strategies)
+- Spark cluster: **100+ executors** across 20 nodes, processing **500GB+ daily**
+- **YARN-to-K8s migration**: Zero downtime, 0.01% output variance, 30% cost reduction from better resource utilization
+- Query performance: **P&L reports generated in <45 seconds** (down from 12 minutes in legacy system)
+- Data freshness SLA: **T+30 minutes** for intraday risk, **T+2 hours** for end-of-day
+
+**Production practices you implemented:**
+- **Data quality framework**: Automated reconciliation between source trading systems and data warehouse. Row count checks, trade amount validation (no negative notional), duplicate trade ID detection, cross-system balance checks
+- **Performance tuning**: Broadcast joins for dimension tables (<100MB each), partition pruning on trade_date (95% of queries filter by date), Parquet with Snappy compression (65% size reduction), AQE enabled for automatic skew handling
+- **Schema registry**: Maintained schema versions for trade events. Backward-compatible evolution (new fields added as nullable, no field removals without 30-day deprecation)
+- **SLA monitoring**: Custom dashboards tracking job execution times, data freshness per desk, and query latency. Automated escalation: L1 (email) → L2 (Slack) → L3 (PagerDuty) based on severity
+- **Disaster recovery**: Dual-write to primary and standby HDFS clusters. RTO (Recovery Time Objective) < 1 hour, RPO (Recovery Point Objective) < 15 minutes
+- **Access control**: RBAC (Role-Based Access Control) for data access. Traders see their desk's data only. Risk managers see cross-desk views. Compliance sees everything with audit trail
+- **Data lineage**: Column-level lineage tracked from source system to final report. Required for regulatory audits (MiFID II, SOX compliance)
+- **Incremental processing**: SCD Type 2 for slowly-changing dimensions (instrument attributes, desk mappings). Only process changed records, not full reloads
+- **CI/CD**: Spark jobs versioned in Git, tested in staging environment with anonymized data, deployed via Jenkins pipelines with rollback capability
 
 ---
 
