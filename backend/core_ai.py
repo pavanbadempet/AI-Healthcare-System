@@ -528,5 +528,3 @@ async def chat_stream(
         return
 
     yield "**SYSTEM ERROR:** No AI backends are available. Please configure Ollama or set GOOGLE_API_KEY."
-#   O p e n T e l e m e t r y   s p a n s   -   W I P  
- 
