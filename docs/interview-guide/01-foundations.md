@@ -4956,3 +4956,192 @@ For ANY tool you haven't used, follow this 4-step answer:
 
 **10.** "Can you tell me about a recent project the team shipped that you're proud of?"
 > Flips the interview. If they struggle to answer, it's a red flag.
+
+---
+
+## PART 33: 15-MINUTE PRE-INTERVIEW CHEAT SHEET
+
+> Print this. Read it in the car/lobby before your interview. These are the numbers, names, and one-liners you MUST have on the tip of your tongue.
+
+---
+
+### YOUR NUMBERS (Memorize these)
+
+```
+NOMURA:
+  100+ feed processes | 3 regions (NCFA, NFPS, NSC)
+  30+ fact tables | 20+ dimension tables
+  200M+ trade events/day | 500GB+ daily
+  100+ Spark executors | 20 nodes
+  50+ AutoSys job chains
+  30% cost reduction (YARN → K8s)
+  0.01% output variance during migration
+  45min → 12min P&L job (73% improvement, report as 30%)
+  SLA: T+30min intraday, T+2hr end-of-day
+
+NISSAN:
+  50+ daily data feeds | 15+ analysts
+  99.7% pipeline success rate
+  6 AM SLA (never missed in 6 months)
+  ~40% cost reduction vs EC2
+  12 upstream schema changes caught
+  12 AWS services used
+  3 S3 zones: landing/processed/failed
+
+HEALTHCARE:
+  253K CDC records | 21 features | 3 diseases
+  141 automated tests
+  XGBoost (not deep learning -- tabular data)
+  SHAP for explainability
+  <5ms prediction latency
+
+NOVA:
+  1M+ movie records | 50K embeddings
+  768-dim SBERT vectors | <10ms FAISS search
+  Delta Lake Medallion (Bronze/Silver/Gold)
+  Kafka → Spark Structured Streaming
+```
+
+### YOUR ONE-LINERS (Say these exactly)
+
+| Question | Your one-liner |
+|---|---|
+| "Tell me about yourself" | "I'm a DE with 2+ years at TCS — 100+ feeds at Nomura, serverless platform at Nissan, plus two AI projects" |
+| "Why Snowflake not Redshift?" | "Concurrency (multi-warehouse), compute/storage separation, multi-cloud flexibility" |
+| "Why Spark not MapReduce?" | "In-memory processing. 8 transformation steps = 8 disk writes in MR, 0 in Spark" |
+| "Why PySpark not Scala?" | "Same Catalyst optimizer, same performance for DataFrames. Team knew Python" |
+| "Why XGBoost not DL?" | "Tabular data, 21 features, 253K rows. Research proves trees beat DL on tabular" |
+| "Why Lambda not Spark?" | "10-80MB files. Pandas in Lambda = 2 seconds. Spark startup = 30+ seconds" |
+| "Why YARN → K8s?" | "Dynamic scaling, storage-agnostic (MinIO), better resource packing" |
+| "Why star schema?" | "30+ fact tables sharing 20+ dimensions. Analysts write 2-3 join queries" |
+| "Why not Airflow?" | "AutoSys was enterprise standard. Same concepts: DAGs, dependencies, retries" |
+| "Why leaving TCS?" | "Grateful for the foundation. Ready for deeper ownership and cloud-native work" |
+| "Biggest weakness?" | "Over-engineering monitoring. Learned to ship first, instrument what hurts" |
+| "Rate yourself on Spark?" | "7-8. Confident in production PySpark, tuning, Spark UI. Growing in internals" |
+| "Where in 5 years?" | "Designing data architectures, not just implementing them. Staff/principal track" |
+
+### FEED NAMES TO DROP (Sounds authentic)
+
+> When talking about Nomura, casually mention 2-3 feed names:
+> - "For example, the DRT — Daily Reconciliation Trades — had to complete before settlement could run"
+> - "PRISM handled derivatives pricing, Pre-FX handled currency exposures"
+> - "Moody's and Fitch rating feeds updated dim_rating nightly"
+> - "Corporate Actions feed was a manual gate — ops had to sign off before downstream"
+
+### DIMENSION TABLE NAMES TO DROP
+
+> "We had dim_instrument with ISIN and CUSIP codes, dim_counterparty with LEI codes, dim_obligor_hierarchy for the parent-child credit chain, dim_settlement_type distinguishing DVP from FOP..."
+
+### REGION NAMES TO DROP
+
+> "NCFA handled Americas, NFPS handled EMEA, NSC handled Asia-Pacific. Feeds arrived in different timezones — Tokyo by 6 AM JST, London by 7 AM GMT, New York by 6 AM EST."
+
+---
+
+## PART 34: SALARY NEGOTIATION FOR DATA ENGINEERS
+
+> Know your market value. Never give a number first.
+
+---
+
+### DE Market Rates (2024-2025, India)
+
+| Level | Experience | CTC Range (LPA) | Key skills |
+|---|---|---|---|
+| **Junior DE** | 0-2 years | ₹6-12 LPA | SQL, Python, basic ETL |
+| **Mid DE** | 2-4 years | ₹12-25 LPA | Spark, Cloud (AWS/Azure), orchestration |
+| **Senior DE** | 4-7 years | ₹25-45 LPA | Architecture, leadership, multiple platforms |
+| **Staff/Lead DE** | 7+ years | ₹45-80 LPA | Platform strategy, team building |
+
+**Your positioning**: Mid DE with senior-level project complexity. Target: **₹15-25 LPA** depending on company tier.
+
+### DE Market Rates (US, for reference)
+
+| Level | Experience | Salary Range (USD) |
+|---|---|---|
+| **Junior DE** | 0-2 years | $80K-$110K |
+| **Mid DE** | 2-4 years | $110K-$150K |
+| **Senior DE** | 4-7 years | $150K-$200K |
+| **Staff DE** | 7+ years | $200K-$300K+ |
+
+### Negotiation Scripts
+
+**When they ask "What's your expected CTC?"**
+> "I'd prefer to understand the full scope of the role first. Can you share the budget range for this position?"
+
+**If they insist:**
+> "Based on my research and the complexity of my experience — managing 100+ feed processes at Nomura, building serverless platforms at Nissan, plus my AI/ML portfolio — I'm targeting the upper range for mid-level DE roles. I'm flexible based on the total package (base, bonus, stock, learning budget)."
+
+**When they give a low offer:**
+> "I appreciate the offer. Based on market data and my specific experience — enterprise-scale Spark pipelines, cloud architecture, and ML engineering — I was expecting closer to [X]. Is there flexibility on base, or can we explore a signing bonus or equity?"
+
+**Never say:**
+- ❌ "My current CTC is..."  (they'll anchor to it)
+- ❌ "I'll take whatever you offer"  (signals desperation)
+- ❌ "That's too low"  (confrontational)
+
+**Always say:**
+- ✅ "Based on my research..."  (data-driven)
+- ✅ "I'm excited about this role. Let me think about the full package"  (positive but not committed)
+- ✅ "Is there flexibility on [specific component]?"  (opens negotiation)
+
+---
+
+## PART 35: COMPANY RESEARCH CHECKLIST (Before Every Interview)
+
+> Spend 30 minutes researching the company. Fill in this template.
+
+---
+
+### Before the interview, know:
+
+```
+COMPANY:
+□ What does the company do? (1 sentence)
+□ What's their data stack? (check job posting, LinkedIn, tech blog)
+□ Recent news? (funding, product launch, acquisition)
+□ Company size? (startup / mid / enterprise)
+□ Who am I interviewing with? (LinkedIn their name, know their role)
+
+ROLE:
+□ What tools does the JD mention? (Spark, Airflow, Snowflake, etc.)
+□ What's the team size?
+□ Is it building new or maintaining existing?
+□ Cloud or on-prem?
+□ Batch or streaming or both?
+
+MY FIT:
+□ Which of my projects maps to their needs?
+   - Spark/batch → Nomura
+   - Cloud/serverless → Nissan
+   - ML/AI → Healthcare + Nova
+□ Which "Why This Not That" answers will they likely ask?
+□ What 3 questions will I ask them? (from Part 32)
+
+LOGISTICS:
+□ Interview time (convert to your timezone)
+□ Video link / office address
+□ Interviewer names
+□ Dress code (camera-ready for video)
+□ Water, notes, pen ready
+```
+
+### Map THEIR stack to YOUR experience:
+
+| If they use... | You talk about... |
+|---|---|
+| Airflow | AutoSys at Nomura (same concepts: DAGs, dependencies, retries) |
+| Databricks | Nova project (Delta Lake, Spark, Medallion architecture) |
+| Snowflake | Nissan project (clustering, multi-warehouse, Snowpipe) |
+| Redshift | "Similar to Snowflake which I used at Nissan. Key difference: ..." |
+| Kafka | Nova project (Kafka → Spark Structured Streaming → Delta Lake) |
+| dbt | "Used dbt concepts at Nissan (staging/mart), implemented as SQL procedures" |
+| Kubernetes | Nomura migration (YARN → K8s, HPA, MinIO) |
+| AWS (general) | Nissan (12 services: S3, Lambda, Step Functions, EventBridge, etc.) |
+| Azure | "My Spark and Snowflake skills transfer directly. Azure has ADF, Synapse, ADLS" |
+| On-prem Hadoop | Nomura (HDFS, YARN, 100+ executors, AutoSys) |
+| ML/AI features | Healthcare (XGBoost, SHAP, FastAPI) + Nova (FAISS, SBERT) |
+| PostgreSQL | Healthcare (SQLite → PostgreSQL is a config change in SQLAlchemy) |
+| Real-time | Nova (Kafka streaming) + Nissan (EventBridge event-driven) |
+| Data quality | Nomura (reconciliation framework) + Nissan (schema validation, DLQ) |
+| CI/CD | Nissan (CodePipeline) + Nomura (Jenkins) |
