@@ -1227,6 +1227,386 @@ dim_customers ---- fct_orders ---- dim_dates
 
 ---
 
+## LIVE SQL CODING ROUND (Using Your Nomura Trade Data)
+
+> These are the ACTUAL SQL problems asked in DE interviews. Practice with YOUR schema.
+
+---
+
+### SQL Problem 1: "Find the top 5 desks by daily P&L for the last 30 days"
+
+```sql
+SELECT
+    d.desk_name,
+    dt.trade_date,
+    SUM(f.trade_amount) AS daily_pnl,
+    RANK() OVER (PARTITION BY dt.trade_date ORDER BY SUM(f.trade_amount) DESC) AS rnk
+FROM fct_trade f
+JOIN dim_desk d ON f.desk_id = d.desk_id
+JOIN dim_date dt ON f.date_key = dt.date_key
+WHERE dt.trade_date >= CURRENT_DATE - INTERVAL '30 days'
+GROUP BY d.desk_name, dt.trade_date
+QUALIFY rnk <= 5
+ORDER BY dt.trade_date DESC, rnk;
+```
+
+**Follow-up**: "How would you optimize this?" → "Partition fct_trade by trade_date. Cluster dim_desk by desk_id. The WHERE clause prunes to 30 partitions out of thousands."
+
+---
+
+### SQL Problem 2: "Find trades that exist in DRT but NOT in settlement (reconciliation breaks)"
+
+```sql
+-- Anti-join pattern: find unmatched records
+SELECT
+    drt.trade_id,
+    drt.trade_amount,
+    drt.trade_date,
+    drt.region
+FROM fct_drt drt
+LEFT JOIN fct_settlement stl
+    ON drt.trade_id = stl.trade_id
+    AND drt.trade_date = stl.trade_date
+WHERE stl.trade_id IS NULL
+  AND drt.trade_date = CURRENT_DATE - 1;
+```
+
+**Say**: "This is exactly the DRT reconciliation I ran at Nomura. The anti-join finds breaks — trades that the trading system booked but settlement hasn't processed yet."
+
+---
+
+### SQL Problem 3: "Running total of trade volume per desk"
+
+```sql
+SELECT
+    d.desk_name,
+    dt.trade_date,
+    SUM(f.trade_amount) AS daily_volume,
+    SUM(SUM(f.trade_amount)) OVER (
+        PARTITION BY d.desk_name
+        ORDER BY dt.trade_date
+        ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+    ) AS running_total
+FROM fct_trade f
+JOIN dim_desk d ON f.desk_id = d.desk_id
+JOIN dim_date dt ON f.date_key = dt.date_key
+WHERE dt.trade_date >= '2024-01-01'
+GROUP BY d.desk_name, dt.trade_date
+ORDER BY d.desk_name, dt.trade_date;
+```
+
+---
+
+### SQL Problem 4: "Find duplicate trades (same instrument, amount, timestamp)"
+
+```sql
+WITH duplicates AS (
+    SELECT
+        trade_id,
+        instrument_id,
+        trade_amount,
+        trade_timestamp,
+        ROW_NUMBER() OVER (
+            PARTITION BY instrument_id, trade_amount, trade_timestamp
+            ORDER BY trade_id
+        ) AS rn
+    FROM fct_trade
+    WHERE trade_date = CURRENT_DATE - 1
+)
+SELECT * FROM duplicates WHERE rn > 1;
+```
+
+**Say**: "This is the deduplication query I used when the NCFA DRT feed had duplicate trade IDs after a corporate action event."
+
+---
+
+### SQL Problem 5: "Compare today's trade count vs 7-day average per desk (anomaly detection)"
+
+```sql
+WITH daily_counts AS (
+    SELECT
+        desk_id,
+        trade_date,
+        COUNT(*) AS trade_count
+    FROM fct_trade
+    WHERE trade_date >= CURRENT_DATE - 8
+    GROUP BY desk_id, trade_date
+),
+averages AS (
+    SELECT
+        desk_id,
+        AVG(CASE WHEN trade_date < CURRENT_DATE THEN trade_count END) AS avg_7d,
+        STDDEV(CASE WHEN trade_date < CURRENT_DATE THEN trade_count END) AS std_7d,
+        MAX(CASE WHEN trade_date = CURRENT_DATE - 1 THEN trade_count END) AS yesterday_count
+    FROM daily_counts
+    GROUP BY desk_id
+)
+SELECT
+    d.desk_name,
+    a.yesterday_count,
+    ROUND(a.avg_7d, 0) AS avg_7d,
+    CASE
+        WHEN a.yesterday_count > a.avg_7d + 2 * a.std_7d THEN '🔴 ANOMALY HIGH'
+        WHEN a.yesterday_count < a.avg_7d - 2 * a.std_7d THEN '🔴 ANOMALY LOW'
+        ELSE '✅ NORMAL'
+    END AS status
+FROM averages a
+JOIN dim_desk d ON a.desk_id = d.desk_id;
+```
+
+**Say**: "This is a data quality check I ran at Nomura — if a desk's trade count is outside 2 standard deviations of its 7-day average, something's wrong."
+
+---
+
+### SQL Problem 6: "SCD Type 2 — find the current version of each instrument"
+
+```sql
+SELECT *
+FROM dim_instrument
+WHERE is_current = TRUE;
+
+-- OR if no is_current flag:
+SELECT *
+FROM dim_instrument
+WHERE end_date = '9999-12-31';  -- Sentinel date for "still active"
+```
+
+---
+
+### SQL Problem 7: "Pivot: monthly trade count by region"
+
+```sql
+SELECT
+    DATE_TRUNC('month', dt.trade_date) AS month,
+    SUM(CASE WHEN r.region_code = 'NCFA' THEN 1 ELSE 0 END) AS americas,
+    SUM(CASE WHEN r.region_code = 'NFPS' THEN 1 ELSE 0 END) AS emea,
+    SUM(CASE WHEN r.region_code = 'NSC' THEN 1 ELSE 0 END) AS apac,
+    COUNT(*) AS total
+FROM fct_trade f
+JOIN dim_date dt ON f.date_key = dt.date_key
+JOIN dim_region r ON f.region_id = r.region_id
+WHERE dt.trade_date >= '2024-01-01'
+GROUP BY 1
+ORDER BY 1;
+```
+
+---
+
+### SQL Problem 8: "Find the most traded instrument per desk (top 1 per group)"
+
+```sql
+WITH ranked AS (
+    SELECT
+        d.desk_name,
+        i.instrument_name,
+        COUNT(*) AS trade_count,
+        ROW_NUMBER() OVER (PARTITION BY d.desk_name ORDER BY COUNT(*) DESC) AS rn
+    FROM fct_trade f
+    JOIN dim_desk d ON f.desk_id = d.desk_id
+    JOIN dim_instrument i ON f.instrument_id = i.instrument_id
+    WHERE f.trade_date >= CURRENT_DATE - 30
+    GROUP BY d.desk_name, i.instrument_name
+)
+SELECT desk_name, instrument_name, trade_count
+FROM ranked WHERE rn = 1;
+```
+
+---
+
+## LIVE PYSPARK CODING ROUND
+
+---
+
+### PySpark Problem 1: "Read trade Parquet, join with dimension, aggregate"
+
+```python
+from pyspark.sql import functions as F
+
+# Read fact and dimension
+trades = spark.read.parquet("s3a://data/fct_trade/").filter(F.col("trade_date") >= "2024-01-01")
+desks = spark.read.parquet("s3a://data/dim_desk/")
+
+# Broadcast join (dim_desk < 100MB)
+result = (
+    trades
+    .join(F.broadcast(desks), "desk_id")
+    .groupBy("desk_name", "trade_date")
+    .agg(
+        F.sum("trade_amount").alias("total_pnl"),
+        F.count("*").alias("trade_count"),
+        F.avg("trade_amount").alias("avg_trade_size")
+    )
+    .orderBy("trade_date", F.desc("total_pnl"))
+)
+
+result.write.mode("overwrite").parquet("s3a://output/daily_pnl/")
+```
+
+**Say**: "I always broadcast dimension tables — they're all under 100MB. This eliminates shuffle, which was the key optimization at Nomura."
+
+---
+
+### PySpark Problem 2: "Deduplicate with window function"
+
+```python
+from pyspark.sql.window import Window
+
+window = Window.partitionBy("trade_id").orderBy(F.desc("event_timestamp"))
+
+deduped = (
+    trades
+    .withColumn("rn", F.row_number().over(window))
+    .filter(F.col("rn") == 1)
+    .drop("rn")
+)
+```
+
+---
+
+### PySpark Problem 3: "Delta Lake MERGE (upsert)"
+
+```python
+from delta.tables import DeltaTable
+
+target = DeltaTable.forPath(spark, "s3a://warehouse/fct_trade/")
+
+target.alias("t").merge(
+    new_trades.alias("s"),
+    "t.trade_id = s.trade_id AND t.trade_date = s.trade_date"
+).whenMatchedUpdateAll(
+).whenNotMatchedInsertAll(
+).execute()
+```
+
+---
+
+### PySpark Problem 4: "Data quality check — null rate per column"
+
+```python
+total = df.count()
+null_report = df.select([
+    (F.sum(F.when(F.col(c).isNull(), 1).otherwise(0)) / total * 100).alias(c)
+    for c in df.columns
+])
+null_report.show(truncate=False)
+```
+
+---
+
+### PySpark Problem 5: "Slowly Changing Dimension Type 2"
+
+```python
+from pyspark.sql import functions as F
+from datetime import date
+
+today = date.today().isoformat()
+
+# Expire old records
+expired = (
+    existing_dim
+    .join(new_data, "instrument_id", "inner")
+    .withColumn("end_date", F.lit(today))
+    .withColumn("is_current", F.lit(False))
+)
+
+# Insert new version
+new_version = (
+    new_data
+    .withColumn("start_date", F.lit(today))
+    .withColumn("end_date", F.lit("9999-12-31"))
+    .withColumn("is_current", F.lit(True))
+    .withColumn("surrogate_key", F.monotonically_increasing_id())
+)
+
+# Unchanged records
+unchanged = (
+    existing_dim
+    .join(new_data, "instrument_id", "left_anti")
+)
+
+# Union all
+result = unchanged.unionByName(expired).unionByName(new_version)
+```
+
+**Say**: "This is the SCD Type 2 pattern I used for dim_instrument and dim_obligor_hierarchy at Nomura."
+
+---
+
+## SYSTEM DESIGN ROUND: FULL WALKTHROUGH
+
+> Interviewer: "Design a real-time trade data processing platform."
+
+---
+
+### Step 1: Clarify Requirements (2 minutes)
+
+> "Before I start, let me ask a few questions:
+> - What's the data volume? → 200M+ events/day
+> - Latency requirement? → Intraday risk: T+30 minutes. End-of-day: T+2 hours.
+> - Who consumes this? → Risk managers, portfolio managers, regulatory reports.
+> - Is this cloud or on-prem? → On-prem (regulatory requirements).
+> - How many source systems? → 100+ feeds from 3 regions."
+
+### Step 2: Draw the Architecture (3 minutes)
+
+```
+[100+ Source Feeds]
+    │
+[Ingestion Layer: AutoSys + Spark]
+    │
+    ├── Validate (schema, nulls, duplicates)
+    ├── Clean (standardize formats, timezone normalize)
+    └── Enrich (join with reference data)
+    │
+[Storage Layer: HDFS/MinIO (Parquet)]
+    │
+    ├── FACT TABLES (30+): fct_trade, fct_drt, fct_settlement, fct_market_risk...
+    └── DIMENSION TABLES (20+): dim_instrument, dim_counterparty, dim_desk...
+    │
+[Serving Layer]
+    │
+    ├── Risk Analytics (VaR, counterparty exposure)
+    ├── P&L Dashboards (by desk, region)
+    ├── Regulatory Reports (MiFID II, SOX)
+    └── Portfolio Management
+    │
+[Monitoring Layer]
+    │
+    ├── SLA dashboards (data freshness per feed)
+    ├── Data quality scores (per table)
+    └── Alerting (L1 → L2 → L3 escalation)
+```
+
+### Step 3: Dive Into Details (5 minutes)
+
+> **Ingestion**: "I'd use AutoSys for orchestration — 50+ job chains with dependency management. DRT must complete before settlement runs. Pre-Derivatives before Market Risk. Manual gates for reconciliation sign-off."
+>
+> **Processing**: "Spark on Kubernetes for compute. Broadcast joins for all dimension tables (<100MB each). Partition by trade_date + region. AQE enabled for skew handling."
+>
+> **Storage**: "Star schema: 30+ fact tables sharing 20+ dimension tables. Parquet with Snappy compression. SCD Type 2 for slowly-changing dimensions."
+>
+> **Data Quality**: "Automated reconciliation: row counts, balance checks, duplicate detection. Quality score per table. Tables below 95% trigger investigation."
+>
+> **Multi-Region**: "Three regions: NCFA (Americas), NFPS (EMEA), NSC (Asia-Pacific). Feeds staggered by timezone. Cross-region reconciliation verifies global consistency."
+
+### Step 4: Discuss Trade-offs (2 minutes)
+
+> "Trade-offs I considered:
+> - **Why Spark not Flink?** Batch-oriented workload. Flink excels at true event-at-a-time streaming. Our T+30min SLA doesn't need sub-second latency.
+> - **Why star schema not OBT?** 30+ fact tables sharing dimensions. OBT would duplicate dim data 30 times. Star schema is more maintainable and flexible.
+> - **Why on-prem not cloud?** Regulatory requirements (data sovereignty, FCA/MAS compliance). Moving to cloud is the future, but compliance comes first.
+> - **Why AutoSys not Airflow?** Enterprise standard with existing runbooks and team expertise. Airflow is Python-native and more flexible, but migration cost > benefit."
+
+### Step 5: Monitoring & Operations (2 minutes)
+
+> "Operations considerations:
+> - **SLA monitoring**: Dashboard tracking freshness per feed, per region. Alert 15 minutes before SLA breach, not after.
+> - **On-call**: 4-person rotation. Runbooks for every feed. L1 → L2 → L3 escalation.
+> - **Capacity planning**: 15% YoY data growth. Procurement 5 months ahead. K8s migration for better resource utilization.
+> - **Disaster recovery**: Dual-write HDFS clusters. RTO < 1 hour, RPO < 15 minutes."
+
+---
+
 ## FINAL REMINDER: THE META-GAME
 
 The interview is not about knowing everything. It's about three things:
@@ -1235,6 +1615,15 @@ The interview is not about knowing everything. It's about three things:
 2. **Can you communicate?** (Explain clearly, adjust to the audience, draw diagrams)
 3. **Can you deliver?** (Real projects, real code, real numbers, real impact)
 
-You have ALL THREE. You built two production systems from scratch. You optimized Spark pipelines by 30%. You trained ML models on 253K records. You wrote 141+ tests. You designed a 7-layer middleware stack. You implemented RAG with SSE streaming.
+You have ALL THREE:
+- **100+ feed processes** across 3 Nomura regions (NCFA, NFPS, NSC)
+- **30+ fact tables + 20+ dimension tables** in a production star schema
+- **50+ daily data feeds** at Nissan with 99.7% success rate
+- **12 AWS services** in a single serverless pipeline
+- **253K records** trained into clinical-grade XGBoost models
+- **141 automated tests** proving production mindset
+- **1M+ movie records** with FAISS vector search in <10ms
+- **30% cost reduction** from YARN-to-K8s migration
+- **8 STAR stories** ready for any behavioral question
 
 **You are not pretending to be an engineer. You ARE one. Go prove it.**
