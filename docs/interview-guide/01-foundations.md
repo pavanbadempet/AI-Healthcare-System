@@ -3707,3 +3707,209 @@ FROM raw_events;
 
 **Q: "What's Snowflake's query result caching?"**
 > "Snowflake caches query results for 24 hours. If you run the same query twice, the second execution returns instantly from cache (no warehouse compute needed). This means: (1) dashboards that refresh every hour don't re-query data, (2) you pay ZERO compute for repeated queries. Cache invalidates when underlying data changes."
+
+---
+
+## PART 28: THE PLATFORM WARS (Every "Why X Not Y" You'll Face)
+
+> Interviewers LOVE asking "why did you choose X over Y?" This section covers EVERY combination.
+
+---
+
+### Databricks vs Snowflake (The #1 Comparison in DE Interviews)
+
+| | Databricks | Snowflake |
+|---|---|---|
+| **Core strength** | Processing (Spark + Delta Lake) | Warehousing (SQL analytics) |
+| **Language** | Python/Scala/SQL/R | SQL only (with Snowpark for Python) |
+| **Best for** | ML pipelines, complex ETL, data science | BI dashboards, SQL analytics, data sharing |
+| **Storage** | Delta Lake (open format, your control) | Proprietary (Snowflake manages) |
+| **Streaming** | Native (Structured Streaming) | Limited (Snowpipe for ingestion only) |
+| **ML support** | MLflow built-in, full ML lifecycle | Snowpark ML (newer, less mature) |
+| **Governance** | Unity Catalog | Snowflake Access Control + Horizon |
+| **Concurrency** | Cluster-based (you manage) | Warehouse-based (auto-scales) |
+| **Ease of use** | Steeper learning curve | Easier for SQL analysts |
+| **Cost model** | DBU (compute units) | Credits (compute units) |
+| **Open source** | Built on open source (Spark, Delta) | Proprietary, closed source |
+
+**When to choose Databricks:** Complex ETL with Python, ML model training, streaming data, data science notebooks, Delta Lake ecosystem.
+
+**When to choose Snowflake:** SQL-first analytics, BI reporting, data sharing across organizations, when your team is mostly SQL analysts.
+
+**Counter-question:** "Can you use BOTH?"
+> "Yes, and many companies do. Databricks for heavy ETL processing and ML. Snowflake as the serving layer for BI tools (Tableau, Power BI). Data flows: Source → Databricks (ETL in Delta Lake) → Snowflake (serving for analysts). This is a common pattern at enterprises."
+
+**Counter-question:** "Snowflake now has Snowpark. Doesn't that replace Databricks?"
+> "Snowpark adds Python/Java/Scala to Snowflake, but it runs INSIDE Snowflake's compute. Databricks runs Spark clusters with full control over resources. For heavy ML training or complex streaming, Databricks is still superior. Snowpark is great for Snowflake-native teams that want some Python without leaving Snowflake."
+
+---
+
+### Databricks on AWS vs Databricks on Azure vs Databricks Standalone
+
+| | Databricks on AWS | Databricks on Azure | Databricks (any cloud) |
+|---|---|---|---|
+| **Storage** | S3 | ADLS Gen2 | Whichever cloud you're on |
+| **Identity** | IAM roles | AAD (Azure Active Directory) | Cloud-native auth |
+| **Networking** | AWS VPC | Azure VNet | Cloud-native networking |
+| **Integration** | Glue catalog, Redshift | Synapse, ADF, Power BI | Cloud-specific connectors |
+| **Pricing** | Same DBU pricing | Same DBU pricing | Infrastructure cost varies |
+
+**"Why does the cloud matter if Databricks is the same?"**
+> "The Spark code is identical. What changes is the infrastructure layer: where data lives (S3 vs ADLS), how authentication works (IAM vs AAD), and which native services you integrate with. If your company is Azure-first, Databricks on Azure makes sense because it natively reads ADLS, integrates with AAD for security, and connects to Power BI. If AWS-first, Databricks on AWS reads from S3 and uses IAM roles."
+
+**Your answer:** "I've used Spark on AWS (Nomura) and Snowflake on AWS (Nissan). The Spark skills transfer directly to Databricks on any cloud. The cloud-specific parts (storage, auth) are configuration, not code."
+
+---
+
+### Snowflake vs Redshift vs Synapse (The Data Warehouse Wars)
+
+| | Snowflake | AWS Redshift | Azure Synapse | Databricks SQL |
+|---|---|---|---|---|
+| **Compute/Storage** | Separated | Coupled (Serverless: separated) | Separated | Separated |
+| **Concurrency** | Excellent (multi-warehouse) | Limited (WLM queues) | Good (on-demand) | Good (SQL endpoints) |
+| **Multi-cloud** | ✅ AWS, Azure, GCP | ❌ AWS only | ❌ Azure only | ✅ Any cloud |
+| **Semi-structured** | Native VARIANT type | SUPER type (newer) | OPENROWSET | Native JSON support |
+| **Data sharing** | Native (zero-copy) | Via S3 | Via Azure storage | Via Delta Sharing |
+| **Learning curve** | Easy (standard SQL) | Moderate | Moderate | Moderate |
+| **Cost at scale** | Can be expensive | Cheaper for steady workloads | Competitive | Competitive |
+
+**"Why Snowflake at Nissan and not Redshift?"**
+> "Three reasons: (1) Separated compute/storage -- we could scale warehouses up for big loads and back down, paying only when running. Redshift (at the time) coupled compute and storage. (2) Concurrency -- multiple teams queried simultaneously without interference. Redshift had queue-based concurrency. (3) Multi-cloud flexibility -- Nissan considered Azure migration, Snowflake works on both."
+
+**Counter-question:** "But Redshift Serverless now separates compute/storage?"
+> "Correct. Redshift Serverless closed the gap. For a pure AWS shop, Redshift Serverless is competitive. The remaining Snowflake advantages are: multi-cloud, better data sharing, and the VARIANT type for semi-structured data. But Redshift Serverless is now a valid choice."
+
+---
+
+### Apache Spark vs Apache Flink
+
+| | Spark | Flink |
+|---|---|---|
+| **Processing model** | Micro-batch (default), true streaming (experimental) | True event-at-a-time streaming |
+| **Latency** | Seconds (micro-batch) to milliseconds (continuous) | Milliseconds (native) |
+| **Batch processing** | Excellent (mature, optimized) | Good (but Spark is better for batch) |
+| **State management** | Checkpointing | Native state backends (RocksDB) |
+| **Ecosystem** | Massive (Databricks, Delta Lake, MLlib) | Smaller but growing |
+| **Talent pool** | Large (most DEs know Spark) | Smaller (harder to hire) |
+| **Your experience** | Nomura: PySpark, Nova: Structured Streaming | Haven't used directly |
+
+**"Why Spark not Flink?"**
+> "For Nova's recommendation engine, we need 30-second latency, not millisecond. Spark Structured Streaming provides this with a simpler programming model. Flink's true streaming adds operational complexity (separate cluster, different API, smaller team expertise). If we needed sub-second fraud detection, Flink would be the better choice."
+
+**Counter-question:** "When would you recommend Flink?"
+> "Three scenarios: (1) Sub-second latency requirements (fraud detection, real-time bidding). (2) Complex event processing with stateful operations (session windows, pattern matching). (3) When the team already has Flink expertise. For everything else, Spark's micro-batch is simpler and sufficient."
+
+---
+
+### Delta Lake vs Apache Iceberg vs Apache Hudi
+
+| | Delta Lake | Apache Iceberg | Apache Hudi |
+|---|---|---|---|
+| **Creator** | Databricks | Netflix → Apache | Uber → Apache |
+| **Best with** | Spark/Databricks | Any engine (Trino, Spark, Flink) | Spark, Flink |
+| **ACID transactions** | ✅ | ✅ | ✅ |
+| **Time travel** | ✅ | ✅ | ✅ |
+| **Schema evolution** | ✅ | ✅ (best-in-class) | ✅ |
+| **Engine lock-in** | Spark-centric (improving) | Engine-agnostic (strongest here) | Spark-centric |
+| **Merge performance** | Excellent (OPTIMIZE, Z-ORDER) | Good | Good (MOR tables) |
+| **Community** | Large (Databricks backing) | Growing fast | Moderate |
+| **Your experience** | Nova project (Delta Lake) | Know the concepts | Know the concepts |
+
+**"Why Delta Lake not Iceberg?"**
+> "At the time of Nova, Delta Lake had the most mature Spark integration and the best MERGE performance. Iceberg's engine-agnostic design is compelling -- if we needed to query from Trino AND Spark AND Flink, Iceberg would be stronger. Delta Lake is converging toward engine-agnostic (Delta UniForm), but it's still Spark-first."
+
+**Counter-question:** "Iceberg is gaining momentum. Would you switch?"
+> "If starting fresh today and needed multi-engine support, I'd seriously consider Iceberg. The ACID guarantees and time travel are equivalent. Iceberg's schema evolution is slightly better. But for a Spark/Databricks shop, Delta Lake still has better tooling (OPTIMIZE, Z-ORDER, Photon). The choice depends on engine diversity."
+
+---
+
+### Airflow vs Prefect vs Dagster vs Step Functions vs dbt
+
+| | Airflow | Prefect | Dagster | Step Functions | dbt |
+|---|---|---|---|---|---|
+| **Type** | General orchestrator | General orchestrator | Data orchestrator | AWS-native workflow | SQL transform tool |
+| **Language** | Python | Python | Python | JSON/YAML | SQL + Jinja |
+| **DAG definition** | Python code | Python decorators | Python assets | State machine JSON | SQL models |
+| **UI** | Web UI (mature) | Cloud UI (polished) | Asset-focused UI | AWS Console | Docs site |
+| **Learning curve** | Moderate | Easy | Moderate | Easy (AWS-native) | Easy (SQL) |
+| **Self-hosted** | ✅ | ✅ (Cloud preferred) | ✅ | ❌ AWS only | ✅ or dbt Cloud |
+| **Data awareness** | Low (task-focused) | Low | High (asset-focused) | None | High (model-focused) |
+| **Your experience** | Know the concepts, used AutoSys | Haven't used | Haven't used | Used at Nissan | Know the concepts |
+
+**"Why Airflow not Prefect/Dagster?"**
+> "Airflow is the industry standard with the largest community, most connectors (1000+ providers), and every cloud offers a managed version (MWAA, Cloud Composer, Astronomer). Prefect is simpler but less battle-tested at scale. Dagster is asset-focused (better for data-aware orchestration) but smaller community. For most teams, Airflow's maturity and ecosystem wins."
+
+**Counter-question:** "Dagster claims to be 'data-aware.' What does that mean?"
+> "Airflow thinks in tasks: 'run this Python, then run that SQL.' Dagster thinks in assets: 'this table depends on that table.' Dagster knows WHAT data you're producing, not just WHAT code you're running. This enables better lineage, automatic re-materialization, and data quality monitoring. It's a legitimate advantage for data-centric workflows."
+
+---
+
+### Kafka vs Confluent vs AWS MSK vs Azure Event Hubs
+
+| | Apache Kafka (self-managed) | Confluent Cloud | AWS MSK | Azure Event Hubs |
+|---|---|---|---|---|
+| **Management** | You manage everything | Fully managed Kafka | Managed Kafka on AWS | Managed, Kafka-compatible |
+| **Cost** | Hardware + ops team | Premium pricing | Moderate | Moderate |
+| **Schema Registry** | Community (Confluent) | Built-in | Glue Schema Registry | Built-in |
+| **Connectors** | Kafka Connect (self-managed) | 200+ managed connectors | MSK Connect | Azure Functions |
+| **Multi-cloud** | ✅ (your hardware) | ✅ | ❌ AWS only | ❌ Azure only |
+| **Best for** | Full control, on-prem | Fastest setup, least ops | AWS-native shops | Azure-native shops |
+
+**"Why not just use SQS/SNS instead of Kafka?"**
+> "SQS is a message QUEUE -- once consumed, the message is deleted. Kafka is an event LOG -- messages are retained and replayable. SQS for task distribution (process this order). Kafka for event streaming (track every click, replay for analytics). Different tools for different problems."
+
+---
+
+### Palantir vs Traditional DE Stack
+
+| | Palantir Foundry | Traditional DE (Spark + Airflow + Delta) |
+|---|---|---|
+| **What it is** | End-to-end data platform (ingestion to app) | You build each layer yourself |
+| **Target** | Government, defense, large enterprises | Any company |
+| **Cost** | Very expensive (enterprise contracts) | Open source + cloud costs |
+| **Customization** | Limited to Palantir's framework | Full control |
+| **Coding** | Low-code + Python/Java | Full code |
+| **Data modeling** | Ontology-based (objects, links) | Traditional (tables, schemas) |
+| **Your bridge** | "I build the same capabilities with open tools" | Your actual experience |
+
+**"What is Palantir Foundry?"**
+> "Palantir is an end-to-end data platform. Instead of stitching Kafka + Spark + Airflow + Delta Lake yourself, Palantir provides all of it integrated. Its unique concept is the 'Ontology' -- a semantic layer where data is modeled as real-world objects (a 'Patient,' a 'Trade,' a 'Vehicle') with relationships, not just tables. It's powerful but expensive and proprietary."
+
+**Counter-question:** "Could you work with Palantir?"
+> "The underlying concepts are the same: data pipelines, transformations, quality checks, and serving layers. Palantir adds an Ontology layer on top, which maps to the domain modeling I already do (dim_patients, fct_trades). The tooling is different, but the data engineering principles transfer directly."
+
+---
+
+### The Universal "Why Not" Answer Framework
+
+For ANY tool you haven't used, follow this 4-step answer:
+
+```
+1. ACKNOWLEDGE: "I haven't used [Tool X] directly."
+2. MAP: "But [Tool X] maps to [Tool Y] which I've used extensively."
+3. DIFFERENTIATE: "The key difference is [specific tradeoff]."
+4. COMMIT: "Given my experience with the underlying concepts, I'd ramp up in [timeframe]."
+```
+
+**Example:** "Why not Flink?"
+> 1. "I haven't used Flink directly."
+> 2. "But Flink maps to Spark Structured Streaming which I use in Nova."
+> 3. "The key difference is Flink processes events one-at-a-time (lower latency) while Spark uses micro-batches (higher throughput)."
+> 4. "Given my Spark streaming experience, I'd be productive in Flink within 2-3 weeks."
+
+---
+
+### Master Comparison: All Platforms at a Glance
+
+| Need | Best Choice | Runner-up | Your experience |
+|---|---|---|---|
+| **SQL analytics** | Snowflake | Redshift / Synapse | Snowflake (Nissan) |
+| **Heavy ETL** | Databricks / Spark | dbt (SQL-only ETL) | PySpark (Nomura + Nova) |
+| **ML pipelines** | Databricks + MLflow | SageMaker | Healthcare (XGBoost) |
+| **Event streaming** | Kafka / Confluent | Kinesis / Event Hubs | Kafka (Nova) |
+| **Orchestration** | Airflow | Dagster / Prefect | AutoSys (TCS/Nomura) |
+| **Data lake storage** | Delta Lake | Iceberg | Delta Lake (Nova) |
+| **Serverless ETL** | AWS Lambda + Step Functions | Azure Functions + ADF | Lambda (Nissan) |
+| **BI serving** | Snowflake | Redshift / Synapse | Snowflake (Nissan) |
+| **On-prem big data** | Hadoop + Spark on YARN | Cloudera / Hortonworks | YARN (Nomura) |
+| **Data governance** | Unity Catalog / Collibra | AWS Lake Formation | Know concepts |
