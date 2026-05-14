@@ -1607,6 +1607,410 @@ result = unchanged.unionByName(expired).unionByName(new_version)
 
 ---
 
+## DATA MODELING INTERVIEW ROUND
+
+> They give you a business scenario and ask you to design the schema. Here are the 3 most common ones.
+
+---
+
+### Modeling Problem 1: "Design a schema for an e-commerce platform"
+
+**Your approach** (talk out loud):
+> "First, let me identify the business processes: orders, inventory, customers, products. The key fact is order_items — that's the grain: one row per product per order."
+
+```sql
+-- Fact table (grain: one row per line item)
+CREATE TABLE fct_order_items (
+    order_item_id   BIGINT PRIMARY KEY,
+    order_id        BIGINT,
+    product_id      INT,       -- FK → dim_product
+    customer_id     INT,       -- FK → dim_customer
+    date_key        INT,       -- FK → dim_date
+    store_id        INT,       -- FK → dim_store
+    quantity        INT,
+    unit_price      DECIMAL(10,2),
+    discount_amount DECIMAL(10,2),
+    total_amount    DECIMAL(10,2),  -- quantity * unit_price - discount
+    shipping_cost   DECIMAL(10,2)
+);
+
+-- Dimension tables
+CREATE TABLE dim_product (
+    product_id      INT PRIMARY KEY,
+    product_name    VARCHAR(200),
+    category        VARCHAR(100),
+    subcategory     VARCHAR(100),
+    brand           VARCHAR(100),
+    unit_cost       DECIMAL(10,2)
+);
+
+CREATE TABLE dim_customer (
+    customer_id     INT PRIMARY KEY,
+    customer_name   VARCHAR(200),
+    segment         VARCHAR(50),   -- Consumer, Corporate, SMB
+    city            VARCHAR(100),
+    state           VARCHAR(50),
+    country         VARCHAR(50),
+    signup_date     DATE
+);
+
+CREATE TABLE dim_date (
+    date_key        INT PRIMARY KEY,
+    full_date       DATE,
+    day_of_week     VARCHAR(10),
+    month           INT,
+    quarter         INT,
+    year            INT,
+    is_holiday      BOOLEAN,
+    is_weekend      BOOLEAN
+);
+```
+
+**Key points to mention:**
+- "The grain is the most important decision — one row per line item, not per order"
+- "I denormalize category into dim_product (star schema, not snowflake) for fewer joins"
+- "dim_date is a conformed dimension — reusable across all fact tables"
+
+---
+
+### Modeling Problem 2: "Design a schema for ride-sharing (Uber-like)"
+
+```sql
+-- Fact table (grain: one row per ride)
+CREATE TABLE fct_rides (
+    ride_id         BIGINT PRIMARY KEY,
+    driver_id       INT,       -- FK → dim_driver
+    rider_id        INT,       -- FK → dim_rider
+    date_key        INT,       -- FK → dim_date
+    pickup_loc_id   INT,       -- FK → dim_location
+    dropoff_loc_id  INT,       -- FK → dim_location (role-playing dimension)
+    ride_duration   INT,       -- seconds
+    distance_miles  DECIMAL(8,2),
+    base_fare       DECIMAL(10,2),
+    surge_multiplier DECIMAL(4,2),
+    total_fare      DECIMAL(10,2),
+    driver_rating   DECIMAL(3,2),
+    rider_rating    DECIMAL(3,2)
+);
+```
+
+**Say**: "Notice dim_location is used TWICE — pickup and dropoff. This is called a role-playing dimension. Same table, different foreign keys, different meaning."
+
+---
+
+### Modeling Problem 3: "Design YOUR Nomura trade schema"
+
+> If they ask you to design a trade data warehouse from scratch:
+
+```sql
+-- Core fact table
+CREATE TABLE fct_trade (
+    trade_id        BIGINT,
+    trade_date      DATE,          -- partition key
+    region_id       INT,           -- FK → dim_region (NCFA/NFPS/NSC)
+    instrument_id   INT,           -- FK → dim_instrument
+    counterparty_id INT,           -- FK → dim_counterparty
+    desk_id         INT,           -- FK → dim_desk
+    book_id         INT,           -- FK → dim_book
+    trader_id       INT,           -- FK → dim_trader
+    currency_id     INT,           -- FK → dim_currency
+    trade_amount    DECIMAL(18,4),
+    quantity        DECIMAL(18,6),
+    price           DECIMAL(18,8),
+    trade_type      VARCHAR(10),   -- BUY/SELL
+    settlement_date DATE,
+    trade_status    VARCHAR(20),   -- OPEN/SETTLED/CANCELLED
+    PRIMARY KEY (trade_id, trade_date)
+) PARTITION BY (trade_date);
+
+-- Key dimensions (show 3-4, mention "20+ total")
+CREATE TABLE dim_instrument (
+    instrument_id   INT PRIMARY KEY,
+    isin            VARCHAR(12),   -- International Securities ID
+    cusip           VARCHAR(9),    -- US securities ID
+    instrument_name VARCHAR(200),
+    asset_class     VARCHAR(50),   -- Equity, Fixed Income, Derivatives, FX
+    maturity_date   DATE,
+    issuer          VARCHAR(200),
+    -- SCD Type 2 fields
+    start_date      DATE,
+    end_date        DATE DEFAULT '9999-12-31',
+    is_current      BOOLEAN DEFAULT TRUE
+);
+
+CREATE TABLE dim_counterparty (
+    counterparty_id INT PRIMARY KEY,
+    lei_code        VARCHAR(20),   -- Legal Entity Identifier
+    counterparty_name VARCHAR(200),
+    credit_rating   VARCHAR(10),   -- AAA, AA+, etc.
+    country         VARCHAR(50),
+    sector          VARCHAR(100),
+    is_internal     BOOLEAN        -- Intercompany vs external
+);
+
+CREATE TABLE dim_obligor_hierarchy (
+    obligor_id      INT PRIMARY KEY,
+    obligor_name    VARCHAR(200),
+    parent_id       INT,           -- Self-referencing for hierarchy
+    ultimate_parent_id INT,
+    hierarchy_level INT,           -- 1=ultimate parent, 2=subsidiary, etc.
+    rating_moodys   VARCHAR(10),
+    rating_fitch    VARCHAR(10),
+    rating_sp       VARCHAR(10)
+);
+```
+
+**Say**: "I designed this exact schema at Nomura. The key decisions: (1) Partition by trade_date for time-range queries. (2) SCD Type 2 on dim_instrument because ISINs get reissued and ratings change. (3) dim_obligor_hierarchy is self-referencing for the credit chain."
+
+---
+
+## ADVANCED SQL PATTERNS (Frequently Asked)
+
+---
+
+### Pattern 1: Recursive CTE (Hierarchy traversal)
+
+> "Given dim_obligor_hierarchy, find ALL subsidiaries of a parent company"
+
+```sql
+WITH RECURSIVE hierarchy AS (
+    -- Anchor: start from the parent
+    SELECT obligor_id, obligor_name, parent_id, 1 AS level
+    FROM dim_obligor_hierarchy
+    WHERE obligor_id = 1001  -- Starting parent
+
+    UNION ALL
+
+    -- Recursive: find children
+    SELECT c.obligor_id, c.obligor_name, c.parent_id, h.level + 1
+    FROM dim_obligor_hierarchy c
+    JOIN hierarchy h ON c.parent_id = h.obligor_id
+)
+SELECT * FROM hierarchy ORDER BY level, obligor_name;
+```
+
+**Say**: "I used this at Nomura for the obligor hierarchy — when a parent company's credit rating changes, we need to find ALL subsidiaries that are affected."
+
+---
+
+### Pattern 2: MERGE (Upsert)
+
+```sql
+MERGE INTO fct_trade AS target
+USING staging_trades AS source
+ON target.trade_id = source.trade_id
+   AND target.trade_date = source.trade_date
+WHEN MATCHED THEN
+    UPDATE SET
+        trade_amount = source.trade_amount,
+        trade_status = source.trade_status,
+        updated_at = CURRENT_TIMESTAMP
+WHEN NOT MATCHED THEN
+    INSERT (trade_id, trade_date, instrument_id, trade_amount, trade_status)
+    VALUES (source.trade_id, source.trade_date, source.instrument_id,
+            source.trade_amount, source.trade_status);
+```
+
+---
+
+### Pattern 3: LAG/LEAD (Day-over-day comparison)
+
+```sql
+SELECT
+    trade_date,
+    daily_volume,
+    LAG(daily_volume, 1) OVER (ORDER BY trade_date) AS prev_day_volume,
+    daily_volume - LAG(daily_volume, 1) OVER (ORDER BY trade_date) AS change,
+    ROUND(
+        (daily_volume - LAG(daily_volume, 1) OVER (ORDER BY trade_date))
+        / NULLIF(LAG(daily_volume, 1) OVER (ORDER BY trade_date), 0) * 100
+    , 2) AS pct_change
+FROM (
+    SELECT trade_date, SUM(trade_amount) AS daily_volume
+    FROM fct_trade
+    WHERE trade_date >= CURRENT_DATE - 30
+    GROUP BY trade_date
+) daily;
+```
+
+---
+
+### Pattern 4: GROUPING SETS (Multiple aggregation levels in one query)
+
+```sql
+SELECT
+    COALESCE(d.desk_name, 'ALL DESKS') AS desk,
+    COALESCE(r.region_code, 'ALL REGIONS') AS region,
+    SUM(f.trade_amount) AS total_volume,
+    COUNT(*) AS trade_count
+FROM fct_trade f
+JOIN dim_desk d ON f.desk_id = d.desk_id
+JOIN dim_region r ON f.region_id = r.region_id
+WHERE f.trade_date = CURRENT_DATE - 1
+GROUP BY GROUPING SETS (
+    (d.desk_name, r.region_code),  -- desk + region detail
+    (d.desk_name),                  -- desk subtotal
+    (r.region_code),                -- region subtotal
+    ()                              -- grand total
+)
+ORDER BY desk, region;
+```
+
+**Say**: "GROUPING SETS replaces running 4 separate GROUP BY queries. One scan of fct_trade produces detail, subtotals, and grand total."
+
+---
+
+### Pattern 5: Gap Detection (Find missing dates in a time series)
+
+```sql
+WITH date_range AS (
+    SELECT generate_series(
+        '2024-01-01'::date,
+        CURRENT_DATE,
+        '1 day'::interval
+    )::date AS expected_date
+),
+actual_dates AS (
+    SELECT DISTINCT trade_date
+    FROM fct_trade
+    WHERE region_id = (SELECT region_id FROM dim_region WHERE region_code = 'NCFA')
+)
+SELECT dr.expected_date AS missing_date
+FROM date_range dr
+LEFT JOIN actual_dates ad ON dr.expected_date = ad.trade_date
+LEFT JOIN dim_date dd ON dr.expected_date = dd.full_date
+WHERE ad.trade_date IS NULL
+  AND dd.is_weekend = FALSE
+  AND dd.is_holiday = FALSE
+ORDER BY dr.expected_date;
+```
+
+**Say**: "I used this to find days where NCFA feeds were missing — skipping weekends and holidays. If a business day has no trades, something went wrong upstream."
+
+---
+
+### Pattern 6: Sessionization (Group events into sessions)
+
+```sql
+WITH events AS (
+    SELECT
+        user_id,
+        event_timestamp,
+        LAG(event_timestamp) OVER (PARTITION BY user_id ORDER BY event_timestamp) AS prev_event,
+        CASE
+            WHEN event_timestamp - LAG(event_timestamp) OVER (
+                PARTITION BY user_id ORDER BY event_timestamp
+            ) > INTERVAL '30 minutes' THEN 1
+            ELSE 0
+        END AS new_session_flag
+    FROM user_events
+),
+sessions AS (
+    SELECT
+        user_id,
+        event_timestamp,
+        SUM(new_session_flag) OVER (
+            PARTITION BY user_id ORDER BY event_timestamp
+        ) AS session_id
+    FROM events
+)
+SELECT
+    user_id,
+    session_id,
+    MIN(event_timestamp) AS session_start,
+    MAX(event_timestamp) AS session_end,
+    COUNT(*) AS events_in_session,
+    MAX(event_timestamp) - MIN(event_timestamp) AS session_duration
+FROM sessions
+GROUP BY user_id, session_id;
+```
+
+**Say**: "This is relevant for the Nova recommendation system — grouping user watch events into viewing sessions to understand engagement patterns."
+
+---
+
+## MOCK INTERVIEW TRANSCRIPT (Full 30-Minute Flow)
+
+> Read this to understand the RHYTHM of a DE interview. Notice how answers always connect back to your projects.
+
+---
+
+**Interviewer**: "Tell me about yourself."
+
+**You**: "I'm a Data Engineer with 2+ years at TCS, where I built enterprise-scale data platforms for two major clients. At Nomura Capital, I managed 100+ feed processes across three regional entities — NCFA, NFPS, and NSC — building Spark ETL pipelines that produced 30+ fact tables joined against 20+ dimension tables. I led the YARN-to-Kubernetes migration that cut costs by 30%. At Nissan, I architected a serverless platform using 12 AWS services that processed 50+ daily feeds with a 99.7% success rate. On the AI side, I've built a healthcare prediction system and a movie recommendation engine with FAISS and Kafka streaming."
+
+**Interviewer**: "Interesting. Tell me more about the Nomura feeds. What exactly were you processing?"
+
+**You**: "The feeds covered the full capital markets stack. For example, the DRT — Daily Reconciliation Trades — reconciled what the trading system said was traded versus what settlement said was settled. Breaks flagged mismatches. PRISM handled derivatives pricing. Pre-FX calculated currency exposures. We also ingested external rating feeds from Moody's and Fitch that updated dim_rating nightly. Each feed produced its own fact table, and they all joined against shared dimension tables like dim_instrument, dim_counterparty, dim_desk."
+
+**Interviewer**: "How did you handle a feed failure?"
+
+**You**: "Let me walk you through a real scenario. The NCFA DRT feed failed at 3 AM due to duplicate trade IDs caused by a corporate action event. AutoSys detected the non-zero exit code and alerted on-call. I checked Spark logs, identified the duplicates, wrote a deduplication query using ROW_NUMBER partitioned by trade_id and ordered by event_timestamp descending, applied it, and re-triggered. Downstream jobs — settlement and market risk — were blocked by AutoSys dependency chains, so they automatically started once DRT completed. P&L reports were delivered by 5:45 AM, within SLA."
+
+**Interviewer**: "Nice. Let's switch to SQL. Can you write a query to find the top 3 instruments by trading volume per desk?"
+
+**You**: "Sure. Classic top-N per group problem."
+
+```sql
+WITH ranked AS (
+    SELECT
+        d.desk_name,
+        i.instrument_name,
+        SUM(f.trade_amount) AS volume,
+        ROW_NUMBER() OVER (
+            PARTITION BY d.desk_name
+            ORDER BY SUM(f.trade_amount) DESC
+        ) AS rn
+    FROM fct_trade f
+    JOIN dim_desk d ON f.desk_id = d.desk_id
+    JOIN dim_instrument i ON f.instrument_id = i.instrument_id
+    WHERE f.trade_date >= CURRENT_DATE - 30
+    GROUP BY d.desk_name, i.instrument_name
+)
+SELECT * FROM ranked WHERE rn <= 3;
+```
+
+**Interviewer**: "Good. How would you optimize this if fct_trade has billions of rows?"
+
+**You**: "Three things: First, partition fct_trade by trade_date so the WHERE clause prunes to only 30 partitions. Second, broadcast join dim_desk and dim_instrument — they're both under 100MB, so broadcast eliminates shuffle. Third, if this query runs daily, I'd materialize it as a Snowflake materialized view or pre-aggregate in a mart table."
+
+**Interviewer**: "Let's talk about Spark. What's the difference between a narrow and wide transformation?"
+
+**You**: "Narrow transformations like map, filter, and select don't require data to move between partitions — each input partition produces one output partition. Wide transformations like groupBy, join, and repartition require a shuffle — data moves across the network. The key is minimizing wide transformations because shuffle is the number one performance killer. At Nomura, I eliminated most shuffles by using broadcast joins for dimension tables."
+
+**Interviewer**: "How would you design a data pipeline from scratch for a new use case?"
+
+**You**: "I'd follow a 5-step framework. Step 1: Clarify requirements — data volume, latency SLA, who consumes the output. Step 2: Draw the architecture — source to serving layer. Step 3: Dive into processing details — what transformations, what joins. Step 4: Discuss trade-offs — why this tool not that tool, with specific reasons. Step 5: Monitoring and operations — SLA tracking, alerting, on-call. I never jump to tools first. Requirements determine tools."
+
+**Interviewer**: "One more. Where do you see yourself in 5 years?"
+
+**You**: "Designing data architectures, not just implementing them. I want to be the person who says 'here's why we should migrate from Redshift to Snowflake' or 'here's the data mesh strategy for our organization.' That means growing from a data engineer who writes excellent pipelines to a senior or staff engineer who shapes platform strategy."
+
+**Interviewer**: "Great. Do you have any questions for me?"
+
+**You**: "Yes — what's the biggest data engineering challenge your team is facing right now? And how does the team handle data quality — is there an established framework or is it still evolving?"
+
+---
+
+## INTERVIEW DAY TIMELINE
+
+```
+T-60 min:  Review Part 33 (cheat sheet) — numbers, one-liners, names to drop
+T-30 min:  Review Part 35 (company research) — their stack, your fit
+T-15 min:  Read your 30-second pitch OUT LOUD 3 times
+T-5 min:   Water, pen, paper, webcam check, deep breath
+T-0:       SMILE. They want you to succeed.
+
+During:    Connect EVERY answer to YOUR projects
+           Give NUMBERS (30%, 100+, 200M, 141 tests)
+           Say "At Nomura..." or "At Nissan..." — proves it's real
+
+After:     Send thank-you email within 2 hours
+           Note what they asked (for next round prep)
+```
+
+---
+
 ## FINAL REMINDER: THE META-GAME
 
 The interview is not about knowing everything. It's about three things:
