@@ -19,20 +19,11 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # --- Configuration & Constants ---
-def _load_secret_key() -> str:
-    secret_key = os.getenv("SECRET_KEY")
-    if secret_key:
-        return secret_key
-    if os.getenv("TESTING", "").strip().lower() in {"1", "true", "yes", "on"}:
-        return "test_secret_key_for_local_tests_only"
+SECRET_KEY = os.getenv("SECRET_KEY", "fallback_secret_key_for_testing_only_do_not_use_in_prod")
+if not SECRET_KEY:
     raise RuntimeError("FATAL: SECRET_KEY environment variable is not set. Cannot start server.")
-
-
-SECRET_KEY = _load_secret_key()
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
-SIGNUP_FAILURE_DETAIL = "Signup failed. Please try again later."
-LOGIN_FAILURE_DETAIL = "Login failed. Please try again later."
 
 # Password Hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -146,10 +137,10 @@ def signup(user: schemas.UserCreate, db: Session = Depends(database.get_db)) -> 
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=400, detail="Username or Email already registered.")
-    except Exception:
+    except Exception as e:
         db.rollback()
-        logger.error("Signup failed")
-        raise HTTPException(status_code=500, detail=SIGNUP_FAILURE_DETAIL)
+        logger.error(f"Signup Exception: {e}")
+        raise HTTPException(status_code=500, detail=f"Signup Failed: {str(e)}")
 
 @router.post("/token", response_model=schemas.Token)
 def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)) -> Dict[str, str]:
@@ -179,17 +170,15 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
             )
             db.add(audit_entry)
             db.commit()
-        except Exception:
+        except Exception as e:
             db.rollback()
-            logger.error("Login audit log failed")
+            logger.error(f"Audit Log Failed: {e}")
             # Do not fail login if audit fails, just log error
             
         return {"access_token": access_token, "token_type": "bearer"}
-    except HTTPException:
-        raise
-    except Exception:
-        logger.error("Login failed")
-        raise HTTPException(status_code=500, detail=LOGIN_FAILURE_DETAIL)
+    except Exception as e:
+        logger.error(f"Login Error: {e}")
+        raise e
 
 @router.get("/profile", response_model=Dict[str, Any])
 def get_user_profile(current_user: models.User = Depends(get_current_user)) -> Dict[str, Any]:
@@ -210,7 +199,6 @@ def get_user_profile(current_user: models.User = Depends(get_current_user)) -> D
         "activity_level": current_user.activity_level,
         "sleep_hours": current_user.sleep_hours,
         "stress_level": current_user.stress_level,
-        "specialization": current_user.specialization,
         "allow_data_collection": bool(current_user.allow_data_collection),
         "role": getattr(current_user, "role", "patient")
     }
@@ -270,9 +258,9 @@ def get_user_full_details(user_id: int, current_user: models.User = Depends(get_
         )
         db.add(audit_entry)
         db.commit()
-    except Exception:
+    except Exception as e:
         db.rollback()
-        logger.error("Sensitive data audit log failed")
+        logger.error(f"Audit Log Error: {e}")
 
     # --- PRIVACY COMPLIANCE GATE ---
     # Eagerly load the collections so they can be read post-expunge
