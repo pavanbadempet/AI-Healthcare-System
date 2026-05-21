@@ -35,6 +35,33 @@ SUPPORTED_ANALYSIS_AREAS = {
 }
 
 
+def build_external_research_query(query: str) -> str:
+    """Build a non-identifying query for external medical literature search."""
+    query_lower = _coerce_context(query).lower()
+    terms = ["clinical research"]
+
+    if any(word in query_lower for word in ["latest", "news", "2024", "2025", "2026"]):
+        terms.insert(0, "latest")
+    if "treatment" in query_lower:
+        terms.append("treatment guidelines")
+    if "study" in query_lower or "research" in query_lower:
+        terms.append("medical studies")
+
+    matched_areas = []
+    seen = set()
+    for keyword, (area, _label) in SUPPORTED_ANALYSIS_AREAS.items():
+        if keyword in query_lower and area not in seen:
+            matched_areas.append(area)
+            seen.add(area)
+
+    if matched_areas:
+        terms.extend(matched_areas)
+    else:
+        terms.append("healthcare")
+
+    return " ".join(terms)
+
+
 # ── core_ai-backed LLM Wrapper ────────────────────────────────────────
 # Wraps the multi-tier AI engine (Ollama → Gemini → Cloud) in a
 # LangChain-compatible .invoke() interface for the LangGraph agent.
@@ -149,8 +176,8 @@ def supervisor_node(state: AgentState):
 def research_node(state: AgentState):
     """Executes general web search."""
     query = state['messages'][-1].content
-    logger.info(f"🔎 Researching: {query}")
-    results = tavily_search(query)
+    logger.info("Researching healthcare topic")
+    results = tavily_search(build_external_research_query(query))
     return {"tavily_results": results}
 
 

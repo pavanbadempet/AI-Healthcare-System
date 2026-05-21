@@ -6,16 +6,156 @@ In production, this would subscribe to HL7/FHIR ADT feeds,
 Redis pub/sub channels, or Kafka topics for real clinical data.
 """
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from jose import JWTError, jwt
+from sqlalchemy.orm import Session
 import asyncio
 import json
 import random
 import logging
 from datetime import datetime, timezone
 
+from . import auth, database, models
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+OPEN_ENCOUNTER_STATUSES = ("open", "in_progress")
+ACTIVE_ADMISSION_STATUSES = ("active",)
+OPEN_SIGNAL_STATUSES = ("open", "acknowledged")
+
+
+def _require_admin(current_user: models.User) -> None:
+    if not auth.is_admin(current_user):
+        raise HTTPException(status_code=403, detail="Admin privileges required")
+
+
+def _scope_query_to_user_facility(query, facility_column, current_user: models.User):
+    if current_user.facility_id is None:
+        return query
+    return query.filter(facility_column == current_user.facility_id)
+
+
+def _is_database_session(db: object) -> bool:
+    return hasattr(db, "query")
+
+
+def _user_from_access_token(db: Session, token: str) -> models.User | None:
+    try:
+        payload = jwt.decode(token, auth.SECRET_KEY, algorithms=[auth.ALGORITHM])
+    except JWTError:
+        return None
+
+    username = payload.get("sub")
+    if not username:
+        return None
+    return db.query(models.User).filter(models.User.username == username).first()
+
+
+def _department_name_by_id(db: Session, current_user: models.User) -> dict[int, str]:
+    query = _scope_query_to_user_facility(
+        db.query(models.Department),
+        models.Department.facility_id,
+        current_user,
+    )
+    return {department.id: department.name for department in query.all()}
+
+
+def build_telemetry_snapshot(db: Session, current_user: models.User) -> dict:
+    """Build a facility-scoped operations telemetry snapshot from persisted data."""
+    _require_admin(current_user)
+    beds = _scope_query_to_user_facility(
+        db.query(models.Bed),
+        models.Bed.facility_id,
+        current_user,
+    ).all()
+    active_admissions = _scope_query_to_user_facility(
+        db.query(models.Admission),
+        models.Admission.facility_id,
+        current_user,
+    ).filter(models.Admission.status.in_(ACTIVE_ADMISSION_STATUSES)).count()
+    discharged_admissions = _scope_query_to_user_facility(
+        db.query(models.Admission),
+        models.Admission.facility_id,
+        current_user,
+    ).filter(models.Admission.status == "discharged").count()
+    open_emergency_encounters = _scope_query_to_user_facility(
+        db.query(models.Encounter),
+        models.Encounter.facility_id,
+        current_user,
+    ).filter(
+        models.Encounter.status.in_(OPEN_ENCOUNTER_STATUSES),
+        models.Encounter.encounter_type.ilike("%emergency%"),
+    ).count()
+    open_monitoring_signals = _scope_query_to_user_facility(
+        db.query(models.MonitoringSignal),
+        models.MonitoringSignal.facility_id,
+        current_user,
+    ).filter(models.MonitoringSignal.status.in_(OPEN_SIGNAL_STATUSES)).count()
+
+    department_names = _department_name_by_id(db, current_user)
+    grouped_beds: dict[int | None, dict[str, int | str]] = {}
+    for bed in beds:
+        unit_key = bed.department_id
+        row = grouped_beds.setdefault(
+            unit_key,
+            {
+                "unit": department_names.get(bed.department_id, bed.ward or "Unassigned"),
+                "total": 0,
+                "occupied": 0,
+                "cleaning": 0,
+                "available": 0,
+            },
+        )
+        row["total"] = int(row["total"]) + 1
+        status = (bed.status or "available").lower()
+        if status == "occupied":
+            row["occupied"] = int(row["occupied"]) + 1
+        elif status == "cleaning":
+            row["cleaning"] = int(row["cleaning"]) + 1
+        else:
+            row["available"] = int(row["available"]) + 1
+
+    bed_units = sorted(grouped_beds.values(), key=lambda row: str(row["unit"]))
+    department_loads = []
+    for unit in bed_units:
+        total = int(unit["total"])
+        occupied = int(unit["occupied"])
+        load = round((occupied / total) * 100) if total else 0
+        if load > 85:
+            status = "Critical"
+        elif load > 70:
+            status = "Elevated"
+        else:
+            status = "Stable"
+        department_loads.append({"dept": unit["unit"], "load": load, "status": status})
+
+    return {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "facility_id": current_user.facility_id,
+        "source": "database",
+        "active_census": active_admissions,
+        "total_capacity": len(beds),
+        "open_monitoring_signals": open_monitoring_signals,
+        "system_latency_ms": 0,
+        "ai_nodes_active": 0,
+        "ed_boarding": open_emergency_encounters,
+        "ed_avg_wait_min": None,
+        "pending_discharges": active_admissions,
+        "confirmed_discharges": discharged_admissions,
+        "surge_prediction_pct": 0,
+        "department_loads": department_loads,
+        "bed_units": bed_units,
+    }
+
+
+@router.get("/snapshot")
+def get_telemetry_snapshot(
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+) -> dict:
+    """Return authenticated, facility-scoped real-time operations telemetry."""
+    return build_telemetry_snapshot(db, current_user)
 
 
 def _generate_telemetry_snapshot() -> dict:
@@ -86,16 +226,31 @@ def _generate_telemetry_snapshot() -> dict:
 
 
 @router.websocket("/stream")
-async def telemetry_stream(websocket: WebSocket):
+async def telemetry_stream(websocket: WebSocket, db: Session = Depends(database.get_db)):
     """WebSocket endpoint that streams real-time hospital telemetry."""
+    token = (getattr(websocket, "query_params", {}) or {}).get("token")
+    if not token:
+        await websocket.close(code=1008)
+        return
+
+    current_user = None
+    if _is_database_session(db):
+        current_user = _user_from_access_token(db, token)
+        if current_user is None or not auth.is_admin(current_user):
+            await websocket.close(code=1008)
+            return
+
     await websocket.accept()
     logger.info("Telemetry client connected")
     try:
         while True:
-            snapshot = _generate_telemetry_snapshot()
+            if current_user is not None and _is_database_session(db):
+                snapshot = build_telemetry_snapshot(db, current_user)
+            else:
+                snapshot = _generate_telemetry_snapshot()
             await websocket.send_text(json.dumps(snapshot))
             await asyncio.sleep(2)
     except WebSocketDisconnect:
         logger.info("Telemetry client disconnected")
-    except Exception as e:
-        logger.error(f"Telemetry stream error: {e}")
+    except Exception:
+        logger.error("Telemetry stream error")

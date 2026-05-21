@@ -8,7 +8,9 @@ from typing import Dict, Any, List
 from functools import lru_cache
 
 # --- Custom Modules ---
-from . import explainability, schemas, features
+from . import audit, database, explainability, schemas, features
+from .facility_scope import users_share_facility_context
+from sqlalchemy.orm import Session
 
 # --- Logging Configuration ---
 logger = logging.getLogger(__name__)
@@ -48,8 +50,8 @@ def load_pkl(filenames: List[str], fallback_class=None):
                     obj = joblib.load(f)
                     logger.info(f"✅ Successfully loaded model: {f_name}")
                     return obj
-            except Exception as e:
-                logger.error(f"❌ Failed to load {f_name}: {e}")
+            except Exception:
+                logger.error("Failed to load model file %s", f_name)
     
     logger.warning(f"⚠️ Could not find any of: {filenames} in {MODEL_DIR}. Model will be unavailable.")
     if fallback_class:
@@ -110,6 +112,104 @@ def reload_models(current_user: db_models.User = Depends(auth.get_current_user))
         "lungs_loaded": lungs_model is not None
     }
 
+
+PREDICTION_REVIEW_DECISIONS = {"accepted", "overridden", "ignored"}
+PREDICTION_REVIEW_TYPES = {"diabetes", "heart", "liver", "kidney", "lungs"}
+PREDICTION_REVIEW_CATEGORIES = {
+    "administrative",
+    "patient_education",
+    "clinician_review",
+    "clinical_decision_support",
+}
+
+
+def _prediction_patient(db: Session, patient_id: int) -> db_models.User:
+    patient = db.query(db_models.User).filter(
+        db_models.User.id == patient_id,
+        db_models.User.role == "patient",
+    ).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    return patient
+
+
+def _doctor_assigned_to_prediction_patient(db: Session, doctor_id: int, patient_id: int) -> bool:
+    if not users_share_facility_context(db, doctor_id, patient_id):
+        return False
+    if db.query(db_models.Encounter).filter(
+        db_models.Encounter.patient_id == patient_id,
+        db_models.Encounter.doctor_id == doctor_id,
+    ).first():
+        return True
+    if db.query(db_models.Admission).filter(
+        db_models.Admission.patient_id == patient_id,
+        db_models.Admission.doctor_id == doctor_id,
+    ).first():
+        return True
+    if db.query(db_models.ClinicalOrder).filter(
+        db_models.ClinicalOrder.patient_id == patient_id,
+        db_models.ClinicalOrder.doctor_id == doctor_id,
+    ).first():
+        return True
+    appointment = db.query(db_models.Appointment).filter(
+        db_models.Appointment.user_id == patient_id,
+        db_models.Appointment.doctor_id == doctor_id,
+    ).first()
+    return appointment is not None
+
+
+def _ensure_prediction_review_access(db: Session, current_user: db_models.User, patient_id: int) -> None:
+    if auth.is_admin(current_user):
+        return
+    if current_user.role != "doctor":
+        raise HTTPException(status_code=403, detail="Doctor or admin privileges required")
+    if not _doctor_assigned_to_prediction_patient(db, current_user.id, patient_id):
+        raise HTTPException(status_code=403, detail="Doctor is not assigned to this patient")
+
+
+@router.post("/predict/reviews", status_code=201, response_model=Dict[str, Any])
+def record_prediction_review(
+    payload: schemas.PredictionReviewCreate,
+    db: Session = Depends(database.get_db),
+    current_user: db_models.User = Depends(auth.get_current_user),
+) -> Dict[str, Any]:
+    decision = payload.decision.strip().lower()
+    prediction_type = payload.prediction_type.strip().lower()
+    use_category = (payload.clinical_use_category or "clinician_review").strip().lower()
+    if decision not in PREDICTION_REVIEW_DECISIONS:
+        raise HTTPException(status_code=400, detail="Unsupported prediction review decision")
+    if prediction_type not in PREDICTION_REVIEW_TYPES:
+        raise HTTPException(status_code=400, detail="Unsupported prediction review type")
+    if use_category not in PREDICTION_REVIEW_CATEGORIES:
+        raise HTTPException(status_code=400, detail="Unsupported prediction review category")
+
+    patient = _prediction_patient(db, payload.patient_id)
+    _ensure_prediction_review_access(db, current_user, patient.id)
+    audit_entry = audit.record_audit_event(
+        db,
+        actor_user_id=current_user.id,
+        target_user_id=patient.id,
+        action="REVIEW_AI_PREDICTION",
+        details={
+            "resource_type": "ai_prediction_review",
+            "screening_area": prediction_type,
+            "decision": decision,
+            "use_category": use_category,
+            "model_card_id": payload.model_card_id,
+            "prediction_reference_id_present": bool(payload.prediction_reference_id),
+            "review_text_present": bool(payload.review_note),
+        },
+    )
+    return {
+        "status": "recorded",
+        "patient_id": patient.id,
+        "reviewed_by_id": current_user.id,
+        "prediction_type": prediction_type,
+        "decision": decision,
+        "clinical_use_category": use_category,
+        "audit_event_id": audit_entry.id if audit_entry else None,
+    }
+
 # --- Helper Functions for Big Data Mapping ---
 
 def get_age_bucket(age: float) -> int:
@@ -149,11 +249,20 @@ def _get_confidence(model, input_data):
 
 MEDICAL_DISCLAIMER = ("This is an AI-assisted screening tool, not a medical diagnosis. "
                       "Please consult a qualified healthcare professional for clinical decisions.")
+PREDICTION_FAILURE_DETAIL = "Prediction failed. Please try again later."
+
+
+def _raise_prediction_failure(model_name: str) -> None:
+    logger.error("%s prediction failed", model_name)
+    raise HTTPException(status_code=500, detail=PREDICTION_FAILURE_DETAIL)
 
 # --- Prediction Endpoints ---
 
 @router.post("/predict/kidney", response_model=Dict[str, Any])
-def predict_kidney(data: schemas.KidneyInput) -> Dict[str, Any]:
+def predict_kidney(
+    data: schemas.KidneyInput,
+    _current_user: db_models.User = Depends(auth.get_current_user),
+) -> Dict[str, Any]:
     if not kidney_model or not kidney_scaler:
          raise HTTPException(status_code=503, detail="Kidney Model not trained/loaded.")
              
@@ -179,12 +288,14 @@ def predict_kidney(data: schemas.KidneyInput) -> Dict[str, Any]:
         confidence, risk_level = _get_confidence(kidney_model, input_scaled)
         return {"prediction": result, "raw": raw_pred, "confidence": confidence, "risk_level": risk_level, "disclaimer": MEDICAL_DISCLAIMER}
         
-    except Exception as e:
-        logger.error(f"Kidney Prediction Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        _raise_prediction_failure("Kidney")
 
 @router.post("/predict/lungs", response_model=Dict[str, Any])
-def predict_lungs(data: schemas.LungInput) -> Dict[str, Any]:
+def predict_lungs(
+    data: schemas.LungInput,
+    _current_user: db_models.User = Depends(auth.get_current_user),
+) -> Dict[str, Any]:
     if not lungs_model or not lungs_scaler:
          raise HTTPException(status_code=503, detail="Lung Model not trained/loaded.")
              
@@ -210,12 +321,14 @@ def predict_lungs(data: schemas.LungInput) -> Dict[str, Any]:
         confidence, risk_level = _get_confidence(lungs_model, input_scaled)
         return {"prediction": result, "raw": raw_pred, "confidence": confidence, "risk_level": risk_level, "disclaimer": MEDICAL_DISCLAIMER}
         
-    except Exception as e:
-        logger.error(f"Lung Prediction Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        _raise_prediction_failure("Lung")
 
 @router.post("/predict/diabetes", response_model=Dict[str, Any])
-def predict_diabetes(data: schemas.DiabetesInput) -> Dict[str, Any]:
+def predict_diabetes(
+    data: schemas.DiabetesInput,
+    _current_user: db_models.User = Depends(auth.get_current_user),
+) -> Dict[str, Any]:
     if not diabetes_model:
         raise HTTPException(status_code=503, detail="Diabetes Model not available")
     try:
@@ -235,12 +348,14 @@ def predict_diabetes(data: schemas.DiabetesInput) -> Dict[str, Any]:
         result = "High Risk" if prediction == 1 or prediction == 2 else "Low Risk"
         confidence, risk_level = _get_confidence(diabetes_model, [input_list])
         return {"prediction": result, "raw": int(prediction), "confidence": confidence, "risk_level": risk_level, "disclaimer": MEDICAL_DISCLAIMER}
-    except Exception as e:
-        logger.error(f"Diabetes Prediction Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        _raise_prediction_failure("Diabetes")
 
 @router.post("/predict/heart", response_model=Dict[str, Any])
-def predict_heart(data: schemas.HeartInput) -> Dict[str, Any]:
+def predict_heart(
+    data: schemas.HeartInput,
+    _current_user: db_models.User = Depends(auth.get_current_user),
+) -> Dict[str, Any]:
     if not heart_model:
         raise HTTPException(status_code=503, detail="Heart Model not available")
     try:
@@ -260,12 +375,14 @@ def predict_heart(data: schemas.HeartInput) -> Dict[str, Any]:
         raw_val = 1 if result == "Heart Disease Detected" else 0
         confidence, risk_level = _get_confidence(heart_model, [input_list])
         return {"prediction": result, "raw": raw_val, "confidence": confidence, "risk_level": risk_level, "disclaimer": MEDICAL_DISCLAIMER}
-    except Exception as e:
-        logger.error(f"Heart Prediction Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        _raise_prediction_failure("Heart")
 
 @router.post("/predict/liver", response_model=Dict[str, Any])
-def predict_liver(data: schemas.LiverInput) -> Dict[str, Any]:
+def predict_liver(
+    data: schemas.LiverInput,
+    _current_user: db_models.User = Depends(auth.get_current_user),
+) -> Dict[str, Any]:
     if not liver_model or not liver_scaler:
         raise HTTPException(status_code=503, detail="Liver Model or Scaler not available")
     try:
@@ -298,16 +415,16 @@ def predict_liver(data: schemas.LiverInput) -> Dict[str, Any]:
         confidence, risk_level = _get_confidence(liver_model, X_scaled)
         return {"prediction": result, "raw": int(val), "confidence": confidence, "risk_level": risk_level, "disclaimer": MEDICAL_DISCLAIMER}
 
-    except Exception as e:
-        import traceback
-        error_msg = f"Liver Logic Error: {str(e)} | Trace: {traceback.format_exc()}"
-        logger.error(error_msg)
-        raise HTTPException(status_code=500, detail=f"Liver Prediction Failed: {str(e)}")
+    except Exception:
+        _raise_prediction_failure("Liver")
 
 # --- Explanation Endpoints (SHAP) ---
 
 @router.post("/predict/explain/diabetes")
-def explain_diabetes(data: schemas.DiabetesInput):
+def explain_diabetes(
+    data: schemas.DiabetesInput,
+    _current_user: db_models.User = Depends(auth.get_current_user),
+):
     if not diabetes_model:
         raise HTTPException(status_code=503, detail="Model unavailable")
     
@@ -324,7 +441,10 @@ def explain_diabetes(data: schemas.DiabetesInput):
     raise HTTPException(status_code=500, detail="Explanation Generation Failed")
 
 @router.post("/predict/explain/heart")
-def explain_heart(data: schemas.HeartInput):
+def explain_heart(
+    data: schemas.HeartInput,
+    _current_user: db_models.User = Depends(auth.get_current_user),
+):
     if not heart_model:
         raise HTTPException(status_code=503, detail="Model unavailable")
     
@@ -340,7 +460,10 @@ def explain_heart(data: schemas.HeartInput):
     raise HTTPException(status_code=500, detail="Explanation Generation Failed")
 
 @router.post("/predict/explain/liver")
-def explain_liver(data: schemas.LiverInput):
+def explain_liver(
+    data: schemas.LiverInput,
+    _current_user: db_models.User = Depends(auth.get_current_user),
+):
     if not liver_model or not liver_scaler:
          raise HTTPException(status_code=503, detail="Model unavailable")
     

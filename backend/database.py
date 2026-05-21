@@ -3,14 +3,21 @@ from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 import os
 
-# Allow override via env var for deployment, default to local SQLite
-SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
-if not SQLALCHEMY_DATABASE_URL:
-    SQLALCHEMY_DATABASE_URL = "sqlite:///./healthcare.db"
 
-# Fix for Render/Heroku using 'postgres://' instead of 'postgresql://'
-if SQLALCHEMY_DATABASE_URL.startswith("postgres://"):
-    SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgres://", "postgresql://", 1)
+def _load_database_url() -> str:
+    database_url = os.getenv("DATABASE_URL")
+    if database_url:
+        if database_url.startswith("postgres://"):
+            return database_url.replace("postgres://", "postgresql://", 1)
+        return database_url
+
+    if os.getenv("TESTING", "").strip().lower() in {"1", "true", "yes", "on"}:
+        return "sqlite:///:memory:"
+
+    raise RuntimeError("DATABASE_URL environment variable is not set. Cannot start database engine.")
+
+
+SQLALCHEMY_DATABASE_URL = _load_database_url()
 
 connect_args = {}
 if "sqlite" in SQLALCHEMY_DATABASE_URL:

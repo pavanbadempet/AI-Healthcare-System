@@ -13,7 +13,7 @@ Features:
   - Server-Sent Events (SSE) with heartbeat keepalive
   - Multi-tier AI inference via core_ai.py
   - RAG context from chat_context.py
-  - Cloud provider override via x-ai-provider / x-ai-api-key headers
+  - Admin-only cloud provider override via x-ai-provider / x-ai-api-key headers
 """
 
 import asyncio
@@ -36,6 +36,11 @@ logger = logging.getLogger(__name__)
 
 # SSE Heartbeat interval (keeps connection alive through proxies)
 SSE_HEARTBEAT_INTERVAL = 15.0
+STREAM_FAILURE_DETAIL = "AI stream failed. Please try again later."
+STREAM_MEDICAL_DISCLAIMER = (
+    "This is AI-generated information and is not a medical diagnosis. "
+    "Please consult a qualified healthcare professional for medical decisions or emergencies."
+)
 
 router = APIRouter(prefix="/chat", tags=["Streaming Chat"])
 
@@ -74,7 +79,9 @@ async def stream_chat(
             yield f"data: {json.dumps({'reply': 'How can I help you with your health today?', 'status': 'complete'})}\n\n"
         return StreamingResponse(empty_gen(), media_type="text/event-stream")
 
-    ai_available = await core_ai.is_available() or (x_ai_provider and x_ai_api_key)
+    provider_override = x_ai_provider if auth.is_admin(current_user) else None
+    api_key_override = x_ai_api_key if auth.is_admin(current_user) else None
+    ai_available = await core_ai.is_available() or (provider_override and api_key_override)
 
     if ai_available:
         # Build RAG context with Governance Scope
@@ -99,6 +106,7 @@ async def stream_chat(
         async def stream_generator() -> AsyncGenerator[str, None]:
             """Robust streaming generator with heartbeat and error handling."""
             last_activity = time.time()
+            streamed_reply_parts: list[str] = []
 
             try:
                 # 1. Send sources immediately
@@ -115,14 +123,14 @@ async def stream_chat(
                             chat_history[-4:],  # Keep context tight
                             system=system_prompt,
                             model=final_model,
-                            api_provider=x_ai_provider,
-                            api_key=x_ai_api_key,
+                            api_provider=provider_override,
+                            api_key=api_key_override,
                         ):
                             if chunk:
                                 await chunk_queue.put(("chunk", chunk))
                         await chunk_queue.put(("done", None))
-                    except Exception as e:
-                        await chunk_queue.put(("error", str(e)))
+                    except Exception:
+                        await chunk_queue.put(("error", STREAM_FAILURE_DETAIL))
 
                 stream_task = asyncio.create_task(ai_stream_consumer())
 
@@ -135,13 +143,18 @@ async def stream_chat(
                         )
 
                         if msg_type == "chunk":
+                            streamed_reply_parts.append(data)
                             yield f"data: {json.dumps({'reply': data})}\n\n"
                             last_activity = time.time()
                         elif msg_type == "error":
-                            logger.error("AI stream error: %s", data)
+                            logger.error("AI stream error")
                             yield f"data: {json.dumps({'error': data, 'status': 'error'})}\n\n"
                             break
                         elif msg_type == "done":
+                            streamed_reply = "".join(streamed_reply_parts)
+                            if STREAM_MEDICAL_DISCLAIMER not in streamed_reply:
+                                disclaimer = f"\n\n{STREAM_MEDICAL_DISCLAIMER}"
+                                yield f"data: {json.dumps({'reply': disclaimer})}\n\n"
                             yield f"data: {json.dumps({'status': 'complete'})}\n\n"
                             break
 
@@ -152,10 +165,11 @@ async def stream_chat(
                             last_activity = time.time()
 
             except Exception as e:
-                logger.error("Chat streaming error: %s", e)
-                error_msg = str(e)
-                if "timeout" in error_msg.lower():
+                logger.error("Chat streaming error")
+                if "timeout" in str(e).lower():
                     error_msg = "The AI is taking too long. Please try again or use a cloud provider."
+                else:
+                    error_msg = STREAM_FAILURE_DETAIL
                 yield f"data: {json.dumps({'error': error_msg, 'status': 'error'})}\n\n"
             finally:
                 if stream_task and not stream_task.done():
@@ -183,6 +197,7 @@ async def stream_chat(
     async def fallback_generator():
         yield f"data: {json.dumps({'sources': [], 'model': 'fallback'})}\n\n"
         yield f"data: {json.dumps({'reply': fallback_msg})}\n\n"
+        yield f"data: {json.dumps({'reply': f'\\n\\n{STREAM_MEDICAL_DISCLAIMER}'})}\n\n"
         yield f"data: {json.dumps({'status': 'complete'})}\n\n"
 
     return StreamingResponse(

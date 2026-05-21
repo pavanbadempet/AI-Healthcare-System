@@ -1,8 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 import os
 import logging
-from . import core_ai
+from . import auth, core_ai, models
 from dotenv import load_dotenv
 
 # Load Env
@@ -24,8 +24,13 @@ class ExplanationResponse(BaseModel):
 
 from typing import Optional, Any
 
+EXPLANATION_FAILURE_DETAIL = "Failed to generate explanation"
+
 @router.post("/", response_model=ExplanationResponse)
-async def explain_prediction(req: ExplanationRequest):
+async def explain_prediction(
+    req: ExplanationRequest,
+    current_user: models.User = Depends(auth.get_current_user),
+):
     """
     Uses core_ai to explain WHY a prediction was made in plain English.
     """
@@ -78,6 +83,8 @@ async def explain_prediction(req: ExplanationRequest):
             lifestyle_tips=tips_part
         )
 
-    except Exception as e:
-        logger.error(f"Explanation Error: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to generate explanation: {str(e)}")
+    except HTTPException:
+        raise
+    except Exception:
+        logger.error("Explanation generation failed")
+        raise HTTPException(status_code=500, detail=EXPLANATION_FAILURE_DETAIL)

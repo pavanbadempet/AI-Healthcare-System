@@ -80,8 +80,8 @@ def get_shap_values(model, input_vector, feature_names):
         
         return {"html": html_str}
 
-    except Exception as e:
-        logger.error(f"SHAP Generation Error: {e}")
+    except Exception:
+        logger.error("SHAP generation failed")
         return None
 
 def generate_static_force_plot(model, input_vector, feature_names):

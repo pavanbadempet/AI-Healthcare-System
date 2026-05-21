@@ -20,6 +20,8 @@ from sqlalchemy import text
 import redis
 
 logger = logging.getLogger(__name__)
+COMPLIANCE_OPERATION_FAILURE_MESSAGE = "Compliance operation failed. Please try again later."
+COMPLIANCE_REPORT_FAILURE_MESSAGE = "Compliance report unavailable."
 
 class ComplianceFramework(Enum):
     HIPAA = "hipaa"
@@ -93,8 +95,8 @@ class HIPAACompliance:
                     try:
                         decrypted_value = self.cipher.decrypt(value.encode()).decode()
                         decrypted_data[field] = decrypted_value
-                    except Exception as e:
-                        logger.error(f"Failed to decrypt field {field}: {e}")
+                    except Exception:
+                        logger.error("Failed to decrypt PHI field")
                         decrypted_data[field] = "[ENCRYPTED]"
                 elif isinstance(value, dict):
                     decrypted_data[field] = self.decrypt_phi(value)
@@ -129,8 +131,8 @@ class HIPAACompliance:
                 f"from {ip_address} for purpose: {purpose}"
             )
             
-        except Exception as e:
-            logger.error(f"Failed to log PHI access: {e}")
+        except Exception:
+            logger.error("Failed to log PHI access")
     
     def validate_minimum_necessary(self, requested_fields: Set[str], 
                                  purpose: str) -> Set[str]:
@@ -185,8 +187,8 @@ class GDPRCompliance:
                     'ts': datetime.now(timezone.utc)
                 })
                 conn.commit()
-        except Exception as e:
-            logger.error(f"Failed to log DSAR: {e}")
+        except Exception:
+            logger.error("Failed to log DSAR")
         
         # Process based on request type
         if request_type == "access":
@@ -243,10 +245,18 @@ class GDPRCompliance:
                 'delivery_method': 'secure_download'
             }
             
-        except Exception as e:
-            logger.error(f"Access request failed: {e}")
-            self._update_request_status(request_id, 'failed', {'error': str(e)})
-            return {'status': 'failed', 'request_id': request_id, 'error': str(e)}
+        except Exception:
+            logger.error("Access request failed")
+            self._update_request_status(
+                request_id,
+                'failed',
+                {'error': COMPLIANCE_OPERATION_FAILURE_MESSAGE},
+            )
+            return {
+                'status': 'failed',
+                'request_id': request_id,
+                'error': COMPLIANCE_OPERATION_FAILURE_MESSAGE,
+            }
     
     def _process_erasure_request(self, user_id: int, request_id: str) -> Dict[str, Any]:
         """Process right to erasure (right to be forgotten)"""
@@ -298,9 +308,13 @@ class GDPRCompliance:
                 'completion_date': datetime.now(timezone.utc).isoformat()
             }
             
-        except Exception as e:
-            logger.error(f"Erasure request failed: {e}")
-            return {'status': 'failed', 'request_id': request_id, 'error': str(e)}
+        except Exception:
+            logger.error("Erasure request failed")
+            return {
+                'status': 'failed',
+                'request_id': request_id,
+                'error': COMPLIANCE_OPERATION_FAILURE_MESSAGE,
+            }
     
     def _process_portability_request(self, user_id: int, request_id: str) -> Dict[str, Any]:
         """Process data portability request"""
@@ -404,8 +418,8 @@ class GDPRCompliance:
                     'rid': request_id
                 })
                 conn.commit()
-        except Exception as e:
-            logger.error(f"Failed to update request status: {e}")
+        except Exception:
+            logger.error("Failed to update request status")
     
     def _convert_to_portable_format(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """Convert data to portable format"""
@@ -446,8 +460,8 @@ class ComplianceManager:
                     'tparty': record.third_party
                 })
                 conn.commit()
-        except Exception as e:
-            logger.error(f"Failed to log data processing: {e}")
+        except Exception:
+            logger.error("Failed to log data processing")
     
     def check_consent(self, user_id: int, purpose: str, 
                      data_categories: List[DataCategory]) -> bool:
@@ -475,8 +489,8 @@ class ComplianceManager:
                 
                 return False
                 
-        except Exception as e:
-            logger.error(f"Consent check failed: {e}")
+        except Exception:
+            logger.error("Consent check failed")
             return False
     
     def record_consent(self, consent: ConsentRecord):
@@ -501,8 +515,8 @@ class ComplianceManager:
                     'retention': consent.retention_period_days
                 })
                 conn.commit()
-        except Exception as e:
-            logger.error(f"Failed to record consent: {e}")
+        except Exception:
+            logger.error("Failed to record consent")
     
     def generate_compliance_report(self, report_type: str) -> Dict[str, Any]:
         """Generate compliance reports"""
@@ -545,9 +559,9 @@ class ComplianceManager:
                     'compliance_score': 0.95  # This would be calculated
                 }
                 
-        except Exception as e:
-            logger.error(f"HIPAA audit report failed: {e}")
-            return {'error': str(e)}
+        except Exception:
+            logger.error("HIPAA audit report failed")
+            return {'error': COMPLIANCE_REPORT_FAILURE_MESSAGE}
     
     def _generate_gdpr_accountability_report(self) -> Dict[str, Any]:
         """Generate GDPR accountability report"""
@@ -579,9 +593,9 @@ class ComplianceManager:
                     'data_subject_rights_satisfaction': 0.92  # This would be calculated
                 }
                 
-        except Exception as e:
-            logger.error(f"GDPR accountability report failed: {e}")
-            return {'error': str(e)}
+        except Exception:
+            logger.error("GDPR accountability report failed")
+            return {'error': COMPLIANCE_REPORT_FAILURE_MESSAGE}
     
     def _generate_data_inventory_report(self) -> Dict[str, Any]:
         """Generate data inventory report"""
@@ -610,9 +624,9 @@ class ComplianceManager:
                     'retention_policies_applied': True
                 }
                 
-        except Exception as e:
-            logger.error(f"Data inventory report failed: {e}")
-            return {'error': str(e)}
+        except Exception:
+            logger.error("Data inventory report failed")
+            return {'error': COMPLIANCE_REPORT_FAILURE_MESSAGE}
 
 # Global compliance manager instance
 compliance_manager = None

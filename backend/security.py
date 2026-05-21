@@ -4,11 +4,12 @@ Security & Compliance Module
 Handles Audit Logging and Rate Limiting logic.
 """
 from sqlalchemy.orm import Session
-from . import models
+from . import audit, models
 from fastapi import Request, HTTPException
 from datetime import datetime, timezone
 import time
 import logging
+import os
 from typing import Dict
 
 logger = logging.getLogger(__name__)
@@ -37,18 +38,29 @@ def log_audit_event(
             admin_id=admin_id, # Can be None if system action
             target_user_id=target_user_id,
             action=action,
-            details=details,
+            details=audit.sanitize_audit_details(details),
             timestamp=datetime.now(timezone.utc)
         )
         db.add(log_entry)
         db.commit()
-    except Exception as e:
+    except Exception:
         db.rollback() # Ensure ACID isolation by clearing failed transactions
-        logger.error(f"FAILED TO AUDIT LOG: {e}")
+        logger.error("Failed to write legacy audit log")
 
 
 # --- Simple In-Memory Rate Limiter ---
 # For scalable prod, use Redis. For MVP/Free Tier, this suffices.
+
+def _load_rate_limit_requests_per_minute() -> int:
+    raw_value = os.getenv("RATE_LIMIT_REQUESTS_PER_MINUTE", "60")
+    try:
+        value = int(raw_value)
+    except ValueError:
+        raise RuntimeError("RATE_LIMIT_REQUESTS_PER_MINUTE must be an integer.")
+    if value <= 0:
+        raise RuntimeError("RATE_LIMIT_REQUESTS_PER_MINUTE must be positive.")
+    return value
+
 
 class RateLimiter:
     def __init__(self, requests_per_minute: int = 60):
@@ -93,4 +105,4 @@ class RateLimiter:
             del self.storage[k]
 
 # Global instance
-limiter = RateLimiter(requests_per_minute=60)
+limiter = RateLimiter(requests_per_minute=_load_rate_limit_requests_per_minute())
