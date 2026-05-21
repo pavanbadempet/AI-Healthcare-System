@@ -1,21 +1,20 @@
 """
 RAG Module - Semantic Memory for Personalized Healthcare AI
 ============================================================
-Uses FREE Gemini Embedding API (no local model needed = saves ~200MB)
+Uses centralized core_ai embeddings (no local embedding model needed = saves ~200MB)
 
 Enhanced with citation tracking, token budget management, and
 RAGResult return types from the Singularity AI Engine architecture.
 """
 import os
-import pickle
+import json
 import numpy as np
 import logging
 from typing import List, Dict, Optional, Any
 from dataclasses import dataclass, field
 from sklearn.metrics.pairwise import cosine_similarity
-import warnings
-warnings.filterwarnings("ignore", message=".*google.generativeai.*", category=FutureWarning)
-import google.generativeai as genai
+
+from . import core_ai
 
 # --- Logging ---
 logger = logging.getLogger(__name__)
@@ -115,67 +114,43 @@ def assemble_context(
     return "\n".join(context_parts), total_tokens, selected
 
 # --- Constants ---
-DB_FILE = os.path.join(os.path.dirname(__file__), "..", "models", "vector_store.pkl")
-EMBEDDING_MODEL = "models/text-embedding-004"  # Free Gemini embedding model
-
-# --- Gemini Embedding (FREE, no local model needed) ---
-_configured = False
+DB_FILE = os.path.join(os.path.dirname(__file__), "..", "models", "vector_store.json")
 
 def get_embedding(text: str) -> List[float]:
     """
-    Generate embedding using FREE Gemini API.
-    No local model = saves ~200MB memory!
+    Generate an embedding through the centralized AI provider boundary.
     """
-    global _configured
-    
-    api_key = os.getenv("GOOGLE_API_KEY")
-    if not api_key:
-        logger.warning("GOOGLE_API_KEY not found, using zero vector")
-        return [0.0] * 768  # Return zero vector as fallback
-    
-    if not _configured:
-        genai.configure(api_key=api_key)
-        _configured = True
-    
-    try:
-        result = genai.embed_content(
-            model=EMBEDDING_MODEL,
-            content=text,
-            task_type="retrieval_document"
-        )
-        return result['embedding']
-    except Exception as e:
-        logger.error(f"Embedding failed: {e}")
-        return [0.0] * 768  # Fallback
+    return core_ai.embed_text(text, task_type="retrieval_document")
 
 def get_query_embedding(text: str) -> List[float]:
     """Generate embedding for search query."""
-    global _configured
-    
-    api_key = os.getenv("GOOGLE_API_KEY")
-    if not api_key:
-        return [0.0] * 768
-    
-    if not _configured:
-        genai.configure(api_key=api_key)
-        _configured = True
-    
-    try:
-        result = genai.embed_content(
-            model=EMBEDDING_MODEL,
-            content=text,
-            task_type="retrieval_query"
-        )
-        return result['embedding']
-    except Exception as e:
-        logger.error(f"Query embedding failed: {e}")
-        return [0.0] * 768
+    return core_ai.embed_text(text, task_type="retrieval_query")
+
+
+def _normalize_acl_value(value: Any) -> str:
+    return str(value).strip()
+
+
+def _build_acl_filter(user_id: str, facility_id: Optional[str] = None) -> Dict[str, str]:
+    acl_filter = {"user_id": _normalize_acl_value(user_id)}
+    if facility_id is not None and _normalize_acl_value(facility_id):
+        acl_filter["facility_id"] = _normalize_acl_value(facility_id)
+    return acl_filter
+
+
+def _metadata_matches_filter(metadata: Dict[str, Any], filter_meta: Dict[str, Any]) -> bool:
+    for key, expected in filter_meta.items():
+        if key not in metadata:
+            return False
+        if _normalize_acl_value(metadata[key]) != _normalize_acl_value(expected):
+            return False
+    return True
 
 
 class SimpleVectorStore:
     """
     Persistent vector store using Pickle + Scikit-Learn cosine similarity.
-    Now powered by FREE Gemini embeddings!
+    Embeddings are generated through core_ai.
     """
     
     def __init__(self):
@@ -186,32 +161,56 @@ class SimpleVectorStore:
         self.load()
 
     def load(self) -> None:
-        """Load from pickle file."""
+        """Load from JSON file (avoids pickle deserialization risks)."""
         if os.path.exists(DB_FILE):
             try:
-                with open(DB_FILE, 'rb') as f:
-                    data = pickle.load(f)
-                    self.documents = data.get('documents', [])
-                    self.metadatas = data.get('metadatas', [])
-                    self.vectors = data.get('vectors', [])
-                    self.ids = data.get('ids', [])
+                with open(DB_FILE, "r", encoding="utf-8") as f:
+                    data = json.load(f) or {}
+                self.documents = data.get("documents", []) or []
+                self.metadatas = data.get("metadatas", []) or []
+                self.vectors = data.get("vectors", []) or []
+                self.ids = data.get("ids", []) or []
                 logger.info(f"Loaded Vector Store: {len(self.ids)} records.")
-            except Exception as e:
-                logger.error(f"Failed to load vector store: {e}")
+                return
+            except Exception:
+                logger.error("Failed to load vector store JSON")
+
+        # Optional one-time migration path from legacy pickle store.
+        legacy_pkl = os.path.splitext(DB_FILE)[0] + ".pkl"
+        if os.path.exists(legacy_pkl) and os.getenv("ALLOW_PICKLE_MIGRATION", "").strip().lower() in {"1", "true", "yes", "on"}:
+            try:
+                import pickle  # local import; only used when explicitly enabled
+                with open(legacy_pkl, "rb") as f:
+                    data = pickle.load(f) or {}
+                self.documents = data.get("documents", []) or []
+                self.metadatas = data.get("metadatas", []) or []
+                self.vectors = data.get("vectors", []) or []
+                self.ids = data.get("ids", []) or []
+                self.save()
+                logger.warning("Migrated legacy pickle vector store to JSON. Disable ALLOW_PICKLE_MIGRATION after first run.")
+            except Exception:
+                logger.error("Failed to migrate legacy pickle vector store")
 
     def save(self) -> None:
-        """Persist to pickle file."""
+        """Persist to JSON file (atomic write)."""
         try:
             os.makedirs(os.path.dirname(DB_FILE), exist_ok=True)
-            with open(DB_FILE, 'wb') as f:
-                pickle.dump({
-                    'documents': self.documents,
-                    'metadatas': self.metadatas,
-                    'vectors': self.vectors,
-                    'ids': self.ids
-                }, f)
-        except Exception as e:
-            logger.error(f"Failed to save vector store: {e}")
+            tmp_path = DB_FILE + ".tmp"
+            with open(tmp_path, "w", encoding="utf-8") as f:
+                json.dump(
+                    {
+                        "documents": self.documents,
+                        "metadatas": self.metadatas,
+                        "vectors": self.vectors,
+                        "ids": self.ids,
+                    },
+                    f,
+                    ensure_ascii=False,
+                    separators=(",", ":"),
+                )
+            os.replace(tmp_path, DB_FILE)
+        except Exception:
+            logger.error("Failed to save vector store")
 
     def add(self, text: str, metadata: Dict[str, Any], record_id: str) -> None:
         """Add or update a document."""
@@ -265,11 +264,8 @@ class SimpleVectorStore:
             
             # Apply metadata filter
             match = True
-            if filter_meta:
-                for k_filter, v_filter in filter_meta.items():
-                    if self.metadatas[idx].get(k_filter) != v_filter:
-                        match = False
-                        break
+            if filter_meta and not _metadata_matches_filter(self.metadatas[idx], filter_meta):
+                match = False
             
             if match:
                 results.append(self.documents[idx])
@@ -292,7 +288,15 @@ def get_vector_store() -> SimpleVectorStore:
 
 # --- Public API ---
 
-def add_checkup_to_db(user_id: str, record_id: str, record_type: str, data: dict, prediction: str, timestamp: str) -> bool:
+def add_checkup_to_db(
+    user_id: str,
+    record_id: str,
+    record_type: str,
+    data: dict,
+    prediction: str,
+    timestamp: str,
+    facility_id: Optional[str] = None,
+) -> bool:
     """Index a health checkup record."""
     try:
         data_str = ", ".join([f"{k}: {v}" for k, v in data.items()])
@@ -304,19 +308,30 @@ def add_checkup_to_db(user_id: str, record_id: str, record_type: str, data: dict
             f"Clinical Data: {data_str}"
         )
         
-        get_vector_store().add(document_text, {
+        metadata = {
             "user_id": str(user_id),
             "record_id": str(record_id),
             "type": record_type,
             "timestamp": timestamp,
             "prediction": prediction
-        }, str(record_id))
+        }
+        if facility_id is not None and _normalize_acl_value(facility_id):
+            metadata["facility_id"] = _normalize_acl_value(facility_id)
+
+        get_vector_store().add(document_text, metadata, str(record_id))
         return True
-    except Exception as e:
-        logger.error(f"Error saving Checkup to RAG: {e}")
+    except Exception:
+        logger.error("Error saving checkup to RAG")
         return False
 
-def add_interaction_to_db(user_id: str, interaction_id: str, role: str, content: str, timestamp: str) -> bool:
+def add_interaction_to_db(
+    user_id: str,
+    interaction_id: str,
+    role: str,
+    content: str,
+    timestamp: str,
+    facility_id: Optional[str] = None,
+) -> bool:
     """Index a chat interaction."""
     try:
         document_text = (
@@ -324,24 +339,37 @@ def add_interaction_to_db(user_id: str, interaction_id: str, role: str, content:
             f"Interaction: {role.upper()}: {content}"
         )
         
-        get_vector_store().add(document_text, {
+        metadata = {
             "user_id": str(user_id),
             "interaction_id": str(interaction_id),
             "type": "chat_log",
             "timestamp": timestamp,
             "role": role
-        }, f"chat_{interaction_id}")
+        }
+        if facility_id is not None and _normalize_acl_value(facility_id):
+            metadata["facility_id"] = _normalize_acl_value(facility_id)
+
+        get_vector_store().add(document_text, metadata, f"chat_{interaction_id}")
         return True
-    except Exception as e:
-        logger.error(f"Error saving Interaction to RAG: {e}")
+    except Exception:
+        logger.error("Error saving interaction to RAG")
         return False
 
-def search_similar_records(user_id: str, query: str, n_results: int = 3) -> List[str]:
+def search_similar_records(
+    user_id: str,
+    query: str,
+    n_results: int = 3,
+    facility_id: Optional[str] = None,
+) -> List[str]:
     """Retrieve relevant context for a user."""
     try:
-        return get_vector_store().search(query, filter_meta={"user_id": str(user_id)}, k=n_results)
-    except Exception as e:
-        logger.error(f"Error querying RAG: {e}")
+        return get_vector_store().search(
+            query,
+            filter_meta=_build_acl_filter(user_id, facility_id),
+            k=n_results,
+        )
+    except Exception:
+        logger.error("Error querying RAG")
         return []
 
 def delete_record_from_db(record_id: str) -> bool:

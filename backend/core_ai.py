@@ -4,7 +4,7 @@ AI Healthcare System — Multi-Tier AI Inference Engine
 All AI inference MUST go through this module. Never call provider APIs directly.
 
 Supports three tiers with automatic fallback:
-  Tier A: Ollama (local, zero-cost, HIPAA-friendly — data never leaves the machine)
+  Tier A: Ollama (local-first; no cloud provider when OLLAMA_BASE_URL is local)
   Tier B: Gemini (Google API, free tier available)
   Tier C: OpenAI / Anthropic / OpenRouter (optional, via env vars or request headers)
 
@@ -23,11 +23,18 @@ import os
 import json
 import logging
 import asyncio
-from typing import Optional
+from typing import Optional, Any
 
 import httpx
+from dotenv import load_dotenv
 
 logger = logging.getLogger(__name__)
+load_dotenv()
+
+OLLAMA_PULL_FAILURE_DETAIL = "Failed to pull model"
+OLLAMA_DELETE_FAILURE_DETAIL = "Failed to delete model"
+AI_STREAM_FAILURE_CHUNK = "**SYSTEM ERROR:** AI stream failed. Please try again later."
+CLOUD_AI_FAILURE_DETAIL = "Cloud AI request failed"
 
 
 def _env_flag(name: str, default: str = "false") -> bool:
@@ -41,6 +48,8 @@ OLLAMA_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", "120"))
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
+GEMINI_EMBEDDING_MODEL = os.getenv("GEMINI_EMBEDDING_MODEL", "models/text-embedding-004")
+GEMINI_VISION_MODEL = os.getenv("GEMINI_VISION_MODEL", GEMINI_MODEL)
 
 # ── Model list TTL cache (avoids redundant /api/tags calls) ──────────
 _model_cache: dict[str, tuple[float, list[str]]] = {}
@@ -71,6 +80,69 @@ async def get_ollama_models() -> list[str]:
         pass
     _model_cache[cache_key] = (now, [])
     return []
+
+
+async def list_ollama_model_details() -> list[dict]:
+    """List downloaded Ollama model metadata."""
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            r = await client.get(f"{OLLAMA_BASE_URL}/api/tags")
+            if r.status_code == 200:
+                return r.json().get("models", [])
+    except Exception:
+        logger.warning("Ollama not available")
+    return []
+
+
+async def is_ollama_running() -> bool:
+    """Check whether the Ollama API is reachable."""
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            r = await client.get(f"{OLLAMA_BASE_URL}/api/tags")
+            return r.status_code == 200
+    except Exception:
+        return False
+
+
+async def stream_ollama_model_pull(name: str):
+    """Yield Ollama model pull progress events as dictionaries."""
+    try:
+        async with httpx.AsyncClient() as client:
+            async with client.stream("POST", f"{OLLAMA_BASE_URL}/api/pull", json={"name": name}) as response:
+                if response.status_code != 200:
+                    await response.aread()
+                    logger.warning("Ollama model pull failed with status %s", response.status_code)
+                    yield {"error": OLLAMA_PULL_FAILURE_DETAIL}
+                    return
+
+                buffer = ""
+                async for chunk in response.aiter_text():
+                    buffer += chunk
+                    while "\n" in buffer:
+                        line, buffer = buffer.split("\n", 1)
+                        if not line.strip():
+                            continue
+                        try:
+                            data = json.loads(line)
+                            total = data.get("total", 0)
+                            completed = data.get("completed", 0)
+                            progress = (completed / total * 100) if total > 0 else 0
+                            yield {"status": data.get("status", ""), "progress": progress}
+                        except Exception:
+                            continue
+    except Exception:
+        logger.warning("Ollama model pull failed")
+        yield {"error": OLLAMA_PULL_FAILURE_DETAIL}
+
+
+async def delete_ollama_model(name: str) -> tuple[bool, int, str]:
+    """Delete an Ollama model and return success, status code, and error text."""
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            r = await client.request("DELETE", f"{OLLAMA_BASE_URL}/api/delete", json={"name": name})
+            return r.status_code == 200, r.status_code, r.text
+    except Exception:
+        return False, 500, OLLAMA_DELETE_FAILURE_DETAIL
 
 
 async def _resolve_ollama_model(target_model: str) -> Optional[str]:
@@ -141,8 +213,8 @@ async def _generate_ollama(prompt: str, system: str = "", model: Optional[str] =
                 return ((data.get("message") or {}).get("content") or "").strip()
     except httpx.TimeoutException:
         logger.warning("Ollama request timed out after %ds", OLLAMA_TIMEOUT)
-    except Exception as e:
-        logger.warning("Ollama error: %s", e)
+    except Exception:
+        logger.warning("Ollama generation failed")
     return ""
 
 
@@ -212,9 +284,9 @@ async def _stream_ollama(messages: list[dict], system: str = "", model: Optional
                             pass
     except httpx.TimeoutException:
         yield "**SYSTEM TIMEOUT:** The LLM took too long to respond."
-    except Exception as e:
-        logger.warning("Ollama stream error: %s", e)
-        yield f"**SYSTEM ERROR:** {str(e)}"
+    except Exception:
+        logger.warning("Ollama stream error")
+        yield AI_STREAM_FAILURE_CHUNK
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -223,6 +295,11 @@ async def _stream_ollama(messages: list[dict], system: str = "", model: Optional
 
 _gemini_configured = False
 _gemini_model = None
+
+
+def has_gemini_api_key() -> bool:
+    """Return whether Gemini-backed features can be configured."""
+    return bool(GOOGLE_API_KEY and GOOGLE_API_KEY != "dummy")
 
 
 def _get_gemini_model():
@@ -239,9 +316,48 @@ def _get_gemini_model():
             _gemini_configured = True
         _gemini_model = genai.GenerativeModel(GEMINI_MODEL)
         return _gemini_model
-    except Exception as e:
-        logger.warning("Failed to initialize Gemini: %s", e)
+    except Exception:
+        logger.warning("Failed to initialize Gemini")
         return None
+
+
+def embed_text(text: str, task_type: str = "retrieval_document") -> list[float]:
+    """Generate a text embedding through the canonical AI provider boundary."""
+    global _gemini_configured
+    if not has_gemini_api_key():
+        logger.warning("GOOGLE_API_KEY not found, using zero vector")
+        return [0.0] * 768
+
+    try:
+        import google.generativeai as genai
+        if not _gemini_configured:
+            genai.configure(api_key=GOOGLE_API_KEY)
+            _gemini_configured = True
+        result = genai.embed_content(
+            model=GEMINI_EMBEDDING_MODEL,
+            content=text,
+            task_type=task_type,
+        )
+        return result.get("embedding") or [0.0] * 768
+    except Exception:
+        logger.error("Embedding failed")
+        return [0.0] * 768
+
+
+def generate_vision_content(prompt: str, image: Any, model: Optional[str] = None) -> str:
+    """Generate text from a prompt plus image through Gemini Vision."""
+    if not has_gemini_api_key():
+        return ""
+
+    try:
+        import google.generativeai as genai
+        genai.configure(api_key=GOOGLE_API_KEY)
+        vision_model = genai.GenerativeModel(model or GEMINI_VISION_MODEL)
+        response = vision_model.generate_content([prompt, image])
+        return (getattr(response, "text", "") or "").strip()
+    except Exception:
+        logger.error("Vision generation failed")
+        return ""
 
 
 async def _generate_gemini(prompt: str, system: str = "") -> str:
@@ -258,7 +374,7 @@ async def _generate_gemini(prompt: str, system: str = "") -> str:
         if "429" in err or "Quota" in err:
             logger.warning("Gemini quota exceeded")
         else:
-            logger.warning("Gemini error: %s", e)
+            logger.warning("Gemini generation failed")
         return ""
 
 
@@ -277,8 +393,8 @@ async def _chat_gemini(messages: list[dict], system: str = "") -> str:
     try:
         response = await asyncio.to_thread(model.generate_content, full_prompt)
         return response.text.strip() if response.text else ""
-    except Exception as e:
-        logger.warning("Gemini chat error: %s", e)
+    except Exception:
+        logger.warning("Gemini chat failed")
         return ""
 
 
@@ -320,7 +436,7 @@ async def _generate_cloud(prompt: str, system: str, model: Optional[str], api_pr
                 if r.status_code == 200:
                     data = r.json()
                     return data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
-                logger.warning("%s error: %d %s", api_provider, r.status_code, r.text[:200])
+                logger.warning("%s error: %d", api_provider, r.status_code)
 
             elif api_provider.lower() == "anthropic":
                 headers = {
@@ -343,10 +459,10 @@ async def _generate_cloud(prompt: str, system: str, model: Optional[str], api_pr
                     content = r.json().get("content", [])
                     if content:
                         return content[0].get("text", "").strip()
-                logger.warning("Anthropic error: %d %s", r.status_code, r.text[:200])
+                logger.warning("Anthropic error: %d", r.status_code)
 
-    except Exception as e:
-        logger.warning("Cloud AI Error (%s): %s", api_provider, e)
+    except Exception:
+        logger.warning("Cloud AI error (%s)", api_provider)
     return ""
 
 
@@ -402,9 +518,11 @@ async def _chat_cloud(messages: list[dict], system: str, model: Optional[str], a
                         return content[0].get("text", "").strip()
                 raise Exception(f"Anthropic error: {r.status_code}")
 
-    except Exception as e:
-        logger.warning("Cloud AI Error (%s): %s", api_provider, e)
-        raise
+    except Exception as exc:
+        if isinstance(exc, RuntimeError) and str(exc) == CLOUD_AI_FAILURE_DETAIL:
+            raise
+        logger.warning("Cloud AI error (%s)", api_provider)
+        raise RuntimeError(CLOUD_AI_FAILURE_DETAIL) from None
 
 
 async def _stream_cloud(messages: list[dict], system: str, model: Optional[str], api_provider: str, api_key: str):
@@ -484,8 +602,8 @@ async def chat(
     if ollama_models:
         try:
             return await _chat_ollama(messages, system, model)
-        except Exception as e:
-            logger.warning("Ollama chat failed, trying Gemini: %s", e)
+        except Exception:
+            logger.warning("Ollama chat failed, trying Gemini")
 
     # Tier B: Gemini
     if GOOGLE_API_KEY and GOOGLE_API_KEY != "dummy":

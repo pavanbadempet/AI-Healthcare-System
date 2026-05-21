@@ -24,6 +24,7 @@ from fastapi import WebSocket
 import uuid
 
 logger = logging.getLogger(__name__)
+ADVANCED_AI_FAILURE_MESSAGE = "Advanced AI operation failed."
 
 @dataclass
 class PredictionRequest:
@@ -199,8 +200,8 @@ class EnsemblePredictor:
             
             # Similar for other models...
             
-        except Exception as e:
-            logger.error(f"Failed to load ensemble models: {e}")
+        except Exception:
+            logger.error("Failed to load ensemble models")
     
     def predict_ensemble(self, model_type: str, features: np.ndarray) -> Tuple[Any, float, Dict[str, Any]]:
         """Make ensemble prediction with confidence"""
@@ -217,8 +218,8 @@ class EnsemblePredictor:
                 proba = model.predict_proba(features.reshape(1, -1))[0]
                 predictions.append(pred)
                 confidences.append(np.max(proba))
-            except Exception as e:
-                logger.warning(f"Model prediction failed: {e}")
+            except Exception:
+                logger.warning("Model prediction failed")
         
         if not predictions:
             raise ValueError("All model predictions failed")
@@ -290,8 +291,8 @@ class RealTimePredictionService:
                 # Send real-time update via WebSocket
                 await self._notify_client(request.user_id, result)
                 
-            except Exception as e:
-                logger.error(f"Prediction processing error: {e}")
+            except Exception:
+                logger.error("Prediction processing error")
                 await asyncio.sleep(1)
     
     async def _predict_normal(self, request: PredictionRequest) -> PredictionResult:
@@ -341,8 +342,8 @@ class RealTimePredictionService:
             
             return result
             
-        except Exception as e:
-            logger.error(f"Prediction failed: {e}")
+        except Exception:
+            logger.error("Prediction failed")
             raise
     
     async def _predict_high_priority(self, request: PredictionRequest) -> PredictionResult:
@@ -388,9 +389,9 @@ class RealTimePredictionService:
             
             return explanation
             
-        except Exception as e:
-            logger.error(f"Explanation generation failed: {e}")
-            return {'method': 'failed', 'error': str(e)}
+        except Exception:
+            logger.error("Explanation generation failed")
+            return {'method': 'failed', 'error': ADVANCED_AI_FAILURE_MESSAGE}
     
     def _calculate_risk_score(self, model_type: str, prediction: Any, 
                             confidence: float, metadata: Dict[str, Any]) -> float:
@@ -477,8 +478,8 @@ class RealTimePredictionService:
             db.add(health_record)
             db.commit()
             
-        except Exception as e:
-            logger.error(f"Failed to store prediction result: {e}")
+        except Exception:
+            logger.error("Failed to store prediction result")
         finally:
             db.close()
     
@@ -496,8 +497,8 @@ class RealTimePredictionService:
                     'recommendations': result.recommendations,
                     'processing_time_ms': result.processing_time_ms
                 })
-            except Exception as e:
-                logger.error(f"WebSocket notification failed: {e}")
+            except Exception:
+                logger.error("WebSocket notification failed")
                 # Remove disconnected client
                 del self.websocket_connections[str(user_id)]
     
@@ -517,8 +518,8 @@ class RealTimePredictionService:
                 
                 await asyncio.sleep(60)  # Check every minute
                 
-            except Exception as e:
-                logger.error(f"Performance monitoring error: {e}")
+            except Exception:
+                logger.error("Performance monitoring error")
                 await asyncio.sleep(60)
     
     async def _send_alert(self, alert: Dict[str, Any]):

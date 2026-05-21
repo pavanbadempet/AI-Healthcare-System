@@ -9,6 +9,7 @@ import logging
 import os
 
 logger = logging.getLogger(__name__)
+EMAIL_SEND_FAILURE_MESSAGE = "Failed to send booking confirmation email"
 
 def send_booking_confirmation(to_email: str, patient_name: str, doctor_name: str, date_time: str, link: str):
     """
@@ -55,12 +56,12 @@ def send_booking_confirmation(to_email: str, patient_name: str, doctor_name: str
             text = msg.as_string()
             server.sendmail(smtp_user, to_email, text)
             server.quit()
-            logger.info(f"✅ Real Email sent to {to_email}")
+            logger.info("Booking confirmation email sent")
         else:
             # Fallback to simulation
-            logger.info(f"📧 [SIMULATION] To: {to_email} | Subject: {subject}")
+            logger.info("Booking confirmation email simulated")
             
         return True
-    except Exception as e:
-        logger.error(f"Failed to send email: {e}")
+    except Exception:
+        logger.error(EMAIL_SEND_FAILURE_MESSAGE)
         return False

@@ -11,7 +11,7 @@ import re
 import logging
 from dotenv import load_dotenv
 
-from . import models, database, schemas
+from . import audit, models, database, schemas
 
 # Initialize Logger
 logger = logging.getLogger(__name__)
@@ -28,11 +28,23 @@ def _load_secret_key() -> str:
     raise RuntimeError("FATAL: SECRET_KEY environment variable is not set. Cannot start server.")
 
 
+def _load_access_token_expire_minutes() -> int:
+    raw_value = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
+    try:
+        minutes = int(raw_value)
+    except ValueError:
+        raise RuntimeError("ACCESS_TOKEN_EXPIRE_MINUTES must be an integer.")
+    if minutes <= 0:
+        raise RuntimeError("ACCESS_TOKEN_EXPIRE_MINUTES must be positive.")
+    return minutes
+
+
 SECRET_KEY = _load_secret_key()
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+ACCESS_TOKEN_EXPIRE_MINUTES = _load_access_token_expire_minutes()
 SIGNUP_FAILURE_DETAIL = "Signup failed. Please try again later."
 LOGIN_FAILURE_DETAIL = "Login failed. Please try again later."
+ADMIN_FACILITY_ACCESS_DETAIL = "Admin resource is outside the user's facility"
 
 # Password Hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -65,7 +77,7 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     if expires_delta:
         expire = datetime.now(timezone.utc) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
@@ -96,6 +108,19 @@ def is_admin(user: models.User) -> bool:
     """Check if user has admin privileges."""
     # Strict Role-Based Access Control
     return getattr(user, 'role', 'patient') == 'admin'
+
+
+def _scope_users_to_admin_facility(query, admin: models.User):
+    if admin.facility_id is None:
+        return query
+    return query.filter(models.User.facility_id == admin.facility_id)
+
+
+def _ensure_admin_can_access_user(admin: models.User, user: models.User) -> None:
+    if admin.facility_id is None:
+        return
+    if user.facility_id != admin.facility_id:
+        raise HTTPException(status_code=403, detail=ADMIN_FACILITY_ACCESS_DETAIL)
 
 # --- Endpoints ---
 
@@ -169,20 +194,17 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
             data={"sub": user.username}, expires_delta=access_token_expires
         )
         
-        # --- AUDIT LOGGING ---
-        try:
-            audit_entry = models.AuditLog(
-                admin_id=user.id, # Using admin_id field as 'actor_id'
-                target_user_id=user.id,
-                action="LOGIN_SUCCESS",
-                details=f"User logged in from API. Timestamp: {datetime.now(timezone.utc)}"
-            )
-            db.add(audit_entry)
-            db.commit()
-        except Exception:
-            db.rollback()
-            logger.error("Login audit log failed")
-            # Do not fail login if audit fails, just log error
+        audit.record_audit_event(
+            db,
+            actor_user_id=user.id,
+            target_user_id=user.id,
+            action="LOGIN_SUCCESS",
+            details={
+                "resource_type": "auth_session",
+                "outcome": "success",
+                "occurred_at": datetime.now(timezone.utc),
+            },
+        )
             
         return {"access_token": access_token, "token_type": "bearer"}
     except HTTPException:
@@ -223,8 +245,8 @@ def update_user_profile(
 ) -> Dict[str, Any]:
     """Update user profile fields."""
     
-    # Update fields if provided
-    for field, value in profile.model_dump(exclude_unset=True).items():
+    updates = profile.model_dump(exclude_unset=True)
+    for field, value in updates.items():
          if field == 'allow_data_collection':
              current_user.allow_data_collection = 1 if value else 0
          elif hasattr(current_user, field):
@@ -232,6 +254,17 @@ def update_user_profile(
     
     db.commit()
     db.refresh(current_user)
+    if updates:
+        audit.record_audit_event(
+            db,
+            actor_user_id=current_user.id,
+            target_user_id=current_user.id,
+            action="UPDATE_PROFILE",
+            details={
+                "resource_type": "user_profile",
+                "updated_fields": sorted(updates.keys()),
+            },
+        )
     
     return {
         "status": "success", 
@@ -247,7 +280,7 @@ def get_all_users(current_user: models.User = Depends(get_current_user), db: Ses
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin privileges required"
         )
-    users = db.query(models.User).all()
+    users = _scope_users_to_admin_facility(db.query(models.User), current_user).all()
     return users
 
 @router.get("/users/{user_id}/full", response_model=schemas.UserFullResponse)
@@ -259,20 +292,15 @@ def get_user_full_details(user_id: int, current_user: models.User = Depends(get_
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    _ensure_admin_can_access_user(current_user, user)
     
-    # --- AUDIT LOGGING ---
-    try:
-        audit_entry = models.AuditLog(
-            admin_id=current_user.id,
-            target_user_id=user_id,
-            action="VIEW_SENSITIVE_DATA",
-            details="Accessed full dossier"
-        )
-        db.add(audit_entry)
-        db.commit()
-    except Exception:
-        db.rollback()
-        logger.error("Sensitive data audit log failed")
+    audit.record_audit_event(
+        db,
+        actor_user_id=current_user.id,
+        target_user_id=user_id,
+        action="VIEW_SENSITIVE_DATA",
+        details={"resource_type": "user_dossier", "resource_id": user_id},
+    )
 
     # --- PRIVACY COMPLIANCE GATE ---
     # Eagerly load the collections so they can be read post-expunge

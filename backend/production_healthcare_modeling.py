@@ -13,6 +13,7 @@ from pyspark.sql.functions import col, lit, current_timestamp, row_number
 from delta.tables import DeltaTable
 
 logger = logging.getLogger(__name__)
+PRODUCTION_MODELING_FAILURE_MESSAGE = "Production modeling operation failed."
 
 class TableStrategy(Enum):
     SCD_TYPE_2 = "scd_type_2"  # For critical business data
@@ -400,12 +401,12 @@ class ProductionHealthcareModeler:
                 'message': "VACUUM completed successfully. History preserved via SCD Type 2." if config.strategy == TableStrategy.SCD_TYPE_2 else f"VACUUM completed. Time travel available for last {config.vacuum_retention_hours} hours."
             }
             
-        except Exception as e:
-            logger.error(f"VACUUM failed for {table_name}: {e}")
+        except Exception:
+            logger.error("VACUUM failed")
             return {
                 'table': table_name,
                 'vacuum_completed': False,
-                'error': str(e)
+                'error': PRODUCTION_MODELING_FAILURE_MESSAGE
             }
     
     def get_performance_metrics(self, table_name: str) -> Dict[str, Any]:
@@ -440,9 +441,9 @@ class ProductionHealthcareModeler:
                 }
             }
             
-        except Exception as e:
-            logger.error(f"Failed to get metrics for {table_name}: {e}")
-            return {'error': str(e)}
+        except Exception:
+            logger.error("Failed to get metrics")
+            return {'error': PRODUCTION_MODELING_FAILURE_MESSAGE}
     
     def _create_constraints(self, delta_table: DeltaTable, config: ProductionTableConfig):
         """Create Delta Lake constraints for data quality"""
@@ -453,8 +454,8 @@ class ProductionHealthcareModeler:
                 # Note: Delta Lake constraints are limited but can be used for validation
                 logger.info(f"Constraints would be added to {delta_table} in production")
                 
-        except Exception as e:
-            logger.warning(f"Failed to create constraints: {e}")
+        except Exception:
+            logger.warning("Failed to create constraints")
 
 # Initialize production modeler
 def get_production_modeler(spark: SparkSession, warehouse_path: str) -> ProductionHealthcareModeler:

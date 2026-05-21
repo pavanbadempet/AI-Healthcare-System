@@ -6,11 +6,13 @@ AI components: ML models for data quality and predictions
 
 import asyncio
 import logging
+import re
 from typing import Dict, List, Any, Optional
 from datetime import datetime, timedelta
 from dataclasses import dataclass
 from enum import Enum
 import json
+from urllib.parse import urlparse
 from pyspark.sql import SparkSession, DataFrame as SparkDF
 from pyspark.sql.functions import col, count, sum, avg, max as spark_max, min as spark_min
 from pyspark.sql.types import StructType, StructField, StringType, FloatType, DateType, TimestampType
@@ -19,6 +21,8 @@ from concurrent.futures import ThreadPoolExecutor
 import time
 
 logger = logging.getLogger(__name__)
+PIPELINE_FAILURE_MESSAGE = "Data pipeline failed. Please review operational logs."
+SQL_IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*(?:\.[A-Za-z_][A-Za-z0-9_]*)?$")
 
 class PipelineStatus(Enum):
     PENDING = "pending"
@@ -53,6 +57,31 @@ class DataQualityMetrics:
     validity: float      # Format and constraint validation
     uniqueness: float    # Duplicate detection
     overall_score: float
+
+
+def _sql_literal(value: Any) -> str:
+    if isinstance(value, bool):
+        return "TRUE" if value else "FALSE"
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return str(value)
+    escaped = str(value).replace("'", "''")
+    return f"'{escaped}'"
+
+
+def _append_incremental_filter(query: str, incremental_column: str, last_extract_value: Any) -> str:
+    if not isinstance(query, str) or not query.strip():
+        raise ValueError("Database extract query is required")
+    if not SQL_IDENTIFIER_RE.fullmatch(incremental_column or ""):
+        raise ValueError("Invalid incremental column")
+    operator = "AND" if re.search(r"\bwhere\b", query, flags=re.IGNORECASE) else "WHERE"
+    return f"{query} {operator} {incremental_column} > {_sql_literal(last_extract_value)}"
+
+
+def _validate_api_base_url(base_url: str | None) -> str:
+    parsed = urlparse(base_url or "")
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        raise ValueError("API base_url must use http or https")
+    return str(base_url).rstrip("/")
 
 class HealthcareDataPipeline:
     """Enterprise-grade healthcare data processing platform"""
@@ -152,12 +181,12 @@ class HealthcareDataPipeline:
                 'load_result': load_result
             }
             
-        except Exception as e:
-            logger.error(f"ETL pipeline failed: {e}")
+        except Exception:
+            logger.error("ETL pipeline failed")
             return {
                 'status': 'failed',
                 'pipeline_id': pipeline_id,
-                'error': str(e),
+                'error': PIPELINE_FAILURE_MESSAGE,
                 'duration_seconds': time.time() - start_time
             }
     
@@ -177,7 +206,7 @@ class HealthcareDataPipeline:
         for i, result in enumerate(results):
             source_name = sources[i].get('name', f'source_{i}')
             if isinstance(result, Exception):
-                extract_results[source_name] = {'error': str(result)}
+                extract_results[source_name] = {'error': PIPELINE_FAILURE_MESSAGE}
             else:
                 extract_results[source_name] = result
         
@@ -206,8 +235,8 @@ class HealthcareDataPipeline:
         last_extract_value = config.get('last_extract_value')
         
         # Build incremental query if specified
-        if incremental_column and last_extract_value:
-            query += f" WHERE {incremental_column} > '{last_extract_value}'"
+        if incremental_column and last_extract_value is not None:
+            query = _append_incremental_filter(query, incremental_column, last_extract_value)
         
         # Execute query using Spark for large datasets
         df = self.spark.read.format("jdbc").options(
@@ -238,6 +267,8 @@ class HealthcareDataPipeline:
         endpoint = config.get('endpoint')
         headers = config.get('headers', {})
         pagination_param = config.get('pagination_param', 'page')
+        request_timeout = config.get('request_timeout_seconds', 30)
+        base_url = _validate_api_base_url(base_url)
         
         all_data = []
         page = 1
@@ -245,7 +276,7 @@ class HealthcareDataPipeline:
         
         while has_more:
             url = f"{base_url}/{endpoint}?{pagination_param}={page}"
-            response = requests.get(url, headers=headers)
+            response = requests.get(url, headers=headers, timeout=request_timeout)
             
             if response.status_code != 200:
                 break
@@ -455,7 +486,7 @@ class HealthcareDataPipeline:
         for i, result in enumerate(results):
             target_name = targets[i].get('name', f'target_{i}')
             if isinstance(result, Exception):
-                load_results[target_name] = {'error': str(result)}
+                load_results[target_name] = {'error': PIPELINE_FAILURE_MESSAGE}
             else:
                 load_results[target_name] = result
         
@@ -510,8 +541,8 @@ class HealthcareDataPipeline:
                 'write_mode': write_mode
             }
             
-        except Exception as e:
-            logger.error(f"Database load failed: {e}")
+        except Exception:
+            logger.error("Database load failed")
             raise
     
     async def _load_to_file(self, df: SparkDF, config: Dict[str, Any]) -> Dict[str, Any]:
@@ -543,8 +574,8 @@ class HealthcareDataPipeline:
                 'records_written': df.count()
             }
             
-        except Exception as e:
-            logger.error(f"File load failed: {e}")
+        except Exception:
+            logger.error("File load failed")
             raise
     
     async def _load_to_data_lake(self, df: SparkDF, config: Dict[str, Any]) -> Dict[str, Any]:
@@ -573,8 +604,8 @@ class HealthcareDataPipeline:
                 'records_written': df.count()
             }
             
-        except Exception as e:
-            logger.error(f"Data lake load failed: {e}")
+        except Exception:
+            logger.error("Data lake load failed")
             raise
     
     async def _load_to_warehouse(self, df: SparkDF, config: Dict[str, Any]) -> Dict[str, Any]:

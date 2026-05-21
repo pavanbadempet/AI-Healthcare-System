@@ -4,6 +4,7 @@ Full implementation with schema evolution, time travel, and ACID guarantees
 """
 
 import logging
+import re
 from typing import Dict, List, Any
 from datetime import datetime, timezone
 from dataclasses import dataclass
@@ -12,6 +13,9 @@ from pyspark.sql import SparkSession, DataFrame as SparkDF
 from delta.tables import DeltaTable
 
 logger = logging.getLogger(__name__)
+DELTA_OPERATION_FAILURE_MESSAGE = "Delta Lake operation failed."
+DELTA_IDENTIFIER_RE = re.compile(r"^[A-Za-z_][A-Za-z0-9_]*$")
+DELTA_DATA_TYPE_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_]*(?:\([0-9,\s]+\))?$")
 
 class DeltaTableType(Enum):
     DIMENSION = "dimension"
@@ -46,6 +50,30 @@ class DeltaTableConfig:
         if self.enable_cdc:
             self.write_properties["delta.enableChangeDataFeed"] = "true"
 
+
+def _validate_delta_identifier(value: str, label: str) -> str:
+    if not DELTA_IDENTIFIER_RE.fullmatch(value or ""):
+        raise ValueError(f"Invalid Delta {label}")
+    return value
+
+
+def _validate_delta_qualified_name(value: str, label: str) -> str:
+    parts = str(value or "").split(".")
+    if not parts or any(not DELTA_IDENTIFIER_RE.fullmatch(part) for part in parts):
+        raise ValueError(f"Invalid Delta {label}")
+    return value
+
+
+def _validate_delta_data_type(value: str) -> str:
+    if not DELTA_DATA_TYPE_RE.fullmatch(value or ""):
+        raise ValueError("Invalid Delta data_type")
+    return value
+
+
+def _delta_sql_literal(value: str) -> str:
+    return "'" + str(value).replace("'", "''") + "'"
+
+
 class DeltaSchemaManager:
     """Manages Delta Lake schema evolution and versioning"""
     
@@ -55,7 +83,9 @@ class DeltaSchemaManager:
     def create_delta_table(self, df: SparkDF, config: DeltaTableConfig, path: str = None) -> Dict[str, Any]:
         """Create Delta table with optimized configuration"""
         catalog = "uc_healthcare_prod" # Unity Catalog namespace
-        full_table_name = f"{catalog}.{config.database}.{config.table_name}"
+        database = _validate_delta_identifier(config.database, "database")
+        table_name = _validate_delta_identifier(config.table_name, "table_name")
+        full_table_name = f"{catalog}.{database}.{table_name}"
         
         try:
             # Write DataFrame as Delta table with Liquid Clustering
@@ -70,7 +100,9 @@ class DeltaSchemaManager:
             
             if path:
                 writer.save(path)
-                self.spark.sql(f"CREATE TABLE IF NOT EXISTS {full_table_name} USING DELTA LOCATION '{path}'")
+                self.spark.sql(
+                    f"CREATE TABLE IF NOT EXISTS {full_table_name} USING DELTA LOCATION {_delta_sql_literal(path)}"
+                )
                 target = path
             else:
                 writer.saveAsTable(full_table_name)
@@ -90,8 +122,8 @@ class DeltaSchemaManager:
                 'record_count': df.count()
             }
             
-        except Exception as e:
-            logger.error(f"Failed to create Delta table {full_table_name}: {e}")
+        except Exception:
+            logger.error("Failed to create Delta table")
             raise
     
     def _apply_liquid_clustering(self, target: str, by_path: bool):
@@ -105,8 +137,8 @@ class DeltaSchemaManager:
             dt.optimize().executeCompaction()
             logger.info(f"Applied Liquid Clustering optimization to {target}")
             
-        except Exception as e:
-            logger.warning(f"Failed to apply Liquid Clustering: {e}")
+        except Exception:
+            logger.warning("Failed to apply Liquid Clustering")
             
     def stream_cdc_changes(self, table_name: str, starting_version: int = 0) -> SparkDF:
         """Structured Streaming: Capture real-time Change Data Feed (CDC) for downstream pipelines"""
@@ -147,9 +179,9 @@ class DeltaSchemaManager:
                 else:
                     errors.append(f"Unsupported change type: {change_type}")
                     
-            except Exception as e:
-                errors.append(f"Failed to apply {change_type}: {str(e)}")
-                logger.error(f"Schema change failed: {e}")
+            except Exception:
+                errors.append(DELTA_OPERATION_FAILURE_MESSAGE)
+                logger.error("Schema change failed")
         
         return {
             'table_name': table_name,
@@ -160,32 +192,37 @@ class DeltaSchemaManager:
         }
     
     def _add_column(self, table_name: str, change: Dict[str, Any]):
-        column_name = change['column_name']
-        data_type = change['data_type']
+        table_name = _validate_delta_qualified_name(table_name, "table_name")
+        column_name = _validate_delta_identifier(change['column_name'], "column_name")
+        data_type = _validate_delta_data_type(change['data_type'])
         self.spark.sql(f"ALTER TABLE {table_name} ADD COLUMNS ({column_name} {data_type})")
         logger.info(f"Added column {column_name} to {table_name}")
     
     def _drop_column(self, table_name: str, change: Dict[str, Any]):
-        column_name = change['column_name']
+        table_name = _validate_delta_qualified_name(table_name, "table_name")
+        column_name = _validate_delta_identifier(change['column_name'], "column_name")
         self.spark.sql(f"ALTER TABLE {table_name} DROP COLUMN {column_name}")
         logger.info(f"Dropped column {column_name} from {table_name}")
     
     def _rename_column(self, table_name: str, change: Dict[str, Any]):
-        old_name = change['old_column_name']
-        new_name = change['new_column_name']
+        table_name = _validate_delta_qualified_name(table_name, "table_name")
+        old_name = _validate_delta_identifier(change['old_column_name'], "old_column_name")
+        new_name = _validate_delta_identifier(change['new_column_name'], "new_column_name")
         self.spark.sql(f"ALTER TABLE {table_name} RENAME COLUMN {old_name} TO {new_name}")
         logger.info(f"Renamed column {old_name} to {new_name} in {table_name}")
     
     def _modify_column_type(self, table_name: str, change: Dict[str, Any]):
-        column_name = change['column_name']
-        new_type = change['new_data_type']
+        table_name = _validate_delta_qualified_name(table_name, "table_name")
+        column_name = _validate_delta_identifier(change['column_name'], "column_name")
+        new_type = _validate_delta_data_type(change['new_data_type'])
         self.spark.sql(f"ALTER TABLE {table_name} ALTER COLUMN {column_name} TYPE {new_type}")
         logger.info(f"Modified column {column_name} type to {new_type} in {table_name}")
     
     def _update_column_description(self, table_name: str, change: Dict[str, Any]):
-        column_name = change['column_name']
+        table_name = _validate_delta_qualified_name(table_name, "table_name")
+        column_name = _validate_delta_identifier(change['column_name'], "column_name")
         description = change['description']
-        self.spark.sql(f"ALTER TABLE {table_name} ALTER COLUMN {column_name} COMMENT '{description}'")
+        self.spark.sql(f"ALTER TABLE {table_name} ALTER COLUMN {column_name} COMMENT {_delta_sql_literal(description)}")
         logger.info(f"Updated description for column {column_name} in {table_name}")
     
     def query_at_snapshot(self, table_name: str, version: int) -> SparkDF:
@@ -201,8 +238,8 @@ class DeltaSchemaManager:
         try:
             dt = DeltaTable.forName(self.spark, table_name)
             return [row.asDict() for row in dt.history().collect()]
-        except Exception as e:
-            logger.error(f"Failed to get table history: {e}")
+        except Exception:
+            logger.error("Failed to get table history")
             return []
     
     def rollback_to_snapshot(self, table_name: str, version: int) -> Dict[str, Any]:
@@ -219,8 +256,8 @@ class DeltaSchemaManager:
                 'status': 'success'
             }
             
-        except Exception as e:
-            logger.error(f"Failed to rollback to version {version}: {e}")
+        except Exception:
+            logger.error("Failed to rollback table")
             raise
 
 class HealthcareDeltaManager:
@@ -308,12 +345,12 @@ class HealthcareDeltaManager:
                 'compliance_status': 'compliant',
                 'audit_trail_available': True
             }
-        except Exception as e:
-            logger.error(f"Failed to generate compliance report: {e}")
+        except Exception:
+            logger.error("Failed to generate compliance report")
             return {
                 'table_name': table_name,
                 'compliance_status': 'error',
-                'error': str(e)
+                'error': DELTA_OPERATION_FAILURE_MESSAGE
             }
     
     def optimize_table_performance(self, table_name: str) -> Dict[str, Any]:
@@ -335,8 +372,8 @@ class HealthcareDeltaManager:
                 'timestamp': datetime.now(timezone.utc).isoformat()
             }
             
-        except Exception as e:
-            logger.error(f"Failed to optimize table {table_name}: {e}")
+        except Exception:
+            logger.error("Failed to optimize table")
             raise
 
 # Initialize Delta manager
