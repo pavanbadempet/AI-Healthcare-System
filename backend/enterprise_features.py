@@ -21,6 +21,8 @@ import json
 from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
+HEALTH_CHECK_UNHEALTHY = "unhealthy"
+ENTERPRISE_OPERATION_FAILURE_MESSAGE = "Enterprise operation failed."
 
 # Prometheus Metrics
 REQUEST_COUNT = Counter('http_requests_total', 'Total HTTP requests', ['method', 'endpoint', 'status'])
@@ -65,8 +67,8 @@ class EnterpriseMetrics:
             with engine.connect() as conn:
                 result = conn.execute(text("SELECT count(*) FROM pg_stat_activity WHERE state = 'active'"))
                 DATABASE_CONNECTIONS.set(result.scalar())
-        except Exception as e:
-            logger.error(f"Failed to get DB connections: {e}")
+        except Exception:
+            logger.error("Failed to get DB connections")
     
     def get_health_status(self) -> Dict[str, Any]:
         """Get comprehensive health status"""
@@ -82,8 +84,8 @@ class EnterpriseMetrics:
             with engine.connect() as conn:
                 conn.execute(text("SELECT 1"))
                 health['checks']['database'] = 'healthy'
-        except Exception as e:
-            health['checks']['database'] = f'unhealthy: {str(e)}'
+        except Exception:
+            health['checks']['database'] = HEALTH_CHECK_UNHEALTHY
             health['status'] = 'unhealthy'
         
         # Redis health
@@ -91,8 +93,8 @@ class EnterpriseMetrics:
             try:
                 self.redis.ping()
                 health['checks']['redis'] = 'healthy'
-            except Exception as e:
-                health['checks']['redis'] = f'unhealthy: {str(e)}'
+            except Exception:
+                health['checks']['redis'] = HEALTH_CHECK_UNHEALTHY
                 health['status'] = 'unhealthy'
         
         # AI models health
@@ -100,8 +102,8 @@ class EnterpriseMetrics:
             from .ml_service import ml_service
             ml_service.health_check()
             health['checks']['ml_models'] = 'healthy'
-        except Exception as e:
-            health['checks']['ml_models'] = f'unhealthy: {str(e)}'
+        except Exception:
+            health['checks']['ml_models'] = HEALTH_CHECK_UNHEALTHY
             health['status'] = 'degraded'
         
         return health
@@ -131,8 +133,8 @@ class ComplianceAudit:
                     'ua': user_agent
                 })
                 conn.commit()
-        except Exception as e:
-            logger.error(f"Audit log failed: {e}")
+        except Exception:
+            logger.error("Audit log failed")
     
     def check_data_retention(self) -> Dict[str, Any]:
         """Check data retention policies"""
@@ -152,9 +154,9 @@ class ComplianceAudit:
                     'expired_records': expired,
                     'compliance_status': 'compliant' if expired == 0 else 'action_required'
                 }
-        except Exception as e:
-            logger.error(f"Data retention check failed: {e}")
-            return {'error': str(e)}
+        except Exception:
+            logger.error("Data retention check failed")
+            return {'error': ENTERPRISE_OPERATION_FAILURE_MESSAGE}
 
 class PerformanceOptimizer:
     """Advanced performance optimization features"""
@@ -238,8 +240,7 @@ def audit_decorator(resource_type: str):
             time.time()
             try:
                 result = await func(*args, **kwargs)
-            except Exception as e:
-                str(e)
+            except Exception:
                 raise
             finally:
                 # Log audit trail
@@ -317,8 +318,8 @@ def init_enterprise_features(app):
         )
         redis_client.ping()
         logger.info("Redis connected successfully")
-    except Exception as e:
-        logger.warning(f"Redis connection failed: {e}")
+    except Exception:
+        logger.warning("Redis connection failed")
         redis_client = None
     
     return {

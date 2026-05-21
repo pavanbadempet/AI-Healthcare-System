@@ -1,12 +1,16 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from . import database, models, auth, schemas
+from .facility_scope import users_share_facility_context
 from datetime import datetime
 
 ACTIVE_APPOINTMENT_STATUSES = ("Scheduled", "Rescheduled")
 DEFAULT_SPECIALIZATION = "General Physician"
 PAST_APPOINTMENT_DETAIL = "Appointment time must be in the future"
 DUPLICATE_APPOINTMENT_DETAIL = "Doctor already has an active appointment at that time"
+APPOINTMENT_FACILITY_MISMATCH_DETAIL = "Appointment participants must belong to the same facility"
+APPOINTMENT_FACILITY_ACCESS_DETAIL = "Appointment resource is outside the user's facility"
 
 router = APIRouter(
     prefix="/appointments",
@@ -33,6 +37,10 @@ def _doctor_display_name(doctor: models.User) -> str:
     return doctor.full_name or doctor.username
 
 
+def _resolve_appointment_facility_id(patient: models.User, doctor: models.User) -> int | None:
+    return patient.facility_id or doctor.facility_id
+
+
 def _ensure_future_slot(appointment_dt: datetime) -> None:
     if appointment_dt <= datetime.now():
         raise HTTPException(status_code=400, detail=PAST_APPOINTMENT_DETAIL)
@@ -56,6 +64,19 @@ def _ensure_doctor_slot_available(
         raise HTTPException(status_code=409, detail=DUPLICATE_APPOINTMENT_DETAIL)
 
 
+def _scope_appointments_to_admin_facility(query, current_user: models.User):
+    if current_user.facility_id is None:
+        return query
+    return query.filter(models.Appointment.facility_id == current_user.facility_id)
+
+
+def _ensure_admin_can_access_appointment(current_user: models.User, appointment: models.Appointment) -> None:
+    if not auth.is_admin(current_user) or current_user.facility_id is None:
+        return
+    if appointment.facility_id != current_user.facility_id:
+        raise HTTPException(status_code=403, detail=APPOINTMENT_FACILITY_ACCESS_DETAIL)
+
+
 @router.post("/", response_model=schemas.AppointmentResponse)
 def create_appointment(
     appt: schemas.AppointmentCreate,
@@ -72,11 +93,15 @@ def create_appointment(
     ).first()
     if not doctor:
         raise HTTPException(status_code=400, detail="Selected doctor not found")
+    if not users_share_facility_context(db, current_user.id, doctor.id):
+        raise HTTPException(status_code=400, detail=APPOINTMENT_FACILITY_MISMATCH_DETAIL)
     specialization = _doctor_specialization(doctor)
+    facility_id = _resolve_appointment_facility_id(current_user, doctor)
     _ensure_future_slot(appointment_dt)
     _ensure_doctor_slot_available(db, doctor.id, appointment_dt)
     
     new_appt = models.Appointment(
+        facility_id=facility_id,
         user_id=current_user.id,
         doctor_id=doctor.id,
         specialist=specialization,
@@ -109,7 +134,8 @@ def get_appointments(
     current_user: models.User = Depends(auth.get_current_user)
 ):
     if auth.is_admin(current_user):
-        return db.query(models.Appointment).order_by(models.Appointment.date_time.asc()).all()
+        query = _scope_appointments_to_admin_facility(db.query(models.Appointment), current_user)
+        return query.order_by(models.Appointment.date_time.asc()).all()
 
     if current_user.role == "doctor":
         return db.query(models.Appointment).filter(
@@ -121,9 +147,22 @@ def get_appointments(
     ).order_by(models.Appointment.date_time.asc()).all()
 
 @router.get("/doctors", response_model=list[schemas.DoctorResponse])
-def get_doctors(db: Session = Depends(database.get_db)):
+def get_doctors(
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
     """Fetch all users with role='doctor'"""
-    doctors = db.query(models.User).filter(models.User.role == "doctor").all()
+    query = db.query(models.User).filter(models.User.role == "doctor")
+    if auth.is_admin(current_user) and current_user.facility_id is not None:
+        query = query.filter(models.User.facility_id == current_user.facility_id)
+    elif not auth.is_admin(current_user) and current_user.facility_id is not None:
+        query = query.filter(
+            or_(
+                models.User.facility_id == current_user.facility_id,
+                models.User.facility_id.is_(None),
+            )
+        )
+    doctors = query.all()
     # Map to DoctorResponse (handling missing profile fields)
     response = []
     for doc in doctors:
@@ -144,6 +183,7 @@ def cancel_appointment(
     appt = db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
     if not appt:
         raise HTTPException(status_code=404, detail="Appointment not found")
+    _ensure_admin_can_access_appointment(current_user, appt)
         
     # Permission check
     if current_user.role != "admin" and appt.user_id != current_user.id:
@@ -164,6 +204,7 @@ def reschedule_appointment(
     appt = db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
     if not appt:
         raise HTTPException(status_code=404, detail="Appointment not found")
+    _ensure_admin_can_access_appointment(current_user, appt)
         
     if current_user.role != "admin" and appt.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
@@ -193,6 +234,7 @@ def delete_appointment(
     appt = db.query(models.Appointment).filter(models.Appointment.id == appointment_id).first()
     if not appt:
         raise HTTPException(status_code=404, detail="Appointment not found")
+    _ensure_admin_can_access_appointment(current_user, appt)
         
     if current_user.role != "admin" and appt.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")

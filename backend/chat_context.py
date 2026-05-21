@@ -24,10 +24,27 @@ from . import models
 logger = logging.getLogger(__name__)
 
 MAX_CONTEXT_CHARS = 6000  # Conservative for smaller models
+GLOBAL_RAG_ROLES = {"doctor", "admin"}
+VALID_RAG_SCOPES = {"patient", "global", "guidelines"}
 
 
 def _normalize(text: str) -> str:
     return re.sub(r"\s+", " ", (text or "").strip().lower())
+
+
+def _normalize_rag_scope(rag_scope: Optional[str], user: models.User) -> str:
+    """Normalize client RAG scope while enforcing role-based global access."""
+    scope = (rag_scope or "patient").strip().lower()
+    if scope == "all":
+        scope = "global"
+    if scope not in VALID_RAG_SCOPES:
+        scope = "patient"
+
+    role = (getattr(user, "role", None) or "patient").lower()
+    if scope == "global" and role not in GLOBAL_RAG_ROLES:
+        return "patient"
+
+    return scope
 
 
 def _build_patient_profile(user: models.User) -> str:
@@ -196,7 +213,19 @@ def _build_general_stats_context(question: str, db: Session, user_id: int) -> st
     return "\n".join(lines)
 
 
-def _build_global_rag_context(db: Session, question: str) -> tuple[str, list[dict[str, Any]]]:
+def _scope_health_records_to_user_facility(query, user: models.User):
+    if user.facility_id is None:
+        return query
+    return query.join(models.User, models.HealthRecord.user_id == models.User.id).filter(
+        models.User.facility_id == user.facility_id
+    )
+
+
+def _build_global_rag_context(
+    db: Session,
+    question: str,
+    user: models.User,
+) -> tuple[str, list[dict[str, Any]]]:
     """
     Hospital-wide Global RAG Search (Anonymized).
     Finds historical cases matching conditions mentioned in the query.
@@ -219,18 +248,21 @@ def _build_global_rag_context(db: Session, question: str) -> tuple[str, list[dic
 
     if not matched_types:
         # Fallback to general historical statistics if no specific disease mentioned
-        total_records = db.query(models.HealthRecord).count()
+        total_records = _scope_health_records_to_user_facility(
+            db.query(models.HealthRecord),
+            user,
+        ).count()
         lines.append(f"System has indexed {total_records} historical health records across all departments.")
         lines.append("No specific disease keyword detected for cross-patient similarity matching.")
         return "\n".join(lines), sources
 
     for record_type in matched_types:
+        query = db.query(models.HealthRecord).filter(models.HealthRecord.record_type == record_type)
         records = (
-            db.query(models.HealthRecord)
-            .filter(models.HealthRecord.record_type == record_type)
-            .order_by(models.HealthRecord.timestamp.desc())
-            .limit(10)
-            .all()
+            _scope_health_records_to_user_facility(query, user)
+                .order_by(models.HealthRecord.timestamp.desc())
+                .limit(10)
+                .all()
         )
         if records:
             lines.append(f"\n#### Historical {record_type.capitalize()} Cases")
@@ -244,20 +276,17 @@ def _build_global_rag_context(db: Session, question: str) -> tuple[str, list[dic
 
 
 def build_chat_context(
-    db: Session, question: str, user: models.User, rag_scope: str = "patient"
+    db: Session, question: str, user: models.User, rag_scope: Optional[str] = "patient"
 ) -> tuple[str, list[dict[str, Any]]]:
     """
     Build RAG context for a chat question with Role-Based Governance.
 
     Returns (context_string, sources_list).
     """
-    # RAG Governance Security Check
-    if rag_scope == "global" and user.role not in ("doctor", "admin"):
-        # Strictly override to patient mode if unauthorized
-        rag_scope = "patient"
+    rag_scope = _normalize_rag_scope(rag_scope, user)
 
     if rag_scope == "global":
-        global_ctx, global_sources = _build_global_rag_context(db, question)
+        global_ctx, global_sources = _build_global_rag_context(db, question, user)
         # Always include chat history for context continuity even in global mode
         chat_ctx = _build_chat_history_context(db, user.id, limit=3)
         combined = f"{global_ctx}\n\n{chat_ctx}"

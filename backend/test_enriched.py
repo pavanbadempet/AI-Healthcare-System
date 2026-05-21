@@ -3,6 +3,7 @@ Comprehensive Bug Hunt — Tests ALL endpoints, edge cases, and error handling
 """
 import httpx
 import json
+import os
 
 BASE = "http://127.0.0.1:8000"
 bugs = []
@@ -83,9 +84,16 @@ check("Diabetes extreme values don't crash", r.status_code == 200, f"Got {r.stat
 # ============================================================
 # 5. Auth endpoints
 # ============================================================
-r = httpx.post(f"{BASE}/token", data={"username":"admin","password":"admin123"})
-check("Admin login works", r.status_code == 200, f"Got {r.status_code}")
-if r.status_code == 200:
+admin_username = os.getenv("DEFAULT_ADMIN_USERNAME")
+admin_password = os.getenv("DEFAULT_ADMIN_PASSWORD")
+if admin_username and admin_password:
+    r = httpx.post(f"{BASE}/token", data={"username": admin_username, "password": admin_password})
+    check("Configured admin login works", r.status_code == 200, f"Got {r.status_code}")
+else:
+    r = None
+    check("Configured admin login skipped when bootstrap credentials are unset", True)
+
+if r is not None and r.status_code == 200:
     token = r.json()["access_token"]
     
     # Profile

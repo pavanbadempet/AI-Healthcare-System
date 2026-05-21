@@ -16,6 +16,7 @@ from delta.tables import DeltaTable
 import os
 
 logger = logging.getLogger(__name__)
+DATA_MODELING_FAILURE_MESSAGE = "Data modeling operation failed."
 
 class TableFormat(Enum):
     DELTA = "delta"
@@ -417,9 +418,9 @@ class SchemaEvolutionManager:
             else:
                 return {'status': 'unsupported_format', 'table': table_name}
                 
-        except Exception as e:
-            logger.error(f"Schema evolution failed for {table_name}: {e}")
-            return {'status': 'failed', 'table': table_name, 'error': str(e)}
+        except Exception:
+            logger.error("Schema evolution failed")
+            return {'status': 'failed', 'table': table_name, 'error': DATA_MODELING_FAILURE_MESSAGE}
     
     def _apply_delta_evolution(self, table_name: str, changes: List[SchemaChange]) -> Dict[str, Any]:
         """Apply schema evolution for Delta Lake"""
@@ -437,8 +438,8 @@ class SchemaEvolutionManager:
                 else:
                     logger.warning(f"Delta Lake schema evolution for {change.change_type} not implemented")
                     
-            except Exception as e:
-                logger.error(f"Failed to apply Delta schema change: {e}")
+            except Exception:
+                logger.error("Failed to apply Delta schema change")
         
         return {
             'status': 'success',

@@ -7,7 +7,7 @@ from uploaded medical report images (PNG/JPG).
 
 Author: Pavan Badempet
 """
-from fastapi import APIRouter, UploadFile, File, HTTPException
+from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
 from typing import Dict, Any
 import logging
 from . import vision_service, database, auth, models, pdf_service
@@ -17,9 +17,24 @@ from . import vision_service, database, auth, models, pdf_service
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+REPORT_ANALYSIS_FAILURE_DETAIL = "Failed to analyze report"
+HEALTH_REPORT_FAILURE_DETAIL = "Failed to generate health report"
+REPORT_ANALYSIS_DISCLAIMER = (
+    "This AI-assisted report analysis is for informational support only and is not a medical diagnosis. "
+    "Please consult a qualified clinician for diagnosis, treatment, or emergencies."
+)
+
+
+def _with_report_analysis_disclaimer(result: Dict[str, Any]) -> Dict[str, Any]:
+    payload = dict(result)
+    payload.setdefault("disclaimer", REPORT_ANALYSIS_DISCLAIMER)
+    return payload
 
 @router.post("/analyze/report", response_model=Dict[str, Any])
-async def analyze_report(file: UploadFile = File(...)) -> Dict[str, Any]:
+async def analyze_report(
+    file: UploadFile = File(...),
+    current_user: models.User = Depends(auth.get_current_user),
+) -> Dict[str, Any]:
     """
     Analyze an uploaded medical report image.
     
@@ -47,21 +62,19 @@ async def analyze_report(file: UploadFile = File(...)) -> Dict[str, Any]:
         # 3. Analyze via Vision Service
         result = vision_service.analyze_lab_report(contents)
         
-        return result
+        return _with_report_analysis_disclaimer(result)
         
     except HTTPException as he:
         raise he
-    except Exception as e:
-        logger.error(f"Report Analysis Failed: {e}")
-        raise HTTPException(status_code=500, detail="Failed to analyze report")
-        raise HTTPException(status_code=500, detail="Failed to analyze report")
+    except Exception:
+        logger.error("Report analysis failed")
+        raise HTTPException(status_code=500, detail=REPORT_ANALYSIS_FAILURE_DETAIL)
 
 # --- PDF Download Endpoint ---
-from fastapi import Depends
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
 
-@router.get("/download/health-report")
+@router.get("/reports/download/health-report")
 def download_health_report(
     current_user: models.User = Depends(auth.get_current_user),
     db: Session = Depends(database.get_db)
@@ -98,8 +111,8 @@ def download_health_report(
                 if latest_record.data:
                     parsed_data = json.loads(latest_record.data)
                     report_data.update(parsed_data)
-            except Exception as e:
-                logger.warning(f"Failed to parse record data: {e}")
+            except Exception:
+                logger.warning("Failed to parse health record data")
 
         # 2. Generate PDF using the existing service
         pdf_bytes = pdf_service.generate_medical_report(
@@ -114,11 +127,11 @@ def download_health_report(
         return Response(
             content=pdf_bytes, 
             media_type="application/pdf",
-            headers={"Content-Disposition": f"attachment; filename=Health_Report_{current_user.username}.pdf"}
+            headers={"Content-Disposition": "attachment; filename=Health_Report.pdf"}
         )
 
-    except Exception as e:
-        logger.error(f"PDF Generation Failed: {e}")
+    except Exception:
+        logger.error("PDF generation failed")
         # Return a fallback PDF or 500 based on preference. 
         # For now, let's try to return a simple error PDF if possible, or just raise 500
-        raise HTTPException(status_code=500, detail=f"PDF Generation Error: {str(e)}")
+        raise HTTPException(status_code=500, detail=HEALTH_REPORT_FAILURE_DETAIL)

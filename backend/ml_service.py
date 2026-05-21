@@ -2,6 +2,7 @@ import logging
 from . import prediction, schemas
 
 logger = logging.getLogger(__name__)
+ML_PREDICTION_FAILURE_MESSAGE = "Error running prediction. Please try again later."
 
 class MLService:
     def __init__(self):
@@ -36,9 +37,9 @@ class MLService:
             result = prediction.predict_diabetes(data)
             return result["prediction"]
             
-        except Exception as e:
-            logger.error(f"Legacy Diabetes Predict Error: {e}")
-            return f"Error running diabetes prediction: {e}"
+        except Exception:
+            logger.error("Legacy diabetes prediction failed")
+            return ML_PREDICTION_FAILURE_MESSAGE
 
     def predict_heart_disease(self, age, gender, cp, trestbps, chol, fbs, restecg, thalach, exang, oldpeak, slope, ca, thal):
         try:
@@ -62,9 +63,9 @@ class MLService:
              
             result = prediction.predict_heart(data)
             return result["prediction"]
-        except Exception as e:
-             logger.error(f"Legacy Heart Predict Error: {e}")
-             return f"Error running heart prediction: {e}"
+        except Exception:
+             logger.error("Legacy heart prediction failed")
+             return ML_PREDICTION_FAILURE_MESSAGE
 
     def predict_liver_disease(self, age, gender, total_bilirubin, alkaline_phosphotase, alamine_aminotransferase, albumin_globulin_ratio):
         try:
@@ -86,9 +87,9 @@ class MLService:
             
             result = prediction.predict_liver(data)
             return result["prediction"]
-        except Exception as e:
-            logger.error(f"Legacy Liver Predict Error: {e}")
-            return f"Error running liver prediction: {e}"
+        except Exception:
+            logger.error("Legacy liver prediction failed")
+            return ML_PREDICTION_FAILURE_MESSAGE
 
 ml_service = MLService()
 
