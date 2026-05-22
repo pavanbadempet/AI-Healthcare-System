@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 @theme {
+  --font-display: var(--font-display), ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
   --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
@@ -26,59 +27,64 @@
 
 :root {
   /* ──────────────────────────────────────────────────
-     Enterprise Professional Dark Theme — Design Tokens
-     All pages MUST use these variables instead of
-     hardcoded hex values. See @layer components below.
+     Luxury Editorial Noir — Design Tokens
+     Purpose: "high-end magazine" meets "clinical instrument"
+     Use variables (no hard-coded hex in components).
      ────────────────────────────────────────────────── */
 
-  /* Surface Hierarchy (darkest → lightest) */
-  --bg-primary: #000000;     /* Absolute black — page backgrounds */
-  --bg-secondary: #0a0a0a;   /* Subtle elevation — panels, sidebars */
-  --bg-card: #111111;        /* Clean solid dark — cards, inputs */
-  --bg-card-hover: #171717;  /* Slight hover/active state */
-  --bg-elevated: #1a1a1a;    /* Modal / overlay backgrounds */
+  /* Surfaces (ink → charcoal → lacquer) */
+  --bg-primary: #060505;       /* ink */
+  --bg-secondary: #0b0908;     /* charcoal */
+  --bg-card: #110e0d;          /* lacquer */
+  --bg-card-hover: #161211;    /* hover lacquer */
+  --bg-elevated: #1b1615;      /* overlays */
 
-  /* Border Hierarchy */
-  --border: #262626;         /* Default border — cards, dividers */
-  --border-focus: #404040;   /* Active / focused elements */
-  --border-subtle: #171717;  /* Very subtle separator */
+  /* Hairline borders (subtle, editorial) */
+  --border: rgba(255, 244, 230, 0.10);
+  --border-focus: rgba(255, 244, 230, 0.22);
+  --border-subtle: rgba(255, 244, 230, 0.06);
 
-  /* Medical / Professional Accents */
-  --accent: #0066cc;         /* Clinical precise blue — primary action */
-  --accent-hover: #0052a3;   /* Darker blue for hover states */
-  --accent-muted: rgba(0, 102, 204, 0.1);  /* 10% blue tint for backgrounds */
-  --accent-border: rgba(0, 102, 204, 0.3); /* 30% blue tint for borders */
-  --accent-emerald: #10b981; /* Precise success state */
-  --accent-purple: #a855f7;  /* Secondary accent — analytics, assessments */
-  --accent-purple-muted: rgba(168, 85, 247, 0.1);
-  --accent-purple-border: rgba(168, 85, 247, 0.2);
+  /* Accents (antique gold + deep clinical blue) */
+  --accent: #c7a36a;           /* antique gold */
+  --accent-hover: #d4b57c;
+  --accent-muted: rgba(199, 163, 106, 0.12);
+  --accent-border: rgba(199, 163, 106, 0.28);
 
-  /* Text Hierarchy */
-  --text-primary: #ffffff;   /* Pure white for maximum readability */
-  --text-secondary: #a3a3a3; /* Neutral gray for secondary info */
-  --text-dim: #737373;       /* Dim text for metadata */
-  --text-muted: #525252;     /* Even dimmer, for placeholders */
+  --accent-blue: #1b5cff;      /* clinical signal (charts/links) */
+  --accent-blue-muted: rgba(27, 92, 255, 0.14);
+  --accent-blue-border: rgba(27, 92, 255, 0.28);
 
-  /* Status Palette */
-  --danger: #ef4444;
-  --danger-muted: rgba(239, 68, 68, 0.1);
-  --danger-border: rgba(239, 68, 68, 0.3);
-  --warning: #f59e0b;
-  --warning-muted: rgba(245, 158, 11, 0.1);
-  --warning-border: rgba(245, 158, 11, 0.3);
-  --success: #10b981;
-  --success-muted: rgba(16, 185, 129, 0.1);
-  --success-border: rgba(16, 185, 129, 0.2);
+  --accent-emerald: #3ad6a3;   /* success */
+  --accent-purple: #b084ff;    /* secondary */
+  --accent-purple-muted: rgba(176, 132, 255, 0.12);
+  --accent-purple-border: rgba(176, 132, 255, 0.22);
 
-  /* Precision Geometry */
-  --radius-sm: 4px;
-  --radius: 8px;
-  --radius-lg: 12px;
+  /* Text (ivory, not pure white) */
+  --text-primary: #fff4e6;
+  --text-secondary: rgba(255, 244, 230, 0.72);
+  --text-dim: rgba(255, 244, 230, 0.52);
+  --text-muted: rgba(255, 244, 230, 0.34);
 
-  /* Refined Shadows (No Glows) */
-  --shadow-soft: 0 4px 12px rgba(0,0,0,0.5);
-  --shadow-lg: 0 10px 40px -10px rgba(0,0,0,0.8);
-  --shadow-focus: 0 0 0 1px var(--border-focus);
+  /* Status Palette (kept vivid for clinical clarity) */
+  --danger: #ff4d4d;
+  --danger-muted: rgba(255, 77, 77, 0.14);
+  --danger-border: rgba(255, 77, 77, 0.28);
+  --warning: #ffb020;
+  --warning-muted: rgba(255, 176, 32, 0.14);
+  --warning-border: rgba(255, 176, 32, 0.28);
+  --success: #3ad6a3;
+  --success-muted: rgba(58, 214, 163, 0.14);
+  --success-border: rgba(58, 214, 163, 0.24);
+
+  /* Geometry (slightly rounder, more premium) */
+  --radius-sm: 8px;
+  --radius: 12px;
+  --radius-lg: 18px;
+
+  /* Shadows (soft lift + inner hairline) */
+  --shadow-soft: 0 16px 40px rgba(0,0,0,0.55);
+  --shadow-lg: 0 28px 80px rgba(0,0,0,0.75);
+  --shadow-focus: 0 0 0 1px var(--border-focus), 0 0 0 6px rgba(199, 163, 106, 0.12);
 }
 
 /* Force dark mode everywhere, professional baseline */
@@ -93,6 +99,41 @@ html, body {
   color-scheme: dark;
 }
 
+/* Luxury editorial atmosphere: gradient fields + paper grain (subtle) */
+body {
+  position: relative;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(900px 700px at 12% 18%, rgba(199, 163, 106, 0.14), transparent 55%),
+    radial-gradient(1000px 800px at 78% 26%, rgba(27, 92, 255, 0.12), transparent 62%),
+    radial-gradient(900px 700px at 70% 86%, rgba(176, 132, 255, 0.10), transparent 60%),
+    radial-gradient(800px 600px at 18% 88%, rgba(58, 214, 163, 0.08), transparent 60%);
+  opacity: 0.9;
+}
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)' opacity='.22'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+  opacity: 0.12;
+}
+
+/* Keep app content above atmospheric layers */
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
 /* Precise selection */
 ::selection {
   background: var(--accent);
@@ -101,6 +142,21 @@ html, body {
 
 /* Smooth transitions */
 .transition-smooth { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+
+/* Editorial typography helpers */
+.display-hero {
+  font-family: var(--font-display);
+  letter-spacing: -0.04em;
+  line-height: 0.98;
+}
+.display-title {
+  font-family: var(--font-display);
+  letter-spacing: -0.03em;
+}
+.lede {
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
 
 /* ──────────────────────────────────────────────────
    Accessibility: Focus rings & reduced motion
@@ -137,32 +193,41 @@ html, body {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 8px 16px;
+    padding: 10px 16px;
     border-radius: var(--radius-sm);
-    font-weight: 500;
+    font-weight: 600;
     font-size: 0.875rem; /* 14px */
     white-space: nowrap;
     cursor: pointer;
     border: 1px solid transparent;
-    transition: all 0.15s ease-in-out;
+    transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
   }
   .btn-primary {
-    background: var(--accent);
-    color: #ffffff;
+    background:
+      radial-gradient(120% 160% at 30% 20%, rgba(255, 244, 230, 0.22), transparent 35%),
+      linear-gradient(180deg, rgba(199, 163, 106, 0.96), rgba(164, 129, 74, 0.96));
+    color: #070606;
+    border-color: rgba(255, 244, 230, 0.12);
+    box-shadow: 0 1px 0 rgba(255, 244, 230, 0.18) inset, 0 18px 40px rgba(0,0,0,0.35);
   }
   .btn-primary:hover {
-    background: var(--accent-hover);
+    transform: translateY(-1px);
+    background:
+      radial-gradient(120% 160% at 30% 20%, rgba(255, 244, 230, 0.26), transparent 35%),
+      linear-gradient(180deg, rgba(212, 181, 124, 0.98), rgba(173, 138, 80, 0.98));
   }
-  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:active { transform: translateY(0px) scale(0.99); }
   .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
   .btn-secondary {
-    background: transparent;
+    background: rgba(255, 244, 230, 0.03);
     color: var(--text-primary);
     border: 1px solid var(--border);
+    box-shadow: 0 1px 0 rgba(255, 244, 230, 0.06) inset;
   }
   .btn-secondary:hover {
-    background: var(--bg-card-hover);
+    transform: translateY(-1px);
+    background: rgba(255, 244, 230, 0.05);
     border-color: var(--border-focus);
   }
 
@@ -173,7 +238,7 @@ html, body {
   }
   .btn-ghost:hover {
     color: var(--text-primary);
-    background: var(--bg-card);
+    background: rgba(255, 244, 230, 0.04);
     border-color: var(--border);
   }
 
@@ -191,20 +256,24 @@ html, body {
      Panel / Card System
      ────────────────────────────────────────────────── */
   .glass-card {
-    background: var(--bg-card);
+    background: linear-gradient(180deg, rgba(255, 244, 230, 0.045), rgba(255, 244, 230, 0.02));
     border: 1px solid var(--border);
     border-radius: var(--radius);
+    box-shadow: 0 1px 0 rgba(255, 244, 230, 0.06) inset;
   }
 
   .panel {
-    background: var(--bg-secondary);
+    background: linear-gradient(180deg, rgba(255, 244, 230, 0.028), rgba(255, 244, 230, 0.012));
     border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 1px 0 rgba(255, 244, 230, 0.05) inset, 0 18px 50px rgba(0,0,0,0.25);
   }
 
   .panel-header {
     padding: 12px 20px;
     border-bottom: 1px solid var(--border);
-    background: var(--bg-primary);
+    background: rgba(6, 5, 5, 0.6);
+    backdrop-filter: blur(10px);
   }
 
   /* ──────────────────────────────────────────────────
@@ -271,20 +340,22 @@ html, body {
      ────────────────────────────────────────────────── */
   .input-clinical {
     width: 100%;
-    background: var(--bg-card);
+    background: rgba(255, 244, 230, 0.035);
     border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
     padding: 10px 14px;
     color: var(--text-primary);
     font-size: 13px;
     font-family: var(--font-mono);
-    transition: border-color 0.15s ease, background 0.15s ease;
+    transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
   }
   .input-clinical::placeholder {
     color: var(--text-muted);
   }
   .input-clinical:focus {
     border-color: var(--accent);
-    background: var(--bg-secondary);
+    background: rgba(255, 244, 230, 0.05);
+    box-shadow: var(--shadow-focus);
   }
 }
 
