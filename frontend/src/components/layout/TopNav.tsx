@@ -61,14 +61,21 @@ export default function TopNav({ mobileOpen, setMobileOpen }: { mobileOpen?: boo
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-14 z-50 bg-[var(--bg-primary)] border-b border-[var(--border)] flex items-center px-4 md:px-6 justify-between" role="banner">
+    <header
+      className="fixed top-0 left-0 right-0 h-14 z-50 flex items-center px-4 md:px-6 justify-between border-b border-[var(--border)] bg-[color:rgba(6,5,5,0.62)] backdrop-blur-xl"
+      role="banner"
+    >
+      {/* Hairline highlight */}
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(255,244,230,0.18),transparent)]" aria-hidden="true" />
       {/* Left: Logo */}
       <Link href="/dashboard" className="flex items-center gap-3 shrink-0 group" aria-label="AI Healthcare System - Go to dashboard">
-        <div className="w-8 h-8 rounded-md flex items-center justify-center text-[var(--text-primary)] bg-[var(--bg-card)] border border-[var(--border)] group-hover:border-[var(--border-focus)] transition-colors">
+        <div className="w-8 h-8 rounded-md flex items-center justify-center text-[var(--text-primary)] bg-[linear-gradient(180deg,rgba(255,244,230,0.06),rgba(255,244,230,0.02))] border border-[var(--border)] group-hover:border-[var(--border-focus)] transition-colors shadow-[0_1px_0_rgba(255,244,230,0.06)_inset]">
           <Sparkles size={16} aria-hidden="true" />
         </div>
         <div className="hidden sm:block">
-          <h1 className="text-sm font-semibold text-[var(--text-primary)] tracking-tight">AI Healthcare<span className="text-[var(--text-secondary)] ml-1">System</span></h1>
+          <h1 className="text-sm text-[var(--text-primary)] tracking-tight display-title">
+            AI Healthcare<span className="text-[var(--text-secondary)] ml-1">System</span>
+          </h1>
         </div>
       </Link>
 
@@ -97,16 +104,17 @@ export default function TopNav({ mobileOpen, setMobileOpen }: { mobileOpen?: boo
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 5 }}
                     transition={{ duration: 0.1 }}
-                    className="absolute top-[48px] left-1/2 -translate-x-1/2 w-[500px] pt-2 z-50"
+                    className="absolute top-[48px] left-1/2 -translate-x-1/2 w-[520px] pt-2 z-50"
                   >
-                    <div className="bg-[var(--bg-secondary)] border border-[var(--border)] p-4 rounded-lg shadow-xl relative overflow-hidden" role="menu">
+                    <div className="glass-card p-4 shadow-[var(--shadow-lg)] relative overflow-hidden" role="menu">
+                      <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(199,163,106,0.35),transparent)]" aria-hidden="true" />
                       <div className="grid grid-cols-2 gap-2">
                         {menu.items.map((item) => (
                           <Link 
                             key={item.href} 
                             href={item.href}
                             onClick={() => setActiveMenu(null)}
-                            className="flex items-start gap-3 p-3 rounded-md hover:bg-[var(--bg-card)] transition-colors group"
+                            className="flex items-start gap-3 p-3 rounded-md hover:bg-[rgba(255,244,230,0.05)] transition-colors group"
                             role="menuitem"
                           >
                             <div className="mt-0.5 text-[var(--text-dim)] group-hover:text-[var(--text-primary)] transition-colors">
