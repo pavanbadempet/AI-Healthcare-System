@@ -5,7 +5,7 @@ import { useAuthStore } from "@/lib/auth";
 import { login, fetchProfile } from "@/lib/api";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { Activity, Lock, User, ArrowRight, HeartPulse, Sparkles, ShieldCheck, Database } from "lucide-react";
+import { Activity, Lock, User, ArrowRight, HeartPulse, Sparkles, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 
 export default function LoginPage() {
@@ -80,13 +80,13 @@ export default function LoginPage() {
           {/* Trust indicators */}
           <div className="mt-8 flex items-center justify-center gap-6 text-[11px] font-mono text-[var(--text-dim)] uppercase tracking-widest">
             <span className="flex items-center gap-1.5">
-              <ShieldCheck size={12} className="text-[var(--accent-emerald)]" /> HIPAA
+              <ShieldCheck size={12} className="text-[var(--accent-emerald)]" /> Access Control
             </span>
             <span className="flex items-center gap-1.5">
-              <Database size={12} className="text-[var(--accent)]" /> AES-256
+              <Lock size={12} className="text-[var(--accent)]" /> JWT Sessions
             </span>
             <span className="flex items-center gap-1.5">
-              <Activity size={12} className="text-[var(--warning)]" /> SOC 2
+              <Activity size={12} className="text-[var(--warning)]" /> Audit Logs
             </span>
           </div>
         </motion.div>
@@ -202,10 +202,10 @@ export default function LoginPage() {
           {/* Mobile-only trust bar */}
           <div className="lg:hidden flex items-center justify-center gap-6 pt-4 text-[11px] font-mono text-[var(--text-dim)] uppercase tracking-widest border-t border-[var(--border)]">
             <span className="flex items-center gap-1.5">
-              <ShieldCheck size={12} className="text-[var(--accent-emerald)]" /> HIPAA
+              <ShieldCheck size={12} className="text-[var(--accent-emerald)]" /> Access Control
             </span>
             <span className="flex items-center gap-1.5">
-              <Database size={12} className="text-[var(--accent)]" /> AES-256
+              <Lock size={12} className="text-[var(--accent)]" /> JWT Sessions
             </span>
           </div>
         </div>

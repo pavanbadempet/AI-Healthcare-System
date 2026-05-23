@@ -168,10 +168,10 @@ export default function SignupPage() {
           </div>
 
           <h2 className="text-3xl font-semibold text-[var(--text-primary)] tracking-tight mb-4 leading-tight">
-            Your Health Data,<br />Secured & Analyzed
+            Your Health Data,<br />Protected & Analyzed
           </h2>
           <p className="text-[var(--text-secondary)] text-sm leading-relaxed max-w-sm mx-auto">
-            Enterprise-grade medical predictions powered by our Singularity Tri-Tier AI Engine with full HIPAA compliance.
+            Enterprise-grade medical predictions powered by our Singularity Tri-Tier AI Engine with privacy-aware safeguards.
           </p>
 
           {/* Feature list */}
@@ -179,7 +179,7 @@ export default function SignupPage() {
             {[
               { icon: BrainCircuit, text: "Multi-organ diagnostic AI models" },
               { icon: Database, text: "RAG-powered clinical copilot" },
-              { icon: ShieldCheck, text: "End-to-end encrypted health records" },
+              { icon: ShieldCheck, text: "Access-controlled health records" },
             ].map((item, i) => (
               <motion.div
                 key={i}

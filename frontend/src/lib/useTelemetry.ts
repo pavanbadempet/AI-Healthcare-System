@@ -1,5 +1,5 @@
 /**
- * AI Healthcare System — Real-Time Telemetry Hook
+ * AI Healthcare System - Real-Time Telemetry Hook
  * 
  * Connects to the backend WebSocket telemetry stream and provides
  * live-updating hospital operations data to any component.
@@ -10,7 +10,7 @@
  * - Graceful cleanup on unmount
  */
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
 
 export interface DepartmentLoad {
   dept: string;
@@ -53,68 +53,80 @@ export function useTelemetry() {
   const reconnectAttempt = useRef(0);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const connect = useCallback(() => {
-    // Build WebSocket URL from API base
-    const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-    const wsUrl = apiBase.replace(/^http/, "ws") + "/telemetry/stream";
-
-    setStatus("connecting");
-
-    try {
-      const ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
-
-      ws.onopen = () => {
-        setStatus("connected");
-        reconnectAttempt.current = 0; // Reset on successful connection
-      };
-
-      ws.onmessage = (event) => {
-        try {
-          const parsed: TelemetryData = JSON.parse(event.data);
-          setData(parsed);
-        } catch {
-          console.error("[Telemetry] Failed to parse message");
-        }
-      };
-
-      ws.onerror = () => {
-        setStatus("error");
-      };
-
-      ws.onclose = () => {
-        setStatus("disconnected");
-        wsRef.current = null;
-
-        // Exponential backoff reconnect
-        const delay = Math.min(
-          INITIAL_RECONNECT_DELAY * Math.pow(2, reconnectAttempt.current),
-          MAX_RECONNECT_DELAY
-        );
-        reconnectAttempt.current += 1;
-
-        reconnectTimer.current = setTimeout(() => {
-          connect();
-        }, delay);
-      };
-    } catch {
-      setStatus("error");
-    }
-  }, []);
-
   useEffect(() => {
+    let shouldReconnect = true;
+
+    function connect() {
+      if (!shouldReconnect) {
+        return;
+      }
+
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+      const wsUrl = apiBase.replace(/^http/, "ws") + "/telemetry/stream";
+
+      setStatus("connecting");
+
+      try {
+        const ws = new WebSocket(wsUrl);
+        wsRef.current = ws;
+
+        ws.onopen = () => {
+          setStatus("connected");
+          reconnectAttempt.current = 0;
+        };
+
+        ws.onmessage = (event) => {
+          try {
+            const parsed: TelemetryData = JSON.parse(event.data);
+            setData(parsed);
+          } catch {
+            console.error("[Telemetry] Failed to parse message");
+          }
+        };
+
+        ws.onerror = () => {
+          setStatus("error");
+        };
+
+        ws.onclose = () => {
+          setStatus("disconnected");
+          wsRef.current = null;
+
+          if (!shouldReconnect) {
+            return;
+          }
+
+          const delay = Math.min(
+            INITIAL_RECONNECT_DELAY * Math.pow(2, reconnectAttempt.current),
+            MAX_RECONNECT_DELAY
+          );
+          reconnectAttempt.current += 1;
+
+          reconnectTimer.current = setTimeout(() => {
+            connect();
+          }, delay);
+        };
+      } catch {
+        setStatus("error");
+      }
+    }
+
     connect();
 
     return () => {
+      shouldReconnect = false;
+
       // Clean up on unmount
       if (reconnectTimer.current) {
         clearTimeout(reconnectTimer.current);
+        reconnectTimer.current = null;
       }
       if (wsRef.current) {
         wsRef.current.close();
+        wsRef.current = null;
       }
     };
-  }, [connect]);
+  }, []);
 
   return { data, status };
 }
