@@ -1,6 +1,6 @@
 /**
  * AI Healthcare System — API Client
- * 
+ *
  * Typed wrapper around all backend endpoints.
  * Auto-injects auth token from Zustand store.
  */
@@ -249,6 +249,477 @@ export async function getAdminUsers(): Promise<UserProfile[]> {
   return apiFetch('/admin/users');
 }
 
+export async function getAdminPatients(): Promise<UserProfile[]> {
+  return apiFetch('/admin/patients');
+}
+
+export async function getAdminPatient(patientId: number): Promise<UserProfile> {
+  return apiFetch(`/admin/patients/${patientId}`);
+}
+
+export interface DoctorPatientSummary {
+  patient_id: number;
+  username: string;
+  full_name?: string | null;
+  latest_encounter_id?: number | null;
+  latest_encounter_type?: string | null;
+  latest_status?: string | null;
+  open_orders?: number;
+  active_admissions?: number;
+}
+
+export async function getDoctorPatients(): Promise<DoctorPatientSummary[]> {
+  return apiFetch('/hospital/doctor/patients');
+}
+
+// --- Hospital Operations Cockpit ---
+export interface HospitalAdminMetrics {
+  total_departments?: number;
+  total_beds?: number;
+  occupied_beds?: number;
+  open_encounters?: number;
+  active_admissions?: number;
+  open_orders?: number;
+  clinical_safety_note?: string;
+  [key: string]: unknown;
+}
+
+export interface MonitoringAdminMetrics {
+  total_vital_observations?: number;
+  open_signals?: number;
+  clinical_safety_note?: string;
+  [key: string]: unknown;
+}
+
+export interface MonitoringSignal {
+  id: number;
+  patient_id: number;
+  vital_observation_id?: number | null;
+  encounter_id?: number | null;
+  department_id?: number | null;
+  signal_type: string;
+  severity: string;
+  title: string;
+  summary: string;
+  status: string;
+  created_at: string;
+}
+
+export interface VitalObservation {
+  id: number;
+  patient_id: number;
+  recorded_by_id?: number | null;
+  encounter_id?: number | null;
+  department_id?: number | null;
+  source: string;
+  heart_rate?: number | null;
+  systolic_bp?: number | null;
+  diastolic_bp?: number | null;
+  spo2?: number | null;
+  temperature_c?: number | null;
+  respiratory_rate?: number | null;
+  observed_at: string;
+  created_at: string;
+}
+
+export interface DoctorPatientMonitoringSignals {
+  patient_id: number;
+  latest_vitals: VitalObservation[];
+  open_signals: MonitoringSignal[];
+  clinical_safety_note?: string;
+}
+
+export async function getDoctorPatientMonitoringSignals(patientId: number): Promise<DoctorPatientMonitoringSignals> {
+  return apiFetch(`/monitoring/doctor/patients/${patientId}/signals`);
+}
+
+export async function resolveMonitoringSignal(signalId: number): Promise<MonitoringSignal> {
+  return apiFetch(`/monitoring/signals/${signalId}/resolve`, { method: 'PUT' });
+}
+
+export interface DiagnosticResult {
+  id: number;
+  order_id: number;
+  encounter_id?: number | null;
+  patient_id: number;
+  doctor_id?: number | null;
+  department_id?: number | null;
+  result_type: string;
+  title: string;
+  summary: string;
+  abnormal_flag: boolean;
+  status: string;
+  review_status: string;
+  review_note?: string | null;
+  reviewed_by_id?: number | null;
+  reviewed_at?: string | null;
+  created_at: string;
+}
+
+export interface DoctorPatientDiagnosticResults {
+  patient_id: number;
+  results: DiagnosticResult[];
+  clinical_safety_note?: string;
+}
+
+export interface DiagnosticReviewUpdate {
+  review_status: 'reviewed' | 'needs_follow_up' | 'withheld';
+  review_note?: string;
+}
+
+export async function getDoctorPatientDiagnosticResults(patientId: number): Promise<DoctorPatientDiagnosticResults> {
+  return apiFetch(`/diagnostics/doctor/patients/${patientId}/results`);
+}
+
+export async function getPatientDiagnosticResults(): Promise<DiagnosticResult[]> {
+  return apiFetch('/diagnostics/patient/results');
+}
+
+export async function reviewDiagnosticResult(
+  resultId: number,
+  data: DiagnosticReviewUpdate
+): Promise<DiagnosticResult> {
+  return apiFetch(`/diagnostics/results/${resultId}/review`, { method: 'PUT', body: JSON.stringify(data) });
+}
+
+export interface DiagnosticsAdminMetrics {
+  total_results?: number;
+  pending_review?: number;
+  abnormal_results?: number;
+  clinical_safety_note?: string;
+  [key: string]: unknown;
+}
+
+export interface PharmacyAdminMetrics {
+  total_inventory_items?: number;
+  low_stock_items?: number;
+  total_prescriptions?: number;
+  active_prescriptions?: number;
+  dispensed_prescriptions?: number;
+  clinical_safety_note?: string;
+  [key: string]: unknown;
+}
+
+export interface PrescriptionItem {
+  id: number;
+  prescription_id: number;
+  inventory_id?: number | null;
+  medication_name: string;
+  dosage: string;
+  frequency: string;
+  duration: string;
+  quantity_prescribed: number;
+  quantity_dispensed: number;
+  instructions?: string | null;
+  status: string;
+}
+
+export interface Prescription {
+  id: number;
+  encounter_id?: number | null;
+  patient_id: number;
+  doctor_id?: number | null;
+  diagnosis_context?: string | null;
+  status: string;
+  created_at: string;
+  dispensed_at?: string | null;
+  items: PrescriptionItem[];
+}
+
+export interface DoctorPatientPrescriptions {
+  patient_id: number;
+  prescriptions: Prescription[];
+  clinical_safety_note?: string;
+}
+
+export async function getDoctorPatientPrescriptions(patientId: number): Promise<DoctorPatientPrescriptions> {
+  return apiFetch(`/pharmacy/doctor/patients/${patientId}/prescriptions`);
+}
+
+export async function getPatientPrescriptions(): Promise<Prescription[]> {
+  return apiFetch('/pharmacy/patient/prescriptions');
+}
+
+export interface BillingAdminMetrics {
+  total_services?: number;
+  total_invoices?: number;
+  total_billed?: number;
+  total_collected?: number;
+  outstanding_balance?: number;
+  operations_note?: string;
+  [key: string]: unknown;
+}
+
+export interface DischargeAdminMetrics {
+  total_summaries?: number;
+  draft_summaries?: number;
+  finalized_summaries?: number;
+  active_admissions?: number;
+  discharged_admissions?: number;
+  clinical_safety_note?: string;
+  [key: string]: unknown;
+}
+
+export interface NursingAdminMetrics {
+  total_tasks?: number;
+  assigned_tasks?: number;
+  completed_tasks?: number;
+  overdue_tasks?: number;
+  operations_note?: string;
+  [key: string]: unknown;
+}
+
+export interface CareEventAdminMetrics {
+  total_events?: number;
+  events_by_severity?: Record<string, number>;
+  operations_note?: string;
+  [key: string]: unknown;
+}
+
+export interface InteroperabilityAdminMetrics {
+  total_exports?: number;
+  active_consents?: number;
+  total_resources_exported?: number;
+  standards_note?: string;
+  [key: string]: unknown;
+}
+
+export interface AdminOperationsCockpitData {
+  hospital: HospitalAdminMetrics;
+  monitoring: MonitoringAdminMetrics;
+  diagnostics: DiagnosticsAdminMetrics;
+  pharmacy: PharmacyAdminMetrics;
+  billing: BillingAdminMetrics;
+  discharge: DischargeAdminMetrics;
+  nursing: NursingAdminMetrics;
+  events: CareEventAdminMetrics;
+  interoperability: InteroperabilityAdminMetrics;
+}
+
+export async function getAdminOperationsCockpit(): Promise<AdminOperationsCockpitData> {
+  const [
+    hospital,
+    monitoring,
+    diagnostics,
+    pharmacy,
+    billing,
+    discharge,
+    nursing,
+    events,
+    interoperability,
+  ] = await Promise.all([
+    apiFetch<HospitalAdminMetrics>('/hospital/admin/operations'),
+    apiFetch<MonitoringAdminMetrics>('/monitoring/admin/patterns'),
+    apiFetch<DiagnosticsAdminMetrics>('/diagnostics/admin/metrics'),
+    apiFetch<PharmacyAdminMetrics>('/pharmacy/admin/metrics'),
+    apiFetch<BillingAdminMetrics>('/billing/admin/metrics'),
+    apiFetch<DischargeAdminMetrics>('/discharge/admin/metrics'),
+    apiFetch<NursingAdminMetrics>('/nursing/admin/metrics'),
+    apiFetch<CareEventAdminMetrics>('/events/admin/metrics'),
+    apiFetch<InteroperabilityAdminMetrics>('/interop/admin/metrics'),
+  ]);
+
+  return {
+    hospital,
+    monitoring,
+    diagnostics,
+    pharmacy,
+    billing,
+    discharge,
+    nursing,
+    events,
+    interoperability,
+  };
+}
+
+export interface Department {
+  id: number;
+  name: string;
+  department_type: string;
+  location?: string | null;
+  description?: string | null;
+  status: string;
+  created_at: string;
+}
+
+export interface DepartmentCreate {
+  name: string;
+  department_type: string;
+  location?: string;
+  description?: string;
+}
+
+export interface Bed {
+  id: number;
+  department_id: number;
+  bed_number: string;
+  ward?: string | null;
+  status: string;
+  current_patient_id?: number | null;
+  created_at: string;
+}
+
+export interface BedCreate {
+  department_id: number;
+  bed_number: string;
+  ward?: string;
+  status?: string;
+}
+
+export async function getDepartments(): Promise<Department[]> {
+  return apiFetch('/hospital/departments');
+}
+
+export async function createDepartment(data: DepartmentCreate): Promise<Department> {
+  return apiFetch('/hospital/departments', { method: 'POST', body: JSON.stringify(data) });
+}
+
+export async function createBed(data: BedCreate): Promise<Bed> {
+  return apiFetch('/hospital/beds', { method: 'POST', body: JSON.stringify(data) });
+}
+
+export interface EncounterCreate {
+  patient_id: number;
+  doctor_id?: number;
+  department_id?: number;
+  encounter_type: string;
+  reason?: string;
+  priority?: string;
+}
+
+export interface Encounter {
+  id: number;
+  patient_id: number;
+  doctor_id?: number | null;
+  department_id?: number | null;
+  encounter_type: string;
+  reason?: string | null;
+  priority: string;
+  status: string;
+  started_at: string;
+  ended_at?: string | null;
+}
+
+export interface AdmissionCreate {
+  encounter_id: number;
+  patient_id: number;
+  doctor_id?: number;
+  department_id?: number;
+  bed_id?: number;
+  admitted_at?: string;
+  reason?: string;
+}
+
+export interface Admission {
+  id: number;
+  encounter_id: number;
+  patient_id: number;
+  doctor_id?: number | null;
+  department_id?: number | null;
+  bed_id?: number | null;
+  admitted_at: string;
+  discharged_at?: string | null;
+  reason?: string | null;
+  status: string;
+}
+
+export interface ClinicalOrderCreate {
+  encounter_id?: number;
+  patient_id: number;
+  doctor_id?: number;
+  department_id?: number;
+  order_type: string;
+  title: string;
+  priority?: string;
+  notes?: string;
+}
+
+export interface ClinicalOrder {
+  id: number;
+  encounter_id?: number | null;
+  patient_id: number;
+  doctor_id?: number | null;
+  department_id?: number | null;
+  order_type: string;
+  title: string;
+  priority: string;
+  status: string;
+  notes?: string | null;
+  created_at: string;
+  completed_at?: string | null;
+}
+
+export interface CareEvent {
+  id: number;
+  patient_id: number;
+  actor_user_id?: number | null;
+  encounter_id?: number | null;
+  department_id?: number | null;
+  event_type: string;
+  title: string;
+  summary?: string | null;
+  severity: string;
+  created_at: string;
+}
+
+export interface CareEventFeed {
+  events: CareEvent[];
+  next_after_id?: number | null;
+  patient_id?: number;
+  clinical_safety_note?: string;
+}
+
+export async function createEncounter(data: EncounterCreate): Promise<Encounter> {
+  return apiFetch('/hospital/encounters', { method: 'POST', body: JSON.stringify(data) });
+}
+
+export async function createAdmission(data: AdmissionCreate): Promise<Admission> {
+  return apiFetch('/hospital/admissions', { method: 'POST', body: JSON.stringify(data) });
+}
+
+export async function createClinicalOrder(data: ClinicalOrderCreate): Promise<ClinicalOrder> {
+  return apiFetch('/hospital/orders', { method: 'POST', body: JSON.stringify(data) });
+}
+
+export async function getDoctorPatientCareEventFeed(patientId: number, limit = 25): Promise<CareEventFeed> {
+  return apiFetch(`/events/doctor/patients/${patientId}/feed?limit=${limit}`);
+}
+
+export async function getAdminPatientCareEventFeed(patientId: number, limit = 25): Promise<CareEventFeed> {
+  return apiFetch(`/events/admin/patients/${patientId}/feed?limit=${limit}`);
+}
+
+export async function getPatientCareEventFeed(limit = 25): Promise<CareEventFeed> {
+  return apiFetch(`/events/patient/feed?limit=${limit}`);
+}
+
+export interface FhirBundleExportResponse {
+  bundle: {
+    resourceType: string;
+    entry?: unknown[];
+  };
+  export: {
+    id: number;
+    patient_id?: number;
+    export_type?: string;
+    resource_count: number;
+    bundle_sha256?: string;
+    manifest_signature?: string;
+  };
+  manifest: {
+    resourceType?: string;
+    export_id?: number;
+    bundle_sha256?: string;
+    signature_algorithm?: string;
+    signature?: string;
+  };
+  standards_note?: string;
+}
+
+export async function exportDoctorPatientFhirBundle(patientId: number): Promise<FhirBundleExportResponse> {
+  return apiFetch(`/interop/doctor/patients/${patientId}/fhir-bundle`);
+}
+
 // ── Payments ─────────────────────────────────────────────────────
 export interface PaymentOrder {
   id: string;
@@ -281,14 +752,80 @@ export interface Appointment {
   doctor?: { name: string; specialization: string };
 }
 
+interface BackendAppointment {
+  id: number;
+  user_id: number;
+  doctor_id: number | null;
+  specialist: string;
+  date_time: string;
+  reason: string;
+  status: string;
+}
+
+interface BackendDoctor {
+  id: number;
+  full_name?: string;
+  name?: string;
+  specialization?: string;
+}
+
+function splitAppointmentDate(value: string): { date: string; time: string } {
+  const direct = value.match(/^(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})/);
+  if (direct) {
+    return { date: direct[1], time: direct[2] };
+  }
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) {
+    throw new Error('Invalid appointment date');
+  }
+
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return {
+    date: `${parsed.getFullYear()}-${pad(parsed.getMonth() + 1)}-${pad(parsed.getDate())}`,
+    time: `${pad(parsed.getHours())}:${pad(parsed.getMinutes())}`,
+  };
+}
+
+function normalizeAppointment(appointment: BackendAppointment): Appointment {
+  return {
+    id: appointment.id,
+    doctor_id: appointment.doctor_id ?? 0,
+    appointment_date: appointment.date_time,
+    status: appointment.status,
+    notes: appointment.reason,
+    doctor: {
+      name: appointment.specialist,
+      specialization: appointment.specialist,
+    },
+  };
+}
+
 export async function getAppointments(): Promise<Appointment[]> {
-  return apiFetch('/appointments/');
+  const appointments = await apiFetch<BackendAppointment[]>('/appointments/');
+  return appointments.map(normalizeAppointment);
 }
 
 export async function bookAppointment(data: { doctor_id: number; appointment_date: string; notes?: string }): Promise<Appointment> {
-  return apiFetch('/appointments/', { method: 'POST', body: JSON.stringify(data) });
+  const { date, time } = splitAppointmentDate(data.appointment_date);
+  const appointment = await apiFetch<BackendAppointment>('/appointments/', {
+    method: 'POST',
+    body: JSON.stringify({
+      doctor_id: data.doctor_id,
+      specialist: 'General Physician',
+      date,
+      time,
+      reason: data.notes || '',
+    }),
+  });
+  return normalizeAppointment(appointment);
 }
 
 export async function getDoctors(): Promise<{ id: number; name: string; specialization: string }[]> {
-  return apiFetch('/appointments/doctors');
+  const doctors = await apiFetch<BackendDoctor[]>('/appointments/doctors');
+  return doctors.map((doctor) => ({
+    id: doctor.id,
+    name: doctor.name || doctor.full_name || 'Doctor',
+    specialization: doctor.specialization || 'General Physician',
+  }));
 }
