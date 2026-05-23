@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Activity, AlertTriangle, FileText, CheckCircle2, ChevronDown, Cpu, Sparkles } from "lucide-react";
 import type { PredictionResult } from "@/lib/api";
@@ -70,6 +70,7 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
   const CustomSelect = ({ field, value, onChange }: { field: Field, value: number | undefined, onChange: (val: number) => void }) => {
     const [open, setOpen] = useState(false);
     const selectRef = useRef<HTMLDivElement>(null);
+    const listboxId = useId();
 
     useEffect(() => {
       const handleClickOutside = (event: MouseEvent) => {
@@ -90,6 +91,7 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
           className={`w-full bg-[var(--bg-card)] border ${open ? 'border-[var(--accent)] ring-2 ring-[var(--accent-border)]' : 'border-[var(--border)] hover:bg-[var(--bg-card-hover)]'} px-3 py-2 text-[var(--text-secondary)] text-xs cursor-pointer transition-all flex justify-between items-center`}
           role="combobox"
           aria-expanded={open}
+          aria-controls={listboxId}
           aria-haspopup="listbox"
           aria-label={`Select ${field.label}`}
           tabIndex={0}
@@ -109,6 +111,7 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.15 }}
               className="absolute top-full left-0 right-0 mt-2 bg-[var(--bg-card)] border border-[var(--border-focus)] overflow-hidden z-50 shadow-[var(--shadow-lg)]"
+              id={listboxId}
               role="listbox"
               aria-label={`Options for ${field.label}`}
             >

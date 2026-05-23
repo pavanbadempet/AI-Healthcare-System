@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Download, Trash2, Check, Loader2, HardDrive, Zap, ChevronLeft, AlertCircle, Globe, Monitor, ExternalLink } from 'lucide-react';
 import * as webllm from '@/lib/webllm';
+import { useAuthStore } from '@/lib/auth';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
-/* ─── Types ─── */
+/* Types */
 interface CatalogModel {
   name: string;
   label: string;
@@ -30,7 +31,7 @@ interface PullProgress {
   error?: string;
 }
 
-/* ─── Helpers ─── */
+/* Helpers */
 const SPEED_COLORS: Record<string, string> = {
   fastest: 'text-emerald-400',
   fast: 'text-green-400',
@@ -44,7 +45,7 @@ const QUALITY_BADGES: Record<string, string> = {
   excellent: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
 };
 
-/* ─── Component ─── */
+/* Component */
 export const ModelManager: React.FC<{
   onClose: () => void;
   onOllamaSelect: (model: string) => void;
@@ -54,6 +55,8 @@ export const ModelManager: React.FC<{
   currentWebLLMModel: string | null;
   webllmActive: boolean;
 }> = ({ onClose, onOllamaSelect, onWebLLMSelect, onWebLLMUnload, currentOllamaModel, currentWebLLMModel, webllmActive }) => {
+  const { token, user } = useAuthStore();
+  const isAdmin = user?.role === 'admin';
   const [catalog, setCatalog] = useState<CatalogModel[]>([]);
   const [downloaded, setDownloaded] = useState<DownloadedModel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,6 +99,11 @@ export const ModelManager: React.FC<{
   useEffect(() => { fetchData(); }, [fetchData]);
   useEffect(() => { return () => { abortRef.current?.abort(); }; }, []);
 
+  const modelMutationHeaders = useCallback(() => ({
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  }), [token]);
+
   // Auto-switch to Browser tab if no Ollama
   useEffect(() => {
     if (!loading && !ollamaAvailable && webGPUSupported) {
@@ -103,8 +111,12 @@ export const ModelManager: React.FC<{
     }
   }, [loading, ollamaAvailable, webGPUSupported]);
 
-  /* ─── Ollama Handlers ─── */
+  /* Ollama Handlers */
   const handlePull = useCallback(async (modelName: string) => {
+    if (!isAdmin) {
+      setPullProgress({ status: 'error', progress: 0, error: 'Admin access required to download server models.' });
+      return;
+    }
     setPulling(modelName);
     setPullProgress({ status: 'starting', progress: 0 });
     const controller = new AbortController();
@@ -112,12 +124,13 @@ export const ModelManager: React.FC<{
     try {
       const response = await fetch(`${API_BASE}/ai/models/pull`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: modelMutationHeaders(),
         body: JSON.stringify({ name: modelName }),
         signal: controller.signal,
       });
       if (!response.ok || !response.body) {
-        setPullProgress({ status: 'error', progress: 0, error: 'Failed to start download' });
+        const body = await response.json().catch(() => ({}));
+        setPullProgress({ status: 'error', progress: 0, error: body.detail || 'Failed to start download' });
         setPulling(null);
         return;
       }
@@ -154,28 +167,29 @@ export const ModelManager: React.FC<{
       }
       setPulling(null);
     }
-  }, [fetchData]);
+  }, [fetchData, isAdmin, modelMutationHeaders]);
 
   const handleDelete = useCallback(async (modelName: string) => {
+    if (!isAdmin) return;
     if (!confirm(`Delete ${modelName}? This cannot be undone.`)) return;
     setDeleting(modelName);
     try {
       const res = await fetch(`${API_BASE}/ai/models`, {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: modelMutationHeaders(),
         body: JSON.stringify({ name: modelName }),
       });
       if (res.ok) fetchData();
     } catch { /* ignore */ }
     finally { setDeleting(null); }
-  }, [fetchData]);
+  }, [fetchData, isAdmin, modelMutationHeaders]);
 
   const handleSelect = useCallback((modelName: string) => {
     onOllamaSelect(modelName);
     onClose();
   }, [onOllamaSelect, onClose]);
 
-  /* ─── WebLLM Handlers ─── */
+  /* WebLLM Handlers */
   const handleWebLLMLoad = useCallback(async (modelId: string) => {
     if (webllmLoading) return;
     setWebllmLoading(modelId);
@@ -291,7 +305,7 @@ export const ModelManager: React.FC<{
           </div>
 
         ) : tab === 'browser' ? (
-          /* ─── Browser AI (WebLLM) ─── */
+          /* Browser AI (WebLLM) */
           <>
             {!webGPUSupported ? (
               <div className="flex flex-col items-center justify-center py-16 text-center bg-zinc-900/30 rounded-2xl border border-zinc-800/50 mt-4">
@@ -375,7 +389,7 @@ export const ModelManager: React.FC<{
           </>
 
         ) : tab === 'library' ? (
-          /* ─── Ollama Library Catalog ─── */
+          /* Ollama Library Catalog */
           catalog.map(model => {
             const isDownloaded = model.downloaded || downloadedNames.has(model.name);
             const isPulling = pulling === model.name;
@@ -407,16 +421,20 @@ export const ModelManager: React.FC<{
                         <button onClick={() => handleSelect(model.name)} disabled={currentOllamaModel === model.name} className={`flex-1 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${currentOllamaModel === model.name ? 'bg-cyan-500/20 text-cyan-400 cursor-default' : 'bg-white text-zinc-950 hover:bg-zinc-200 shadow-[0_0_15px_rgba(255,255,255,0.1)]'}`}>
                           {currentOllamaModel === model.name ? <><Check className="w-4 h-4" /> Selected</> : <><Zap className="w-4 h-4" /> Set as Active Model</>}
                         </button>
-                        {currentOllamaModel !== model.name && (
-                          <button onClick={() => handleDelete(model.name)} disabled={deleting === model.name} className="px-4 py-2.5 rounded-lg border border-red-500/30 text-xs font-bold text-red-400 hover:bg-red-500/10 transition-colors flex items-center justify-center gap-2">
+                        {currentOllamaModel !== model.name && isAdmin && (
+                          <button onClick={() => handleDelete(model.name)} disabled={deleting === model.name} aria-label={`Delete ${model.name}`} className="px-4 py-2.5 rounded-lg border border-red-500/30 text-xs font-bold text-red-400 hover:bg-red-500/10 transition-colors flex items-center justify-center gap-2">
                             {deleting === model.name ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                           </button>
                         )}
                       </>
-                    ) : (
+                    ) : isAdmin ? (
                       <button onClick={() => handlePull(model.name)} disabled={!!pulling || !ollamaAvailable} className="w-full py-2.5 rounded-lg border border-cyan-500/50 text-xs font-bold text-cyan-400 hover:bg-cyan-500/10 transition-all flex items-center justify-center gap-2 disabled:opacity-40 disabled:border-zinc-700 disabled:text-zinc-500 disabled:hover:bg-transparent">
                         {isPulling ? <><Loader2 className="w-4 h-4 animate-spin" /> Downloading to Local Daemon...</> : <><Download className="w-4 h-4" /> Download to Local Hub</>}
                       </button>
+                    ) : (
+                      <div className="w-full py-2.5 rounded-lg border border-zinc-800 text-xs font-bold text-zinc-500 bg-zinc-950/40 flex items-center justify-center gap-2">
+                        <AlertCircle className="w-4 h-4" /> Admin access required
+                      </div>
                     )}
                   </div>
                 </div>
@@ -425,7 +443,7 @@ export const ModelManager: React.FC<{
           })
 
         ) : (
-          /* ─── Downloaded Models ─── */
+          /* Downloaded Models */
           downloaded.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center bg-zinc-900/30 rounded-2xl border border-zinc-800/50 mt-4">
               <HardDrive className="w-12 h-12 text-zinc-700 mb-4" />
@@ -453,8 +471,8 @@ export const ModelManager: React.FC<{
                       <button onClick={() => handleSelect(model.name)} disabled={isActive} className={`py-2 px-4 rounded-lg text-xs font-bold transition-all shadow-md ${isActive ? 'bg-cyan-500/20 text-cyan-400 cursor-default shadow-none' : 'bg-white text-zinc-950 hover:bg-zinc-200 shadow-[0_0_15px_rgba(255,255,255,0.1)]'}`}>
                         {isActive ? 'Active' : 'Select'}
                       </button>
-                      {!isActive && (
-                        <button onClick={() => handleDelete(model.name)} disabled={deleting === model.name} className="p-2 rounded-lg border border-zinc-800 hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-400 text-zinc-500 transition-colors">
+                      {!isActive && isAdmin && (
+                        <button onClick={() => handleDelete(model.name)} disabled={deleting === model.name} aria-label={`Delete ${model.name}`} className="p-2 rounded-lg border border-zinc-800 hover:border-red-500/50 hover:bg-red-500/10 hover:text-red-400 text-zinc-500 transition-colors">
                           {deleting === model.name ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                         </button>
                       )}
