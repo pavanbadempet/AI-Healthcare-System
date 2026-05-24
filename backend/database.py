@@ -16,7 +16,7 @@ connect_args = {}
 if "sqlite" in SQLALCHEMY_DATABASE_URL:
     connect_args = {"check_same_thread": False}
 
-# Configure Pooling only for non-SQLite (e.g. Postgres)
+# SECURITY: Configure Pooling for better resource management
 engine_args = {
     "connect_args": connect_args,
     "pool_pre_ping": True,
@@ -24,8 +24,9 @@ engine_args = {
 }
 
 if "sqlite" not in SQLALCHEMY_DATABASE_URL:
-    engine_args["pool_size"] = 5
-    engine_args["max_overflow"] = 0
+    # SECURITY: Increased pool_size from 5 to 20, added max_overflow to prevent exhaustion
+    engine_args["pool_size"] = 20
+    engine_args["max_overflow"] = 10
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, 
@@ -42,6 +43,7 @@ if "sqlite" in SQLALCHEMY_DATABASE_URL:
         cursor.execute("PRAGMA synchronous=NORMAL") # Balance ACID with performance in WAL
         cursor.execute("PRAGMA foreign_keys=ON") # Strict OLTP data integrity
         cursor.close()
+        
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()

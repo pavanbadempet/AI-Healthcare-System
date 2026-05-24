@@ -35,6 +35,7 @@ def run_migrations():
     """
     Smart migration script: Checks for missing columns before trying to add them.
     This prevents Postgres transaction aborts if a column already exists.
+    SECURITY: Column names are validated against whitelist.
     """
     # Map of column_name -> definition
     required_columns = {
@@ -45,29 +46,36 @@ def run_migrations():
         "stress_level": "TEXT", 
         "psych_profile": "TEXT", 
         "plan_tier": "VARCHAR", 
-        "subscription_expiry": "TIMESTAMP", # Changed from DATETIME for Postgres compat
+        "subscription_expiry": "TIMESTAMP",
         "razorpay_customer_id": "VARCHAR",
         "created_at": "TIMESTAMP",
         "role": "VARCHAR",
         "consultation_fee": "FLOAT",
         "specialization": "VARCHAR",
-        # Note: Foreign keys are harder to add via simple script, assuming basic column add for now
-        "doctor_id": "INTEGER" 
+    }
+    
+    # SECURITY: Whitelist of allowed columns to prevent SQL injection
+    ALLOWED_COLUMNS = {
+        "about_me", "diet", "activity_level", "sleep_hours", 
+        "stress_level", "psych_profile", "plan_tier", "subscription_expiry",
+        "razorpay_customer_id", "created_at", "role", "consultation_fee", "specialization"
     }
     
     try:
         inspector = inspect(database.engine)
         if not inspector.has_table("users"):
-            # Tables created by create_all, skip
             return
 
         existing_columns = {col['name'] for col in inspector.get_columns("users")}
         
         with database.engine.connect() as conn:
-            # Enable autocommit for schema changes if supported (converts simple executes)
-            # or just execute one by one.
             count = 0
             for col_name, col_type in required_columns.items():
+                # SECURITY: Validate column name against whitelist
+                if col_name not in ALLOWED_COLUMNS:
+                    logger.error(f"Migration: Rejected invalid column '{col_name}'")
+                    continue
+                    
                 if col_name not in existing_columns:
                     try:
                         logger.info(f"Migration: Adding missing column '{col_name}'...")
@@ -120,6 +128,26 @@ def create_default_admin():
     finally:
         session.close()
 
+# --- Security Middleware ---
+
+class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
+    """Prevent request body DoS attacks. SECURITY: Limit request size to 1MB."""
+    MAX_SIZE = 1_000_000  # 1MB limit
+    
+    async def dispatch(self, request: Request, call_next):
+        content_length = request.headers.get('content-length')
+        if content_length:
+            try:
+                size = int(content_length)
+                if size > self.MAX_SIZE:
+                    return JSONResponse(
+                        status_code=413,
+                        content={"detail": "Request entity too large (max 1MB)"}
+                    )
+            except (ValueError, TypeError):
+                pass
+        return await call_next(request)
+
 # --- App ---
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -149,6 +177,10 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response = await call_next(request)
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        # SECURITY: HSTS only for non-localhost (allow local development)
+        if "127.0.0.1" not in request.url.hostname:
+            response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains; preload"
         return response
 
 class ExceptionMiddleware(BaseHTTPMiddleware):
@@ -158,6 +190,7 @@ class ExceptionMiddleware(BaseHTTPMiddleware):
         except Exception:
             error_id = str(uuid.uuid4())[:8]
             logger.error("Unhandled server error %s", error_id)
+            # SECURITY: Return generic error to client, full error logged server-side
             return JSONResponse(status_code=500, content={"detail": f"Error: {error_id}"})
 
 class LoggingMiddleware(BaseHTTPMiddleware):
@@ -174,11 +207,14 @@ if not os.getenv("TESTING"):
     app.add_middleware(ExceptionMiddleware)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(SecurityHeadersMiddleware)
+app.add_middleware(RequestSizeLimitMiddleware)  # SECURITY: Added request size limit
 app.add_middleware(CORSMiddleware,
     allow_origins=["http://127.0.0.1:3000"],
     allow_credentials=True, 
-    allow_methods=["*"], 
-    allow_headers=["*"])
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],  # SECURITY: Explicit methods
+    allow_headers=["Content-Type", "Authorization"],  # SECURITY: Explicit headers
+    expose_headers=["Content-Disposition"],
+    max_age=600)  # Cache preflight
 app.add_middleware(TrustedHostMiddleware, 
     allowed_hosts=["127.0.0.1", "aio-health-backend.onrender.com"])
 app.add_middleware(RateLimitMiddleware)

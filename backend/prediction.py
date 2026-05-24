@@ -8,7 +8,7 @@ from typing import Dict, Any, List
 from functools import lru_cache
 
 # --- Custom Modules ---
-from . import explainability, schemas, features
+from . import explainability, schemas, features, security
 
 # --- Logging Configuration ---
 logger = logging.getLogger(__name__)
@@ -156,7 +156,7 @@ MEDICAL_DISCLAIMER = ("This is an AI-assisted screening tool, not a medical diag
 def predict_kidney(data: schemas.KidneyInput) -> Dict[str, Any]:
     if not kidney_model or not kidney_scaler:
          raise HTTPException(status_code=503, detail="Kidney Model not trained/loaded.")
-             
+              
     try:
         # Features Verified: ['age', 'bp', 'sg', 'al', 'su', 'rbc', 'pc', 'pcc', 'ba', 'bgr', 'bu', 'sc', 'sod', 'pot', 'hemo', 'pcv', 'wc', 'rc', 'htn', 'dm', 'cad', 'appet', 'pe', 'ane']
         feature_names = features.KIDNEY_FEATURES
@@ -180,14 +180,15 @@ def predict_kidney(data: schemas.KidneyInput) -> Dict[str, Any]:
         return {"prediction": result, "raw": raw_pred, "confidence": confidence, "risk_level": risk_level, "disclaimer": MEDICAL_DISCLAIMER}
         
     except Exception as e:
-        logger.error(f"Kidney Prediction Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Kidney Prediction Error: {e}", exc_info=True)
+        # SECURITY: Return generic error to client
+        raise HTTPException(status_code=500, detail="Prediction service temporarily unavailable")
 
 @router.post("/predict/lungs", response_model=Dict[str, Any])
 def predict_lungs(data: schemas.LungInput) -> Dict[str, Any]:
     if not lungs_model or not lungs_scaler:
          raise HTTPException(status_code=503, detail="Lung Model not trained/loaded.")
-             
+              
     try:
         # Features Verified: UPPERCASE ['GENDER', 'AGE', 'SMOKING', ...]
         feature_names = features.LUNG_FEATURES
@@ -211,8 +212,9 @@ def predict_lungs(data: schemas.LungInput) -> Dict[str, Any]:
         return {"prediction": result, "raw": raw_pred, "confidence": confidence, "risk_level": risk_level, "disclaimer": MEDICAL_DISCLAIMER}
         
     except Exception as e:
-        logger.error(f"Lung Prediction Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Lung Prediction Error: {e}", exc_info=True)
+        # SECURITY: Return generic error to client
+        raise HTTPException(status_code=500, detail="Prediction service temporarily unavailable")
 
 @router.post("/predict/diabetes", response_model=Dict[str, Any])
 def predict_diabetes(data: schemas.DiabetesInput) -> Dict[str, Any]:
@@ -236,8 +238,9 @@ def predict_diabetes(data: schemas.DiabetesInput) -> Dict[str, Any]:
         confidence, risk_level = _get_confidence(diabetes_model, [input_list])
         return {"prediction": result, "raw": int(prediction), "confidence": confidence, "risk_level": risk_level, "disclaimer": MEDICAL_DISCLAIMER}
     except Exception as e:
-        logger.error(f"Diabetes Prediction Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Diabetes Prediction Error: {e}", exc_info=True)
+        # SECURITY: Return generic error to client
+        raise HTTPException(status_code=500, detail="Prediction service temporarily unavailable")
 
 @router.post("/predict/heart", response_model=Dict[str, Any])
 def predict_heart(data: schemas.HeartInput) -> Dict[str, Any]:
@@ -261,8 +264,9 @@ def predict_heart(data: schemas.HeartInput) -> Dict[str, Any]:
         confidence, risk_level = _get_confidence(heart_model, [input_list])
         return {"prediction": result, "raw": raw_val, "confidence": confidence, "risk_level": risk_level, "disclaimer": MEDICAL_DISCLAIMER}
     except Exception as e:
-        logger.error(f"Heart Prediction Error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        logger.error(f"Heart Prediction Error: {e}", exc_info=True)
+        # SECURITY: Return generic error to client
+        raise HTTPException(status_code=500, detail="Prediction service temporarily unavailable")
 
 @router.post("/predict/liver", response_model=Dict[str, Any])
 def predict_liver(data: schemas.LiverInput) -> Dict[str, Any]:
@@ -299,10 +303,9 @@ def predict_liver(data: schemas.LiverInput) -> Dict[str, Any]:
         return {"prediction": result, "raw": int(val), "confidence": confidence, "risk_level": risk_level, "disclaimer": MEDICAL_DISCLAIMER}
 
     except Exception as e:
-        import traceback
-        error_msg = f"Liver Logic Error: {str(e)} | Trace: {traceback.format_exc()}"
-        logger.error(error_msg)
-        raise HTTPException(status_code=500, detail=f"Liver Prediction Failed: {str(e)}")
+        logger.error(f"Liver Prediction Error: {e}", exc_info=True)
+        # SECURITY: Return generic error to client
+        raise HTTPException(status_code=500, detail="Prediction service temporarily unavailable")
 
 # --- Explanation Endpoints (SHAP) ---
 

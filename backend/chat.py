@@ -2,11 +2,12 @@
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, validator
 from langchain_core.messages import HumanMessage, AIMessage
-from . import models, database, auth, rag, agent, schemas, pdf_generator
+from . import models, database, auth, rag, agent, schemas, pdf_generator, security
 import json
 import datetime
+import re
 from typing import List, Dict, Any, Optional
 import logging
 
@@ -19,14 +20,23 @@ class Message(BaseModel):
     content: str
 
 class ChatRequest(BaseModel):
-    message: str
-    history: List[Message] = []
+    message: str = Field(..., max_length=2000, min_length=1)
+    history: List[Message] = Field(default=[], max_items=50)
     current_context: Dict[str, Any] = {}
+    
+    @validator('message')
+    def sanitize_message(cls, v):
+        """SECURITY: Sanitize user input to prevent injection attacks."""
+        # Remove null bytes and excessive whitespace
+        v = v.replace('\x00', '').replace('\r', '')
+        # Limit consecutive newlines
+        v = re.sub(r'\n{3,}', '\n\n', v)
+        return v.strip()
 
 class RecordCreate(BaseModel):
-    record_type: str
+    record_type: str = Field(..., max_length=50)
     data: Dict[str, Any]
-    prediction: str
+    prediction: str = Field(..., max_length=500)
 
 
 # --- Chat Endpoints ---
@@ -35,6 +45,7 @@ class RecordCreate(BaseModel):
 def delete_chat_history(current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
     db.query(models.ChatLog).filter(models.ChatLog.user_id == current_user.id).delete()
     db.commit()
+    security.log_audit_event(db, "DELETE_CHAT_HISTORY", current_user.id, admin_id=current_user.id)
     return {"status": "success"}
 
 @router.get("/chat/history")
@@ -59,6 +70,7 @@ def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth
             log = models.ChatLog(user_id=current_user.id, role="user", content=request.message)
             db.add(log)
             db.commit()
+            security.log_audit_event(db, "CHAT_MESSAGE", current_user.id)
         except Exception as e:
             logger.error(f"Save error: {e}")
     
@@ -109,8 +121,9 @@ def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth
         return {"response": response}
         
     except Exception as e:
-        logger.error(f"Agent error: {e}")
-        return {"response": "Sorry, I'm having trouble right now. Please try again.", "error": str(e)}
+        logger.error(f"Agent error: {e}", exc_info=True)
+        # SECURITY: Return generic error to client
+        return {"response": "Sorry, I'm having trouble right now. Please try again."}
 
 
 # --- Record Endpoints ---
@@ -126,6 +139,7 @@ def save_health_record(record: RecordCreate, current_user: models.User = Depends
     db.add(db_record)
     db.commit()
     rag.add_checkup_to_db(str(current_user.id), str(db_record.id), record.record_type, record.data, record.prediction, str(db_record.timestamp))
+    security.log_audit_event(db, "CREATE_HEALTH_RECORD", current_user.id, details=f"Type: {record.record_type}")
     return {"status": "success"}
 
 @router.get("/records", response_model=List[schemas.HealthRecordResponse])
@@ -143,6 +157,7 @@ def delete_health_record(record_id: int, current_user: models.User = Depends(aut
     db.delete(record)
     db.commit()
     rag.delete_record_from_db(str(record_id))
+    security.log_audit_event(db, "DELETE_HEALTH_RECORD", current_user.id, details=f"Record ID: {record_id}")
     return {"status": "success"}
 
 
@@ -161,5 +176,7 @@ def download_health_report(current_user: models.User = Depends(auth.get_current_
         health_records=records_list
     )
     
-    filename = f"health_report_{current_user.username}_{datetime.datetime.now().strftime('%Y%m%d')}.pdf"
+    # SECURITY: Sanitize filename to prevent path traversal
+    safe_username = re.sub(r'[^a-zA-Z0-9_-]', '', current_user.username)
+    filename = f"health_report_{safe_username}_{datetime.datetime.now().strftime('%Y%m%d')}.pdf"
     return Response(content=pdf_bytes, media_type="application/pdf", headers={"Content-Disposition": f"attachment; filename={filename}"})

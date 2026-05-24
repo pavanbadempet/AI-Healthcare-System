@@ -1,5 +1,6 @@
 -- Enterprise Database Initialization Script
 -- Creates optimized schemas, indexes, and enterprise features
+-- SECURITY: Admin user must be created via environment variables, not hardcoded
 
 -- Enable required extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
@@ -38,13 +39,14 @@ CREATE TABLE IF NOT EXISTS app_data.users (
     
     -- Privacy and compliance
     allow_data_collection BOOLEAN DEFAULT true,
-    data_retention_days INTEGER DEFAULT 2555, -- 7 years default
+    data_retention_days INTEGER DEFAULT 2555,
     consent_version VARCHAR(20) DEFAULT 'v1.0',
     
     -- Subscription
     plan_tier VARCHAR(50) DEFAULT 'free' CHECK (plan_tier IN ('free', 'pro', 'clinic', 'enterprise')),
     subscription_expiry TIMESTAMP WITH TIME ZONE,
     stripe_customer_id VARCHAR(255),
+    razorpay_customer_id VARCHAR(255),
     
     -- Doctor specific
     consultation_fee DECIMAL(10,2) DEFAULT 500.00,
@@ -59,7 +61,6 @@ CREATE TABLE IF NOT EXISTS app_data.users (
     manager_id UUID REFERENCES app_data.users(id),
     is_active BOOLEAN DEFAULT true,
     last_login TIMESTAMP WITH TIME ZONE,
-    
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -142,18 +143,8 @@ CREATE INDEX IF NOT EXISTS idx_health_records_status ON app_data.health_records(
 
 CREATE INDEX IF NOT EXISTS idx_audit_user_id ON audit.activity_log(user_id);
 CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON audit.activity_log(timestamp);
-CREATE INDEX IF NOT EXISTS idx_audit_action_type ON audit.activity_log(action_type);
 
-CREATE INDEX IF NOT EXISTS idx_predictions_model_id ON ml.predictions(model_id);
-CREATE INDEX IF NOT EXISTS idx_predictions_timestamp ON ml.predictions(timestamp);
-
--- GIN indexes for JSONB
-CREATE INDEX IF NOT EXISTS idx_health_records_data_gin ON app_data.health_records USING GIN(data);
-CREATE INDEX IF NOT EXISTS idx_health_records_prediction_gin ON app_data.health_records USING GIN(prediction);
-CREATE INDEX IF NOT EXISTS idx_audit_old_values_gin ON audit.activity_log USING GIN(old_values);
-CREATE INDEX IF NOT EXISTS idx_audit_new_values_gin ON audit.activity_log USING GIN(new_values);
-
--- Create trigger for updated_at timestamp
+-- Create update trigger for updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -162,8 +153,11 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
-CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON app_data.users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_health_records_updated_at BEFORE UPDATE ON app_data.health_records FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON app_data.users
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_health_records_updated_at BEFORE UPDATE ON app_data.health_records
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- Create audit trigger
 CREATE OR REPLACE FUNCTION audit_trigger_function()
@@ -186,61 +180,12 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Apply audit triggers
-CREATE TRIGGER audit_users AFTER INSERT OR UPDATE OR DELETE ON app_data.users FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
-CREATE TRIGGER audit_health_records AFTER INSERT OR UPDATE OR DELETE ON app_data.health_records FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
+CREATE TRIGGER audit_users AFTER INSERT OR UPDATE OR DELETE ON app_data.users
+    FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
+CREATE TRIGGER audit_health_records AFTER INSERT OR UPDATE OR DELETE ON app_data.health_records
+    FOR EACH ROW EXECUTE FUNCTION audit_trigger_function();
 
--- Create row-level security policies (HIPAA compliance)
-ALTER TABLE app_data.users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE app_data.health_records ENABLE ROW LEVEL SECURITY;
-
--- Policy: Users can only see their own data (except admins)
-CREATE POLICY user_isolation_policy ON app_data.users
-    FOR ALL
-    TO authenticated_user
-    USING (id = current_setting('app.current_user_id')::UUID OR current_setting('app.user_role') = 'admin');
-
-CREATE POLICY health_record_isolation_policy ON app_data.health_records
-    FOR ALL
-    TO authenticated_user
-    USING (user_id = current_setting('app.current_user_id')::UUID OR current_setting('app.user_role') = 'admin');
-
--- Create views for common queries
-CREATE OR REPLACE VIEW app_data.patient_summary AS
-SELECT 
-    u.id,
-    u.full_name,
-    u.email,
-    u.dob,
-    u.plan_tier,
-    COUNT(hr.id) as total_records,
-    MAX(hr.created_at) as last_record_date,
-    array_agg(DISTINCT hr.record_type) as record_types
-FROM app_data.users u
-LEFT JOIN app_data.health_records hr ON u.id = hr.user_id
-WHERE u.role = 'patient'
-GROUP BY u.id, u.full_name, u.email, u.dob, u.plan_tier;
-
--- Create materialized view for analytics
-CREATE MATERIALIZED VIEW app_data.health_analytics AS
-SELECT 
-    DATE_TRUNC('month', hr.created_at) as month,
-    hr.record_type,
-    COUNT(*) as record_count,
-    AVG((hr.prediction->>'confidence')::DECIMAL) as avg_confidence,
-    COUNT(DISTINCT hr.user_id) as unique_patients
-FROM app_data.health_records hr
-GROUP BY DATE_TRUNC('month', hr.created_at), hr.record_type
-ORDER BY month DESC;
-
--- Create refresh function for materialized view
-CREATE OR REPLACE FUNCTION refresh_health_analytics()
-RETURNS void AS $$
-BEGIN
-    REFRESH MATERIALIZED VIEW CONCURRENTLY app_data.health_analytics;
-END;
-$$ LANGUAGE plpgsql;
-
--- Grant permissions (adjust as needed)
+-- Grant permissions
 GRANT USAGE ON SCHEMA app_data TO healthcare_admin;
 GRANT USAGE ON SCHEMA audit TO healthcare_admin;
 GRANT USAGE ON SCHEMA ml TO healthcare_admin;
@@ -248,9 +193,7 @@ GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA app_data TO healthcare_admin;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA audit TO healthcare_admin;
 GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA ml TO healthcare_admin;
 
--- Create default admin user (password should be changed immediately)
-INSERT INTO app_data.users (username, email, hashed_password, full_name, role, plan_tier)
-VALUES ('admin', 'admin@healthcare.local', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj6ukx.LFvO6', 'System Administrator', 'super_admin', 'enterprise')
-ON CONFLICT (username) DO NOTHING;
+-- NOTE: Admin user must be created via environment variables during app initialization
+-- DO NOT hardcode credentials in SQL. Use backend/main.py create_default_admin() function
 
 COMMIT;
