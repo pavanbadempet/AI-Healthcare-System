@@ -37,12 +37,15 @@ def test_generation_node(mock_agent_env):
         "user_profile": "Male, 30",
         "psych_profile": "Friendly",
         "tavily_results": "Some web info",
-        "analysis_results": "None"
+        "analysis_results": "Clinical analysis says use structured heart form."
     }
     
     result = generation_node(state)
          
     mock_instance = mock_agent_env["gemini"]
     assert mock_instance.invoke.called
+    system_prompt = mock_instance.invoke.call_args.args[0][0].content
+    assert "Clinical Analysis Context" in system_prompt
+    assert "Clinical analysis says use structured heart form." in system_prompt
     assert isinstance(result["messages"][-1], AIMessage)
     assert result["messages"][-1].content == "Mocked AI Response"
