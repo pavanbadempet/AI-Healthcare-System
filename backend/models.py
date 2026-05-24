@@ -40,6 +40,7 @@ class User(Base):
     
     # Doctor Specific
     consultation_fee = Column(Float, default=500.0)
+    specialization = Column(String, nullable=True)
     
     # AI Memory
     psych_profile = Column(Text, nullable=True) # Long term memory summary
