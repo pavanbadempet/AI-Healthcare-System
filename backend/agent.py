@@ -19,6 +19,20 @@ logger = logging.getLogger(__name__)
 # Load keys
 load_dotenv()
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY")
+AI_GENERATION_FAILURE_MESSAGE = "AI is temporarily unavailable. Please try again shortly."
+SEARCH_FAILURE_MESSAGE = "Search temporarily unavailable."
+SEARCH_UPSTREAM_ERROR_MESSAGE = "Search service returned an error."
+SUPPORTED_ANALYSIS_AREAS = {
+    "heart": ("heart", "Heart disease structured prediction"),
+    "cardiac": ("heart", "Heart disease structured prediction"),
+    "diabetes": ("diabetes", "Diabetes structured prediction"),
+    "glucose": ("diabetes", "Diabetes structured prediction"),
+    "liver": ("liver", "Liver disease structured prediction"),
+    "kidney": ("kidney", "Kidney disease structured prediction"),
+    "renal": ("kidney", "Kidney disease structured prediction"),
+    "lung": ("lungs", "Lung health structured prediction"),
+    "lungs": ("lungs", "Lung health structured prediction"),
+}
 
 
 # ── core_ai-backed LLM Wrapper ────────────────────────────────────────
@@ -58,8 +72,8 @@ class CoreAIWrapper:
             err_str = str(e)
             if "429" in err_str or "Quota" in err_str:
                 return AIMessage(content="⚠️ **Quota Exceeded.** Please wait a moment or configure a local Ollama model for unlimited free inference.")
-            logger.error(f"AI generation error: {e}")
-            return AIMessage(content=f"AI Error: {str(e)}")
+            logger.error("AI generation failed")
+            return AIMessage(content=AI_GENERATION_FAILURE_MESSAGE)
 
 
 # Global instance — uses multi-tier inference automatically
@@ -103,9 +117,9 @@ def tavily_search(query: str):
             data = resp.json()
             return f"Answer: {data.get('answer', '')}\nSources: {[r['url'] for r in data.get('results', [])]}"
         else:
-            return f"Search Error: {resp.text}"
-    except Exception as e:
-        return f"Search Exception: {str(e)}"
+            return SEARCH_UPSTREAM_ERROR_MESSAGE
+    except Exception:
+        return SEARCH_FAILURE_MESSAGE
 
 # --- 4. Nodes ---
 
@@ -139,11 +153,67 @@ def research_node(state: AgentState):
     results = tavily_search(query)
     return {"tavily_results": results}
 
+
+def _coerce_context(value: object) -> str:
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def _compact_context(value: object, *, limit: int = 700) -> str:
+    text = " ".join(_coerce_context(value).split())
+    if len(text) <= limit:
+        return text
+    return text[: limit - 3].rstrip() + "..."
+
+
+def build_clinical_analysis_context(state: AgentState) -> str:
+    """Build deterministic clinical analysis from already-scoped agent context."""
+    messages = state.get("messages", [])
+    latest_message = messages[-1].content if messages else ""
+    available_reports = _compact_context(state.get("available_reports"))
+    rag_memories = _compact_context(state.get("rag_memories"), limit=500)
+    combined_text = f"{latest_message} {available_reports} {rag_memories}".lower()
+
+    matched = []
+    seen = set()
+    for keyword, (area, label) in SUPPORTED_ANALYSIS_AREAS.items():
+        if keyword in combined_text and area not in seen:
+            matched.append((area, label))
+            seen.add(area)
+
+    lines = []
+    if available_reports or rag_memories:
+        lines.append("Relevant patient context:")
+        if available_reports:
+            lines.append(f"- Recent records: {available_reports}")
+        if rag_memories:
+            lines.append(f"- Related memory: {rag_memories}")
+    else:
+        lines.append("No prior scoped health records were provided for this analysis request.")
+
+    if matched:
+        model_labels = ", ".join(label for _, label in matched)
+        lines.append(f"Applicable structured prediction areas: {model_labels}.")
+    else:
+        lines.append(
+            "No supported prediction area was clearly identified from the request or scoped records."
+        )
+
+    lines.append(
+        "Do not produce a numeric risk score from chat text alone; ask the user to use "
+        "the validated structured prediction form before giving a model-based risk estimate."
+    )
+    lines.append(
+        "Frame the answer as educational support, mention uncertainty, and recommend a "
+        "qualified clinician for diagnosis, treatment, or urgent symptoms."
+    )
+    return "\n".join(lines)
+
+
 def analyst_node(state: AgentState):
-    """Verifies access to ML tools."""
-    # In a full super-agent, this would parse arguments and call ml_service.
-    # For now, we simulate the 'Board' recognizing the need for tools.
-    return {"analysis_results": "ML Models (Heart, Diabetes, Liver) are available for invocation."}
+    """Builds deterministic clinical analysis context from scoped records."""
+    return {"analysis_results": build_clinical_analysis_context(state)}
 
 def profiler_node(state: AgentState):
     """
@@ -165,6 +235,7 @@ def generation_node(state: AgentState):
     medical_history = state.get("available_reports", "")
     rag_context = state.get("rag_memories", "")
     web_data = state.get("tavily_results", "")
+    analysis_context = state.get("analysis_results", "")
     conv_count = state.get("conversation_count", 1)
     
     # Determine conversation phase for engagement style
@@ -180,6 +251,7 @@ def generation_node(state: AgentState):
         user_profile=profile,
         medical_history=medical_history,
         rag_context=rag_context,
+        analysis_context=analysis_context if analysis_context else "N/A",
         web_context=web_data if web_data else "N/A",
         engagement_style=engagement_style,
     )
@@ -197,7 +269,7 @@ workflow = StateGraph(AgentState)
 # Nodes
 workflow.add_node("supervisor", supervisor_node)
 workflow.add_node("researcher", research_node)
-workflow.add_node("analyst", analyst_node) # placeholder for tool calling
+workflow.add_node("analyst", analyst_node)
 workflow.add_node("generate", generation_node)
 workflow.add_node("guardrail", guardrail_node)
 
