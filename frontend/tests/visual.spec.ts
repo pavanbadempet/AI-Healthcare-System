@@ -9,11 +9,20 @@ test.describe('B2B Clinical Enterprise UI Consistency', () => {
     await expect(loginForm).toBeVisible();
 
     // Verify background is strictly monochromatic (not neon/gamer)
-    const bodyBg = await page.evaluate(() => {
-      return window.getComputedStyle(document.body).backgroundColor;
+    const clinicalShellStyles = await page.evaluate(() => {
+      const bodyStyles = window.getComputedStyle(document.body);
+      const shell = document.querySelector('.min-h-screen');
+      const shellStyles = shell ? window.getComputedStyle(shell) : null;
+      return {
+        bodyBg: bodyStyles.backgroundColor,
+        primaryBgToken: window.getComputedStyle(document.documentElement).getPropertyValue('--bg-primary').trim(),
+        shellBg: shellStyles?.backgroundColor ?? null,
+      };
     });
-    // RGB(0,0,0) or dark variant expected, not bright glowing gradients
-    expect(bodyBg).toMatch(/rgba?\(0, 0, 0|rgba?\(10, 10, 10/);
+    // Compiled CSS must be loaded; transparent default styles can make unstyled pages pass weak checks.
+    expect(['#000', '#000000']).toContain(clinicalShellStyles.primaryBgToken);
+    expect(clinicalShellStyles.bodyBg).toBe('rgb(0, 0, 0)');
+    expect(clinicalShellStyles.shellBg).toBe('rgb(0, 0, 0)');
 
     // Take a visual snapshot to lock in the CSS rules
     await expect(page).toHaveScreenshot('login-clinical-style.png', { maxDiffPixels: 100 });
