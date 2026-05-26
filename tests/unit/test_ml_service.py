@@ -6,6 +6,7 @@ import pytest
 from unittest.mock import patch, MagicMock
 import numpy as np
 
+from backend import ml_service as ml_service_module
 from backend.ml_service import MLService, ml_service
 
 
@@ -76,6 +77,23 @@ class TestMLServiceDiabetes:
             
             assert "Error" in result
 
+    def test_predict_diabetes_exception_hides_sensitive_details(self, caplog):
+        """Diabetes prediction failures should not expose input/provider details."""
+        sensitive_error = "Model error token=diabetes-secret patient_name=Sensitive User"
+        caplog.set_level("ERROR", logger="backend.ml_service")
+
+        with patch("backend.ml_service.prediction.predict_diabetes", side_effect=Exception(sensitive_error)):
+            service = MLService()
+            result = service.predict_diabetes(
+                gender="male", age=50, hypertension=1, heart_disease=0,
+                smoking_history="never", bmi=28.0, hba1c_level=7.0, blood_glucose_level=200
+            )
+
+        assert result == ml_service_module.ML_PREDICTION_FAILURE_MESSAGE
+        assert sensitive_error not in result
+        assert "diabetes-secret" not in caplog.text
+        assert "Sensitive User" not in caplog.text
+
 
 class TestMLServiceHeart:
     """Tests for MLService.predict_heart_disease method."""
@@ -106,6 +124,24 @@ class TestMLServiceHeart:
             )
             
             assert "Error" in result
+
+    def test_predict_heart_exception_hides_sensitive_details(self, caplog):
+        """Heart prediction failures should not expose input/provider details."""
+        sensitive_error = "Heart model error token=heart-secret patient_name=Sensitive User"
+        caplog.set_level("ERROR", logger="backend.ml_service")
+
+        with patch("backend.ml_service.prediction.predict_heart", side_effect=Exception(sensitive_error)):
+            service = MLService()
+            result = service.predict_heart_disease(
+                age=60, gender="male", cp=2, trestbps=140, chol=250,
+                fbs=1, restecg=0, thalach=150, exang=0, oldpeak=1.5,
+                slope=1, ca=0, thal=2
+            )
+
+        assert result == ml_service_module.ML_PREDICTION_FAILURE_MESSAGE
+        assert sensitive_error not in result
+        assert "heart-secret" not in caplog.text
+        assert "Sensitive User" not in caplog.text
 
 
 class TestMLServiceLiver:
@@ -150,6 +186,24 @@ class TestMLServiceLiver:
             )
             
             assert "Error" in result
+
+    def test_predict_liver_exception_hides_sensitive_details(self, caplog):
+        """Liver prediction failures should not expose input/provider details."""
+        sensitive_error = "Liver model error token=liver-secret patient_name=Sensitive User"
+        caplog.set_level("ERROR", logger="backend.ml_service")
+
+        with patch("backend.ml_service.prediction.predict_liver", side_effect=Exception(sensitive_error)):
+            service = MLService()
+            result = service.predict_liver_disease(
+                age=50, gender="male", total_bilirubin=1.0,
+                alkaline_phosphotase=200, alamine_aminotransferase=40,
+                albumin_globulin_ratio=1.0
+            )
+
+        assert result == ml_service_module.ML_PREDICTION_FAILURE_MESSAGE
+        assert sensitive_error not in result
+        assert "liver-secret" not in caplog.text
+        assert "Sensitive User" not in caplog.text
 
 
 class TestMLServiceSingleton:

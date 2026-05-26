@@ -1,12 +1,13 @@
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from unittest.mock import MagicMock, patch
-from backend.report import router as report_router
-import io
+from unittest.mock import patch
+from backend import auth, models
+from backend.report import REPORT_ANALYSIS_DISCLAIMER, router as report_router
 
 # Wrap router in App to avoid middleware scope issues
 app = FastAPI()
 app.include_router(report_router)
+app.dependency_overrides[auth.get_current_user] = lambda: models.User(id=1, username="report_test")
 
 client = TestClient(app)
 
@@ -23,7 +24,7 @@ def test_analyze_report_valid_file():
         )
         
         assert resp.status_code == 200
-        assert resp.json() == mock_result
+        assert resp.json() == {**mock_result, "disclaimer": REPORT_ANALYSIS_DISCLAIMER}
 
 def test_analyze_report_invalid_type():
     resp = client.post(

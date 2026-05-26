@@ -8,11 +8,7 @@ from backend.rag import SimpleVectorStore, add_checkup_to_db, add_interaction_to
 # FIXTURE: Mock Embedding Model GLOBAL to prevent download
 @pytest.fixture(autouse=True)
 def mock_embedding_model():
-    # Mock google.generativeai
-    with patch("google.generativeai.embed_content") as mock_embed, \
-         patch("google.generativeai.configure") as mock_conf:
-         
-        mock_embed.return_value = {'embedding': [0.1] * 5}
+    with patch("backend.rag.core_ai.embed_text", return_value=[0.1] * 5) as mock_embed:
         yield mock_embed
 
 # --- SimpleVectorStore Tests ---
@@ -68,24 +64,39 @@ def test_store_search_filter():
 
 # --- High Level Function Tests (Exception Handling) ---
 
-def test_add_checkup_exception():
+def test_add_checkup_exception(caplog):
     mock_store = MagicMock()
-    mock_store.add.side_effect = Exception("Store Error")
+    sensitive_error = "Store error token=rag-secret patient_name=Sensitive User"
+    mock_store.add.side_effect = Exception(sensitive_error)
+    caplog.set_level("ERROR", logger="backend.rag")
     with patch("backend.rag.get_vector_store", return_value=mock_store):
         res = add_checkup_to_db("1", "1", "type", {}, "pred", "date")
         assert res is False
+    assert sensitive_error not in caplog.text
+    assert "rag-secret" not in caplog.text
+    assert "Sensitive User" not in caplog.text
 
-def test_add_interaction_exception():
+def test_add_interaction_exception(caplog):
     mock_store = MagicMock()
-    mock_store.add.side_effect = Exception("Store Error")
+    sensitive_error = "Store error token=rag-secret patient_name=Sensitive User"
+    mock_store.add.side_effect = Exception(sensitive_error)
+    caplog.set_level("ERROR", logger="backend.rag")
     with patch("backend.rag.get_vector_store", return_value=mock_store):
         res = add_interaction_to_db("1", "int1", "user", "msg", "date")
         assert res is False
+    assert sensitive_error not in caplog.text
+    assert "rag-secret" not in caplog.text
+    assert "Sensitive User" not in caplog.text
 
-def test_search_similar_records_exception():
+def test_search_similar_records_exception(caplog):
     mock_store = MagicMock()
-    mock_store.search.side_effect = Exception("Search Fail")
+    sensitive_error = "Search fail token=rag-secret patient_name=Sensitive User"
+    mock_store.search.side_effect = Exception(sensitive_error)
+    caplog.set_level("ERROR", logger="backend.rag")
     with patch("backend.rag.get_vector_store", return_value=mock_store):
         res = search_similar_records("1", "q")
         assert res == []
+    assert sensitive_error not in caplog.text
+    assert "rag-secret" not in caplog.text
+    assert "Sensitive User" not in caplog.text
 

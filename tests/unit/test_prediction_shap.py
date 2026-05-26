@@ -8,12 +8,36 @@ import numpy as np
 
 from fastapi import FastAPI
 import backend.prediction
+from backend import explainability
 from backend.prediction import router
 
 # Test app
 app = FastAPI()
 app.include_router(router)
+app.dependency_overrides[backend.prediction.auth.get_current_user] = lambda: backend.prediction.db_models.User(
+    id=1,
+    username="prediction_shap_test_user",
+    role="patient",
+)
 client = TestClient(app)
+
+
+def test_shap_generation_hides_error_details(caplog):
+    sensitive_error = "shap failed patient_name=Sensitive User token=shap-secret"
+    caplog.set_level("ERROR", logger="backend.explainability")
+
+    with patch("backend.explainability.SHAP_AVAILABLE", True), \
+         patch("backend.explainability.shap.TreeExplainer", side_effect=Exception(sensitive_error)):
+        result = explainability.get_shap_values(
+            MagicMock(),
+            np.array([[1, 2, 3]]),
+            ["age", "glucose", "bmi"],
+        )
+
+    assert result is None
+    assert sensitive_error not in caplog.text
+    assert "Sensitive User" not in caplog.text
+    assert "shap-secret" not in caplog.text
 
 
 class TestDiabetesExplanation:

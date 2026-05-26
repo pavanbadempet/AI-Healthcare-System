@@ -84,17 +84,24 @@ class TestDatabaseUrl:
     
     def test_database_url_from_env(self):
         """Test that DATABASE_URL env var is read."""
-        with patch.dict('os.environ', {'DATABASE_URL': 'postgresql://test:test@localhost/test'}):
-            # Reload to pick up env var
-            import importlib
-            # Note: This would require module reload which is complex
-            # Just verify current value exists
-            assert database.SQLALCHEMY_DATABASE_URL is not None
+        with patch.dict("os.environ", {"DATABASE_URL": "postgresql://test:test@127.0.0.1/test"}, clear=True):
+            assert database._load_database_url() == "postgresql://test:test@127.0.0.1/test"
     
-    def test_default_sqlite_url(self):
-        """Test default SQLite URL when env var not set."""
-        # Default should be SQLite
-        assert "sqlite" in database.SQLALCHEMY_DATABASE_URL or True
+    def test_postgres_url_is_normalized(self):
+        """Test Render/Heroku postgres:// URLs are normalized for SQLAlchemy."""
+        with patch.dict("os.environ", {"DATABASE_URL": "postgres://test:test@127.0.0.1/test"}, clear=True):
+            assert database._load_database_url() == "postgresql://test:test@127.0.0.1/test"
+
+    def test_testing_uses_in_memory_sqlite_when_env_missing(self):
+        """Test local tests do not fall back to the runtime healthcare database."""
+        with patch.dict("os.environ", {"TESTING": "1"}, clear=True):
+            assert database._load_database_url() == "sqlite:///:memory:"
+
+    def test_database_url_required_outside_testing(self):
+        """Test production startup fails fast instead of using a hardcoded DB path."""
+        with patch.dict("os.environ", {}, clear=True):
+            with pytest.raises(RuntimeError, match="DATABASE_URL"):
+                database._load_database_url()
 
 
 class TestDatabaseEngine:

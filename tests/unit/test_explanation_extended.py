@@ -7,12 +7,13 @@ from fastapi.testclient import TestClient
 from fastapi import FastAPI
 from unittest.mock import patch, AsyncMock
 
-from backend import explanation
+from backend import auth, explanation, models
 
 
 # Create test app
 app = FastAPI()
 app.include_router(explanation.router)
+app.dependency_overrides[auth.get_current_user] = lambda: models.User(id=1, username="explain_test")
 client = TestClient(app)
 
 
@@ -51,9 +52,8 @@ class TestExplainPredictionEndpoint:
                 "input_data": {"glucose": 140},
                 "prediction_result": "High Risk"
             })
-            # The 503 is caught by the outer except and re-raised as 500
-            assert resp.status_code == 500
-            assert "Unavailable" in resp.json()["detail"] or "Failed" in resp.json()["detail"]
+            assert resp.status_code == 503
+            assert resp.json()["detail"] == "AI Service Unavailable"
 
     def test_explain_parsing_fallback(self):
         """Test fallback when response doesn't match expected format."""
@@ -74,14 +74,20 @@ class TestExplainPredictionEndpoint:
 
     def test_explain_exception_handling(self):
         """Test exception handling during explanation generation."""
-        with patch("backend.explanation.core_ai.generate", new_callable=AsyncMock, side_effect=Exception("API timeout")):
+        with patch(
+            "backend.explanation.core_ai.generate",
+            new_callable=AsyncMock,
+            side_effect=Exception("API timeout with synthetic patient context"),
+        ):
             resp = client.post("/explain/", json={
                 "prediction_type": "Liver",
                 "input_data": {"bilirubin": 2.0},
                 "prediction_result": "Normal"
             })
             assert resp.status_code == 500
-            assert "Failed" in resp.json()["detail"]
+            assert resp.json()["detail"] == "Failed to generate explanation"
+            assert "API timeout" not in str(resp.json())
+            assert "synthetic patient context" not in str(resp.json())
 
     def test_explain_empty_tips(self):
         """Test when TIPS section is present but empty."""

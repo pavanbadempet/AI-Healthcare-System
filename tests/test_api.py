@@ -4,6 +4,25 @@ from backend.main import app
 import logging
 from backend.schemas import HeartInput, LiverInput, DiabetesInput
 
+
+def _auth_headers(client, username: str = "prediction_api_user") -> dict[str, str]:
+    password = "StrongPassword123!"
+    signup = client.post(
+        "/signup",
+        json={
+            "username": username,
+            "password": password,
+            "email": f"{username}@example.com",
+            "full_name": "Synthetic Prediction User",
+            "dob": "1990-01-01",
+        },
+    )
+    assert signup.status_code == 200
+    login = client.post("/token", data={"username": username, "password": password})
+    assert login.status_code == 200
+    return {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+
 def test_read_root(client):
     response = client.get("/")
     assert response.status_code == 200
@@ -26,7 +45,7 @@ def test_heart_prediction_cdc(client):
         "ca": 0,
         "thal": 1
     }
-    response = client.post("/predict/heart", json=payload)
+    response = client.post("/predict/heart", json=payload, headers=_auth_headers(client))
     assert response.status_code == 200
     json_data = response.json()
     assert "prediction" in json_data
@@ -46,7 +65,7 @@ def test_liver_prediction_extended(client):
         "albumin": 3.3,
         "albumin_and_globulin_ratio": 0.9
     }
-    response = client.post("/predict/liver", json=payload)
+    response = client.post("/predict/liver", json=payload, headers=_auth_headers(client))
     assert response.status_code == 200
     json_data = response.json()
     assert "prediction" in json_data
@@ -63,7 +82,7 @@ def test_diabetes_prediction(client):
         "physical_activity": 1,
         "general_health": 2
     }
-    response = client.post("/predict/diabetes", json=payload)
+    response = client.post("/predict/diabetes", json=payload, headers=_auth_headers(client))
     assert response.status_code == 200
     json_data = response.json()
     assert "prediction" in json_data
@@ -77,7 +96,7 @@ def test_kidney_prediction(client):
         "hemo": 15.4, "pcv": 44.0, "wc": 7800.0, "rc": 5.2,
         "htn": 1, "dm": 1, "cad": 0, "appet": 0, "pe": 0, "ane": 0
     }
-    response = client.post("/predict/kidney", json=payload)
+    response = client.post("/predict/kidney", json=payload, headers=_auth_headers(client))
     assert response.status_code == 200
     json_data = response.json()
     assert "prediction" in json_data
@@ -95,7 +114,7 @@ def test_lung_prediction(client):
         "coughing": 1, "shortness_of_breath": 1, "swallowing_difficulty": 1,
         "chest_pain": 1
     }
-    response = client.post("/predict/lungs", json=payload)
+    response = client.post("/predict/lungs", json=payload, headers=_auth_headers(client))
     assert response.status_code == 200
     assert "prediction" in response.json()
 

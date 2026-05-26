@@ -10,6 +10,7 @@ from backend.agent import (
     CoreAIWrapper, 
     build_clinical_analysis_context,
     tavily_search, 
+    research_node,
     supervisor_node, 
     guardrail_node,
     analyst_node,
@@ -133,7 +134,7 @@ class TestTavilySearch:
             
             assert result == "Search service returned an error."
             assert "search-secret" not in result
-    
+
     def test_tavily_exception(self):
         """Test handling of request exceptions."""
         sensitive_error = "Network error token=search-secret patient_name=Sensitive User"
@@ -188,6 +189,37 @@ class TestSupervisorNode:
 class TestOtherNodes:
     """Tests for other agent nodes."""
     
+    def test_research_node_does_not_log_raw_patient_query(self, caplog):
+        """Research routing should not write patient health text to logs."""
+        sensitive_query = "latest treatment for diabetes patient_name=Sensitive User"
+        caplog.set_level("INFO", logger="backend.agent")
+
+        with patch("backend.agent.tavily_search", return_value="Answer: safe summary"):
+            result = research_node({"messages": [HumanMessage(content=sensitive_query)]})
+
+        assert result == {"tavily_results": "Answer: safe summary"}
+        assert sensitive_query not in caplog.text
+        assert "Sensitive User" not in caplog.text
+
+    def test_research_node_sends_sanitized_query_to_external_search(self):
+        """Research routing should not send identifiers to external search APIs."""
+        sensitive_query = (
+            "latest diabetes treatment patient_name=Sensitive User "
+            "email=sensitive@example.com dob=1990-01-01 token=secret123"
+        )
+
+        with patch("backend.agent.tavily_search", return_value="Answer: safe summary") as search:
+            result = research_node({"messages": [HumanMessage(content=sensitive_query)]})
+
+        assert result == {"tavily_results": "Answer: safe summary"}
+        sent_query = search.call_args.args[0]
+        assert "diabetes" in sent_query
+        assert "treatment" in sent_query
+        assert "Sensitive" not in sent_query
+        assert "sensitive@example.com" not in sent_query
+        assert "1990-01-01" not in sent_query
+        assert "secret123" not in sent_query
+
     def test_guardrail_node(self):
         """Test guardrail node returns appropriate message."""
         state = {"messages": [HumanMessage(content="politics")]}

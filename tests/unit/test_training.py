@@ -12,7 +12,8 @@ def test_train_diabetes():
     with patch("pandas.read_parquet") as mock_read, \
          patch("backend.train_diabetes.os.path.exists", return_value=True), \
          patch("backend.train_diabetes.pickle.dump") as mock_pickle, \
-         patch("xgboost.XGBClassifier") as mock_xgb:
+         patch("xgboost.XGBClassifier") as mock_xgb, \
+         patch("builtins.open", mock_open()):
         
         df = pd.DataFrame({
             "gender": [1, 0, 1] * 10,
@@ -43,7 +44,8 @@ def test_train_heart():
     with patch("pandas.read_parquet") as mock_read, \
          patch("backend.train_heart.os.path.exists", return_value=True), \
          patch("backend.train_heart.pickle.dump") as mock_pickle, \
-         patch("xgboost.XGBClassifier") as mock_xgb:
+         patch("xgboost.XGBClassifier") as mock_xgb, \
+         patch("builtins.open", mock_open()):
         
         df = pd.DataFrame({
             "age": [50] * 30,
