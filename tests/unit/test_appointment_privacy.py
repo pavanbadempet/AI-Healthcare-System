@@ -11,6 +11,7 @@ def _create_user(
     *,
     full_name: str | None = None,
     specialization: str | None = None,
+    facility_id: int | None = None,
 ) -> models.User:
     user = models.User(
         username=username,
@@ -19,6 +20,7 @@ def _create_user(
         hashed_password=auth.get_password_hash("StrongPassword123!"),
         role=role,
         specialization=specialization,
+        facility_id=facility_id,
     )
     db_session.add(user)
     db_session.commit()
@@ -31,13 +33,29 @@ def _auth_headers(username: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
 
 
+def _create_facility(db_session, name: str) -> models.HospitalFacility:
+    facility = models.HospitalFacility(
+        name=name,
+        facility_type="hospital",
+        country="India",
+        status="active",
+    )
+    db_session.add(facility)
+    db_session.commit()
+    db_session.refresh(facility)
+    return facility
+
+
 def _create_appointment(
     db_session,
     patient: models.User,
     doctor: models.User,
     reason: str,
+    *,
+    facility_id: int | None = None,
 ) -> models.Appointment:
     appointment = models.Appointment(
+        facility_id=facility_id,
         user_id=patient.id,
         doctor_id=doctor.id,
         specialist="General Physician",
@@ -69,6 +87,7 @@ def _booking_payload(
 
 
 def test_doctor_listing_returns_stored_specialization_and_fallback(client, db_session):
+    viewer = _create_user(db_session, "doctor_directory_viewer", "patient")
     cardiologist = _create_user(
         db_session,
         "cardio_doc",
@@ -78,13 +97,91 @@ def test_doctor_listing_returns_stored_specialization_and_fallback(client, db_se
     )
     generalist = _create_user(db_session, "general_doc", "doctor", full_name="Dr General")
 
-    response = client.get("/appointments/doctors")
+    response = client.get("/appointments/doctors", headers=_auth_headers(viewer.username))
 
     assert response.status_code == 200
     doctors = {doctor["id"]: doctor for doctor in response.json()}
     assert doctors[cardiologist.id]["full_name"] == "Dr Cardio"
     assert doctors[cardiologist.id]["specialization"] == "Cardiology"
     assert doctors[generalist.id]["specialization"] == "General Physician"
+
+
+def test_unauthenticated_user_cannot_list_doctors(client, db_session):
+    _create_user(db_session, "public_directory_doctor", "doctor")
+
+    response = client.get("/appointments/doctors")
+
+    assert response.status_code == 401
+
+
+def test_patient_doctor_listing_hides_doctors_from_other_facilities(client, db_session):
+    primary_facility = _create_facility(db_session, "Primary Appointment Hospital")
+    other_facility = _create_facility(db_session, "Other Appointment Hospital")
+    patient = _create_user(
+        db_session,
+        "facility_directory_patient",
+        "patient",
+        facility_id=primary_facility.id,
+    )
+    local_doctor = _create_user(
+        db_session,
+        "facility_directory_local_doctor",
+        "doctor",
+        facility_id=primary_facility.id,
+    )
+    legacy_doctor = _create_user(db_session, "facility_directory_legacy_doctor", "doctor")
+    other_doctor = _create_user(
+        db_session,
+        "facility_directory_other_doctor",
+        "doctor",
+        facility_id=other_facility.id,
+    )
+
+    response = client.get(
+        "/appointments/doctors",
+        headers=_auth_headers(patient.username),
+    )
+
+    assert response.status_code == 200
+    doctor_ids = {doctor["id"] for doctor in response.json()}
+    assert local_doctor.id in doctor_ids
+    assert legacy_doctor.id in doctor_ids
+    assert other_doctor.id not in doctor_ids
+
+
+def test_facility_admin_doctor_listing_is_scoped_to_own_facility(client, db_session):
+    primary_facility = _create_facility(db_session, "Admin Doctor Directory Primary")
+    other_facility = _create_facility(db_session, "Admin Doctor Directory Other")
+    admin = _create_user(
+        db_session,
+        "appointment_directory_facility_admin",
+        "admin",
+        facility_id=primary_facility.id,
+    )
+    local_doctor = _create_user(
+        db_session,
+        "appointment_directory_admin_local_doctor",
+        "doctor",
+        facility_id=primary_facility.id,
+    )
+    other_doctor = _create_user(
+        db_session,
+        "appointment_directory_admin_other_doctor",
+        "doctor",
+        facility_id=other_facility.id,
+    )
+    legacy_doctor = _create_user(db_session, "appointment_directory_admin_legacy_doctor", "doctor")
+    local_doctor_id = local_doctor.id
+    other_doctor_id = other_doctor.id
+    legacy_doctor_id = legacy_doctor.id
+
+    response = client.get("/appointments/doctors", headers=_auth_headers(admin.username))
+
+    assert response.status_code == 200
+    doctor_ids = {doctor["id"] for doctor in response.json()}
+    assert local_doctor_id in doctor_ids
+    assert other_doctor_id not in doctor_ids
+    assert legacy_doctor_id not in doctor_ids
 
 
 def test_doctor_profile_can_store_specialization(client, db_session):
@@ -154,6 +251,64 @@ def test_patient_can_book_appointment_with_doctor(client, db_session):
     assert response.json()["user_id"] == patient_id
     assert db_session.query(models.Appointment).count() == 1
     send_email.assert_called_once()
+
+
+def test_patient_cannot_book_appointment_with_doctor_from_another_facility(client, db_session):
+    patient_facility = _create_facility(db_session, "Patient Booking Facility")
+    doctor_facility = _create_facility(db_session, "Doctor Booking Facility")
+    patient = _create_user(
+        db_session,
+        "cross_facility_booking_patient",
+        "patient",
+        facility_id=patient_facility.id,
+    )
+    doctor = _create_user(
+        db_session,
+        "cross_facility_booking_doctor",
+        "doctor",
+        facility_id=doctor_facility.id,
+    )
+
+    with patch("backend.email_service.send_booking_confirmation") as send_email:
+        response = client.post(
+            "/appointments/",
+            json=_booking_payload(doctor.id, reason="Cross facility consult"),
+            headers=_auth_headers(patient.username),
+        )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Appointment participants must belong to the same facility"
+    assert db_session.query(models.Appointment).count() == 0
+    send_email.assert_not_called()
+
+
+def test_patient_booking_persists_shared_facility_id(client, db_session):
+    facility = _create_facility(db_session, "Shared Booking Facility")
+    facility_id = facility.id
+    patient = _create_user(
+        db_session,
+        "shared_facility_booking_patient",
+        "patient",
+        facility_id=facility_id,
+    )
+    doctor = _create_user(
+        db_session,
+        "shared_facility_booking_doctor",
+        "doctor",
+        facility_id=facility_id,
+    )
+
+    with patch("backend.email_service.send_booking_confirmation"):
+        response = client.post(
+            "/appointments/",
+            json=_booking_payload(doctor.id, reason="Same facility consult"),
+            headers=_auth_headers(patient.username),
+        )
+
+    assert response.status_code == 200
+    assert response.json()["facility_id"] == facility_id
+    appointment = db_session.query(models.Appointment).one()
+    assert appointment.facility_id == facility_id
 
 
 def test_patient_booking_uses_doctor_specialization_not_client_specialist(client, db_session):
@@ -342,3 +497,58 @@ def test_admin_still_lists_all_appointments(client, db_session):
 
     assert response.status_code == 200
     assert [appointment["id"] for appointment in response.json()] == [first.id, second.id]
+
+
+def test_facility_admin_appointment_list_is_scoped_to_own_facility(client, db_session):
+    primary_facility = _create_facility(db_session, "Appointment List Primary")
+    other_facility = _create_facility(db_session, "Appointment List Other")
+    admin = _create_user(db_session, "appointment_list_facility_admin", "admin", facility_id=primary_facility.id)
+    local_doctor = _create_user(db_session, "appointment_list_local_doctor", "doctor", facility_id=primary_facility.id)
+    local_patient = _create_user(db_session, "appointment_list_local_patient", "patient", facility_id=primary_facility.id)
+    other_doctor = _create_user(db_session, "appointment_list_other_doctor", "doctor", facility_id=other_facility.id)
+    other_patient = _create_user(db_session, "appointment_list_other_patient", "patient", facility_id=other_facility.id)
+    local_appointment = _create_appointment(
+        db_session,
+        local_patient,
+        local_doctor,
+        "Local visit",
+        facility_id=primary_facility.id,
+    )
+    local_appointment_id = local_appointment.id
+    _create_appointment(
+        db_session,
+        other_patient,
+        other_doctor,
+        "Other visit",
+        facility_id=other_facility.id,
+    )
+
+    response = client.get("/appointments/", headers=_auth_headers(admin.username))
+
+    assert response.status_code == 200
+    assert [appointment["id"] for appointment in response.json()] == [local_appointment_id]
+
+
+def test_facility_admin_cannot_cancel_other_facility_appointment(client, db_session):
+    primary_facility = _create_facility(db_session, "Appointment Cancel Primary")
+    other_facility = _create_facility(db_session, "Appointment Cancel Other")
+    admin = _create_user(db_session, "appointment_cancel_facility_admin", "admin", facility_id=primary_facility.id)
+    other_doctor = _create_user(db_session, "appointment_cancel_other_doctor", "doctor", facility_id=other_facility.id)
+    other_patient = _create_user(db_session, "appointment_cancel_other_patient", "patient", facility_id=other_facility.id)
+    appointment = _create_appointment(
+        db_session,
+        other_patient,
+        other_doctor,
+        "Other facility visit",
+        facility_id=other_facility.id,
+    )
+    appointment_id = appointment.id
+
+    response = client.put(
+        f"/appointments/{appointment_id}/cancel",
+        headers=_auth_headers(admin.username),
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Appointment resource is outside the user's facility"
+    assert db_session.get(models.Appointment, appointment_id).status == "Scheduled"

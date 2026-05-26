@@ -8,14 +8,8 @@ from backend import rag
 
 @pytest.fixture
 def mock_vector_db(monkeypatch, tmp_path):
-    # Mock Gemini embedding to return a zero vector
-    def mock_embed(*args, **kwargs):
-        return {'embedding': [1.0] * 768}
-        
-    monkeypatch.setenv("GOOGLE_API_KEY", "mock_key")
-        
-    monkeypatch.setattr("google.generativeai.embed_content", mock_embed)
-    monkeypatch.setattr("google.generativeai.configure", lambda api_key: None)
+    # Mock core AI embeddings so tests never call an external provider.
+    monkeypatch.setattr(rag.core_ai, "embed_text", lambda text, task_type: [1.0] * 768)
 
     # Create temp DB file
     d = tmp_path / "test_vector_store.pkl"
@@ -61,3 +55,52 @@ def test_rag_deletion(mock_vector_db):
     
     # Confirm Gone
     assert len(rag.search_similar_records(user_id, "Diabetes")) == 0
+
+
+def test_rag_facility_scoped_search_blocks_same_user_cross_facility(mock_vector_db):
+    user_id = "user_facility"
+
+    rag.add_checkup_to_db(
+        user_id,
+        "rec_north",
+        "Diabetes",
+        {"site": "north"},
+        "North facility result",
+        "2024-01-01",
+        facility_id="facility_north",
+    )
+    rag.add_checkup_to_db(
+        user_id,
+        "rec_south",
+        "Diabetes",
+        {"site": "south"},
+        "South facility result",
+        "2024-01-01",
+        facility_id="facility_south",
+    )
+
+    results = rag.search_similar_records(
+        user_id,
+        "show me the South facility result",
+        n_results=5,
+        facility_id="facility_north",
+    )
+
+    assert any("North facility result" in result for result in results)
+    assert all("South facility result" not in result for result in results)
+
+
+def test_rag_facility_scoped_search_excludes_unscoped_legacy_documents(mock_vector_db):
+    user_id = "user_legacy"
+
+    rag.add_checkup_to_db(
+        user_id,
+        "rec_legacy",
+        "Diabetes",
+        {"site": "legacy"},
+        "Legacy unscoped result",
+        "2024-01-01",
+    )
+
+    assert rag.search_similar_records(user_id, "Legacy", facility_id="facility_north") == []
+    assert len(rag.search_similar_records(user_id, "Legacy")) == 1
