@@ -1,8 +1,8 @@
 from playwright.sync_api import Page, expect
 import pytest
 
-# Prerequisite: App must be running on localhost:8501
-BASE_URL = "http://localhost:8501"
+# Prerequisite: App must be running on 127.0.0.1:3000
+BASE_URL = "http://127.0.0.1:3000"
 
 @pytest.mark.e2e
 def test_ui_smoke(page: Page):

@@ -40,18 +40,25 @@ client = TestClient(app)
 
 # --- Tests ---
 
-def test_chat_agent_failure():
+def test_chat_agent_failure(caplog):
     # Mock agent invoke to raise exception
-    with patch("backend.chat.agent.medical_agent.invoke", side_effect=Exception("Agent Down")):
+    caplog.set_level("ERROR", logger="backend.chat")
+    with patch("backend.chat.agent.medical_agent.invoke", side_effect=Exception("Agent Down with patient context")):
         resp = client.post("/chat", json={"message": "Hi"})
-        assert resp.status_code == 200 # It returns 200 with error message
-        assert "trouble" in resp.json()["response"]
-        assert "Agent Down" in resp.json()["error"]
+        assert resp.status_code == 200
+        body = resp.json()
+        assert "trouble" in body["response"]
+        assert "error" not in body
+        assert "Agent Down" not in str(body)
+        assert "patient context" not in str(body)
+        assert "Agent Down" not in caplog.text
+        assert "patient context" not in caplog.text
 
-def test_chat_db_save_failure():
+def test_chat_db_save_failure(caplog):
     # Mock DB commit to fail
+    caplog.set_level("ERROR", logger="backend.chat")
     mock_db = MagicMock()
-    mock_db.commit.side_effect = Exception("DB Error")
+    mock_db.commit.side_effect = Exception("DB Error with patient context")
     
     app.dependency_overrides[chat.database.get_db] = lambda: mock_db
     
@@ -64,8 +71,23 @@ def test_chat_db_save_failure():
         # chat.py: try/except around user log save.
         resp = client.post("/chat", json={"message": "Hi"})
         assert resp.status_code == 200
-        assert resp.json()["response"] == "Hello"
+        assert resp.json()["response"].startswith("Hello")
+        assert chat.CHAT_MEDICAL_DISCLAIMER in resp.json()["response"]
+        assert "DB Error" not in caplog.text
+        assert "patient context" not in caplog.text
         # We verified that it didn't crash application
+
+
+def test_chat_response_adds_medical_disclaimer():
+    app.dependency_overrides[chat.database.get_db] = mock_get_db
+    mock_agent_resp = {"messages": [MagicMock(content="Hydration may help, but monitor symptoms.")]}
+
+    with patch("backend.chat.agent.medical_agent.invoke", return_value=mock_agent_resp):
+        resp = client.post("/chat", json={"message": "What should I do?"})
+
+    assert resp.status_code == 200
+    assert "Hydration may help" in resp.json()["response"]
+    assert chat.CHAT_MEDICAL_DISCLAIMER in resp.json()["response"]
 
 def test_chat_record_validation():
     # Setup DB returning records

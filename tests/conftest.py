@@ -1,6 +1,9 @@
 import warnings
 warnings.filterwarnings("ignore", message=".*google.generativeai.*", category=FutureWarning)
 
+import os
+os.environ["TESTING"] = "1"
+
 import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
@@ -19,12 +22,36 @@ engine = create_engine(
     poolclass=StaticPool,
 )
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-# --- Environment Setup for Testing ---
-import os
-os.environ["TESTING"] = "1"
 
 from backend.prediction import initialize_models
 initialize_models()
+
+
+def _is_e2e_item(item: pytest.Item) -> bool:
+    path = str(getattr(item, "path", getattr(item, "fspath", ""))).replace("\\", "/")
+    return "/tests/e2e/" in path or path.startswith("tests/e2e/")
+
+
+def pytest_collection_modifyitems(config, items):
+    """
+    Keep Playwright sync tests at the end of mixed pytest runs.
+
+    Under Python 3.14 with pytest-playwright 0.7.x, the sync Playwright
+    fixture can leave an event loop visible to pytest-asyncio in the same
+    process. Running E2E tests last preserves E2E coverage without breaking
+    async unit tests collected later.
+    """
+    e2e_items = []
+    other_items = []
+
+    for item in items:
+        if _is_e2e_item(item) or item.get_closest_marker("e2e"):
+            item.add_marker(pytest.mark.e2e)
+            e2e_items.append(item)
+        else:
+            other_items.append(item)
+
+    items[:] = other_items + e2e_items
 
 
 @pytest.fixture(scope="function")
