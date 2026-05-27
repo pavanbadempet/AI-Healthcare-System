@@ -164,7 +164,7 @@ def deploy_models(**context):
     """Call model reload endpoint."""
     import requests
     
-    backend = os.getenv('BACKEND_URL', 'http://localhost:8000')
+    backend = os.getenv('BACKEND_URL', 'http://127.0.0.1:8000')
     token = os.getenv('ADMIN_JWT_TOKEN')
     
     if not token:

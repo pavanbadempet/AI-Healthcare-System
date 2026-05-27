@@ -40,11 +40,6 @@ sentence-transformers
 matplotlib>=3.8.4
 plotly>=5.21.0
 
-# --- Frontend (Streamlit) ---
-streamlit>=1.35.0
-streamlit-lottie>=0.0.5
-streamlit-option-menu>=0.3.13
-
 # --- AI & LLM (Full) ---
 google-generativeai>=0.5.2
 langchain-huggingface>=0.0.3

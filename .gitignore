@@ -59,6 +59,12 @@ dist/
 build/
 *.egg-info/
 node_modules/
+.next/
+playwright-report/
+test-results/
+
+# RAG vector store (generated at runtime)
+models/vector_store.*
 
 # Airflow
 airflow/logs/

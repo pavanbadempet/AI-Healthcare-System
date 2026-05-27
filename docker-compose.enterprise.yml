@@ -103,27 +103,27 @@ services:
       - ./backend:/app/backend
     restart: always
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/health"]
       interval: 30s
       timeout: 10s
       retries: 3
 
   # Frontend with Enhanced Features
   frontend:
-    build: .
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://127.0.0.1:8000
     container_name: healthcare_frontend_enterprise
-    command: streamlit run frontend/main.py --server.port 8501 --server.address 0.0.0.0
     ports:
-      - "8501:8501"
+      - "3000:3000"
     environment:
-      - BACKEND_URL=http://backend:8000
+      - NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
     depends_on:
       backend:
         condition: service_healthy
-    volumes:
-      - ./.streamlit:/app/.streamlit
-      - ./frontend:/app/frontend
 
   # MLflow with PostgreSQL Backend
   mlflow:
