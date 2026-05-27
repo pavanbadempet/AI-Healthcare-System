@@ -27,8 +27,8 @@ spec:
     app: healthcare-frontend
   ports:
   - name: http
-    port: 8501
-    targetPort: 8501
+    port: 3000
+    targetPort: 3000
     protocol: TCP
   type: ClusterIP
 ---
@@ -120,7 +120,7 @@ spec:
           service:
             name: healthcare-frontend
             port:
-              number: 8501
+              number: 3000
   - host: mlflow.healthcare.example.com
     http:
       paths:

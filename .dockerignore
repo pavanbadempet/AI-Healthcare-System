@@ -1,4 +1,7 @@
 node_modules
+.next
+playwright-report
+test-results
 venv
 .git
 .gitignore

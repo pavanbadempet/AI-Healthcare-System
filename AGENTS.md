@@ -18,28 +18,31 @@
 
 ## Repo Map
 
-- `backend/main.py` → FastAPI application entry point
-- `backend/` → All API routes, models, services, ML, AI modules
-- `frontend/` → Next.js App Router (UI, components, hooks, lib)
-- `frontend_legacy/` → Old Streamlit UI (for reference/legacy only)
-- `scripts/` → Dev utilities, DB management, deployment checks
-- `tests/` → Pytest test suite
-- `docs/` → Architecture docs, whitepapers, analysis
-- `data/` → Training datasets for ML models
-- `airflow/`, `mlops/`, `monitoring/` → Infrastructure & pipeline configs
+- `backend/main.py` -> FastAPI application entry point
+- `backend/` -> All API routes, models, services, ML, AI modules
+- `frontend/` -> Next.js App Router (UI, components, hooks, lib)
+- `frontend_legacy/` -> Old Python UI (for reference/legacy only)
+- `scripts/` -> Dev utilities, DB management, deployment checks
+- `tests/` -> Pytest test suite
+- `docs/` -> Architecture docs, whitepapers, analysis
+- `data/` -> Training datasets for ML models
+- `airflow/`, `mlops/`, `monitoring/` -> Infrastructure & pipeline configs
 
 ## Always True
 
 - Use `127.0.0.1`, never `localhost`. For frontend, port is `3000`.
 - Never hardcode database paths; use `DATABASE_URL` from env.
-- All AI inference must go through `backend/core_ai.py` — never call provider APIs directly.
+- All AI inference must go through `backend/core_ai.py` - never call provider APIs directly.
 - Never log or expose PII (patient names, DOBs, health data) in error messages or debug output.
-- Always include medical disclaimers in AI-generated health advice.
+- AI-generated health advice must include a medical disclaimer and recommend consulting a qualified clinician for diagnosis, treatment, or emergencies.
+- Do not add tests, fixtures, logs, screenshots, or docs containing real patient data.
 - Use `Depends(database.get_db)` for database sessions in route handlers.
-- ML model loading is owned by `prediction.py` → `initialize_models()`.
-- Prompts are owned by `prompt_registry.py` — never inline system prompts in route handlers.
+- Database schema changes must update SQLAlchemy models, Pydantic schemas, and migration/startup logic together.
+- ML model loading is owned by `prediction.py` -> `initialize_models()`.
+- Prompts are owned by `prompt_registry.py` - never inline system prompts in route handlers.
 - Keep `requirements.txt` and `requirements-full.txt` in sync when adding dependencies.
 - Tests must not depend on external API keys; mock all AI/embedding calls.
+- Before claiming completion, run the narrowest relevant tests or checks and report any that were skipped.
 
 ## Scoped Instructions
 

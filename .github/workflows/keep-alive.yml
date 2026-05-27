@@ -35,7 +35,9 @@ jobs:
           echo "Pinging secondary backend (Fallback)..."
           curl -s -o /dev/null -w "%{http_code}" --max-time 30 https://aio-health-backend.onrender.com/healthz || echo "Secondary ping sent"
           
-      - name: Ping Frontend (Streamlit Headless)
+      - name: Ping Frontend
+        env:
+          FRONTEND_URL: ${{ vars.FRONTEND_URL }}
         run: |
-          echo "Launching headless browser to check if Streamlit is asleep..."
+          echo "Launching headless browser to ping frontend..."
           python scripts/keep_alive_frontend.py

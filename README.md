@@ -57,7 +57,7 @@ Diabetes, Heart, Liver, Kidney, Lungs -- trained on real clinical datasets (BRFS
 <td width="33%" valign="top">
 
 ### 3-Tier AI Inference
-**Ollama > Gemini > Cloud** automatic fallback. HIPAA-friendly local inference, free Gemini tier, or OpenAI/Anthropic via headers. Zero vendor lock-in.
+**Ollama > Gemini > Cloud** automatic fallback. Local-first inference option for sensitive workflows, free Gemini tier, or OpenAI/Anthropic via headers. Zero vendor lock-in.
 
 </td>
 <td width="33%" valign="top">
@@ -71,7 +71,7 @@ Gemini embeddings + vector store + LangGraph agent. Personalized responses groun
 <td width="33%" valign="top">
 
 ### Enterprise Security
-JWT + bcrypt auth, RBAC (patient/doctor/admin), audit logging, rate limiting, PII redaction, HIPAA/GDPR compliance modules, and 7-layer middleware stack.
+JWT + bcrypt auth, RBAC (patient/doctor/admin), audit logging, rate limiting, PII redaction, HIPAA/GDPR-oriented helpers, and 7-layer middleware stack.
 
 </td>
 <td width="33%" valign="top">
@@ -153,7 +153,7 @@ graph TB
             TELE["Telemetry WS"] --- EXPLAIN["Explain AI"] --- OLLAMA["Ollama Mgmt"] --- ENT["Enterprise"]
         end
         subgraph CoreAI["CORE AI ENGINE -- core_ai.py"]
-            TA["Tier A: Ollama -- Local, HIPAA-safe"]
+            TA["Tier A: Ollama -- Local-first"]
             TB["Tier B: Gemini -- Free tier"]
             TC["Tier C: OpenAI / Anthropic -- Cloud"]
         end
@@ -217,7 +217,7 @@ Five scikit-learn/XGBoost models trained on public clinical datasets:
 
 ```mermaid
 graph LR
-    API["generate() / chat() / chat_stream()"] --> A["Tier A: Ollama<br/>Local, HIPAA-safe, Free"]
+    API["generate() / chat() / chat_stream()"] --> A["Tier A: Ollama<br/>Local-first, Free"]
     A -->|"fails"| B["Tier B: Gemini<br/>Google API, Free tier"]
     B -->|"fails"| C["Tier C: Cloud<br/>OpenAI / Anthropic"]
 
@@ -228,7 +228,7 @@ graph LR
 
 | Tier | Provider | Privacy | Cost |
 |------|----------|---------|------|
-| **A** | Ollama | Data never leaves machine | Free |
+| **A** | Ollama | No cloud provider when configured locally | Free |
 | **B** | Gemini | Cloud API | Free tier |
 | **C** | OpenAI/Anthropic | Cloud API | Pay-per-use |
 
@@ -321,16 +321,16 @@ graph TB
 | `POST` | `/records` | Yes | Save health record |
 | `GET` | `/records` | Yes | Get records |
 | `DELETE` | `/records/{id}` | Yes | Delete record |
-| `POST` | `/analyze/report` | No | Vision AI lab report analysis |
+| `POST` | `/analyze/report` | Yes | Vision AI lab report analysis |
 | `GET` | `/download/health-report` | Yes | PDF health report |
-| `POST` | `/explain/` | No | AI prediction explanation |
+| `POST` | `/explain/` | Yes | AI prediction explanation |
 | `POST` | `/appointments/` | Yes | Book appointment |
 | `GET` | `/appointments/doctors` | No | List doctors |
 | `POST` | `/payments/create-order` | Yes | Razorpay order |
 | `POST` | `/payments/verify` | Yes | Verify payment |
 | `GET` | `/admin/stats` | Admin | System statistics |
 | `GET` | `/ai/models` | No | List Ollama models |
-| `POST` | `/ai/models/pull` | No | Pull model (SSE) |
+| `POST` | `/ai/models/pull` | Admin | Pull model (SSE) |
 | `WS` | `/telemetry/stream` | No | Hospital telemetry |
 | `GET` | `/healthz` | No | Health check |
 
@@ -386,7 +386,7 @@ Features: SQLite WAL mode, PostgreSQL connection pooling, auto-migration, `postg
 
 **Auth:** JWT (HS256, 30min) + bcrypt + RBAC (patient/doctor/admin)
 **Privacy:** PII redaction, audit logging, medical disclaimers, per-user data collection flag
-**Enterprise:** Prometheus metrics, HIPAA/GDPR compliance, Redis rate limiting
+**Enterprise:** Prometheus metrics, compliance-oriented audit helpers, Redis rate limiting
 
 ---
 
@@ -416,6 +416,14 @@ Plus: Dependabot (4 ecosystems), CODEOWNERS, Issue/PR templates, FUNDING.yml.
 ---
 
 ## Deployment
+
+Do not deploy this system directly from a passing local test run. Before any production rollout, complete the gate in [`docs/PRODUCTION_READINESS_GATE.md`](docs/PRODUCTION_READINESS_GATE.md) and run:
+
+```bash
+python scripts/production_readiness_check.py
+```
+
+The gate covers backend verification, database readiness, lakehouse/data processing, monitoring, security, AI safety, rollback, and operational signoff.
 
 | Option | Command | Services |
 |--------|---------|----------|
@@ -527,7 +535,7 @@ MIT License -- Copyright (c) 2025 **Pavan Badempet**, Shiva Prasad Anagondi, Pra
 </p>
 
 <sub>
-<strong>Keywords:</strong> AI healthcare, machine learning diagnosis, medical chatbot, diabetes prediction, heart disease prediction, liver disease prediction, kidney disease prediction, lung cancer prediction, FastAPI healthcare API, LangGraph medical agent, RAG healthcare, SHAP explainability, Ollama local inference, Gemini healthcare, HIPAA-friendly AI, healthcare ML models, clinical decision support, medical AI system, health prediction API, telemedicine platform, hospital capacity management, real-time telemetry, enterprise healthcare, Docker healthcare deployment, Kubernetes healthcare, Terraform AWS healthcare
+<strong>Keywords:</strong> AI healthcare, machine learning diagnosis, medical chatbot, diabetes prediction, heart disease prediction, liver disease prediction, kidney disease prediction, lung cancer prediction, FastAPI healthcare API, LangGraph medical agent, RAG healthcare, SHAP explainability, Ollama local inference, Gemini healthcare, privacy-aware AI, healthcare ML models, clinical decision support, medical AI system, health prediction API, telemedicine platform, hospital capacity management, real-time telemetry, enterprise healthcare, Docker healthcare deployment, Kubernetes healthcare, Terraform AWS healthcare
 </sub>
 
 <br/><br/>
