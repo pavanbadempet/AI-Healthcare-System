@@ -216,7 +216,7 @@ def check_obsolete_files(manifest: dict) -> list[str]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="AI Healthcare System — Sync agent adapter files from manifest."
+        description="AI Healthcare System - Sync agent adapter files from manifest."
     )
     parser.add_argument("--check", action="store_true", help="Verify generated files are in sync.")
     args = parser.parse_args(argv)

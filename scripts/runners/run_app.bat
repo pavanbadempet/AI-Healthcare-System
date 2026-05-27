@@ -3,13 +3,14 @@ echo ========================================
 echo      Stopping Old Processes...
 echo ========================================
 taskkill /F /IM python.exe /T >nul 2>&1
+taskkill /F /IM node.exe /T >nul 2>&1
 echo Done.
 
 echo.
 echo ========================================
 echo      Starting Backend Server...
 echo ========================================
-start cmd /k "uvicorn backend.main:app --reload"
+start cmd /k "uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000"
 
 echo.
 echo ========================================
@@ -25,5 +26,6 @@ echo.
 echo ========================================
 echo      Starting Healthcare Frontend...
 echo ========================================
-streamlit run frontend/main.py
+cd /d frontend
+npm run dev -- -p 3000
 pause

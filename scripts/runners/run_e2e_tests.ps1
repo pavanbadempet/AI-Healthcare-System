@@ -7,19 +7,19 @@ if (Test-Path "session.json") { Remove-Item "session.json" -Force }
 
 # --- Start Backend ---
 Write-Host "Starting Backend API..." -ForegroundColor Cyan
-$backendProcess = Start-Process -FilePath "uvicorn" -ArgumentList "backend.main:app", "--port", "8000" -PassThru -NoNewWindow
+$backendProcess = Start-Process -FilePath "uvicorn" -ArgumentList "backend.main:app", "--host", "127.0.0.1", "--port", "8000" -PassThru -NoNewWindow
 
 # Wait for Backend
-$backendUrl = "http://localhost:8000/docs" # Health check endpoint usually
+$backendUrl = "http://127.0.0.1:8000/docs" # Health check endpoint usually
 $maxRetries = 30
 $retryCount = 0
 $backendReady = $false
 
-Write-Host "Waiting for Backend to be ready at localhost:8000..." -ForegroundColor Yellow
+Write-Host "Waiting for Backend to be ready at 127.0.0.1:8000..." -ForegroundColor Yellow
 while ($retryCount -lt $maxRetries) {
     try {
         $tcpClient = New-Object System.Net.Sockets.TcpClient
-        $connect = $tcpClient.BeginConnect("localhost", 8000, $null, $null)
+        $connect = $tcpClient.BeginConnect("127.0.0.1", 8000, $null, $null)
         $wait = $connect.AsyncWaitHandle.WaitOne(1000, $false)
         
         if ($tcpClient.Connected) {
@@ -42,22 +42,22 @@ if (-not $backendReady) {
     exit 1
 }
 
-# --- Start Streamlit ---
-Write-Host "`nStarting Streamlit App..." -ForegroundColor Cyan
-$appProcess = Start-Process -FilePath "streamlit" -ArgumentList "run", "frontend/main.py", "--server.port=8501", "--server.headless=true" -PassThru -NoNewWindow
+# --- Start Next.js ---
+Write-Host "`nStarting Next.js App..." -ForegroundColor Cyan
+$appProcess = Start-Process -FilePath "npm.cmd" -ArgumentList "run", "dev", "--", "-p", "3000" -WorkingDirectory "frontend" -PassThru -NoNewWindow
 $appReady = $false
 $retryCount = 0
 
-Write-Host "Waiting for Streamlit to be ready at localhost:8501..." -ForegroundColor Yellow
+Write-Host "Waiting for Next.js to be ready at 127.0.0.1:3000..." -ForegroundColor Yellow
 while ($retryCount -lt $maxRetries) {
     try {
         $tcpClient = New-Object System.Net.Sockets.TcpClient
-        $connect = $tcpClient.BeginConnect("localhost", 8501, $null, $null)
+        $connect = $tcpClient.BeginConnect("127.0.0.1", 3000, $null, $null)
         $wait = $connect.AsyncWaitHandle.WaitOne(1000, $false)
         
         if ($tcpClient.Connected) {
             $appReady = $true
-            Write-Host "`nStreamlit is ready!" -ForegroundColor Green
+            Write-Host "`nNext.js is ready!" -ForegroundColor Green
             $tcpClient.Close()
             break
         }
@@ -70,7 +70,7 @@ while ($retryCount -lt $maxRetries) {
 }
 
 if (-not $appReady) {
-    Write-Host "`nStreamlit failed to start." -ForegroundColor Red
+    Write-Host "`nNext.js failed to start." -ForegroundColor Red
     Stop-Process -Id $backendProcess.Id -Force -ErrorAction SilentlyContinue
     Stop-Process -Id $appProcess.Id -Force -ErrorAction SilentlyContinue
     exit 1

@@ -64,14 +64,14 @@ airflow standalone
 ```
 
 ### 4. Access UI
-Open http://localhost:8080
+Open http://127.0.0.1:8080
 
 ## Environment Variables
 
 | Variable | Description |
 |----------|-------------|
 | `DATABASE_URL` | PostgreSQL connection string |
-| `BACKEND_URL` | API base URL (default: http://localhost:8000) |
+| `BACKEND_URL` | API base URL (default: http://127.0.0.1:8000) |
 | `ADMIN_JWT_TOKEN` | Pre-generated admin JWT for deployment |
 
 ## Production Deployment

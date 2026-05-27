@@ -26,7 +26,7 @@ import subprocess
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SERVICE_PORTS = [
     ("Backend (FastAPI)", 8000),
-    ("Frontend (Streamlit)", 8501),
+    ("Frontend (Next.js)", 3000),
 ]
 CONTEXT_FILES = [
     "AGENTS.md",
@@ -44,9 +44,14 @@ CONTEXT_FILES = [
     "scripts/sync_agent_adapters.py",
 ]
 ML_MODEL_FILES = [
-    "Diabetes_Model.pkl",
-    "Heart_Model.pkl",
-    "Liver_Model.pkl",
+    "backend/diabetes_model.pkl",
+    "backend/heart_disease_model.pkl",
+    "backend/liver_disease_model.pkl",
+    "backend/liver_scaler.pkl",
+    "backend/kidney_model.pkl",
+    "backend/kidney_scaler.pkl",
+    "backend/lungs_model.pkl",
+    "backend/lungs_scaler.pkl",
 ]
 
 
@@ -124,25 +129,25 @@ def service_info() -> list[dict[str, object]]:
 
 
 def ml_model_info() -> list[dict[str, object]]:
-    """Check presence of ML model pickle files."""
+    """Check presence and basic validity of runtime ML artifacts."""
     models = []
     for model_file in ML_MODEL_FILES:
-        # Check both root and backend/ directories
-        for search_dir in [ROOT, ROOT / "backend"]:
-            path = search_dir / model_file
-            if path.exists():
-                models.append({
-                    "name": model_file,
-                    "path": str(path.relative_to(ROOT)),
-                    "exists": True,
-                    "size_mb": round(path.stat().st_size / (1024 * 1024), 2),
-                })
-                break
+        path = ROOT / model_file
+        if path.exists():
+            size_bytes = path.stat().st_size
+            models.append({
+                "name": path.name,
+                "path": str(path.relative_to(ROOT)),
+                "exists": True,
+                "usable": size_bytes > 0,
+                "size_mb": round(size_bytes / (1024 * 1024), 2),
+            })
         else:
             models.append({
-                "name": model_file,
+                "name": pathlib.Path(model_file).name,
                 "path": model_file,
                 "exists": False,
+                "usable": False,
             })
     return models
 
@@ -181,13 +186,13 @@ def _print_text(snapshot: dict[str, object]) -> None:
     db = snapshot["database"]
     db_label = f"{db.get('type', 'unknown').upper()}"
     if db.get("type") == "sqlite":
-        db_label += f" — {db.get('path', '?')}"
+        db_label += f" - {db.get('path', '?')}"
         if db.get("exists") and "size_mb" in db:
             db_label += f" ({db['size_mb']:.1f} MB)"
         elif not db.get("exists"):
             db_label += " (NOT FOUND)"
     else:
-        db_label += f" — {db.get('url', '?')}"
+        db_label += f" - {db.get('url', '?')}"
     print(f"Database: {db_label}")
     print()
 
@@ -212,10 +217,12 @@ def _print_text(snapshot: dict[str, object]) -> None:
     # ML Models
     print("ML Models:")
     for model in snapshot["ml_models"]:
-        if model["exists"]:
-            print(f"  [OK] {model['name']} ({model.get('size_mb', '?')} MB)")
+        if model["exists"] and model.get("usable"):
+            print(f"  [OK] {model['path']} ({model.get('size_mb', '?')} MB)")
+        elif model["exists"]:
+            print(f"  [!!] {model['path']} - EMPTY/INVALID (run training scripts)")
         else:
-            print(f"  [!!] {model['name']} — MISSING (run training scripts)")
+            print(f"  [!!] {model['path']} - MISSING (run training scripts)")
     print()
 
     # Context Files
@@ -232,7 +239,7 @@ def _print_text(snapshot: dict[str, object]) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="AI Healthcare System — Session context snapshot for AI agents."
+        description="AI Healthcare System - Session context snapshot for AI agents."
     )
     parser.add_argument("--json", action="store_true", help="Emit machine-readable JSON.")
     args = parser.parse_args(argv)
