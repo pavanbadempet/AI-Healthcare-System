@@ -380,6 +380,58 @@ def prepare_consent_request(
 ) -> dict[str, Any]:
     settings = get_settings()
     endpoint = f"{settings.base_url.rstrip('/')}{settings.consent_request_path}" if settings.base_url else None
+    
+    # Enable a fallback mock response if ABDM_DEMO_MODE=true is enabled
+    demo_mode = os.getenv("ABDM_DEMO_MODE", "").strip().lower() in {"1", "true", "yes"}
+    if submit and demo_mode:
+        mock_payload = {
+            "requestId": request_id or str(uuid4()),
+            "timestamp": _fhir_datetime(timestamp or datetime.now(timezone.utc)),
+            "consent": {
+                "purpose": {
+                    "text": PURPOSE_CODES.get(purpose_code.upper(), "Care Management"),
+                    "code": purpose_code.upper(),
+                    "refUri": ABDM_PURPOSE_REF_URI,
+                },
+                "patient": {"id": patient_abha_address},
+                "hiu": {"id": settings.hiu_id or "demo-hiu-id"},
+                "requester": {
+                    "name": settings.requester_name,
+                    "identifier": {
+                        "type": settings.requester_identifier_type,
+                        "value": settings.requester_identifier_value or "demo-value",
+                        "system": settings.requester_identifier_system,
+                    }
+                },
+                "hiTypes": hi_types or DEFAULT_HI_TYPES,
+                "permission": {
+                    "accessMode": "VIEW",
+                    "dateRange": {
+                        "from": _fhir_datetime(date_from),
+                        "to": _fhir_datetime(date_to),
+                    },
+                    "dataEraseAt": _fhir_datetime(data_erase_at),
+                    "frequency": {
+                        "unit": "HOUR",
+                        "value": 0,
+                        "repeats": 0,
+                    },
+                }
+            }
+        }
+        mock_response = {
+            "status": "SUCCESS",
+            "consentRequestId": mock_payload["requestId"],
+            "message": "Consent request created successfully in mock sandbox."
+        }
+        return {
+            "submitted": True,
+            "status": "submitted",
+            "endpoint": "https://dev.abdm.gov.in/gateway/v0.5/consent-requests (MOCK)",
+            "payload": mock_payload,
+            "abdm_response": mock_response,
+        }
+
     if submit and (not settings.configured_for_submission or not endpoint):
         raise ABDMConfigurationError("ABDM connector is not fully configured")
 

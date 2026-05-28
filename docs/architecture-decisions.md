@@ -333,14 +333,14 @@ Info Alerts (Dashboard):
 **Accepted**
 
 ### Context
-Healthcare data requires HIPAA compliance, patient privacy, and audit trails while maintaining usability for healthcare providers.
+Healthcare data requires privacy controls, audit trails, and a path toward HIPAA-aligned operational safeguards while maintaining usability for healthcare providers.
 
 ### Decision
-Implement **defense-in-depth security**:
-- **Encryption at rest** (AES-256)
-- **Encryption in transit** (TLS 1.3)
-- **Field-level encryption** for PHI
-- **Audit logging** for all access
+Target **defense-in-depth security** for production deployments:
+- **Managed database/storage encryption at rest**
+- **Encryption in transit** (TLS)
+- **Optional field-level encryption** for highly sensitive fields
+- **Audit logging** for privileged and health-data access
 
 ### Trade-offs Analysis
 
@@ -362,14 +362,14 @@ Cost Analysis:
 - Security infrastructure: $500/month
 - Compliance monitoring: $200/month
 - Audit storage: $100/month
-- Total: $800/month vs $2M HIPAA fines
+- Total: $800/month vs materially higher breach and compliance remediation costs
 ```
 
 ### Risk Mitigation
-- **Data Breach Prevention**: 99.9% protection
-- **Audit Compliance**: 100% regulatory compliance
-- **Patient Privacy**: End-to-end protection
-- **Business Continuity**: Zero data loss
+- **Data Breach Risk Reduction**: layered controls reduce exposure
+- **Audit Readiness**: structured logs support compliance review
+- **Patient Privacy**: access controls and minimization reduce data exposure
+- **Business Continuity**: backups and recovery planning reduce data-loss risk
 
 ---
 
