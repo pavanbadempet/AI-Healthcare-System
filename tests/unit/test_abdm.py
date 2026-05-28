@@ -152,3 +152,27 @@ def test_normalize_consent_callback_rejects_abha_like_request_id():
             status="GRANTED",
             abdm_consent_id="consent-123",
         )
+
+
+def test_prepare_consent_request_allows_demo_mode_bypass(monkeypatch):
+    abdm = _abdm_module()
+    monkeypatch.setenv("ABDM_ENABLED", "true")
+    monkeypatch.setenv("ABDM_DEMO_MODE", "true")
+    monkeypatch.delenv("ABDM_BASE_URL", raising=False)
+    monkeypatch.delenv("ABDM_HIU_ID", raising=False)
+
+    result = abdm.prepare_consent_request(
+        patient_abha_address="demo@sbx",
+        purpose_code="CAREMGT",
+        hi_types=["DiagnosticReport"],
+        date_from=datetime(2026, 5, 1, tzinfo=timezone.utc),
+        date_to=datetime(2026, 5, 27, tzinfo=timezone.utc),
+        data_erase_at=datetime(2026, 6, 26, tzinfo=timezone.utc),
+        submit=True,
+    )
+
+    assert result["submitted"] is True
+    assert result["status"] == "submitted"
+    assert "MOCK" in result["endpoint"]
+    assert result["abdm_response"]["status"] == "SUCCESS"
+    assert result["payload"]["consent"]["patient"]["id"] == "demo@sbx"
