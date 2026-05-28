@@ -1,4 +1,4 @@
-# A HEALTHCARE SYSTEM FOR DISEASE PREDICTION WITH CHATBOT ASSISTANCE
+﻿# A HEALTHCARE SYSTEM FOR DISEASE PREDICTION WITH CHATBOT ASSISTANCE
 
 **Student Names:** Pavan Badempet, Shiva Prasad Anagondi, Prashanth Cheerala  
 **Department:** Computer Science & Engineering  
@@ -8,11 +8,11 @@
 
 ## ABSTRACT
 
-The rapid evolution of Artificial Intelligence (AI) has opened new frontiers in medical diagnostics. This project presents a holistic **"AI Healthcare System"** designed to predict five critical diseases—**Diabetes, Heart Disease, Liver Disease, Kidney Disease, and Lung Cancer**—with high precision. Addressing the limitations of existing manual diagnostic processes, we leverage **XGBoost (eXtreme Gradient Boosting)**, a state-of-the-art ensemble learning algorithm known for its superior performance on tabular clinical data. 
+The rapid evolution of Artificial Intelligence (AI) has opened new frontiers in medical diagnostics. This project presents a holistic **"AI Healthcare System"** designed to predict five critical diseases - **Diabetes, Heart Disease, Liver Disease, Kidney Disease, and Lung Cancer** - with high precision. Addressing the limitations of existing manual diagnostic processes, we leverage **XGBoost (eXtreme Gradient Boosting)**, a state-of-the-art ensemble learning algorithm known for its superior performance on tabular clinical data.
 
 To bridge the gap between technical diagnostics and patient understanding, the system features a **Generative AI Chatbot ("Dr. AI")** powered by **Google Gemini Pro** and **Retrieval Augmented Generation (RAG)**. This chatbot interprets prediction results, recalls past medical history from a Vector Database, and provides personalized lifestyle recommendations.
 
-The application is architected as a **Microservices-based Web Platform** using **FastAPI** (Backend) and **Streamlit** (Frontend), ensuring scalability, security through **JWT Authentication**, and deployment flexibility via **Docker**. This work demonstrates a significant advancement in automated, accessible, and intelligent healthcare solutions.
+The application is architected as a **Microservices-based Web Platform** using **FastAPI** (Backend) and **Next.js** (Frontend), ensuring scalability, security through **JWT Authentication**, and deployment flexibility via **Docker**. This work demonstrates a significant advancement in automated, accessible, and intelligent healthcare solutions.
 
 **Keywords**: Machine Learning, XGBoost, Generative AI, RAG, Healthcare, Disease Prediction, Chatbot, Python, FastAPI, Docker.
 
@@ -41,7 +41,7 @@ The application is architected as a **Microservices-based Web Platform** using *
     *   4.3 UML Diagrams (Class, Sequence, Activity, Deployment)
 5.  **CHAPTER 5: DEVELOPMENT TOOLS**
     *   5.1 Python & Features
-    *   5.2 Libraries (FastAPI, Streamlit, Scikit-Learn)
+    *   5.2 Libraries (FastAPI, Next.js, Scikit-Learn)
 6.  **CHAPTER 6: IMPLEMENTATION**
     *   6.1 Backend Logic
     *   6.2 Frontend Views
@@ -64,7 +64,7 @@ In many developing regions, the doctor-to-patient ratio is critically low, leadi
 The primary objectives are:
 1.  **Multi-Disease Prediction**: To develop highly accurate ML classifiers for Diabetes, Heart, Liver, Kidney, and Lung diseases.
 2.  **Context-Aware Consultation**: To implement a Chatbot that uses RAG (Retrieval Augmented Generation) to "remember" user context (e.g., previous glucose levels) and provide tailored advice.
-3.  **Robust Architecture**: To build a secure, modular web application using **FastAPI** and **Streamlit** that separates concerns between User Interface (UI) and Business Logic.
+3.  **Robust Architecture**: To build a secure, modular web application using **FastAPI** and **Next.js** that separates concerns between User Interface (UI) and Business Logic.
 4.  **Deployment Readiness**: To containerize the application using **Docker**, ensuring it runs consistently across different environments (Dev, Test, Prod).
 
 ### 1.3 SCOPE OF THE PROJECT
@@ -99,7 +99,7 @@ The development followed an **Agile Methodology** with iterative sprints:
 1.  **Module 1: Data Pipeline**: Cleaning datasets (UCI Repository) and feature selection (Correlation Analysis).
 2.  **Module 2: Model Training**: Training 5 distinct XGBoost classifiers and saving them as `.pkl` files.
 3.  **Module 3: Backend API**: Creating FastAPI endpoints to serve these models.
-4.  **Module 4: Frontend UI**: Building the User Interface with Streamlit.
+4.  **Module 4: Frontend UI**: Building the User Interface with Next.js.
 5.  **Module 5: Integration**: Connecting the "Dr. AI" agent to the Backend APIs.
 
 ### 2.2 ALGORITHMS USED
@@ -130,7 +130,7 @@ RAG optimizes LLM output by referencing an authoritative knowledge base before g
 *   **Operating System**: Windows 10/11 or Ubuntu Linux 20.04.
 *   **Programming Language**: Python 3.10.
 *   **Backend Framework**: FastAPI (High-performance web framework).
-*   **Frontend Framework**: Streamlit (Data app framework).
+*   **Frontend Framework**: Next.js App Router (TypeScript).
 *   **Containerization**: Docker Desktop.
 *   **IDE**: VS Code.
 
@@ -157,7 +157,7 @@ graph TD
     Client[User Browser]
     
     subgraph "Frontend Layer"
-        Streamlit[Streamlit App]
+        NextJS[Next.js App]
     end
     
     subgraph "Backend Layer (FastAPI)"
@@ -174,8 +174,8 @@ graph TD
         LLM[Google Gemini API]
     end
     
-    Client -->|HTTPS| Streamlit
-    Streamlit -->|REST| API
+    Client -->|HTTPS| NextJS
+    NextJS -->|REST| API
     API --> Auth
     API --> Predict
     API --> Chat
@@ -233,7 +233,7 @@ graph TD
     Cloud[Cloud / Server]
     
     subgraph "Docker Host"
-        Container1[Container: Frontend (Port 8501)]
+        Container1[Container: Frontend (Port 3000)]
         Container2[Container: Backend (Port 8000)]
     end
     
@@ -251,7 +251,7 @@ Python was chosen for its unparalleled ecosystem in Data Science and Web Develop
 
 ### 5.2 LIBRARIES
 *   **FastAPI**: Modern, fast (high-performance) web framework for building APIs with Python 3.7+ based on standard Python type hints.
-*   **Streamlit**: Turns data scripts into shareable web apps. We used it to build a dashboard-like interface without writing raw HTML/CSS.
+*   **Next.js**: Provides the App Router, TypeScript UI components, and production-ready routing for the healthcare dashboard.
 *   **Pydantic**: Data validation and settings management using python type annotations. Pydantic enforces type hints at runtime, and provides user friendly errors when data is invalid.
 *   **LangChain**: A framework for developing applications powered by language models.
 
@@ -365,7 +365,7 @@ The **AI Healthcare System** successfully meets the objective of providing an ac
 ## CHAPTER 10: BIBLIOGRAPHY
 
 1.  **FastAPI Documentation**. https://fastapi.tiangolo.com/
-2.  **Streamlit Documentation**. https://docs.streamlit.io/
+2.  **Next.js Documentation**. https://nextjs.org/docs
 3.  **XGBoost Documentation**. https://xgboost.readthedocs.io/
 4.  Chen, T., & Guestrin, C. (2016). *XGBoost: A Scalable Tree Boosting System*. KDD '16.
 5.  Latif, J. et al. (2021). *Implementation of Disease Diagnosis Systems... Based on Machine Learning*. IEEE Access.
