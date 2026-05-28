@@ -33,18 +33,18 @@ This allows AIO Health to provide statistical risk assessments alongside qualita
 ## 3. Security & Compliance Posture
 
 ### 3.1 Data Sovereignty
-*   **Zero-Retention (Optional)**: Architecture supports ephemeral sessions for maximum privacy.
-*   **Encryption**: All data at rest is encrypted via AES-256. User passwords hashed with **Bcrypt** (Work Factor 12).
+*   **Zero-Retention (Optional)**: Architecture can support ephemeral sessions for privacy-sensitive deployments.
+*   **Password Protection**: User passwords are hashed with **Bcrypt**. Production deployments should enable managed database/storage encryption and key management.
 
 ### 3.2 Access Control
 *   **RBAC**: Role-Based Access Control implemented via OAuth2 + JWT (JSON Web Tokens).
-*   **Audit Trails**: Immutable logs (`audit_logs` table) record every privileged action and login event, accessible only to compliance officers.
+*   **Audit Trails**: The `audit_logs` table records privileged actions and login events for compliance review.
 
 ## 4. Scalability Infrastructure
 
 Built on a **Microservices Architecture**:
 *   **Backend**: FastAPI (Python) - High concurrency, asynchronous processing.
-*   **Frontend**: Streamlit / React Ready - Decoupled UI for rapid iteration.
+*   **Frontend**: Next.js App Router (TypeScript) - Decoupled UI for rapid iteration.
 *   **Containerization**: Dockerized services ready for Kubernetes (K8s) orchestration on AWS/GCP.
 
 ## 5. Future Roadmap
@@ -54,4 +54,4 @@ Built on a **Microservices Architecture**:
 3.  **Telemedicine Bridge**: Secure H.264 video handoff to human doctors when AI confidence is low.
 
 ---
-*Copyright © 2025 AIO Health. All Rights Reserved.*
+*Copyright 2025 AIO Health. All Rights Reserved.*

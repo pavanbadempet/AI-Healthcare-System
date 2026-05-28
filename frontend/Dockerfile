@@ -1,5 +1,5 @@
 # ============================================================
-# AI Healthcare System — Frontend Dockerfile (Next.js)
+# AI Healthcare System - Frontend Dockerfile (Next.js)
 # ============================================================
 FROM node:20-alpine AS builder
 
@@ -11,6 +11,8 @@ RUN npm ci
 
 # Copy source and build
 COPY . .
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN npm run build
 
 # --- Production stage ---
@@ -19,6 +21,8 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 # Copy built artifacts
 COPY --from=builder /app/.next/standalone ./
