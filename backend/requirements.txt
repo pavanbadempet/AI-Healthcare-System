@@ -10,7 +10,7 @@ uvicorn[standard]>=0.29.0
 python-multipart>=0.0.9
 orjson
 starlette
-requests>=2.32.3
+requests>=2.34.2
 
 # --- Authentication & Security ---
 passlib[bcrypt]>=1.7.4
