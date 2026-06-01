@@ -1,53 +1,107 @@
-"use client";
 
-import { useState, useRef } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useState, useRef, useEffect, lazy, Suspense } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/lib/auth";
+import { prefetchRoute } from "@/lib/prefetch";
 import { motion, AnimatePresence } from "framer-motion";
+import { Sparkles, ChevronDown, BrainCircuit, ShieldCheck } from "lucide-react";
+import Tooltip from "./Tooltip";
+import { useTranslation } from "@/lib/i18n";
 import {
-  LayoutDashboard, MessageSquare, Heart, Activity, 
-  FlaskConical, Stethoscope, Wind, User, LogOut,
-  Sparkles, CreditCard, Video, Info, ShieldCheck, ChevronDown, BrainCircuit, Database, BedDouble, Server
-} from "lucide-react";
+  type MenuItem, type MenuGroup,
+  operationsItems, diagnosticsItems, intelligenceItems,
+  MENU_GROUPS, getIconStyles, colorKeyFromMenuItem,
+  COMMAND_ITEMS,
+} from "./nav-config";
+import MegaMenuPanel from "./MegaMenuPanel";
+import CommandSearch from "./CommandSearch";
+import TelemetryDropdown from "./TelemetryDropdown";
+import LanguageSelector from "./LanguageSelector";
+import ProfileDropdown from "./ProfileDropdown";
 
-const MEGA_MENUS = {
-  operations: {
-    label: "Operations",
-    items: [
-      { label: "Command Center", href: "/dashboard", icon: LayoutDashboard, desc: "Global telemetry and health overview" },
-      { label: "Patient Registry", href: "/patients", icon: User, desc: "Manage multiple patient profiles" },
-      { label: "Capacity & Beds", href: "/capacity", icon: BedDouble, desc: "Hospital ADT & throughput tracker" },
-      { label: "Telemedicine", href: "/telemedicine", icon: Video, desc: "Secure video consultations" },
-      { label: "Infrastructure", href: "/infrastructure", icon: Server, desc: "HL7/FHIR Node Status & Sync" },
-    ]
-  },
-  diagnostics: {
-    label: "Diagnostics AI",
-    items: [
-      { label: "Cardiology", href: "/predict/heart", icon: Heart, desc: "Heart disease risk assessment", color: "text-rose-400" },
-      { label: "Pulmonology", href: "/predict/lungs", icon: Wind, desc: "Lung capacity and disease modeling", color: "text-sky-400" },
-      { label: "Hepatology", href: "/predict/liver", icon: FlaskConical, desc: "Hepatic function analysis", color: "text-amber-400" },
-      { label: "Nephrology", href: "/predict/kidney", icon: Stethoscope, desc: "Renal failure prediction", color: "text-emerald-400" },
-      { label: "Endocrinology", href: "/predict/diabetes", icon: Activity, desc: "Metabolic syndrome tracking", color: "text-indigo-400" },
-    ]
-  },
-  intelligence: {
-    label: "Intelligence",
-    items: [
-      { label: "AI Copilot", href: "/chat", icon: MessageSquare, desc: "Singularity LLM medical assistant" },
-      { label: "System Architecture", href: "/about", icon: Info, desc: "View infrastructure and whitepapers" },
-      { label: "Enterprise Billing", href: "/pricing", icon: CreditCard, desc: "Manage hospital API usage" },
-    ]
-  }
-};
+const MobileDrawer = lazy(() => import("@/components/layout/MobileDrawer"));
 
-export default function TopNav({ mobileOpen, setMobileOpen }: { mobileOpen?: boolean, setMobileOpen?: (val: boolean) => void }) {
-  const pathname = usePathname();
+/* ═══════════════════════════════════════════════════
+   TopNav Component
+   ═══════════════════════════════════════════════════ */
+export default function TopNav({
+  mobileOpen,
+  setMobileOpen,
+}: {
+  mobileOpen?: boolean;
+  setMobileOpen?: (val: boolean) => void;
+}) {
+  const location = useLocation();
+  const pathname = location.pathname;
+  const navigate = useNavigate();
   const { user, logout } = useAuthStore();
-  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const { language, setLanguage, t } = useTranslation();
 
-  const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  // Menu & UI state
+  const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  const [hoveredTab, setHoveredTab] = useState<string | null>(null);
+
+  // Refs
+  const navContainerRef = useRef<HTMLDivElement>(null);
+  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Dynamic menu items and groups computation
+  const dynamicOperationsItems = operationsItems.map(item => {
+    if (item.id === "dashboard") return { ...item, title: t.commandCenter };
+    if (item.id === "patients") return { ...item, title: t.patientRegistry };
+    if (item.id === "capacity") return { ...item, title: t.infrastructure };
+    if (item.id === "telemedicine") return { ...item, title: t.telemedicine };
+    return item;
+  });
+
+  const dynamicIntelligenceItems = intelligenceItems.map(item => {
+    if (item.id === "copilot") return { ...item, title: t.engageCopilot };
+    if (item.id === "architecture") return { ...item, title: t.adminConsole };
+    return item;
+  });
+
+  const dynamicMenuGroups = [
+    {
+      key: "operations",
+      label: language === "es" ? "Operaciones" : language === "hi" ? "संचालन" : "Operations",
+      emoji: "🛰️",
+      accentColor: "text-indigo-400 data-[state=open]:text-indigo-400",
+      items: dynamicOperationsItems,
+      cols: 2,
+      routes: ["/dashboard", "/patients", "/capacity", "/telemedicine", "/infrastructure"],
+    },
+    {
+      key: "diagnostics",
+      label: language === "es" ? "Diagnósticos AI" : language === "hi" ? "निदान एआई" : "Diagnostics AI",
+      emoji: "🧬",
+      accentColor: "text-rose-400 data-[state=open]:text-rose-400",
+      items: diagnosticsItems,
+      cols: 2,
+      routes: ["/predict/heart", "/predict/lungs", "/predict/liver", "/predict/kidney", "/predict/diabetes"],
+    },
+    {
+      key: "intelligence",
+      label: language === "es" ? "Inteligencia" : language === "hi" ? "बुद्धिमत्ता" : "Intelligence",
+      emoji: "⚡",
+      accentColor: "text-purple-400 data-[state=open]:text-purple-400",
+      items: dynamicIntelligenceItems,
+      cols: 1,
+      routes: ["/chat", "/about", "/pricing"],
+    },
+  ];
+
+  // Click outside handler for menu
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Node;
+      if (activeMenu && navContainerRef.current && !navContainerRef.current.contains(target)) {
+        setActiveMenu(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [activeMenu]);
 
   const handleMouseEnter = (menuKey: string) => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
@@ -57,163 +111,220 @@ export default function TopNav({ mobileOpen, setMobileOpen }: { mobileOpen?: boo
   const handleMouseLeave = () => {
     hoverTimeoutRef.current = setTimeout(() => {
       setActiveMenu(null);
-    }, 150); // Small delay to prevent flickering when moving between items
+    }, 200);
+  };
+
+  const closeAllMenus = () => {
+    setActiveMenu(null);
+    setHoveredTab(null);
   };
 
   return (
-    <header
-      className="fixed top-0 left-0 right-0 h-14 z-50 flex items-center px-4 md:px-6 justify-between border-b border-[var(--border)] bg-[color:rgba(6,5,5,0.62)] backdrop-blur-xl"
-      role="banner"
-    >
-      {/* Hairline highlight */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(255,244,230,0.18),transparent)]" aria-hidden="true" />
-      {/* Left: Logo */}
-      <Link href="/dashboard" className="flex items-center gap-3 shrink-0 group" aria-label="AI Healthcare System - Go to dashboard">
-        <div className="w-8 h-8 rounded-md flex items-center justify-center text-[var(--text-primary)] bg-[linear-gradient(180deg,rgba(255,244,230,0.06),rgba(255,244,230,0.02))] border border-[var(--border)] group-hover:border-[var(--border-focus)] transition-colors shadow-[0_1px_0_rgba(255,244,230,0.06)_inset]">
-          <Sparkles size={16} aria-hidden="true" />
-        </div>
-        <div className="hidden sm:block">
-          <h1 className="text-sm text-[var(--text-primary)] tracking-tight display-title">
-            AI Healthcare<span className="text-[var(--text-secondary)] ml-1">System</span>
-          </h1>
-        </div>
-      </Link>
+    <>
+      <header
+        className="fixed top-2.5 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] md:w-[calc(100%-3rem)] max-w-[1550px] h-14 z-50 flex items-center px-4 md:px-6 justify-between border border-[var(--border)] bg-[var(--bg-card)] backdrop-blur-2xl rounded-2xl shadow-[var(--shadow-soft)] transition-all duration-300 hover:border-[var(--border-focus)] hover:shadow-[0_4px_30px_rgba(95,95,247,0.08)]"
+        role="banner"
+      >
+        {/* Top glow */}
+        <div
+          className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-60"
+          aria-hidden="true"
+        />
 
-      {/* Middle: Desktop Mega Navigation */}
-      <nav className="hidden lg:flex items-center gap-2 h-full absolute left-1/2 -translate-x-1/2" onMouseLeave={handleMouseLeave} aria-label="Main navigation">
-        {Object.entries(MEGA_MENUS).map(([key, menu]) => {
-          const isActive = activeMenu === key;
-          const isCurrentRoute = menu.items.some(item => pathname?.startsWith(item.href));
-          
-          return (
-            <div key={key} className="h-full flex items-center" onMouseEnter={() => handleMouseEnter(key)}>
-              <button
-                className={`px-3 py-1.5 rounded-md text-[13px] font-medium transition-colors flex items-center gap-1.5 ${isActive || isCurrentRoute ? "text-[var(--text-primary)] bg-[var(--bg-card-hover)]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
-                aria-expanded={isActive}
-                aria-haspopup="true"
-              >
-                {menu.label}
-                <ChevronDown size={12} className={`transition-transform duration-200 ${isActive ? "rotate-180" : ""}`} aria-hidden="true" />
-              </button>
-
-              {/* Mega Dropdown Panel */}
-              <AnimatePresence>
-                {isActive && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 5 }}
-                    transition={{ duration: 0.1 }}
-                    className="absolute top-[48px] left-1/2 -translate-x-1/2 w-[520px] pt-2 z-50"
-                  >
-                    <div className="glass-card p-4 shadow-[var(--shadow-lg)] relative overflow-hidden" role="menu">
-                      <div className="absolute inset-x-0 top-0 h-px bg-[linear-gradient(90deg,transparent,rgba(199,163,106,0.35),transparent)]" aria-hidden="true" />
-                      <div className="grid grid-cols-2 gap-2">
-                        {menu.items.map((item) => (
-                          <Link 
-                            key={item.href} 
-                            href={item.href}
-                            onClick={() => setActiveMenu(null)}
-                            className="flex items-start gap-3 p-3 rounded-md hover:bg-[rgba(255,244,230,0.05)] transition-colors group"
-                            role="menuitem"
-                          >
-                            <div className="mt-0.5 text-[var(--text-dim)] group-hover:text-[var(--text-primary)] transition-colors">
-                              <item.icon size={16} aria-hidden="true" />
-                            </div>
-                            <div>
-                              <h3 className="text-[13px] font-medium text-[var(--text-primary)] mb-0.5">{item.label}</h3>
-                              <p className="text-[12px] text-[var(--text-dim)] leading-snug">{item.desc}</p>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          );
-        })}
-      </nav>
-
-      {/* Right: User & Status */}
-      <div className="flex items-center gap-4 shrink-0">
-        <div className="hidden md:flex items-center gap-2 mr-4">
-          <span className="status-badge status-badge-success">
-            <Database size={10} aria-hidden="true" /> Online
-          </span>
-        </div>
-
-        {user && user.role === "admin" && (
-          <Link href="/admin" className="hidden lg:flex p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-md transition-colors hover:bg-[var(--bg-card)]" aria-label="Admin panel">
-            <ShieldCheck size={16} aria-hidden="true" />
-          </Link>
-        )}
-        
-        {user && (
-          <Link href="/profile" className="hidden sm:flex items-center gap-2 px-2 py-1 rounded-md hover:bg-[var(--bg-card)] transition-colors border border-transparent hover:border-[var(--border)] cursor-pointer" aria-label={`Profile: ${user.full_name || user.username}`}>
-            <div className="w-6 h-6 rounded bg-[var(--bg-card-hover)] border border-[var(--border)] flex items-center justify-center text-[var(--text-primary)] font-medium text-[11px]">
-              {(user.full_name || user.username).charAt(0).toUpperCase()}
-            </div>
-            <div className="text-left hidden md:block">
-              <p className="text-[13px] font-medium text-[var(--text-primary)] leading-none">{user.full_name || user.username}</p>
-            </div>
-          </Link>
-        )}
-
-        <button onClick={logout} className="p-1.5 text-[var(--text-dim)] hover:text-[var(--danger)] rounded-md transition-colors hover:bg-[var(--danger-muted)]" title="Sign out" aria-label="Sign out">
-          <LogOut size={16} aria-hidden="true" />
-        </button>
-
-        {/* Mobile menu toggle */}
-        <button onClick={() => setMobileOpen && setMobileOpen(true)} className="lg:hidden p-1.5 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-md transition-colors" aria-label="Open mobile menu">
-          <BrainCircuit size={18} aria-hidden="true" />
-        </button>
-      </div>
-
-      {/* Mobile Mega Menu Overlay */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="lg:hidden fixed inset-0 z-50 bg-[var(--bg-primary)] overflow-y-auto pt-20 px-4 pb-20"
-            role="dialog"
-            aria-label="Mobile navigation menu"
+        {/* ─── Left: Brand Logo ─── */}
+        <Tooltip content="Command Center / Dashboard" position="bottom">
+          <Link
+            to="/dashboard"
+            onMouseEnter={() => prefetchRoute('/dashboard')}
+            className="flex items-center gap-2 shrink-0 group"
+            aria-label="AI Healthcare System - Go to dashboard"
           >
-            <button onClick={() => setMobileOpen && setMobileOpen(false)} className="absolute top-4 right-4 p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] rounded-md bg-[var(--bg-card)] border border-[var(--border)]" aria-label="Close mobile menu">
-              Close
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--accent)] to-[var(--accent-purple)] flex items-center justify-center text-white shadow-[0_0_12px_rgba(99,102,241,0.25)] group-hover:scale-105 transition-transform duration-200">
+              <Sparkles size={15} aria-hidden="true" />
+            </div>
+            <div className="hidden sm:block">
+              <h1 className="text-xs font-bold text-[var(--text-primary)] tracking-wide uppercase">
+                AI Healthcare{" "}
+                <span className="text-[var(--text-secondary)] font-normal">System</span>
+              </h1>
+            </div>
+          </Link>
+        </Tooltip>
+
+        {/* ─── Center: Navigation with Mega Menus ─── */}
+        <nav
+          ref={navContainerRef}
+          className="hidden lg:flex items-center gap-1 h-full relative"
+          onMouseLeave={() => {
+            handleMouseLeave();
+            setHoveredTab(null);
+          }}
+          aria-label="Main navigation"
+        >
+          {dynamicMenuGroups.map((group) => {
+            const isCurrentRoute = group.routes.some((r) => pathname?.startsWith(r));
+
+            return (
+              <div
+                key={group.key}
+                className="h-full flex items-center relative"
+                onMouseEnter={() => {
+                  if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+                  setActiveMenu(group.key);
+                  setHoveredTab(group.key);
+                }}
+              >
+                <button
+                  onClick={() => {
+                    if (activeMenu === group.key) {
+                      setActiveMenu(null);
+                      setHoveredTab(null);
+                    } else {
+                      setActiveMenu(group.key);
+                      setHoveredTab(group.key);
+                    }
+                  }}
+                  className={`relative z-10 px-3 py-1.5 rounded-lg text-[10px] font-black tracking-wider uppercase transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
+                    activeMenu === group.key || isCurrentRoute
+                      ? "text-[var(--text-primary)]"
+                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  }`}
+                  aria-expanded={activeMenu === group.key}
+                  aria-haspopup="true"
+                >
+                  <span className="text-sm">{group.emoji}</span>
+                  {group.label}
+                  <ChevronDown
+                    size={11}
+                    className={`transition-transform duration-200 ${
+                      activeMenu === group.key
+                        ? "rotate-180 text-[var(--accent)]"
+                        : "text-[var(--text-dim)]"
+                    }`}
+                    aria-hidden="true"
+                  />
+                </button>
+
+                {/* Hover pill */}
+                {hoveredTab === group.key && (
+                  <motion.div
+                    layoutId="nav-hover-pill"
+                    className="absolute inset-0 bg-white/[0.04] border border-white/[0.02] rounded-lg -z-10"
+                    transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                  />
+                )}
+
+                {/* Active underline */}
+                {isCurrentRoute && activeMenu !== group.key && (
+                  <motion.div
+                    layoutId="nav-active-pill"
+                    className="absolute bottom-1 inset-x-3.5 h-0.5 bg-[var(--accent)] rounded-full"
+                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                  />
+                )}
+              </div>
+            );
+          })}
+
+          {/* ─── Mega Menu Panel ─── */}
+          <AnimatePresence mode="wait">
+            {activeMenu && (
+              <motion.div
+                key={activeMenu}
+                initial={{ opacity: 0, y: 12, scale: 0.97 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 12, scale: 0.97 }}
+                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+                onMouseEnter={() => {
+                  if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+                }}
+                onMouseLeave={() => {
+                  handleMouseLeave();
+                  setHoveredTab(null);
+                }}
+                className="absolute top-[44px] left-1/2 -translate-x-1/2 pt-2 z-50"
+              >
+                {(() => {
+                  const group = dynamicMenuGroups.find((g) => g.key === activeMenu);
+                  if (!group) return null;
+                  return (
+                    <MegaMenuPanel
+                      items={group.items}
+                      cols={group.cols}
+                      onNavigate={closeAllMenus}
+                    />
+                  );
+                })()}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </nav>
+
+        {/* ─── Right: Actions ─── */}
+        <div className="flex items-center gap-2 md:gap-3 shrink-0">
+          {/* Command Search */}
+          <CommandSearch user={user} />
+
+          {/* Telemetry Dropdown */}
+          <TelemetryDropdown />
+
+          {/* Admin Icon */}
+          {user && user.role === "admin" && (
+            <Tooltip content="Clinician Admin Console" position="bottom">
+              <Link
+                to="/admin"
+                onMouseEnter={() => prefetchRoute('/admin')}
+                className="hidden sm:flex p-2 text-[var(--text-secondary)] hover:text-[var(--accent)] border border-transparent hover:border-[var(--border)] hover:bg-white/[0.02] rounded-lg transition-colors"
+                aria-label="Admin panel"
+              >
+                <ShieldCheck size={15} aria-hidden="true" />
+              </Link>
+            </Tooltip>
+          )}
+
+          {/* Language Selector Dropdown */}
+          <LanguageSelector language={language} setLanguage={setLanguage} />
+
+          {/* User Profile Dropdown */}
+          {user && (
+            <ProfileDropdown user={user} logout={logout} adminLabel={t.adminConsole} />
+          )}
+
+          {/* Mobile Menu trigger */}
+          <Tooltip content="Open Navigation Menu" position="bottom">
+            <button
+              onClick={() => {
+                if (setMobileOpen) setMobileOpen(true);
+              }}
+              className="lg:hidden p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)] hover:border-[var(--border-focus)] bg-white/[0.02] hover:bg-white/[0.05] rounded-lg transition-all cursor-pointer"
+              aria-label="Open mobile menu"
+            >
+              <BrainCircuit size={16} aria-hidden="true" />
             </button>
-            
-            <nav className="space-y-8 max-w-md mx-auto" aria-label="Mobile navigation">
-              {Object.entries(MEGA_MENUS).map(([key, menu]) => (
-                <div key={key}>
-                  <h2 className="section-label text-[var(--accent)] mb-3 ml-1">{menu.label}</h2>
-                  <div className="space-y-2">
-                    {menu.items.map((item) => (
-                      <Link 
-                        key={item.href} 
-                        href={item.href}
-                        onClick={() => setMobileOpen && setMobileOpen(false)}
-                        className="flex items-center gap-3 p-3 rounded-md bg-[var(--bg-card)] border border-[var(--border)] hover:border-[var(--border-focus)] transition-colors"
-                      >
-                        <div className="p-2 rounded-md bg-[var(--accent-muted)] text-[var(--accent)] border border-[var(--accent-border)]">
-                          <item.icon size={16} aria-hidden="true" />
-                        </div>
-                        <div>
-                          <h3 className="text-[13px] font-medium text-[var(--text-primary)]">{item.label}</h3>
-                          <p className="text-[11px] text-[var(--text-dim)] mt-0.5">{item.desc}</p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </nav>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </header>
+          </Tooltip>
+        </div>
+
+        {/* ─── Mobile Drawer ─── */}
+        <AnimatePresence>
+          {mobileOpen && (
+            <Suspense fallback={null}>
+              <MobileDrawer
+                open={mobileOpen}
+                onClose={() => {
+                  if (setMobileOpen) setMobileOpen(false);
+                }}
+                setCommandMenuOpen={(val) => {
+                  // Integrate with CommandSearch if needed
+                }}
+                dynamicMenuGroups={dynamicMenuGroups}
+                telemetryStats={{ cpu: 12, latency: 22 }}
+                user={user}
+                logout={logout}
+              />
+            </Suspense>
+          )}
+        </AnimatePresence>
+      </header>
+    </>
   );
 }
