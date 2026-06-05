@@ -22,8 +22,8 @@ jobs:
           HF_SPACE_NAME: ${{ secrets.HF_SPACE_NAME }}
         run: |
           if [ -z "$HF_TOKEN" ] || [ -z "$HF_USERNAME" ] || [ -z "$HF_SPACE_NAME" ]; then
-            echo "Error: Missing Hugging Face Secrets. Please add HF_TOKEN, HF_USERNAME, and HF_SPACE_NAME to GitHub Secrets."
-            exit 1
+            echo "Warning: Missing Hugging Face Secrets. Skipping Hugging Face Sync."
+            exit 0
           fi
           
           # Rename the specific Dockerfile for Hugging Face
