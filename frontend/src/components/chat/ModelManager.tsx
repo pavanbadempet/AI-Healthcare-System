@@ -215,7 +215,7 @@ export const ModelManager: React.FC<{
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-zinc-800/50 bg-zinc-900/50">
         <div className="flex items-center gap-3">
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors">
+          <button onClick={onClose} aria-label="Close model manager" className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors">
             <ChevronLeft className="w-4 h-4" />
           </button>
           <div className="flex items-center gap-2">

@@ -123,7 +123,7 @@ class TestTavilySearch:
             parsed_urls = [
                 urlparse(token.strip("()[]<>,\"'"))
                 for token in result.split()
-                if token.startswith("http://") or token.startswith("https://")
+                if "http://" in token or "https://" in token
             ]
             assert any(
                 p.scheme == "http" and p.hostname == "example.com" and (p.path in ("", "/"))
