@@ -44,3 +44,4 @@ fpdf2
 pillow
 feedparser>=6.0.10
 razorpay
+psutil
