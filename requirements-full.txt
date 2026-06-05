@@ -50,7 +50,7 @@ langgraph>=0.0.10
 # --- Utilities ---
 fpdf
 pillow
-feedparser>=6.0.10
+feedparser>=6.0.12
 
 # --- Data Pipeline (Orchestration) ---
 apache-airflow>=2.8.0
