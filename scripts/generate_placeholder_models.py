@@ -1,10 +1,9 @@
 
-import pickle
 import os
+import pickle
+
 import numpy as np
-import pandas as pd
 from sklearn.dummy import DummyClassifier
-from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
 # Define model paths
@@ -22,19 +21,53 @@ MODELS = {
 
 def generate_placeholders():
     print(f"Checking for models in: {BACKEND_DIR}")
-    
+
     if not os.path.exists(BACKEND_DIR):
         os.makedirs(BACKEND_DIR)
 
+    # Try to download real models from Hugging Face if HF_TOKEN and HF_DATASET_ID are set
+    hf_token = os.getenv("HF_TOKEN")
+    hf_dataset_id = os.getenv("HF_DATASET_ID")
+    if hf_token and hf_dataset_id:
+        try:
+            print("HF credentials found. Attempting to download real models from Hugging Face dataset...")
+            from huggingface_hub import HfApi
+            api = HfApi(token=hf_token)
+            files = api.list_repo_files(repo_id=hf_dataset_id, repo_type="dataset")
+            model_files = [f for f in files if f.startswith("models/")]
+            for file in model_files:
+                filename = os.path.basename(file)
+                print(f"Downloading {filename} from HF...")
+                api.hf_hub_download(
+                    repo_id=hf_dataset_id,
+                    repo_type="dataset",
+                    filename=file,
+                    local_dir=BACKEND_DIR,
+                    local_dir_use_symlinks=False
+                )
+
+            # Move files if they downloaded to BACKEND_DIR/models/
+            models_sub_dir = os.path.join(BACKEND_DIR, "models")
+            if os.path.exists(models_sub_dir):
+                import shutil
+                for f in os.listdir(models_sub_dir):
+                    src = os.path.join(models_sub_dir, f)
+                    dst = os.path.join(BACKEND_DIR, f)
+                    shutil.move(src, dst)
+                os.rmdir(models_sub_dir)
+            print("Successfully checked/downloaded real models from Hugging Face.")
+        except Exception as e:
+            print(f"Failed to download real models from Hugging Face: {e}. Falling back to placeholder generation.")
+
     for filename, config in MODELS.items():
         filepath = os.path.join(BACKEND_DIR, filename)
-        
+
         if os.path.exists(filepath):
             print(f"FOUND existing: {filename}")
             continue
-            
+
         print(f"MISSING: {filename}. Generating placeholder...")
-        
+
         obj = None
         if config["type"] == "classifier":
             # Create a simple dummy classifier
@@ -43,11 +76,11 @@ def generate_placeholders():
             y = np.array(config["classes"][:2]) if len(config["classes"]) >=2 else np.array([config["classes"][0]] * 2)
             # Ensure y matches X length
             if len(y) < 2: y = np.array([config["classes"][0]] * 2)
-                
+
             clf = DummyClassifier(strategy="constant", constant=config["classes"][0])
             clf.fit(X, y)
             obj = clf
-            
+
         elif config["type"] == "scaler":
             n_features = config.get("features", 1)
             scaler = StandardScaler()
