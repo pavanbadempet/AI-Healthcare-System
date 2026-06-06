@@ -6,9 +6,9 @@
 # =======================================================
 
 # --- Core API & Server ---
-fastapi>=0.111.0
+fastapi>=0.136.3
 uvicorn[standard]>=0.48.0
-python-multipart>=0.0.9
+python-multipart>=0.0.30
 orjson
 starlette
 starlette
@@ -19,7 +19,7 @@ razorpay
 passlib[bcrypt]>=1.7.4
 bcrypt<4.0
 pyjwt>=2.13.0
-python-jose[cryptography]>=3.3.0
+python-jose[cryptography]>=3.5.0
 
 # --- Database & Config ---
 sqlalchemy
@@ -31,7 +31,7 @@ numpy>=1.26.4
 scikit-learn>=1.8.0
 joblib>=1.3.0
 torch>=2.2.0
-xgboost>=2.0.3
+xgboost>=3.2.0
 lightgbm>=4.3.0
 shap>=0.45.0
 sentence-transformers
