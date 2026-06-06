@@ -26,7 +26,7 @@ python-dotenv
 # --- Data Science (Lite) ---
 pandas>=3.0.3
 numpy>=1.26.4
-scikit-learn>=1.4.2
+scikit-learn>=1.8.0
 xgboost>=1.7.0
 shap>=0.40.0
 joblib>=1.3.0
