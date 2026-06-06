@@ -24,7 +24,7 @@ psycopg2-binary
 python-dotenv
 
 # --- Data Science (Lite) ---
-pandas>=2.2.2
+pandas>=3.0.3
 numpy>=1.26.4
 scikit-learn>=1.4.2
 xgboost>=1.7.0
