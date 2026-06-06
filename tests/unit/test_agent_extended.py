@@ -4,6 +4,7 @@ Tests CoreAIWrapper, tavily_search, supervisor routing, and guardrail node.
 """
 import pytest
 from unittest.mock import MagicMock, patch, AsyncMock
+from urllib.parse import urlparse
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
 from backend.agent import (
@@ -119,7 +120,15 @@ class TestTavilySearch:
             result = tavily_search("diabetes treatment")
             
             assert "Test answer" in result
-            assert "http://example.com" in result
+            parsed_urls = [
+                urlparse(token.strip("()[]<>,\"'"))
+                for token in result.split()
+                if "http://" in token or "https://" in token
+            ]
+            assert any(
+                p.scheme == "http" and p.hostname == "example.com" and (p.path in ("", "/"))
+                for p in parsed_urls
+            )
     
     def test_tavily_api_error(self):
         """Test handling of API errors."""

@@ -6,16 +6,16 @@
 
 # --- Core API & Server ---
 fastapi>=0.111.0
-uvicorn[standard]>=0.29.0
+uvicorn[standard]>=0.48.0
 python-multipart>=0.0.9
 orjson
 starlette
-requests>=2.32.3
+requests>=2.34.2
 
 # --- Authentication & Security ---
 passlib[bcrypt]>=1.7.4
 bcrypt<4.0
-pyjwt>=2.8.0
+pyjwt>=2.13.0
 python-jose[cryptography]>=3.3.0
 
 # --- Database & Config ---
@@ -24,9 +24,9 @@ psycopg2-binary
 python-dotenv
 
 # --- Data Science (Lite) ---
-pandas>=2.2.2
+pandas>=3.0.3
 numpy>=1.26.4
-scikit-learn>=1.4.2
+scikit-learn>=1.8.0
 xgboost>=1.7.0
 shap>=0.40.0
 joblib>=1.3.0
@@ -42,5 +42,7 @@ langgraph>=0.0.10
 # --- Utilities ---
 fpdf2
 pillow
-feedparser>=6.0.10
+feedparser>=6.0.12
 razorpay
+psutil
+prometheus_client
