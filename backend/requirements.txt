@@ -42,7 +42,7 @@ langgraph>=0.0.10
 # --- Utilities ---
 fpdf2
 pillow
-feedparser>=6.0.10
+feedparser>=6.0.12
 razorpay
 psutil
 prometheus_client
