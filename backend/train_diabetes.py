@@ -1,9 +1,10 @@
 import os
 import pickle
+
 import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
 import xgboost as xgb
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
 
 # --- Configuration ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -12,7 +13,7 @@ MODEL_PATH = os.path.join(BASE_DIR, "diabetes_model.pkl")
 
 def train_diabetes_model():
     print("Starting Diabetes Model Training (BRFSS 2015)...")
-    
+
     # 1. Load Data
     if not os.path.exists(DATASET_PATH):
         print(f"Error: Dataset not found at {DATASET_PATH}")
@@ -26,12 +27,12 @@ def train_diabetes_model():
         from .features import DIABETES_DATASET_MAP, DIABETES_FEATURES
     except ImportError:
         from features import DIABETES_DATASET_MAP, DIABETES_FEATURES
-    
+
     # Check if we need to rename columns
     if all(col in df.columns for col in DIABETES_DATASET_MAP.keys()):
         print("Renaming columns to canonical names...")
         df = df.rename(columns=DIABETES_DATASET_MAP)
-    
+
     # Select only required features
     X = df[DIABETES_FEATURES]
     Y = df["diabetes"]

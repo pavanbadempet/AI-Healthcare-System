@@ -48,12 +48,12 @@ def load_pkl(filenames: List[str], fallback_class=None):
                 # Use joblib to load (supports standard pickle and compressed joblib files)
                 with open(path, 'rb') as f:
                     obj = joblib.load(f)
-                    logger.info(f"✅ Successfully loaded model: {f_name}")
+                    logger.info("✅ Successfully loaded model: %s", f_name)
                     return obj
             except Exception:
                 logger.error("Failed to load model file %s", f_name)
     
-    logger.warning(f"⚠️ Could not find any of: {filenames} in {MODEL_DIR}. Model will be unavailable.")
+    logger.warning("⚠️ Could not find any of: %s in %s. Model will be unavailable.", filenames, MODEL_DIR)
     if fallback_class:
         return fallback_class()
     return None

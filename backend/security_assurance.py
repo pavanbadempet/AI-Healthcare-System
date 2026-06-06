@@ -7,10 +7,9 @@ vulnerability scanning, and penetration-test review.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import os
+from datetime import datetime, timezone
 from typing import Any
-
 
 CONTROL_DEFINITIONS = (
     ("secret_scan", "Secret scan evidence", "SECRET_SCAN_LAST_RUN_AT", "timestamp"),

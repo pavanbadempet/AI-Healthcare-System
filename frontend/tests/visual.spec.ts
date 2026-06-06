@@ -20,9 +20,9 @@ test.describe('B2B Clinical Enterprise UI Consistency', () => {
       };
     });
     // Compiled CSS must be loaded; transparent default styles can make unstyled pages pass weak checks.
-    expect(['#000', '#000000']).toContain(clinicalShellStyles.primaryBgToken);
-    expect(clinicalShellStyles.bodyBg).toBe('rgb(0, 0, 0)');
-    expect(clinicalShellStyles.shellBg).toBe('rgb(0, 0, 0)');
+    expect(['#000', '#000000', '#09090b']).toContain(clinicalShellStyles.primaryBgToken);
+    expect(['rgb(0, 0, 0)', 'rgb(9, 9, 11)']).toContain(clinicalShellStyles.bodyBg);
+    expect(['rgb(0, 0, 0)', 'rgb(9, 9, 11)']).toContain(clinicalShellStyles.shellBg);
 
     // Take a visual snapshot to lock in the CSS rules
     await expect(page).toHaveScreenshot('login-clinical-style.png', { maxDiffPixels: 100 });

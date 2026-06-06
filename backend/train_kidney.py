@@ -1,10 +1,11 @@
 import os
 import pickle
+
 import pandas as pd
+import xgboost as xgb
+from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score
-import xgboost as xgb
 
 try:
     from .features import KIDNEY_FEATURES
@@ -19,7 +20,7 @@ SCALER_PATH = os.path.join(BASE_DIR, "kidney_scaler.pkl")
 
 def train_kidney_model():
     print("Starting Kidney Disease Model Training...")
-    
+
     if not os.path.exists(DATASET_PATH):
         print(f"Error: Dataset not found at {DATASET_PATH}")
         return
@@ -35,7 +36,7 @@ def train_kidney_model():
     # 3. Scaling
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
-    
+
     with open(SCALER_PATH, 'wb') as f:
         pickle.dump(scaler, f)
     print(f"Scaler Saved to {SCALER_PATH}")

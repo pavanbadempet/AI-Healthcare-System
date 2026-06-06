@@ -1,0 +1,388 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* Custom Animations */
+  --animate-gradient-x: gradient-x 15s ease infinite;
+}
+
+@keyframes gradient-x {
+  0%, 100% {
+    background-size: 200% 200%;
+    background-position: left center;
+  }
+  50% {
+    background-size: 200% 200%;
+    background-position: right center;
+  }
+}
+
+@keyframes scan-line {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes drift {
+  0%, 100% {
+    background-position: 0% 50%, 100% 50%;
+  }
+  50% {
+    background-position: 100% 50%, 0% 50%;
+  }
+}
+
+:root {
+  /* ──────────────────────────────────────────────────
+     Modern Tech-SaaS Design Tokens
+     Purpose: Ultra-clean, high-performance developer console aesthetic
+     ────────────────────────────────────────────────── */
+
+  /* Surfaces (deep dark neutral scale) */
+  --bg-primary: #09090b;       /* zinc-950 */
+  --bg-secondary: #0f0f11;     /* high-density slate */
+  --bg-card: #18181b;          /* zinc-900 */
+  --bg-card-hover: #202024;    /* hover slate */
+  --bg-elevated: #27272a;      /* zinc-800 */
+
+  /* Razor-thin borders */
+  --border: rgba(255, 255, 255, 0.05);
+  --border-focus: rgba(255, 255, 255, 0.15);
+  --border-subtle: rgba(255, 255, 255, 0.03);
+
+  /* Accents (clean Indigo/Violet glow) */
+  --accent: #6366f1;           /* Indigo-500 */
+  --accent-hover: #4f46e5;     /* Indigo-600 */
+  --accent-muted: rgba(99, 102, 241, 0.08);
+  --accent-border: rgba(99, 102, 241, 0.20);
+
+  --accent-purple: #8b5cf6;    /* Violet-500 */
+  --accent-purple-muted: rgba(139, 92, 246, 0.08);
+  --accent-purple-border: rgba(139, 92, 246, 0.20);
+
+  --accent-blue: #06b6d4;      /* Cyan-500 */
+  --accent-blue-muted: rgba(6, 182, 212, 0.08);
+  --accent-blue-border: rgba(6, 182, 212, 0.20);
+
+  --accent-emerald: #10b981;   /* Emerald success */
+
+  /* Typography (high-readability light grays) */
+  --text-primary: #f4f4f5;     /* zinc-100 */
+  --text-secondary: #a1a1aa;   /* zinc-400 */
+  --text-dim: #71717a;         /* zinc-500 */
+  --text-muted: #52525b;       /* zinc-600 */
+
+  /* Status Colors */
+  --danger: #ef4444;           /* Red-500 */
+  --danger-muted: rgba(239, 68, 68, 0.08);
+  --danger-border: rgba(239, 68, 68, 0.20);
+  --warning: #f59e0b;          /* Amber-500 */
+  --warning-muted: rgba(245, 158, 11, 0.08);
+  --warning-border: rgba(245, 158, 11, 0.20);
+  --success: #10b981;          /* Emerald-500 */
+  --success-muted: rgba(16, 185, 129, 0.08);
+  --success-border: rgba(16, 185, 129, 0.20);
+
+  /* Geometry */
+  --radius-sm: 6px;
+  --radius: 8px;
+  --radius-lg: 12px;
+
+  /* Shadows (minimalist glow + tight lift) */
+  --shadow-soft: 0 4px 20px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.8);
+  --shadow-focus: 0 0 0 1px var(--border-focus), 0 0 0 4px rgba(99, 102, 241, 0.15);
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background-color: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
+  font-family: var(--font-sans), system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color-scheme: dark;
+}
+
+body {
+  position: relative;
+}
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(800px 600px at 10% 15%, rgba(99, 102, 241, 0.05), transparent 50%),
+    radial-gradient(900px 700px at 85% 20%, rgba(139, 92, 246, 0.04), transparent 50%),
+    radial-gradient(700px 500px at 50% 80%, rgba(6, 182, 212, 0.03), transparent 50%);
+  opacity: 0.85;
+}
+
+/* Keep app content above atmospheric layers */
+body > * {
+  position: relative;
+  z-index: 1;
+}
+
+::selection {
+  background: var(--accent);
+  color: #ffffff;
+}
+
+.transition-smooth { 
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); 
+}
+
+.display-hero {
+  font-family: var(--font-sans);
+  letter-spacing: -0.03em;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.display-title {
+  font-family: var(--font-sans);
+  letter-spacing: -0.02em;
+  font-weight: 700;
+}
+.lede {
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@layer base {
+  input, select, textarea {
+    background: transparent;
+    outline: none;
+    width: 100%;
+  }
+}
+
+@layer components {
+  /* ──────────────────────────────────────────────────
+     Precision Enterprise Buttons (SaaS styling)
+     ────────────────────────────────────────────────── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 14px;
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.8125rem; /* 13px */
+    white-space: nowrap;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.15s ease-out;
+  }
+  
+  .btn-primary {
+    background: var(--accent);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+  .btn-primary:hover {
+    background: var(--accent-hover);
+    box-shadow: 0 0 12px rgba(99, 102, 241, 0.25);
+  }
+  .btn-primary:active { 
+    transform: scale(0.98); 
+  }
+  .btn-primary:disabled { 
+    opacity: 0.4; 
+    cursor: not-allowed; 
+    transform: none; 
+    box-shadow: none;
+  }
+
+  .btn-secondary {
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+  }
+  .btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--border-focus);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+  }
+  .btn-ghost:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.03);
+  }
+
+  .btn-danger {
+    background: var(--danger-muted);
+    color: var(--danger);
+    border: 1px solid var(--danger-border);
+  }
+  .btn-danger:hover {
+    background: var(--danger);
+    color: #ffffff;
+  }
+
+  /* ──────────────────────────────────────────────────
+     Panel / Card System (Minimalist glass)
+     ────────────────────────────────────────────────── */
+  .glass-card {
+    background: rgba(24, 24, 27, 0.7);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    backdrop-filter: blur(16px);
+    transition: border-color 0.15s ease-out, box-shadow 0.15s ease-out;
+  }
+  .glass-card:hover {
+    border-color: var(--border-focus);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+  }
+
+  .panel {
+    background: rgba(24, 24, 27, 0.75);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(16px);
+  }
+
+  .panel-header {
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(15, 15, 17, 0.85);
+  }
+
+  /* ──────────────────────────────────────────────────
+     Typography Utilities
+     ────────────────────────────────────────────────── */
+  .section-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-dim);
+  }
+
+  .section-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-primary);
+  }
+
+  .mono-meta {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  /* ──────────────────────────────────────────────────
+     Status Badge System (SaaS indicators)
+     ────────────────────────────────────────────────── */
+  .status-badge {
+    display: inline-flex;
+    aria-hidden: false;
+    align-items: center;
+    gap: 6px;
+    padding: 2px 8px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    border-radius: 9999px;
+    border: 1px solid;
+  }
+
+  .status-badge-success {
+    color: var(--success);
+    background: var(--success-muted);
+    border-color: var(--success-border);
+  }
+
+  .status-badge-danger {
+    color: var(--danger);
+    background: var(--danger-muted);
+    border-color: var(--danger-border);
+  }
+
+  .status-badge-accent {
+    color: var(--accent);
+    background: var(--accent-muted);
+    border-color: var(--accent-border);
+  }
+
+  /* ──────────────────────────────────────────────────
+     Clinical Input Field (High contrast modern focus)
+     ────────────────────────────────────────────────── */
+  .input-clinical {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 12px;
+    color: var(--text-primary);
+    font-size: 12px;
+    font-family: var(--font-sans);
+    transition: all 0.15s ease-out;
+  }
+  .input-clinical::placeholder {
+    color: var(--text-muted);
+  }
+  .input-clinical:focus {
+    border-color: var(--accent);
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 0 0 1px var(--accent), 0 0 8px rgba(99, 102, 241, 0.25);
+  }
+}
+
+/* ──────────────────────────────────────────────────
+   Minimalist Scrollbar
+   ────────────────────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-focus);
+  border-radius: 99px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-dim);
+}

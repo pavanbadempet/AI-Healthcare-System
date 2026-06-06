@@ -20,5 +20,7 @@ def wait_for_server(url="http://127.0.0.1:8000", timeout=60):
     return False
 
 if __name__ == "__main__":
-    if not wait_for_server():
+    import sys
+    url = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8000"
+    if not wait_for_server(url):
         sys.exit(1)

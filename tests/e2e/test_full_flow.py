@@ -39,7 +39,7 @@ def test_landing_page(page: Page):
     """Login page should load and render correctly."""
     _goto_or_skip(page, "/login")
     # Next.js renders a login page with a sign-in form
-    expect(page.locator("button", has_text=re.compile("sign in", re.IGNORECASE))).to_be_visible(timeout=15000)
+    expect(page.locator("button", has_text=re.compile("access console|sign in", re.IGNORECASE))).to_be_visible(timeout=15000)
 
 
 def test_signup_and_dashboard_flow(page: Page):
@@ -64,7 +64,7 @@ def test_signup_and_dashboard_flow(page: Page):
     page.get_by_label("Password").fill("SecurePwd123")
 
     # 3. Submit Signup
-    page.locator("button", has_text=re.compile("create account|sign up|register", re.IGNORECASE)).click()
+    page.locator("button", has_text=re.compile("initialize node|create account|sign up|register", re.IGNORECASE)).click()
 
     # 4. Should redirect to login or dashboard
     page.wait_for_url(re.compile(r"/(login|dashboard)"), timeout=15000)
@@ -73,7 +73,7 @@ def test_signup_and_dashboard_flow(page: Page):
     if "/login" in page.url:
         page.get_by_label("Username").fill(username)
         page.get_by_label("Password").fill("SecurePwd123")
-        page.locator("button", has_text=re.compile("sign in|log in", re.IGNORECASE)).click()
+        page.locator("button", has_text=re.compile("access console|sign in|log in", re.IGNORECASE)).click()
         page.wait_for_url(re.compile(r"/dashboard"), timeout=15000)
 
     # 6. Verify Dashboard loaded

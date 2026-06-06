@@ -2,12 +2,12 @@
 # AI Healthcare System - Repository Instructions
 
 - All canonical instructions live in AGENTS.md - read that first.
-- Use 127.0.0.1, never localhost.
-- All AI inference goes through backend/core_ai.py.
+- Use 127.0.0.1 for host-bound local dev URLs; container service names are allowed inside container networks.
+- Provider-backed AI/LLM/embedding/vision inference goes through backend/core_ai.py.
 - Never inline system prompts - use prompt_registry.py.
 - Never log or expose PII in error messages.
 - AI-generated health advice must include a medical disclaimer and recommend consulting a qualified clinician.
 - Database schema changes must update SQLAlchemy models, Pydantic schemas, and migration/startup logic together.
-- Backend is FastAPI (Python), frontend is Next.js App Router (TypeScript).
+- Backend is FastAPI (Python 3.11+), frontend is Next.js 16 App Router (TypeScript/React 19).
 - ML model loading is owned by prediction.py.
-- Database sessions via Depends(database.get_db) in routes.
+- Database sessions go through backend.database.get_db in routes.

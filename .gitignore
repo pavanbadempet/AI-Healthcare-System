@@ -12,6 +12,8 @@ venv/
 
 # Database
 *.db
+*.db-shm
+*.db-wal
 *.sqlite3
 
 # Models (general pkl ignored, but production models are tracked)
@@ -31,6 +33,8 @@ session.json
 .coverage
 htmlcov/
 pytest_output.txt
+tmp/
+output/
 
 # Local drafts
 README_DATA_ENGINEERING.md

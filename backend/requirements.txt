@@ -46,3 +46,4 @@ feedparser>=6.0.12
 razorpay
 psutil
 prometheus_client
+ruff

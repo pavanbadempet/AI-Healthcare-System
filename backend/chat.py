@@ -1,14 +1,15 @@
 """Chat and Records API"""
+import json
+import logging
+from typing import Any, Dict, List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
-from sqlalchemy.orm import Session
+from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import BaseModel
-from langchain_core.messages import HumanMessage, AIMessage
-from . import audit, models, database, auth, rag, agent, schemas, pdf_generator
-import json
-import datetime
-from typing import List, Dict, Any, Optional
-import logging
+from sqlalchemy.orm import Session
+
+from . import agent, audit, auth, database, models, pdf_generator, rag, schemas
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -66,11 +67,11 @@ def get_chat_history(current_user: models.User = Depends(auth.get_current_user),
 def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
     """AI Chat with RAG context."""
     save_data = bool(current_user.allow_data_collection)
-    
+
     # Build profile
     profile = f"Name: {current_user.full_name or 'N/A'}, Age: {current_user.dob or 'N/A'}, " \
               f"Gender: {current_user.gender or 'N/A'}, Height/Weight: {current_user.height}/{current_user.weight}"
-    
+
     # Save user message
     if save_data:
         try:
@@ -79,22 +80,22 @@ def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth
             db.commit()
         except Exception:
             logger.error("Failed to save chat message")
-    
+
     # Build message history
-    messages = [HumanMessage(content=m.content) if m.role == "user" else AIMessage(content=m.content) 
+    messages = [HumanMessage(content=m.content) if m.role == "user" else AIMessage(content=m.content)
                 for m in request.history]
     messages.append(HumanMessage(content=request.message))
-    
+
     # Get medical context
     context = ""
     if request.current_context:
         context = "\n".join([f"{k}: {v.get('prediction', 'N/A')}" for k, v in request.current_context.items() if isinstance(v, dict)])
-    
+
     records = db.query(models.HealthRecord).filter(models.HealthRecord.user_id == current_user.id)\
         .order_by(models.HealthRecord.timestamp.desc()).limit(10).all()
     if records:
         context += "\nHistory: " + ", ".join([f"{r.record_type}:{r.prediction}" for r in records[:5]])
-    
+
     # RAG memory
     rag_context = ""
     try:
@@ -103,7 +104,7 @@ def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth
             rag_context = "\n".join(memories[:3])
     except Exception:
         pass
-    
+
     # Invoke agent
     try:
         result = agent.medical_agent.invoke({
@@ -115,7 +116,7 @@ def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth
             "conversation_count": len(messages)
         })
         response = _with_medical_disclaimer(result['messages'][-1].content)
-        
+
         # Save AI response
         if save_data:
             try:
@@ -123,9 +124,9 @@ def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth
                 db.commit()
             except Exception:
                 pass
-        
+
         return {"response": response}
-        
+
     except Exception:
         logger.error("Agent error while processing chat request")
         return {"response": "Sorry, I'm having trouble right now. Please try again."}

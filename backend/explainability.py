@@ -13,8 +13,9 @@ except ImportError:
     MATPLOTLIB_AVAILABLE = False
     plt = None
 
-import numpy as np
 import logging
+
+import numpy as np
 
 # --- Logging Configuration ---
 logger = logging.getLogger(__name__)
@@ -34,14 +35,14 @@ def get_shap_values(model, input_vector, feature_names):
         JSON compatible dict with 'base_value', 'shap_values', 'feature_names'
         OR base64 image string of a force plot.
     """
-    
+
     # Check if SHAP is available
     if not SHAP_AVAILABLE:
         return {
             "html": "<div style='color:#F59E0B;padding:20px;'>⚠️ SHAP explanations are not available on the lite deployment. Full explanations require additional memory.</div>",
             "error": "SHAP library not installed"
         }
-    
+
     # Strategy: Unwrap VotingClassifier to get the strongest tree-based member (XGBoost)
     # This provides a "High Fidelity Proxy Explanation" which is standard practice when
     # ensemble explanation is too computationally expensive for real-time.
@@ -49,12 +50,12 @@ def get_shap_values(model, input_vector, feature_names):
     if hasattr(model, 'estimators_'):
         # 0 is XGBoost in our train_ensemble.py pipeline
         target_estimator = model.estimators_[0]
-        
+
     # Create Explainer
     try:
         explainer = shap.TreeExplainer(target_estimator)
         shap_values = explainer.shap_values(input_vector)
-        
+
         # Handle different SHAP output formats (binary class usually gives single array or list of two)
         if isinstance(shap_values, list):
             sv = shap_values[1][0] # Positive class
@@ -74,10 +75,10 @@ def get_shap_values(model, input_vector, feature_names):
             matplotlib=False,
             show=False
         )
-        
+
         # Save to HTML string
         html_str = f"<head><script src='https://cdnjs.cloudflare.com/ajax/libs/shapjs/0.4.1/shap.min.js'></script></head><body>{force_plot.html()}</body>"
-        
+
         return {"html": html_str}
 
     except Exception:

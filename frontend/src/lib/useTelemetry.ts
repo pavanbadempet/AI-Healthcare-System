@@ -11,6 +11,7 @@
  */
 
 import { useState, useEffect, useRef } from "react";
+import { useAuthStore } from "./auth";
 
 export interface DepartmentLoad {
   dept: string;
@@ -61,8 +62,9 @@ export function useTelemetry() {
         return;
       }
 
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
-      const wsUrl = apiBase.replace(/^http/, "ws") + "/telemetry/stream";
+      const token = useAuthStore.getState().token;
+      const apiBase = import.meta.env.NEXT_PUBLIC_API_URL || import.meta.env.VITE_PUBLIC_API_URL || "http://127.0.0.1:8000";
+      const wsUrl = apiBase.replace(/^http/, "ws") + `/telemetry/stream${token ? `?token=${token}` : ""}`;
 
       setStatus("connecting");
 

@@ -2,12 +2,14 @@
 
 > Scoped rules for `backend/`. Read root `AGENTS.md` first.
 
-## Module Ownership
+## Key Module Ownership
+
+This table covers active backend modules agents most often edit. Read `backend/CONTEXT.md` for the extended module map before broad backend changes.
 
 | Module | Responsibility |
 | --- | --- |
 | `main.py` | FastAPI app, middleware, request tracing, router mounting |
-| `core_ai.py` | **All AI inference/provider access** - text, chat, streaming, embeddings, vision, and Ollama management. Single entry point. |
+| `core_ai.py` | **Provider-backed AI inference/provider access** - text, chat, streaming, embeddings, vision, and Ollama management. Single entry point. |
 | `ai_function_registry.py` | Admin-visible inventory of AI-facing functions, clinical safety controls, disclaimer requirements, human-review flags, and provider boundaries |
 | `model_cards.py` | Admin-visible model and dataset evidence cards for local prediction models and public training artifacts |
 | `agent.py` | LangGraph medical agent orchestration (supervisor -> research/analyze -> generate) |
@@ -40,6 +42,19 @@
 | `smart_fhir.py` | Configuration-driven SMART on FHIR readiness and authorization URL helpers without token exchange |
 | `terminology.py` | PHI-safe seed terminology catalog for LOINC, SNOMED CT, and ICD-10-CM integration mapping |
 | `interoperability.py` | FHIR-style patient bundle exports, patient consent controls, reusable export profiles, resource/department filters, signed export manifests, ABDM readiness/consent request/callback endpoints, assigned-doctor/admin access, and interoperability metrics |
+| `admin.py` | Admin-only operational, governance, user-management, audit, and readiness endpoints |
+| `appointments.py` | Telemedicine appointment booking and facility-scoped appointment access |
+| `payments.py` | Razorpay subscription order creation and payment verification |
+| `report.py` | Health-report download and AI-assisted report analysis with disclaimer handling |
+| `vision_service.py` | Lab-report vision analysis through `core_ai` and registered prompts |
+| `telemetry.py` | Admin telemetry snapshots and WebSocket telemetry streaming |
+| `facility_scope.py` | Shared facility/doctor/patient scoping helpers |
+| `email_service.py` | Email notification helpers |
+| `pdf_service.py` / `pdf_generator.py` | Medical report PDF generation |
+| `security.py` | Rate-limiting middleware |
+| `explainability.py` / `explanation.py` | SHAP and deterministic prediction explanation helpers/routes |
+| `ollama_routes.py` | Ollama model-management routes backed by `core_ai` |
+| `train_*.py` | Local training scripts for bundled sklearn model artifacts |
 | `auth.py` | JWT authentication, password hashing |
 | `models.py` | SQLAlchemy ORM models |
 | `database.py` | Engine, session factory, `get_db()` |
@@ -48,11 +63,11 @@
 
 - **AI Provider Abstraction**: Never import `google.generativeai` or `httpx` for AI calls outside `core_ai.py`. Use `core_ai.generate()`, `core_ai.chat()`, `core_ai.chat_stream()`, `core_ai.embed_text()`, or the relevant `core_ai` provider helper.
 - **Prompt Management**: Never inline system prompts in route handlers. Register them in `prompt_registry.py` and retrieve via `get_prompt("name")`.
-- **Database Sessions**: Always use `Depends(database.get_db)` in FastAPI routes. Never create `SessionLocal()` manually in route handlers.
+- **Database Sessions**: Route handlers must use `backend.database.get_db`, usually as `Depends(database.get_db)`. Never create `SessionLocal()` manually in route handlers.
 - **Schema Changes**: Update `models.py`, `schemas.py`, and `main.py` migration/startup logic together when changing persisted fields.
 - **Error Handling**: Log errors with `logger.error()`, never expose stack traces to clients. Return structured `{"detail": "..."}` errors.
 - **HIPAA Awareness**: Health data (predictions, records, chat logs) must be scoped to `current_user.id`. Never return another user's data.
-- **ML Models**: Model files (`*.pkl`) live in project root or `models/`. Loading is centralized in `prediction.initialize_models()`.
+- **ML Models**: Model files (`*.pkl`) currently live in `backend/` and `models/`. Loading is centralized in `prediction.initialize_models()`.
 
 ## Recommended Tests
 

@@ -33,7 +33,7 @@ def send_booking_confirmation(to_email: str, patient_name: str, doctor_name: str
         Regards,
         AI Healthcare System
         """
-        
+
         smtp_server = os.getenv("SMTP_SERVER")
         smtp_port = int(os.getenv("SMTP_PORT", 587))
         smtp_user = os.getenv("SMTP_EMAIL")
@@ -41,8 +41,8 @@ def send_booking_confirmation(to_email: str, patient_name: str, doctor_name: str
 
         if smtp_server and smtp_user:
             import smtplib
-            from email.mime.text import MIMEText
             from email.mime.multipart import MIMEMultipart
+            from email.mime.text import MIMEText
 
             msg = MIMEMultipart()
             msg['From'] = smtp_user
@@ -60,7 +60,7 @@ def send_booking_confirmation(to_email: str, patient_name: str, doctor_name: str
         else:
             # Fallback to simulation
             logger.info("Booking confirmation email simulated")
-            
+
         return True
     except Exception:
         logger.error(EMAIL_SEND_FAILURE_MESSAGE)

@@ -1,6 +1,6 @@
 import { getDoctorPatientMonitoringSignals, resolveMonitoringSignal, setTokenGetter } from '@/lib/api';
 
-const fetchMock = jest.fn();
+const fetchMock = vi.fn();
 
 beforeEach(() => {
   fetchMock.mockReset();

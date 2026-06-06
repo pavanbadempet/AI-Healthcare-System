@@ -1,7 +1,10 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text
-from sqlalchemy.orm import relationship
-from .database import Base
 from datetime import datetime, timezone
+
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy.orm import relationship
+
+from .database import Base
+
 
 class User(Base):
     __tablename__ = "users"
@@ -11,7 +14,7 @@ class User(Base):
     hashed_password = Column(String)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     role = Column(String, default="patient") # patient, doctor, nurse, pharmacist, billing, admin
-    
+
     # Profile Data
     email = Column(String, nullable=True)
     full_name = Column(String, nullable=True)
@@ -23,26 +26,26 @@ class User(Base):
     existing_ailments = Column(Text, nullable=True)
     profile_picture = Column(Text, nullable=True) # Base64 string
     about_me = Column(Text, nullable=True) # Custom About Info
-    
+
     # Lifestyle Data (The 4 Pillars)
     diet = Column(String, nullable=True) # Vegan, Keto, etc.
     activity_level = Column(String, nullable=True) # Sedentary, Active, etc.
     sleep_hours = Column(Float, nullable=True)
     stress_level = Column(String, nullable=True) # Low, Medium, High
-    
+
     # Privacy
     allow_data_collection = Column(Integer, default=1) # 0=False, 1=True
     facility_id = Column(Integer, ForeignKey("hospital_facilities.id"), nullable=True, index=True)
-    
+
     # Subscription / Monetization
     plan_tier = Column(String, default="free") # free, pro, clinic
     subscription_expiry = Column(DateTime, nullable=True)
     razorpay_customer_id = Column(String, nullable=True)
-    
+
     # Doctor Specific
     consultation_fee = Column(Float, default=500.0)
     specialization = Column(String, nullable=True)
-    
+
     # AI Memory
     psych_profile = Column(Text, nullable=True) # Long term memory summary
 

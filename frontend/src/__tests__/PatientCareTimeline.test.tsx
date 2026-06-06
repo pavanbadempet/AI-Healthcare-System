@@ -4,12 +4,12 @@ import { getAdminPatientCareEventFeed, getDoctorPatientCareEventFeed, getPatient
 
 let mockAuthUser = { id: 7, username: 'doctor_user', full_name: 'Doctor User', role: 'doctor' };
 
-jest.mock('@/lib/auth', () => ({
+vi.mock('@/lib/auth', () => ({
   useAuthStore: () => ({ user: mockAuthUser }),
 }));
 
-jest.mock('@/lib/api', () => ({
-  getAdminPatientCareEventFeed: jest.fn(() => Promise.resolve({
+vi.mock('@/lib/api', () => ({
+  getAdminPatientCareEventFeed: vi.fn(() => Promise.resolve({
     patient_id: 42,
     clinical_safety_note: 'Care events are operational records and do not replace clinician review.',
     next_after_id: 14,
@@ -26,7 +26,7 @@ jest.mock('@/lib/api', () => ({
       },
     ],
   })),
-  getDoctorPatientCareEventFeed: jest.fn(() => Promise.resolve({
+  getDoctorPatientCareEventFeed: vi.fn(() => Promise.resolve({
     patient_id: 42,
     clinical_safety_note: 'Care events are operational records and do not replace clinician review.',
     next_after_id: 12,
@@ -45,7 +45,7 @@ jest.mock('@/lib/api', () => ({
       },
     ],
   })),
-  getPatientCareEventFeed: jest.fn(() => Promise.resolve({
+  getPatientCareEventFeed: vi.fn(() => Promise.resolve({
     next_after_id: 3,
     events: [
       {
@@ -62,8 +62,9 @@ jest.mock('@/lib/api', () => ({
 }));
 
 beforeEach(() => {
-  jest.clearAllMocks();
-  mockAuthUser = { id: 7, username: 'doctor_user', full_name: 'Doctor User', role: 'doctor' };
+  vi.clearAllMocks();
+  for (const key in mockAuthUser) delete (mockAuthUser as any)[key];
+    Object.assign(mockAuthUser, { id: 7, username: 'doctor_user', full_name: 'Doctor User', role: 'doctor' });
 });
 
 async function renderTimeline() {
@@ -85,7 +86,7 @@ describe('PatientCareTimeline', () => {
     expect(screen.getByText('CBC panel ordered')).toBeInTheDocument();
     expect(screen.getByText('Lab order was placed for clinician review.')).toBeInTheDocument();
     expect(screen.getByText('Care events are operational records and do not replace clinician review.')).toBeInTheDocument();
-    expect(screen.getByText('Synced through event #12')).toBeInTheDocument();
+    expect(screen.getByText('Synced Event ID: #12')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Refresh timeline' }));
 
@@ -95,7 +96,7 @@ describe('PatientCareTimeline', () => {
   });
 
   it('refreshes when care workflow actions announce a matching patient update', async () => {
-    (getDoctorPatientCareEventFeed as jest.Mock)
+    (getDoctorPatientCareEventFeed as vi.Mock)
       .mockResolvedValueOnce({
         patient_id: 42,
         clinical_safety_note: 'Care events are operational records and do not replace clinician review.',
@@ -151,11 +152,12 @@ describe('PatientCareTimeline', () => {
       expect(getDoctorPatientCareEventFeed).toHaveBeenCalledTimes(2);
     });
     expect(screen.getByText('Admission created')).toBeInTheDocument();
-    expect(screen.getByText('Synced through event #13')).toBeInTheDocument();
+    expect(screen.getByText('Synced Event ID: #13')).toBeInTheDocument();
   });
 
   it('uses the admin-scoped patient feed for admin users', async () => {
-    mockAuthUser = { id: 1, username: 'admin_user', full_name: 'Admin User', role: 'admin' };
+    for (const key in mockAuthUser) delete (mockAuthUser as any)[key];
+    Object.assign(mockAuthUser, { id: 1, username: 'admin_user', full_name: 'Admin User', role: 'admin' });
 
     await renderTimeline();
 
@@ -165,11 +167,12 @@ describe('PatientCareTimeline', () => {
     expect(getDoctorPatientCareEventFeed).not.toHaveBeenCalled();
     expect(getPatientCareEventFeed).not.toHaveBeenCalled();
     expect(screen.getByText('Admin patient event reviewed')).toBeInTheDocument();
-    expect(screen.getByText('Synced through event #14')).toBeInTheDocument();
+    expect(screen.getByText('Synced Event ID: #14')).toBeInTheDocument();
   });
 
   it('uses the patient-scoped feed for patient users', async () => {
-    mockAuthUser = { id: 42, username: 'patient_user', full_name: 'Patient User', role: 'patient' };
+    for (const key in mockAuthUser) delete (mockAuthUser as any)[key];
+    Object.assign(mockAuthUser, { id: 42, username: 'patient_user', full_name: 'Patient User', role: 'patient' });
 
     await renderTimeline();
 
@@ -182,7 +185,8 @@ describe('PatientCareTimeline', () => {
   });
 
   it('does not request timeline data for unsupported roles', async () => {
-    mockAuthUser = { id: 12, username: 'billing_user', full_name: 'Billing User', role: 'billing' };
+    for (const key in mockAuthUser) delete (mockAuthUser as any)[key];
+    Object.assign(mockAuthUser, { id: 12, username: 'billing_user', full_name: 'Billing User', role: 'billing' });
 
     await renderTimeline();
 

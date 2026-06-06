@@ -5,7 +5,9 @@
  * Auto-injects auth token from Zustand store.
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+import { ApiConnectionError } from './apiErrors';
+
+const API_BASE = import.meta.env.NEXT_PUBLIC_API_URL || import.meta.env.VITE_PUBLIC_API_URL || 'http://127.0.0.1:8000';
 
 // ── Auth Store Access ────────────────────────────────────────────
 let getToken: (() => string | null) | null = null;
@@ -22,14 +24,19 @@ function authHeaders(): Record<string, string> {
 
 // ── Generic Fetch Wrapper ────────────────────────────────────────
 async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...authHeaders(),
-      ...(options.headers || {}),
-    },
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders(),
+        ...(options.headers || {}),
+      },
+    });
+  } catch {
+    throw new ApiConnectionError(path);
+  }
 
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
@@ -241,12 +248,26 @@ export async function predictLungs(data: Record<string, number>): Promise<Predic
 }
 
 // ── Admin ────────────────────────────────────────────────────────
+export interface AuditLogEntry {
+  id: number;
+  facility_id: number | null;
+  actor_user_id: number | null;
+  target_user_id: number | null;
+  action: string;
+  timestamp: string;
+  details: string;
+}
+
 export async function getAdminStats(): Promise<Record<string, unknown>> {
   return apiFetch('/admin/stats');
 }
 
 export async function getAdminUsers(): Promise<UserProfile[]> {
   return apiFetch('/admin/users');
+}
+
+export async function getAdminAuditLogs(): Promise<AuditLogEntry[]> {
+  return apiFetch('/admin/audit-logs');
 }
 
 export async function getAdminPatients(): Promise<UserProfile[]> {
@@ -578,6 +599,11 @@ export async function createBed(data: BedCreate): Promise<Bed> {
   return apiFetch('/hospital/beds', { method: 'POST', body: JSON.stringify(data) });
 }
 
+export async function getBeds(status?: string): Promise<Bed[]> {
+  const url = status ? `/hospital/beds?status=${status}` : '/hospital/beds';
+  return apiFetch<Bed[]>(url);
+}
+
 export interface EncounterCreate {
   patient_id: number;
   doctor_id?: number;
@@ -829,3 +855,21 @@ export async function getDoctors(): Promise<{ id: number; name: string; speciali
     specialization: doctor.specialization || 'General Physician',
   }));
 }
+
+export interface DemoReadinessData {
+  status: string;
+  demo_mode: boolean;
+  environment: string;
+  required: Record<string, unknown>;
+  optional: Record<string, unknown>;
+  missing_required: string[];
+  capabilities: Record<string, boolean>;
+  clinical_safety_note?: string;
+  privacy_note?: string;
+  source: string;
+}
+
+export async function getDemoReadiness(): Promise<DemoReadinessData> {
+  return apiFetch<DemoReadinessData>('/demo-readiness/');
+}
+

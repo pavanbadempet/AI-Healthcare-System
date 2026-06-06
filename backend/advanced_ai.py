@@ -456,32 +456,29 @@ class RealTimePredictionService:
     async def _store_prediction_result(self, result: PredictionResult):
         """Store prediction result in database"""
         try:
-            from .database import SessionLocal
+            from .database import get_db_context
             from .models import HealthRecord
             
-            db = SessionLocal()
-            
-            # Create health record
-            health_record = HealthRecord(
-                user_id=int(result.request_id.split('_')[1]),  # Extract user_id from request_id
-                record_type="prediction",
-                data=json.dumps({
-                    'prediction': result.prediction,
-                    'confidence': result.confidence,
-                    'risk_score': result.risk_score,
-                    'recommendations': result.recommendations
-                }),
-                prediction=str(result.prediction),
-                timestamp=result.timestamp
-            )
-            
-            db.add(health_record)
-            db.commit()
+            with get_db_context() as db:
+                # Create health record
+                health_record = HealthRecord(
+                    user_id=int(result.request_id.split('_')[1]),  # Extract user_id from request_id
+                    record_type="prediction",
+                    data=json.dumps({
+                        'prediction': result.prediction,
+                        'confidence': result.confidence,
+                        'risk_score': result.risk_score,
+                        'recommendations': result.recommendations
+                    }),
+                    prediction=str(result.prediction),
+                    timestamp=result.timestamp
+                )
+                
+                db.add(health_record)
+                db.commit()
             
         except Exception:
             logger.error("Failed to store prediction result")
-        finally:
-            db.close()
     
     async def _notify_client(self, user_id: int, result: PredictionResult):
         """Send real-time update to client via WebSocket"""

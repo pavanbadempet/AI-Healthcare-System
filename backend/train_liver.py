@@ -1,17 +1,18 @@
 import os
 import pickle
-import pandas as pd
+
 import numpy as np
-from sklearn.preprocessing import RobustScaler
-from sklearn.model_selection import train_test_split
-from sklearn.utils import resample
-from sklearn.metrics import accuracy_score
+import pandas as pd
 import xgboost as xgb
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import RobustScaler
+from sklearn.utils import resample
 
 try:
     from .features import LIVER_FEATURES
 except ImportError:
-    from features import LIVER_FEATURES
+    pass
 
 # --- Configuration ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -21,7 +22,7 @@ SCALER_PATH = os.path.join(BASE_DIR, "liver_scaler.pkl")
 
 def train_liver_model():
     print("Starting Liver Disease Model Training (Honest Evaluation)...")
-    
+
     # 1. Load Data
     if not os.path.exists(DATASET_PATH):
         print(f"Error: Dataset not found at {DATASET_PATH}")
@@ -50,16 +51,16 @@ def train_liver_model():
     # 3. CRITICAL: Train/Test Split BEFORE Upsampling (Prevent Leakage)
     X = df.drop('target', axis=1)
     Y = df['target']
-    
+
     X_train_raw, X_test, Y_train_raw, Y_test = train_test_split(X, Y, test_size=0.2, random_state=123, stratify=Y)
-    
+
     print(f"Initial Split: Train={len(X_train_raw)}, Test={len(X_test)}")
 
     # 4. Scaling
     scaler = RobustScaler()
     X_train_scaled = scaler.fit_transform(X_train_raw)
     X_test_scaled = scaler.transform(X_test)
-    
+
     # Save Scaler
     with open(SCALER_PATH, 'wb') as f:
         pickle.dump(scaler, f)
@@ -68,10 +69,10 @@ def train_liver_model():
     # 5. Upsampling (Only on Training Data)
     train_df = pd.DataFrame(X_train_scaled, columns=X.columns)
     train_df['target'] = Y_train_raw.values
-    
+
     minority = train_df[train_df.target == 1]
     majority = train_df[train_df.target == 0]
-    
+
     if len(minority) > 0 and len(majority) > 0:
         if len(minority) < len(majority):
             minority_upsample = resample(minority, replace=True, n_samples=len(majority), random_state=42)
@@ -83,7 +84,7 @@ def train_liver_model():
 
     X_train_final = train_df_balanced.drop('target', axis=1)
     Y_train_final = train_df_balanced['target']
-    
+
     print(f"Balanced Training Set: {len(X_train_final)} records")
 
     # 6. Training (XGBoost)

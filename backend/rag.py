@@ -6,12 +6,13 @@ Uses centralized core_ai embeddings (no local embedding model needed = saves ~20
 Enhanced with citation tracking, token budget management, and
 RAGResult return types from the Singularity AI Engine architecture.
 """
-import os
 import json
-import numpy as np
 import logging
-from typing import List, Dict, Optional, Any
+import os
 from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
+
+import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
 from . import core_ai
@@ -152,7 +153,7 @@ class SimpleVectorStore:
     Persistent vector store using Pickle + Scikit-Learn cosine similarity.
     Embeddings are generated through core_ai.
     """
-    
+
     def __init__(self):
         self.documents: List[str] = []
         self.metadatas: List[Dict[str, Any]] = []
@@ -215,7 +216,7 @@ class SimpleVectorStore:
     def add(self, text: str, metadata: Dict[str, Any], record_id: str) -> None:
         """Add or update a document."""
         vector = get_embedding(text)
-        
+
         if record_id in self.ids:
             idx = self.ids.index(record_id)
             self.documents[idx] = text
@@ -226,7 +227,7 @@ class SimpleVectorStore:
             self.metadatas.append(metadata)
             self.vectors.append(vector)
             self.ids.append(record_id)
-        
+
         self.save()
 
     def delete(self, record_id: str) -> bool:
@@ -245,34 +246,34 @@ class SimpleVectorStore:
         """Semantic search with user filtering."""
         if not self.vectors:
             return []
-        
+
         query_vector = get_query_embedding(query)
-        
+
         vec_matrix = np.array(self.vectors)
         q_vec = np.array([query_vector])
-        
+
         # Cosine similarity
         sim_scores = cosine_similarity(q_vec, vec_matrix)[0]
         sorted_indices = sim_scores.argsort()[::-1]
-        
+
         results = []
         count = 0
-        
+
         for idx in sorted_indices:
             if sim_scores[idx] <= 0.0:
                 break
-            
+
             # Apply metadata filter
             match = True
             if filter_meta and not _metadata_matches_filter(self.metadatas[idx], filter_meta):
                 match = False
-            
+
             if match:
                 results.append(self.documents[idx])
                 count += 1
                 if count >= k:
                     break
-        
+
         return results
 
 
@@ -307,7 +308,7 @@ def add_checkup_to_db(
             f"Result: {prediction}\n"
             f"Clinical Data: {data_str}"
         )
-        
+
         metadata = {
             "user_id": str(user_id),
             "record_id": str(record_id),
@@ -338,7 +339,7 @@ def add_interaction_to_db(
             f"Date: {timestamp}. "
             f"Interaction: {role.upper()}: {content}"
         )
-        
+
         metadata = {
             "user_id": str(user_id),
             "interaction_id": str(interaction_id),

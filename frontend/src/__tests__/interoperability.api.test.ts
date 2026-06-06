@@ -1,7 +1,7 @@
 import { exportDoctorPatientFhirBundle, setTokenGetter } from '@/lib/api';
 
 describe('interoperability API helpers', () => {
-  const fetchMock = jest.fn();
+  const fetchMock = vi.fn();
 
   beforeEach(() => {
     fetchMock.mockReset();

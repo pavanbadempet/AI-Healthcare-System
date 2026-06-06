@@ -6,19 +6,19 @@ import {
   type Ref,
 } from 'react';
 import { act, render, screen } from '@testing-library/react';
-import LoginPage from '@/app/login/page';
-import SignupPage from '@/app/signup/page';
-import DashboardPage from '@/app/(p)/dashboard/page';
-import TelemedicinePage from '@/app/(p)/telemedicine/page';
-import AboutPage from '@/app/(p)/about/page';
-import PatientDetailPage from '@/app/(p)/patients/[id]/page';
+import LoginPage from '@/pages/Login';
+import SignupPage from '@/pages/Signup';
+import DashboardPage from '@/pages/Dashboard';
+import TelemedicinePage from '@/pages/Telemedicine';
+import AboutPage from '@/pages/About';
+import PatientDetailPage from '@/pages/PatientDetail';
 
-jest.mock('next/navigation', () => ({
-  useRouter: () => ({ push: jest.fn() }),
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({ push: vi.fn() }),
   usePathname: () => '/',
 }));
 
-jest.mock('framer-motion', () => {
+vi.mock('framer-motion', () => {
   const omittedMotionProps = new Set([
     'initial',
     'animate',
@@ -53,7 +53,7 @@ jest.mock('framer-motion', () => {
   };
 });
 
-jest.mock('recharts', () => ({
+vi.mock('recharts', () => ({
   ResponsiveContainer: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   AreaChart: () => <div />,
   LineChart: () => <div />,
@@ -64,17 +64,45 @@ jest.mock('recharts', () => ({
   Line: () => <div />,
 }));
 
-jest.mock('@/components/operations/PatientCareActions', () => function MockPatientCareActions() {
-  return <div>Care actions</div>;
-});
+vi.mock('@/components/operations/PatientCareActions', () => ({
+  default: function MockPatientCareActions() {
+    return <div>Care actions</div>;
+  }
+}));
 
-jest.mock('@/components/operations/PatientCareTimeline', () => function MockPatientCareTimeline() {
-  return <div>Care timeline</div>;
-});
+vi.mock('@/components/operations/PatientCareTimeline', () => ({
+  default: function MockPatientCareTimeline() {
+    return <div>Care timeline</div>;
+  }
+}));
 
-jest.mock('@/lib/auth', () => {
-  const setAuth = jest.fn();
-  const logout = jest.fn();
+vi.mock('@/components/operations/PatientMonitoringSignals', () => ({
+  default: function MockPatientMonitoringSignals() {
+    return <div>Monitoring signals</div>;
+  }
+}));
+
+vi.mock('@/components/operations/PatientDiagnosticsReview', () => ({
+  default: function MockPatientDiagnosticsReview() {
+    return <div>Diagnostic review</div>;
+  }
+}));
+
+vi.mock('@/components/operations/PatientDiagnosticResults', () => ({
+  default: function MockPatientDiagnosticResults() {
+    return <div>Patient diagnostic results</div>;
+  }
+}));
+
+vi.mock('@/components/operations/PatientMedicationsPanel', () => ({
+  default: function MockPatientMedicationsPanel() {
+    return <div>No active medication data loaded from source systems for this patient record.</div>;
+  }
+}));
+
+vi.mock('@/lib/auth', () => {
+  const setAuth = vi.fn();
+  const logout = vi.fn();
   const user = { id: 7, username: 'clinician', full_name: 'Test Clinician', role: 'doctor' };
   const useAuthStore = () => ({
     user,
@@ -86,7 +114,7 @@ jest.mock('@/lib/auth', () => {
   return { useAuthStore };
 });
 
-jest.mock('@/lib/useTelemetry', () => ({
+vi.mock('@/lib/useTelemetry', () => ({
   useTelemetry: () => ({
     status: 'connected',
     data: {
@@ -100,12 +128,22 @@ jest.mock('@/lib/useTelemetry', () => ({
   }),
 }));
 
-jest.mock('@/lib/api', () => ({
-  login: jest.fn(),
-  signup: jest.fn(),
-  fetchProfile: jest.fn(),
-  getRecords: jest.fn(() => Promise.resolve([])),
-  getAdminOperationsCockpit: jest.fn(() => Promise.resolve({
+vi.mock('@/lib/api', () => ({
+  login: vi.fn(),
+  signup: vi.fn(),
+  fetchProfile: vi.fn(),
+  getRecords: vi.fn(() => Promise.resolve([])),
+  getDemoReadiness: vi.fn(() => Promise.resolve({
+    status: 'demo-ready',
+    demo_mode: true,
+    environment: 'demo',
+    required: {},
+    optional: {},
+    missing_required: [],
+    capabilities: { synthetic_demo: true },
+    source: 'backend.demo_readiness',
+  })),
+  getAdminOperationsCockpit: vi.fn(() => Promise.resolve({
     hospital: {},
     monitoring: {},
     diagnostics: {},
@@ -116,11 +154,11 @@ jest.mock('@/lib/api', () => ({
     events: {},
     interoperability: {},
   })),
-  getAppointments: jest.fn(() => Promise.resolve([])),
-  getDoctors: jest.fn(() => Promise.resolve([])),
-  bookAppointment: jest.fn(),
-  getDepartments: jest.fn(() => Promise.resolve([])),
-  getDoctorPatients: jest.fn(() => Promise.resolve([
+  getAppointments: vi.fn(() => Promise.resolve([])),
+  getDoctors: vi.fn(() => Promise.resolve([])),
+  bookAppointment: vi.fn(),
+  getDepartments: vi.fn(() => Promise.resolve([])),
+  getDoctorPatients: vi.fn(() => Promise.resolve([
     {
       patient_id: 42,
       username: 'patient_42',
@@ -130,13 +168,13 @@ jest.mock('@/lib/api', () => ({
       latest_status: 'open',
     },
   ])),
-  getAdminUsers: jest.fn(() => Promise.resolve([])),
-  exportDoctorPatientFhirBundle: jest.fn(),
-  createEncounter: jest.fn(),
-  createAdmission: jest.fn(),
-  createClinicalOrder: jest.fn(),
-  getDoctorPatientCareEventFeed: jest.fn(() => Promise.resolve({ events: [], next_after_id: null })),
-  getPatientCareEventFeed: jest.fn(() => Promise.resolve({ events: [], next_after_id: null })),
+  getAdminUsers: vi.fn(() => Promise.resolve([])),
+  exportDoctorPatientFhirBundle: vi.fn(),
+  createEncounter: vi.fn(),
+  createAdmission: vi.fn(),
+  createClinicalOrder: vi.fn(),
+  getDoctorPatientCareEventFeed: vi.fn(() => Promise.resolve({ events: [], next_after_id: null })),
+  getPatientCareEventFeed: vi.fn(() => Promise.resolve({ events: [], next_after_id: null })),
 }));
 
 const unverifiedClaims = [

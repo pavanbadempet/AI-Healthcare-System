@@ -1,21 +1,20 @@
 """AI Healthcare System - Backend API"""
-import sys
-import os
-import uuid
 import logging
-import time
+import os
 import re
-
-from fastapi import FastAPI, Request, HTTPException, Depends
-from fastapi.staticfiles import StaticFiles
-from fastapi.middleware.trustedhost import TrustedHostMiddleware
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, Response
-from fastapi.middleware.gzip import GZipMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware
-from sqlalchemy import text
+import sys
+import time
+import uuid
 from contextlib import asynccontextmanager
+
+from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from fastapi.responses import JSONResponse, Response
+from fastapi.staticfiles import StaticFiles
 from jose import JWTError, jwt
+from starlette.middleware.base import BaseHTTPMiddleware
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -58,133 +57,57 @@ def _load_cors_origins() -> list[str]:
     return ["http://127.0.0.1:3000"]
 
 # --- Imports ---
-from . import models, database, auth, chat, explanation, prediction, report, admin, payments, security, telemetry, sales_readiness, hospital_operations, monitoring, diagnostics, pharmacy, billing, discharge, nursing, care_events, interoperability
-from . import streaming_chat
+from . import (
+    admin,
+    auth,
+    billing,
+    care_events,
+    chat,
+    database,
+    demo_readiness,
+    diagnostics,
+    discharge,
+    explanation,
+    hospital_operations,
+    interoperability,
+    models,
+    monitoring,
+    nursing,
+    payments,
+    pharmacy,
+    prediction,
+    report,
+    sales_readiness,
+    security,
+    streaming_chat,
+    telemetry,
+)
 from .pdf_service import generate_medical_report
 
 # Initialize Database
 models.Base.metadata.create_all(bind=database.engine)
 
-from sqlalchemy import inspect
-
 def run_migrations():
     """
-    Smart migration script: Checks for missing columns before trying to add them.
-    This prevents Postgres transaction aborts if a column already exists.
+    Run Alembic database migrations programmatically on startup.
+    Hides exception details to prevent leaking database credentials/info.
     """
-    # Map of column_name -> definition
-    required_columns = {
-        "about_me": "TEXT",
-        "diet": "TEXT", 
-        "activity_level": "TEXT",
-        "sleep_hours": "FLOAT",
-        "stress_level": "TEXT", 
-        "psych_profile": "TEXT", 
-        "plan_tier": "VARCHAR", 
-        "subscription_expiry": "TIMESTAMP", # Changed from DATETIME for Postgres compat
-        "razorpay_customer_id": "VARCHAR",
-        "created_at": "TIMESTAMP",
-        "role": "VARCHAR",
-        "consultation_fee": "FLOAT",
-        "specialization": "VARCHAR",
-        "facility_id": "INTEGER",
-        # Note: Foreign keys are harder to add via simple script, assuming basic column add for now
-        "doctor_id": "INTEGER" 
-    }
-    
+    # Programmatic migrations are disabled during testing to allow clean sqlite:memory setup.
+    if os.getenv("TESTING"):
+        return
+
     try:
-        inspector = inspect(database.engine)
-        if not inspector.has_table("users"):
-            # Tables created by create_all, skip
-            return
+        logger.info("Running database migrations via Alembic...")
+        base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        ini_path = os.path.join(base_dir, "alembic.ini")
 
-        existing_columns = {col['name'] for col in inspector.get_columns("users")}
-        
-        with database.engine.connect() as conn:
-            # Enable autocommit for schema changes if supported (converts simple executes)
-            # or just execute one by one.
-            count = 0
-            for col_name, col_type in required_columns.items():
-                if col_name not in existing_columns:
-                    try:
-                        logger.info(f"Migration: Adding missing column '{col_name}'...")
-                        conn.execute(text(f"ALTER TABLE users ADD COLUMN {col_name} {col_type}"))
-                        count += 1
-                    except Exception:
-                        logger.error("Failed to add column %s", col_name)
-            
-            if count > 0:
-                conn.commit()
-                logger.info(f"Migration: Successfully added {count} columns.")
+        from alembic import command
+        from alembic.config import Config
 
-            if inspector.has_table("interoperability_exports"):
-                export_columns = {col['name'] for col in inspector.get_columns("interoperability_exports")}
-                export_required_columns = {
-                    "consent_id": "INTEGER",
-                    "profile_id": "INTEGER",
-                    "filter_summary": "TEXT",
-                    "bundle_sha256": "VARCHAR",
-                    "manifest_signature": "VARCHAR",
-                    "signature_algorithm": "VARCHAR",
-                }
-                export_count = 0
-                for col_name, col_type in export_required_columns.items():
-                    if col_name not in export_columns:
-                        try:
-                            logger.info("Migration: Adding missing column '%s' to interoperability_exports...", col_name)
-                            conn.execute(text(f"ALTER TABLE interoperability_exports ADD COLUMN {col_name} {col_type}"))
-                            export_count += 1
-                        except Exception:
-                            logger.error("Failed to add interoperability_exports.%s", col_name)
-                if export_count > 0:
-                    conn.commit()
-
-            table_required_columns = {
-                "audit_logs": {"facility_id": "INTEGER"},
-                "departments": {"facility_id": "INTEGER"},
-                "appointments": {"facility_id": "INTEGER"},
-                "beds": {"facility_id": "INTEGER"},
-                "encounters": {"facility_id": "INTEGER"},
-                "admissions": {"facility_id": "INTEGER"},
-                "clinical_orders": {"facility_id": "INTEGER"},
-                "care_events": {"facility_id": "INTEGER"},
-                "billable_services": {"facility_id": "INTEGER"},
-                "invoices": {"facility_id": "INTEGER"},
-                "billing_payments": {"facility_id": "INTEGER"},
-                "medication_inventory": {"facility_id": "INTEGER"},
-                "prescriptions": {"facility_id": "INTEGER"},
-                "dispense_records": {"facility_id": "INTEGER"},
-                "diagnostic_results": {"facility_id": "INTEGER"},
-                "vital_observations": {"facility_id": "INTEGER"},
-                "monitoring_signals": {"facility_id": "INTEGER"},
-                "nursing_tasks": {"facility_id": "INTEGER"},
-                "discharge_summaries": {"facility_id": "INTEGER"},
-                "interoperability_consents": {
-                    "facility_id": "INTEGER",
-                    "abdm_request_id": "VARCHAR",
-                    "abdm_consent_id": "VARCHAR",
-                    "abdm_status": "VARCHAR",
-                    "abdm_last_event_at": "TIMESTAMP",
-                },
-                "interoperability_export_profiles": {"facility_id": "INTEGER"},
-                "interoperability_exports": {"facility_id": "INTEGER"},
-            }
-            for table_name, columns in table_required_columns.items():
-                if not inspector.has_table(table_name):
-                    continue
-                existing_table_columns = {col["name"] for col in inspector.get_columns(table_name)}
-                added_count = 0
-                for col_name, col_type in columns.items():
-                    if col_name not in existing_table_columns:
-                        try:
-                            logger.info("Migration: Adding missing column '%s' to %s...", col_name, table_name)
-                            conn.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {col_name} {col_type}"))
-                            added_count += 1
-                        except Exception:
-                            logger.error("Failed to add %s.%s", table_name, col_name)
-                if added_count > 0:
-                    conn.commit()
-                
+        alembic_cfg = Config(ini_path)
+        alembic_cfg.set_main_option("script_location", os.path.join(base_dir, "backend", "migrations"))
+        command.upgrade(alembic_cfg, "head")
+        logger.info("Migrations completed successfully.")
     except Exception:
         logger.warning("Migration check failed")
 
@@ -199,38 +122,36 @@ def create_default_admin():
         logger.info("Default admin seeding skipped; bootstrap credentials are not configured.")
         return
 
-    session = database.SessionLocal()
-    try:
-        # Check if any admin exists
-        admin = session.query(models.User).filter(models.User.role == "admin").first()
-        if not admin:
-            logger.warning("No admin found. Creating configured bootstrap admin user...")
-            
-            hashed_pw = auth.get_password_hash(default_password)
-            default_admin = models.User(
-                username=default_username,
-                hashed_password=hashed_pw,
-                email=os.getenv("DEFAULT_ADMIN_EMAIL", ""),
-                role="admin",
-                full_name=os.getenv("DEFAULT_ADMIN_FULL_NAME", "System Administrator"),
-                allow_data_collection=0
-            )
-            session.add(default_admin)
-            session.commit()
-            logger.info("Default admin created from configured bootstrap credentials.")
-        else:
-            logger.info("Admin account already exists.")
-    except Exception:
-        logger.error("Failed to seed admin")
-    finally:
-        session.close()
+    with database.get_db_context() as session:
+        try:
+            # Check if any admin exists
+            admin = session.query(models.User).filter(models.User.role == "admin").first()
+            if not admin:
+                logger.warning("No admin found. Creating configured bootstrap admin user...")
+
+                hashed_pw = auth.get_password_hash(default_password)
+                default_admin = models.User(
+                    username=default_username,
+                    hashed_password=hashed_pw,
+                    email=os.getenv("DEFAULT_ADMIN_EMAIL", ""),
+                    role="admin",
+                    full_name=os.getenv("DEFAULT_ADMIN_FULL_NAME", "System Administrator"),
+                    allow_data_collection=0
+                )
+                session.add(default_admin)
+                session.commit()
+                logger.info("Default admin created from configured bootstrap credentials.")
+            else:
+                logger.info("Admin account already exists.")
+        except Exception:
+            logger.error("Failed to seed admin")
 
 # --- App ---
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Run Seeding
     create_default_admin()
-    
+
     logger.info("Loading AI models...")
     prediction.initialize_models()
     yield
@@ -324,8 +245,8 @@ app.add_middleware(GZipMiddleware, minimum_size=1000)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(CORSMiddleware,
     allow_origins=_load_cors_origins(),
-    allow_credentials=True, 
-    allow_methods=["*"], 
+    allow_credentials=True,
+    allow_methods=["*"],
     allow_headers=["*"])
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=_load_allowed_hosts())
 app.add_middleware(RateLimitMiddleware)
@@ -340,6 +261,7 @@ app.include_router(explanation.router)
 app.include_router(report.router, tags=["Reports"])
 app.include_router(admin.router)
 app.include_router(sales_readiness.router)
+app.include_router(demo_readiness.router)
 app.include_router(hospital_operations.router)
 app.include_router(monitoring.router)
 app.include_router(diagnostics.router)
@@ -352,6 +274,7 @@ app.include_router(interoperability.router)
 app.include_router(payments.router)
 app.include_router(telemetry.router, prefix="/telemetry", tags=["Telemetry"])
 from . import appointments, ollama_routes
+
 app.include_router(appointments.router, tags=["Appointments"])
 app.include_router(ollama_routes.router)
 

@@ -168,12 +168,9 @@ class PerformanceOptimizer:
     @contextmanager
     def database_connection_pool(self):
         """Optimized database connection management"""
-        from .database import SessionLocal
-        db = SessionLocal()
-        try:
+        from .database import get_db_context
+        with get_db_context() as db:
             yield db
-        finally:
-            db.close()
     
     def cache_prediction(self, cache_key: str, result: Dict[str, Any], ttl: int = None):
         """Cache ML predictions for performance"""

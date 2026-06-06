@@ -7,10 +7,12 @@ from uploaded medical report images (PNG/JPG).
 
 Author: Pavan Badempet
 """
-from fastapi import APIRouter, Depends, UploadFile, File, HTTPException
-from typing import Dict, Any
 import logging
-from . import vision_service, database, auth, models, pdf_service
+from typing import Any, Dict
+
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
+
+from . import auth, database, models, pdf_service, vision_service
 
 # --- Logging ---
 # logging.basicConfig(level=logging.INFO) # Handled in main.py
@@ -51,19 +53,19 @@ async def analyze_report(
     # 1. Validate File Type
     if file.content_type not in ["image/jpeg", "image/png", "image/jpg"]:
         raise HTTPException(
-            status_code=400, 
+            status_code=400,
             detail="Invalid file type. Please upload a JPEG or PNG image."
         )
-    
+
     try:
         # 2. Read File
         contents = await file.read()
-        
+
         # 3. Analyze via Vision Service
         result = vision_service.analyze_lab_report(contents)
-        
+
         return _with_report_analysis_disclaimer(result)
-        
+
     except HTTPException as he:
         raise he
     except Exception:
@@ -73,6 +75,7 @@ async def analyze_report(
 # --- PDF Download Endpoint ---
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
+
 
 @router.get("/reports/download/health-report")
 def download_health_report(
@@ -94,12 +97,12 @@ def download_health_report(
             "age": 30, # Default/Placeholder if profile empty
             "gender": "Unknown"
         }
-        
+
         # Merge Profile Data
         if current_user.about_me:
             # Simplistic parsing or just dumping raw profile fields
             report_data["about"] = current_user.about_me
-            
+
         prediction_val = "General Health Summary"
         advice_list = ["maintain a balanced diet", "regular exercise"]
 
@@ -125,13 +128,13 @@ def download_health_report(
 
         # 3. Return as downloadable file
         return Response(
-            content=pdf_bytes, 
+            content=pdf_bytes,
             media_type="application/pdf",
             headers={"Content-Disposition": "attachment; filename=Health_Report.pdf"}
         )
 
     except Exception:
         logger.error("PDF generation failed")
-        # Return a fallback PDF or 500 based on preference. 
+        # Return a fallback PDF or 500 based on preference.
         # For now, let's try to return a simple error PDF if possible, or just raise 500
         raise HTTPException(status_code=500, detail=HEALTH_REPORT_FAILURE_DETAIL)

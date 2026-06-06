@@ -1,7 +1,10 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.orm import sessionmaker
 import os
+
+from dotenv import load_dotenv
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
+
+load_dotenv()
 
 
 def _load_database_url() -> str:
@@ -35,7 +38,7 @@ if "sqlite" not in SQLALCHEMY_DATABASE_URL:
     engine_args["max_overflow"] = 0
 
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, 
+    SQLALCHEMY_DATABASE_URL,
     **engine_args
 )
 
@@ -49,16 +52,23 @@ if "sqlite" in SQLALCHEMY_DATABASE_URL:
         cursor.execute("PRAGMA synchronous=NORMAL") # Balance ACID with performance in WAL
         cursor.execute("PRAGMA foreign_keys=ON") # Strict OLTP data integrity
         cursor.close()
+from contextlib import contextmanager
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
 
-def get_db():
+@contextmanager
+def get_db_context():
     db = SessionLocal()
     try:
         yield db
-    except Exception as e:
+    except Exception:
         db.rollback() # ACID compliance: Rollback dirty OLTP transactions
         raise
     finally:
         db.close()
+
+def get_db():
+    with get_db_context() as db:
+        yield db

@@ -1,6 +1,7 @@
-from pydantic import BaseModel, Field, ConfigDict
-from typing import Optional, List
 from datetime import datetime
+from typing import List, Optional
+
+from pydantic import BaseModel, ConfigDict, Field
 
 # --- Authentication & User Schemas ---
 
@@ -23,7 +24,7 @@ class UserResponse(BaseModel):
     role: Optional[str] = "patient"
     full_name: Optional[str] = None
     email: Optional[str] = None
-    
+
     model_config = ConfigDict(from_attributes=True)
 
 class UserProfileUpdate(BaseModel):
@@ -96,7 +97,7 @@ class AppointmentResponse(BaseModel):
     reason: str
     status: str
     model_config = ConfigDict(from_attributes=True)
-    
+
 class DoctorResponse(BaseModel):
     id: int
     full_name: str
@@ -703,7 +704,7 @@ class PredictionReviewCreate(BaseModel):
     model_card_id: Optional[str] = None
     prediction_reference_id: Optional[str] = None
     review_note: Optional[str] = None
-    
+
 # --- Prediction Schemas ---
 
 class DiabetesInput(BaseModel):

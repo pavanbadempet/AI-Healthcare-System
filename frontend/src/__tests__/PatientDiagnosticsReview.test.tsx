@@ -10,28 +10,29 @@ let mockAuthUser = {
   role: 'doctor',
 };
 
-jest.mock('@/lib/auth', () => ({
+vi.mock('@/lib/auth', () => ({
   useAuthStore: () => ({
     user: mockAuthUser,
   }),
 }));
 
-jest.mock('@/lib/api', () => ({
-  getDoctorPatientDiagnosticResults: jest.fn(),
-  reviewDiagnosticResult: jest.fn(),
+vi.mock('@/lib/api', () => ({
+  getDoctorPatientDiagnosticResults: vi.fn(),
+  reviewDiagnosticResult: vi.fn(),
 }));
 
 describe('PatientDiagnosticsReview', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockAuthUser = {
+    vi.clearAllMocks();
+    for (const key in mockAuthUser) delete (mockAuthUser as any)[key];
+    Object.assign(mockAuthUser, {
       id: 7,
       username: 'doctor_user',
       email: 'doctor@example.com',
       full_name: 'Doctor User',
       role: 'doctor',
-    };
-    (getDoctorPatientDiagnosticResults as jest.Mock)
+    });
+    (getDoctorPatientDiagnosticResults as vi.Mock)
       .mockResolvedValueOnce({
         patient_id: 42,
         results: [
@@ -71,7 +72,7 @@ describe('PatientDiagnosticsReview', () => {
         ],
         clinical_safety_note: 'Diagnostic results require clinician review and are not AI diagnoses.',
       });
-    (reviewDiagnosticResult as jest.Mock).mockResolvedValue({
+    (reviewDiagnosticResult as vi.Mock).mockResolvedValue({
       id: 9,
       order_id: 3,
       patient_id: 42,
@@ -106,17 +107,18 @@ describe('PatientDiagnosticsReview', () => {
     await waitFor(() => {
       expect(getDoctorPatientDiagnosticResults).toHaveBeenCalledTimes(2);
     });
-    expect(await screen.findByText(/No pending diagnostic results/i)).toBeInTheDocument();
+    expect(await screen.findByText(/No pending diagnostic reports/i)).toBeInTheDocument();
   });
 
   it('does not render the diagnostic review panel for patient users', () => {
-    mockAuthUser = {
+    for (const key in mockAuthUser) delete (mockAuthUser as any)[key];
+    Object.assign(mockAuthUser, {
       id: 42,
       username: 'patient_user',
       email: 'patient@example.com',
       full_name: 'Patient User',
       role: 'patient',
-    };
+    });
 
     const { container } = render(<PatientDiagnosticsReview patientId={42} refreshIntervalMs={0} />);
 

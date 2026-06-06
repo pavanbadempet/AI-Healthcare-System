@@ -7,10 +7,9 @@ backup, retention, and restore-test runbooks are in place.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import os
+from datetime import datetime, timezone
 from typing import Any
-
 
 RESTORE_TEST_MAX_AGE_DAYS = 90
 BACKUP_CAPABILITIES = {

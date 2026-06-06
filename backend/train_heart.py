@@ -1,10 +1,11 @@
 import os
 import pickle
-import pandas as pd
+
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
+import pandas as pd
 import xgboost as xgb
+from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
 
 try:
     from .features import HEART_FEATURES
@@ -77,7 +78,7 @@ def train_heart_model():
             Y = df["target"]
 
         else:
-            print(f"Dataset has unrecognized columns. Using synthetic fallback.")
+            print("Dataset has unrecognized columns. Using synthetic fallback.")
             df = None
     else:
         print(f"Dataset not found at {DATASET_PATH}. Using synthetic data.")

@@ -11,7 +11,6 @@ from sqlalchemy.orm import Session
 
 from . import models
 
-
 OPENLINEAGE_NAMESPACE = "ai-healthcare-system"
 OPENLINEAGE_PRODUCER = "https://github.com/pavan/AI-Healthcare-System/backend.data_quality"
 OPENLINEAGE_SCHEMA_URL = "https://openlineage.io/spec/2-0-2/OpenLineage.json#/definitions/RunEvent"

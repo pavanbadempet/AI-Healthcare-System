@@ -3,10 +3,26 @@ Admin Dashboard Logic
 =====================
 Endpoints for system administration, analytics, and user management.
 """
+from typing import Dict, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
-from . import ai_function_registry, audit, backup_readiness, data_quality, database, incident_response, model_cards, models, operational_health, privacy_operations, retention_policy, security_assurance, auth
-from typing import Dict, Optional
+
+from . import (
+    ai_function_registry,
+    audit,
+    auth,
+    backup_readiness,
+    data_quality,
+    database,
+    incident_response,
+    model_cards,
+    models,
+    operational_health,
+    privacy_operations,
+    retention_policy,
+    security_assurance,
+)
 
 router = APIRouter(prefix="/admin", tags=["Admin Dashboard"])
 ADMIN_FACILITY_ACCESS_DETAIL = "Admin resource is outside the user's facility"
@@ -93,7 +109,7 @@ def get_admin_stats(
     if admin.facility_id is not None:
         prediction_query = prediction_query.filter(models.HealthRecord.user_id.in_(user_ids))
         message_query = message_query.filter(models.ChatLog.user_id.in_(user_ids))
-    
+
     return {
         "total_users": user_query.count(),
         "total_predictions": prediction_query.count(),
@@ -234,7 +250,7 @@ def get_patient_deletion_plan(
 
 @router.get("/users")
 def get_recent_users(
-    skip: int = 0, 
+    skip: int = 0,
     limit: int = 20,
     db: Session = Depends(database.get_db),
     admin: models.User = Depends(get_current_admin)
@@ -287,8 +303,8 @@ def get_admin_patient_profile(
 
 @router.put("/users/{user_id}/role")
 def update_user_role(
-    user_id: int, 
-    role: str, 
+    user_id: int,
+    role: str,
     admin: models.User = Depends(get_current_admin),
     db: Session = Depends(database.get_db)
 ):
@@ -370,7 +386,7 @@ def delete_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     _ensure_admin_can_access_user(admin, user)
-        
+
     if user.id == admin.id:
         raise HTTPException(status_code=400, detail="Cannot delete yourself.")
 
