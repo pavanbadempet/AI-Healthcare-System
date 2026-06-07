@@ -140,6 +140,10 @@ export async function getChatSuggestions(): Promise<{ suggestions: string[] }> {
   return apiFetch('/chat/suggestions');
 }
 
+export async function getChatContext(query: string): Promise<{ context: string; sources: any[] }> {
+  return apiFetch(`/chat/context?q=${encodeURIComponent(query)}`);
+}
+
 // ── SSE Streaming Chat ───────────────────────────────────────────
 export function streamChat(
   message: string,
