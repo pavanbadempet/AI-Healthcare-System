@@ -7,7 +7,15 @@
 
 import { ApiConnectionError } from './apiErrors';
 
-const API_BASE = import.meta.env.NEXT_PUBLIC_API_URL || import.meta.env.VITE_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+const getApiBase = () => {
+  const envVal = import.meta.env.NEXT_PUBLIC_API_URL || import.meta.env.VITE_PUBLIC_API_URL;
+  if (envVal) return envVal.replace(/\/$/, '');
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+  return 'http://127.0.0.1:8000';
+};
+const API_BASE = getApiBase();
 
 // ── Auth Store Access ────────────────────────────────────────────
 let getToken: (() => string | null) | null = null;

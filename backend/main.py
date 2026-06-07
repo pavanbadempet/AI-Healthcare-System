@@ -196,7 +196,15 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
-        response.headers["X-Frame-Options"] = "DENY"
+        # Hugging Face Spaces embeds the application inside an iframe.
+        # If running in a Hugging Face Space (detected by SPACES_ID),
+        # allow framing from HF domains via CSP frame-ancestors instead of X-Frame-Options: DENY.
+        if os.getenv("SPACES_ID"):
+            response.headers["Content-Security-Policy"] = (
+                "frame-ancestors 'self' https://*.huggingface.co https://huggingface.co"
+            )
+        else:
+            response.headers["X-Frame-Options"] = "DENY"
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["Referrer-Policy"] = "no-referrer"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
@@ -312,3 +320,37 @@ async def generate_report(
 _static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend", "static")
 if os.path.isdir(_static_dir):
     app.mount("/static", StaticFiles(directory=_static_dir, html=True), name="static")
+
+# --- Serve React Frontend SPA ---
+_frontend_dist = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend", "dist")
+if os.path.isdir(_frontend_dist):
+    # Serve static assets folder
+    assets_dir = os.path.join(_frontend_dist, "assets")
+    if os.path.isdir(assets_dir):
+        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+
+    from fastapi.responses import FileResponse
+
+    # Catch-all route to serve the React SPA and let React Router handle routing
+    @app.get("/{catchall:path}")
+    async def serve_frontend(catchall: str, request: Request):
+        # Allow API endpoints, docs, openapi.json, and health check to pass through
+        first_segment = catchall.split("/")[0] if catchall else ""
+        if (
+            catchall.startswith("api/") or
+            catchall in ("docs", "redoc", "openapi.json", "healthz") or
+            any(route.path.strip("/").split("/")[0] == first_segment for route in request.app.routes if route.path.startswith("/"))
+        ):
+            raise HTTPException(status_code=404)
+
+        # Serve specific file if it exists directly in the dist directory (e.g., favicon.ico)
+        file_path = os.path.join(_frontend_dist, catchall)
+        if os.path.isfile(file_path):
+            return FileResponse(file_path)
+
+        # Fallback to index.html for browser client-side routing
+        index_file = os.path.join(_frontend_dist, "index.html")
+        if os.path.exists(index_file):
+            return FileResponse(index_file)
+
+        raise HTTPException(status_code=404)
