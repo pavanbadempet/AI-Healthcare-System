@@ -36,6 +36,60 @@ def get_spark_session():
         logger.warning("PySpark is not installed in the current environment. Running in Pandas fallback mode.")
         return None
 
+def get_r2_client():
+    """Create a boto3 client configured for Cloudflare R2."""
+    r2_endpoint = os.getenv("R2_ENDPOINT")
+    r2_access_key = os.getenv("R2_ACCESS_KEY_ID")
+    r2_secret_key = os.getenv("R2_SECRET_ACCESS_KEY")
+    
+    if not (r2_endpoint and r2_access_key and r2_secret_key):
+        logger.info("Cloudflare R2 environment variables not complete. R2 cloud sync disabled.")
+        return None
+        
+    try:
+        import boto3
+        from botocore.config import Config
+        
+        # Cloudflare R2 requires custom endpoint URL and signature version S3v4
+        s3 = boto3.client(
+            service_name="s3",
+            endpoint_url=r2_endpoint,
+            aws_access_key_id=r2_access_key,
+            aws_secret_access_key=r2_secret_key,
+            config=Config(signature_version="s3v4"),
+        )
+        return s3
+    except ImportError:
+        logger.warning("boto3 is not installed in the environment. Cloudflare R2 sync disabled.")
+        return None
+    except Exception as e:
+        logger.error(f"Failed to initialize boto3 client for Cloudflare R2: {e}")
+        return None
+
+def download_from_r2(s3, bucket_name, mtype, local_path):
+    """Download baseline Parquet dataset from R2 bucket."""
+    key = f"processed/{mtype}.parquet"
+    logger.info(f"Downloading baseline {mtype} dataset from Cloudflare R2...")
+    try:
+        s3.download_file(bucket_name, key, local_path)
+        logger.info(f"Successfully downloaded baseline {mtype} to {local_path}")
+        return True
+    except Exception as e:
+        logger.info(f"No baseline file found in R2 for {mtype} (or access failed: {e}). Starting fresh.")
+        return False
+
+def upload_to_r2(s3, bucket_name, mtype, local_path):
+    """Upload updated Parquet dataset to R2 bucket."""
+    key = f"processed/{mtype}.parquet"
+    logger.info(f"Uploading updated {mtype} dataset to Cloudflare R2...")
+    try:
+        s3.upload_file(local_path, bucket_name, key)
+        logger.info(f"Successfully uploaded {mtype} dataset to R2 bucket.")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to upload {mtype} dataset to R2: {e}")
+        return False
+
 def extract_and_transform():
     """Extract health records and transform them using PySpark if available, or Pandas fallback."""
     database_url = os.getenv("DATABASE_URL")
@@ -70,7 +124,11 @@ def extract_and_transform():
         except Exception as e:
             logger.warning(f"Database extraction failed: {e}. Falling back to baseline datasets.")
             
-    # 2. Spark/Pandas Transformation
+    # 2. Setup Cloudflare R2 Sync Client
+    r2_client = get_r2_client()
+    r2_bucket = os.getenv("R2_BUCKET_NAME", "healthcare-delta-lake")
+
+    # 3. Spark/Pandas Transformation
     spark = get_spark_session()
     
     # Processed directories and model mappings
@@ -79,6 +137,10 @@ def extract_and_transform():
     for mtype in model_types:
         parquet_path = os.path.join(processed_dir, f"{mtype}.parquet")
         
+        # Download baseline from R2 if configured
+        if r2_client is not None:
+            download_from_r2(r2_client, r2_bucket, mtype, parquet_path)
+
         # Load baseline parquet if it exists
         df_base = None
         if os.path.exists(parquet_path):
@@ -145,6 +207,10 @@ def extract_and_transform():
                 try:
                     df_merged.to_parquet(parquet_path, index=False)
                     logger.info(f"Updated {mtype} dataset saved. Total samples: {len(df_merged)}")
+                    
+                    # Upload updated to R2 if configured
+                    if r2_client is not None:
+                        upload_to_r2(r2_client, r2_bucket, mtype, parquet_path)
                 except Exception as e:
                     logger.error(f"Failed to save merged dataset: {e}")
         else:
