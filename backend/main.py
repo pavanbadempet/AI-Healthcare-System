@@ -18,6 +18,12 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+# Normalize TESTING environment variable to prevent "false" string truthiness bugs
+if os.getenv("TESTING", "").strip().lower() in {"1", "true", "yes", "on"}:
+    os.environ["TESTING"] = "1"
+else:
+    os.environ["TESTING"] = ""
+
 # Configure Logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
@@ -288,11 +294,12 @@ app.include_router(ollama_routes.router)
 
 @app.get("/")
 def root():
-    _frontend_dist = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend", "dist")
-    index_file = os.path.join(_frontend_dist, "index.html")
-    if os.path.exists(index_file):
-        from fastapi.responses import FileResponse
-        return FileResponse(index_file)
+    if not os.getenv("TESTING"):
+        _frontend_dist = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend", "dist")
+        index_file = os.path.join(_frontend_dist, "index.html")
+        if os.path.exists(index_file):
+            from fastapi.responses import FileResponse
+            return FileResponse(index_file)
     return {"message": "AI Healthcare API"}
 
 @app.get("/healthz")
@@ -339,19 +346,14 @@ if os.path.isdir(_frontend_dist):
     # Catch-all route to serve the React SPA and let React Router handle routing
     @app.get("/{catchall:path}")
     async def serve_frontend(catchall: str, request: Request):
-        # Allow API endpoints, docs, openapi.json, and health check to pass through
-        first_segment = catchall.split("/")[0] if catchall else ""
-        if (
-            catchall.startswith("api/") or
-            catchall in ("docs", "redoc", "openapi.json", "healthz") or
-            any(route.path.strip("/").split("/")[0] == first_segment for route in request.app.routes if route.path.startswith("/"))
-        ):
-            raise HTTPException(status_code=404)
-
         # Serve specific file if it exists directly in the dist directory (e.g., favicon.ico)
         file_path = os.path.join(_frontend_dist, catchall)
         if os.path.isfile(file_path):
             return FileResponse(file_path)
+
+        # If requesting a file (with extension) that does not exist, return 404
+        if "." in os.path.basename(catchall):
+            raise HTTPException(status_code=404)
 
         # Fallback to index.html for browser client-side routing
         index_file = os.path.join(_frontend_dist, "index.html")

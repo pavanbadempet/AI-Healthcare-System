@@ -4,7 +4,7 @@ import {
   type ReactNode,
   type Ref,
 } from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import TopNav from '@/components/layout/TopNav';
 const mockUseLocation = vi.fn();
 vi.mock('react-router-dom', () => ({
@@ -19,6 +19,19 @@ vi.mock('@/lib/auth', () => ({
     user: { username: 'testuser', role: 'doctor', full_name: 'Test Doctor' },
     logout: vi.fn(),
   }),
+}));
+
+vi.mock('@/components/layout/CommandPalette', () => ({
+  default: ({ open, onClose }: any) => open ? (
+    <div>
+      <input placeholder="Search patients, rooms, or tools..." />
+      <button aria-label="Close search console" onClick={onClose}>Close search</button>
+    </div>
+  ) : null
+}));
+
+vi.mock('@/components/layout/MobileDrawer', () => ({
+  default: () => <div>Mobile Drawer</div>
 }));
 
 // Mock framer-motion to disable async animations in tests
@@ -68,20 +81,20 @@ describe('TopNav Component', () => {
     expect(screen.getByText('Test Doctor')).toBeInTheDocument();
   });
 
-  it('opens and closes the command menu when search button is clicked', () => {
+  it('opens and closes the command menu when search button is clicked', async () => {
     mockUseLocation.mockReturnValue({ pathname: '/' });
 
     render(<TopNav />);
 
     // Command menu should not be visible initially
-    expect(screen.queryByPlaceholderText(/Search modules, predictors/i)).not.toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/Search patients, rooms, or tools/i)).not.toBeInTheDocument();
 
     // Find and click the search button
     const searchBtn = screen.getByRole('button', { name: /Open Command/i });
     fireEvent.click(searchBtn);
 
     // Command menu should now be visible
-    const input = screen.getByPlaceholderText(/Search modules, predictors/i);
+    const input = await screen.findByPlaceholderText(/Search patients, rooms, or tools/i);
     expect(input).toBeInTheDocument();
 
     // Click close button
@@ -89,6 +102,8 @@ describe('TopNav Component', () => {
     fireEvent.click(closeBtn);
 
     // Command menu should be gone
-    expect(screen.queryByPlaceholderText(/Search modules, predictors/i)).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByPlaceholderText(/Search patients, rooms, or tools/i)).not.toBeInTheDocument();
+    });
   });
 });

@@ -162,6 +162,8 @@ export function streamChat(
   if (cloudProvider) headers['x-ai-provider'] = cloudProvider;
   if (cloudApiKey) headers['x-ai-api-key'] = cloudApiKey;
 
+  let receivedContent = false;
+
   fetch(`${API_BASE}/chat/stream`, {
     method: 'POST',
     headers,
@@ -182,6 +184,9 @@ export function streamChat(
           if (line.startsWith('data: ')) {
             try {
               const data = JSON.parse(line.slice(6));
+              if (data.reply) {
+                receivedContent = true;
+              }
               onChunk(data);
               if (data.status === 'complete') { onDone(); return; }
               if (data.status === 'error') { onError(data.error || 'Unknown error'); return; }
@@ -191,8 +196,34 @@ export function streamChat(
       }
       onDone();
     })
-    .catch((err) => {
-      if (err.name !== 'AbortError') onError(err.message);
+    .catch(async (err) => {
+      if (err.name === 'AbortError') return;
+
+      if (!receivedContent) {
+        console.warn("Streaming chat failed or was blocked, falling back to synchronous chat...", err);
+        try {
+          const syncRes = await fetch(`${API_BASE}/chat`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...authHeaders(),
+            },
+            body: JSON.stringify({ message, history }),
+          });
+          if (!syncRes.ok) throw new Error(`HTTP ${syncRes.status}`);
+          const syncData = await syncRes.json();
+          const replyText = syncData.response || syncData.reply || "";
+          
+          onChunk({ reply: replyText });
+          onDone();
+          return;
+        } catch (fallbackErr: any) {
+          onError(fallbackErr.message || "Connection interrupted.");
+          return;
+        }
+      }
+
+      onError(err.message || "Connection interrupted.");
     });
 
   return () => controller.abort();

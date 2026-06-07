@@ -10,6 +10,7 @@ vi.mock('next/link', () => ({
 }));
 
 vi.mock('framer-motion', () => ({
+  AnimatePresence: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
   motion: {
     div: ({ children, ...props }: { children?: React.ReactNode }) => <div {...props}>{children}</div>,
   },

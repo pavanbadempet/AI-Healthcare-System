@@ -4,8 +4,7 @@ import { useAuthStore } from "@/lib/auth";
 import { streamChat, getChatHistory, clearChatHistory, getChatSuggestions, type ChatMessage } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, Bot, User, Trash2, Zap, Settings2, FileText, Database, ShieldAlert, Cpu, BrainCircuit, Loader2, Info } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
+import LazyMarkdown from "@/components/chat/LazyMarkdown";
 import Tooltip from "@/components/layout/Tooltip";
 
 export default function ChatCopilotPage() {
@@ -182,9 +181,9 @@ export default function ChatCopilotPage() {
                     }`}>
                       {msg.role === 'assistant' ? (
                         <div className="prose prose-invert prose-xs max-w-none leading-relaxed uppercase font-mono text-[11px]">
-                          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          <LazyMarkdown>
                             {msg.content || "..."}
-                          </ReactMarkdown>
+                          </LazyMarkdown>
                         </div>
                       ) : (
                         <p className="whitespace-pre-wrap font-mono text-[11px] uppercase leading-relaxed">{msg.content}</p>

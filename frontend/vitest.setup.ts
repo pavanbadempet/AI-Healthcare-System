@@ -5,6 +5,9 @@ import { createElement } from 'react';
 // Expose 'vi' as 'jest' globally for backward compatibility with existing Jest-based tests
 (globalThis as any).jest = vi;
 
+// Stub API URL for test predictability
+vi.stubEnv('VITE_PUBLIC_API_URL', 'http://127.0.0.1:8000');
+
 // Canvas Mock
 Object.defineProperty(HTMLCanvasElement.prototype, 'getContext', {
   configurable: true,

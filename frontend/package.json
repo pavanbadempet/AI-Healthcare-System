@@ -16,7 +16,6 @@
     "@tanstack/react-query": "^5.62.0",
     "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
-    "lottie-react": "^2.4.1",
     "lucide-react": "^1.14.0",
     "react": "19.2.7",
     "react-dom": "19.2.7",

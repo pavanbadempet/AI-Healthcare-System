@@ -1,37 +1,25 @@
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, lazy, Suspense } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/lib/auth";
 import { prefetchRoute } from "@/lib/prefetch";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  LayoutDashboard, MessageSquare, Heart, Activity,
-  FlaskConical, Stethoscope, Wind, User, LogOut,
-  Sparkles, CreditCard, Video, Info, ShieldCheck, ChevronDown,
-  BrainCircuit, Database, BedDouble, Server, Search, Cpu,
-  Network, Settings, Command, X, Shield, ArrowRight, Globe
+  Sparkles, LogOut, ChevronDown,
+  BrainCircuit, Database, Server, Search, Cpu,
+  Network, Settings, Shield, ArrowRight, Globe,
+  CreditCard, ShieldCheck, X,
 } from "lucide-react";
 import Tooltip from "./Tooltip";
 import { useTranslation } from "@/lib/i18n";
+import {
+  type MenuItem, type MenuGroup,
+  operationsItems, diagnosticsItems, intelligenceItems,
+  MENU_GROUPS, getIconStyles, colorKeyFromMenuItem,
+  COMMAND_ITEMS,
+} from "./nav-config";
 
-/* ───────────────────────────────────────────────────
-   MenuItem interface – Universe Dex style
-   ─────────────────────────────────────────────────── */
-interface MenuItem {
-  id: string;
-  title: string;
-  href: string;
-  icon: React.ElementType;
-  desc: string;
-  longDesc: string;
-  color: string;
-  bg: string;
-  borderHover: string;
-  glow: string;
-  gradient: string;
-  highlights?: string[];
-  subActions?: { title: string; href: string }[];
-}
+const MobileDrawer = lazy(() => import("@/components/layout/MobileDrawer"));
 
 /* ───────────────────────────────────────────────────
    MegaMenuPanel – Dynamic Hero + Grid
@@ -44,10 +32,31 @@ const MegaMenuPanel: React.FC<{
   const [activeId, setActiveId] = useState<string>(items[0].id);
   const activeItem = items.find((i) => i.id === activeId) || items[0];
 
+  const activeGlowColor = activeItem.color.includes("indigo")
+    ? "rgba(95, 95, 247, 0.25)"
+    : activeItem.color.includes("rose")
+      ? "rgba(255, 74, 74, 0.25)"
+      : activeItem.color.includes("purple")
+        ? "rgba(134, 86, 245, 0.25)"
+        : activeItem.color.includes("cyan")
+          ? "rgba(0, 188, 212, 0.25)"
+          : activeItem.color.includes("emerald")
+            ? "rgba(16, 185, 129, 0.25)"
+            : activeItem.color.includes("amber")
+              ? "rgba(255, 179, 0, 0.25)"
+              : activeItem.color.includes("sky")
+                ? "rgba(56, 189, 248, 0.25)"
+                : "rgba(95, 95, 247, 0.25)";
+
   return (
     <div
-      className="grid gap-5 p-6 lg:grid-cols-[360px_1fr] bg-[rgba(9,9,11,0.97)] backdrop-blur-3xl shadow-[0_50px_100px_-20px_rgba(0,0,0,0.7)] border border-white/[0.06] rounded-2xl relative overflow-hidden"
-      style={{ minWidth: cols === 1 ? 620 : 900, maxWidth: 1050 }}
+      className="grid gap-5 p-6 lg:grid-cols-[360px_1fr] bg-[rgba(5,5,8,0.96)] backdrop-blur-3xl rounded-2xl relative overflow-hidden transition-all duration-300 border"
+      style={{
+        minWidth: cols === 1 ? 620 : 900,
+        maxWidth: 1050,
+        borderColor: activeGlowColor,
+        boxShadow: `0 30px 60px rgba(0,0,0,0.8), 0 0 35px ${activeGlowColor}, inset 0 1px 0 rgba(255,255,255,0.02)`
+      }}
     >
       {/* Subtle inner glow */}
       <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
@@ -192,314 +201,6 @@ const MegaMenuPanel: React.FC<{
   );
 };
 
-/* ───────────────────────────────────────────────────
-   MEGA MENU DATA – Operations / Diagnostics / Intelligence
-   ─────────────────────────────────────────────────── */
-
-const operationsItems: MenuItem[] = [
-  {
-    id: "dashboard",
-    title: "Command Center",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-    desc: "Global telemetry and health overview",
-    longDesc:
-      "The authoritative operational cockpit. Monitor real-time hospital telemetry, ward status feeds, clinician activity, and system health from a single unified dashboard.",
-    color: "text-indigo-400",
-    bg: "bg-indigo-500/10",
-    borderHover: "hover:border-indigo-500/60",
-    glow: "drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]",
-    gradient: "bg-gradient-to-br from-indigo-950/80 via-indigo-900/20 to-black/60",
-    highlights: ["99.9% Uptime", "Live Feeds", "Alerts"],
-    subActions: [{ title: "View Dashboard", href: "/dashboard" }],
-  },
-  {
-    id: "patients",
-    title: "Patient Registry",
-    href: "/patients",
-    icon: User,
-    desc: "Manage patient profiles and charts",
-    longDesc:
-      "Comprehensive clinical patient registry. Inspect charts, manage demographics, view historical records, and coordinate care across multiple departments.",
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/10",
-    borderHover: "hover:border-emerald-500/60",
-    glow: "drop-shadow-[0_0_15px_rgba(52,211,153,0.5)]",
-    gradient: "bg-gradient-to-br from-emerald-950/80 via-emerald-900/20 to-black/60",
-    highlights: ["142 Active", "Demographics", "History"],
-  },
-  {
-    id: "capacity",
-    title: "Capacity & Beds",
-    href: "/capacity",
-    icon: BedDouble,
-    desc: "Hospital ADT & throughput tracker",
-    longDesc:
-      "Real-time hospital capacity management. Track bed utilization, ward assignments, discharge planning, and throughput metrics across all clinical units.",
-    color: "text-rose-400",
-    bg: "bg-rose-500/10",
-    borderHover: "hover:border-rose-500/60",
-    glow: "drop-shadow-[0_0_15px_rgba(244,63,94,0.5)]",
-    gradient: "bg-gradient-to-br from-rose-950/80 via-rose-900/20 to-black/60",
-    highlights: ["88% Full", "ADT Live", "Ward Grid"],
-  },
-  {
-    id: "telemedicine",
-    title: "Telemedicine",
-    href: "/telemedicine",
-    icon: Video,
-    desc: "Secure video consultations",
-    longDesc:
-      "HIPAA-grade telemedicine portal. Initiate secure video consultations, manage appointment queues, and access remote patient encounter notes.",
-    color: "text-cyan-400",
-    bg: "bg-cyan-500/10",
-    borderHover: "hover:border-cyan-500/60",
-    glow: "drop-shadow-[0_0_15px_rgba(34,211,238,0.5)]",
-    gradient: "bg-gradient-to-br from-cyan-950/80 via-cyan-900/20 to-black/60",
-    highlights: ["Live Rooms", "E2E Encrypted"],
-    subActions: [{ title: "Start Session", href: "/telemedicine" }],
-  },
-  {
-    id: "infrastructure",
-    title: "Infrastructure",
-    href: "/infrastructure",
-    icon: Server,
-    desc: "HL7/FHIR node status & sync",
-    longDesc:
-      "Monitor HL7 broker synchronization, FHIR endpoint availability, API gateway health, and interoperability sandbox environments.",
-    color: "text-amber-400",
-    bg: "bg-amber-500/10",
-    borderHover: "hover:border-amber-500/60",
-    glow: "drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]",
-    gradient: "bg-gradient-to-br from-amber-950/80 via-amber-900/20 to-black/60",
-    highlights: ["Connected", "FHIR R4", "Sync Active"],
-  },
-];
-
-const diagnosticsItems: MenuItem[] = [
-  {
-    id: "heart",
-    title: "Cardiology",
-    href: "/predict/heart",
-    icon: Heart,
-    desc: "Heart disease risk assessment",
-    longDesc:
-      "Advanced cardiac risk prediction engine. Evaluate multi-factor cardiovascular disease probability using ensemble ML models trained on clinical datasets.",
-    color: "text-rose-400",
-    bg: "bg-rose-500/10",
-    borderHover: "hover:border-rose-500/60",
-    glow: "drop-shadow-[0_0_15px_rgba(244,63,94,0.5)]",
-    gradient: "bg-gradient-to-br from-rose-950/80 via-rose-900/20 to-black/60",
-    highlights: ["ML v2.1", "Ensemble", "98.4% Accuracy"],
-    subActions: [{ title: "Run Assessment", href: "/predict/heart" }],
-  },
-  {
-    id: "lungs",
-    title: "Pulmonology",
-    href: "/predict/lungs",
-    icon: Wind,
-    desc: "Lung capacity and disease modeling",
-    longDesc:
-      "Pulmonary function analysis and disease prediction. Model spirometry data, assess COPD risk factors, and predict respiratory outcomes.",
-    color: "text-sky-400",
-    bg: "bg-sky-500/10",
-    borderHover: "hover:border-sky-500/60",
-    glow: "drop-shadow-[0_0_15px_rgba(56,189,248,0.5)]",
-    gradient: "bg-gradient-to-br from-sky-950/80 via-sky-900/20 to-black/60",
-    highlights: ["ML v1.8", "Spirometry", "COPD Risk"],
-  },
-  {
-    id: "liver",
-    title: "Hepatology",
-    href: "/predict/liver",
-    icon: FlaskConical,
-    desc: "Hepatic function analysis",
-    longDesc:
-      "Comprehensive liver function scoring. Analyze hepatic biomarkers, predict cirrhosis progression, and assess drug-induced liver injury risk.",
-    color: "text-amber-400",
-    bg: "bg-amber-500/10",
-    borderHover: "hover:border-amber-500/60",
-    glow: "drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]",
-    gradient: "bg-gradient-to-br from-amber-950/80 via-amber-900/20 to-black/60",
-    highlights: ["ML v1.2", "Biomarkers", "DILI Score"],
-  },
-  {
-    id: "kidney",
-    title: "Nephrology",
-    href: "/predict/kidney",
-    icon: Stethoscope,
-    desc: "Renal failure prediction",
-    longDesc:
-      "Renal function prediction and chronic kidney disease staging. Evaluate eGFR trajectories, proteinuria markers, and dialysis risk scoring.",
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/10",
-    borderHover: "hover:border-emerald-500/60",
-    glow: "drop-shadow-[0_0_15px_rgba(52,211,153,0.5)]",
-    gradient: "bg-gradient-to-br from-emerald-950/80 via-emerald-900/20 to-black/60",
-    highlights: ["ML v2.0", "CKD Staging", "eGFR"],
-  },
-  {
-    id: "diabetes",
-    title: "Endocrinology",
-    href: "/predict/diabetes",
-    icon: Activity,
-    desc: "Metabolic syndrome tracking",
-    longDesc:
-      "Metabolic disease and diabetes risk engine. Track HbA1c trends, insulin resistance indices, and generate multi-organ complication forecasts.",
-    color: "text-indigo-400",
-    bg: "bg-indigo-500/10",
-    borderHover: "hover:border-indigo-500/60",
-    glow: "drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]",
-    gradient: "bg-gradient-to-br from-indigo-950/80 via-indigo-900/20 to-black/60",
-    highlights: ["ML v2.3", "HbA1c", "Insulin Resistance"],
-    subActions: [{ title: "Run Screening", href: "/predict/diabetes" }],
-  },
-];
-
-const intelligenceItems: MenuItem[] = [
-  {
-    id: "copilot",
-    title: "AI Copilot",
-    href: "/chat",
-    icon: MessageSquare,
-    desc: "Singularity LLM medical assistant",
-    longDesc:
-      "Engage the Singularity clinical advisory LLM. Query drug interactions, differential diagnoses, treatment protocols, and evidence-based guidelines in real-time.",
-    color: "text-purple-400",
-    bg: "bg-purple-500/10",
-    borderHover: "hover:border-purple-500/60",
-    glow: "drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]",
-    gradient: "bg-gradient-to-br from-purple-950/80 via-purple-900/20 to-black/60",
-    highlights: ["Online", "Context-Aware", "HIPAA Safe"],
-    subActions: [
-      { title: "Launch Chat", href: "/chat" },
-    ],
-  },
-  {
-    id: "architecture",
-    title: "System Architecture",
-    href: "/about",
-    icon: Info,
-    desc: "Platform whitepapers and diagrams",
-    longDesc:
-      "Explore the full infrastructure blueprint. Review microservice topology, data flow diagrams, security boundaries, and HL7/FHIR integration whitepapers.",
-    color: "text-blue-400",
-    bg: "bg-blue-500/10",
-    borderHover: "hover:border-blue-500/60",
-    glow: "drop-shadow-[0_0_15px_rgba(59,130,246,0.5)]",
-    gradient: "bg-gradient-to-br from-blue-950/80 via-blue-900/20 to-black/60",
-    highlights: ["Docs v1.0", "Architecture", "Security"],
-  },
-  {
-    id: "billing",
-    title: "Enterprise Billing",
-    href: "/pricing",
-    icon: CreditCard,
-    desc: "Manage hospital API usage",
-    longDesc:
-      "Enterprise-grade billing and API token management. Monitor usage quotas, configure rate limits, and manage subscription tiers for hospital integrations.",
-    color: "text-indigo-400",
-    bg: "bg-indigo-500/10",
-    borderHover: "hover:border-indigo-500/60",
-    glow: "drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]",
-    gradient: "bg-gradient-to-br from-indigo-950/80 via-indigo-900/20 to-black/60",
-    highlights: ["Pro Tier", "Usage Metrics"],
-  },
-];
-
-/* ───────────────────────────────────────────────────
-   COMMAND PALETTE items (unchanged)
-   ─────────────────────────────────────────────────── */
-const COMMAND_ITEMS = [
-  { label: "Command Center Dashboard", href: "/dashboard", category: "Operations", desc: "Telemetry systems and operational cockpit", icon: LayoutDashboard },
-  { label: "Patient Registry Database", href: "/patients", category: "Operations", desc: "Inspect and manage clinical patient charts", icon: User },
-  { label: "Capacity & Ward Management", href: "/capacity", category: "Operations", desc: "ADT tracker and hospital bed utilization", icon: BedDouble },
-  { label: "Telemedicine Video Portal", href: "/telemedicine", category: "Operations", desc: "Initiate secure virtual patient consults", icon: Video },
-  { label: "FHIR Infrastructure Nodes", href: "/infrastructure", category: "Operations", desc: "Check HL7 sync feeds and server settings", icon: Server },
-  { label: "Cardiology Risk Predictor", href: "/predict/heart", category: "Diagnostics AI", desc: "Heart disease assessment ML module", icon: Heart },
-  { label: "Pulmonology Risk Predictor", href: "/predict/lungs", category: "Diagnostics AI", desc: "Lung function assessment ML module", icon: Wind },
-  { label: "Hepatology Risk Predictor", href: "/predict/liver", category: "Diagnostics AI", desc: "Liver failure risk scoring ML module", icon: FlaskConical },
-  { label: "Nephrology Risk Predictor", href: "/predict/kidney", category: "Diagnostics AI", desc: "Kidney failure scoring ML module", icon: Stethoscope },
-  { label: "Endocrinology Risk Predictor", href: "/predict/diabetes", category: "Diagnostics AI", desc: "Metabolic tracking & diabetes scoring", icon: Activity },
-  { label: "AI Copilot Chat Assistant", href: "/chat", category: "Intelligence", desc: "Singularity clinical advisory chat", icon: MessageSquare },
-  { label: "System Architecture Docs", href: "/about", category: "Intelligence", desc: "Platform whitepapers and diagrams", icon: Info },
-  { label: "Enterprise Billing Details", href: "/pricing", category: "Intelligence", desc: "Hospital API token usage rates", icon: CreditCard },
-  { label: "User Account Settings", href: "/profile", category: "Account", desc: "View and edit profile preferences", icon: Settings },
-  { label: "Admin Control Console", href: "/admin", category: "Admin", desc: "Manage doctors, logs, and security levels", icon: ShieldCheck },
-];
-
-/* ───────────────────────────────────────────────────
-   Menu group definitions used by nav tabs
-   ─────────────────────────────────────────────────── */
-const MENU_GROUPS: {
-  key: string;
-  label: string;
-  emoji: string;
-  accentColor: string;
-  items: MenuItem[];
-  cols: number;
-  routes: string[];
-}[] = [
-  {
-    key: "operations",
-    label: "Operations",
-    emoji: "🛰️",
-    accentColor: "text-indigo-400 data-[state=open]:text-indigo-400",
-    items: operationsItems,
-    cols: 2,
-    routes: ["/dashboard", "/patients", "/capacity", "/telemedicine", "/infrastructure"],
-  },
-  {
-    key: "diagnostics",
-    label: "Diagnostics AI",
-    emoji: "🧬",
-    accentColor: "text-rose-400 data-[state=open]:text-rose-400",
-    items: diagnosticsItems,
-    cols: 2,
-    routes: ["/predict/heart", "/predict/lungs", "/predict/liver", "/predict/kidney", "/predict/diabetes"],
-  },
-  {
-    key: "intelligence",
-    label: "Intelligence",
-    emoji: "⚡",
-    accentColor: "text-purple-400 data-[state=open]:text-purple-400",
-    items: intelligenceItems,
-    cols: 1,
-    routes: ["/chat", "/about", "/pricing"],
-  },
-];
-
-/* ───────────────────────────────────────────────────
-   Icon style helper for command palette + mobile
-   ─────────────────────────────────────────────────── */
-function getIconStyles(color: string) {
-  switch (color) {
-    case "indigo": return "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 group-hover:bg-indigo-500/20 group-hover:text-indigo-300";
-    case "emerald": return "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 group-hover:bg-emerald-500/20 group-hover:text-emerald-300";
-    case "rose": return "bg-rose-500/10 text-rose-400 border border-rose-500/20 group-hover:bg-rose-500/20 group-hover:text-rose-300";
-    case "cyan": return "bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 group-hover:bg-cyan-500/20 group-hover:text-cyan-300";
-    case "amber": return "bg-amber-500/10 text-amber-400 border border-amber-500/20 group-hover:bg-amber-500/20 group-hover:text-amber-300";
-    case "sky": return "bg-sky-500/10 text-sky-400 border border-sky-500/20 group-hover:bg-sky-500/20 group-hover:text-sky-300";
-    case "purple": return "bg-purple-500/10 text-purple-400 border border-purple-500/20 group-hover:bg-purple-500/20 group-hover:text-purple-300";
-    case "blue": return "bg-blue-500/10 text-blue-400 border border-blue-500/20 group-hover:bg-blue-500/20 group-hover:text-blue-300";
-    default: return "bg-white/5 text-white/70 border border-white/10";
-  }
-}
-
-/* Map item color string (e.g. "rose") to the simple key for getIconStyles */
-function colorKeyFromMenuItem(item: { color?: string }): string {
-  const c = (item as MenuItem).color ?? "";
-  if (c.includes("indigo")) return "indigo";
-  if (c.includes("emerald")) return "emerald";
-  if (c.includes("rose")) return "rose";
-  if (c.includes("cyan")) return "cyan";
-  if (c.includes("amber")) return "amber";
-  if (c.includes("sky")) return "sky";
-  if (c.includes("purple")) return "purple";
-  if (c.includes("blue")) return "blue";
-  return "";
-}
-
 /* ═══════════════════════════════════════════════════
    TopNav Component
    ═══════════════════════════════════════════════════ */
@@ -522,9 +223,7 @@ export default function TopNav({
   const [telemetryOpen, setTelemetryOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [languageOpen, setLanguageOpen] = useState(false);
-  const [commandMenuOpen, setCommandMenuOpen] = useState(false);
-
-  // Command search
+  const [searchFocused, setSearchFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
 
@@ -533,6 +232,8 @@ export default function TopNav({
   const telemetryRef = useRef<HTMLDivElement>(null);
   const profileRef = useRef<HTMLDivElement>(null);
   const languageRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Dynamic menu items and groups computation
@@ -593,12 +294,49 @@ export default function TopNav({
     return () => clearInterval(interval);
   }, []);
 
-  // Ctrl+K shortcut
+  const filteredCommandItems = COMMAND_ITEMS.filter((item) => {
+    if (item.category === "Admin" && (!user || user.role !== "admin")) return false;
+    const query = searchQuery.toLowerCase();
+    return (
+      item.label.toLowerCase().includes(query) ||
+      item.desc.toLowerCase().includes(query) ||
+      item.category.toLowerCase().includes(query)
+    );
+  });
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent) => {
+    if (filteredCommandItems.length === 0) return;
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev + 1) % filteredCommandItems.length);
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIndex((prev) => (prev - 1 + filteredCommandItems.length) % filteredCommandItems.length);
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const targetItem = filteredCommandItems[selectedIndex];
+      if (targetItem) {
+        navigate(targetItem.href);
+        setSearchFocused(false);
+        setSearchQuery("");
+      }
+    } else if (e.key === "Escape") {
+      setSearchFocused(false);
+    }
+  };
+
+  // Reset selected on search change
+  useEffect(() => {
+    setSelectedIndex(0);
+  }, [searchQuery]);
+
+  // Ctrl+K shortcut to focus input
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.key === "k" || e.key === "K") && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setCommandMenuOpen((prev) => !prev);
+        setSearchFocused(true);
+        setTimeout(() => searchInputRef.current?.focus(), 50);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -621,48 +359,13 @@ export default function TopNav({
       if (activeMenu && navContainerRef.current && !navContainerRef.current.contains(target)) {
         setActiveMenu(null);
       }
+      if (searchFocused && searchContainerRef.current && !searchContainerRef.current.contains(target)) {
+        setSearchFocused(false);
+      }
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [telemetryOpen, profileOpen, languageOpen, activeMenu]);
-
-  // Command search filter
-  const filteredCommandItems = COMMAND_ITEMS.filter((item) => {
-    if (item.category === "Admin" && (!user || user.role !== "admin")) return false;
-    const query = searchQuery.toLowerCase();
-    return (
-      item.label.toLowerCase().includes(query) ||
-      item.desc.toLowerCase().includes(query) ||
-      item.category.toLowerCase().includes(query)
-    );
-  });
-
-  // Command menu keyboard nav
-  const handleCommandMenuKeyDown = (e: React.KeyboardEvent) => {
-    if (filteredCommandItems.length === 0) return;
-    if (e.key === "ArrowDown") {
-      e.preventDefault();
-      setSelectedIndex((prev) => (prev + 1) % filteredCommandItems.length);
-    } else if (e.key === "ArrowUp") {
-      e.preventDefault();
-      setSelectedIndex((prev) => (prev - 1 + filteredCommandItems.length) % filteredCommandItems.length);
-    } else if (e.key === "Enter") {
-      e.preventDefault();
-      const targetItem = filteredCommandItems[selectedIndex];
-      if (targetItem) {
-        navigate(targetItem.href);
-        setCommandMenuOpen(false);
-        setSearchQuery("");
-        setSelectedIndex(0);
-      }
-    } else if (e.key === "Escape") {
-      setCommandMenuOpen(false);
-    }
-  };
-
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [searchQuery]);
+  }, [telemetryOpen, profileOpen, languageOpen, activeMenu, searchFocused]);
 
   const handleMouseEnter = (menuKey: string) => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
@@ -683,12 +386,12 @@ export default function TopNav({
   return (
     <>
       <header
-        className="fixed top-2 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] md:w-[calc(100%-3rem)] max-w-[1550px] h-14 z-50 flex items-center px-4 md:px-6 justify-between border border-[var(--border)] bg-[rgba(9,9,11,0.7)] backdrop-blur-xl rounded-2xl shadow-[var(--shadow-soft)] transition-all duration-300 hover:border-[var(--border-focus)]"
+        className="fixed top-2.5 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] md:w-[calc(100%-3rem)] max-w-[1550px] h-14 z-50 flex items-center px-4 md:px-6 justify-between border border-[var(--border)] bg-[var(--bg-card)] backdrop-blur-2xl rounded-2xl shadow-[var(--shadow-soft)] transition-all duration-300 hover:border-[var(--border-focus)] hover:shadow-[0_4px_30px_rgba(95,95,247,0.08)]"
         role="banner"
       >
         {/* Top glow */}
         <div
-          className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-40"
+          className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-60"
           aria-hidden="true"
         />
 
@@ -824,21 +527,157 @@ export default function TopNav({
         {/* ─── Right: Actions ─── */}
         <div className="flex items-center gap-2 md:gap-3 shrink-0">
           {/* Command Search */}
-          <Tooltip content="Command Search Console (Ctrl+K)" position="bottom">
-            <button
-              onClick={() => setCommandMenuOpen(true)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-[var(--border)] bg-white/[0.02] hover:bg-white/[0.05] hover:border-[var(--border-focus)] transition-all text-[var(--text-secondary)] hover:text-[var(--text-primary)] cursor-pointer"
-              aria-label="Open Command Search Console"
-            >
-              <Search size={13} aria-hidden="true" />
-              <span className="hidden md:inline text-[9px] font-bold uppercase tracking-wider text-[var(--text-dim)]">
-                Search
-              </span>
-              <kbd className="hidden sm:inline-flex items-center gap-0.5 text-[8px] font-bold font-mono bg-white/[0.06] border border-white/[0.08] px-1 rounded text-[var(--text-dim)]">
-                Ctrl K
-              </kbd>
-            </button>
-          </Tooltip>
+          <div ref={searchContainerRef} className="relative shrink-0">
+            <Tooltip content="Command Search Console (Ctrl+K)" position="bottom">
+              <div
+                className={`flex items-center gap-2 px-3 py-1.5 border transition-all duration-300 rounded-lg bg-white/[0.02] shrink-0 ${
+                  searchFocused
+                    ? "w-56 md:w-72 border-[var(--accent-blue)] bg-white/[0.04] shadow-glow-cyan"
+                    : "w-32 md:w-40 border-[var(--border)] hover:bg-white/[0.05] hover:border-[var(--border-focus)]"
+                }`}
+              >
+                <button
+                  onClick={() => {
+                    setSearchFocused(true);
+                    setTimeout(() => searchInputRef.current?.focus(), 50);
+                  }}
+                  aria-label="Open Command Search Console"
+                  className="flex items-center gap-1.5 w-full text-left bg-transparent border-none p-0 cursor-pointer text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  style={{ display: searchFocused ? 'none' : 'flex' }}
+                >
+                  <Search size={13} aria-hidden="true" />
+                  <span className="hidden md:inline text-[9px] font-bold uppercase tracking-wider text-[var(--text-dim)]">
+                    Search
+                  </span>
+                  <kbd className="hidden sm:inline-flex items-center gap-0.5 text-[8px] font-bold font-mono bg-white/[0.06] border border-white/[0.08] px-1 rounded text-[var(--text-dim)]">
+                    Ctrl K
+                  </kbd>
+                </button>
+
+                {searchFocused && (
+                  <div className="flex items-center gap-2 w-full">
+                    <Search size={13} className="text-[var(--accent-blue)] shrink-0" />
+                    <input
+                      ref={searchInputRef}
+                      type="text"
+                      placeholder="Search patients, rooms, or tools..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={handleSearchKeyDown}
+                      className="flex-1 text-[10px] font-bold uppercase tracking-wider text-[var(--text-primary)] placeholder-[var(--text-muted)] bg-transparent outline-none border-none py-0.5"
+                      autoFocus
+                    />
+                    <button
+                      aria-label="Close search console"
+                      onClick={() => {
+                        setSearchFocused(false);
+                        setSearchQuery("");
+                      }}
+                      className="p-0.5 rounded hover:bg-white/[0.04] text-[var(--text-dim)] hover:text-[var(--text-primary)] transition-colors cursor-pointer text-[0px]"
+                    >
+                      Close search <X size={12} className="inline-block" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            </Tooltip>
+
+            {/* Dropdown Results */}
+            <AnimatePresence>
+              {searchFocused && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 top-[38px] w-72 sm:w-96 pt-1 z-50 pointer-events-auto"
+                >
+                  <div className="glass-card bg-[rgba(15,15,18,0.96)] border border-[var(--border-focus)] rounded-xl shadow-[var(--shadow-lg)] overflow-hidden flex flex-col max-h-[70vh]">
+                    <div className="flex-1 overflow-y-auto p-2 space-y-3">
+                      {filteredCommandItems.length > 0 ? (
+                        Object.entries(
+                          filteredCommandItems.reduce(
+                            (acc, item) => {
+                              if (!acc[item.category]) acc[item.category] = [];
+                              acc[item.category].push(item);
+                              return acc;
+                            },
+                            {} as Record<string, typeof COMMAND_ITEMS>
+                          )
+                        ).map(([category, items]) => (
+                          <div key={category}>
+                            <h4 className="px-3 py-1 text-[8px] font-mono font-bold uppercase tracking-wider text-[var(--accent-blue)]">
+                              {category}
+                            </h4>
+                            <div className="space-y-0.5 mt-1">
+                              {items.map((item) => {
+                                const globalIndex = filteredCommandItems.indexOf(item);
+                                const isSelected = globalIndex === selectedIndex;
+
+                                return (
+                                  <button
+                                    key={item.href}
+                                    onClick={() => {
+                                      navigate(item.href);
+                                      setSearchFocused(false);
+                                      setSearchQuery("");
+                                    }}
+                                    onMouseEnter={() => setSelectedIndex(globalIndex)}
+                                    className={`w-full flex items-center gap-2.5 p-2 rounded-lg text-left transition-all duration-150 group cursor-pointer ${
+                                      isSelected
+                                        ? "bg-[var(--accent-muted)] border border-[var(--accent-border)]"
+                                        : "bg-transparent border border-transparent hover:bg-white/[0.01]"
+                                    }`}
+                                  >
+                                    <div
+                                      className={`p-1.5 rounded-lg transition-colors shrink-0 ${
+                                        isSelected
+                                          ? "bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/20"
+                                          : "bg-white/[0.02] text-[var(--text-dim)] border border-white/[0.04] group-hover:text-[var(--text-primary)]"
+                                      }`}
+                                    >
+                                      <item.icon size={11} />
+                                    </div>
+                                    <div className="min-w-0 flex-1">
+                                      <div className="flex items-center justify-between">
+                                        <span
+                                          className={`text-[10px] font-bold transition-colors truncate ${
+                                            isSelected
+                                              ? "text-[var(--accent)]"
+                                              : "text-[var(--text-primary)]"
+                                          }`}
+                                        >
+                                          {item.label}
+                                        </span>
+                                      </div>
+                                      <p className="text-[8px] text-[var(--text-dim)] truncate mt-0.5 group-hover:text-[var(--text-secondary)] transition-colors">
+                                        {item.desc}
+                                      </p>
+                                    </div>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="py-6 text-center">
+                          <p className="text-[10px] font-bold text-[var(--text-secondary)] uppercase">
+                            No matching modules found
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    {/* Footer */}
+                    <div className="px-3 py-1.5 bg-white/[0.01] border-t border-white/[0.03] flex justify-between items-center text-[7px] font-mono text-[var(--text-dim)] uppercase tracking-wider">
+                      <span>↑↓ to navigate · ↵ to open</span>
+                      <span>Console Navigator</span>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* Telemetry Dropdown */}
           <div ref={telemetryRef} className="relative">
@@ -1123,289 +962,25 @@ export default function TopNav({
         {/* ─── Mobile Drawer ─── */}
         <AnimatePresence>
           {mobileOpen && (
-            <>
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.5 }}
-                exit={{ opacity: 0 }}
-                onClick={() => {
+            <Suspense fallback={null}>
+              <MobileDrawer
+                open={mobileOpen}
+                onClose={() => {
                   if (setMobileOpen) setMobileOpen(false);
                 }}
-                className="lg:hidden fixed inset-0 z-40 bg-black"
+                setCommandMenuOpen={(val) => {
+                  setSearchFocused(val);
+                  if (val) setTimeout(() => searchInputRef.current?.focus(), 50);
+                }}
+                dynamicMenuGroups={dynamicMenuGroups}
+                telemetryStats={telemetryStats}
+                user={user}
+                logout={logout}
               />
-
-              <motion.div
-                initial={{ x: "100%" }}
-                animate={{ x: 0 }}
-                exit={{ x: "100%" }}
-                transition={{ type: "spring", damping: 25, stiffness: 220 }}
-                className="lg:hidden fixed right-0 top-0 bottom-0 w-80 max-w-[90vw] z-50 bg-[var(--bg-secondary)] border-l border-[var(--border)] flex flex-col pt-6 px-5 pb-6 overflow-y-auto"
-                role="dialog"
-                aria-label="Mobile navigation menu"
-              >
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-dim)]">
-                    Console Hub
-                  </h2>
-                  <button
-                    onClick={() => {
-                      if (setMobileOpen) setMobileOpen(false);
-                    }}
-                    className="p-1 text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.04] border border-[var(--border)] rounded-md cursor-pointer"
-                    aria-label="Close mobile menu"
-                  >
-                    <X size={15} />
-                  </button>
-                </div>
-
-                {/* Mobile Quick Search */}
-                <button
-                  onClick={() => {
-                    if (setMobileOpen) setMobileOpen(false);
-                    setCommandMenuOpen(true);
-                  }}
-                  className="w-full flex items-center justify-between p-2.5 rounded-lg border border-[var(--border)] bg-white/[0.02] text-[var(--text-secondary)] mb-6 text-xs text-left"
-                >
-                  <span className="flex items-center gap-2">
-                    <Search size={13} /> Quick Search...
-                  </span>
-                  <kbd className="text-[8px] font-mono border border-white/[0.08] px-1 rounded bg-white/[0.04]">
-                    ⌘K
-                  </kbd>
-                </button>
-
-                <nav className="flex-1 space-y-6" aria-label="Mobile navigation">
-                  {dynamicMenuGroups.map((group) => (
-                    <div key={group.key}>
-                      <h2 className="text-[10px] font-bold uppercase tracking-wider text-[var(--accent)] mb-2.5 ml-1 flex items-center gap-1.5">
-                        <span>{group.emoji}</span> {group.label}
-                      </h2>
-                      <div className="space-y-1">
-                        {group.items.map((item) => (
-                          <Link
-                            key={item.href}
-                            to={item.href}
-                            onClick={() => {
-                              if (setMobileOpen) setMobileOpen(false);
-                            }}
-                            onMouseEnter={() => prefetchRoute(item.href)}
-                            className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/[0.03] border border-transparent hover:border-[var(--border)] transition-colors group"
-                          >
-                            <div className={`p-1.5 rounded-md ${getIconStyles(colorKeyFromMenuItem(item))}`}>
-                              <item.icon size={13} aria-hidden="true" />
-                            </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center justify-between">
-                                <h3 className="text-xs font-bold text-[var(--text-primary)]">
-                                  {item.title}
-                                </h3>
-                              </div>
-                            </div>
-                          </Link>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </nav>
-
-                {/* Mobile footer */}
-                <div className="mt-8 pt-6 border-t border-white/[0.03] space-y-3">
-                  <div className="flex justify-between items-center text-[9px] font-bold font-mono uppercase text-[var(--text-dim)]">
-                    <span>CPU Core Load</span>
-                    <span>{telemetryStats.cpu}%</span>
-                  </div>
-                  <div className="flex justify-between items-center text-[9px] font-bold font-mono uppercase text-[var(--text-dim)]">
-                    <span>Broker Sync</span>
-                    <span className="text-[var(--success)]">Connected</span>
-                  </div>
-                  {user && (
-                    <div className="mt-4 p-2 bg-white/[0.02] border border-white/[0.03] rounded-lg flex items-center gap-2.5">
-                      <div className="w-7 h-7 rounded bg-[var(--accent-muted)] border border-[var(--accent-border)] flex items-center justify-center text-[var(--accent)] font-bold text-xs">
-                        {(user.full_name || user.username).charAt(0).toUpperCase()}
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <h4 className="text-[11px] font-bold text-[var(--text-primary)] truncate">
-                          {user.full_name || user.username}
-                        </h4>
-                        <p className="text-[8px] font-mono text-[var(--accent)] uppercase">
-                          {user.role}
-                        </p>
-                      </div>
-                      <button
-                        onClick={() => {
-                          if (setMobileOpen) setMobileOpen(false);
-                          logout();
-                        }}
-                        className="p-1.5 text-[var(--text-dim)] hover:text-[var(--danger)] hover:bg-[var(--danger-muted)] rounded transition-colors"
-                        aria-label="Sign out"
-                      >
-                        <LogOut size={13} />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            </>
+            </Suspense>
           )}
         </AnimatePresence>
       </header>
-
-      {/* ═══════════════════════════════════════════════
-          COMMAND PALETTE (Ctrl+K / ⌘K)
-          ═══════════════════════════════════════════════ */}
-      <AnimatePresence>
-        {commandMenuOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.6 }}
-              exit={{ opacity: 0 }}
-              onClick={() => {
-                setCommandMenuOpen(false);
-                setSearchQuery("");
-              }}
-              className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm"
-            />
-
-            {/* Modal */}
-            <div className="fixed inset-0 z-[101] flex items-start justify-center p-4 sm:p-10 pt-[10vh] sm:pt-[15vh] pointer-events-none">
-              <motion.div
-                initial={{ scale: 0.96, opacity: 0, y: -20 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.96, opacity: 0, y: -20 }}
-                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                className="w-full max-w-xl bg-[rgba(12,12,14,0.95)] border border-[var(--border-focus)] rounded-xl shadow-[var(--shadow-lg)] overflow-hidden flex flex-col pointer-events-auto max-h-[80vh] backdrop-blur-2xl"
-                onKeyDown={handleCommandMenuKeyDown}
-              >
-                {/* Search Input */}
-                <div className="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.04] relative">
-                  <Search size={15} className="text-[var(--text-dim)] shrink-0" />
-                  <input
-                    type="text"
-                    placeholder="Search modules, predictors, billing, or profile settings..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="flex-1 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] bg-transparent outline-none border-none py-0.5"
-                    autoFocus
-                  />
-                  <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="text-[8px] font-bold font-mono px-1 rounded bg-white/[0.06] border border-white/[0.08] text-[var(--text-dim)]">
-                      ESC
-                    </span>
-                    <button
-                      onClick={() => {
-                        setCommandMenuOpen(false);
-                        setSearchQuery("");
-                      }}
-                      className="p-1 rounded hover:bg-white/[0.04] text-[var(--text-dim)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
-                      aria-label="Close search"
-                    >
-                      <X size={14} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Command Items */}
-                <div className="flex-1 overflow-y-auto p-2 space-y-3 max-h-[50vh]">
-                  {filteredCommandItems.length > 0 ? (
-                    Object.entries(
-                      filteredCommandItems.reduce(
-                        (acc, item) => {
-                          if (!acc[item.category]) acc[item.category] = [];
-                          acc[item.category].push(item);
-                          return acc;
-                        },
-                        {} as Record<string, typeof COMMAND_ITEMS>
-                      )
-                    ).map(([category, items]) => (
-                      <div key={category}>
-                        <h4 className="px-3 py-1.5 text-[9px] font-mono font-bold uppercase tracking-wider text-[var(--accent)]">
-                          {category}
-                        </h4>
-                        <div className="space-y-0.5 mt-1">
-                          {items.map((item) => {
-                            const globalIndex = filteredCommandItems.indexOf(item);
-                            const isSelected = globalIndex === selectedIndex;
-
-                            return (
-                              <button
-                                key={item.href}
-                                onClick={() => {
-                                  navigate(item.href);
-                                  setCommandMenuOpen(false);
-                                  setSearchQuery("");
-                                }}
-                                onMouseEnter={() => setSelectedIndex(globalIndex)}
-                                className={`w-full flex items-center gap-3 p-2.5 rounded-lg text-left transition-all duration-150 group cursor-pointer ${
-                                  isSelected
-                                    ? "bg-[var(--accent-muted)] border border-[var(--accent-border)]"
-                                    : "bg-transparent border border-transparent hover:bg-white/[0.01]"
-                                }`}
-                              >
-                                <div
-                                  className={`p-2 rounded-lg transition-colors shrink-0 ${
-                                    isSelected
-                                      ? "bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/20"
-                                      : "bg-white/[0.02] text-[var(--text-dim)] border border-white/[0.04] group-hover:text-[var(--text-primary)]"
-                                  }`}
-                                >
-                                  <item.icon size={13} />
-                                </div>
-                                <div className="min-w-0 flex-1">
-                                  <div className="flex items-center justify-between">
-                                    <span
-                                      className={`text-[11px] font-bold transition-colors truncate ${
-                                        isSelected
-                                          ? "text-[var(--accent)]"
-                                          : "text-[var(--text-primary)]"
-                                      }`}
-                                    >
-                                      {item.label}
-                                    </span>
-                                    {isSelected && (
-                                      <span className="text-[8px] font-bold font-mono px-1 rounded bg-[var(--accent)]/10 text-[var(--accent)] uppercase tracking-wider scale-90">
-                                        Open
-                                      </span>
-                                    )}
-                                  </div>
-                                  <p className="text-[9px] text-[var(--text-dim)] truncate mt-0.5 group-hover:text-[var(--text-secondary)] transition-colors">
-                                    {item.desc}
-                                  </p>
-                                </div>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="py-8 text-center">
-                      <Command size={20} className="mx-auto text-white/[0.04] mb-2" />
-                      <p className="text-xs font-bold text-[var(--text-secondary)] uppercase">
-                        No matching modules found
-                      </p>
-                      <p className="text-[10px] text-[var(--text-dim)] mt-1">
-                        Try searching for keywords like &quot;heart&quot;, &quot;predict&quot;,
-                        &quot;beds&quot;, or &quot;settings&quot;.
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Footer */}
-                <div className="px-4 py-2 bg-white/[0.01] border-t border-white/[0.03] flex justify-between items-center text-[8px] font-mono text-[var(--text-dim)] uppercase tracking-wider">
-                  <div className="flex gap-3">
-                    <span>↑↓ to navigate</span>
-                    <span>↵ to open</span>
-                  </div>
-                  <span>Quick Console Navigator</span>
-                </div>
-              </motion.div>
-            </div>
-          </>
-        )}
-      </AnimatePresence>
     </>
   );
 }
