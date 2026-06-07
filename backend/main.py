@@ -197,9 +197,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response = await call_next(request)
         # Hugging Face Spaces embeds the application inside an iframe.
-        # If running in a Hugging Face Space (detected by SPACES_ID),
+        # If running in a Hugging Face Space (detected by SPACE_ID or SPACES_ID),
         # allow framing from HF domains via CSP frame-ancestors instead of X-Frame-Options: DENY.
-        if os.getenv("SPACES_ID"):
+        if os.getenv("SPACE_ID") or os.getenv("SPACES_ID"):
             response.headers["Content-Security-Policy"] = (
                 "frame-ancestors 'self' https://*.huggingface.co https://huggingface.co"
             )
