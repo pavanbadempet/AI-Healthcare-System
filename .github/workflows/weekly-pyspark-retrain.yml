@@ -1,9 +1,9 @@
-name: Weekly PySpark ETL & ML Retraining
+name: Daily PySpark ETL & ML Retraining
 
 on:
   schedule:
-    # Trigger weekly on Sundays at 2:00 AM UTC
-    - cron: '0 2 * * 0'
+    # Trigger daily at 2:00 AM UTC
+    - cron: '0 2 * * *'
   workflow_dispatch:
     # Allow manual execution via the Actions tab
 
