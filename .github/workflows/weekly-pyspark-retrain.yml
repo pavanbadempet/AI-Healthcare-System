@@ -34,27 +34,25 @@ jobs:
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pyspark delta-spark numpy pandas scikit-learn xgboost joblib requests sqlalchemy psycopg2-binary pyarrow boto3
+        pip install pyspark delta-spark numpy pandas scikit-learn xgboost joblib requests sqlalchemy psycopg2-binary pyarrow huggingface_hub
 
     - name: Run PySpark ETL and Model Retraining
       env:
         DATABASE_URL: ${{ secrets.DATABASE_URL }}
         BACKEND_URL: ${{ secrets.BACKEND_URL }}
         ADMIN_JWT_TOKEN: ${{ secrets.ADMIN_JWT_TOKEN }}
-        R2_ENDPOINT: ${{ secrets.R2_ENDPOINT }}
-        R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-        R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-        R2_BUCKET_NAME: ${{ secrets.R2_BUCKET_NAME }}
+        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        HF_DATASET_ID: ${{ secrets.HF_DATASET_ID }}
       run: |
         python scripts/runners/run_spark_etl.py
 
-    - name: Commit and Push Updated Models and Datasets
+    - name: Commit and Push Updated Models
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         
-        # Add the modified model pickle files and parquet datasets
-        git add backend/*.pkl data/processed/*.parquet
+        # Add only the modified model pickle files (datasets are securely stored in private HF dataset)
+        git add backend/*.pkl
         
         if git diff --cached --quiet; then
           echo "No model updates detected. Skipping commit."
