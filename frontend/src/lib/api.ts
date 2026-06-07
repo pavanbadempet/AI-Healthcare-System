@@ -983,3 +983,27 @@ export async function getAdminOperationalHealth(): Promise<OperationalHealthRepo
   return apiFetch<OperationalHealthReport>('/admin/operational-health');
 }
 
+export interface AnalyticsReport {
+  report_generated_at: string | null;
+  total_records_analyzed: number;
+  prevalence_rates: Record<string, number>;
+  demographics: {
+    avg_age: number;
+    avg_bmi: number;
+    gender_distribution: {
+      male_ratio: number;
+      female_ratio: number;
+    };
+  };
+  model_performance: Record<string, number>;
+  pipeline_execution: {
+    duration_seconds: number;
+    status: string;
+  };
+}
+
+export async function getAnalyticsReport(): Promise<AnalyticsReport> {
+  return apiFetch<AnalyticsReport>('/admin/analytics/report');
+}
+
+

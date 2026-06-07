@@ -96,3 +96,11 @@ docs/optimal_dual_layer_architecture.md
 docs/ZERO_CAPITAL_GUIDE.md
 docs/GITHUB_METADATA.md
 docs/performance-benchmarks.md
+
+# Data Lake layers (Bronze, Silver, Gold Parquet files)
+data/bronze/
+data/silver/
+data/gold/
+# Keep only the Gold Analyst Report JSON file tracked in git for deployment
+!data/gold/analyst_report.json
+

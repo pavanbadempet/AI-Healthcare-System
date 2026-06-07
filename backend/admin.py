@@ -3,6 +3,8 @@ Admin Dashboard Logic
 =====================
 Endpoints for system administration, analytics, and user management.
 """
+import os
+import json
 from typing import Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -95,6 +97,53 @@ def _scope_audit_logs_to_admin_facility(query, admin: models.User):
     return query.filter(models.AuditLog.facility_id == admin.facility_id)
 
 # --- Endpoints ---
+
+@router.get("/analytics/report")
+def get_analytics_report(
+    admin: models.User = Depends(get_current_admin)
+) -> Dict:
+    """Fetch the Gold Layer analyst report."""
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    report_path = os.path.join(base_dir, "data", "gold", "analyst_report.json")
+    
+    if not os.path.exists(report_path):
+        return {
+            "report_generated_at": None,
+            "total_records_analyzed": 0,
+            "prevalence_rates": {
+                "diabetes": 0.0,
+                "heart": 0.0,
+                "kidney": 0.0,
+                "liver": 0.0,
+                "lungs": 0.0
+            },
+            "demographics": {
+                "avg_age": 0.0,
+                "avg_bmi": 0.0,
+                "gender_distribution": {"male_ratio": 50.0, "female_ratio": 50.0}
+            },
+            "model_performance": {
+                "diabetes": 0.0,
+                "heart": 0.0,
+                "kidney": 0.0,
+                "liver": 0.0,
+                "lungs": 0.0
+            },
+            "pipeline_execution": {
+                "duration_seconds": 0.0,
+                "status": "not_run"
+            }
+        }
+        
+    try:
+        with open(report_path, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to read Gold analyst report: {str(e)}"
+        )
+
 
 @router.get("/stats")
 def get_admin_stats(
