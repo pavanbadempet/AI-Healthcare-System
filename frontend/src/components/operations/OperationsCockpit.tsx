@@ -247,26 +247,70 @@ export default function OperationsCockpit() {
           )}
           {adminData && (
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {cards.map((card, idx) => (
-                <motion.div 
-                  key={card.label} 
-                  initial={{ opacity: 0, y: 5 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.02 }}
-                  className={`rounded border bg-[rgba(24,24,27,0.2)] hover:bg-[rgba(24,24,27,0.45)] p-4.5 flex flex-col justify-between transition-all duration-200 ${card.border}`}
-                >
-                  <div className="mb-4 flex items-start justify-between">
-                    <div>
-                      <p className="section-label text-[9px]">{card.label}</p>
-                      <p className="mt-2.5 text-2xl font-extrabold tracking-tight text-[var(--text-primary)] font-mono">{card.value}</p>
+              {cards.map((card, idx) => {
+                const getCardStyle = (tone: string) => {
+                  if (tone.includes("accent-blue")) {
+                    return {
+                      gradient: "from-cyan-950/20 via-cyan-900/5 to-black/40",
+                      glow: "rgba(34, 211, 238, 0.25)"
+                    };
+                  }
+                  if (tone.includes("accent")) {
+                    return {
+                      gradient: "from-indigo-950/20 via-indigo-900/5 to-black/40",
+                      glow: "rgba(99, 102, 241, 0.25)"
+                    };
+                  }
+                  if (tone.includes("warning")) {
+                    return {
+                      gradient: "from-amber-950/20 via-amber-900/5 to-black/40",
+                      glow: "rgba(245, 158, 11, 0.25)"
+                    };
+                  }
+                  if (tone.includes("danger")) {
+                    return {
+                      gradient: "from-rose-950/20 via-rose-900/5 to-black/40",
+                      glow: "rgba(239, 68, 68, 0.25)"
+                    };
+                  }
+                  if (tone.includes("success")) {
+                    return {
+                      gradient: "from-emerald-950/20 via-emerald-900/5 to-black/40",
+                      glow: "rgba(16, 185, 129, 0.25)"
+                    };
+                  }
+                  return {
+                    gradient: "from-zinc-900/40 to-black/40",
+                    glow: "rgba(255, 255, 255, 0.05)"
+                  };
+                };
+
+                const style = getCardStyle(card.tone);
+
+                return (
+                  <motion.div 
+                    key={card.label} 
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.02 }}
+                    className={`rounded-2xl border border-white/[0.06] bg-gradient-to-br ${style.gradient} hover:border-white/[0.12] p-5 flex flex-col justify-between transition-all duration-300 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]`}
+                  >
+                    <div className="mb-4 flex items-start justify-between">
+                      <div>
+                        <p className="section-label text-[9px] tracking-wider">{card.label}</p>
+                        <p className="mt-2.5 text-2xl font-extrabold tracking-tight text-[var(--text-primary)] font-display">{card.value}</p>
+                      </div>
+                      <div 
+                        className={`p-2 rounded-xl border border-white/10 ${card.bg} ${card.tone} transition-transform duration-500 hover:scale-110`}
+                        style={{ filter: `drop-shadow(0 0 6px ${style.glow})` }}
+                      >
+                        <card.icon size={15} aria-hidden="true" />
+                      </div>
                     </div>
-                    <div className={`p-2 rounded border ${card.bg} ${card.tone} ${card.border.split(' ')[0]}`}>
-                      <card.icon size={15} aria-hidden="true" />
-                    </div>
-                  </div>
-                  <p className="mono-meta text-[9px] border-t border-[var(--border-subtle)] pt-2.5 mt-1">{card.detail}</p>
-                </motion.div>
-              ))}
+                    <p className="mono-meta text-[9px] border-t border-white/[0.06] pt-2.5 mt-1">{card.detail}</p>
+                  </motion.div>
+                );
+              })}
             </div>
           )}
         </div>

@@ -143,8 +143,11 @@ export default function DashboardPage() {
             sub: `${capacityPct}% Capacity`,
             icon: Activity,
             trend: telemetry ? `${telemetry.active_census}/${telemetry.total_capacity}` : "+12",
-            trendColor: capacityPct > 85 ? "text-[var(--danger)]" : "text-[var(--warning)]",
+            trendColor: capacityPct > 85 ? "text-rose-400" : "text-amber-400",
             meta: telemetry ? `ED Boarding: ${telemetry.ed_boarding}` : "ICU: 42/50",
+            gradient: "from-indigo-950/30 via-indigo-900/10 to-black/50",
+            glowColor: "rgba(99, 102, 241, 0.25)",
+            badgeColor: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20",
           },
           {
             title: "AI TRIAGE ALERTS",
@@ -152,8 +155,11 @@ export default function DashboardPage() {
             sub: "Requires Review",
             icon: AlertTriangle,
             trend: highRiskRecords.length > 0 ? "CRITICAL" : "CLEAR",
-            trendColor: highRiskRecords.length > 0 ? "text-[var(--danger)]" : "text-[var(--success)]",
+            trendColor: highRiskRecords.length > 0 ? "text-rose-400" : "text-emerald-400",
             meta: "Sepsis Risk: 2",
+            gradient: "from-rose-950/30 via-rose-900/10 to-black/50",
+            glowColor: "rgba(244, 63, 94, 0.25)",
+            badgeColor: "text-rose-400 bg-rose-500/10 border-rose-500/20",
           },
           {
             title: "PREDICTIVE MODELS",
@@ -161,8 +167,11 @@ export default function DashboardPage() {
             sub: "Global Accuracy",
             icon: BrainCircuit,
             trend: "STABLE",
-            trendColor: "text-[var(--success)]",
+            trendColor: "text-emerald-400",
             meta: `Running: ${telemetry ? telemetry.ai_nodes_active : 14} Nodes`,
+            gradient: "from-emerald-950/30 via-emerald-900/10 to-black/50",
+            glowColor: "rgba(52, 211, 153, 0.25)",
+            badgeColor: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
           },
           {
             title: "SYSTEM LATENCY",
@@ -170,8 +179,11 @@ export default function DashboardPage() {
             sub: "Protected Session",
             icon: Clock,
             trend: "OPTIMAL",
-            trendColor: "text-[var(--success)]",
+            trendColor: "text-cyan-400",
             meta: "FHIR Bridge: UP",
+            gradient: "from-cyan-950/30 via-cyan-900/10 to-black/50",
+            glowColor: "rgba(34, 211, 238, 0.25)",
+            badgeColor: "text-cyan-400 bg-cyan-500/10 border-cyan-500/20",
           },
         ].map((stat, i) => (
           <motion.div
@@ -179,28 +191,31 @@ export default function DashboardPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.04 }}
-            className="glass-card p-4 flex flex-col justify-between relative overflow-hidden group border border-[var(--border)] rounded bg-[rgba(24,24,27,0.4)]"
+            className={`flex flex-col justify-between relative overflow-hidden group border border-white/[0.06] rounded-2xl bg-gradient-to-br ${stat.gradient} p-5 hover:border-white/[0.12] transition-all duration-300 shadow-[0_15px_35px_-10px_rgba(0,0,0,0.5)]`}
           >
             <div className="flex justify-between items-start mb-4">
               <div>
-                <h3 className="section-label mb-1">{stat.title}</h3>
+                <h3 className="section-label mb-1.5 tracking-wider">{stat.title}</h3>
                 <div className="flex items-baseline gap-1">
-                  <span className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">{stat.value}</span>
+                  <span className="text-3xl font-extrabold text-[var(--text-primary)] tracking-tight font-display">{stat.value}</span>
                 </div>
               </div>
-              <div className="p-1.5 rounded bg-[rgba(255,255,255,0.02)] border border-[var(--border)] text-[var(--text-dim)] group-hover:text-[var(--accent)] transition-colors">
-                <stat.icon size={14} aria-hidden="true" />
+              <div
+                className={`flex items-center justify-center w-9 h-9 rounded-xl border ${stat.badgeColor} transition-transform duration-500 group-hover:scale-110`}
+                style={{ filter: `drop-shadow(0 0 8px ${stat.glowColor})` }}
+              >
+                <stat.icon size={15} aria-hidden="true" />
               </div>
             </div>
             
-            <div className="flex items-center justify-between text-[11px] font-mono border-t border-[var(--border-subtle)] pt-2.5 mt-2">
+            <div className="flex items-center justify-between text-[11px] font-mono border-t border-white/[0.06] pt-3 mt-2">
               <span className="text-[var(--text-secondary)]">{stat.sub}</span>
-              <span className={`${stat.trendColor} font-bold`}>{stat.trend}</span>
+              <span className={`${stat.trendColor} font-black uppercase tracking-wider`}>{stat.trend}</span>
             </div>
             
-            <div className="text-[10px] font-mono text-[var(--text-muted)] mt-1.5 flex justify-between uppercase">
+            <div className="text-[10px] font-mono text-[var(--text-dim)] mt-2 flex justify-between uppercase">
               <span>Status</span>
-              <span>{stat.meta}</span>
+              <span className="font-semibold text-white/50">{stat.meta}</span>
             </div>
           </motion.div>
         ))}
