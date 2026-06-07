@@ -34,7 +34,7 @@ jobs:
     - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pyspark delta-spark numpy pandas scikit-learn xgboost joblib requests sqlalchemy psycopg2-binary
+        pip install pyspark delta-spark numpy pandas scikit-learn xgboost joblib requests sqlalchemy psycopg2-binary pyarrow
 
     - name: Run PySpark ETL and Model Retraining
       env:
