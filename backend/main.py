@@ -288,6 +288,11 @@ app.include_router(ollama_routes.router)
 
 @app.get("/")
 def root():
+    _frontend_dist = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend", "dist")
+    index_file = os.path.join(_frontend_dist, "index.html")
+    if os.path.exists(index_file):
+        from fastapi.responses import FileResponse
+        return FileResponse(index_file)
     return {"message": "AI Healthcare API"}
 
 @app.get("/healthz")
