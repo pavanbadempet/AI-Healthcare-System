@@ -46,6 +46,13 @@ async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> 
     throw new ApiConnectionError(path);
   }
 
+  if (res.status === 401) {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('healthcare-auth');
+      window.location.href = '/login';
+    }
+  }
+
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     let errorMessage = `API Error: ${res.status}`;
@@ -175,6 +182,13 @@ export function streamChat(
     signal: controller.signal,
   })
     .then(async (res) => {
+      if (res.status === 401) {
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('healthcare-auth');
+          window.location.href = '/login';
+        }
+        throw new Error('Unauthorized');
+      }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const reader = res.body?.getReader();
       if (!reader) throw new Error('No stream');
@@ -214,6 +228,13 @@ export function streamChat(
             },
             body: JSON.stringify({ message, history }),
           });
+          if (syncRes.status === 401) {
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem('healthcare-auth');
+              window.location.href = '/login';
+            }
+            throw new Error('Unauthorized');
+          }
           if (!syncRes.ok) throw new Error(`HTTP ${syncRes.status}`);
           const syncData = await syncRes.json();
           const replyText = syncData.response || syncData.reply || "";
