@@ -937,3 +937,49 @@ export async function getDemoReadiness(): Promise<DemoReadinessData> {
   return apiFetch<DemoReadinessData>('/demo-readiness/');
 }
 
+export interface DataQualityReport {
+  overall_score: number;
+  failed_checks: string[];
+  datasets: Array<{
+    name: string;
+    record_count: number;
+    pii_exposed: boolean;
+    lineage: {
+      source_tables: string[];
+      upstream_modules: string[];
+      downstream_uses: string[];
+      freshness_field: string;
+    };
+  }>;
+  checks: Array<{
+    id: string;
+    dataset: string;
+    description: string;
+    severity: string;
+    status: string;
+    total_count: number;
+    failed_count: number;
+    score: number;
+  }>;
+}
+
+export interface OperationalHealthReport {
+  status: string;
+  checks: Array<{
+    id: string;
+    name: string;
+    status: string;
+    total_count: number;
+    failed_count: number;
+    detail: string | null;
+  }>;
+}
+
+export async function getAdminDataQuality(): Promise<DataQualityReport> {
+  return apiFetch<DataQualityReport>('/admin/data-quality');
+}
+
+export async function getAdminOperationalHealth(): Promise<OperationalHealthReport> {
+  return apiFetch<OperationalHealthReport>('/admin/operational-health');
+}
+

@@ -115,7 +115,8 @@ def get_admin_stats(
         "total_predictions": prediction_query.count(),
         "total_messages": message_query.count(),
         "server_status": "Online",
-        "database_status": "Connected"
+        "database_status": "Connected",
+        "database_type": "sqlite" if "sqlite" in database.SQLALCHEMY_DATABASE_URL else "postgresql"
     }
 
 @router.get("/audit-logs")

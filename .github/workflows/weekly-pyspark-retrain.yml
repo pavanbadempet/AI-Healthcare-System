@@ -1,0 +1,61 @@
+name: Weekly PySpark ETL & ML Retraining
+
+on:
+  schedule:
+    # Trigger weekly on Sundays at 2:00 AM UTC
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    # Allow manual execution via the Actions tab
+
+jobs:
+  retrain:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set up Java JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.12'
+        cache: 'pip'
+
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyspark delta-spark numpy pandas scikit-learn xgboost joblib requests sqlalchemy psycopg2-binary
+
+    - name: Run PySpark ETL and Model Retraining
+      env:
+        DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        BACKEND_URL: ${{ secrets.BACKEND_URL }}
+        ADMIN_JWT_TOKEN: ${{ secrets.ADMIN_JWT_TOKEN }}
+      run: |
+        python scripts/runners/run_spark_etl.py
+
+    - name: Commit and Push Updated Models
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        
+        # Add the modified model pickle files
+        git add backend/*.pkl
+        
+        if git diff --cached --quiet; then
+          echo "No model updates detected. Skipping commit."
+        else
+          git commit -m "chore(ml): weekly model retraining update [skip ci]"
+          git push
+          echo "Model updates pushed to repository."
+        fi

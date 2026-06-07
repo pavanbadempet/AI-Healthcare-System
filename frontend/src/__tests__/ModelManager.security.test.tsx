@@ -24,9 +24,12 @@ function renderModelManager() {
       onOllamaSelect={vi.fn()}
       onWebLLMSelect={vi.fn()}
       onWebLLMUnload={vi.fn()}
+      onWebLLMLoad={vi.fn()}
       currentOllamaModel=""
       currentWebLLMModel={null}
       webllmActive={false}
+      webllmLoading={null}
+      webllmProgress={null}
     />
   );
 }

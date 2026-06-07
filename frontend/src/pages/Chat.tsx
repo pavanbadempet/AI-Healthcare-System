@@ -23,12 +23,50 @@ export default function ChatCopilotPage() {
   const [currentOllamaModel, setCurrentOllamaModel] = useState("llama3.2");
   const [currentWebLLMModel, setCurrentWebLLMModel] = useState<string | null>(() => webllm.getActiveModel());
   const [webllmActive, setWebllmActive] = useState(() => webllm.isLoaded());
+  const [webllmLoading, setWebllmLoading] = useState<string | null>(null);
+  const [webllmProgress, setWebllmProgress] = useState<webllm.WebLLMProgress | null>(null);
   const canUseGlobalScope = user?.role === "doctor" || user?.role === "admin";
   const ragOptions = [
     ...(canUseGlobalScope ? [{ id: 'global', label: 'Global DB & Literature', icon: Database }] : []),
     { id: 'patient', label: 'Active Patient Record', icon: User },
     { id: 'guidelines', label: 'Clinical Guidelines', icon: FileText }
   ];
+
+  const handleWebLLMLoad = async (modelId: string) => {
+    if (webllmLoading) return;
+    setWebllmLoading(modelId);
+    setWebllmProgress({ text: 'Initializing WebGPU...', progress: 0 });
+    localStorage.removeItem("webllm_unloaded");
+    try {
+      await webllm.loadModel(modelId, (p) => {
+        setWebllmProgress(p);
+      });
+      setCurrentWebLLMModel(modelId);
+      setWebllmActive(true);
+      setWebllmProgress(null);
+    } catch (err: any) {
+      setWebllmProgress({ text: `Error: ${err.message || err}`, progress: 0 });
+      setTimeout(() => setWebllmProgress(null), 4000);
+    } finally {
+      setWebllmLoading(null);
+    }
+  };
+
+  const handleWebLLMUnload = () => {
+    webllm.unloadModel();
+    setWebllmActive(false);
+    setCurrentWebLLMModel(null);
+    localStorage.setItem("webllm_unloaded", "true");
+  };
+
+  useEffect(() => {
+    const isSupported = webllm.isWebGPUSupported();
+    const wasUnloaded = localStorage.getItem("webllm_unloaded") === "true";
+    const isLoaded = webllm.isLoaded();
+    if (isSupported && !isLoaded && !wasUnloaded) {
+      handleWebLLMLoad("Llama-3.2-1B-Instruct-q4f16_1-MLC");
+    }
+  }, []);
 
   useEffect(() => {
     getChatHistory()
@@ -58,7 +96,7 @@ export default function ChatCopilotPage() {
   };
 
   const handleSend = async (text: string) => {
-    if (!text.trim() || isLoading) return;
+    if (!text.trim() || isLoading || !!webllmLoading) return;
     const currentInput = text;
     setInput("");
     
@@ -213,6 +251,24 @@ ${contextText}
             </div>
           </div>
 
+          {webllmLoading && webllmProgress && (
+            <div className="bg-emerald-500/10 border-b border-emerald-500/20 px-4 py-2 flex items-center justify-between text-[10px] font-mono text-emerald-400">
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+                <span>PREPARING LOCAL BROWSER AI: {webllmProgress.text}</span>
+              </div>
+              <div className="flex items-center gap-3 shrink-0">
+                <span className="font-bold">{(webllmProgress.progress * 100).toFixed(0)}%</span>
+                <div className="w-24 h-1.5 bg-zinc-800 rounded-full overflow-hidden border border-zinc-700/50">
+                  <div 
+                    className="h-full bg-emerald-500 transition-all duration-300"
+                    style={{ width: `${Math.min(webllmProgress.progress * 100, 100)}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Chat Messages */}
           <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4" role="log" aria-label="Chat messages" aria-live="polite">
             {messages.length === 0 ? (
@@ -296,14 +352,14 @@ ${contextText}
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(input); } }}
-                placeholder="Query diagnostics, research guidelines, or patient files..."
-                disabled={isLoading}
-                className="input-clinical pr-10"
+                placeholder={webllmLoading ? "Please wait while local browser AI initializes..." : "Query diagnostics, research guidelines, or patient files..."}
+                disabled={isLoading || !!webllmLoading}
+                className="input-clinical pr-10 disabled:opacity-50"
                 aria-label="Type a message to the AI copilot"
               />
               <button 
                 onClick={() => handleSend(input)}
-                disabled={!input.trim() || isLoading}
+                disabled={!input.trim() || isLoading || !!webllmLoading}
                 className="absolute right-1.5 p-1.5 bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] disabled:opacity-30 disabled:bg-transparent disabled:text-[var(--text-dim)] transition-colors rounded cursor-pointer"
                 aria-label="Send message"
               >
@@ -390,14 +446,13 @@ ${contextText}
             setCurrentWebLLMModel(modelId);
             setWebllmActive(true);
           }}
-          onWebLLMUnload={() => {
-            webllm.unloadModel();
-            setWebllmActive(false);
-            setCurrentWebLLMModel(null);
-          }}
+          onWebLLMUnload={handleWebLLMUnload}
+          onWebLLMLoad={handleWebLLMLoad}
           currentOllamaModel={currentOllamaModel}
           currentWebLLMModel={currentWebLLMModel}
           webllmActive={webllmActive}
+          webllmLoading={webllmLoading}
+          webllmProgress={webllmProgress}
         />
       )}
     </div>
