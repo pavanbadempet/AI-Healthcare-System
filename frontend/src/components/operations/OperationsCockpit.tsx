@@ -1,7 +1,6 @@
-"use client";
-
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   Activity,
   AlertTriangle,
@@ -16,69 +15,72 @@ import {
   ShieldCheck,
   Stethoscope,
   Users,
+  ArrowRight,
+  TrendingUp,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth";
 import { getAdminOperationsCockpit, type AdminOperationsCockpitData } from "@/lib/api";
+import { safeApiMessage } from "@/lib/apiErrors";
 
 type RoleProfile = {
   title: string;
   description: string;
-  actions: { label: string; href: string }[];
+  actions: { label: string; href: string; detail: string; icon: any }[];
 };
 
 const roleProfiles: Record<string, RoleProfile> = {
   admin: {
-    title: "Admin command view",
-    description: "Hospital-wide throughput, department queues, consent-led exchange, and finance visibility.",
+    title: "Admin Command Console",
+    description: "Hospital-wide throughput, department queues, consent exchange, and revenue status.",
     actions: [
-      { label: "Operations summary", href: "/dashboard" },
-      { label: "Patient registry", href: "/patients" },
-      { label: "Capacity board", href: "/capacity" },
+      { label: "Operations cockpit", href: "/dashboard", detail: "Real-time clinic throughput overview", icon: Radio },
+      { label: "Patient database", href: "/patients", detail: "Longitudinal patient registries", icon: Users },
+      { label: "Capacity board", href: "/capacity", detail: "Bed maps & ward metrics", icon: TrendingUp },
     ],
   },
   doctor: {
-    title: "Doctor care-team view",
-    description: "Assigned patient panel, clinician-reviewed signals, orders, diagnostics, and discharge context.",
+    title: "Doctor Care-Team Interface",
+    description: "Assigned patient panel, clinical signals, diagnostic predictions, and AI copilot RAG.",
     actions: [
-      { label: "Assigned patient panel", href: "/patients" },
-      { label: "AI copilot", href: "/chat" },
-      { label: "Diagnostics", href: "/predict" },
+      { label: "Patient panel", href: "/patients", detail: "Active patient registry & vitals", icon: Stethoscope },
+      { label: "AI Copilot RAG", href: "/chat", detail: "Consult clinical reference guides", icon: ShieldCheck },
+      { label: "Model predictors", href: "/predict", detail: "Run clinical risk models", icon: FlaskConical },
     ],
   },
   nurse: {
-    title: "Nursing coordination view",
-    description: "Task worklists, care timeline events, bedside observations, and overdue care coordination.",
+    title: "Nursing Care Dashboard",
+    description: "Bedside observations, medication schedules, and clinical task lists.",
     actions: [
-      { label: "Patient registry", href: "/patients" },
-      { label: "Capacity board", href: "/capacity" },
-      { label: "Care timeline", href: "/dashboard" },
+      { label: "Active census", href: "/patients", detail: "Bedside monitoring & logs", icon: HeartPulse },
+      { label: "Bed board", href: "/capacity", detail: "ADT ward map & unit occupancy", icon: Activity },
+      { label: "Operations timeline", href: "/dashboard", detail: "Care timeline & checklist", icon: ClipboardList },
     ],
   },
   pharmacist: {
-    title: "Pharmacy operations view",
-    description: "Prescription queues, low-stock visibility, dispense status, and medication workflow handoffs.",
+    title: "Pharmacy Operations Center",
+    description: "Prescription queues, inventory signals, and medication dispensing.",
     actions: [
-      { label: "Prescription queues", href: "/dashboard" },
-      { label: "Patient medication view", href: "/patients" },
-      { label: "Inventory signals", href: "/dashboard" },
+      { label: "Dispense queue", href: "/dashboard", detail: "Process medication orders", icon: Pill },
+      { label: "Patient records", href: "/patients", detail: "View allergy lists & logs", icon: FileText },
+      { label: "Supplies tracker", href: "/dashboard", detail: "Check low-stock diagnostics", icon: ClipboardList },
     ],
   },
   billing: {
-    title: "Billing operations view",
-    description: "Invoices, cashier payments, outstanding balances, and encounter-linked revenue workflow.",
+    title: "Billing Operations Center",
+    description: "Invoices, transactions, cashiering, and financial accounts.",
     actions: [
-      { label: "Invoice queue", href: "/dashboard" },
-      { label: "Patient billing view", href: "/patients" },
-      { label: "Admin revenue metrics", href: "/admin" },
+      { label: "Pending invoices", href: "/dashboard", detail: "Outstanding cashier invoices", icon: CreditCard },
+      { label: "Patient financials", href: "/patients", detail: "Encounter ledger history", icon: FileText },
+      { label: "System logs", href: "/admin", detail: "Database telemetry metrics", icon: Radio },
     ],
   },
   patient: {
-    title: "Patient record view",
-    description: "Own timeline, appointments, reports, AI-assisted education, and export consent controls.",
+    title: "My Health Hub",
+    description: "Personal health timeline, upcoming consults, and secure medical records.",
     actions: [
-      { label: "My dashboard", href: "/dashboard" },
-      { label: "Appointments", href: "/telemedicine" },
-      { label: "Health assistant", href: "/chat" },
+      { label: "My dashboard", href: "/dashboard", detail: "My risk modeling trends", icon: Stethoscope },
+      { label: "Telemedicine scheduler", href: "/telemedicine", detail: "Book virtual appointments", icon: Radio },
+      { label: "AI assistant", href: "/chat", detail: "Learn about wellness indices", icon: ShieldCheck },
     ],
   },
 };
@@ -98,6 +100,8 @@ function adminMetricCards(data: AdminOperationsCockpitData) {
       value: numberValue(data.hospital.open_encounters),
       icon: Stethoscope,
       tone: "text-[var(--accent)]",
+      bg: "bg-[var(--accent-muted)]",
+      border: "border-[var(--accent-border)] hover:border-[var(--accent)]",
       detail: `${numberValue(data.hospital.active_admissions)} active admissions`,
     },
     {
@@ -105,6 +109,8 @@ function adminMetricCards(data: AdminOperationsCockpitData) {
       value: numberValue(data.hospital.open_orders),
       icon: ClipboardList,
       tone: "text-[var(--warning)]",
+      bg: "bg-[var(--warning-muted)]",
+      border: "border-[var(--warning-border)] hover:border-[var(--warning)]",
       detail: `${numberValue(data.hospital.occupied_beds)} occupied beds`,
     },
     {
@@ -112,13 +118,17 @@ function adminMetricCards(data: AdminOperationsCockpitData) {
       value: numberValue(data.monitoring.open_signals),
       icon: HeartPulse,
       tone: "text-[var(--danger)]",
+      bg: "bg-[var(--danger-muted)]",
+      border: "border-[var(--danger-border)] hover:border-[var(--danger)]",
       detail: `${numberValue(data.monitoring.total_vital_observations)} observations`,
     },
     {
-      label: "Diagnostics pending review",
+      label: "Diagnostics pending",
       value: numberValue(data.diagnostics.pending_review),
       icon: FlaskConical,
       tone: "text-[var(--accent-blue)]",
+      bg: "bg-[var(--accent-blue-muted)]",
+      border: "border-[var(--accent-blue-border)] hover:border-[var(--accent-blue)]",
       detail: `${numberValue(data.diagnostics.abnormal_results)} abnormal results`,
     },
     {
@@ -126,6 +136,8 @@ function adminMetricCards(data: AdminOperationsCockpitData) {
       value: numberValue(data.pharmacy.low_stock_items),
       icon: Pill,
       tone: "text-[var(--warning)]",
+      bg: "bg-[var(--warning-muted)]",
+      border: "border-[var(--warning-border)] hover:border-[var(--warning)]",
       detail: `${numberValue(data.pharmacy.active_prescriptions)} active prescriptions`,
     },
     {
@@ -133,6 +145,8 @@ function adminMetricCards(data: AdminOperationsCockpitData) {
       value: moneyValue(data.billing.outstanding_balance),
       icon: CreditCard,
       tone: "text-[var(--accent)]",
+      bg: "bg-[var(--accent-muted)]",
+      border: "border-[var(--accent-border)] hover:border-[var(--accent)]",
       detail: `${moneyValue(data.billing.total_collected)} collected`,
     },
     {
@@ -140,6 +154,8 @@ function adminMetricCards(data: AdminOperationsCockpitData) {
       value: numberValue(data.discharge.draft_summaries),
       icon: FileCheck2,
       tone: "text-[var(--success)]",
+      bg: "bg-[var(--success-muted)]",
+      border: "border-[var(--success-border)] hover:border-[var(--success)]",
       detail: `${numberValue(data.discharge.finalized_summaries)} finalized`,
     },
     {
@@ -147,6 +163,8 @@ function adminMetricCards(data: AdminOperationsCockpitData) {
       value: numberValue(data.nursing.overdue_tasks),
       icon: Activity,
       tone: "text-[var(--danger)]",
+      bg: "bg-[var(--danger-muted)]",
+      border: "border-[var(--danger-border)] hover:border-[var(--danger)]",
       detail: `${numberValue(data.nursing.assigned_tasks)} assigned tasks`,
     },
     {
@@ -154,8 +172,21 @@ function adminMetricCards(data: AdminOperationsCockpitData) {
       value: numberValue(data.interoperability.active_consents),
       icon: ShieldCheck,
       tone: "text-[var(--success)]",
+      bg: "bg-[var(--success-muted)]",
+      border: "border-[var(--success-border)] hover:border-[var(--success)]",
       detail: `${numberValue(data.interoperability.total_exports)} exports logged`,
     },
+    ...(data.monitoring.spark_info?.spark_batch_id !== undefined ? [
+      {
+        label: "Spark Stream Engine",
+        value: `Batch #${data.monitoring.spark_info.spark_batch_id}`,
+        icon: Radio,
+        tone: "text-[var(--accent-blue)]",
+        bg: "bg-[var(--accent-blue-muted)]",
+        border: "border-[var(--accent-blue-border)] hover:border-[var(--accent-blue)]",
+        detail: `Latency: ${data.monitoring.spark_info.spark_latency_ms.toFixed(1)}ms | ML: ${data.monitoring.spark_info.spark_ml_latency_ms.toFixed(1)}ms | Ingest: ${data.monitoring.spark_info.spark_records_processed} recs`,
+      }
+    ] : []),
   ];
 }
 
@@ -177,7 +208,7 @@ export default function OperationsCockpit() {
     setError("");
     getAdminOperationsCockpit()
       .then(setAdminData)
-      .catch((err) => setError(err.message || "Failed to load operations cockpit"))
+      .catch((err) => setError(safeApiMessage(err)))
       .finally(() => setLoading(false));
   }, [isAdmin]);
 
@@ -190,27 +221,25 @@ export default function OperationsCockpit() {
     <section className="panel overflow-hidden" aria-labelledby="operations-cockpit-title">
       <div className="panel-header flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <div className="section-label mb-2 flex items-center gap-2 text-[var(--accent)]">
-            <Radio size={13} aria-hidden="true" />
-            Live hospital workflow layer
+          <div className="section-label mb-1.5 flex items-center gap-2 text-[var(--accent)] tracking-wider">
+            <Radio size={12} className="text-[var(--accent)] animate-pulse" aria-hidden="true" />
+            Live Hospital Workflow Layer
           </div>
-          <h2 id="operations-cockpit-title" className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
-            Hospital Operations Cockpit
+          <h2 id="operations-cockpit-title" className="text-lg font-bold text-[var(--text-primary)] uppercase tracking-wide">
+            Operational Dashboard Cockpit
           </h2>
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--text-secondary)]">
-            Role-scoped operational visibility across OPD, IPD, monitoring, diagnostics, pharmacy, billing, discharge,
-            nursing, care events, and interoperability.
+          <p className="mt-1 max-w-3xl text-xs text-[var(--text-secondary)] font-mono uppercase leading-relaxed">
+            Role-scoped pipeline status spanning OPD/IPD, monitoring signals, predictive diagnostics, pharmacy stock, and consent exchange logs.
           </p>
         </div>
-        <div className="glass-card min-w-full p-4 lg:min-w-[320px]">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-md border border-[var(--accent-border)] bg-[var(--accent-muted)] text-[var(--accent)]">
-              {isAdmin ? <Users size={17} aria-hidden="true" /> : <Stethoscope size={17} aria-hidden="true" />}
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-[var(--text-primary)]">{roleProfile.title}</p>
-              <p className="text-xs leading-5 text-[var(--text-dim)]">{roleProfile.description}</p>
-            </div>
+        
+        <div className="rounded border border-[var(--border)] bg-[rgba(24,24,27,0.4)] p-4 lg:max-w-[340px] w-full flex items-center gap-3 hover:border-[var(--border-focus)] transition-colors">
+          <div className="flex h-10 w-10 items-center justify-center rounded border border-[var(--accent-border)] bg-[var(--accent-muted)] text-[var(--accent)] shrink-0">
+            {isAdmin ? <Users size={16} aria-hidden="true" /> : <Stethoscope size={16} aria-hidden="true" />}
+          </div>
+          <div>
+            <p className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wide">{roleProfile.title}</p>
+            <p className="text-[10px] text-[var(--text-secondary)] mt-0.5 leading-snug">{roleProfile.description}</p>
           </div>
         </div>
       </div>
@@ -218,77 +247,149 @@ export default function OperationsCockpit() {
       {isAdmin ? (
         <div className="p-5">
           {loading && (
-            <div className="rounded-md border border-[var(--border)] bg-[var(--bg-card)] p-5 text-sm text-[var(--text-secondary)]" role="status">
+            <div className="rounded border border-[var(--border)] bg-[rgba(24,24,27,0.2)] p-6 text-center text-xs font-mono text-[var(--text-dim)] uppercase tracking-wider" role="status">
               Loading hospital operations metrics...
             </div>
           )}
           {error && (
-            <div className="rounded-md border border-[var(--danger-border)] bg-[var(--danger-muted)] p-5 text-sm text-[var(--danger)]" role="alert">
+            <div className="rounded border border-[var(--danger-border)] bg-[var(--danger-muted)] p-4 text-xs font-mono text-[var(--danger)] uppercase tracking-wider" role="alert">
               {error}
             </div>
           )}
           {adminData && (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-              {cards.map((card) => (
-                <div key={card.label} className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] p-4">
-                  <div className="mb-5 flex items-start justify-between">
-                    <div>
-                      <p className="section-label">{card.label}</p>
-                      <p className="mt-2 text-2xl font-semibold tracking-tight text-[var(--text-primary)]">{card.value}</p>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {cards.map((card, idx) => {
+                const getCardStyle = (tone: string) => {
+                  if (tone.includes("accent-blue")) {
+                    return {
+                      gradient: "from-cyan-950/20 via-cyan-900/5 to-black/40",
+                      glow: "rgba(34, 211, 238, 0.25)"
+                    };
+                  }
+                  if (tone.includes("accent")) {
+                    return {
+                      gradient: "from-indigo-950/20 via-indigo-900/5 to-black/40",
+                      glow: "rgba(99, 102, 241, 0.25)"
+                    };
+                  }
+                  if (tone.includes("warning")) {
+                    return {
+                      gradient: "from-amber-950/20 via-amber-900/5 to-black/40",
+                      glow: "rgba(245, 158, 11, 0.25)"
+                    };
+                  }
+                  if (tone.includes("danger")) {
+                    return {
+                      gradient: "from-rose-950/20 via-rose-900/5 to-black/40",
+                      glow: "rgba(239, 68, 68, 0.25)"
+                    };
+                  }
+                  if (tone.includes("success")) {
+                    return {
+                      gradient: "from-emerald-950/20 via-emerald-900/5 to-black/40",
+                      glow: "rgba(16, 185, 129, 0.25)"
+                    };
+                  }
+                  return {
+                    gradient: "from-zinc-900/40 to-black/40",
+                    glow: "rgba(255, 255, 255, 0.05)"
+                  };
+                };
+
+                const style = getCardStyle(card.tone);
+
+                return (
+                  <motion.div 
+                    key={card.label} 
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.02 }}
+                    className={`rounded-2xl border border-white/[0.06] bg-gradient-to-br ${style.gradient} hover:border-white/[0.12] p-5 flex flex-col justify-between transition-all duration-300 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]`}
+                  >
+                    <div className="mb-4 flex items-start justify-between">
+                      <div>
+                        <p className="section-label text-[9px] tracking-wider">{card.label}</p>
+                        <p className="mt-2.5 text-2xl font-extrabold tracking-tight text-[var(--text-primary)] font-display">{card.value}</p>
+                      </div>
+                      <div 
+                        className={`p-2 rounded-xl border border-white/10 ${card.bg} ${card.tone} transition-transform duration-500 hover:scale-110`}
+                        style={{ filter: `drop-shadow(0 0 6px ${style.glow})` }}
+                      >
+                        <card.icon size={15} aria-hidden="true" />
+                      </div>
                     </div>
-                    <card.icon className={card.tone} size={18} aria-hidden="true" />
-                  </div>
-                  <p className="mono-meta">{card.detail}</p>
-                </div>
-              ))}
+                    <p className="mono-meta text-[9px] border-t border-white/[0.06] pt-2.5 mt-1">{card.detail}</p>
+                  </motion.div>
+                );
+              })}
             </div>
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4 p-5 lg:grid-cols-[1.1fr_0.9fr]">
-          <div className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] p-5">
-            <h3 className="section-title mb-4">Role workflow access</h3>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {roleProfile.actions.map((action) => (
-                <Link
-                  key={action.label}
-                  href={action.href}
-                  className="rounded-md border border-[var(--border)] bg-[rgba(255,244,230,0.025)] p-3 text-sm font-semibold text-[var(--text-primary)] transition-colors hover:border-[var(--border-focus)] hover:bg-[rgba(255,244,230,0.045)]"
-                >
-                  {action.label}
-                </Link>
-              ))}
+        <div className="grid grid-cols-1 gap-5 p-5 lg:grid-cols-[1.2fr_0.8fr]">
+          {/* Action List */}
+          <div className="rounded border border-[var(--border)] bg-[rgba(24,24,27,0.2)] p-5">
+            <h3 className="section-title mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]">
+              <ClipboardList size={13} className="text-[var(--accent)]" />
+              Role Workflow Actions
+            </h3>
+            
+            <div className="grid gap-3 sm:grid-cols-2">
+              {roleProfile.actions.map((action) => {
+                const Icon = action.icon;
+                return (
+                  <Link
+                    key={action.label}
+                    to={action.href}
+                    className="group rounded border border-[var(--border)] hover:border-[var(--border-focus)] bg-[rgba(255,255,255,0.01)] hover:bg-[rgba(255,255,255,0.02)] p-4.5 transition-all flex items-start justify-between"
+                  >
+                    <div className="space-y-1">
+                      <p className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wide group-hover:text-[var(--accent)] transition-colors">
+                        {action.label}
+                      </p>
+                      <p className="text-[9px] font-mono text-[var(--text-secondary)] uppercase tracking-wide">
+                        {action.detail}
+                      </p>
+                    </div>
+                    <div className="p-2 rounded border border-[var(--border)] bg-[rgba(255,255,255,0.02)] text-[var(--text-dim)] group-hover:text-[var(--accent)] group-hover:border-[var(--accent-border)] transition-colors shrink-0">
+                      <Icon size={14} aria-hidden="true" />
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </div>
-          <div className="rounded-lg border border-[var(--accent-border)] bg-[var(--accent-muted)] p-5">
-            <div className="mb-3 flex items-center gap-2 text-[var(--accent)]">
-              <AlertTriangle size={16} aria-hidden="true" />
-              <h3 className="text-sm font-semibold">Clinical boundary</h3>
+          
+          {/* Legal Boundary Notice */}
+          <div className="rounded border border-[var(--accent-border)] bg-[var(--accent-muted)] p-5 flex flex-col justify-between hover:border-[var(--accent)] transition-all duration-300">
+            <div>
+              <div className="mb-3.5 flex items-center gap-2 text-[var(--accent)]">
+                <AlertTriangle size={15} aria-hidden="true" />
+                <h3 className="text-xs font-bold uppercase tracking-wider">Clinical Safety Guard</h3>
+              </div>
+              <p className="text-xs leading-relaxed text-[var(--text-secondary)] font-mono uppercase">
+                Active clinician review and diagnostic sign-off is required for all AI-assisted observations. The inference suite organizes telemetry records and does not prescribe, diagnose, or override qualified provider workflows.
+              </p>
             </div>
-            <p className="text-sm leading-6 text-[var(--text-secondary)]">
-              Clinician review remains required for every AI-assisted signal.
-            </p>
-            <p className="mt-3 text-xs leading-5 text-[var(--text-dim)]">
-              The cockpit organizes operational data and does not diagnose, prescribe, or replace licensed staff decisions.
-            </p>
+            <div className="mt-4 text-[9px] font-mono text-[var(--text-dim)] border-t border-[var(--accent-border)] pt-3.5 uppercase">
+              Escalate emergency cases to on-call clinical teams immediately.
+            </div>
           </div>
         </div>
       )}
 
-      <div className="border-t border-[var(--border)] bg-[var(--bg-primary)] px-5 py-3">
-        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] font-mono uppercase tracking-[0.14em] text-[var(--text-dim)]">
-          <span className="flex items-center gap-2 text-[var(--success)]">
-            <FileText size={12} aria-hidden="true" />
-            Workflow coverage online
+      {/* Ribbon bottom */}
+      <div className="border-t border-[var(--border)] bg-[rgba(15,15,17,0.3)] px-5 py-3">
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[10px] font-mono uppercase tracking-widest text-[var(--text-dim)]">
+          <span className="flex items-center gap-1.5 text-[var(--success)] font-semibold">
+            <ShieldCheck size={11} aria-hidden="true" />
+            ADT / HL7 WORKFLOW COVERAGE ACTIVE
           </span>
-          <span>OPD/IPD</span>
-          <span>Monitoring</span>
-          <span>Diagnostics</span>
-          <span>Pharmacy</span>
-          <span>Billing</span>
-          <span>Discharge</span>
-          <span>Nursing</span>
-          <span>Interop</span>
+          <span>OPD/IPD Admissions</span>
+          <span>Monitoring Feed</span>
+          <span>Diagnostics Suite</span>
+          <span>Pharmacy Handoff</span>
+          <span>Billing Records</span>
         </div>
       </div>
     </section>
