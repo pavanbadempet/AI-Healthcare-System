@@ -1,9 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-display: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-sans: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-display: 'Outfit', ui-sans-serif, system-ui, sans-serif;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 
   /* Custom Animations */
   --animate-gradient-x: gradient-x 15s ease infinite;
@@ -150,13 +151,13 @@ body > * {
 }
 
 .display-hero {
-  font-family: var(--font-sans);
+  font-family: var(--font-display);
   letter-spacing: -0.03em;
   font-weight: 800;
   line-height: 1.1;
 }
 .display-title {
-  font-family: var(--font-sans);
+  font-family: var(--font-display);
   letter-spacing: -0.02em;
   font-weight: 700;
 }
