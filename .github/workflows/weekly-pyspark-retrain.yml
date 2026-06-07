@@ -53,13 +53,13 @@ jobs:
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         
-        # Add the modified model pickle files
-        git add backend/*.pkl
+        # Add the modified model pickle files and parquet datasets
+        git add backend/*.pkl data/processed/*.parquet
         
         if git diff --cached --quiet; then
-          echo "No model updates detected. Skipping commit."
+          echo "No model or dataset updates detected. Skipping commit."
         else
-          git commit -m "chore(ml): weekly model retraining update [skip ci]"
+          git commit -m "chore(ml): weekly model and dataset retraining update [skip ci]"
           git push
-          echo "Model updates pushed to repository."
+          echo "Model and dataset updates pushed to repository."
         fi
