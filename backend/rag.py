@@ -323,10 +323,28 @@ class SimpleVectorStore(VectorStoreBackend):
 # --- Singleton ---
 _store = None
 
-def get_vector_store() -> SimpleVectorStore:
+
+def get_vector_store() -> VectorStoreBackend:
+    """
+    Return the active vector store backend (singleton, chosen once per process).
+
+    Preference order:
+      1. TurboVecVectorStore — turbovec Rust/SIMD ANN backend (if installed)
+      2. SimpleVectorStore   — JSON + scikit-learn cosine fallback
+    """
     global _store
     if _store is None:
-        _store = SimpleVectorStore()
+        try:
+            from .turbovec_store import TurboVecVectorStore  # noqa: PLC0415
+            _store = TurboVecVectorStore()
+            _store.load()
+            logger.info("Vector store backend: TurboVecVectorStore (turbovec)")
+        except ImportError:
+            logger.warning(
+                "turbovec is not installed — falling back to SimpleVectorStore. "
+                "Install turbovec>=0.5.0 for SIMD-accelerated ANN search."
+            )
+            _store = SimpleVectorStore()
     return _store
 
 

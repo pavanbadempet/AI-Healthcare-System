@@ -39,6 +39,11 @@ langgraph>=1.2.4
 # NOTE: RAG uses core_ai-managed embeddings (no sentence-transformers needed)
 # This saves ~200MB of memory!
 
+# --- Optional ANN Backend ---
+# turbovec: Rust-based SIMD-accelerated vector index (TurboQuant).
+# Optional — falls back to SimpleVectorStore (scikit-learn cosine) when absent.
+turbovec>=0.5.0
+
 # --- Utilities ---
 fpdf2
 pillow

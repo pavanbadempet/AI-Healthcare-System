@@ -35,6 +35,11 @@ lightgbm>=4.6.0
 shap>=0.51.0
 sentence-transformers
 
+# --- Optional ANN Backend ---
+# turbovec: Rust-based SIMD-accelerated vector index (TurboQuant).
+# Optional — falls back to SimpleVectorStore (scikit-learn cosine) when absent.
+turbovec>=0.5.0
+
 # --- Visualization ---
 matplotlib>=3.10.9
 plotly>=5.21.0
