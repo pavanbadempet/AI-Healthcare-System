@@ -45,7 +45,23 @@ def train_lungs_model():
     X_train, X_test, Y_train, Y_test = train_test_split(X_scaled, Y, test_size=0.2, random_state=42)
 
     # 5. Training
-    model = xgb.XGBClassifier(n_estimators=100, max_depth=5, learning_rate=0.1, eval_metric='logloss')
+    neg_count = int((Y_train == 0).sum())
+    pos_count = int((Y_train == 1).sum())
+    scale_weight = neg_count / pos_count if pos_count > 0 else 1.0
+    print(f"Class balance: neg={neg_count}, pos={pos_count}, scale_pos_weight={scale_weight:.2f}")
+
+    model = xgb.XGBClassifier(
+        n_estimators=150,
+        max_depth=4,
+        learning_rate=0.05,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        reg_alpha=0.1,
+        reg_lambda=1.0,
+        scale_pos_weight=scale_weight,
+        eval_metric='logloss',
+        random_state=42
+    )
     model.fit(X_train, Y_train)
 
     # 6. Evaluation

@@ -373,7 +373,208 @@ Cost Analysis:
 
 ---
 
-## Decision Framework
+## ADR-009: ModelService Pattern for ML Model Lifecycle
+
+### Status
+**Accepted**
+
+### Context
+The original prediction module used global mutable dictionaries (`models = {}`, `scalers = {}`) to manage ML model instances. This pattern has critical drawbacks:
+- No thread safety for concurrent model loading
+- No health-check or readiness endpoint for production monitoring
+- No structured error handling or graceful degradation
+- Difficult to test in isolation due to hidden global state
+
+### Decision
+Implement a **ModelService class** as a thread-safe singleton:
+- Encapsulate all model state in `ModelEntry` dataclasses inside a `ModelService` instance
+- Use `threading.RLock()` for safe concurrent model access
+- Expose `health_check()`, `is_available()`, and `reload()` methods
+- Provide structured `PredictionResult` dataclasses instead of raw dictionaries
+- Maintain backward-compatible shims (`initialize_models()`, `get_model_status()`) for gradual migration
+
+### Trade-offs Analysis
+
+| Option | Testability | Thread Safety | Health Monitoring | Migration Cost |
+|--------|------------|---------------|-------------------|---------------|
+| **Global Dicts (Legacy)** | Poor | None | None | None |
+| **Service Class (Chosen)** | Excellent | RLock | Built-in | Low (shims provided) |
+| **Dependency Injection** | Excellent | External | External | High |
+
+### Consequences
+- Production can monitor model readiness via `/admin/models/health`
+- Test suites can mock `ModelService` without touching globals
+- Future: easy to add model versioning, A/B testing, and auto-reload
+
+---
+
+## ADR-010: API Versioning with /v1 Prefix
+
+### Status
+**Accepted**
+
+### Context
+The API had no versioning — all endpoints were mounted at root level (`/predict/diabetes`, `/chat`, etc.). This creates problems:
+- Breaking changes affect all clients simultaneously
+- No way to maintain backward compatibility during major changes
+- API documentation doesn't communicate stability guarantees
+
+### Decision
+Prefix all API routes with `/v1`:
+- All routers mounted with `prefix="/v1"` in FastAPI
+- Infrastructure routes (`/`, `/healthz`, `/docs`) remain at root
+- `APIVersioningMiddleware` redirects legacy paths to `/v1` via 307 (preserves HTTP method)
+- Frontend `API_BASE` updated to include `/v1`
+
+### Trade-offs Analysis
+
+| Option | Backward Compat | OpenAPI Clarity | Migration Effort |
+|--------|-----------------|-----------------|------------------|
+| **No Versioning (Legacy)** | N/A | Poor | None |
+| **/v1 Prefix + Redirect (Chosen)** | 307 redirect | Clean | Low |
+| **Header-Based Versioning** | Good | Poor | Medium |
+| **Separate Sub-App** | Good | Duplicate routes | High |
+
+### Consequences
+- Clients calling old paths get transparent 307 redirects
+- Future `/v2` can be introduced without breaking `/v1` clients
+- OpenAPI schema cleanly documents versioned endpoints
+
+---
+
+## ADR-011: Pluggable VectorStore Backend for RAG
+
+### Status
+**Accepted**
+
+### Context
+The RAG pipeline uses `SimpleVectorStore` — a pickle-based in-memory vector store with cosine similarity. This works for development but has limitations:
+- No persistence across container restarts without pickle files
+- No horizontal scaling (in-memory only)
+- No metadata filtering or hybrid search support
+- Cannot swap to production backends (Qdrant, Pinecone, pgvector) without rewriting RAG code
+
+### Decision
+Define a **VectorStoreBackend** abstract base class:
+- Abstract methods: `add()`, `delete()`, `search()`, `search_with_scores()`, `count()`, `load()`, `save()`
+- `SimpleVectorStore` implements `VectorStoreBackend` (backward compatible)
+- RAG code programs against the interface, not the implementation
+- Future: swap to Qdrant/Pinecone/pgvector by implementing the interface
+
+### Trade-offs Analysis
+
+| Option | Flexibility | Migration Effort | Production Readiness |
+|--------|-------------|------------------|---------------------|
+| **Hard-coded SimpleVectorStore** | None | None | Low |
+| **ABC Interface (Chosen)** | High | Low | High |
+| **LangChain VectorStore** | Very High | High (dependency) | Medium |
+
+### Consequences
+- RAG pipeline can switch backends without code changes
+- `search_with_scores()` enables relevance threshold tuning
+- `count()` enables capacity monitoring
+
+---
+
+## ADR-012: Frontend Module Decomposition
+
+### Status
+**Accepted**
+
+### Context
+Frontend components had grown too large for maintainability:
+- `api.ts` was 1010 lines (all API functions in one file)
+- `TopNav.tsx` was 987 lines (navigation + search + dropdowns)
+- `Admin.tsx` was 820 lines (5 tabs with inline state)
+
+These files were difficult to navigate, test, and review. Changes to one feature risked breaking unrelated features.
+
+### Decision
+Decompose into domain-focused modules:
+- **API client**: Split `api.ts` into 7 domain modules (`apiCore`, `apiAuth`, `apiChat`, `apiPredictions`, `apiHospital`, `apiAdmin`, `apiBilling`) with barrel re-export preserving backward compatibility
+- **TopNav**: Extract `MegaMenuPanel`, `CommandSearch`, `TelemetryDropdown`, `LanguageSelector`, `ProfileDropdown` as separate components
+- **Admin**: Extract `UsersPanel`, `AuditPanel`, `DataEngineeringPanel`, `AnalyticsPanel` into `components/admin/` directory
+
+### Trade-offs Analysis
+
+| Option | Discoverability | Bundle Size | Review Friction |
+|--------|----------------|-------------|----------------|
+| **Monolith Files (Legacy)** | Poor (scrolling) | Larger | High |
+| **Domain Modules (Chosen)** | Good (file name) | Same (tree-shaking) | Low |
+| **Feature Folders** | Good | Same | Medium |
+
+### Consequences
+- Each file has a single responsibility, making code review faster
+- Barrel re-export preserves `import { login } from '@/lib/api'` compatibility
+- New features are added in their own file rather than appended to a growing monolith
+
+---
+
+## ADR-013: Specific Exception Handling in Healthcare Code
+
+### Status
+**Accepted**
+
+### Context
+Multiple backend modules used bare `except Exception:` or `except:` patterns. In a healthcare system, silently swallowing errors can have patient safety implications:
+- A misconfigured lab value could be silently ignored
+- A model loading failure could be hidden, causing wrong predictions
+- Debugging becomes extremely difficult when errors are caught too broadly
+
+### Decision
+Enforce specific exception handling:
+- Remove E722 from ruff ignore list in `pyproject.toml`
+- Replace bare `except Exception:` with specific exception tuples (e.g., `except (ValueError, KeyError, AttributeError, RuntimeError) as exc:`)
+- Always log the caught exception for audit trail
+- Add input sanitization (`_sanitize_chat_input`) with length limits and null byte rejection
+
+### Trade-offs Analysis
+
+| Option | Error Visibility | Debugging | Patient Safety |
+|--------|-----------------|-----------|---------------|
+| **Bare Except** | Poor | Very Hard | Risky |
+| **Specific Except (Chosen)** | Excellent | Easy | Safer |
+| **No Except (crash)** | Perfect | Trivial | Unacceptable uptime |
+
+### Consequences
+- Linter now flags bare excepts as errors
+- Every caught exception is logged with context
+- Input sanitization prevents injection attacks on chat endpoints
+
+---
+
+## ADR-014: Multi-Stage Docker Build for Production
+
+### Status
+**Accepted**
+
+### Context
+The original Dockerfile installed build tools (`build-essential`) in the production image. This increases:
+- Image size (build-essential adds ~300MB)
+- Attack surface (compilers available in production container)
+- Build time on code changes (dependency layer not cached separately)
+
+### Decision
+Adopt a **multi-stage Docker build**:
+- Stage 1 (builder): Install build-essential, compile dependencies to `/install` prefix
+- Stage 2 (runtime): Copy only compiled packages, no build tools
+- Add non-root `appuser` for security
+- Configure resource limits in docker-compose (2G memory, 2 CPUs for backend)
+- Add `start_period: 30s` to health check for model loading time
+
+### Trade-offs Analysis
+
+| Option | Image Size | Security | Build Cache |
+|--------|-----------|----------|-------------|
+| **Single Stage (Legacy)** | ~1.2GB | Medium (root + compilers) | Poor |
+| **Multi-Stage (Chosen)** | ~400MB | High (non-root, no compilers) | Excellent |
+
+### Consequences
+- Production image is ~3x smaller
+- No compilers in runtime container reduces attack surface
+- Dependency layer is cached independently from code changes
+
+---
 
 ### Evaluation Criteria
 1. **Business Impact**: Does this solve a real business problem?

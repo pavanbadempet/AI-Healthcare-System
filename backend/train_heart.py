@@ -121,9 +121,13 @@ def train_heart_model():
     print(f"Class balance: neg={neg_count}, pos={pos_count}, scale_pos_weight={scale_weight:.2f}")
 
     model = xgb.XGBClassifier(
-        n_estimators=200,
+        n_estimators=300,
         max_depth=5,
-        learning_rate=0.1,
+        learning_rate=0.05,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        reg_alpha=0.1,
+        reg_lambda=1.0,
         scale_pos_weight=scale_weight,
         eval_metric='logloss',
         random_state=42

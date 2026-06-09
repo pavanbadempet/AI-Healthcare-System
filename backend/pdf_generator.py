@@ -136,12 +136,12 @@ def generate_health_report(
     pdf.set_font('Helvetica', '', 10)
     pdf.set_text_color(60, 60, 60)
     recommendations = [
-        "• Schedule regular check-ups with your healthcare provider",
-        "• Maintain a balanced diet rich in fruits and vegetables",
-        "• Exercise for at least 30 minutes daily",
-        "• Get 7-8 hours of quality sleep each night",
-        "• Stay hydrated - drink 8 glasses of water daily",
-        "• Monitor your vitals regularly and track changes"
+        "- Schedule regular check-ups with your healthcare provider",
+        "- Maintain a balanced diet rich in fruits and vegetables",
+        "- Exercise for at least 30 minutes daily",
+        "- Get 7-8 hours of quality sleep each night",
+        "- Stay hydrated - drink 8 glasses of water daily",
+        "- Monitor your vitals regularly and track changes"
     ]
     for rec in recommendations:
         pdf.cell(0, 6, rec, new_x='LMARGIN', new_y='NEXT')

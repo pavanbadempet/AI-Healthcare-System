@@ -8,6 +8,6 @@
 - Never log or expose PII in error messages.
 - AI-generated health advice must include a medical disclaimer and recommend consulting a qualified clinician.
 - Database schema changes must update SQLAlchemy models, Pydantic schemas, and migration/startup logic together.
-- Backend is FastAPI (Python 3.11+), frontend is Next.js 16 App Router (TypeScript/React 19).
+- Backend is FastAPI (Python 3.11+), frontend is a Vite 6 React SPA (TypeScript/React 19, React Router DOM).
 - ML model loading is owned by prediction.py.
 - Database sessions go through backend.database.get_db in routes.

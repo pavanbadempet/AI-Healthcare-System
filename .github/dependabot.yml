@@ -1,5 +1,11 @@
 # Dependabot — Free automated dependency updates
 # Docs: https://docs.github.com/en/code-security/dependabot
+#
+# Configuration guidelines:
+#   - All ecosystems are checked weekly on Monday at 09:00 IST
+#   - Reviewer: pavanbadempet
+#   - PR limits prevent alert fatigue while keeping security patches flowing
+#   - Vulnerability patches are prioritized via GitHub Security Advisory integration
 version: 2
 
 updates:
@@ -20,6 +26,16 @@ updates:
     commit-message:
       prefix: "deps"
       include: "scope"
+    # Allow both direct and indirect dependency updates for security patches
+    allow:
+      - dependency-type: "all"
+    # Group patch updates to reduce PR noise
+    groups:
+      patch-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
 
   # npm — frontend dependencies
   - package-ecosystem: "npm"
@@ -38,6 +54,24 @@ updates:
     commit-message:
       prefix: "deps"
       include: "scope"
+    allow:
+      - dependency-type: "all"
+    groups:
+      patch-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+      dev-dependencies:
+        patterns:
+          - "@types/*"
+          - "eslint*"
+          - "prettier"
+          - "vitest"
+          - "typescript"
+        update-types:
+          - "minor"
+          - "patch"
 
   # GitHub Actions — keep actions up to date
   - package-ecosystem: "github-actions"

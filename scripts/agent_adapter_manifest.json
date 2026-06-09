@@ -29,7 +29,7 @@
     "Never log or expose PII in error messages.",
     "AI-generated health advice must include a medical disclaimer and recommend consulting a qualified clinician.",
     "Database schema changes must update SQLAlchemy models, Pydantic schemas, and migration/startup logic together.",
-    "Backend is FastAPI (Python 3.11+), frontend is Next.js 16 App Router (TypeScript/React 19).",
+    "Backend is FastAPI (Python 3.11+), frontend is a Vite 6 React SPA (TypeScript/React 19, React Router DOM).",
     "ML model loading is owned by prediction.py.",
     "Database sessions go through backend.database.get_db in routes."
   ],
@@ -80,22 +80,22 @@
       "copilot_apply_to": "frontend/**",
       "copilot_lines": [
         "Read frontend/AGENTS.md for frontend-specific rules.",
-        "Frontend is Next.js 16 App Router (TypeScript/React 19).",
-        "Routes live in frontend/src/app; shared components in frontend/src/components; helpers/hooks in frontend/src/lib.",
-        "Use NEXT_PUBLIC_API_URL for browser-facing backend URLs and default to http://127.0.0.1:8000.",
+        "Frontend is a Vite 6 React SPA (TypeScript/React 19, React Router DOM). No Next.js — no server components, no server actions, no App Router.",
+        "Routes are client-side via React Router DOM; page components live in frontend/src/pages/.",
+        "Use VITE_PUBLIC_API_URL or fallback to http://127.0.0.1:8000 for backend URLs.",
         "Include medical disclaimers in prediction, chat, report-analysis, and other patient-facing medical AI views.",
-        "Frontend Jest tests live in frontend/src/__tests__; Playwright tests live in frontend/tests."
+        "Vitest unit tests live in frontend/src/__tests__; Playwright E2E tests live in frontend/tests."
       ],
       "cursor_rule_file": "02-frontend.mdc",
-      "cursor_description": "Next.js frontend rules",
+      "cursor_description": "Vite React SPA frontend rules",
       "cursor_globs": ["frontend/**/*.{ts,tsx,js,jsx}"],
       "cursor_lines": [
         "Read frontend/AGENTS.md for frontend-specific rules.",
-        "Frontend is Next.js 16 App Router (TypeScript/React 19).",
-        "Routes live in frontend/src/app; shared components in frontend/src/components; helpers/hooks in frontend/src/lib.",
-        "Use NEXT_PUBLIC_API_URL for browser-facing backend URLs.",
+        "Frontend is a Vite 6 React SPA (TypeScript/React 19, React Router DOM). No Next.js.",
+        "Routes are client-side via React Router DOM; page components live in frontend/src/pages/.",
+        "Use VITE_PUBLIC_API_URL or fallback to http://127.0.0.1:8000 for backend URLs.",
         "Include medical disclaimers in prediction, chat, report-analysis, and other patient-facing medical AI views.",
-        "Frontend Jest tests live in frontend/src/__tests__; Playwright tests live in frontend/tests."
+        "Vitest unit tests live in frontend/src/__tests__; Playwright E2E tests live in frontend/tests."
       ],
       "cursor_refs": ["frontend/AGENTS.md"]
     },
@@ -154,7 +154,7 @@
     ],
     "tech": [
       "Backend: FastAPI (Python 3.11+), SQLAlchemy ORM, SQLite/PostgreSQL.",
-      "Frontend: Next.js 16 App Router (TypeScript/React 19, Node >=20.9.0).",
+      "Frontend: Vite 6 React SPA (TypeScript/React 19, React Router DOM, Node >=20.9.0). No Next.js.",
       "AI: Multi-tier - Ollama (local), Google Gemini (cloud), OpenAI/Anthropic (optional).",
       "ML: scikit-learn models (pickle), ensemble predictions.",
       "RAG: core_ai-managed embeddings, cosine similarity vector store.",
@@ -163,7 +163,7 @@
     ],
     "structure": [
       "backend/ - FastAPI app, API routes, AI modules, ML services, database models.",
-      "frontend/ - Next.js 16 App Router UI with src/app, src/components, frontend tests, and src/lib.",
+      "frontend/ - Vite React SPA with src/pages, src/components, src/lib, Vitest unit tests, and Playwright E2E tests.",
       "frontend_legacy/ - legacy Streamlit UI kept for reference only.",
       "scripts/ - DevX utilities (ai_context.py, sync_agent_adapters.py), DB management.",
       "tests/ - Pytest test suite.",

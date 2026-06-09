@@ -89,9 +89,13 @@ def train_liver_model():
 
     # 6. Training (XGBoost)
     model = xgb.XGBClassifier(
-        n_estimators=100, # Reduced for better generalization
-        learning_rate=0.05,
+        n_estimators=200,
         max_depth=4,
+        learning_rate=0.03,
+        subsample=0.8,
+        colsample_bytree=0.8,
+        reg_alpha=0.1,
+        reg_lambda=1.0,
         eval_metric='logloss',
         random_state=123
     )

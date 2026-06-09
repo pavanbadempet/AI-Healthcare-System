@@ -16,6 +16,7 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
 from . import core_ai
+from .vector_store_base import VectorStoreBackend
 
 # --- Logging ---
 logger = logging.getLogger(__name__)
@@ -148,10 +149,11 @@ def _metadata_matches_filter(metadata: Dict[str, Any], filter_meta: Dict[str, An
     return True
 
 
-class SimpleVectorStore:
+class SimpleVectorStore(VectorStoreBackend):
     """
-    Persistent vector store using Pickle + Scikit-Learn cosine similarity.
+    Persistent vector store using JSON + Scikit-Learn cosine similarity.
     Embeddings are generated through core_ai.
+    Implements the VectorStoreBackend interface for future pluggable backends.
     """
 
     def __init__(self):
@@ -275,6 +277,47 @@ class SimpleVectorStore:
                     break
 
         return results
+
+    def search_with_scores(
+        self,
+        query: str,
+        filter_meta: Optional[Dict[str, Any]] = None,
+        k: int = 3,
+    ) -> List[Dict[str, Any]]:
+        """Semantic search returning documents with similarity scores and metadata."""
+        if not self.vectors:
+            return []
+
+        query_vector = get_query_embedding(query)
+        vec_matrix = np.array(self.vectors)
+        q_vec = np.array([query_vector])
+
+        sim_scores = cosine_similarity(q_vec, vec_matrix)[0]
+        sorted_indices = sim_scores.argsort()[::-1]
+
+        results = []
+        count = 0
+
+        for idx in sorted_indices:
+            if sim_scores[idx] <= 0.0:
+                break
+            if filter_meta and not _metadata_matches_filter(self.metadatas[idx], filter_meta):
+                continue
+            results.append({
+                "text": self.documents[idx],
+                "metadata": self.metadatas[idx],
+                "id": self.ids[idx],
+                "score": float(sim_scores[idx]),
+            })
+            count += 1
+            if count >= k:
+                break
+
+        return results
+
+    def count(self) -> int:
+        """Return the total number of documents in the store."""
+        return len(self.ids)
 
 
 # --- Singleton ---

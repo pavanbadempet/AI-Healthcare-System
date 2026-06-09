@@ -8,12 +8,14 @@ from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 
 from backend.main import (
-    REQUEST_ID_HEADER,
     app,
+    _load_allowed_hosts,
+)
+from backend.middleware import (
+    REQUEST_ID_HEADER,
     ExceptionMiddleware,
     RequestTracingMiddleware,
     SecurityHeadersMiddleware,
-    _load_allowed_hosts,
 )
 
 

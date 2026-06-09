@@ -329,7 +329,12 @@ def _get_gemini_model():
 
 
 def embed_text(text: str, task_type: str = "retrieval_document") -> list[float]:
-    """Generate a text embedding through the canonical AI provider boundary."""
+    """Generate a text embedding through the canonical AI provider boundary.
+
+    This is a synchronous function intentionally kept sync for callers that
+    cannot be async (e.g. startup-time vector store population). Async callers
+    should wrap it with ``asyncio.to_thread(embed_text, text)``.
+    """
     global _gemini_configured
     if not has_gemini_api_key():
         logger.warning("GOOGLE_API_KEY not found, using zero vector")
@@ -351,8 +356,16 @@ def embed_text(text: str, task_type: str = "retrieval_document") -> list[float]:
         return [0.0] * 768
 
 
+async def embed_text_async(text: str, task_type: str = "retrieval_document") -> list[float]:
+    """Async wrapper for embed_text — use this from async route handlers."""
+    return await asyncio.to_thread(embed_text, text, task_type)
+
+
 def generate_vision_content(prompt: str, image: Any, model: Optional[str] = None) -> str:
-    """Generate text from a prompt plus image through Gemini Vision."""
+    """Generate text from a prompt plus image through Gemini Vision.
+
+    Synchronous. Async callers should use ``asyncio.to_thread(generate_vision_content, ...)``.
+    """
     if not has_gemini_api_key():
         return ""
 
@@ -365,6 +378,11 @@ def generate_vision_content(prompt: str, image: Any, model: Optional[str] = None
     except Exception:
         logger.error("Vision generation failed")
         return ""
+
+
+async def generate_vision_content_async(prompt: str, image: Any, model: Optional[str] = None) -> str:
+    """Async wrapper for generate_vision_content — use this from async route handlers."""
+    return await asyncio.to_thread(generate_vision_content, prompt, image, model)
 
 
 async def _generate_gemini(prompt: str, system: str = "") -> str:
@@ -386,19 +404,33 @@ async def _generate_gemini(prompt: str, system: str = "") -> str:
 
 
 async def _chat_gemini(messages: list[dict], system: str = "") -> str:
-    """Chat using Gemini (converts messages to single prompt)."""
+    """Chat using Gemini native multi-turn via start_chat()."""
     model = _get_gemini_model()
     if not model:
         return ""
-    parts = []
-    if system:
-        parts.append(f"System: {system}\n")
-    for msg in messages:
-        role = msg.get("role", "user").capitalize()
-        parts.append(f"{role}: {msg.get('content', '')}\n")
-    full_prompt = "\n".join(parts)
+
     try:
-        response = await asyncio.to_thread(model.generate_content, full_prompt)
+        import google.generativeai as genai
+        from google.generativeai.types import ContentDict
+
+        # Build history for all but the final user message
+        history: list[ContentDict] = []
+        if system:
+            # Gemini doesn't have a dedicated system role in start_chat history;
+            # inject it as the first user/model exchange so it anchors the conversation.
+            history.append({"role": "user", "parts": [system]})
+            history.append({"role": "model", "parts": ["Understood. I will follow those instructions."]})
+
+        # All messages except the last become history
+        for msg in messages[:-1]:
+            gemini_role = "model" if msg.get("role") == "assistant" else "user"
+            history.append({"role": gemini_role, "parts": [msg.get("content", "")]})
+
+        chat_session = await asyncio.to_thread(model.start_chat, history=history)
+
+        # Send the last message
+        last_msg = messages[-1].get("content", "") if messages else ""
+        response = await asyncio.to_thread(chat_session.send_message, last_msg)
         return response.text.strip() if response.text else ""
     except Exception:
         logger.warning("Gemini chat failed")

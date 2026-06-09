@@ -13,14 +13,11 @@ ignore = [
     "E701", # Multiple statements on one line (colon)
     "E702", # Multiple statements on one line (semicolon)
     "E712", # Comparison to True/False
-    "E722", # Bare except
     "E731", # Lambda assignment
     "E402", # Module level import not at top
-    "F401", # Unused import
-    "F841", # Unused local variable
-    "W291", # Trailing whitespace
-    "W293"  # Blank line contains whitespace
 ]
+# E722 (bare except) is intentionally NOT ignored — healthcare code
+# must catch specific exceptions to avoid silently swallowing errors.
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
