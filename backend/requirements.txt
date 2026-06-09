@@ -34,7 +34,7 @@ joblib>=1.5.3
 # --- AI & LLM ---
 google-generativeai>=0.5.2
 langchain-core
-langgraph>=0.0.10
+langgraph>=1.2.4
 
 # NOTE: RAG uses core_ai-managed embeddings (no sentence-transformers needed)
 # This saves ~200MB of memory!
