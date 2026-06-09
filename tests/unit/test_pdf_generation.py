@@ -202,3 +202,204 @@ def test_generate_health_report_risk_record_no_crash():
         health_records=records,
     )
     assert isinstance(result, (bytes, bytearray))
+
+
+# ── Trend chart tests ─────────────────────────────────────────────────────────
+
+def test_generate_health_report_with_vital_records():
+    """Vital records are accepted and do not cause a crash."""
+    vitals = [
+        {
+            "observed_at": datetime(2024, 1, 1),
+            "heart_rate": 72,
+            "systolic_bp": 120,
+            "diastolic_bp": 80,
+            "spo2": 98,
+            "temperature_c": 36.6,
+        },
+        {
+            "observed_at": datetime(2024, 2, 1),
+            "heart_rate": 75,
+            "systolic_bp": 125,
+            "diastolic_bp": 82,
+            "spo2": 97,
+            "temperature_c": 36.8,
+        },
+    ]
+    result = generate_health_report(
+        user_name="Vitals Patient",
+        user_profile={"height": 170, "weight": 70},
+        health_records=[],
+        vital_records=vitals,
+    )
+    assert isinstance(result, (bytes, bytearray))
+    assert result[:4] == b"%PDF"
+
+
+def test_generate_health_report_without_vital_records_kwarg():
+    """vital_records is optional — omitting it should not crash."""
+    result = generate_health_report(
+        user_name="No Vitals",
+        user_profile={},
+        health_records=[],
+    )
+    assert isinstance(result, (bytes, bytearray))
+
+
+def test_generate_health_report_with_empty_vital_records():
+    """Empty vital_records list — no crash, no charts generated."""
+    result = generate_health_report(
+        user_name="Empty Vitals",
+        user_profile={},
+        health_records=[],
+        vital_records=[],
+    )
+    assert isinstance(result, (bytes, bytearray))
+
+
+def test_generate_health_report_charts_with_multiple_record_types():
+    """Multiple assessment types produce bar chart and timeline."""
+    records = [
+        {"timestamp": datetime(2024, 1, 1), "record_type": "diabetes", "prediction": "High Risk"},
+        {"timestamp": datetime(2024, 2, 1), "record_type": "heart", "prediction": "Low Risk"},
+        {"timestamp": datetime(2024, 3, 1), "record_type": "diabetes", "prediction": "Low Risk"},
+        {"timestamp": datetime(2024, 4, 1), "record_type": "kidney", "prediction": "High Risk"},
+    ]
+    result = generate_health_report(
+        user_name="Chart Patient",
+        user_profile={"height": 175, "weight": 75},
+        health_records=records,
+    )
+    assert isinstance(result, (bytes, bytearray))
+    assert len(result) > 1000  # charts inflate file size
+
+
+def test_generate_health_report_single_record_no_timeline():
+    """Only 1 dated record — timeline chart is skipped (needs >= 2), no crash."""
+    records = [
+        {"timestamp": datetime(2024, 1, 1), "record_type": "liver", "prediction": "Healthy"},
+    ]
+    result = generate_health_report(
+        user_name="Single Record",
+        user_profile={},
+        health_records=records,
+    )
+    assert isinstance(result, (bytes, bytearray))
+
+
+def test_generate_health_report_single_vital_no_chart():
+    """Only 1 vital observation — vitals chart is skipped (needs >= 2), no crash."""
+    vitals = [
+        {"observed_at": datetime(2024, 1, 1), "heart_rate": 72, "systolic_bp": 120},
+    ]
+    result = generate_health_report(
+        user_name="One Vital",
+        user_profile={},
+        health_records=[],
+        vital_records=vitals,
+    )
+    assert isinstance(result, (bytes, bytearray))
+
+
+def test_generate_health_report_partial_vitals_no_crash():
+    """Vitals with some None fields should not crash chart generation."""
+    vitals = [
+        {"observed_at": datetime(2024, 1, 1), "heart_rate": 70, "spo2": None, "temperature_c": None},
+        {"observed_at": datetime(2024, 3, 1), "heart_rate": 74, "spo2": 98, "temperature_c": 36.5},
+    ]
+    result = generate_health_report(
+        user_name="Partial Vitals",
+        user_profile={},
+        health_records=[],
+        vital_records=vitals,
+    )
+    assert isinstance(result, (bytes, bytearray))
+
+
+def test_generate_health_report_records_without_timestamps():
+    """Records missing timestamps are skipped gracefully in chart logic."""
+    records = [
+        {"record_type": "diabetes", "prediction": "High Risk"},  # no timestamp
+        {"timestamp": datetime(2024, 2, 1), "record_type": "heart", "prediction": "Low Risk"},
+    ]
+    result = generate_health_report(
+        user_name="No Timestamp",
+        user_profile={},
+        health_records=records,
+    )
+    assert isinstance(result, (bytes, bytearray))
+
+
+def test_generate_health_report_combined_records_and_vitals():
+    """Both health records and vitals produce multiple chart sections."""
+    records = [
+        {"timestamp": datetime(2024, 1, 1), "record_type": "diabetes", "prediction": "High Risk"},
+        {"timestamp": datetime(2024, 3, 1), "record_type": "heart", "prediction": "Low Risk"},
+    ]
+    vitals = [
+        {"observed_at": datetime(2024, 1, 15), "heart_rate": 72, "systolic_bp": 120, "diastolic_bp": 80},
+        {"observed_at": datetime(2024, 2, 15), "heart_rate": 78, "systolic_bp": 130, "diastolic_bp": 85},
+        {"observed_at": datetime(2024, 3, 15), "heart_rate": 70, "systolic_bp": 118, "diastolic_bp": 78},
+    ]
+    result = generate_health_report(
+        user_name="Full Report",
+        user_profile={"height": 180, "weight": 80, "blood_type": "O+"},
+        health_records=records,
+        vital_records=vitals,
+    )
+    assert isinstance(result, (bytes, bytearray))
+    assert result[:4] == b"%PDF"
+    assert len(result) > 5000  # bar chart + timeline + vitals chart inflate size
+
+
+def test_chart_risk_assessment_history_returns_none_when_no_records():
+    """Helper returns None for empty input — no matplotlib crash."""
+    from backend.pdf_generator import _chart_risk_assessment_history
+    result = _chart_risk_assessment_history([])
+    assert result is None
+
+
+def test_chart_assessment_timeline_returns_none_for_single_record():
+    """Timeline needs >= 2 dated records."""
+    from backend.pdf_generator import _chart_assessment_timeline
+    result = _chart_assessment_timeline([
+        {"timestamp": datetime(2024, 1, 1), "record_type": "diabetes", "prediction": "Low Risk"}
+    ])
+    assert result is None
+
+
+def test_chart_vitals_trends_returns_none_for_single_vital():
+    """Vitals chart needs >= 2 observations."""
+    from backend.pdf_generator import _chart_vitals_trends
+    result = _chart_vitals_trends([
+        {"observed_at": datetime(2024, 1, 1), "heart_rate": 72}
+    ])
+    assert result is None
+
+
+def test_chart_risk_assessment_history_returns_png_bytes():
+    """Valid records → PNG bytes starting with PNG magic."""
+    from backend.pdf_generator import _chart_risk_assessment_history, _MPL_AVAILABLE
+    if not _MPL_AVAILABLE:
+        pytest.skip("matplotlib not installed")
+    records = [
+        {"timestamp": datetime(2024, 1, 1), "record_type": "diabetes", "prediction": "High Risk"},
+        {"timestamp": datetime(2024, 2, 1), "record_type": "heart", "prediction": "Low Risk"},
+    ]
+    result = _chart_risk_assessment_history(records)
+    assert result is not None
+    assert result[:8] == b"\x89PNG\r\n\x1a\n"  # PNG magic bytes
+
+
+def test_chart_vitals_trends_returns_png_bytes():
+    """Valid vitals → PNG bytes."""
+    from backend.pdf_generator import _chart_vitals_trends, _MPL_AVAILABLE
+    if not _MPL_AVAILABLE:
+        pytest.skip("matplotlib not installed")
+    vitals = [
+        {"observed_at": datetime(2024, 1, 1), "heart_rate": 70, "systolic_bp": 120, "diastolic_bp": 80},
+        {"observed_at": datetime(2024, 2, 1), "heart_rate": 75, "systolic_bp": 125, "diastolic_bp": 82},
+    ]
+    result = _chart_vitals_trends(vitals)
+    assert result is not None
+    assert result[:8] == b"\x89PNG\r\n\x1a\n"
