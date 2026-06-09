@@ -6,15 +6,17 @@ Uses centralized core_ai embeddings (no local embedding model needed = saves ~20
 Enhanced with citation tracking, token budget management, and
 RAGResult return types from the Singularity AI Engine architecture.
 """
-import os
 import json
-import numpy as np
 import logging
-from typing import List, Dict, Optional, Any
+import os
 from dataclasses import dataclass, field
+from typing import Any, Dict, List, Optional
+
+import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
 from . import core_ai
+from .vector_store_base import VectorStoreBackend
 
 # --- Logging ---
 logger = logging.getLogger(__name__)
@@ -147,12 +149,13 @@ def _metadata_matches_filter(metadata: Dict[str, Any], filter_meta: Dict[str, An
     return True
 
 
-class SimpleVectorStore:
+class SimpleVectorStore(VectorStoreBackend):
     """
-    Persistent vector store using Pickle + Scikit-Learn cosine similarity.
+    Persistent vector store using JSON + Scikit-Learn cosine similarity.
     Embeddings are generated through core_ai.
+    Implements the VectorStoreBackend interface for future pluggable backends.
     """
-    
+
     def __init__(self):
         self.documents: List[str] = []
         self.metadatas: List[Dict[str, Any]] = []
@@ -215,7 +218,7 @@ class SimpleVectorStore:
     def add(self, text: str, metadata: Dict[str, Any], record_id: str) -> None:
         """Add or update a document."""
         vector = get_embedding(text)
-        
+
         if record_id in self.ids:
             idx = self.ids.index(record_id)
             self.documents[idx] = text
@@ -226,7 +229,7 @@ class SimpleVectorStore:
             self.metadatas.append(metadata)
             self.vectors.append(vector)
             self.ids.append(record_id)
-        
+
         self.save()
 
     def delete(self, record_id: str) -> bool:
@@ -245,44 +248,103 @@ class SimpleVectorStore:
         """Semantic search with user filtering."""
         if not self.vectors:
             return []
-        
+
         query_vector = get_query_embedding(query)
-        
+
         vec_matrix = np.array(self.vectors)
         q_vec = np.array([query_vector])
-        
+
         # Cosine similarity
         sim_scores = cosine_similarity(q_vec, vec_matrix)[0]
         sorted_indices = sim_scores.argsort()[::-1]
-        
+
         results = []
         count = 0
-        
+
         for idx in sorted_indices:
             if sim_scores[idx] <= 0.0:
                 break
-            
+
             # Apply metadata filter
             match = True
             if filter_meta and not _metadata_matches_filter(self.metadatas[idx], filter_meta):
                 match = False
-            
+
             if match:
                 results.append(self.documents[idx])
                 count += 1
                 if count >= k:
                     break
-        
+
         return results
+
+    def search_with_scores(
+        self,
+        query: str,
+        filter_meta: Optional[Dict[str, Any]] = None,
+        k: int = 3,
+    ) -> List[Dict[str, Any]]:
+        """Semantic search returning documents with similarity scores and metadata."""
+        if not self.vectors:
+            return []
+
+        query_vector = get_query_embedding(query)
+        vec_matrix = np.array(self.vectors)
+        q_vec = np.array([query_vector])
+
+        sim_scores = cosine_similarity(q_vec, vec_matrix)[0]
+        sorted_indices = sim_scores.argsort()[::-1]
+
+        results = []
+        count = 0
+
+        for idx in sorted_indices:
+            if sim_scores[idx] <= 0.0:
+                break
+            if filter_meta and not _metadata_matches_filter(self.metadatas[idx], filter_meta):
+                continue
+            results.append({
+                "text": self.documents[idx],
+                "metadata": self.metadatas[idx],
+                "id": self.ids[idx],
+                "score": float(sim_scores[idx]),
+            })
+            count += 1
+            if count >= k:
+                break
+
+        return results
+
+    def count(self) -> int:
+        """Return the total number of documents in the store."""
+        return len(self.ids)
 
 
 # --- Singleton ---
 _store = None
 
-def get_vector_store() -> SimpleVectorStore:
+
+def get_vector_store() -> VectorStoreBackend:
+    """
+    Return the active vector store backend (singleton, chosen once per process).
+
+    Preference order:
+      1. TurboVecVectorStore — turbovec Rust/SIMD ANN backend (if installed)
+      2. SimpleVectorStore   — JSON + scikit-learn cosine fallback
+    """
     global _store
     if _store is None:
-        _store = SimpleVectorStore()
+        try:
+            from .turbovec_store import TurboVecVectorStore  # noqa: PLC0415
+            _store = TurboVecVectorStore()
+            _store.load()
+            logger.info("Vector store backend: TurboVecVectorStore (turbovec)")
+        except ImportError:
+            logger.warning(
+                "turbovec is not installed — falling back to SimpleVectorStore. "
+                "Install turbovec>=0.5.0 for SIMD-accelerated ANN search."
+            )
+            _store = SimpleVectorStore()
     return _store
 
 
@@ -307,7 +369,7 @@ def add_checkup_to_db(
             f"Result: {prediction}\n"
             f"Clinical Data: {data_str}"
         )
-        
+
         metadata = {
             "user_id": str(user_id),
             "record_id": str(record_id),
@@ -338,7 +400,7 @@ def add_interaction_to_db(
             f"Date: {timestamp}. "
             f"Interaction: {role.upper()}: {content}"
         )
-        
+
         metadata = {
             "user_id": str(user_id),
             "interaction_id": str(interaction_id),
