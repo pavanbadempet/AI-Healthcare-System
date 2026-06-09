@@ -66,76 +66,81 @@
 
 ## What Is This?
 
-**AI Healthcare System** is a production-ready, open-source medical AI platform that combines machine learning disease prediction, a RAG-powered clinical chatbot, and full hospital management — in a single, well-architected codebase. Not a tutorial. Not a demo. A real system built to the standards used in health-tech products.
+**AI Healthcare System** is an open-source medical AI platform that combines machine learning disease prediction, a RAG-powered clinical chatbot, and hospital management workflows — in a single codebase. It covers more ground than most single-purpose healthcare AI repositories and is designed to be both studied and deployed.
 
-**Accessible to students. Trusted by industry. Runs on a laptop. Scales to AWS EKS.**
+It runs on a laptop with no API keys (via Ollama), scales to Kubernetes, and ships with Terraform for AWS. Whether you're a student exploring how these systems are built or an engineer evaluating architecture patterns, the code is the documentation.
 
 <table>
 <tr>
 <td width="33%" valign="top">
 
 ### 5 ML Diagnostic Models
-Diabetes, Heart, Liver, Kidney, Lungs — trained on real clinical datasets (BRFSS CDC, Cleveland UCI, ILPD, UCI CKD) with SHAP explainability, confidence scoring, and published accuracy (Heart: **92%**, Diabetes: **89%**).
+Diabetes, Heart, Liver, Kidney, Lungs — trained on real clinical datasets (BRFSS CDC, Cleveland UCI, ILPD, UCI CKD) with SHAP explainability and confidence scoring. Heart disease model: 92% accuracy. Diabetes model: 89% accuracy on the test split.
 
 </td>
 <td width="33%" valign="top">
 
 ### 3-Tier AI Inference
-**Ollama → Gemini → Cloud** automatic fallback. Local-first for private/HIPAA-sensitive workflows, free Gemini tier for cloud, or OpenAI/Anthropic via request headers. Zero vendor lock-in.
+**Ollama → Gemini → Cloud** automatic fallback. Run fully offline via Ollama, use Gemini's free tier for cloud, or override to OpenAI/Anthropic per request via headers. No vendor lock-in in the application code.
 
 </td>
 <td width="33%" valign="top">
 
 ### RAG Medical Chatbot
-LangGraph multi-agent system + Gemini embeddings + scoped vector store. Responses grounded in each patient's own health records with citation tracking, 3,000-token budget, and role-based access control.
+LangGraph multi-agent system + Gemini embeddings + scoped vector store. Answers are grounded in each patient's own health records with citation tracking, a 3,000-token context budget, and role-based scope control.
 
 </td>
 </tr>
 <tr>
 <td width="33%" valign="top">
 
-### Full Hospital Operations
-OPD/IPD encounters, pharmacy inventory, lab diagnostics, nursing tasks, discharge planning, bed management, and billing/invoicing — 8 modules covering the complete care continuum.
+### Hospital Operations Modules
+OPD/IPD encounters, pharmacy inventory, lab diagnostics, nursing tasks, discharge planning, bed management, and billing — 8 modules across the care continuum, with real-time capacity telemetry over WebSocket.
 
 </td>
 <td width="33%" valign="top">
 
-### Enterprise Security
-JWT + bcrypt, RBAC (patient/doctor/admin), 8-layer middleware, per-IP rate limiting, PII-scrubbed errors, HIPAA/GDPR-oriented audit logging, and patient data deletion propagation.
+### Security and Audit
+JWT + bcrypt, RBAC (patient/doctor/admin), 8-layer middleware stack, per-IP rate limiting, PII-scrubbed error responses, and audit logging designed with HIPAA/GDPR controls in mind.
 
 </td>
 <td width="33%" valign="top">
 
-### 5 Deployment Options
-Docker Compose, Enterprise Stack (7 services), Render PaaS, Kubernetes (3-replica HA + HPA), Terraform AWS (VPC + EKS + RDS + ElastiCache + S3 + Route53).
+### Deployment Options
+Docker Compose for local dev, an enterprise stack with PostgreSQL/Redis/Prometheus/Grafana, Render PaaS, Kubernetes (3-replica HA), and Terraform for AWS EKS + RDS + ElastiCache.
 
 </td>
 </tr>
 </table>
 
-> **Built for portfolios, built for production.** This is a full-stack healthcare platform demonstrating ML engineering, LLM orchestration, RAG architecture, and DevOps maturity in one cohesive codebase.
-
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
-## Why This Stands Out
+## What Works End-to-End Today
 
-| Capability | This project | Typical healthcare AI repo |
-|---|:---:|:---:|
-| Real trained ML models — not mocked | ✅ 5 models | ⚠️ usually 1 |
-| Published accuracy (Heart: 92%, Diabetes: 89%) | ✅ | ❌ |
-| SHAP feature-level explainability | ✅ | ❌ |
-| Clinician override with PHI-safe audit trail | ✅ | ❌ |
-| Local AI via Ollama — no API key required | ✅ | ❌ |
-| 3-tier AI fallback, zero vendor lock-in | ✅ | ❌ single provider |
-| RAG grounded in patient's own records | ✅ scoped, ACL-enforced | ❌ |
-| LangGraph multi-node agent + safety guardrails | ✅ | ❌ |
-| Full hospital ops (pharmacy, billing, nursing…) | ✅ 8 modules | ❌ |
-| Real-time WebSocket hospital telemetry | ✅ | ❌ |
-| FHIR R4 · ABDM · DICOMweb · SMART on FHIR | ✅ | ❌ |
-| 8-layer security middleware | ✅ | ❌ |
-| Property-based tests with Hypothesis | ✅ ~90 test files | ❌ |
-| Kubernetes HA + Terraform AWS EKS | ✅ | ❌ |
-| AI governance inventory (WHO/FDA/EU AI Act) | ✅ | ❌ |
+This section is honest about what's fully wired up vs what's a reference/connector implementation.
+
+**Fully functional**
+- Disease prediction for all 5 models with SHAP explanations and clinician audit logging
+- RAG chatbot with patient-scoped vector retrieval and SSE streaming
+- LangGraph agent with supervisor routing and guardrails
+- Auth, RBAC, and the full 8-layer middleware stack
+- All 8 hospital operations modules (pharmacy, billing, nursing, diagnostics, discharge, bed management)
+- Real-time hospital telemetry over WebSocket
+- PDF health report generation and Vision AI lab report analysis
+- Docker Compose, Kubernetes manifests, and Terraform AWS configs
+- CI/CD with 8 GitHub Actions workflows including CodeQL SAST
+
+**Reference / connector implementations** *(working code, but require external system integration to use in production)*
+- **FHIR R4 serializers** — produce valid FHIR bundles, but no live EHR connection out of the box
+- **India ABDM connector** — consent request generation and callback handling, but requires ABDM sandbox credentials
+- **DICOMweb / PACS** — metadata and endpoint planning only; no PACS server bundled
+- **SMART on FHIR** — authorization URL generation; no EHR launch context without an EHR
+- **Razorpay payments** — wired up but requires live Razorpay credentials
+- **Tavily research agent node** — works when `TAVILY_API_KEY` is set; degrades gracefully without it
+
+## Design Scope
+
+This project demonstrates a complete healthcare AI system at the architectural level. It is not a certified medical device and makes no clinical diagnostic claims. All predictions include mandatory disclaimers. If you're building for regulated clinical use, it provides a solid foundation and reference point — full HIPAA/CE compliance requires additional organizational controls, audits, and a formal regulatory pathway.
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
@@ -143,8 +148,8 @@ Docker Compose, Enterprise Stack (7 services), Render PaaS, Kubernetes (3-replic
 <summary><strong>Table of Contents</strong></summary>
 
 - [What Is This?](#what-is-this)
-- [Why This Stands Out](#why-this-stands-out)
-- [For Students & Learners](#-for-students--learners)
+- [What Works End-to-End Today](#what-works-end-to-end-today)
+- [Exploring the Codebase](#exploring-the-codebase)
 - [Quick Start](#-quick-start)
 - [Architecture](#-architecture)
 - [ML Models](#-ml-models)
@@ -170,25 +175,25 @@ Docker Compose, Enterprise Stack (7 services), Render PaaS, Kubernetes (3-replic
 
 ---
 
-## 📚 For Students & Learners
+## Exploring the Codebase
 
-This codebase is designed to be studied. Every module has one clear responsibility and is well-documented. Whether you're building a final-year project, learning how real AI systems are architected, or preparing for a technical interview — start here:
+Each module in this project has a single responsibility and is named after what it does. If you want to understand a specific concept, here's where to look:
 
-| What you want to learn | File to open | What you'll see |
-|---|---|---|
-| How ML models serve predictions via REST API | `backend/prediction.py` | XGBoost loading, scaling, inference endpoint |
-| How RAG (AI with memory) works | `backend/rag.py` + `backend/chat_context.py` | Embedding, vector search, context assembly |
-| How LangGraph multi-agent systems are built | `backend/agent.py` | Supervisor routing, researcher, analyst, guardrail |
-| How to make AI provider-agnostic | `backend/core_ai.py` | 3-tier fallback, retry, caching |
-| How SHAP explains ML predictions | `backend/explainability.py` | Feature attribution for clinical decisions |
-| How JWT auth and RBAC work | `backend/auth.py` | Token creation, role enforcement, DI pattern |
-| How to structure a large FastAPI project | `backend/main.py` + routers | Middleware, mounting, startup lifecycle |
-| How property-based testing works | `tests/unit/` (Hypothesis) | Auto-generated edge case discovery |
-| How CI/CD pipelines are structured | `.github/workflows/` | 8 real pipelines: CI, CodeQL, Docker, HF |
-| How Terraform provisions AWS infrastructure | `terraform/main.tf` | VPC, EKS, RDS, ElastiCache, S3, Route53 |
+- **How ML predictions are served via REST** → `backend/prediction.py` — model loading with `initialize_models()`, feature scaling, endpoint wiring
+- **How RAG works in practice** → `backend/rag.py` and `backend/chat_context.py` — embedding, cosine search, ACL scoping, token-budgeted context assembly
+- **How a LangGraph agent is structured** → `backend/agent.py` — supervisor node, researcher, analyst, guardrail, and generate nodes with a `CoreAIWrapper` adapter
+- **How to swap AI providers without touching application code** → `backend/core_ai.py` — the full fallback chain, retry logic, and 30s TTL caching
+- **How SHAP makes ML predictions explainable** → `backend/explainability.py` — feature attribution computed at inference time
+- **How JWT auth and role-based access work** → `backend/auth.py` — token creation, `get_current_user()` dependency, RBAC enforcement
+- **How a large FastAPI app is structured** → `backend/main.py` — middleware stack ordering, router mounting, lifespan startup
+- **How property-based testing finds edge cases** → `tests/unit/` — Hypothesis strategies generating thousands of inputs automatically
+- **How CI/CD pipelines are set up** → `.github/workflows/` — eight real pipelines covering CI, CodeQL, Docker, and HuggingFace sync
+- **How Terraform provisions cloud infrastructure** → `terraform/main.tf` — VPC, EKS cluster, RDS, ElastiCache, S3, Route53
+
+The [`AGENTS.md`](AGENTS.md) file documents the architectural rules that govern the whole system — useful reading before contributing or extending anything.
 
 <details>
-<summary><b>For industry engineers — architecture decisions and production rationale</b></summary>
+<summary><b>Architecture decisions — for engineers evaluating this as a reference</b></summary>
 
 | Decision | Rationale |
 |---|---|
