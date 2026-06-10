@@ -4,3 +4,4 @@ pytest-asyncio
 pytest-playwright
 httpx
 playwright
+hypothesis
