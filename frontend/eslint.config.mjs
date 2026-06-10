@@ -36,9 +36,6 @@ const eslintConfig = defineConfig([
         ecmaFeatures: { jsx: true },
       },
     },
-    rules: {
-      "no-unused-vars": "off",
-    },
   },
 ]);
 
