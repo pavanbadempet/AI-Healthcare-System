@@ -1,14 +1,13 @@
-import numpy as np
-import pandas as pd
-from fastapi import APIRouter, HTTPException
 import logging
-from typing import Dict, Any
+from typing import Any, Dict
+
+from fastapi import APIRouter, HTTPException
+from sqlalchemy.orm import Session
 
 # --- Custom Modules ---
-from . import audit, database, explainability, schemas, features
+from . import audit, database, schemas
 from .facility_scope import users_share_facility_context
-from .model_service import model_service, MEDICAL_DISCLAIMER, PREDICTION_FAILURE_DETAIL, get_age_bucket
-from sqlalchemy.orm import Session
+from .model_service import PREDICTION_FAILURE_DETAIL, model_service
 
 # --- Logging Configuration ---
 logger = logging.getLogger(__name__)
@@ -23,8 +22,11 @@ def initialize_models():
     """Delegates to model_service.initialize()."""
     model_service.initialize()
 
-from . import auth, models as db_models
 from fastapi import Depends
+
+from . import auth
+from . import models as db_models
+
 
 @router.post("/admin/reload_models")
 def reload_models(current_user: db_models.User = Depends(auth.get_current_user)):

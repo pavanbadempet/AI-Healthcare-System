@@ -11,17 +11,14 @@ continues to work unchanged.
 
 from ..database import Base  # noqa: F401 — re-exported for backward compat
 
-# Auth domain
-from .auth import User
-
-# Records domain
-from .records import AuditLog, ChatLog, HealthRecord
-
 # Appointments domain
 from .appointments import Appointment
 
-# Hospital domain
-from .hospital import Admission, Bed, Department, Encounter, HospitalFacility
+# Auth domain
+from .auth import User
+
+# Billing domain
+from .billing import BillableService, BillingPayment, Invoice, InvoiceLineItem
 
 # Clinical domain
 from .clinical import (
@@ -32,17 +29,11 @@ from .clinical import (
     VitalObservation,
 )
 
-# Pharmacy domain
-from .pharmacy import DispenseRecord, MedicationInventory, Prescription, PrescriptionItem
-
-# Billing domain
-from .billing import BillableService, BillingPayment, Invoice, InvoiceLineItem
-
 # Discharge domain
 from .discharge import DischargeSummary
 
-# Nursing domain
-from .nursing import NursingTask
+# Hospital domain
+from .hospital import Admission, Bed, Department, Encounter, HospitalFacility
 
 # Interoperability domain
 from .interoperability import (
@@ -51,6 +42,15 @@ from .interoperability import (
     InteroperabilityExport,
     InteroperabilityExportProfile,
 )
+
+# Nursing domain
+from .nursing import NursingTask
+
+# Pharmacy domain
+from .pharmacy import DispenseRecord, MedicationInventory, Prescription, PrescriptionItem
+
+# Records domain
+from .records import AuditLog, ChatLog, HealthRecord
 
 __all__ = [
     "Base",

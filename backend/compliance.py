@@ -115,7 +115,7 @@ class HIPAACompliance:
         try:
             with self.db.connect() as conn:
                 conn.execute(text("""
-                    INSERT INTO audit.phi_access_log 
+                    INSERT INTO audit.phi_access_log
                     (user_id, accessed_by, purpose, ip_address, timestamp)
                     VALUES (:uid, :accessed_by, :purpose, :ip, :ts)
                 """), {
@@ -177,7 +177,7 @@ class GDPRCompliance:
         try:
             with self.db.connect() as conn:
                 conn.execute(text("""
-                    INSERT INTO compliance.data_subject_requests 
+                    INSERT INTO compliance.data_subject_requests
                     (request_id, user_id, request_type, request_details, status, created_at)
                     VALUES (:rid, :uid, :rtype, :details, 'pending', :ts)
                 """), {
@@ -277,7 +277,7 @@ class GDPRCompliance:
             with self.db.connect() as conn:
                 # Anonymize user data
                 conn.execute(text("""
-                    UPDATE app_data.users SET 
+                    UPDATE app_data.users SET
                         email = 'ANONYMIZED',
                         full_name = 'ANONYMIZED',
                         phone = 'ANONYMIZED',
@@ -287,7 +287,7 @@ class GDPRCompliance:
 
                 # Delete or anonymize health records
                 conn.execute(text("""
-                    UPDATE app_data.health_records SET 
+                    UPDATE app_data.health_records SET
                         data = 'ANONYMIZED',
                         prediction = 'ANONYMIZED'
                     WHERE user_id = :uid
@@ -409,7 +409,7 @@ class GDPRCompliance:
         try:
             with self.db.connect() as conn:
                 conn.execute(text("""
-                    UPDATE compliance.data_subject_requests 
+                    UPDATE compliance.data_subject_requests
                     SET status = :status, result = :result, completed_at = :ts
                     WHERE request_id = :rid
                 """), {
@@ -446,8 +446,8 @@ class ComplianceManager:
         try:
             with self.db.connect() as conn:
                 conn.execute(text("""
-                    INSERT INTO compliance.data_processing_log 
-                    (user_id, processing_type, data_categories, legal_basis, 
+                    INSERT INTO compliance.data_processing_log
+                    (user_id, processing_type, data_categories, legal_basis,
                      purpose, timestamp, processor, third_party)
                     VALUES (:uid, :ptype, :dcats, :lbasis, :purpose, :ts, :proc, :tparty)
                 """), {
@@ -470,9 +470,9 @@ class ComplianceManager:
         try:
             with self.db.connect() as conn:
                 result = conn.execute(text("""
-                    SELECT * FROM compliance.consent_records 
-                    WHERE user_id = :uid AND purpose = :purpose 
-                    AND granted = true 
+                    SELECT * FROM compliance.consent_records
+                    WHERE user_id = :uid AND purpose = :purpose
+                    AND granted = true
                     AND expires_at > :ts
                     ORDER BY created_at DESC LIMIT 1
                 """), {
@@ -499,8 +499,8 @@ class ComplianceManager:
         try:
             with self.db.connect() as conn:
                 conn.execute(text("""
-                    INSERT INTO compliance.consent_records 
-                    (user_id, consent_type, consent_version, granted, timestamp, 
+                    INSERT INTO compliance.consent_records
+                    (user_id, consent_type, consent_version, granted, timestamp,
                      ip_address, user_agent, purpose, data_categories, retention_period_days)
                     VALUES (:uid, :ctype, :cversion, :granted, :ts, :ip, :ua, :purpose, :dcats, :retention)
                 """), {
@@ -536,10 +536,10 @@ class ComplianceManager:
             with self.db.connect() as conn:
                 # Get access logs
                 access_logs = conn.execute(text("""
-                    SELECT COUNT(*) as total_accesses, 
+                    SELECT COUNT(*) as total_accesses,
                            COUNT(DISTINCT accessed_by) as unique_users,
                            DATE_TRUNC('day', timestamp) as date
-                    FROM audit.phi_access_log 
+                    FROM audit.phi_access_log
                     WHERE timestamp >= CURRENT_DATE - INTERVAL '30 days'
                     GROUP BY DATE_TRUNC('day', timestamp)
                     ORDER BY date DESC

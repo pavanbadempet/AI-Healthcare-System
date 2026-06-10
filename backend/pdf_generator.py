@@ -11,7 +11,6 @@ Dependencies: fpdf2 (core), matplotlib (charts — gracefully skipped if absent)
 """
 import io
 import logging
-import os
 from collections import defaultdict
 from datetime import datetime
 from typing import Any, Dict, List, Optional
@@ -24,8 +23,8 @@ logger = logging.getLogger(__name__)
 try:
     import matplotlib
     matplotlib.use("Agg")  # non-interactive backend, safe in server environments
-    import matplotlib.pyplot as plt
     import matplotlib.dates as mdates
+    import matplotlib.pyplot as plt
     from matplotlib.figure import Figure
     _MPL_AVAILABLE = True
 except ImportError:  # pragma: no cover
@@ -93,9 +92,9 @@ def _chart_risk_assessment_history(health_records: List[Dict[str, Any]]) -> Opti
 
     fig, ax = plt.subplots(figsize=(7, 3.5))
     width = 0.35
-    bars_low = ax.bar([i - width / 2 for i in x], low_counts, width,
+    ax.bar([i - width / 2 for i in x], low_counts, width,
                       label="Low Risk", color="#16a34a", alpha=0.85)
-    bars_high = ax.bar([i + width / 2 for i in x], high_counts, width,
+    ax.bar([i + width / 2 for i in x], high_counts, width,
                        label="High Risk", color="#dc2626", alpha=0.85)
 
     ax.set_xlabel("Assessment Type", fontsize=9)

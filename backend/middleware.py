@@ -83,7 +83,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             try:
                 identifier = self._identifier_for_request(request)
                 # Lazy imports to avoid circular dependency at module load time
-                from . import auth, security
+                from . import security
                 security.limiter.check(request, identifier)
             except HTTPException as e:
                 return JSONResponse(status_code=e.status_code, content={"detail": e.detail})

@@ -38,19 +38,19 @@ async def explain_prediction(
         # Construct Prompt
         prompt = f"""
         You are an expert Medical AI. I have just run a Machine Learning prediction for **{req.prediction_type}**.
-        
+
         **Patient Data**:
         {req.input_data}
-        
+
         **Model Prediction**:
         {req.prediction_result}
-        
+
         **Task**:
         1. Explain WHY the model likely gave this result based on the provided data (e.g. "Your glucose of 140 is higher than normal...").
         2. Provide 3 specific, actionable lifestyle tips to improve this condition.
         3. Be empathetic but scientific.
         4. Return the response in a structured format with clear sections.
-        
+
         Output Format:
         EXPLANATION: [Your explanation here]
         TIPS:

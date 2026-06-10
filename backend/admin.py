@@ -3,8 +3,8 @@ Admin Dashboard Logic
 =====================
 Endpoints for system administration, analytics, and user management.
 """
-import os
 import json
+import os
 from typing import Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -105,7 +105,7 @@ def get_analytics_report(
     """Fetch the Gold Layer analyst report."""
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     report_path = os.path.join(base_dir, "data", "gold", "analyst_report.json")
-    
+
     if not os.path.exists(report_path):
         return {
             "report_generated_at": None,
@@ -134,7 +134,7 @@ def get_analytics_report(
                 "status": "not_run"
             }
         }
-        
+
     try:
         with open(report_path, "r") as f:
             return json.load(f)
