@@ -106,8 +106,8 @@ def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth
             log = models.ChatLog(user_id=current_user.id, role="user", content=sanitized_message)
             db.add(log)
             db.commit()
-        except (ValueError, RuntimeError) as exc:
-            logger.error("Failed to save chat message: %s", exc)
+        except Exception:
+            logger.error("Failed to save chat message")
 
     # Build message history
     messages = [HumanMessage(content=m.content) if m.role == "user" else AIMessage(content=m.content)
@@ -150,13 +150,13 @@ def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth
             try:
                 db.add(models.ChatLog(user_id=current_user.id, role="assistant", content=response))
                 db.commit()
-            except (ValueError, RuntimeError):
-                pass
+            except Exception:
+                logger.error("Failed to save chat response")
 
         return {"response": response}
 
-    except (ValueError, RuntimeError) as exc:
-        logger.error("Agent error while processing chat request: %s", exc)
+    except Exception:
+        logger.error("Agent error while processing chat request")
         return {"response": "Sorry, I'm having trouble right now. Please try again."}
 
 

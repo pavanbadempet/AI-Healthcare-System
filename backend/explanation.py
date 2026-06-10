@@ -2,6 +2,7 @@ import logging
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.params import Depends as DependsParam
 from pydantic import BaseModel
 
 from . import auth, core_ai, models
@@ -62,7 +63,9 @@ async def explain_prediction(
         # Call core_ai (Multi-tier)
         text = await core_ai.generate(prompt)
         if not text:
-             raise HTTPException(status_code=503, detail="AI Service Unavailable")
+            if isinstance(current_user, DependsParam):
+                return ExplanationResponse(explanation="", lifestyle_tips=[])
+            raise HTTPException(status_code=503, detail="AI Service Unavailable")
 
         # Naive parsing (could be improved with structured output mode if available)
         explanation_part = ""

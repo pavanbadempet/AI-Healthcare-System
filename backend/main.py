@@ -98,8 +98,8 @@ def run_migrations():
         alembic_cfg.set_main_option("script_location", os.path.join(base_dir, "backend", "migrations"))
         command.upgrade(alembic_cfg, "head")
         logger.info("Migrations completed successfully.")
-    except (OSError, ImportError, RuntimeError) as exc:
-        logger.warning("Migration check failed: %s", exc)
+    except Exception:
+        logger.warning("Migration check failed")
 
 
 # --- Seeding ---
@@ -132,8 +132,9 @@ def create_default_admin():
                 logger.info("Default admin created from configured bootstrap credentials.")
             else:
                 logger.info("Admin account already exists.")
-        except (ValueError, OSError, RuntimeError) as exc:
-            logger.error("Failed to seed admin: %s", exc)
+        except Exception:
+            session.rollback()
+            logger.error("Failed to seed admin")
 
 
 # --- App ---
@@ -196,6 +197,7 @@ app.include_router(care_events.router, prefix=API_V1_PREFIX)
 app.include_router(interoperability.router, prefix=API_V1_PREFIX)
 app.include_router(payments.router, prefix=API_V1_PREFIX)
 app.include_router(telemetry.router, prefix=f"{API_V1_PREFIX}/telemetry", tags=["Telemetry"])
+app.include_router(telemetry.router, prefix="/telemetry", tags=["Telemetry"])
 from . import appointments, ollama_routes
 
 app.include_router(appointments.router, prefix=API_V1_PREFIX, tags=["Appointments"])
@@ -233,8 +235,8 @@ async def generate_report(
         return Response(content=pdf, media_type="application/pdf")
     except HTTPException:
         raise
-    except (RuntimeError, ValueError, OSError) as exc:
-        logger.error("Generate report failed: %s", exc)
+    except Exception:
+        logger.error("Generate report failed")
         raise HTTPException(status_code=500, detail=GENERATE_REPORT_FAILURE_DETAIL)
 
 # --- Static Files (WebLLM AI Copilot page) ---

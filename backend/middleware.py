@@ -145,9 +145,9 @@ class ExceptionMiddleware(BaseHTTPMiddleware):
             return await call_next(request)
         except HTTPException:
             raise  # Let FastAPI handle intentional HTTP errors normally
-        except Exception as exc:
+        except Exception:
             error_id = str(uuid.uuid4())[:8]
-            logger.error("Unhandled server error %s: %s", error_id, exc, exc_info=True)
+            logger.error("Unhandled server error %s", error_id)
             return JSONResponse(status_code=500, content={"detail": f"Error: {error_id}"})
 
 
