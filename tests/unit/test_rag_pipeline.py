@@ -270,12 +270,16 @@ def test_store_load_handles_corrupt_json(tmp_path):
 def isolated_store(tmp_path):
     """Ensure each test gets a fresh global store backed by a temp file."""
     db_file = str(tmp_path / "test_vector_store.json")
+    turbovec_index_path = str(tmp_path / "turbovec_index")
     import backend.rag as rag_module
     original_store = rag_module._store
     rag_module._store = None
     with patch("backend.rag.DB_FILE", db_file), \
          patch("backend.rag.get_embedding", side_effect=_unit_embed), \
-         patch("backend.rag.get_query_embedding", side_effect=_unit_embed):
+         patch("backend.rag.get_query_embedding", side_effect=_unit_embed), \
+         patch("backend.turbovec_store.get_embedding", side_effect=_unit_embed), \
+         patch("backend.turbovec_store.get_query_embedding", side_effect=_unit_embed), \
+         patch.dict("os.environ", {"TURBOVEC_INDEX_PATH": turbovec_index_path}):
         yield
     rag_module._store = original_store
 
@@ -296,11 +300,14 @@ def test_add_checkup_to_db_returns_true():
 def test_add_checkup_to_db_includes_clinical_data_in_document():
     from backend.rag import get_vector_store
     with patch("backend.rag.get_embedding", side_effect=_unit_embed), \
-         patch("backend.rag.get_query_embedding", side_effect=_unit_embed):
+         patch("backend.rag.get_query_embedding", side_effect=_unit_embed), \
+         patch("backend.turbovec_store.get_query_embedding", side_effect=_unit_embed):
         add_checkup_to_db("2", "200", "heart", {"chol": 250}, "Detected", "2024-01-01")
         store = get_vector_store()
+        # Use the backend-agnostic search interface to verify the document content.
+        results = store.search("heart checkup", k=5)
 
-    assert any("chol" in doc for doc in store.documents)
+    assert any("chol" in doc for doc in results)
 
 
 def test_add_checkup_to_db_with_facility_id():
@@ -328,7 +335,14 @@ def test_add_interaction_to_db_uses_chat_prefix_for_id():
     with patch("backend.rag.get_embedding", side_effect=_unit_embed):
         add_interaction_to_db("1", "999", "user", "How are you?", "2024-01-01")
         store = get_vector_store()
-    assert "chat_999" in store.ids
+    # Use the backend-agnostic _texts/_str_to_int mapping, or count() > 0 as a proxy.
+    # The canonical check is that "chat_999" is a known record_id in the store.
+    if hasattr(store, "ids"):
+        # SimpleVectorStore path
+        assert "chat_999" in store.ids
+    else:
+        # TurboVecVectorStore (and future backends) — verify via count and _texts
+        assert "chat_999" in store._texts
 
 
 def test_search_similar_records_returns_results():
