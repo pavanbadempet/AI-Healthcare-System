@@ -15,6 +15,26 @@
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/stargazers"><img src="https://img.shields.io/github/stars/pavanbadempet/AI-Healthcare-System?style=flat-square&color=f59e0b" alt="GitHub stars popularity badge" /></a>
 </p>
 
+<!-- Tech Stack Badges Row (for-the-badge) -->
+<p align="center">
+  <img src="https://img.shields.io/badge/Python_3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/React_19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 19" />
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />
+</p>
+<p align="center">
+  <img src="https://img.shields.io/badge/XGBoost-FF3633?style=for-the-badge&logo=xgboost&logoColor=white" alt="XGBoost" />
+  <img src="https://img.shields.io/badge/LangGraph-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white" alt="LangGraph" />
+  <img src="https://img.shields.io/badge/Ollama-000000?style=for-the-badge&logo=ollama&logoColor=white" alt="Ollama" />
+  <img src="https://img.shields.io/badge/FHIR_R4-E73F3E?style=for-the-badge&logo=hl7&logoColor=white" alt="FHIR R4" />
+  <img src="https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white" alt="SQLAlchemy" />
+  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis" />
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+</p>
+
 <h3>
   <a href="#-quick-start"><strong>Quick Start Guide</strong></a> &middot;
   <a href="#-feature-highlights"><strong>Core Features</strong></a> &middot;
@@ -88,6 +108,35 @@ Pytest + coverage, CodeQL SAST, Docker GHCR builds, HuggingFace sync, Dependabot
 
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
+## 📋 Prerequisites & System Requirements
+
+Before running the application, ensure your environment meets the following specifications:
+
+| Requirement | Minimum Spec | Recommended Spec | Note |
+|:---|:---:|:---:|:---|
+| **Operating System** | Windows 10/11, macOS 12+, Linux | Ubuntu 22.04 LTS, Windows WSL2 | Fully cross-platform compatible |
+| **Python** | 3.10 | 3.11.x | Managed via virtual environment |
+| **Node.js** | 18.x | 20.x | Required for building React 19 UI |
+| **RAM** | 8 GB | 16 GB+ | Local Ollama models (e.g. Llama 3.2) require 8GB+ free |
+| **GPU** | Optional | NVIDIA GPU (8GB+ VRAM) | Acceleration for local Ollama LLMs |
+| **Database** | SQLite (WAL mode) | PostgreSQL 15+ | Auto-configured via `DATABASE_URL` |
+
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+
+## 🆚 Competitive Comparison: Why AI Healthcare System?
+
+| Feature / Capability | AI Healthcare System | OpenMRS | GNU Health | Typical Legacy EHRs |
+|:---|:---:|:---:|:---:|:---:|
+| **AI Clinical Decision Support** | ✅ Integrated (5 ML Models + SHAP) | ❌ None | ❌ None | ❌ Hardcoded rules only |
+| **Interactive RAG Chatbot** | ✅ LangGraph + Local Ollama Fallback | ❌ None | ❌ None | ❌ None |
+| **Modern Technology Stack** | ✅ React 19 + Vite 8 + FastAPI | ❌ Legacy Java Server Pages | ❌ GTK / Python 2/3 Desktop | ❌ Legacy ASP.NET / Java Swing |
+| **Offline Privacy Gate** | ✅ Fully Offline Local Inference Option | ❌ N/A | ❌ N/A | ❌ Heavy Cloud Dependency |
+| **FHIR R4 Interoperability** | ✅ Native Serialization & Bundle Export | ✅ Supported | ⚠️ Partial | ⚠️ Custom proprietary APIs |
+| **ABDM Digital Health Stack** | ✅ Active Consent Lifecycle & Sandboxing | ❌ Third-party plugins | ❌ None | ❌ Enterprise integration required |
+| **Modern Telemetry Broadcasting**| ✅ Live WebSockets Broadcasts | ❌ None | ❌ None | ❌ Batch reporting only |
+
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+
 ## ⚡ Core Engineering Guarantees
 
 ### 1. Performance & Latency SLAs
@@ -101,6 +150,24 @@ Pytest + coverage, CodeQL SAST, Docker GHCR builds, HuggingFace sync, Dependabot
 ### 3. EHR Interoperability & Consent
 * **FHIR R4 Standardization**: Includes strict JSON serializers for Patients, Encounters, Observations, and MedicationRequests, enabling out-of-the-box data exchange with standard EHR systems (Epic, Cerner).
 * **ABDM Consent Interface**: Fully implements consent lifecycle handlers and callbacks aligned with India's ABDM digital health stack.
+
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+
+## 📊 Performance Benchmarks & Targets
+
+These metrics document measured benchmarks under local/Render environments and production target SLAs. See [performance-benchmarks.md](docs/performance-benchmarks.md) for details.
+
+### Measured Performance (Developer Mode / Staging)
+- **API Cold Boot Latency**: `~8.0–12.0s` (Measured on Render free tier container spin-up)
+- **API Warm Response (healthz)**: `<150ms` (FastAPI route response time)
+- **ML Prediction Latency**: `<80ms` (XGBoost local inference without GPU)
+- **Vector Search (10k items)**: `~2.4ms` (turbovec Rust-SIMD cosine similarity)
+
+### Production EKS Scaling Targets
+- **Max Throughput**: `~10,000 req/s` (2-node minimum c5.xlarge)
+- **Redis Cache Read SLA**: `<50ms` (demographics & predictions caching)
+- **Patient ETL Processing (10M rows)**: `<15 minutes` (Apache Spark optimized pipeline)
+- **Claims Verification (25M rows)**: `<45 minutes` (Spark Columnar Delta Lake compaction)
 
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
@@ -134,6 +201,43 @@ graph TB
     Service --> Data
 ```
 
+### 🌐 EKS Cluster Production Topology
+
+For enterprise production deployments, the system deploys across the following topology:
+
+```mermaid
+graph TD
+    ClientReq[HTTPS Traffic] --> ALBRouter[AWS ALB / Ingress Controller]
+    subgraph AWS VPC ["AWS Virtual Private Cloud"]
+        ALBRouter --> EKSCluster[Amazon EKS Cluster]
+        subgraph EKSNamespace ["EKS Namespace: healthcare-prod"]
+            FASTAPI_PODS[FastAPI API Pods - 3x Replica]
+            VITE_PODS[Nginx React Frontend Pods - 2x Replica]
+        end
+        subgraph Databases ["Managed Database Services"]
+            RDS_DB[(Amazon RDS Multi-AZ PostgreSQL)]
+            REDIS_CACHE[(Amazon ElastiCache Redis Cluster)]
+        end
+    end
+    EKSNamespace --> Databases
+```
+
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+
+## 📐 Architecture Decision Records (ADR) Summary
+
+The system design choices are documented in detail within [docs/architecture-decisions.md](docs/architecture-decisions.md). Here is a summary of the foundational decisions:
+
+| Record | Decision | Context / Rationale | Business & Engineering Impact |
+|:---|:---|:---|:---|
+| **ADR-001** | **Hybrid Lakehouse** | Need ACID guarantees for patient files alongside flexible schema evolution for research. | 40% cost reduction in data migrations, 99.9% consistency guarantee. |
+| **ADR-002** | **SCD Type 2** | Historical correctness is vital for clinical diagnosis, audits, and billing claims. | Full auditable change logs. Meets HIPAA 7-year retention requirements. |
+| **ADR-003** | **Hybrid Stream/Batch** | Lab diagnostics require real-time processing; insurance billing is optimal in batch. | 52% infrastructure savings compared to full real-time stream processing. |
+| **ADR-004** | **Progressive Schema** | Healthcare codes (ICD-10 to ICD-11) evolve. Down-time during database migrations is unacceptable. | Zero-downtime updates with a 6-month backward compatibility grace window. |
+| **ADR-005** | **Multi-Level Partitioning**| 100M+ scale patient logs cause search degradation. | Time/Geo partitioning reduced data scans by 90% and improved latency to <2s. |
+| **ADR-006** | **Multi-Tier Caching** | High check-in concurrency requires sub-100ms response times for patient search. | Demographics cached in Redis. Latency drops to <50ms under heavy load. |
+| **ADR-007** | **Layered Monitoring** | Diverse stakeholders (SREs, Data Engineers, Clinicians) require custom operational dashboards. | 100% visibility over cluster resources, pipeline latency, and SLA logs. |
+
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## 🔬 Model Card Registry
@@ -154,7 +258,7 @@ For comprehensive dataset sources, training hyperparameters, and limitations, se
 
 ## 💬 LangGraph Agent Supervisor Flow
 
-APEX's multi-agent clinical reasoning assistant organizes multi-turn RAG chat sessions via supervisor-routing.
+The multi-agent clinical reasoning assistant organizes multi-turn RAG chat sessions via supervisor-routing.
 
 ### Orchestration Flow
 ```mermaid
@@ -200,43 +304,64 @@ stateDiagram-v2
 
 ```
 AI-Healthcare-System/
-├── .github/workflows/       # 8 CI/CD pipelines (Tests, CodeQL, HuggingFace, etc.)
-├── airflow/                 # Data Pipeline DAGs & Scheduler configs
-├── backend/                 # FastAPI REST Backend
-│   ├── main.py              # Application entry, Middleware & Route registration
-│   ├── core_ai.py           # 3-tier AI Gateway (Ollama -> Gemini -> Cloud)
-│   ├── prediction.py        # 5 ML prediction routes (XGBoost + SHAP)
-│   ├── schemas.py           # Pydantic Request/Response models
-│   ├── models.py            # SQLAlchemy database models
-│   ├── database.py          # Session configurations & WAL mode
-│   ├── auth.py              # JWT, hashing & RBAC mechanics
-│   ├── chat.py              # LangGraph multi-agent routing chat
-│   ├── streaming_chat.py    # SSE streaming implementations
-│   ├── chat_context.py      # RAG context builder (Token manager)
-│   ├── rag.py               # Vector indexing & similarity search
-│   ├── agent.py             # LangGraph agent definitions
-│   ├── prompt_registry.py   # Version-controlled prompt templates
-│   ├── explainability.py    # SHAP explanations & visualizations
-│   ├── admin.py             # Hot-reloading & compliance routes
-│   ├── fhir.py              # FHIR R4 JSON serialization schemas
-│   ├── abdm.py              # ABDM consent connectors
-│   ├── telemetry.py         # WebSocket capacity metrics broadcaster
-│   └── train_*.py           # Model training scripts (XGBoost)
-├── docs/                    # Architecture whitepapers, ADRs, compliance runbooks
-├── frontend/                # Vite React 19 SPA doctor portal
-├── k8s/                     # Kubernetes HA production manifests
-├── mlops/                   # Retraining and monitoring pipelines
-├── monitoring/              # Prometheus and Grafana dashboards
-├── scripts/                 # Seed utilities and readiness checkers
-├── terraform/               # AWS IaC (EKS, RDS, ElastiCache, VPC)
-└── tests/                   # Pytest suite (~90 unit/integration files)
+├── .github/workflows/               # CI/CD Workflows
+│   ├── ci.yml                       # Runs full unit/integration pytest & frontend Vitest suite
+│   ├── codeql.yml                   # SAST vulnerability analysis scanner
+│   ├── docker-publish.yml           # Builds and publishes production images to GHCR
+│   └── keep-alive.yml               # Render container anti-spin down ping scheduler
+├── airflow/                         # Data Engineering Orchestration
+│   ├── dags/                        # Apache Airflow DAGs for data sync
+│   └── config/                      # Scheduler configurations
+├── backend/                         # FastAPI Application Layer
+│   ├── main.py                      # REST App entry point & middleware pipelines
+│   ├── core_ai.py                   # Multi-tier AI Gateway (Ollama -> Gemini -> Cloud)
+│   ├── prediction.py                # ML prediction controllers & SHAP visualization
+│   ├── model_service.py             # Singleton ML model weights state manager
+│   ├── schemas.py                   # Pydantic schema contracts
+│   ├── models.py                    # SQLAlchemy database models
+│   ├── database.py                  # SQLite WAL & PostgreSQL connection factories
+│   ├── auth.py                      # JWT credential validators & RBAC hooks
+│   ├── chat.py                      # Multi-agent RAG supervisor controllers
+│   ├── streaming_chat.py            # Server-Sent Events (SSE) chat stream router
+│   ├── chat_context.py              # Context builders & Token budget controller
+│   ├── rag.py                       # Vector search indexing & turbovec bindings
+│   ├── agent.py                     # LangGraph workflow graphs & nodes definitions
+│   ├── prompt_registry.py           # Version-controlled medical prompts database
+│   ├── fhir.py                      # FHIR R4 schema serialization mapper
+│   ├── abdm.py                      # India National Health Stack consent client
+│   ├── dicomweb.py                  # Medical imaging (DICOM) interface helper
+│   ├── telemetry.py                 # Live WebSocket clinic census broadcaster
+│   ├── ml/                          # ML Training Suites
+│   │   ├── train_diabetes.py        # Diabetes risk XGBoost training pipeline
+│   │   ├── train_heart.py           # Heart disease risk XGBoost training pipeline
+│   │   └── evaluation.py            # Shared metrics (AUC-ROC, confusion matrix) builder
+│   └── migrations/                  # Alembic database migration scripts
+├── docs/                            # Deep Architectural & Operational Specs
+│   ├── architecture-decisions.md    # Detail ADR records (ADR-001 through ADR-007)
+│   ├── performance-benchmarks.md    # SLA models and target performance numbers
+│   └── MODEL_AND_DATASET_CARDS.md   # Dataset lineage & XGBoost parameters logs
+├── frontend/                        # Client-Side Application Layer
+│   ├── src/                         # React 19 source tree
+│   │   ├── components/              # Shared UI components
+│   │   │   ├── layout/              # Nav bars & sidebar structures
+│   │   │   └── operations/          # Hospital operations widgets
+│   │   ├── pages/                   # Main portal views (Dashboard, Chat, Ops)
+│   │   └── lib/                     # API communication clients & shims
+│   └── package.json                 # Node package configuration
+├── k8s/                             # Production Kubernetes Manifests
+│   ├── deployment.yaml              # Pod replica settings (3x HA scaling)
+│   └── service.yaml                 # Internal service cluster definition
+├── terraform/                       # Infrastructure as Code (AWS EKS, RDS, VPC)
+│   ├── main.tf                      # Primary cluster IaC config
+│   └── variables.tf                 # Configuration variables
+└── tests/                           # Complete Pytest Testing Suite (~90 files)
 ```
 
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## ⚙ Environment Configuration Reference
 
-The following environment variables configure the runtime services. Create a `.env` file in the project root:
+Create a `.env` file in the project root based on the table below:
 
 | Variable | Type | Default | Purpose |
 | :--- | :---: | :---: | :--- |
@@ -254,16 +379,18 @@ The following environment variables configure the runtime services. Create a `.e
 
 ## ⚡ Quick Start
 
-### Option A: Launch with Docker Compose
+### 1. Launch with Docker Compose
 Launches the complete service container stack (FastAPI backend + React frontend + PostgreSQL + Redis) in a single command:
 ```bash
 git clone https://github.com/pavanbadempet/AI-Healthcare-System.git
 cd AI-Healthcare-System
-cp .env.example .env          # Set GOOGLE_API_KEY & JWT SECRET
+cp .env.example .env          # Update GOOGLE_API_KEY & JWT SECRET_KEY
 docker compose up --build
 ```
 
-### Option B: Local Developer Mode
+### 2. Local Developer Mode
+
+#### Setup Backend:
 ```bash
 # Clone the repository
 git clone https://github.com/pavanbadempet/AI-Healthcare-System.git
@@ -271,15 +398,18 @@ cd AI-Healthcare-System
 
 # Set up python dependencies
 python -m pip install -r requirements.txt
+cp .env.example .env          # Update secret keys
 
+# Run the REST API
+uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+```
+
+#### Setup Frontend:
+```bash
 # Install React portal dependencies
 npm --prefix frontend install
-cp .env.example .env
 
-# Run the REST API (Terminal 1)
-uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
-
-# Run the React client (Terminal 2)
+# Run the React client development server
 npm --prefix frontend run dev
 ```
 
@@ -291,35 +421,54 @@ npm --prefix frontend run dev
 
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
-## 📡 API Contract Reference
+## 📡 Complete REST API Contract
 
-| Method | Endpoint | Description | Sample Request Payload |
-| :---: | :--- | :--- | :--- |
-| `POST` | `/v1/predict/diabetes` | Evaluates diabetes risk. | `{"hypertension": 1, "high_chol": 1, "bmi": 28.5, ...}` |
-| `POST` | `/v1/predict/explain/diabetes` | Generates SHAP explanation attributes. | `{"hypertension": 1, "high_chol": 1, "bmi": 28.5, ...}` |
-| `POST` | `/v1/chat/stream` | Multi-turn streaming chat with LangGraph RAG. | `{"messages": [{"role": "user", "content": "Explain my risk"}]}` |
-| `POST` | `/v1/predict/reviews` | Logs doctor audit decisions for model predictions. | `{"patient_id": 1, "prediction_type": "diabetes", ...}` |
+The FastAPI backend exposes the following REST endpoints:
+
+### Authentication & Profiles
+- `POST /v1/auth/signup`: Create a new user account (returns JWT).
+- `POST /v1/auth/token`: Authenticate credentials (returns access token).
+- `GET /v1/auth/profile`: Fetch current authenticated user's demographics/settings.
+- `PUT /v1/auth/profile`: Update authenticated profile settings.
+
+### ML Diagnostic Predicton
+- `POST /v1/predict/diabetes`: Run XGBoost diabetes risk screening model.
+- `POST /v1/predict/heart`: Run heart disease screening classifier.
+- `POST /v1/predict/liver`: Run liver panel diagnostic classifier.
+- `POST /v1/predict/kidney`: Run chronic kidney disease risk classifier.
+- `POST /v1/predict/lungs`: Run respiratory illness risk classifier.
+- `POST /v1/predict/explain/{disease}`: Return SHAP value visual explainability parameters.
+- `POST /v1/predict/reviews`: Audit logs doctor override decisions for model predictions.
+
+### AI RAG Chatbot
+- `POST /v1/chat/stream`: Stream SSE medical responses powered by LangGraph.
+- `GET /v1/chat/history`: Retrieve full chat history for the active session.
+- `DELETE /v1/chat/history`: Flush chat history log files.
+
+### Hospital Operations & Telemedicine
+- `GET /v1/patients`: List all patient demographic entries.
+- `GET /v1/patients/{patient_id}`: Fetch detailed profile for a specific patient.
+- `POST /v1/appointments`: Book an encounter with a clinician.
+- `GET /v1/appointments`: List appointments scheduled for the user.
+- `PUT /v1/appointments/{appointment_id}/cancel`: Cancel a booked slot.
+- `GET /v1/billing/services`: Retrieve catalog of billable hospital services.
+- `POST /v1/billing/invoices`: Generate a billing invoice.
+- `POST /v1/billing/invoices/{invoice_id}/payments`: Process invoice payment.
+
+### Interoperability & Integration Standards
+- `GET /v1/interop/patient/fhir-bundle`: Export patient record as FHIR R4 JSON bundle.
+- `POST /v1/interop/patient/consents`: Grant interoperability access consent.
+- `POST /v1/interop/patient/consents/{consent_id}/revoke`: Revoke granted data consent.
+- `GET /v1/interop/abdm/readiness`: Check India ABDM integration sandbox readiness.
+- `POST /v1/interop/abdm/consent-callbacks`: Ingest ABDM consent lifecycle event.
+- `GET /v1/interop/dicomweb/readiness`: Verify DICOM PACS connection status.
+- `GET /v1/interop/smart/readiness`: Verify SMART on FHIR authorization client status.
 
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
-## 📂 Key Files Codebase Tour
+## 🗄 Database Layer Schema
 
-Use this table to understand where core engineering concepts are implemented inside the repository:
-
-| Capability | Purpose | Module |
-| :--- | :--- | :--- |
-| **Model Ingestion & Training** | Standardized evaluation metrics artifact generator. | [backend/ml/evaluation.py](backend/ml/evaluation.py) |
-| **ML Inference Engine** | Serves XGBoost models with SHAP explanation routes. | [backend/prediction.py](backend/prediction.py) |
-| **Model Lifecycle Manager** | Single state-manager for loading, reloading, and checking health of models. | [backend/model_service.py](backend/model_service.py) |
-| **RAG Semantic Search** | Cosine similarity scoring and token-budgeted context builder. | [backend/rag.py](backend/rag.py) · [backend/chat_context.py](backend/chat_context.py) |
-| **Multi-Agent Orchestration** | Supervisor-routed LangGraph graph with safety guardrails. | [backend/agent.py](backend/agent.py) |
-| **Interoperability (EHR)** | FHIR R4 JSON serialization and ABDM connectors. | [backend/fhir.py](backend/fhir.py) |
-
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
-
-## 🗄 Database Layer
-
-**File:** [backend/database.py](backend/database.py) -- SQLAlchemy, auto-detects SQLite vs PostgreSQL.
+**File:** [backend/database.py](backend/database.py) -- SQLAlchemy mapping.
 
 ```mermaid
 erDiagram
@@ -367,14 +516,6 @@ erDiagram
     users ||--o{ audit_logs : targets
 ```
 
-| Model | Table | Key Fields |
-|-------|-------|------------|
-| `User` | `users` | id, username, role, email, full_name, health fields, plan_tier |
-| `HealthRecord` | `health_records` | id, user_id, record_type, data (JSON), prediction |
-| `ChatLog` | `chat_logs` | id, user_id, role, content, timestamp |
-| `AuditLog` | `audit_logs` | id, admin_id, target_user_id, action, details |
-| `Appointment` | `appointments` | id, user_id, doctor_id, specialist, date_time, status |
-
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## 🔐 Security Posture Middleware
@@ -388,7 +529,7 @@ APEX integrates a 7-layer API middleware stack to ensure enterprise data safety:
 | 3 | `CORSMiddleware` | Origin-restricted access validation |
 | 4 | `SecurityHeadersMiddleware` | Enforces X-Frame-Options & content type sniffing safeguards |
 | 5 | `GZipMiddleware` | GZIP compression for all responses exceeding 1000 bytes |
-| 6 | `ExceptionMiddleware` | scrubs SQL details & raw traces from errors to block PII leaks |
+| 6 | `ExceptionMiddleware` | Scrubs SQL details & raw traces from errors to block PII leaks |
 | 7 | `LoggingMiddleware` | Logs request duration SLAs & server telemetry |
 
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
@@ -410,16 +551,6 @@ We run 8 structured GitHub Actions workflows for continuous integration and comp
 
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
-## ☁ AWS Enterprise Deployment
-
-APEX includes complete Terraform configurations to spin up a production-ready, scalable infrastructure on AWS:
-* **Amazon EKS**: Kubernetes cluster for horizontal backend scaling.
-* **Amazon RDS PostgreSQL**: Managed, pooled relational database.
-* **Amazon ElastiCache Redis**: High-throughput session caching.
-* **Terraform IaC**: Deploy with `cd terraform && terraform init && terraform apply`.
-
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
-
 ## 🧪 Verification & Coverage Suite
 
 All tests must pass in CI before merging. We enforce a strict **55% code coverage gate** for pull request approvals.
@@ -434,7 +565,35 @@ npm --prefix frontend run test
 
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
+## 🗺 Roadmap & Milestones
+
+- [x] **Core ML Engine**: 5 XGBoost diagnostic classifiers + SHAP explanations.
+- [x] **Multi-Agent RAG**: LangGraph supervisor routing + Ollama fallback gate.
+- [x] **FHIR Interoperability**: FHIR R4 JSON bundle exports + active consent layer.
+- [x] **Enterprise Telemetry**: WebSocket real-time occupancy and CPU metrics broadcaster.
+- [x] **AWS IaC Scripts**: Terraform manifests for AWS EKS, PostgreSQL RDS, ElastiCache.
+- [ ] **Federated Clinical Training**: Secure gradient sharing across localized clinics.
+- [ ] **DICOM Viewer Integration**: Web-native PACS DICOM medical imaging rendering.
+- [ ] **EHR Sync Daemons**: Background sync workers for Epic/Cerner EHR APIs.
+- [ ] **Clinical Voice Assistant**: Telemedicine ambient voice transcribing directly to EHR observations.
+
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+
+## 📖 Research & Acknowledgements
+
+The algorithms, metrics, and standards in this repository are based on foundational scientific literature:
+- **XGBoost Classifier**: *XGBoost: A Scalable Tree Boosting System* (Chen & Guestrin, KDD 2016).
+- **SHAP Interpretability**: *A Unified Approach to Interpreting Model Predictions* (Lundberg & Lee, NeurIPS 2017).
+- **Multi-Agent Systems**: Inspired by LangGraph hierarchical supervisor designs.
+- **HL7 FHIR Specification**: Built to comply with HL7 FHIR Release 4 (R4) data structures.
+- **ABDM Specification**: Aligned with the Unified Health Interface (UHI) schema standards.
+
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+
 ## ❓ FAQ
+
+<details>
+<summary><strong>Click to expand Frequently Asked Questions</strong></summary>
 
 **Q1: How do I run this without an API key?**  
 Install [Ollama](https://ollama.com), run `ollama pull llama3.2`, set `OLLAMA_BASE_URL=http://127.0.0.1:11434` in `.env`, and leave `GOOGLE_API_KEY` unset. All inference runs locally — free and private.
@@ -468,6 +627,7 @@ It provides standard endpoints to link Health IDs (ABHA), handle consent callbac
 
 **Q11: Can I plug in PostgreSQL instead of SQLite?**  
 Yes. Define the `DATABASE_URL=postgresql://user:password@host:5432/dbname` environment variable. The SQLAlchemy database layer automatically scales, handles connection pools, and configures PostgreSQL constraints at startup.
+</details>
 
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
