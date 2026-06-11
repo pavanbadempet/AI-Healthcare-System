@@ -17,7 +17,7 @@
 
 <h3>
   <a href="#-quick-start"><strong>Quick Start</strong></a> &middot;
-  <a href="#-core-pillars"><strong>Features</strong></a> &middot;
+  <a href="#-feature-highlights"><strong>Features</strong></a> &middot;
   <a href="#-core-engineering-guarantees"><strong>Guarantees</strong></a> &middot;
   <a href="#-core-technical-architecture"><strong>Architecture</strong></a> &middot;
   <a href="#-model-card-registry"><strong>Model Cards</strong></a> &middot;
@@ -39,30 +39,52 @@ The codebase is engineered to demonstrate **production-level engineering pattern
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
-## ⚡ Core Pillars
+## ⚡ Feature Highlights
 
 <table>
 <tr>
 <td width="33%" valign="top">
 
-### 🩺 5 ML Diagnostics
-Instant screening for **Diabetes, Heart, Liver, Kidney, and Lung health** using calibrated XGBoost models. Every prediction includes gain-based SHAP explainability so clinicians know *why* a risk was flagged.
+### 🩺 5 ML Diagnostic Models
+Diabetes, Heart, Liver, Kidney, Lungs — trained on real clinical datasets (BRFSS, Cleveland, ILPD, UCI CKD) with SHAP explainability and confidence scoring.
 
 </td>
 <td width="33%" valign="top">
 
-### 💬 Multi-Agent RAG Chat
-A supervisor-routed LangGraph reasoning graph that retrieves patient records with citation tracking. Safety guardrails gate and review all answers to prevent medical hallucinations.
+### 🤖 3-Tier AI Inference
+**Ollama > Gemini > Cloud** automatic fallback. Local-first inference option for sensitive workflows, free Gemini tier, or OpenAI/Anthropic via headers. Zero vendor lock-in.
 
 </td>
 <td width="33%" valign="top">
 
-### 🏥 Hospital Operations
-A complete system to run your facility: OPD/IPD encounters, ward bed allocations, pharmacy inventory, nursing task worklists, billing, and real-time WebSocket capacity telemetry.
+### 💬 RAG Medical Chat
+Gemini embeddings + vector store + LangGraph agent. Personalized responses grounded in patient history with citation tracking and token budget management.
+
+</td>
+</tr>
+<tr>
+<td width="33%" valign="top">
+
+### 🔐 Enterprise Security
+JWT + bcrypt auth, RBAC (patient/doctor/admin), audit logging, rate limiting, PII redaction, HIPAA/GDPR-oriented helpers, and 7-layer middleware stack.
+
+</td>
+<td width="33%" valign="top">
+
+### ☁ 5 Deployment Options
+Docker Compose, Enterprise Stack (7 services), Render PaaS, Kubernetes (3-replica HA), Terraform AWS (VPC + EKS + RDS + ElastiCache).
+
+</td>
+<td width="33%" valign="top">
+
+### ⚙ 8 CI/CD Pipelines
+Pytest + coverage, CodeQL SAST, Docker GHCR builds, HuggingFace sync, Dependabot, release drafter, stale bot, and Render keep-alive.
 
 </td>
 </tr>
 </table>
+
+> **Built for portfolios, built for production.** This is not a tutorial project -- it is a full-stack healthcare platform demonstrating ML engineering, LLM orchestration, RAG architecture, and DevOps maturity in a single cohesive codebase.
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
@@ -152,6 +174,62 @@ graph TB
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
+## 📁 Project Structure Tree
+
+```
+AI-Healthcare-System/
+├── .github/workflows/       # 8 CI/CD pipelines (Tests, CodeQL, HuggingFace, etc.)
+├── airflow/                 # Data Pipeline DAGs & Scheduler configs
+├── backend/                 # FastAPI REST Backend
+│   ├── main.py              # Application entry, Middleware & Route registration
+│   ├── core_ai.py           # 3-tier AI Gateway (Ollama -> Gemini -> Cloud)
+│   ├── prediction.py        # 5 ML prediction routes (XGBoost + SHAP)
+│   ├── schemas.py           # Pydantic Request/Response models
+│   ├── models.py            # SQLAlchemy database models
+│   ├── database.py          # Session configurations & WAL mode
+│   ├── auth.py              # JWT, hashing & RBAC mechanics
+│   ├── chat.py              # LangGraph multi-agent routing chat
+│   ├── streaming_chat.py    # SSE streaming implementations
+│   ├── chat_context.py      # RAG context builder (Token manager)
+│   ├── rag.py               # Vector indexing & similarity search
+│   ├── agent.py             # LangGraph agent definitions
+│   ├── prompt_registry.py   # Version-controlled prompt templates
+│   ├── explainability.py    # SHAP explanations & visualizations
+│   ├── admin.py             # Hot-reloading & compliance routes
+│   ├── fhir.py              # FHIR R4 JSON serialization schemas
+│   ├── abdm.py              # ABDM consent connectors
+│   ├── telemetry.py         # WebSocket capacity metrics broadcaster
+│   └── train_*.py           # Model training scripts (XGBoost)
+├── docs/                    # Architecture whitepapers, ADRs, compliance runbooks
+├── frontend/                # Vite React 19 SPA doctor portal
+├── k8s/                     # Kubernetes HA production manifests
+├── mlops/                   # Retraining and monitoring pipelines
+├── monitoring/              # Prometheus and Grafana dashboards
+├── scripts/                 # Seed utilities and readiness checkers
+├── terraform/               # AWS IaC (EKS, RDS, ElastiCache, VPC)
+└── tests/                   # Pytest suite (~90 unit/integration files)
+```
+
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
+
+## ⚙ Environment Configuration Reference
+
+The following environment variables configure the runtime services. Create a `.env` file in the project root:
+
+| Variable | Type | Default | Purpose |
+| :--- | :---: | :---: | :--- |
+| `DATABASE_URL` | string | `sqlite:///./healthcare.db` | Connection string for SQL database (SQLite/Postgres). |
+| `GOOGLE_API_KEY` | string | — | Gemini API key (optional if Ollama is active). |
+| `SECRET_KEY` | string | — | JWT signing key. Generate via `openssl rand -hex 32`. |
+| `OLLAMA_BASE_URL` | string | `http://127.0.0.1:11434` | Endpoint for local private AI inference. |
+| `OLLAMA_MODEL` | string | `llama3.2` | Model target for Ollama inference sessions. |
+| `GEMINI_MODEL` | string | `gemini-1.5-flash` | Cloud model fallback destination. |
+| `ALLOWED_HOSTS` | string | `127.0.0.1` | Host whitelist constraint for security. |
+| `CORS_ORIGINS` | string | `http://127.0.0.1:3000` | Allowed client endpoints for CORS validations. |
+| `RATE_LIMIT_REQUESTS_PER_MINUTE` | int | `60` | Limit count for API rate limit rules. |
+
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
+
 ## ⚡ Quick Start
 
 ### Option A: Launch with Docker Compose
@@ -202,7 +280,9 @@ npm --prefix frontend run dev
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
-## 📂 Key Modules Directory
+## 📂 Key Files Codebase Tour
+
+Use this table to understand where core engineering concepts are implemented inside the repository:
 
 | Capability | Purpose | Module |
 | :--- | :--- | :--- |
@@ -212,16 +292,6 @@ npm --prefix frontend run dev
 | **RAG Semantic Search** | Cosine similarity scoring and token-budgeted context builder. | [backend/rag.py](backend/rag.py) · [backend/chat_context.py](backend/chat_context.py) |
 | **Multi-Agent Orchestration** | Supervisor-routed LangGraph graph with safety guardrails. | [backend/agent.py](backend/agent.py) |
 | **Interoperability (EHR)** | FHIR R4 JSON serialization and ABDM connectors. | [backend/fhir.py](backend/fhir.py) |
-
-<img src="docs/assets/divider.svg" alt="" width="100%"/>
-
-## ☁ AWS Enterprise Deployment
-
-APEX includes complete Terraform configurations to spin up a production-ready, scalable infrastructure on AWS:
-* **Amazon EKS**: Kubernetes cluster for horizontal backend scaling.
-* **Amazon RDS PostgreSQL**: Managed, pooled relational database.
-* **Amazon ElastiCache Redis**: High-throughput session caching.
-* **Terraform IaC**: Deploy with `cd terraform && terraform init && terraform apply`.
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
@@ -239,34 +309,46 @@ APEX includes complete Terraform configurations to spin up a production-ready, s
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
-## 🔐 Security Posture
+## 🔐 Security Posture Middleware
+
+APEX integrates a 7-layer API middleware stack to ensure enterprise data safety:
 
 | # | Middleware | Purpose |
 |---|-----------|---------|
-| 1 | `RateLimitMiddleware` | 60 req/min per IP |
-| 2 | `TrustedHostMiddleware` | Allowlisted hosts only |
-| 3 | `CORSMiddleware` | Origin-restricted |
-| 4 | `SecurityHeadersMiddleware` | X-Frame-Options, nosniff |
-| 5 | `GZipMiddleware` | Compression (1000+ bytes) |
-| 6 | `ExceptionMiddleware` | No PII in errors |
-| 7 | `LoggingMiddleware` | Request timing |
+| 1 | `RateLimitMiddleware` | 60 requests/minute per IP address endpoint fallback |
+| 2 | `TrustedHostMiddleware` | Enforces host constraints against DNS hijacking |
+| 3 | `CORSMiddleware` | Origin-restricted access validation |
+| 4 | `SecurityHeadersMiddleware` | Enforces X-Frame-Options & content type sniffing safeguards |
+| 5 | `GZipMiddleware` | GZIP compression for all responses exceeding 1000 bytes |
+| 6 | `ExceptionMiddleware` | scrubs SQL details & raw traces from errors to block PII leaks |
+| 7 | `LoggingMiddleware` | Logs request duration SLAs & server telemetry |
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
-## 🚀 CI/CD Pipelines
+## 🚀 CI/CD Pipelines Registry
 
-**8 GitHub Actions workflows:**
+We run 8 structured GitHub Actions workflows for continuous integration and compliance:
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| CI Tests | Push/PR | pytest + coverage |
-| CodeQL | Push/PR + weekly | SAST scanning |
-| Docker | Push/PR | Build to `ghcr.io` |
-| HuggingFace | Push to main | Deploy to HF Spaces |
-| Keep-Alive | Scheduled | Prevent Render cold starts |
-| Labels | Push to main | Sync GitHub labels |
-| Release Draft | Push/PR | Auto release notes |
-| Stale Bot | Scheduled | Close stale issues |
+| **CI Tests** | Push/PR | Runs complete backend pytest and frontend unit verification. |
+| **CodeQL** | Push/PR + weekly | SAST vulnerability scan checks. |
+| **Docker Build** | Push/PR | Builds production image tags to `ghcr.io`. |
+| **HuggingFace Sync** | Push to main | Auto-deploys Space code updates to Hugging Face. |
+| **Keep-Alive** | Scheduled | Ping schedules to prevent Render cold boots. |
+| **Labeler** | Push to main | Synchronizes repository issues tags. |
+| **Release Draft** | Push/PR | Automatic changelog drafts compilation. |
+| **Stale Bot** | Scheduled | Auto-flags idle issues. |
+
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
+
+## ☁ AWS Enterprise Deployment
+
+APEX includes complete Terraform configurations to spin up a production-ready, scalable infrastructure on AWS:
+* **Amazon EKS**: Kubernetes cluster for horizontal backend scaling.
+* **Amazon RDS PostgreSQL**: Managed, pooled relational database.
+* **Amazon ElastiCache Redis**: High-throughput session caching.
+* **Terraform IaC**: Deploy with `cd terraform && terraform init && terraform apply`.
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
@@ -286,26 +368,41 @@ npm --prefix frontend run test
 
 ## ❓ FAQ
 
-**How do I run this without an API key?**
+**Q1: How do I run this without an API key?**  
 Install [Ollama](https://ollama.com), run `ollama pull llama3.2`, set `OLLAMA_BASE_URL=http://127.0.0.1:11434` in `.env`, and leave `GOOGLE_API_KEY` unset. All inference runs locally — free and private.
 
-**Can I use this as a college final-year project?**
+**Q2: Can I use this as a college final-year project?**  
 Yes — it's MIT licensed and designed to be studied. Every module has one clear responsibility and is well-commented.
 
-**How do I deploy to the cloud for free?**
+**Q3: How do I deploy to the cloud for free?**  
 Fork the repo and connect it to [Render](https://render.com). The `render.yaml` handles deployment automatically on the free tier.
 
-**Is this HIPAA compliant?**
+**Q4: Is this HIPAA compliant?**  
 This platform implements HIPAA-oriented controls (bcrypt, JWT, RBAC, audit logging, PII-scrubbed errors, per-user consent). Full HIPAA compliance for production requires additional organizational controls, BAAs, and a formal compliance review.
 
-**How do I add a new disease prediction model?**
+**Q5: How do I add a new disease prediction model?**  
 Add a training script → register in `prediction.py:initialize_models()` → add Pydantic schema → add endpoint → add model card in `model_cards.py` → write unit test.
 
-**How does the chatbot remember my health history?**
+**Q6: How does the chatbot remember my health history?**  
 RAG — your health records are embedded with Gemini `text-embedding-004`, stored in a vector store, retrieved by cosine similarity when you ask a question, and assembled into context before the LLM responds. Your data is scoped to your account only.
 
-**What is FHIR R4 and why does this implement it?**
+**Q7: What is FHIR R4 and why does this implement it?**  
 FHIR R4 is the international standard for exchanging healthcare data. Implementing it means patient records can be exported to or imported from any FHIR-compatible EHR (Epic, Cerner, etc.) without custom integration.
+
+**Q8: How does the model hot-reloader work?**  
+The `/v1/admin/reload_models` route triggers the `ModelService` state singleton to download or reload `.pkl` weights from disk into memory atomically. All current sessions use the new weights immediately without API service disruption.
+
+**Q9: Why are some ML models scoring low specificity (e.g. Kidney/Lung)?**  
+Some datasets (e.g. Lung Cancer / CKD) are heavily imbalanced. In screening applications, we optimize for **100% sensitivity** (no false negatives), leading to lower specificity. We discuss these trade-offs in [`docs/MODEL_AND_DATASET_CARDS.md`](docs/MODEL_AND_DATASET_CARDS.md).
+
+**Q10: What is India's ABDM Digital Health Stack integration?**  
+It provides standard endpoints to link Health IDs (ABHA), handle consent callbacks, and serialize records into encrypted FHIR packages for exchange over India's National Health Stack.
+
+**Q11: How does the turbovec Rust SIMD index work?**  
+`turbovec` is a compiled Rust library that computes cosine similarity between user query embeddings and patient vectors using SIMD instructions. If compilation fails, it automatically falls back to scikit-learn metrics.
+
+**Q12: Can I plug in PostgreSQL instead of SQLite?**  
+Yes. Define the `DATABASE_URL=postgresql://user:password@host:5432/dbname` environment variable. The SQLAlchemy database layer automatically scales, handles connection pools, and configures PostgreSQL constraints at startup.
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
