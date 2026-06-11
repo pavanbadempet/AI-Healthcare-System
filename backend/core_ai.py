@@ -410,7 +410,6 @@ async def _chat_gemini(messages: list[dict], system: str = "") -> str:
         return ""
 
     try:
-        import google.generativeai as genai
         from google.generativeai.types import ContentDict
 
         # Build history for all but the final user message

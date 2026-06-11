@@ -2,18 +2,19 @@
 Real-Time Telemetry WebSocket Endpoint
 
 Streams live hospital operations data to the frontend dashboard.
-In production, this would subscribe to HL7/FHIR ADT feeds, 
+In production, this would subscribe to HL7/FHIR ADT feeds,
 Redis pub/sub channels, or Kafka topics for real clinical data.
 """
+
+import asyncio
+import json
+import logging
+import random
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
-import asyncio
-import json
-import random
-import logging
-from datetime import datetime, timezone
 
 from . import auth, database, models
 
@@ -160,14 +161,14 @@ def get_telemetry_snapshot(
 
 def _generate_telemetry_snapshot() -> dict:
     """Generate a single telemetry data snapshot.
-    
+
     In production, this would query:
     - ADT (Admit/Discharge/Transfer) feed for census
     - Bed management system for unit-level occupancy
     - ED tracking board for boarding counts
     - AI inference cluster for node health
     """
-    
+
     # Department loads with realistic variance
     dept_loads = []
     for dept_name, base_load in [

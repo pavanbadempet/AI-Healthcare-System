@@ -47,7 +47,7 @@ describe('patient care action API adapter', () => {
 
     expect(fetchMock.mock.calls).toEqual([
       [
-        'http://127.0.0.1:8000/hospital/encounters',
+        'http://127.0.0.1:8000/v1/hospital/encounters',
         {
           method: 'POST',
           body: JSON.stringify({
@@ -64,7 +64,7 @@ describe('patient care action API adapter', () => {
         },
       ],
       [
-        'http://127.0.0.1:8000/hospital/admissions',
+        'http://127.0.0.1:8000/v1/hospital/admissions',
         {
           method: 'POST',
           body: JSON.stringify({
@@ -80,7 +80,7 @@ describe('patient care action API adapter', () => {
         },
       ],
       [
-        'http://127.0.0.1:8000/hospital/orders',
+        'http://127.0.0.1:8000/v1/hospital/orders',
         {
           method: 'POST',
           body: JSON.stringify({

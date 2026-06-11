@@ -57,7 +57,7 @@ describe('pharmacy API adapter', () => {
     const result = await getDoctorPatientPrescriptions(42);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://127.0.0.1:8000/pharmacy/doctor/patients/42/prescriptions',
+      'http://127.0.0.1:8000/v1/pharmacy/doctor/patients/42/prescriptions',
       expect.objectContaining({
         headers: {
           'Content-Type': 'application/json',
@@ -74,7 +74,7 @@ describe('pharmacy API adapter', () => {
     const result = await getPatientPrescriptions();
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://127.0.0.1:8000/pharmacy/patient/prescriptions',
+      'http://127.0.0.1:8000/v1/pharmacy/patient/prescriptions',
       expect.objectContaining({
         headers: {
           'Content-Type': 'application/json',

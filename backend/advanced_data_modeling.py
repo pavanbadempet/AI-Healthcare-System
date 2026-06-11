@@ -337,8 +337,8 @@ class SCDManager:
         """Get historical records for specific business key"""
         # This would need to be adapted based on the actual business key column
         return self.spark.sql(f"""
-            SELECT * FROM {table_name} 
-            WHERE patient_id = '{business_key_value}' 
+            SELECT * FROM {table_name}
+            WHERE patient_id = '{business_key_value}'
             ORDER BY effective_date DESC
         """)
 
@@ -571,7 +571,7 @@ class HealthcareDataModeler:
     def apply_schema_evolution_example(self) -> Dict[str, Any]:
         """Example of schema evolution for patient table"""
         # Simulate schema change: adding new column
-        new_schema_changes = [
+        [
             SchemaChange(
                 change_type="ADD_COLUMN",
                 column_name="blood_type",

@@ -23,14 +23,14 @@ logger = logging.getLogger(__name__)
 def get_shap_values(model, input_vector, feature_names):
     """
     Generates SHAP values for a given model and input.
-    Handles VotingClassifier by interacting with the first estimator (XGBoost) as a proxy, 
+    Handles VotingClassifier by interacting with the first estimator (XGBoost) as a proxy,
     since direct ensemble SHAP is complex/slow for real-time.
-    
+
     Args:
         model: The trained model (VotingClassifier or XGBClassifier)
         input_vector: Numpy array of shape (1, n_features)
         feature_names: List of strings
-        
+
     Returns:
         JSON compatible dict with 'base_value', 'shap_values', 'feature_names'
         OR base64 image string of a force plot.

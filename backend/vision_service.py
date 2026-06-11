@@ -17,10 +17,10 @@ logger = logging.getLogger(__name__)
 def analyze_lab_report(image_bytes: bytes) -> Dict[str, Any]:
     """
     Analyzes a medical lab report image using Google Gemini Vision.
-    
+
     Args:
         image_bytes (bytes): Raw image data (JPEG/PNG).
-        
+
     Returns:
         dict: Structured JSON containing 'extracted_data' (metrics) and 'summary'.
     """
