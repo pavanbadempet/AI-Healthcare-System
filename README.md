@@ -821,6 +821,24 @@ FHIR R4 is the international standard for exchanging healthcare data. Implementi
 
 ---
 
+## 🎓 For Students & Learners
+
+This project is built to be an educational resource for medical AI, software engineering, and DevOps. Here is a guided curriculum mapping key educational topics to their implementation in the codebase:
+
+| Learning Topic | Educational Value | Files to Study |
+| :--- | :--- | :--- |
+| **Supervised Machine Learning** | How to train and serialize tabular classification models on public medical data. | [Diabetes XGBoost Training](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/ml/train_diabetes.py) <br> [Heart Ensemble Training](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/ml/train_heart.py) |
+| **Model Explainability (SHAP)** | Calculating and parsing Shapley values for feature attribution in a production API. | [Explainability Module](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/ml/explainability.py) |
+| **Multi-Agent Systems** | Design supervisor-agent architecture using LangGraph state graphs and routers. | [LangGraph Agent Core](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/services/agent.py) |
+| **RAG (Retrieval-Augmented Generation)** | Scoped context extraction, cosine similarity, vector persistence, and citation generation. | [RAG Core](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/services/rag.py) <br> [Context Manager](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/services/chat_context.py) |
+| **Unified AI Provider Interface** | Decoupling provider SDKs from routes using a fallback, retry, and caching layer. | [Core AI Wrapper](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/services/core_ai.py) |
+| **Healthcare Interoperability** | Formatting clinical observations, encounters, and medication requests into standard FHIR resources. | [FHIR Serializers](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/fhir.py) <br> [Terminology Engine](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/terminology.py) |
+| **JWT & RBAC Authorization** | Securing clinical routes based on roles (Patient, Doctor, Admin). | [Auth Middleware](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/api/auth.py) |
+| **Production Middleware Stack** | Distributed tracing, rate-limiting, custom error masking, security headers, and compression. | [Middleware Stack](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/services/middleware.py) |
+| **Infrastructure as Code (IaC)** | Provisioning highly-available VPC, EKS (Kubernetes), ElastiCache, RDS, and S3 resources on AWS. | [Terraform Main Configuration](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/terraform/main.tf) |
+
+---
+
 ## 🤝 Contributing
 
 Contributions are welcome — bug fixes, new ML models, docs, tests, or translations.
