@@ -42,7 +42,7 @@ describe('HospitalSetupPanel', () => {
         location: 'Ground',
       });
     });
-    expect(screen.getByText('Department created successfully.')).toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText('Department created successfully.')).toBeInTheDocument());
     expect(screen.getAllByText('Emergency').length).toBeGreaterThan(0);
   });
 
