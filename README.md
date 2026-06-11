@@ -1,6 +1,6 @@
-# AI Healthcare System — Enterprise-Grade Clinical AI & EHR Interoperability Platform
+# 🏥 AI Healthcare System — Privacy-First Clinical AI & EHR Interoperability Platform
 
-> Reference implementation of a secure, high-performance clinical intelligence platform. Demonstrates standardized machine learning diagnostics, multi-agent RAG orchestration, and HIPAA-oriented healthcare data engineering.
+> A production-ready, HIPAA-oriented clinical intelligence platform combining machine learning diagnostics, a multi-agent RAG chatbot, and full hospital operations.
 
 <div align="center">
 
@@ -17,22 +17,52 @@
 
 <h3>
   <a href="#-quick-start"><strong>Quick Start</strong></a> &middot;
-  <a href="#-core-engineering-guarantees"><strong>System Guarantees</strong></a> &middot;
+  <a href="#-core-pillars"><strong>Features</strong></a> &middot;
+  <a href="#-core-engineering-guarantees"><strong>Guarantees</strong></a> &middot;
   <a href="#-core-technical-architecture"><strong>Architecture</strong></a> &middot;
   <a href="#-model-card-registry"><strong>Model Cards</strong></a> &middot;
   <a href="#-api-contract-reference"><strong>API Contract</strong></a> &middot;
-  <a href="#-verification--coverage-suite"><strong>Testing</strong></a>
+  <a href="#-aws-enterprise-deployment"><strong>AWS Deploy</strong></a>
 </h3>
 
 </div>
 
 ---
 
-## 💡 System Overview
+## ✨ Why Choose AI Healthcare System?
 
-**AI Healthcare System** is an open-source reference implementation of a high-performance clinical platform. It combines machine learning classifiers, a retrieval-augmented generation (RAG) assistant, and hospital workflows into an auditable and secure system.
+Existing healthcare software is either outdated, closed-source, or extremely complex to integrate. **AI Healthcare System** is a modern, open-source alternative built on a unified, high-performance stack (FastAPI + React 19).
 
-The codebase is built to demonstrate **production-level engineering patterns** required in regulated domains: strict schema compliance, EHR interoperability standards (FHIR R4), pluggable data layers, and automated verification gates.
+It is designed to run **fully offline and private** (via Ollama) on standard consumer hardware, ensuring patient data remains secure inside your clinic's network, while remaining fully compatible with international interoperability standards like **FHIR R4**.
+
+The codebase is engineered to demonstrate **production-level engineering patterns** required in regulated domains: strict schema compliance, ABDM consent management, pluggable data layers, and automated verification gates.
+
+---
+
+## ⚡ Core Pillars
+
+<table>
+<tr>
+<td width="33%" valign="top">
+
+### 🩺 5 ML Diagnostics
+Instant screening for **Diabetes, Heart, Liver, Kidney, and Lung health** using calibrated XGBoost models. Every prediction includes gain-based SHAP explainability so clinicians know *why* a risk was flagged.
+
+</td>
+<td width="33%" valign="top">
+
+### 💬 Multi-Agent RAG Chat
+A supervisor-routed LangGraph reasoning graph that retrieves patient records with citation tracking. Safety guardrails gate and review all answers to prevent medical hallucinations.
+
+</td>
+<td width="33%" valign="top">
+
+### 🏥 Hospital Operations
+A complete system to run your facility: OPD/IPD encounters, ward bed allocations, pharmacy inventory, nursing task worklists, billing, and real-time WebSocket capacity telemetry.
+
+</td>
+</tr>
+</table>
 
 ---
 
@@ -46,9 +76,9 @@ The codebase is built to demonstrate **production-level engineering patterns** r
 * **PII Exception Masking**: Outer-most middleware intercepts all unhandled system exceptions, scrubbing raw stack traces and sanitizing SQL errors to prevent database leaks or Protected Health Information (PHI) exposure in API responses.
 * **Audit Logs**: Clinician prediction override logs are recorded as cryptographically traceable, PHI-free `REVIEW_AI_PREDICTION` events in the audit layer.
 
-### 3. EHR Interoperability
-* **FHIR R4 Standardization**: Includes strict JSON serializers for Patients, Encounters, Observations, and MedicationRequests, enabling out-of-the-box data exchange with standard EHR systems.
-* **ABDM consent interface**: Fully implements consent lifecycle handlers and callbacks aligned with the ABDM digital health stack.
+### 3. EHR Interoperability & Consent
+* **FHIR R4 Standardization**: Includes strict JSON serializers for Patients, Encounters, Observations, and MedicationRequests, enabling out-of-the-box data exchange with standard EHR systems (Epic, Cerner).
+* **ABDM Consent Interface**: Fully implements consent lifecycle handlers and callbacks aligned with India's ABDM digital health stack.
 
 ---
 
@@ -56,11 +86,11 @@ The codebase is built to demonstrate **production-level engineering patterns** r
 
 ```mermaid
 graph TB
-    subgraph Client["CLIENT SURFACE"]
-        FE["Vite 8 SPA · Clinical Portal & Telemedicine UI"]
+    subgraph Client["CLIENT SURFACE — React 19 · TypeScript · Tailwind CSS"]
+        FE["Vite 8 SPA · Doctor Portal & Telemedicine UI"]
     end
 
-    subgraph Gateway["API GATEWAY & SECURITY"]
+    subgraph Gateway["API GATEWAY & SECURITY — FastAPI"]
         MW["8-Layer Middleware Stack (Exception Masking · Rate-limiting · Tracing)"]
         ROUTERS["REST API Routers (Auth · Chat · Predict · Ops · Interop)"]
     end
@@ -131,6 +161,12 @@ uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
 npm --prefix frontend run dev
 ```
 
+| Service | Access URL |
+| :--- | :--- |
+| **Doctor Portal** | [http://127.0.0.1:3000](http://127.0.0.1:3000) |
+| **REST API Server** | [http://127.0.0.1:8000](http://127.0.0.1:8000) |
+| **Interactive API Documentation** | [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) |
+
 ---
 
 ## 📡 API Contract Reference
@@ -157,6 +193,16 @@ npm --prefix frontend run dev
 
 ---
 
+## ☁ AWS Enterprise Deployment
+
+APEX includes complete Terraform configurations to spin up a production-ready, scalable infrastructure on AWS:
+* **Amazon EKS**: Kubernetes cluster for horizontal backend scaling.
+* **Amazon RDS PostgreSQL**: Managed, pooled relational database.
+* **Amazon ElastiCache Redis**: High-throughput session caching.
+* **Terraform IaC**: Deploy with `cd terraform && terraform init && terraform apply`.
+
+---
+
 ## 🧪 Verification & Coverage Suite
 
 All tests must pass in CI before merging. We enforce a strict **55% code coverage gate** for pull request approvals.
@@ -174,3 +220,11 @@ npm --prefix frontend run test
 ## 📄 License
 
 MIT License — Copyright © 2026 **Pavan Badempet**, Shiva Prasad Anagondi, Prashanth Cheerala. See [LICENSE](LICENSE) for details.
+
+---
+
+<div align="center">
+
+### **If you find this project useful, give it a ⭐ star!**
+
+</div>
