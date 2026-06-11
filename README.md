@@ -802,7 +802,7 @@ See [`.env.example`](.env.example) for the complete reference.
 Install [Ollama](https://ollama.com), run `ollama pull llama3.2`, set `OLLAMA_BASE_URL=http://127.0.0.1:11434` in `.env`, and leave `GOOGLE_API_KEY` unset. All inference runs locally — free and private.
 
 **Can I use this as a college final-year project?**
-Yes — it's MIT licensed and designed to be studied. See the [For Students & Learners](#-for-students--learners) table for which files cover which concepts.
+Yes — it's MIT licensed and designed to be studied. See the [Key Files Reference](#-key-files-reference) table for which files cover which concepts.
 
 **How do I deploy to the cloud for free?**
 Fork the repo and connect it to [Render](https://render.com). The `render.yaml` handles deployment automatically on the free tier.
@@ -821,21 +821,20 @@ FHIR R4 is the international standard for exchanging healthcare data. Implementi
 
 ---
 
-## 🎓 For Students & Learners
+## 📂 Key Files Reference
 
-This project is built to be an educational resource for medical AI, software engineering, and DevOps. Here is a guided curriculum mapping key educational topics to their implementation in the codebase:
+A quick map from system capability to the module that owns it:
 
-| Learning Topic | Educational Value | Files to Study |
+| Capability | What it does | Module |
 | :--- | :--- | :--- |
-| **Supervised Machine Learning** | How to train and serialize tabular classification models on public medical data. | [Diabetes XGBoost Training](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/ml/train_diabetes.py) <br> [Heart Ensemble Training](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/ml/train_heart.py) |
-| **Model Explainability (SHAP)** | Calculating and parsing Shapley values for feature attribution in a production API. | [Explainability Module](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/ml/explainability.py) |
-| **Multi-Agent Systems** | Design supervisor-agent architecture using LangGraph state graphs and routers. | [LangGraph Agent Core](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/services/agent.py) |
-| **RAG (Retrieval-Augmented Generation)** | Scoped context extraction, cosine similarity, vector persistence, and citation generation. | [RAG Core](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/services/rag.py) <br> [Context Manager](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/services/chat_context.py) |
-| **Unified AI Provider Interface** | Decoupling provider SDKs from routes using a fallback, retry, and caching layer. | [Core AI Wrapper](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/services/core_ai.py) |
-| **Healthcare Interoperability** | Formatting clinical observations, encounters, and medication requests into standard FHIR resources. | [FHIR Serializers](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/fhir.py) <br> [Terminology Engine](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/terminology.py) |
-| **JWT & RBAC Authorization** | Securing clinical routes based on roles (Patient, Doctor, Admin). | [Auth Middleware](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/api/auth.py) |
-| **Production Middleware Stack** | Distributed tracing, rate-limiting, custom error masking, security headers, and compression. | [Middleware Stack](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/services/middleware.py) |
-| **Infrastructure as Code (IaC)** | Provisioning highly-available VPC, EKS (Kubernetes), ElastiCache, RDS, and S3 resources on AWS. | [Terraform Main Configuration](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/terraform/main.tf) |
+| **ML Disease Prediction** | Trains and serves 5 tabular classifiers with SHAP feature attribution. | [backend/ml/train_diabetes.py](backend/ml/train_diabetes.py) · [backend/ml/explainability.py](backend/ml/explainability.py) |
+| **Multi-Agent Orchestration** | Supervisor-routed LangGraph graph with researcher, analyst, guardrail, and generate nodes. | [backend/services/agent.py](backend/services/agent.py) |
+| **RAG Pipeline** | Patient-scoped semantic retrieval, 3,000-token context assembly, citations. | [backend/services/rag.py](backend/services/rag.py) · [backend/services/chat_context.py](backend/services/chat_context.py) |
+| **AI Provider Gateway** | Single-gateway fallback chain: Ollama → Gemini → OpenAI/Anthropic with retry and TTL cache. | [backend/services/core_ai.py](backend/services/core_ai.py) |
+| **FHIR R4 & Interoperability** | Patient, Encounter, Observation, and MedicationRequest serializers; ABDM and DICOM connectors. | [backend/fhir.py](backend/fhir.py) · [backend/terminology.py](backend/terminology.py) |
+| **Auth & RBAC** | JWT HS256, bcrypt, role enforcement (patient / doctor / admin) across all routes. | [backend/api/auth.py](backend/api/auth.py) |
+| **8-Layer Middleware** | Request tracing, rate limiting, PII-safe exception masking, security headers, compression. | [backend/services/middleware.py](backend/services/middleware.py) |
+| **AWS Infrastructure (IaC)** | VPC, EKS cluster, RDS, ElastiCache, S3, EFS, ALB, Route53 via Terraform. | [terraform/main.tf](terraform/main.tf) |
 
 ---
 
