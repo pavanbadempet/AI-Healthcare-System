@@ -179,11 +179,11 @@ def _print_summary(results: dict[str, Any]) -> None:
     if results["sensitivity"] is not None:
         print(f"  Sensitivity     : {results['sensitivity']:.4f}")
         print(f"  Specificity     : {results['specificity']:.4f}")
-    print(f"\n  Confusion Matrix:")
+    print("\n  Confusion Matrix:")
     for row in results["confusion_matrix"]:
         print(f"    {row}")
     if results["feature_importances"]:
-        print(f"\n  Top-5 Features:")
+        print("\n  Top-5 Features:")
         sorted_feats = sorted(
             results["feature_importances"].items(), key=lambda x: x[1], reverse=True
         )
