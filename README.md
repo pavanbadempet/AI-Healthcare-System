@@ -84,7 +84,7 @@ Pytest + coverage, CodeQL SAST, Docker GHCR builds, HuggingFace sync, Dependabot
 </tr>
 </table>
 
-> **Built for portfolios, built for production.** This is not a tutorial project -- it is a full-stack healthcare platform demonstrating ML engineering, LLM orchestration, RAG architecture, and DevOps maturity in a single cohesive codebase.
+> **Built for enterprise, built for production.** This is a production-grade clinical intelligence platform demonstrating advanced ML engineering, LLM orchestration, RAG architecture, and DevOps maturity in a single cohesive codebase.
 
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
@@ -371,37 +371,34 @@ npm --prefix frontend run test
 **Q1: How do I run this without an API key?**  
 Install [Ollama](https://ollama.com), run `ollama pull llama3.2`, set `OLLAMA_BASE_URL=http://127.0.0.1:11434` in `.env`, and leave `GOOGLE_API_KEY` unset. All inference runs locally — free and private.
 
-**Q2: Can I use this as a college final-year project?**  
-Yes — it's MIT licensed and designed to be studied. Every module has one clear responsibility and is well-commented.
+**Q2: How do I deploy this platform to the cloud?**  
+The platform is fully containerized and can be deployed to Render using the included `render.yaml` configuration. For production enterprise environments, you can deploy using the provided Kubernetes manifests (`k8s/`) or the AWS EKS/RDS Terraform configuration (`terraform/`).
 
-**Q3: How do I deploy to the cloud for free?**  
-Fork the repo and connect it to [Render](https://render.com). The `render.yaml` handles deployment automatically on the free tier.
-
-**Q4: Is this HIPAA compliant?**  
+**Q3: Is this HIPAA compliant?**  
 This platform implements HIPAA-oriented controls (bcrypt, JWT, RBAC, audit logging, PII-scrubbed errors, per-user consent). Full HIPAA compliance for production requires additional organizational controls, BAAs, and a formal compliance review.
 
-**Q5: How do I add a new disease prediction model?**  
+**Q4: How do I add a new disease prediction model?**  
 Add a training script → register in `prediction.py:initialize_models()` → add Pydantic schema → add endpoint → add model card in `model_cards.py` → write unit test.
 
-**Q6: How does the chatbot remember my health history?**  
+**Q5: How does the chatbot remember my health history?**  
 RAG — your health records are embedded with Gemini `text-embedding-004`, stored in a vector store, retrieved by cosine similarity when you ask a question, and assembled into context before the LLM responds. Your data is scoped to your account only.
 
-**Q7: What is FHIR R4 and why does this implement it?**  
+**Q6: What is FHIR R4 and why does this implement it?**  
 FHIR R4 is the international standard for exchanging healthcare data. Implementing it means patient records can be exported to or imported from any FHIR-compatible EHR (Epic, Cerner, etc.) without custom integration.
 
-**Q8: How does the model hot-reloader work?**  
+**Q7: How does the model hot-reloader work?**  
 The `/v1/admin/reload_models` route triggers the `ModelService` state singleton to download or reload `.pkl` weights from disk into memory atomically. All current sessions use the new weights immediately without API service disruption.
 
-**Q9: Why are some ML models scoring low specificity (e.g. Kidney/Lung)?**  
+**Q8: Why are some ML models scoring low specificity (e.g. Kidney/Lung)?**  
 Some datasets (e.g. Lung Cancer / CKD) are heavily imbalanced. In screening applications, we optimize for **100% sensitivity** (no false negatives), leading to lower specificity. We discuss these trade-offs in [`docs/MODEL_AND_DATASET_CARDS.md`](docs/MODEL_AND_DATASET_CARDS.md).
 
-**Q10: What is India's ABDM Digital Health Stack integration?**  
+**Q9: What is India's ABDM Digital Health Stack integration?**  
 It provides standard endpoints to link Health IDs (ABHA), handle consent callbacks, and serialize records into encrypted FHIR packages for exchange over India's National Health Stack.
 
-**Q11: How does the turbovec Rust SIMD index work?**  
+**Q10: How does the turbovec Rust SIMD index work?**  
 `turbovec` is a compiled Rust library that computes cosine similarity between user query embeddings and patient vectors using SIMD instructions. If compilation fails, it automatically falls back to scikit-learn metrics.
 
-**Q12: Can I plug in PostgreSQL instead of SQLite?**  
+**Q11: Can I plug in PostgreSQL instead of SQLite?**  
 Yes. Define the `DATABASE_URL=postgresql://user:password@host:5432/dbname` environment variable. The SQLAlchemy database layer automatically scales, handles connection pools, and configures PostgreSQL constraints at startup.
 
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
