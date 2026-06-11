@@ -54,6 +54,30 @@ ML_MODEL_FILES = [
     "backend/lungs_scaler.pkl",
 ]
 
+def plugin_info() -> dict[str, object]:
+    """Check Antigravity plugin status to help manage token usage."""
+    plugins_dir = pathlib.Path.home() / ".gemini" / "config" / "plugins"
+    if not plugins_dir.exists():
+        return {"exists": False, "plugins": []}
+    
+    plugins = []
+    heavy_enabled = []
+    for item in plugins_dir.iterdir():
+        if item.is_dir():
+            name = item.name
+            if name.startswith("_") and name.endswith("_DISABLED"):
+                plugins.append({"name": name[1:-9], "enabled": False})
+            else:
+                plugins.append({"name": name, "enabled": True})
+                if name.lower() in ("science", "android-cli-plugin"):
+                    heavy_enabled.append(name)
+                    
+    return {
+        "exists": True,
+        "plugins": plugins,
+        "heavy_enabled_warnings": heavy_enabled
+    }
+
 
 def _run(cmd: list[str], cwd: pathlib.Path | None = None) -> str:
     try:
@@ -168,6 +192,7 @@ def build_snapshot() -> dict[str, object]:
         "services": service_info(),
         "ml_models": ml_model_info(),
         "context_files": context_files(),
+        "plugins": plugin_info(),
         "guidance_order": [
             "Read AGENTS.md first.",
             "Then read the nearest scoped AGENTS.md.",
@@ -231,6 +256,22 @@ def _print_text(snapshot: dict[str, object]) -> None:
         status = "[OK]" if item["exists"] else "[!!] MISSING"
         print(f"  {status} {item['path']}")
     print()
+
+    # Plugins
+    plugins = snapshot.get("plugins", {})
+    if plugins.get("exists"):
+        print("Antigravity Plugins & Token Impact:")
+        for p in plugins.get("plugins", []):
+            status = "[OK] ENABLED " if p["enabled"] else "[--] DISABLED"
+            print(f"  {status} {p['name']}")
+        warnings = plugins.get("heavy_enabled_warnings", [])
+        if warnings:
+            print()
+            print("  ⚠️  WARNING: Heavy plugins are active!")
+            print(f"      {', '.join(warnings)} are loaded and costing significant tokens per turn.")
+            print("      Run: python scripts/toggle_plugins.py --disable <name>")
+        print()
+
 
     print("=" * 60)
     print("  Read AGENTS.md first, then the nearest scoped AGENTS.md")

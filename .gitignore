@@ -104,3 +104,9 @@ data/gold/
 # Keep only the Gold Analyst Report JSON file tracked in git for deployment
 !data/gold/analyst_report.json
 
+# Spark Telemetry stream & checkpoint directories
+data/telemetry_stream/
+data/checkpoints/
+.hadoop/
+
+

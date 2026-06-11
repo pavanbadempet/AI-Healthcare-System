@@ -8,6 +8,7 @@
 1. Run `python scripts/ai_context.py`.
 2. Read this file, then the nearest scoped `AGENTS.md` for any files you will touch.
 3. Read the matching `CONTEXT.md` if you need deeper module detail.
+4. Read `active_handoff.md` at the root of the workspace if it exists, to capture the exact context of where the last session left off.
 
 ## Instruction Architecture
 
@@ -70,10 +71,10 @@ python scripts/sync_agent_adapters.py
 python scripts/sync_agent_adapters.py --check
 ```
 
-## Documentation Sync Rules
+## Session Efficiency
 
-After codebase changes, update:
+- **Minimize file reads**: Request specific line ranges (e.g. `StartLine` and `EndLine` in `view_file`) instead of reading whole large files.
+- **Start clean sessions**: For unrelated tasks, start a new session or compact the history.
+- **Short outputs**: Keep explanations concise and focused. Avoid verbose code repeats.
+- **Avoid deep recursive scans**: Use targeted file listing on specific directories rather than running recursive file listings or global searches.
 
-- [docs/AI_AGENT_ARCHITECTURE.md](docs/AI_AGENT_ARCHITECTURE.md) if AI modules were added, removed, or restructured
-- The relevant scoped `AGENTS.md` if local instructions changed
-- `backend/CONTEXT.md` if backend module responsibilities changed
