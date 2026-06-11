@@ -35,13 +35,4 @@ services:
       - key: CORS_ORIGINS
         value: https://ai-healthcare-system.streamlit.app,http://127.0.0.1:3000
       - key: DATABASE_URL
-        fromDatabase:
-          name: aio-health-db
-          property: connectionString
-
-databases:
-  - name: aio-health-db
-    databaseName: aio_health
-    user: aio_health
-    region: singapore
-    plan: free
+        value: sqlite:///healthcare.db
