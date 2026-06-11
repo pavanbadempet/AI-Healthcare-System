@@ -28,17 +28,14 @@ python-dotenv
 pandas>=2.2.2
 numpy>=2.4.6
 scikit-learn>=1.4.2
+# Optional — ANN vector backend; falls back to SimpleVectorStore when absent
+turbovec>=0.5.0
 joblib>=1.5.3
 torch>=2.12.0
 xgboost>=2.0.3
 lightgbm>=4.6.0
 shap>=0.51.0
 sentence-transformers
-
-# --- Optional ANN Backend ---
-# turbovec: Rust-based SIMD-accelerated vector index (TurboQuant).
-# Optional — falls back to SimpleVectorStore (scikit-learn cosine) when absent.
-turbovec>=0.5.0
 
 # --- Visualization ---
 matplotlib>=3.10.9

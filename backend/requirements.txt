@@ -40,8 +40,7 @@ langgraph>=1.2.4
 # This saves ~200MB of memory!
 
 # --- Optional ANN Backend ---
-# turbovec: Rust-based SIMD-accelerated vector index (TurboQuant).
-# Optional — falls back to SimpleVectorStore (scikit-learn cosine) when absent.
+# Optional — ANN vector backend; falls back to SimpleVectorStore when absent
 turbovec>=0.5.0
 
 # --- Visualization ---

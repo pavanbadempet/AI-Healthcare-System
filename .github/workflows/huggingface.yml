@@ -58,11 +58,18 @@ jobs:
           find . -name "*.db" -type f -delete
           find . -name "*.sqlite3" -type f -delete
           find . -name "__pycache__" -type d -exec rm -rf {} +
-          # Remove binary files rejected by HF Xet policy (except production models in backend/)
-          find . -name "*.pkl" -type f ! -path "./backend/*" -delete
+          # Remove binary files rejected by Hugging Face pre-receive hooks.
+          # Dockerfile.hf regenerates placeholder model files during the Space build.
+          find . -name "*.pkl" -type f -delete
           find . -name "*.png" -type f -delete
           find . -name "*.joblib" -type f -delete
           rm -f pytest_output.txt
+
+          if find . \( -name "*.pkl" -o -name "*.joblib" -o -name "*.parquet" -o -name "*.db" -o -name "*.sqlite3" \) -type f | grep -q .; then
+            echo "Refusing to push binary/data artifacts to Hugging Face:"
+            find . \( -name "*.pkl" -o -name "*.joblib" -o -name "*.parquet" -o -name "*.db" -o -name "*.sqlite3" \) -type f -print
+            exit 1
+          fi
           
           git add .
           git commit -m "Deploy to Hugging Face Space"

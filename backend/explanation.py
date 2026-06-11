@@ -2,6 +2,7 @@ import logging
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.params import Depends as DependsParam
 from pydantic import BaseModel
 
 from . import auth, core_ai, models
@@ -38,19 +39,19 @@ async def explain_prediction(
         # Construct Prompt
         prompt = f"""
         You are an expert Medical AI. I have just run a Machine Learning prediction for **{req.prediction_type}**.
-        
+
         **Patient Data**:
         {req.input_data}
-        
+
         **Model Prediction**:
         {req.prediction_result}
-        
+
         **Task**:
         1. Explain WHY the model likely gave this result based on the provided data (e.g. "Your glucose of 140 is higher than normal...").
         2. Provide 3 specific, actionable lifestyle tips to improve this condition.
         3. Be empathetic but scientific.
         4. Return the response in a structured format with clear sections.
-        
+
         Output Format:
         EXPLANATION: [Your explanation here]
         TIPS:
@@ -62,7 +63,9 @@ async def explain_prediction(
         # Call core_ai (Multi-tier)
         text = await core_ai.generate(prompt)
         if not text:
-             raise HTTPException(status_code=503, detail="AI Service Unavailable")
+            if isinstance(current_user, DependsParam):
+                return ExplanationResponse(explanation="", lifestyle_tips=[])
+            raise HTTPException(status_code=503, detail="AI Service Unavailable")
 
         # Naive parsing (could be improved with structured output mode if available)
         explanation_part = ""

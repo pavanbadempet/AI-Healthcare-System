@@ -35,15 +35,15 @@ describe('operations cockpit API adapter', () => {
 
     expect(fetchMock).toHaveBeenCalledTimes(9);
     expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
-      'http://127.0.0.1:8000/hospital/admin/operations',
-      'http://127.0.0.1:8000/monitoring/admin/patterns',
-      'http://127.0.0.1:8000/diagnostics/admin/metrics',
-      'http://127.0.0.1:8000/pharmacy/admin/metrics',
-      'http://127.0.0.1:8000/billing/admin/metrics',
-      'http://127.0.0.1:8000/discharge/admin/metrics',
-      'http://127.0.0.1:8000/nursing/admin/metrics',
-      'http://127.0.0.1:8000/events/admin/metrics',
-      'http://127.0.0.1:8000/interop/admin/metrics',
+      'http://127.0.0.1:8000/v1/hospital/admin/operations',
+      'http://127.0.0.1:8000/v1/monitoring/admin/patterns',
+      'http://127.0.0.1:8000/v1/diagnostics/admin/metrics',
+      'http://127.0.0.1:8000/v1/pharmacy/admin/metrics',
+      'http://127.0.0.1:8000/v1/billing/admin/metrics',
+      'http://127.0.0.1:8000/v1/discharge/admin/metrics',
+      'http://127.0.0.1:8000/v1/nursing/admin/metrics',
+      'http://127.0.0.1:8000/v1/events/admin/metrics',
+      'http://127.0.0.1:8000/v1/interop/admin/metrics',
     ]);
     expect(fetchMock.mock.calls[0][1]).toMatchObject({
       headers: {

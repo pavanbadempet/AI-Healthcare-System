@@ -17,7 +17,7 @@ Usage:
 import logging
 import os
 import threading
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -160,8 +160,8 @@ class ModelService:
                         obj = joblib.load(f)
                         logger.info("Successfully loaded model: %s", f_name)
                         return obj
-                except Exception as exc:
-                    logger.error("Failed to load model file %s: %s", f_name, exc)
+                except Exception:
+                    logger.error("Failed to load model file %s", f_name)
 
         logger.warning("Could not find any of: %s in %s", filenames, self._model_dir)
         return None
@@ -219,10 +219,10 @@ class ModelService:
                     entry.status = ModelStatus.ERROR
                     entry.error_message = "Scaler missing"
                 entry.loaded_at = _time.monotonic()
-            except Exception as exc:
+            except Exception:
                 entry.status = ModelStatus.ERROR
-                entry.error_message = str(exc)
-                logger.error("Failed to load %s model: %s", key, exc)
+                entry.error_message = "Model load failed"
+                logger.error("Failed to load %s model", key)
 
     def reload(self) -> Dict[str, Any]:
         """Force reload all models from disk. Returns status dict."""

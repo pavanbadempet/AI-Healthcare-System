@@ -10,6 +10,12 @@ continues to work unchanged.
 # noqa: F401 — intentional re-exports for backward compatibility
 
 # Auth domain
+# Appointments domain
+from .appointments import (  # noqa: F401
+    AppointmentCreate,
+    AppointmentResponse,
+    DoctorResponse,
+)
 from .auth import (  # noqa: F401
     Token,
     UserCreate,
@@ -18,32 +24,16 @@ from .auth import (  # noqa: F401
     UserResponse,
 )
 
-# Records domain
-from .records import (  # noqa: F401
-    AuditLogResponse,
-    ChatLogResponse,
-    HealthRecordResponse,
-)
-
-# Appointments domain
-from .appointments import (  # noqa: F401
-    AppointmentCreate,
-    AppointmentResponse,
-    DoctorResponse,
-)
-
-# Hospital domain
-from .hospital import (  # noqa: F401
-    AdmissionCreate,
-    AdmissionResponse,
-    BedCreate,
-    BedResponse,
-    DepartmentCreate,
-    DepartmentResponse,
-    EncounterCreate,
-    EncounterResponse,
-    FacilityCreate,
-    FacilityResponse,
+# Billing domain
+from .billing import (  # noqa: F401
+    BillableServiceCreate,
+    BillableServiceResponse,
+    BillingPaymentCreate,
+    BillingPaymentResponse,
+    InvoiceCreate,
+    InvoiceLineItemCreate,
+    InvoiceLineItemResponse,
+    InvoiceResponse,
 )
 
 # Clinical domain
@@ -61,42 +51,24 @@ from .clinical import (  # noqa: F401
     VitalSubmissionResponse,
 )
 
-# Pharmacy domain
-from .pharmacy import (  # noqa: F401
-    DispenseItemCreate,
-    DispensePrescriptionCreate,
-    DispenseRecordResponse,
-    MedicationInventoryCreate,
-    MedicationInventoryResponse,
-    PrescriptionCreate,
-    PrescriptionItemCreate,
-    PrescriptionItemResponse,
-    PrescriptionResponse,
-)
-
-# Billing domain
-from .billing import (  # noqa: F401
-    BillableServiceCreate,
-    BillableServiceResponse,
-    BillingPaymentCreate,
-    BillingPaymentResponse,
-    InvoiceCreate,
-    InvoiceLineItemCreate,
-    InvoiceLineItemResponse,
-    InvoiceResponse,
-)
-
 # Discharge domain
 from .discharge import (  # noqa: F401
     DischargeSummaryCreate,
     DischargeSummaryResponse,
 )
 
-# Nursing domain
-from .nursing import (  # noqa: F401
-    NursingTaskComplete,
-    NursingTaskCreate,
-    NursingTaskResponse,
+# Hospital domain
+from .hospital import (  # noqa: F401
+    AdmissionCreate,
+    AdmissionResponse,
+    BedCreate,
+    BedResponse,
+    DepartmentCreate,
+    DepartmentResponse,
+    EncounterCreate,
+    EncounterResponse,
+    FacilityCreate,
+    FacilityResponse,
 )
 
 # Interoperability domain
@@ -111,6 +83,26 @@ from .interoperability import (  # noqa: F401
     InteroperabilityExportResponse,
 )
 
+# Nursing domain
+from .nursing import (  # noqa: F401
+    NursingTaskComplete,
+    NursingTaskCreate,
+    NursingTaskResponse,
+)
+
+# Pharmacy domain
+from .pharmacy import (  # noqa: F401
+    DispenseItemCreate,
+    DispensePrescriptionCreate,
+    DispenseRecordResponse,
+    MedicationInventoryCreate,
+    MedicationInventoryResponse,
+    PrescriptionCreate,
+    PrescriptionItemCreate,
+    PrescriptionItemResponse,
+    PrescriptionResponse,
+)
+
 # Prediction domain
 from .prediction import (  # noqa: F401
     DiabetesInput,
@@ -119,4 +111,11 @@ from .prediction import (  # noqa: F401
     LiverInput,
     LungInput,
     PredictionReviewCreate,
+)
+
+# Records domain
+from .records import (  # noqa: F401
+    AuditLogResponse,
+    ChatLogResponse,
+    HealthRecordResponse,
 )

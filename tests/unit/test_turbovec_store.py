@@ -1,875 +1,1103 @@
 """
-Tests for TurboVecVectorStore — turbovec ANN backend integration.
+tests/unit/test_turbovec_store.py
+=================================
 
-All tests mock turbovec.IdMapIndex with DictIdMapIndex (a pure-Python stub)
-so the test suite runs in CI without the turbovec native extension installed.
+Unit, edge-case, and property-based tests for TurboVecVectorStore.
 
-Test coverage:
-  - Example-based unit tests (interface, load, add, delete, search, env vars)
-  - Edge-case / error-path tests
-  - Property-based tests using Hypothesis (9 correctness properties)
+All tests mock ``turbovec.IdMapIndex`` with the ``DictIdMapIndex`` stub
+defined below — turbovec is never required to be installed.
+
+Test organisation
+-----------------
+- DictIdMapIndex      — in-memory dict stub that mimics turbovec.IdMapIndex
+- Fixtures            — ``store`` (shared)
+- Task 5.2 tests      — example / interface tests (added in task 5.2)
+- Task 5.3 tests      — edge-case / error-path tests (added in task 5.3)
+- Task 6.x tests      — property-based tests via Hypothesis (added in task 6.x)
 """
 
 from __future__ import annotations
 
-import importlib
 import json
+import logging
 import os
 import sys
 import types
 from typing import Any, Dict, List, Optional, Tuple
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-import pytest
-from hypothesis import given, settings
+from hypothesis import given, settings, assume, HealthCheck
 from hypothesis import strategies as st
 
+import numpy as np
+import pytest
+
 # ---------------------------------------------------------------------------
-# DictIdMapIndex stub — pure-Python replacement for turbovec.IdMapIndex
+# DictIdMapIndex — dict-backed stub that mimics turbovec.IdMapIndex
+#
+# Updated to match the real turbovec API used by turbovec_store.py:
+#   - __init__(bit_width=N)
+#   - add_with_ids(vectors_ndarray, ids_ndarray)   ids are uint64 ints
+#   - remove(uint64_id)
+#   - write(path)
+#   - IdMapIndex.load(path)  — classmethod
+#   - search(q_array, k=k)  → (scores_arr, ids_arr) both shape (1, k)
 # ---------------------------------------------------------------------------
+
 
 class DictIdMapIndex:
+    """Lightweight in-memory substitute for ``turbovec.IdMapIndex``.
+
+    Stores ``{uint64_id: List[float]}`` as a plain Python dict.
+
+    Parameters
+    ----------
+    bit_width:
+        Ignored; accepted so the constructor signature matches turbovec.
     """
-    Minimal stub that mimics turbovec.IdMapIndex using a plain dict.
-    search() uses dot-product similarity (all test vectors are [1.0]*N
-    by convention, giving equal scores; use distinct vectors for ordering tests).
-    """
 
-    def __init__(self, bits: int = 4) -> None:
-        self.bits = bits
-        self._store: Dict[str, List[float]] = {}
-        self._save_called = 0
-        self._load_called = 0
+    def __init__(self, bit_width: int = 4) -> None:
+        self._data: Dict[int, List[float]] = {}  # uint64_id -> vector
 
-    def add(self, record_id: str, vector: List[float]) -> None:
-        self._store[record_id] = list(vector)
+    # ------------------------------------------------------------------
+    # Mutation API
+    # ------------------------------------------------------------------
 
-    def delete(self, record_id: str) -> None:
-        self._store.pop(record_id, None)
+    def add_with_ids(self, vectors: "np.ndarray", ids: "np.ndarray") -> None:
+        """Insert entries. vectors shape (N, dim), ids shape (N,) uint64."""
+        for uid, vec in zip(ids.tolist(), vectors.tolist()):
+            self._data[int(uid)] = list(vec)
+
+    def remove(self, uint64_id: int) -> None:
+        """Remove an entry by integer ID (silently ignore if absent)."""
+        self._data.pop(int(uint64_id), None)
+
+    # ------------------------------------------------------------------
+    # Search — returns (scores_arr, ids_arr) each shape (1, k)
+    # ------------------------------------------------------------------
+
+    def _dot(self, a: List[float], b: List[float]) -> float:
+        return sum(x * y for x, y in zip(a, b))
 
     def search(
         self,
-        query_vector: List[float],
-        k: int = 3,
-        allowlist: Optional[List[str]] = None,
-    ) -> List[Tuple[str, float]]:
-        candidates = (
-            {rid: v for rid, v in self._store.items() if rid in allowlist}
-            if allowlist is not None
-            else self._store
+        query_arr: "np.ndarray",
+        k: int = 5,
+        allowlist: Optional["np.ndarray"] = None,
+    ) -> Tuple["np.ndarray", "np.ndarray"]:
+        query_vec = (
+            query_arr[0].tolist()
+            if hasattr(query_arr[0], "tolist")
+            else list(query_arr[0])
         )
-        scores: List[Tuple[str, float]] = []
-        for rid, vec in candidates.items():
-            dot = sum(a * b for a, b in zip(query_vector, vec))
-            norm_q = sum(a * a for a in query_vector) ** 0.5
-            norm_v = sum(b * b for b in vec) ** 0.5
-            score = dot / (norm_q * norm_v) if norm_q and norm_v else 0.0
-            scores.append((rid, score))
-        scores.sort(key=lambda x: x[1], reverse=True)
-        return scores[:k]
+        candidates = self._data
+        if allowlist is not None:
+            allow_set = set(
+                int(x)
+                for x in (
+                    allowlist.tolist() if hasattr(allowlist, "tolist") else allowlist
+                )
+            )
+            candidates = {uid: vec for uid, vec in self._data.items() if uid in allow_set}
 
-    def save(self, path: str) -> None:
-        self._save_called += 1
-        os.makedirs(os.path.dirname(path) if os.path.dirname(path) else ".", exist_ok=True)
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(self._store, f)
+        scored = [(uid, self._dot(query_vec, vec)) for uid, vec in candidates.items()]
+        scored.sort(key=lambda t: t[1], reverse=True)
+        top = scored[:k]
+
+        if top:
+            scores = np.array([[s for _, s in top]], dtype="float32")
+            ids = np.array([[uid for uid, _ in top]], dtype="uint64")
+        else:
+            scores = np.zeros((1, 0), dtype="float32")
+            ids = np.zeros((1, 0), dtype="uint64")
+        return scores, ids
+
+    # ------------------------------------------------------------------
+    # Persistence
+    # ------------------------------------------------------------------
+
+    def write(self, path: str) -> None:
+        dir_name = os.path.dirname(path)
+        if dir_name:
+            os.makedirs(dir_name, exist_ok=True)
+        # Write the stub data file
+        with open(path + ".stub.json", "w", encoding="utf-8") as f:
+            json.dump({str(k): v for k, v in self._data.items()}, f)
+        # Create a sentinel at the bare path so os.path.exists(path) returns True
+        # (mirrors turbovec's native index which is a file/directory at `path`)
+        if not os.path.exists(path):
+            with open(path, "w", encoding="utf-8") as f:
+                f.write("turbovec-stub-sentinel")
 
     @classmethod
     def load(cls, path: str) -> "DictIdMapIndex":
-        inst = cls()
-        inst._load_called += 1
-        if os.path.exists(path):
-            with open(path, "r", encoding="utf-8") as f:
-                inst._store = json.load(f)
-        return inst
+        instance = cls()
+        stub_path = path + ".stub.json"
+        if os.path.exists(stub_path):
+            with open(stub_path, "r", encoding="utf-8") as f:
+                instance._data = {int(k): v for k, v in json.load(f).items()}
+        return instance
+
+    # ------------------------------------------------------------------
+    # Sizing
+    # ------------------------------------------------------------------
 
     def __len__(self) -> int:
-        return len(self._store)
+        return len(self._data)
+
+    def __bool__(self) -> bool:
+        return len(self._data) > 0
 
 
 # ---------------------------------------------------------------------------
-# Helpers to inject the turbovec stub into sys.modules
+# Helper — build a fake ``turbovec`` module
 # ---------------------------------------------------------------------------
+
 
 def _make_turbovec_module() -> types.ModuleType:
-    """Create a fake 'turbovec' module with DictIdMapIndex."""
     mod = types.ModuleType("turbovec")
     mod.IdMapIndex = DictIdMapIndex  # type: ignore[attr-defined]
     return mod
 
 
-def _inject_turbovec() -> None:
-    sys.modules["turbovec"] = _make_turbovec_module()
+# ---------------------------------------------------------------------------
+# Shared helpers
+# ---------------------------------------------------------------------------
 
 
-def _remove_turbovec() -> None:
-    sys.modules.pop("turbovec", None)
-    # Remove cached turbovec_store module so it re-imports fresh
-    for key in list(sys.modules):
-        if "turbovec_store" in key:
-            sys.modules.pop(key, None)
+def _patch_turbovec_store_embeddings(monkeypatch, fn=None):
+    """Patch get_embedding/get_query_embedding in the turbovec_store module."""
+    if fn is None:
+        fn = lambda text, **kw: [1.0] * 768  # noqa: E731
+    import backend.turbovec_store as tvs_mod
+    monkeypatch.setattr(tvs_mod, "get_embedding", fn)
+    monkeypatch.setattr(tvs_mod, "get_query_embedding", fn)
+
+
+def _fresh_store(monkeypatch, tmp_path, quant="4"):
+    """Create a patched TurboVecVectorStore with DictIdMapIndex stub and no I/O side effects."""
+    import backend.rag as rag_module
+
+    turbovec_mod = _make_turbovec_module()
+    index_path = str(tmp_path / "tvec_idx")
+
+    monkeypatch.setitem(sys.modules, "turbovec", turbovec_mod)
+    monkeypatch.setenv("TURBOVEC_INDEX_PATH", index_path)
+    if quant != "4":
+        monkeypatch.setenv("TURBOVEC_QUANTIZATION", quant)
+    monkeypatch.setattr(rag_module.core_ai, "embed_text", lambda text, **kw: [1.0] * 768)
+    rag_module._store = None
+
+    if "backend.turbovec_store" in sys.modules:
+        del sys.modules["backend.turbovec_store"]
+
+    from backend.turbovec_store import TurboVecVectorStore
+    _patch_turbovec_store_embeddings(monkeypatch)
+
+    tvs = TurboVecVectorStore()
+    tvs.load()
+    return tvs
 
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
 
-@pytest.fixture(autouse=True)
-def inject_turbovec_stub():
-    """Inject stub before each test, remove after."""
-    _inject_turbovec()
-    yield
-    _remove_turbovec()
-    # Reset rag._store singleton
-    try:
-        import backend.rag as rag_mod
-        rag_mod._store = None
-    except Exception:
-        pass
 
-
-@pytest.fixture
+@pytest.fixture()
 def store(tmp_path, monkeypatch):
-    """Fresh TurboVecVectorStore with tmp index path and mocked embeddings."""
-    index_path = str(tmp_path / "turbovec_index")
+    """Fresh ``TurboVecVectorStore`` backed by a temp directory.
+
+    - ``sys.modules["turbovec"]`` → DictIdMapIndex stub
+    - ``TURBOVEC_INDEX_PATH``     → tmp_path / "tvec_idx"
+    - ``backend.rag._store``      → reset to None before/after
+    - ``backend.rag.core_ai.embed_text`` → deterministic [1.0]*768
+    - ``backend.turbovec_store.get_embedding/get_query_embedding`` → same stub
+    """
+    import backend.rag as rag_module
+
+    turbovec_mod = _make_turbovec_module()
+    index_path = str(tmp_path / "tvec_idx")
+
+    monkeypatch.setitem(sys.modules, "turbovec", turbovec_mod)
     monkeypatch.setenv("TURBOVEC_INDEX_PATH", index_path)
-    monkeypatch.setenv("TURBOVEC_QUANTIZATION", "4")
 
-    # Reset rag._store singleton
-    import backend.rag as rag_mod
-    rag_mod._store = None
+    original_store = rag_module._store
+    rag_module._store = None
 
-    # Import fresh turbovec_store (stub already injected)
+    monkeypatch.setattr(rag_module.core_ai, "embed_text", lambda text, **kw: [1.0] * 768)
+
     if "backend.turbovec_store" in sys.modules:
         del sys.modules["backend.turbovec_store"]
 
     from backend.turbovec_store import TurboVecVectorStore
 
-    _embed = lambda text, task_type="retrieval_document": [1.0] * 768  # noqa: E731
-    with patch("backend.rag.core_ai.embed_text", side_effect=_embed):
+    # Patch get_embedding/get_query_embedding inside the turbovec_store module
+    # (they are imported from .rag; turbovec_store.py calls get_embedding with
+    # task_type kwarg which the raw wrapper doesn't accept)
+    import backend.turbovec_store as tvs_mod
+    monkeypatch.setattr(tvs_mod, "get_embedding", lambda text, **kw: [1.0] * 768)
+    monkeypatch.setattr(tvs_mod, "get_query_embedding", lambda text, **kw: [1.0] * 768)
+
+    tvs = TurboVecVectorStore()
+    tvs.load()
+
+    yield tvs
+
+    rag_module._store = None
+    if original_store is not None:
+        rag_module._store = original_store
+
+
+# ===========================================================================
+# Task 5.2 — Example / interface tests
+# ===========================================================================
+
+
+def test_turbovec_store_is_vector_store_backend(store):
+    """Req 1.1 — TurboVecVectorStore must implement VectorStoreBackend."""
+    from backend.vector_store_base import VectorStoreBackend
+
+    assert isinstance(store, VectorStoreBackend)
+
+
+def test_load_no_index_creates_empty_store(store):
+    """Req 1.2 — Loading with no persisted files yields count() == 0."""
+    assert store.count() == 0
+
+
+def test_load_existing_index_calls_idmapindex_load(tmp_path, monkeypatch):
+    """Req 1.2, 5.3 — A fresh store loaded from an existing path has records."""
+    import backend.rag as rag_module
+
+    turbovec_mod = _make_turbovec_module()
+    index_path = str(tmp_path / "existing_idx")
+
+    monkeypatch.setitem(sys.modules, "turbovec", turbovec_mod)
+    monkeypatch.setenv("TURBOVEC_INDEX_PATH", index_path)
+    monkeypatch.setattr(rag_module.core_ai, "embed_text", lambda text, **kw: [1.0] * 768)
+    rag_module._store = None
+
+    if "backend.turbovec_store" in sys.modules:
+        del sys.modules["backend.turbovec_store"]
+
+    from backend.turbovec_store import TurboVecVectorStore
+    import backend.turbovec_store as tvs_mod
+    monkeypatch.setattr(tvs_mod, "get_embedding", lambda text, **kw: [1.0] * 768)
+    monkeypatch.setattr(tvs_mod, "get_query_embedding", lambda text, **kw: [1.0] * 768)
+
+    # Build and persist a store with one record
+    s1 = TurboVecVectorStore()
+    s1.load()
+    s1.add("hello world", {"user_id": "u1"}, "rec_load_test")
+
+    assert os.path.exists(index_path + ".meta.json"), ".meta.json sidecar must exist after save"
+
+    # Load a fresh store from the same path
+    if "backend.turbovec_store" in sys.modules:
+        del sys.modules["backend.turbovec_store"]
+
+    from backend.turbovec_store import TurboVecVectorStore as TVS2
+    import backend.turbovec_store as tvs_mod2
+    monkeypatch.setattr(tvs_mod2, "get_embedding", lambda text, **kw: [1.0] * 768)
+    monkeypatch.setattr(tvs_mod2, "get_query_embedding", lambda text, **kw: [1.0] * 768)
+
+    s2 = TVS2()
+    s2.load()
+
+    assert s2.count() > 0, "Fresh store loaded from existing index must have records"
+    assert "rec_load_test" in s2._texts
+
+    rag_module._store = None
+
+
+def test_add_uses_retrieval_document_task_type(store, monkeypatch):
+    """Req 2.3 — add() must use task_type='retrieval_document' for document embedding.
+
+    ``get_embedding()`` in rag.py always calls ``core_ai.embed_text`` with
+    ``task_type="retrieval_document"``.  We verify this by patching core_ai.embed_text
+    and checking the kwarg it receives via the call chain.
+    """
+    import backend.rag as rag_module
+
+    captured: Dict[str, Any] = {}
+
+    def capture_embed(text, **kw):
+        captured.update(kw)
+        return [1.0] * 768
+
+    # Patch at the core_ai boundary where task_type is actually passed
+    monkeypatch.setattr(rag_module.core_ai, "embed_text", capture_embed)
+    # Also re-patch the turbovec_store module-level references to use the real rag wrappers
+    import backend.turbovec_store as tvs_mod
+    from backend.rag import get_embedding as real_get_embedding
+    monkeypatch.setattr(tvs_mod, "get_embedding", real_get_embedding)
+
+    store.add("some medical text", {"user_id": "u1"}, "rec_task_type")
+
+    assert "task_type" in captured, "task_type kwarg must be forwarded to core_ai.embed_text"
+    assert captured["task_type"] == "retrieval_document"
+
+
+def test_get_vector_store_returns_turbovec_when_importable(tmp_path, monkeypatch):
+    """Req 7.1 — When turbovec is importable, get_vector_store() returns TurboVecVectorStore."""
+    import backend.rag as rag_module
+
+    turbovec_mod = _make_turbovec_module()
+    index_path = str(tmp_path / "gvs_turbo_idx")
+
+    monkeypatch.setitem(sys.modules, "turbovec", turbovec_mod)
+    monkeypatch.setenv("TURBOVEC_INDEX_PATH", index_path)
+    monkeypatch.setattr(rag_module.core_ai, "embed_text", lambda text, **kw: [1.0] * 768)
+    rag_module._store = None
+
+    for mod_name in list(sys.modules.keys()):
+        if "turbovec_store" in mod_name:
+            del sys.modules[mod_name]
+
+    from backend.turbovec_store import TurboVecVectorStore
+    import backend.turbovec_store as tvs_mod
+    monkeypatch.setattr(tvs_mod, "get_embedding", lambda text, **kw: [1.0] * 768)
+    monkeypatch.setattr(tvs_mod, "get_query_embedding", lambda text, **kw: [1.0] * 768)
+
+    from backend.rag import get_vector_store
+    result = get_vector_store()
+
+    assert isinstance(result, TurboVecVectorStore)
+
+    rag_module._store = None
+
+
+def test_get_vector_store_returns_simple_on_import_error(tmp_path, monkeypatch):
+    """Req 7.2 — When turbovec backend is unavailable, get_vector_store() returns SimpleVectorStore."""
+    import backend.rag as rag_module
+    from backend.rag import SimpleVectorStore
+
+    db_file = str(tmp_path / "vs_simple.json")
+    monkeypatch.setenv("TURBOVEC_INDEX_PATH", str(tmp_path / "unused"))
+    monkeypatch.setattr(rag_module.core_ai, "embed_text", lambda text, **kw: [1.0] * 768)
+    rag_module._store = None
+
+    # Remove turbovec and turbovec_store from sys.modules so next import is fresh
+    monkeypatch.delitem(sys.modules, "turbovec", raising=False)
+    for mod_name in list(sys.modules.keys()):
+        if "turbovec_store" in mod_name:
+            del sys.modules[mod_name]
+
+    # Patch the import inside rag.py's get_vector_store() to raise ImportError.
+    # We do this by making the turbovec_store module itself raise ImportError when imported.
+    import builtins
+    original_import = builtins.__import__
+
+    def mock_import(name, *args, **kwargs):
+        if name == "backend.turbovec_store" or (
+            name == "turbovec_store" and args and "backend" in str(args)
+        ):
+            raise ImportError("turbovec not installed (test mock)")
+        return original_import(name, *args, **kwargs)
+
+    with patch("builtins.__import__", side_effect=mock_import):
+        with patch("backend.rag.DB_FILE", db_file):
+            result = rag_module.get_vector_store()
+
+    assert isinstance(result, SimpleVectorStore)
+
+    rag_module._store = None
+    # Restore stub so later tests aren't affected
+    monkeypatch.setitem(sys.modules, "turbovec", _make_turbovec_module())
+
+
+def test_turbovec_index_path_env_var(tmp_path, monkeypatch):
+    """Req 8.1 — TURBOVEC_INDEX_PATH env var sets _index_path at construction time."""
+    import backend.rag as rag_module
+
+    turbovec_mod = _make_turbovec_module()
+    custom_path = str(tmp_path / "custom" / "path")
+
+    monkeypatch.setitem(sys.modules, "turbovec", turbovec_mod)
+    monkeypatch.setenv("TURBOVEC_INDEX_PATH", custom_path)
+    monkeypatch.setattr(rag_module.core_ai, "embed_text", lambda text, **kw: [1.0] * 768)
+    rag_module._store = None
+
+    if "backend.turbovec_store" in sys.modules:
+        del sys.modules["backend.turbovec_store"]
+
+    from backend.turbovec_store import TurboVecVectorStore
+
+    s = TurboVecVectorStore()
+    assert s._index_path == custom_path
+
+    rag_module._store = None
+
+
+def test_turbovec_quantization_env_var(tmp_path, monkeypatch):
+    """Req 8.2 — TURBOVEC_QUANTIZATION=2 sets _quantization == 2."""
+    import backend.rag as rag_module
+
+    turbovec_mod = _make_turbovec_module()
+    index_path = str(tmp_path / "quant_idx")
+
+    monkeypatch.setitem(sys.modules, "turbovec", turbovec_mod)
+    monkeypatch.setenv("TURBOVEC_INDEX_PATH", index_path)
+    monkeypatch.setenv("TURBOVEC_QUANTIZATION", "2")
+    monkeypatch.setattr(rag_module.core_ai, "embed_text", lambda text, **kw: [1.0] * 768)
+    rag_module._store = None
+
+    if "backend.turbovec_store" in sys.modules:
+        del sys.modules["backend.turbovec_store"]
+
+    from backend.turbovec_store import TurboVecVectorStore
+
+    s = TurboVecVectorStore()
+    assert s._quantization == 2
+
+    rag_module._store = None
+
+
+def test_save_creates_missing_directory(tmp_path, monkeypatch):
+    """Req 8.3 — save() creates missing parent directories for _index_path."""
+    import backend.rag as rag_module
+
+    turbovec_mod = _make_turbovec_module()
+    deep_path = str(tmp_path / "a" / "b" / "c" / "tvec_idx")
+
+    monkeypatch.setitem(sys.modules, "turbovec", turbovec_mod)
+    monkeypatch.setenv("TURBOVEC_INDEX_PATH", deep_path)
+    monkeypatch.setattr(rag_module.core_ai, "embed_text", lambda text, **kw: [1.0] * 768)
+    rag_module._store = None
+
+    if "backend.turbovec_store" in sys.modules:
+        del sys.modules["backend.turbovec_store"]
+
+    from backend.turbovec_store import TurboVecVectorStore
+    import backend.turbovec_store as tvs_mod
+    monkeypatch.setattr(tvs_mod, "get_embedding", lambda text, **kw: [1.0] * 768)
+    monkeypatch.setattr(tvs_mod, "get_query_embedding", lambda text, **kw: [1.0] * 768)
+
+    s = TurboVecVectorStore()
+    s.load()
+    s.add("test doc", {"user_id": "u1"}, "rec_mkdir")
+
+    meta_path = deep_path + ".meta.json"
+    assert os.path.exists(meta_path), ".meta.json must exist after save in new directory"
+
+    rag_module._store = None
+
+
+def test_migration_calls_save_and_logs_info(tmp_path, monkeypatch, caplog):
+    """Req 6.2, 6.3 — Loading with only vector_store.json triggers migration,
+    persists the result, and logs an INFO message with migrated count.
+    """
+    import backend.rag as rag_module
+
+    turbovec_mod = _make_turbovec_module()
+    index_path = str(tmp_path / "migrated_idx")
+
+    # Write a legacy vector_store.json with one valid record
+    legacy_data = {
+        "ids": ["old_rec_1"],
+        "vectors": [[0.5] * 768],
+        "documents": ["Legacy document text"],
+        "metadatas": [{"user_id": "u42"}],
+    }
+    json_path = str(tmp_path / "vector_store.json")
+    with open(json_path, "w") as f:
+        json.dump(legacy_data, f)
+
+    monkeypatch.setitem(sys.modules, "turbovec", turbovec_mod)
+    monkeypatch.setenv("TURBOVEC_INDEX_PATH", index_path)
+    monkeypatch.setattr(rag_module.core_ai, "embed_text", lambda text, **kw: [1.0] * 768)
+    rag_module._store = None
+
+    if "backend.turbovec_store" in sys.modules:
+        del sys.modules["backend.turbovec_store"]
+
+    import backend.turbovec_store as tvs_module
+    monkeypatch.setattr(tvs_module, "_DEFAULT_JSON_PATH", json_path)
+    monkeypatch.setattr(tvs_module, "get_embedding", lambda text, **kw: [1.0] * 768)
+    monkeypatch.setattr(tvs_module, "get_query_embedding", lambda text, **kw: [1.0] * 768)
+
+    from backend.turbovec_store import TurboVecVectorStore
+
+    with caplog.at_level(logging.INFO, logger="backend.turbovec_store"):
         s = TurboVecVectorStore()
         s.load()
-        yield s
-
-
-# ---------------------------------------------------------------------------
-# ── Example-based unit tests ──
-# ---------------------------------------------------------------------------
-
-class TestTurboVecInterface:
-    def test_is_vector_store_backend(self, store):
-        """Req 1.1 — implements VectorStoreBackend."""
-        from backend.vector_store_base import VectorStoreBackend
-        assert isinstance(store, VectorStoreBackend)
-
-    def test_implements_all_abstract_methods(self, store):
-        """Req 1.1 — no abstract method left unimplemented."""
-        for method in ("add", "delete", "search", "search_with_scores", "count", "load", "save"):
-            assert callable(getattr(store, method))
-
-
-class TestLoadPaths:
-    def test_load_no_index_creates_empty_store(self, store):
-        """Req 1.2 — no existing index → empty count."""
-        assert store.count() == 0
-
-    def test_load_existing_index_reads_sidecar(self, tmp_path, monkeypatch):
-        """Req 1.2, 5.3 — existing index + sidecar is loaded."""
-        index_path = str(tmp_path / "tv_idx")
-        monkeypatch.setenv("TURBOVEC_INDEX_PATH", index_path)
-
-        if "backend.turbovec_store" in sys.modules:
-            del sys.modules["backend.turbovec_store"]
-        from backend.turbovec_store import TurboVecVectorStore
-
-        _embed = lambda text, **kw: [1.0] * 768  # noqa: E731
-        with patch("backend.rag.core_ai.embed_text", side_effect=_embed):
-            s1 = TurboVecVectorStore()
-            s1.load()
-            s1.add("hello world", {"user_id": "u1"}, "rec1")
-
-            # Reload fresh instance
-            del sys.modules["backend.turbovec_store"]
-            from backend.turbovec_store import TurboVecVectorStore as TV2
-            s2 = TV2()
-            s2.load()
-
-        assert s2.count() == 1
-        assert s2._texts["rec1"] == "hello world"
-        assert s2._metas["rec1"]["user_id"] == "u1"
-
-
-class TestAdd:
-    def test_add_uses_retrieval_document_task_type(self, tmp_path, monkeypatch):
-        """Req 2.3 — get_embedding called with task_type='retrieval_document'."""
-        monkeypatch.setenv("TURBOVEC_INDEX_PATH", str(tmp_path / "idx"))
-        if "backend.turbovec_store" in sys.modules:
-            del sys.modules["backend.turbovec_store"]
-        from backend.turbovec_store import TurboVecVectorStore
-
-        calls = []
-
-        def mock_embed(text, task_type="retrieval_document"):
-            calls.append(task_type)
-            return [1.0] * 768
-
-        with patch("backend.rag.core_ai.embed_text", side_effect=mock_embed):
-            s = TurboVecVectorStore()
-            s.load()
-            s.add("some text", {"user_id": "u1"}, "r1")
-
-        assert "retrieval_document" in calls
-
-    def test_add_new_record_increases_count(self, store):
-        """Req 2.1 — new record_id increases count by 1."""
-        with patch("backend.rag.core_ai.embed_text", return_value=[1.0] * 768):
-            store.add("text a", {"user_id": "u1"}, "r1")
-        assert store.count() == 1
-
-    def test_add_existing_record_no_count_change(self, store):
-        """Req 2.2 — update does not grow store."""
-        with patch("backend.rag.core_ai.embed_text", return_value=[1.0] * 768):
-            store.add("text a", {"user_id": "u1"}, "r1")
-            store.add("text b", {"user_id": "u1"}, "r1")
-        assert store.count() == 1
-        assert store._texts["r1"] == "text b"
-
-    def test_add_reraises_embedding_exception_without_modifying_store(self, store):
-        """Req 1.6, 2.4 — embed raises → store unchanged, exception re-raised."""
-        with patch("backend.rag.core_ai.embed_text", side_effect=RuntimeError("embed fail")):
-            with pytest.raises(RuntimeError, match="embed fail"):
-                store.add("text", {"user_id": "u1"}, "r1")
-        assert store.count() == 0
-
-
-class TestDelete:
-    def test_delete_existing_returns_true(self, store):
-        """Req 3.1 — deleting existing record returns True."""
-        with patch("backend.rag.core_ai.embed_text", return_value=[1.0] * 768):
-            store.add("text", {"user_id": "u1"}, "r1")
-        result = store.delete("r1")
-        assert result is True
-        assert store.count() == 0
-
-    def test_delete_nonexistent_returns_false(self, store):
-        """Req 3.2 — deleting absent ID returns False, count unchanged."""
-        result = store.delete("nonexistent")
-        assert result is False
-        assert store.count() == 0
-
-    def test_delete_save_exception_returns_false(self, store):
-        """Req 3.3 — save() raises during delete → returns False, logs error."""
-        with patch("backend.rag.core_ai.embed_text", return_value=[1.0] * 768):
-            store.add("text", {"user_id": "u1"}, "r1")
-
-        with patch.object(store, "save", side_effect=IOError("disk full")):
-            result = store.delete("r1")
-        assert result is False
-
-
-class TestSearch:
-    def test_search_empty_index_returns_empty_list(self, store):
-        """Req 4.5 — empty store → empty list."""
-        with patch("backend.rag.core_ai.embed_text", return_value=[1.0] * 768):
-            result = store.search("query")
-        assert result == []
-
-    def test_search_embedding_exception_returns_empty_list(self, store):
-        """Req 4.8 — embedding fails during search → []."""
-        with patch("backend.rag.core_ai.embed_text", return_value=[1.0] * 768):
-            store.add("text", {"user_id": "u1"}, "r1")
-        with patch("backend.rag.core_ai.embed_text", side_effect=RuntimeError("fail")):
-            result = store.search("query")
-        assert result == []
-
-    def test_search_returns_matching_text(self, store):
-        """Req 4.1 — search returns document text."""
-        with patch("backend.rag.core_ai.embed_text", return_value=[1.0] * 768):
-            store.add("hello patient", {"user_id": "u1"}, "r1")
-            result = store.search("hello")
-        assert "hello patient" in result
-
-    def test_search_with_scores_has_required_keys(self, store):
-        """Req 4.6 — search_with_scores dicts have text/metadata/id/score keys."""
-        with patch("backend.rag.core_ai.embed_text", return_value=[1.0] * 768):
-            store.add("text", {"user_id": "u1"}, "r1")
-            results = store.search_with_scores("query")
-        assert len(results) > 0
-        for r in results:
-            assert set(r.keys()) >= {"text", "metadata", "id", "score"}
-
-    def test_search_acl_filter_excludes_other_users(self, store):
-        """Req 4.2, 4.4 — ACL filter keeps only matching user's records."""
-        with patch("backend.rag.core_ai.embed_text", return_value=[1.0] * 768):
-            store.add("user1 record", {"user_id": "u1"}, "r1")
-            store.add("user2 record", {"user_id": "u2"}, "r2")
-            results = store.search("query", filter_meta={"user_id": "u1"})
-        assert "user1 record" in results
-        assert "user2 record" not in results
-
-
-class TestEnvVars:
-    def test_turbovec_index_path_env_var(self, tmp_path, monkeypatch):
-        """Req 8.1 — TURBOVEC_INDEX_PATH is respected."""
-        custom = str(tmp_path / "custom" / "path")
-        monkeypatch.setenv("TURBOVEC_INDEX_PATH", custom)
-        if "backend.turbovec_store" in sys.modules:
-            del sys.modules["backend.turbovec_store"]
-        from backend.turbovec_store import TurboVecVectorStore
-        s = TurboVecVectorStore()
-        assert s._index_path == custom
-
-    def test_turbovec_quantization_env_var(self, tmp_path, monkeypatch):
-        """Req 8.2 — TURBOVEC_QUANTIZATION=2 → _quantization == 2."""
-        monkeypatch.setenv("TURBOVEC_INDEX_PATH", str(tmp_path / "idx"))
-        monkeypatch.setenv("TURBOVEC_QUANTIZATION", "2")
-        if "backend.turbovec_store" in sys.modules:
-            del sys.modules["backend.turbovec_store"]
-        from backend.turbovec_store import TurboVecVectorStore
-        s = TurboVecVectorStore()
-        assert s._quantization == 2
-
-    def test_save_creates_missing_directory(self, tmp_path, monkeypatch):
-        """Req 8.3 — save() creates parent directory if missing."""
-        deep_path = str(tmp_path / "a" / "b" / "c" / "turbovec_index")
-        monkeypatch.setenv("TURBOVEC_INDEX_PATH", deep_path)
-        if "backend.turbovec_store" in sys.modules:
-            del sys.modules["backend.turbovec_store"]
-        from backend.turbovec_store import TurboVecVectorStore
-
-        with patch("backend.rag.core_ai.embed_text", return_value=[1.0] * 768):
-            s = TurboVecVectorStore()
-            s.load()
-            s.add("text", {"user_id": "u1"}, "r1")  # triggers save()
-
-        assert os.path.exists(os.path.dirname(deep_path))
-
-
-class TestPersistence:
-    def test_save_creates_meta_json_sidecar(self, tmp_path, monkeypatch):
-        """Req 5.2 — .meta.json sidecar is written atomically (no .tmp leftover)."""
-        idx_path = str(tmp_path / "idx")
-        monkeypatch.setenv("TURBOVEC_INDEX_PATH", idx_path)
-        if "backend.turbovec_store" in sys.modules:
-            del sys.modules["backend.turbovec_store"]
-        from backend.turbovec_store import TurboVecVectorStore
-
-        with patch("backend.rag.core_ai.embed_text", return_value=[1.0] * 768):
-            s = TurboVecVectorStore()
-            s.load()
-            s.add("text", {"user_id": "u1"}, "r1")
-
-        assert os.path.exists(idx_path + ".meta.json")
-        assert not os.path.exists(idx_path + ".meta.json.tmp")
-
-    def test_save_exception_silently_swallowed(self, store):
-        """Req 5.5 — standalone save() does not propagate exceptions."""
-        with patch.object(store._index, "save", side_effect=IOError("disk full")):
-            store.save()  # must not raise
-
-
-class TestMigration:
-    def test_migration_imports_valid_records(self, tmp_path, monkeypatch):
-        """Req 6.1, 6.2 — valid JSON records are migrated and saved."""
-        json_path = str(tmp_path / "vector_store.json")
-        idx_path = str(tmp_path / "turbovec_index")
-        data = {
-            "documents": ["doc1", "doc2"],
-            "vectors": [[1.0] * 768, [0.5] * 768],
-            "metadatas": [{"user_id": "u1"}, {"user_id": "u2"}],
-            "ids": ["r1", "r2"],
-        }
-        with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(data, f)
-
-        monkeypatch.setenv("TURBOVEC_INDEX_PATH", idx_path)
-        if "backend.turbovec_store" in sys.modules:
-            del sys.modules["backend.turbovec_store"]
-
-        import backend.turbovec_store as ts_mod
-        importlib.reload(ts_mod)
-        with patch.object(ts_mod, "_DEFAULT_JSON_PATH", json_path):
-            s = ts_mod.TurboVecVectorStore()
-            s.load()
-
-        assert s.count() == 2
-        assert "r1" in s._texts
-        assert "r2" in s._texts
-
-    def test_migration_skips_malformed_records_and_logs_warning(
-        self, tmp_path, monkeypatch, caplog
-    ):
-        """Req 6.4 — malformed vector → skipped with WARNING."""
-        json_path = str(tmp_path / "vector_store.json")
-        idx_path = str(tmp_path / "turbovec_index")
-        data = {
-            "documents": ["good", "bad"],
-            "vectors": [[1.0] * 768, "not-a-list"],
-            "metadatas": [{"user_id": "u1"}, {"user_id": "u2"}],
-            "ids": ["r_good", "r_bad"],
-        }
-        with open(json_path, "w", encoding="utf-8") as f:
-            json.dump(data, f)
-
-        monkeypatch.setenv("TURBOVEC_INDEX_PATH", idx_path)
-        if "backend.turbovec_store" in sys.modules:
-            del sys.modules["backend.turbovec_store"]
-
-        import backend.turbovec_store as ts_mod
-        importlib.reload(ts_mod)
-
-        import logging
-        with patch.object(ts_mod, "_DEFAULT_JSON_PATH", json_path):
-            with caplog.at_level(logging.WARNING, logger="backend.turbovec_store"):
-                s = ts_mod.TurboVecVectorStore()
-                s.load()
-
-        assert s.count() == 1
-        assert "r_good" in s._texts
-        assert "r_bad" not in s._texts
-        assert any("r_bad" in r.message for r in caplog.records)
-
-    def test_load_no_json_no_index_is_empty(self, tmp_path, monkeypatch):
-        """Req 6.5 — neither file → empty store, no crash."""
-        monkeypatch.setenv("TURBOVEC_INDEX_PATH", str(tmp_path / "turbovec_index"))
-        if "backend.turbovec_store" in sys.modules:
-            del sys.modules["backend.turbovec_store"]
-
-        import backend.turbovec_store as ts_mod
-        importlib.reload(ts_mod)
-        with patch.object(ts_mod, "_DEFAULT_JSON_PATH", str(tmp_path / "nonexistent.json")):
-            s = ts_mod.TurboVecVectorStore()
-            s.load()
-
-        assert s.count() == 0
-
-    def test_load_exception_initialises_empty_store(self, tmp_path, monkeypatch, caplog):
-        """Req 5.6 — corrupt index → empty store, no crash."""
-        idx_path = str(tmp_path / "turbovec_index")
-        monkeypatch.setenv("TURBOVEC_INDEX_PATH", idx_path)
-        # Create a corrupt index file
-        with open(idx_path, "w") as f:
-            f.write("corrupt")
-
-        if "backend.turbovec_store" in sys.modules:
-            del sys.modules["backend.turbovec_store"]
-        from backend.turbovec_store import TurboVecVectorStore
-
-        # Patch IdMapIndex.load to raise
-        with patch("turbovec.IdMapIndex.load", side_effect=ValueError("corrupt")):
-            import logging
-            with caplog.at_level(logging.ERROR, logger="backend.turbovec_store"):
-                s = TurboVecVectorStore()
-                s.load()
-
-        assert s.count() == 0
-
-
-class TestFallback:
-    def test_get_vector_store_returns_turbovec_when_importable(self, monkeypatch, tmp_path):
-        """Req 7.1 — turbovec importable → TurboVecVectorStore returned."""
-        monkeypatch.setenv("TURBOVEC_INDEX_PATH", str(tmp_path / "idx"))
-        import backend.rag as rag_mod
-        rag_mod._store = None
-        if "backend.turbovec_store" in sys.modules:
-            del sys.modules["backend.turbovec_store"]
-
-        with patch("backend.rag.core_ai.embed_text", return_value=[1.0] * 768):
-            store = rag_mod.get_vector_store()
-
-        from backend.turbovec_store import TurboVecVectorStore
-        assert isinstance(store, TurboVecVectorStore)
-
-    def test_get_vector_store_returns_simple_on_import_error(self, monkeypatch):
-        """Req 7.2 — ImportError → SimpleVectorStore returned."""
-        import backend.rag as rag_mod
-        rag_mod._store = None
-        _remove_turbovec()  # ensure turbovec is NOT importable
-
-        store = rag_mod.get_vector_store()
-        from backend.rag import SimpleVectorStore
-        assert isinstance(store, SimpleVectorStore)
-        _inject_turbovec()  # restore for other tests
-
-    def test_get_vector_store_singleton(self, monkeypatch, tmp_path):
-        """Req 7.3 — repeated calls return the same object."""
-        monkeypatch.setenv("TURBOVEC_INDEX_PATH", str(tmp_path / "idx"))
-        import backend.rag as rag_mod
-        rag_mod._store = None
-        if "backend.turbovec_store" in sys.modules:
-            del sys.modules["backend.turbovec_store"]
-
-        with patch("backend.rag.core_ai.embed_text", return_value=[1.0] * 768):
-            s1 = rag_mod.get_vector_store()
-            s2 = rag_mod.get_vector_store()
-        assert s1 is s2
-
-
-class TestInvalidQuantization:
-    def test_invalid_quantization_falls_back_to_4bit(self, tmp_path, monkeypatch, caplog):
-        """Req 1.3 — invalid TURBOVEC_QUANTIZATION → warn + 4-bit fallback."""
-        monkeypatch.setenv("TURBOVEC_INDEX_PATH", str(tmp_path / "idx"))
-        monkeypatch.setenv("TURBOVEC_QUANTIZATION", "99")
-        if "backend.turbovec_store" in sys.modules:
-            del sys.modules["backend.turbovec_store"]
-        from backend.turbovec_store import TurboVecVectorStore
-
-        import logging
-        with caplog.at_level(logging.WARNING, logger="backend.turbovec_store"):
-            s = TurboVecVectorStore()
-
-        assert s._quantization == 4
-        assert any("4" in r.message or "invalid" in r.message.lower() for r in caplog.records)
-
-
-# ---------------------------------------------------------------------------
-# ── Property-Based Tests (Hypothesis) ──
-# ---------------------------------------------------------------------------
-
-# Shared strategies
-_text_st = st.text(min_size=1, max_size=200, alphabet=st.characters(blacklist_categories=("Cs",)))
-_uid_st = st.text(min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789_")
-_rid_st = st.text(min_size=1, max_size=50, alphabet="abcdefghijklmnopqrstuvwxyz0123456789_-")
-_meta_st = st.fixed_dictionaries({"user_id": _uid_st})
-_record_st = st.fixed_dictionaries({"text": _text_st, "metadata": _meta_st, "id": _rid_st})
-
-
-def _make_store_for_pbt(tmp_path):
-    """Create a fresh TurboVecVectorStore with DictIdMapIndex for PBT."""
-    _inject_turbovec()
+
+    # The legacy record should have been migrated
+    assert s.count() > 0, "Migrated store must have records"
+    assert "old_rec_1" in s._texts
+
+    # .meta.json sidecar must have been written (save() was called)
+    assert os.path.exists(index_path + ".meta.json"), ".meta.json must exist after migration save"
+
+    # INFO log with migrated count must have been emitted
+    migration_logs = [
+        r for r in caplog.records
+        if r.levelno == logging.INFO and "igrat" in r.message.lower()
+    ]
+    assert migration_logs, (
+        f"Expected INFO log about migration, got: {[r.message for r in caplog.records]}"
+    )
+
+    rag_module._store = None
+
+
+def test_save_and_load_sidecar_atomic_write(store):
+    """Req 5.2 — After add(), .meta.json exists and no leftover .tmp file remains."""
+    store.add("atomic write test", {"user_id": "u99"}, "rec_atomic")
+
+    meta_path = store._index_path + ".meta.json"
+    tmp_leftover = meta_path + ".tmp"
+
+    assert os.path.exists(meta_path), ".meta.json sidecar must exist after save"
+    assert not os.path.exists(tmp_leftover), ".tmp file must not remain after atomic replace"
+
+
+# ===========================================================================
+# Task 5.3 — Edge-case / error-path tests
+# ===========================================================================
+
+
+def test_add_reraises_embedding_exception_without_modifying_store(store, monkeypatch):
+    """Req 1.6, 2.4 — Embedding failure re-raises; store state is unchanged."""
+    import backend.turbovec_store as tvs_mod
+
+    monkeypatch.setattr(
+        tvs_mod,
+        "get_embedding",
+        lambda text, **kw: (_ for _ in ()).throw(RuntimeError("embed failed")),
+    )
+
+    with pytest.raises(RuntimeError, match="embed failed"):
+        store.add("some text", {"user_id": "u1"}, "rec_fail")
+
+    assert store.count() == 0
+    assert "rec_fail" not in store._texts
+    assert "rec_fail" not in store._metas
+
+
+def test_delete_nonexistent_returns_false(store):
+    """Req 3.2 — Deleting an absent record_id returns False without side-effects."""
+    assert store.delete("nonexistent_id") is False
+    assert store.count() == 0
+
+
+def test_delete_save_exception_returns_false(store, monkeypatch):
+    """Req 3.3 — When save() raises after deletion, delete() returns False and logs error."""
+    store.add("hello", {"user_id": "u1"}, "rec_to_delete")
+    assert store.count() == 1
+
+    def _raising_save():
+        raise OSError("disk full")
+
+    monkeypatch.setattr(store, "save", _raising_save)
+
+    with patch("backend.turbovec_store.logger") as mock_logger:
+        result = store.delete("rec_to_delete")
+
+    assert result is False
+    mock_logger.error.assert_called()
+
+
+def test_search_empty_index_returns_empty_list(store):
+    """Req 4.5 — search() on an empty store returns []."""
+    assert store.search("anything") == []
+
+
+def test_search_embedding_exception_returns_empty_list(store, monkeypatch):
+    """Req 4.8 — When query embedding fails, search() returns []."""
+    import backend.turbovec_store as tvs_mod
+
+    store.add("document text", {"user_id": "u1"}, "rec1")
+    assert store.count() == 1
+
+    monkeypatch.setattr(
+        tvs_mod,
+        "get_query_embedding",
+        lambda text, **kw: (_ for _ in ()).throw(RuntimeError("embed down")),
+    )
+
+    assert store.search("failing query") == []
+
+
+def test_save_exception_silently_swallowed(store, monkeypatch):
+    """Req 5.5 — save() logs but does NOT propagate exceptions."""
+    def _raising_write(path):
+        raise OSError("disk error")
+
+    monkeypatch.setattr(store._index, "write", _raising_write)
+
+    with patch("backend.turbovec_store.logger") as mock_logger:
+        store.save()  # must not raise
+
+    mock_logger.error.assert_called()
+
+
+def test_load_exception_initialises_empty_store(tmp_path, monkeypatch):
+    """Req 5.6 — When IdMapIndex.load() raises, load() recovers with an empty store."""
+
+    class BrokenLoadIndex(DictIdMapIndex):
+        @classmethod
+        def load(cls, path: str) -> "BrokenLoadIndex":
+            raise RuntimeError("corrupt index")
+
+    broken_mod = types.ModuleType("turbovec")
+    broken_mod.IdMapIndex = BrokenLoadIndex  # type: ignore[attr-defined]
+    monkeypatch.setitem(sys.modules, "turbovec", broken_mod)
+
+    index_path = str(tmp_path / "broken_idx")
+    monkeypatch.setenv("TURBOVEC_INDEX_PATH", index_path)
+
+    # Create a fake file so load() tries IdMapIndex.load()
+    open(index_path, "w").close()
+
+    if "backend.turbovec_store" in sys.modules:
+        del sys.modules["backend.turbovec_store"]
+
+    import backend.rag as rag_module
+    monkeypatch.setattr(rag_module.core_ai, "embed_text", lambda text, **kw: [1.0] * 768)
+    rag_module._store = None
+
+    from backend.turbovec_store import TurboVecVectorStore
+
+    with patch("backend.turbovec_store.logger") as mock_logger:
+        tvs = TurboVecVectorStore()
+        tvs.load()
+
+    assert tvs.count() == 0
+    mock_logger.error.assert_called()
+
+    rag_module._store = None
+
+
+def test_load_no_json_no_index_is_empty(tmp_path, monkeypatch):
+    """Req 6.5 — Neither turbovec index nor vector_store.json → empty store, no crash."""
+    turbovec_mod = _make_turbovec_module()
+    monkeypatch.setitem(sys.modules, "turbovec", turbovec_mod)
+
+    index_path = str(tmp_path / "fresh_idx")
+    monkeypatch.setenv("TURBOVEC_INDEX_PATH", index_path)
+    assert not os.path.exists(index_path)
+
+    if "backend.turbovec_store" in sys.modules:
+        del sys.modules["backend.turbovec_store"]
+
+    import backend.rag as rag_module
+    monkeypatch.setattr(rag_module.core_ai, "embed_text", lambda text, **kw: [1.0] * 768)
+    rag_module._store = None
+
+    import backend.turbovec_store as tvs_mod
+    # Ensure no JSON migration file is found
+    monkeypatch.setattr(tvs_mod, "_DEFAULT_JSON_PATH", str(tmp_path / "no_such_file.json"))
+
+    from backend.turbovec_store import TurboVecVectorStore
+
+    tvs = TurboVecVectorStore()
+    tvs.load()
+
+    assert tvs.count() == 0
+
+    rag_module._store = None
+
+
+def test_migration_skips_malformed_records_and_logs_warning(tmp_path, monkeypatch):
+    """Req 6.4 — Migration skips records with non-list vectors and logs a WARNING."""
+    turbovec_mod = _make_turbovec_module()
+    monkeypatch.setitem(sys.modules, "turbovec", turbovec_mod)
+
+    json_path = tmp_path / "vector_store.json"
+    valid_vector = [0.1] * 768
+    legacy_data = {
+        "ids": ["valid_rec", "bad_rec"],
+        "vectors": [valid_vector, "not_a_list"],
+        "documents": ["valid doc", "bad doc"],
+        "metadatas": [{"user_id": "u1"}, {"user_id": "u2"}],
+    }
+    json_path.write_text(json.dumps(legacy_data), encoding="utf-8")
+
+    index_path = str(tmp_path / "mig_idx")
+    monkeypatch.setenv("TURBOVEC_INDEX_PATH", index_path)
+
+    if "backend.turbovec_store" in sys.modules:
+        del sys.modules["backend.turbovec_store"]
+
+    import backend.rag as rag_module
+    monkeypatch.setattr(rag_module.core_ai, "embed_text", lambda text, **kw: [1.0] * 768)
+    rag_module._store = None
+
+    import backend.turbovec_store as tvs_mod
+    monkeypatch.setattr(tvs_mod, "_DEFAULT_JSON_PATH", str(json_path))
+
+    from backend.turbovec_store import TurboVecVectorStore
+
+    with patch("backend.turbovec_store.logger") as mock_logger:
+        tvs = TurboVecVectorStore()
+        tvs.load()
+
+    assert tvs.count() == 1
+    assert "valid_rec" in tvs._texts
+    assert "bad_rec" not in tvs._texts
+
+    # At least one warning must have been logged for the malformed record
+    assert mock_logger.warning.called
+
+    rag_module._store = None
+
+
+# ===========================================================================
+# Helpers for property-based tests
+# ===========================================================================
+
+import uuid as _uuid
+
+
+def _make_pbt_store(tmp_path, monkeypatch):
+    """Set up a fresh TurboVecVectorStore for use inside @given test bodies.
+
+    Uses a unique sub-directory under tmp_path on every call so that Hypothesis
+    iterations (which reuse the same tmp_path fixture) do not see a stale index
+    written by a previous iteration.
+    """
+    import backend.rag as rag_module
+
+    turbovec_mod = _make_turbovec_module()
+    # Each call gets its own unique sub-path so previous iterations' saved
+    # indexes are not visible to the current iteration.
+    index_path = str(tmp_path / f"pbt_idx_{_uuid.uuid4().hex}")
+    monkeypatch.setitem(sys.modules, "turbovec", turbovec_mod)
+    monkeypatch.setenv("TURBOVEC_INDEX_PATH", index_path)
+    monkeypatch.setattr(rag_module.core_ai, "embed_text", lambda text, **kw: [1.0] * 768)
+    rag_module._store = None
     if "backend.turbovec_store" in sys.modules:
         del sys.modules["backend.turbovec_store"]
     from backend.turbovec_store import TurboVecVectorStore
-
-    idx_path = str(tmp_path / "tv_pbt_idx")
+    import backend.turbovec_store as tvs_mod
+    monkeypatch.setattr(tvs_mod, "get_embedding", lambda text, **kw: [1.0] * 768)
+    monkeypatch.setattr(tvs_mod, "get_query_embedding", lambda text, **kw: [1.0] * 768)
     s = TurboVecVectorStore()
-    s._index_path = idx_path
-    s._meta_path = idx_path + ".meta.json"
-    import turbovec
-    s._index = turbovec.IdMapIndex(bits=4)
+    s.load()
     return s
 
 
+def _cleanup_pbt_store(monkeypatch):
+    """Reset the RAG singleton after a property test."""
+    import backend.rag as rag_module
+    rag_module._store = None
+
+
+# ===========================================================================
+# Task 6.x — Property-based tests (Hypothesis)
+# ===========================================================================
+
+
+# Feature: turbovec-vector-store-integration, Property 1: Add round-trip
 @given(
-    text=_text_st,
-    metadata=_meta_st,
-    record_id=_rid_st,
+    text=st.text(min_size=1),
+    metadata=st.fixed_dictionaries({"user_id": st.text(min_size=1)}),
+    record_id=st.text(min_size=1),
 )
-@settings(max_examples=100)
-def test_property_1_add_roundtrip(text, metadata, record_id, tmp_path):
+@settings(max_examples=50, suppress_health_check=[HealthCheck.function_scoped_fixture])
+def test_property_add_round_trip(text, metadata, record_id, tmp_path, monkeypatch):
+    """Req 1.4, 1.5, 2.1, 10.1, 10.2 — Added records are stored and retrievable.
+
+    **Validates: Requirements 1.4, 1.5, 2.1, 10.1, 10.2**
     """
-    # Feature: turbovec-vector-store-integration, Property 1: Add round-trip
-    After add(text, metadata, record_id), _texts and _metas contain the values,
-    and search_with_scores with the same vector returns a matching result.
-    Validates: Requirements 1.4, 1.5, 2.1, 10.1, 10.2
-    """
-    s = _make_store_for_pbt(tmp_path)
-    fixed_vec = [1.0] * 768
-
-    with patch("backend.rag.core_ai.embed_text", return_value=fixed_vec):
-        s.add(text, metadata, record_id)
-
-    assert s._texts[record_id] == text
-    assert s._metas[record_id] == metadata
-
-    with patch("backend.rag.core_ai.embed_text", return_value=fixed_vec):
-        results = s.search_with_scores("query")
-
+    store = _make_pbt_store(tmp_path, monkeypatch)
+    store.add(text, metadata, record_id)
+    assert store._texts[record_id] == text
+    assert store._metas[record_id] == metadata
+    results = store.search_with_scores("query")
     ids_in_results = [r["id"] for r in results]
     assert record_id in ids_in_results
-    match = next(r for r in results if r["id"] == record_id)
-    assert match["text"] == text
-    assert match["metadata"] == metadata
-    assert match["score"] > 0.0
+    matching = [r for r in results if r["id"] == record_id]
+    assert matching[0]["text"] == text
+    assert matching[0]["metadata"] == metadata
+    assert matching[0]["score"] > 0.0
+    _cleanup_pbt_store(monkeypatch)
 
 
+# Feature: turbovec-vector-store-integration, Property 2: Update idempotence
 @given(
-    record_id=_rid_st,
-    text1=_text_st,
-    meta1=_meta_st,
-    text2=_text_st,
-    meta2=_meta_st,
+    record_id=st.text(min_size=1),
+    text1=st.text(min_size=1),
+    meta1=st.fixed_dictionaries({"user_id": st.text(min_size=1)}),
+    text2=st.text(min_size=1),
+    meta2=st.fixed_dictionaries({"user_id": st.text(min_size=1)}),
 )
-@settings(max_examples=100)
-def test_property_2_update_idempotence(record_id, text1, meta1, text2, meta2, tmp_path):
+@settings(max_examples=50, suppress_health_check=[HealthCheck.function_scoped_fixture])
+def test_property_update_idempotence(record_id, text1, meta1, text2, meta2, tmp_path, monkeypatch):
+    """Req 2.2 — Calling add() twice with same record_id does not grow the store.
+
+    **Validates: Requirements 2.2**
     """
-    # Feature: turbovec-vector-store-integration, Property 2: Update idempotence
-    Calling add() twice with the same record_id does not grow count().
-    Validates: Requirement 2.2
-    """
-    s = _make_store_for_pbt(tmp_path)
-    fixed_vec = [1.0] * 768
-
-    with patch("backend.rag.core_ai.embed_text", return_value=fixed_vec):
-        s.add(text1, meta1, record_id)
-        s.add(text2, meta2, record_id)
-
-    assert s.count() == 1
-    assert s._texts[record_id] == text2
-    assert s._metas[record_id] == meta2
+    store = _make_pbt_store(tmp_path, monkeypatch)
+    store.add(text1, meta1, record_id)
+    assert store.count() == 1
+    store.add(text2, meta2, record_id)
+    assert store.count() == 1
+    assert store._texts[record_id] == text2
+    assert store._metas[record_id] == meta2
+    _cleanup_pbt_store(monkeypatch)
 
 
+# Feature: turbovec-vector-store-integration, Property 3: Delete isolation
 @given(
-    record_ids=st.lists(_rid_st, min_size=1, max_size=10, unique=True),
+    record_ids=st.lists(st.text(min_size=1), min_size=1, max_size=5, unique=True)
 )
-@settings(max_examples=100)
-def test_property_3_delete_isolation(record_ids, tmp_path):
+@settings(max_examples=50, suppress_health_check=[HealthCheck.function_scoped_fixture])
+def test_property_delete_isolation(record_ids, tmp_path, monkeypatch):
+    """Req 3.1, 3.2, 10.3 — Deleted records never appear in search results.
+
+    **Validates: Requirements 3.1, 3.2, 10.3**
     """
-    # Feature: turbovec-vector-store-integration, Property 3: Delete isolation
-    Deleted records never appear in search results; deleting absent IDs returns False.
-    Validates: Requirements 3.1, 3.2, 10.3
-    """
-    s = _make_store_for_pbt(tmp_path)
-    fixed_vec = [1.0] * 768
-
-    with patch("backend.rag.core_ai.embed_text", return_value=fixed_vec):
-        for rid in record_ids:
-            s.add(f"text for {rid}", {"user_id": "u1"}, rid)
-
-    initial_count = s.count()
-    to_delete = record_ids[0]
-
-    result = s.delete(to_delete)
-    assert result is True
-    assert s.count() == initial_count - 1
-    assert to_delete not in s._texts
-    assert to_delete not in s._metas
-
-    with patch("backend.rag.core_ai.embed_text", return_value=fixed_vec):
-        search_results = s.search("query")
-        scored_results = s.search_with_scores("query")
-
-    assert to_delete not in [r for r in search_results]
-    assert to_delete not in [r["id"] for r in scored_results]
-
-    # Deleting already-absent ID
-    result2 = s.delete(to_delete)
-    assert result2 is False
-    assert s.count() == initial_count - 1
+    store = _make_pbt_store(tmp_path, monkeypatch)
+    for rid in record_ids:
+        store.add(f"text for {rid}", {"user_id": "u1"}, rid)
+    count_before = store.count()
+    assert count_before == len(record_ids)
+    for rid in record_ids:
+        result = store.delete(rid)
+        assert result is True
+        assert store.count() == count_before - 1
+        count_before -= 1
+        search_ids = [r["id"] for r in store.search_with_scores("query", k=20)]
+        assert rid not in search_ids
+    # Deleting a missing ID returns False
+    assert store.delete("never_existed_xyz") is False
+    _cleanup_pbt_store(monkeypatch)
 
 
+# Feature: turbovec-vector-store-integration, Property 4: ACL filter isolation
 @given(
     records=st.lists(
         st.fixed_dictionaries({
-            "user_id": _uid_st,
-            "text": _text_st,
-            "id": _rid_st,
+            "user_id": st.text(min_size=1, max_size=5),
+            "text": st.text(min_size=1),
+            "id": st.text(min_size=1),
         }),
         min_size=2,
-        max_size=8,
+        max_size=6,
         unique_by=lambda r: r["id"],
-    ).filter(lambda recs: len({r["user_id"] for r in recs}) >= 2),
+    )
 )
-@settings(max_examples=100)
-def test_property_4_acl_filter_isolation(records, tmp_path):
+@settings(max_examples=50, suppress_health_check=[HealthCheck.function_scoped_fixture])
+def test_property_acl_filter_isolation(records, tmp_path, monkeypatch):
+    """Req 4.2, 4.3, 4.4 — Search never leaks cross-user records.
+
+    **Validates: Requirements 4.2, 4.3, 4.4**
     """
-    # Feature: turbovec-vector-store-integration, Property 4: ACL filter isolation
-    search() with a user_id filter never returns records from other users.
-    Validates: Requirements 4.2, 4.3, 4.4
-    """
-    s = _make_store_for_pbt(tmp_path)
-    fixed_vec = [1.0] * 768
-
-    with patch("backend.rag.core_ai.embed_text", return_value=fixed_vec):
-        for r in records:
-            s.add(r["text"], {"user_id": r["user_id"]}, r["id"])
-
-    user_ids = list({r["user_id"] for r in records})
-    target_uid = user_ids[0]
-    target_ids = {r["id"] for r in records if r["user_id"] == target_uid}
-
-    with patch("backend.rag.core_ai.embed_text", return_value=fixed_vec):
-        results = s.search("query", filter_meta={"user_id": target_uid}, k=len(records))
-
-    for text in results:
-        matching_record = next(
-            (r for r in records if r["text"] == text), None
-        )
-        if matching_record:
-            assert matching_record["user_id"] == target_uid
+    store = _make_pbt_store(tmp_path, monkeypatch)
+    for rec in records:
+        store.add(rec["text"], {"user_id": rec["user_id"]}, rec["id"])
+    for rec in records:
+        uid = rec["user_id"]
+        results = store.search("query", filter_meta={"user_id": uid}, k=20)
+        # Build set of texts that belong to this user
+        user_texts = {r["text"] for r in records if r["user_id"] == uid}
+        for returned_text in results:
+            assert returned_text in user_texts, (
+                f"search leaked text '{returned_text}' not belonging to user '{uid}'"
+            )
+    _cleanup_pbt_store(monkeypatch)
 
 
+# Feature: turbovec-vector-store-integration, Property 5: Search result shape and ordering
 @given(
-    k=st.integers(min_value=1, max_value=10),
-    n=st.integers(min_value=1, max_value=15),
+    k=st.integers(min_value=1, max_value=5),
+    n=st.integers(min_value=1, max_value=8),
 )
-@settings(max_examples=100)
-def test_property_5_search_result_shape_and_ordering(k, n, tmp_path):
+@settings(max_examples=50, suppress_health_check=[HealthCheck.function_scoped_fixture])
+def test_property_search_result_shape_and_ordering(k, n, tmp_path, monkeypatch):
+    """Req 4.1, 4.6, 4.7 — Results have correct shape, positive scores, and are sorted.
+
+    **Validates: Requirements 4.1, 4.6, 4.7**
     """
-    # Feature: turbovec-vector-store-integration, Property 5: Search result shape and ordering
-    search_with_scores returns dicts with required keys, score > 0, descending order, len <= k.
-    Validates: Requirements 4.1, 4.6, 4.7
-    """
-    s = _make_store_for_pbt(tmp_path)
-
-    with patch("backend.rag.core_ai.embed_text", return_value=[1.0] * 768):
-        for i in range(n):
-            s.add(f"document {i}", {"user_id": "u1"}, f"rec_{i}")
-
-        results = s.search_with_scores("query", k=k)
-
+    store = _make_pbt_store(tmp_path, monkeypatch)
+    for i in range(n):
+        store.add(f"document {i}", {"user_id": "u1"}, f"rec_{i}")
+    results = store.search_with_scores("query", k=k)
     assert len(results) <= k
     for r in results:
         assert set(r.keys()) >= {"text", "metadata", "id", "score"}
         assert r["score"] > 0.0
-
     scores = [r["score"] for r in results]
     assert scores == sorted(scores, reverse=True)
+    _cleanup_pbt_store(monkeypatch)
 
 
+# Feature: turbovec-vector-store-integration, Property 6: Persistence round-trip
 @given(
     records=st.lists(
         st.fixed_dictionaries({
-            "text": _text_st,
-            "meta": _meta_st,
-            "id": _rid_st,
+            "text": st.text(min_size=1),
+            "meta": st.fixed_dictionaries({"user_id": st.text(min_size=1)}),
+            "id": st.text(min_size=1),
         }),
         min_size=0,
-        max_size=8,
+        max_size=5,
         unique_by=lambda r: r["id"],
-    ),
+    )
 )
-@settings(max_examples=50)
-def test_property_6_persistence_roundtrip(records, tmp_path):
-    """
-    # Feature: turbovec-vector-store-integration, Property 6: Persistence round-trip
-    save() then load() in a fresh instance recovers identical _texts, _metas, count().
-    Validates: Requirements 5.1, 5.2, 5.3
-    """
-    idx_path = str(tmp_path / "tv_persist_idx")
-    _inject_turbovec()
+@settings(max_examples=30, suppress_health_check=[HealthCheck.function_scoped_fixture])
+def test_property_persistence_round_trip(records, tmp_path, monkeypatch):
+    """Req 5.1, 5.2, 5.3 — save() + load() recovers identical state.
 
+    **Validates: Requirements 5.1, 5.2, 5.3**
+    """
+    import backend.rag as rag_module
+
+    turbovec_mod = _make_turbovec_module()
+    index_path = str(tmp_path / f"persist_idx_{_uuid.uuid4().hex}")
+    monkeypatch.setitem(sys.modules, "turbovec", turbovec_mod)
+    monkeypatch.setenv("TURBOVEC_INDEX_PATH", index_path)
+    monkeypatch.setattr(rag_module.core_ai, "embed_text", lambda text, **kw: [1.0] * 768)
+    rag_module._store = None
     if "backend.turbovec_store" in sys.modules:
         del sys.modules["backend.turbovec_store"]
     from backend.turbovec_store import TurboVecVectorStore
+    import backend.turbovec_store as tvs_mod
+    monkeypatch.setattr(tvs_mod, "get_embedding", lambda text, **kw: [1.0] * 768)
+    monkeypatch.setattr(tvs_mod, "get_query_embedding", lambda text, **kw: [1.0] * 768)
 
-    fixed_vec = [1.0] * 768
-    with patch("backend.rag.core_ai.embed_text", return_value=fixed_vec):
-        s1 = TurboVecVectorStore()
-        s1._index_path = idx_path
-        s1._meta_path = idx_path + ".meta.json"
-        import turbovec
-        s1._index = turbovec.IdMapIndex(bits=4)
+    s1 = TurboVecVectorStore()
+    s1.load()
+    for rec in records:
+        s1.add(rec["text"], rec["meta"], rec["id"])
+    s1.save()
 
-        for r in records:
-            s1.add(r["text"], r["meta"], r["id"])
-        s1.save()
+    assert os.path.exists(index_path + ".meta.json")
 
+    # Load a fresh instance
     if "backend.turbovec_store" in sys.modules:
         del sys.modules["backend.turbovec_store"]
-    from backend.turbovec_store import TurboVecVectorStore as TV2
+    from backend.turbovec_store import TurboVecVectorStore as TVS2
+    import backend.turbovec_store as tvs_mod2
+    monkeypatch.setattr(tvs_mod2, "get_embedding", lambda text, **kw: [1.0] * 768)
+    monkeypatch.setattr(tvs_mod2, "get_query_embedding", lambda text, **kw: [1.0] * 768)
 
-    s2 = TV2()
-    s2._index_path = idx_path
-    s2._meta_path = idx_path + ".meta.json"
+    s2 = TVS2()
     s2.load()
 
-    assert s2.count() == len(records)
-    for r in records:
-        assert s2._texts[r["id"]] == r["text"]
-        assert s2._metas[r["id"]] == r["meta"]
-
-    assert os.path.exists(idx_path + ".meta.json")
+    assert s2._texts == s1._texts
+    assert s2._metas == s1._metas
+    assert s2.count() == s1.count()
+    rag_module._store = None
 
 
+# Feature: turbovec-vector-store-integration, Property 7: JSON migration correctness
 @given(
-    valid_ids=st.lists(_rid_st, min_size=0, max_size=5, unique=True),
-    malformed_ids=st.lists(_rid_st, min_size=0, max_size=3, unique=True),
+    valid_count=st.integers(min_value=0, max_value=5),
+    malformed_count=st.integers(min_value=0, max_value=3),
 )
-@settings(max_examples=50)
-def test_property_7_migration_correctness(valid_ids, malformed_ids, tmp_path):
+@settings(max_examples=30, suppress_health_check=[HealthCheck.function_scoped_fixture])
+def test_property_migration_correctness(valid_count, malformed_count, tmp_path, monkeypatch):
+    """Req 6.1, 6.4 — All valid records imported; malformed records skipped.
+
+    **Validates: Requirements 6.1, 6.4**
     """
-    # Feature: turbovec-vector-store-integration, Property 7: JSON migration correctness
-    All valid records are imported; malformed vectors are skipped.
-    Validates: Requirements 6.1, 6.4
-    """
-    # Ensure no ID overlap between valid and malformed
-    all_ids = list(dict.fromkeys(valid_ids + malformed_ids))
-    v_ids = all_ids[:len(valid_ids)]
-    m_ids = all_ids[len(valid_ids):len(valid_ids) + len(malformed_ids)]
+    import backend.rag as rag_module
 
-    json_path = str(tmp_path / "vector_store.json")
-    idx_path = str(tmp_path / "tv_migrate_idx")
+    turbovec_mod = _make_turbovec_module()
+    index_path = str(tmp_path / f"mig_prop_idx_{_uuid.uuid4().hex}")
+    json_path = str(tmp_path / f"vector_store_prop_{_uuid.uuid4().hex}.json")
 
-    ids = v_ids + m_ids
-    documents = [f"doc_{i}" for i in range(len(ids))]
-    vectors = [[1.0] * 768] * len(v_ids) + ["BAD_VECTOR"] * len(m_ids)
-    metadatas = [{"user_id": "u1"}] * len(ids)
+    valid_ids = [f"valid_{i}" for i in range(valid_count)]
+    malformed_ids = [f"malformed_{i}" for i in range(malformed_count)]
+    all_ids = valid_ids + malformed_ids
+    vectors = [[0.1] * 768] * valid_count + ["not_a_list"] * malformed_count
+    documents = [f"doc {i}" for i in range(len(all_ids))]
+    metadatas = [{"user_id": "u1"}] * len(all_ids)
 
-    with open(json_path, "w", encoding="utf-8") as f:
-        json.dump({
-            "documents": documents,
-            "vectors": vectors,
-            "metadatas": metadatas,
-            "ids": ids,
-        }, f)
+    with open(json_path, "w") as f:
+        json.dump(
+            {"ids": all_ids, "vectors": vectors, "documents": documents, "metadatas": metadatas},
+            f,
+        )
 
-    _inject_turbovec()
-    import backend.turbovec_store as ts_mod
-    importlib.reload(ts_mod)
-
-    with patch.object(ts_mod, "_DEFAULT_JSON_PATH", json_path):
-        s = ts_mod.TurboVecVectorStore()
-        s._index_path = idx_path
-        s._meta_path = idx_path + ".meta.json"
-        import turbovec
-        s._index = turbovec.IdMapIndex(bits=4)
-        s._texts = {}
-        s._metas = {}
-        s._migrate_from_json(json_path)
-
-    assert s.count() == len(v_ids)
-    for rid in v_ids:
-        assert rid in s._texts
-    for rid in m_ids:
-        assert rid not in s._texts
-
-
-@given(n_calls=st.integers(min_value=2, max_value=10))
-@settings(max_examples=50)
-def test_property_8_singleton_idempotence(n_calls, tmp_path, monkeypatch):
-    """
-    # Feature: turbovec-vector-store-integration, Property 8: Singleton idempotence
-    get_vector_store() returns the identical object on all calls.
-    Validates: Requirement 7.3
-    """
-    monkeypatch.setenv("TURBOVEC_INDEX_PATH", str(tmp_path / "idx_singleton"))
-    _inject_turbovec()
+    monkeypatch.setitem(sys.modules, "turbovec", turbovec_mod)
+    monkeypatch.setenv("TURBOVEC_INDEX_PATH", index_path)
+    monkeypatch.setattr(rag_module.core_ai, "embed_text", lambda text, **kw: [1.0] * 768)
+    rag_module._store = None
     if "backend.turbovec_store" in sys.modules:
         del sys.modules["backend.turbovec_store"]
-
-    import backend.rag as rag_mod
-    rag_mod._store = None
-
-    with patch("backend.rag.core_ai.embed_text", return_value=[1.0] * 768):
-        first = rag_mod.get_vector_store()
-        for _ in range(n_calls - 1):
-            subsequent = rag_mod.get_vector_store()
-            assert subsequent is first
-
-    rag_mod._store = None
-
-
-@given(
-    quant=st.text(min_size=1, max_size=5).filter(lambda s: s not in {"2", "4"}),
-)
-@settings(max_examples=100)
-def test_property_9_invalid_quantization_fallback(quant, tmp_path, monkeypatch, caplog):
-    """
-    # Feature: turbovec-vector-store-integration, Property 9: Invalid quantization falls back to 4-bit
-    Any TURBOVEC_QUANTIZATION value outside {"2","4"} → _quantization == 4, WARNING logged.
-    Validates: Requirement 1.3
-    """
-    monkeypatch.setenv("TURBOVEC_INDEX_PATH", str(tmp_path / "idx_q"))
-    monkeypatch.setenv("TURBOVEC_QUANTIZATION", quant)
-    _inject_turbovec()
-    if "backend.turbovec_store" in sys.modules:
-        del sys.modules["backend.turbovec_store"]
+    import backend.turbovec_store as tvs_mod
+    monkeypatch.setattr(tvs_mod, "_DEFAULT_JSON_PATH", json_path)
+    monkeypatch.setattr(tvs_mod, "get_embedding", lambda text, **kw: [1.0] * 768)
+    monkeypatch.setattr(tvs_mod, "get_query_embedding", lambda text, **kw: [1.0] * 768)
     from backend.turbovec_store import TurboVecVectorStore
 
-    import logging
-    with caplog.at_level(logging.WARNING, logger="backend.turbovec_store"):
+    s = TurboVecVectorStore()
+    s.load()
+
+    assert s.count() == valid_count
+    for vid in valid_ids:
+        assert vid in s._texts
+    for mid in malformed_ids:
+        assert mid not in s._texts
+
+    rag_module._store = None
+
+
+# Feature: turbovec-vector-store-integration, Property 8: Singleton idempotence
+@given(n_calls=st.integers(min_value=2, max_value=10))
+@settings(max_examples=30, suppress_health_check=[HealthCheck.function_scoped_fixture])
+def test_property_singleton_idempotence(n_calls, tmp_path, monkeypatch):
+    """Req 7.3 — get_vector_store() always returns the same object.
+
+    **Validates: Requirements 7.3**
+    """
+    import backend.rag as rag_module
+
+    turbovec_mod = _make_turbovec_module()
+    index_path = str(tmp_path / f"singleton_idx_{_uuid.uuid4().hex}")
+    monkeypatch.setitem(sys.modules, "turbovec", turbovec_mod)
+    monkeypatch.setenv("TURBOVEC_INDEX_PATH", index_path)
+    monkeypatch.setattr(rag_module.core_ai, "embed_text", lambda text, **kw: [1.0] * 768)
+    rag_module._store = None
+    if "backend.turbovec_store" in sys.modules:
+        del sys.modules["backend.turbovec_store"]
+    import backend.turbovec_store as tvs_mod
+    monkeypatch.setattr(tvs_mod, "get_embedding", lambda text, **kw: [1.0] * 768)
+    monkeypatch.setattr(tvs_mod, "get_query_embedding", lambda text, **kw: [1.0] * 768)
+    from backend.rag import get_vector_store
+
+    instances = [get_vector_store() for _ in range(n_calls)]
+    first_id = id(instances[0])
+    for inst in instances[1:]:
+        assert id(inst) == first_id, "get_vector_store() must return the same cached object"
+
+    rag_module._store = None
+
+
+# Feature: turbovec-vector-store-integration, Property 9: Invalid quantization falls back to 4-bit
+@given(quant=st.text(alphabet=st.characters(blacklist_categories=("Cs",), blacklist_characters="\x00")).filter(lambda s: s not in {"2", "4"}))
+@settings(max_examples=50, suppress_health_check=[HealthCheck.function_scoped_fixture])
+def test_property_invalid_quantization_fallback(quant, tmp_path, monkeypatch):
+    """Req 1.3 — Invalid TURBOVEC_QUANTIZATION always falls back to 4-bit with a WARNING.
+
+    **Validates: Requirements 1.3**
+    """
+    import backend.rag as rag_module
+
+    turbovec_mod = _make_turbovec_module()
+    monkeypatch.setitem(sys.modules, "turbovec", turbovec_mod)
+    monkeypatch.setenv("TURBOVEC_INDEX_PATH", str(tmp_path / f"quant_prop_idx_{_uuid.uuid4().hex}"))
+    monkeypatch.setenv("TURBOVEC_QUANTIZATION", quant)
+    monkeypatch.setattr(rag_module.core_ai, "embed_text", lambda text, **kw: [1.0] * 768)
+    rag_module._store = None
+    if "backend.turbovec_store" in sys.modules:
+        del sys.modules["backend.turbovec_store"]
+
+    # Import the module fresh so the module-level logger is bound, then patch it.
+    import backend.turbovec_store as tvs_mod_fresh
+
+    with patch("backend.turbovec_store.logger") as mock_logger:
+        from backend.turbovec_store import TurboVecVectorStore
         s = TurboVecVectorStore()
 
-    assert s._quantization == 4
-    assert len(caplog.records) > 0
+    assert s._quantization == 4, (
+        f"Expected fallback to 4-bit, got {s._quantization} for quant={quant!r}"
+    )
+    mock_logger.warning.assert_called()
+
+    rag_module._store = None

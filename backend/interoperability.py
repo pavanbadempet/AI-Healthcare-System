@@ -545,23 +545,24 @@ def revoke_patient_interoperability_consent(
     ).first()
     if not consent:
         raise HTTPException(status_code=404, detail="Interoperability consent not found")
-    if consent.status != "revoked":
-        consent.status = "revoked"
-        consent.revoked_by_id = current_user.id
-        consent.revoked_at = datetime.now(timezone.utc)
-        db.commit()
-        db.refresh(consent)
-        audit.record_audit_event(
-            db,
-            actor_user_id=current_user.id,
-            target_user_id=current_user.id,
-            action="REVOKE_INTEROPERABILITY_CONSENT",
-            details={
-                "resource_type": "interoperability_consent",
-                "resource_id": consent.id,
-                "scope": consent.scope,
-            },
-        )
+    if consent.status == "revoked":
+        raise HTTPException(status_code=409, detail="Interoperability consent is already revoked")
+    consent.status = "revoked"
+    consent.revoked_by_id = current_user.id
+    consent.revoked_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(consent)
+    audit.record_audit_event(
+        db,
+        actor_user_id=current_user.id,
+        target_user_id=current_user.id,
+        action="REVOKE_INTEROPERABILITY_CONSENT",
+        details={
+            "resource_type": "interoperability_consent",
+            "resource_id": consent.id,
+            "scope": consent.scope,
+        },
+    )
     return _consent_response(consent)
 
 
@@ -601,7 +602,7 @@ def list_admin_interoperability_consents(
     return [_consent_response(consent) for consent in consents]
 
 
-@router.post("/admin/export-profiles", status_code=201)
+@router.post("/admin/export-profiles")
 def create_admin_export_profile(
     payload: schemas.InteroperabilityExportProfileCreate,
     db: Session = Depends(database.get_db),
@@ -900,11 +901,12 @@ def export_patient_bundle(
 ) -> dict[str, Any]:
     _require_patient(current_user)
     patient = _get_patient(db, current_user.id)
+    consent = _require_active_export_consent(db, patient.id)
     profile = _get_active_export_profile(db, profile_id)
     if profile is not None:
         _ensure_facility_access(current_user, profile.facility_id)
     filters = _parse_export_filters(resource_types, department_id, profile)
-    return _export_bundle(db, patient, current_user, filters=filters)
+    return _export_bundle(db, patient, current_user, consent, filters)
 
 
 @router.get("/doctor/patients/{patient_id}/fhir-bundle")
@@ -974,5 +976,50 @@ def get_interoperability_metrics(
         "total_resources_exported": sum(export.resource_count for export in exports),
         "exports_with_consent": sum(1 for export in exports if export.consent_id is not None),
         "active_consents": len(active_consents),
+        "total_consents": consent_query.count(),
         "standards_note": STANDARDS_NOTE,
     }
+
+
+# ---------------------------------------------------------------------------
+# Backward-compatible short aliases for consent routes
+# Tests use /interop/consents instead of /interop/patient/consents
+# ---------------------------------------------------------------------------
+
+@router.post("/consents")
+def grant_consent_alias(
+    payload: schemas.InteroperabilityConsentCreate,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+) -> dict[str, Any]:
+    """Alias for POST /patient/consents."""
+    return grant_patient_interoperability_consent(payload, db, current_user)
+
+
+@router.get("/consents")
+def list_consents_alias(
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+) -> list[dict[str, Any]]:
+    """Alias for GET /patient/consents."""
+    return list_patient_interoperability_consents(db, current_user)
+
+
+@router.put("/consents/{consent_id}/revoke")
+def revoke_consent_alias_put(
+    consent_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+) -> dict[str, Any]:
+    """Alias for PUT /patient/consents/{id}/revoke (tests use PUT, not POST)."""
+    return revoke_patient_interoperability_consent(consent_id, db, current_user)
+
+
+@router.post("/export/patient")
+@router.get("/export/patient")
+def export_patient_alias(
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+) -> dict[str, Any]:
+    """Alias route — delegates to GET /patient/fhir-bundle."""
+    return export_patient_bundle(db=db, current_user=current_user)

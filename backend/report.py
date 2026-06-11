@@ -2,7 +2,7 @@
 Backend Report Analysis Module
 ==============================
 Handles the "Smart Lab Analyzer" feature.
-Uses Computer Vision to extract numerical data 
+Uses Computer Vision to extract numerical data
 from uploaded medical report images (PNG/JPG).
 
 Author: Pavan Badempet
@@ -39,13 +39,13 @@ async def analyze_report(
 ) -> Dict[str, Any]:
     """
     Analyze an uploaded medical report image.
-    
+
     Args:
         file (UploadFile): Image file (JPEG/PNG).
-        
+
     Returns:
         dict: Extracted metrics and summary.
-    
+
     Raises:
         HTTPException(400): Invalid file type.
         HTTPException(500): Analysis failure.

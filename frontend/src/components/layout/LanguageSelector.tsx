@@ -6,10 +6,10 @@ import { useState, useRef, useEffect } from "react";
 import { Globe, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Tooltip from "./Tooltip";
-import { Language } from "@/lib/i18n";
+import type { Language } from "../../lib/i18n";
 
 interface LanguageSelectorProps {
-  language: string;
+  language: Language;
   setLanguage: (lang: Language) => void;
 }
 
@@ -27,7 +27,7 @@ export default function LanguageSelector({ language, setLanguage }: LanguageSele
     return () => document.removeEventListener("mousedown", handler);
   }, [languageOpen]);
 
-  const languages = [
+  const languages: Array<{ code: Language; label: string }> = [
     { code: 'en', label: 'English' },
     { code: 'es', label: 'Español' },
     { code: 'hi', label: 'हिन्दी' },

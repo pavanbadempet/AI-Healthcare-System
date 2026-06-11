@@ -22,14 +22,14 @@ def send_booking_confirmation(to_email: str, patient_name: str, doctor_name: str
         subject = f"Appointment Confirmed: {doctor_name}"
         body = f"""
         Dear {patient_name},
-        
+
         Your appointment with {doctor_name} has been confirmed.
-        
+
         📅 Date & Time: {date_time}
         🔗 Video Link: {link}
-        
+
         Please join 5 minutes early.
-        
+
         Regards,
         AI Healthcare System
         """

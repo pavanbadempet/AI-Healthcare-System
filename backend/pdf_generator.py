@@ -11,7 +11,6 @@ Dependencies: fpdf2 (core), matplotlib (charts — gracefully skipped if absent)
 """
 import io
 import logging
-import os
 from collections import defaultdict
 from datetime import datetime
 from typing import Any, Dict, List, Optional
@@ -24,8 +23,8 @@ logger = logging.getLogger(__name__)
 try:
     import matplotlib
     matplotlib.use("Agg")  # non-interactive backend, safe in server environments
-    import matplotlib.pyplot as plt
     import matplotlib.dates as mdates
+    import matplotlib.pyplot as plt
     from matplotlib.figure import Figure
     _MPL_AVAILABLE = True
 except ImportError:  # pragma: no cover
@@ -63,6 +62,25 @@ def _parse_date(value: Any) -> Optional[datetime]:
     return None
 
 
+_PDF_TEXT_REPLACEMENTS = str.maketrans({
+    "\u2013": "-",
+    "\u2014": "-",
+    "\u2018": "'",
+    "\u2019": "'",
+    "\u201c": '"',
+    "\u201d": '"',
+    "\u2022": "-",
+    "\u00a0": " ",
+})
+
+
+def _pdf_text(value: Any, limit: Optional[int] = None) -> str:
+    """Return text safe for FPDF core fonts."""
+    text = str(value).translate(_PDF_TEXT_REPLACEMENTS)
+    text = text.encode("latin-1", errors="replace").decode("latin-1")
+    return text[:limit] if limit is not None else text
+
+
 def _chart_risk_assessment_history(health_records: List[Dict[str, Any]]) -> Optional[bytes]:
     """
     Bar chart showing assessment outcomes (High Risk vs Low Risk) per record type
@@ -93,9 +111,9 @@ def _chart_risk_assessment_history(health_records: List[Dict[str, Any]]) -> Opti
 
     fig, ax = plt.subplots(figsize=(7, 3.5))
     width = 0.35
-    bars_low = ax.bar([i - width / 2 for i in x], low_counts, width,
+    ax.bar([i - width / 2 for i in x], low_counts, width,
                       label="Low Risk", color="#16a34a", alpha=0.85)
-    bars_high = ax.bar([i + width / 2 for i in x], high_counts, width,
+    ax.bar([i + width / 2 for i in x], high_counts, width,
                        label="High Risk", color="#dc2626", alpha=0.85)
 
     ax.set_xlabel("Assessment Type", fontsize=9)
@@ -342,7 +360,7 @@ def generate_health_report(
     # ── User Info ──────────────────────────────────────────────────────────
     pdf.set_font("Helvetica", "B", 14)
     pdf.set_text_color(30, 30, 30)
-    pdf.cell(0, 10, f"Health Report for {user_name}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 10, _pdf_text(f"Health Report for {user_name}"), new_x="LMARGIN", new_y="NEXT")
 
     pdf.set_font("Helvetica", "", 11)
     pdf.set_text_color(60, 60, 60)
@@ -361,10 +379,10 @@ def generate_health_report(
         except Exception:
             pass
 
-    pdf.cell(0, 7, f"Date of Birth: {dob}", new_x="LMARGIN", new_y="NEXT")
-    pdf.cell(0, 7, f"Height: {height} cm | Weight: {weight} kg | BMI: {bmi_str}",
+    pdf.cell(0, 7, _pdf_text(f"Date of Birth: {dob}"), new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 7, _pdf_text(f"Height: {height} cm | Weight: {weight} kg | BMI: {bmi_str}"),
              new_x="LMARGIN", new_y="NEXT")
-    pdf.cell(0, 7, f"Blood Type: {blood_type}", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 7, _pdf_text(f"Blood Type: {blood_type}"), new_x="LMARGIN", new_y="NEXT")
     pdf.ln(8)
 
     # ── Health Assessment Table ────────────────────────────────────────────
@@ -398,9 +416,9 @@ def generate_health_report(
             else:
                 pdf.set_text_color(22, 163, 74)
 
-            pdf.cell(50, 7, str(date_str)[:10], border=1)
-            pdf.cell(50, 7, str(record_type), border=1)
-            pdf.cell(80, 7, str(prediction)[:40], border=1, new_x="LMARGIN", new_y="NEXT")
+            pdf.cell(50, 7, _pdf_text(date_str, 10), border=1)
+            pdf.cell(50, 7, _pdf_text(record_type), border=1)
+            pdf.cell(80, 7, _pdf_text(prediction, 40), border=1, new_x="LMARGIN", new_y="NEXT")
             pdf.set_text_color(60, 60, 60)
 
     pdf.ln(10)
@@ -465,9 +483,9 @@ def generate_health_report(
         "- Maintain a balanced diet rich in fruits and vegetables",
         "- Exercise for at least 30 minutes daily",
         "- Get 7-8 hours of quality sleep each night",
-        "- Stay hydrated — drink 8 glasses of water daily",
+        "- Stay hydrated - drink 8 glasses of water daily",
         "- Monitor your vitals regularly and track changes",
     ]:
-        pdf.cell(0, 6, rec, new_x="LMARGIN", new_y="NEXT")
+        pdf.cell(0, 6, _pdf_text(rec), new_x="LMARGIN", new_y="NEXT")
 
     return bytes(pdf.output())

@@ -1,4 +1,4 @@
-import { createBed, createDepartment, getDepartments, setTokenGetter } from '@/lib/api';
+import { createBed, createDepartment, getBeds, getDepartments, setTokenGetter } from '@/lib/api';
 
 const fetchMock = vi.fn();
 
@@ -24,7 +24,7 @@ describe('hospital setup API adapter', () => {
 
     const departments = await getDepartments();
 
-    expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8000/hospital/departments', {
+    expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8000/v1/hospital/departments', {
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer admin-token',
@@ -42,7 +42,7 @@ describe('hospital setup API adapter', () => {
     await createBed({ department_id: 2, bed_number: 'ER-01', ward: 'Resus', status: 'available' });
 
     expect(fetchMock.mock.calls[0]).toEqual([
-      'http://127.0.0.1:8000/hospital/departments',
+        'http://127.0.0.1:8000/v1/hospital/departments',
       {
         method: 'POST',
         body: JSON.stringify({ name: 'Emergency', department_type: 'Emergency', location: 'Ground' }),
@@ -53,7 +53,7 @@ describe('hospital setup API adapter', () => {
       },
     ]);
     expect(fetchMock.mock.calls[1]).toEqual([
-      'http://127.0.0.1:8000/hospital/beds',
+        'http://127.0.0.1:8000/v1/hospital/beds',
       {
         method: 'POST',
         body: JSON.stringify({ department_id: 2, bed_number: 'ER-01', ward: 'Resus', status: 'available' }),
@@ -62,6 +62,20 @@ describe('hospital setup API adapter', () => {
           Authorization: 'Bearer admin-token',
         },
       },
+    ]);
+  });
+
+  it('loads beds with and without status filters', async () => {
+    fetchMock
+      .mockReturnValueOnce(mockJsonResponse([]))
+      .mockReturnValueOnce(mockJsonResponse([]));
+
+    await getBeds();
+    await getBeds('available');
+
+    expect(fetchMock.mock.calls.map(([url]) => url)).toEqual([
+      'http://127.0.0.1:8000/v1/hospital/beds',
+      'http://127.0.0.1:8000/v1/hospital/beds?status=available',
     ]);
   });
 });

@@ -27,7 +27,7 @@ def log_audit_event(
 ):
     """
     Log a security-critical event to the AuditLog table.
-    
+
     Args:
         db: Database session
         action: Short string code (e.g. 'VIEW_PROFILE', 'DELETE_USER')

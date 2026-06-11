@@ -34,7 +34,7 @@ describe('patient registry API adapter', () => {
 
     await expect(getDoctorPatients()).resolves.toEqual(panel);
 
-    expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8000/hospital/doctor/patients', {
+    expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8000/v1/hospital/doctor/patients', {
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer doctor-token',
@@ -57,7 +57,7 @@ describe('patient registry API adapter', () => {
 
     await expect(getAdminPatient(42)).resolves.toEqual(profile);
 
-    expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8000/admin/patients/42', {
+    expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8000/v1/admin/patients/42', {
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer doctor-token',
@@ -79,7 +79,7 @@ describe('patient registry API adapter', () => {
 
     await expect(getAdminPatients()).resolves.toEqual(patients);
 
-    expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8000/admin/patients', {
+    expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8000/v1/admin/patients', {
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer doctor-token',

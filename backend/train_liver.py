@@ -10,7 +10,7 @@ from sklearn.preprocessing import RobustScaler
 from sklearn.utils import resample
 
 try:
-    from .features import LIVER_FEATURES
+    from .features import LIVER_FEATURES  # noqa: F401
 except ImportError:
     pass
 
