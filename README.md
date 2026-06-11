@@ -827,13 +827,13 @@ A quick map from system capability to the module that owns it:
 
 | Capability | What it does | Module |
 | :--- | :--- | :--- |
-| **ML Disease Prediction** | Trains and serves 5 tabular classifiers with SHAP feature attribution. | [backend/ml/train_diabetes.py](backend/ml/train_diabetes.py) · [backend/ml/explainability.py](backend/ml/explainability.py) |
-| **Multi-Agent Orchestration** | Supervisor-routed LangGraph graph with researcher, analyst, guardrail, and generate nodes. | [backend/services/agent.py](backend/services/agent.py) |
-| **RAG Pipeline** | Patient-scoped semantic retrieval, 3,000-token context assembly, citations. | [backend/services/rag.py](backend/services/rag.py) · [backend/services/chat_context.py](backend/services/chat_context.py) |
-| **AI Provider Gateway** | Single-gateway fallback chain: Ollama → Gemini → OpenAI/Anthropic with retry and TTL cache. | [backend/services/core_ai.py](backend/services/core_ai.py) |
+| **ML Disease Prediction** | Trains and serves 5 tabular classifiers with SHAP feature attribution. | [backend/train_diabetes.py](backend/train_diabetes.py) · [backend/explainability.py](backend/explainability.py) |
+| **Multi-Agent Orchestration** | Supervisor-routed LangGraph graph with researcher, analyst, guardrail, and generate nodes. | [backend/agent.py](backend/agent.py) |
+| **RAG Pipeline** | Patient-scoped semantic retrieval, 3,000-token context assembly, citations. | [backend/rag.py](backend/rag.py) · [backend/chat_context.py](backend/chat_context.py) |
+| **AI Provider Gateway** | Single-gateway fallback chain: Ollama → Gemini → OpenAI/Anthropic with retry and TTL cache. | [backend/core_ai.py](backend/core_ai.py) |
 | **FHIR R4 & Interoperability** | Patient, Encounter, Observation, and MedicationRequest serializers; ABDM and DICOM connectors. | [backend/fhir.py](backend/fhir.py) · [backend/terminology.py](backend/terminology.py) |
-| **Auth & RBAC** | JWT HS256, bcrypt, role enforcement (patient / doctor / admin) across all routes. | [backend/api/auth.py](backend/api/auth.py) |
-| **8-Layer Middleware** | Request tracing, rate limiting, PII-safe exception masking, security headers, compression. | [backend/services/middleware.py](backend/services/middleware.py) |
+| **Auth & RBAC** | JWT HS256, bcrypt, role enforcement (patient / doctor / admin) across all routes. | [backend/auth.py](backend/auth.py) |
+| **8-Layer Middleware** | Request tracing, rate limiting, PII-safe exception masking, security headers, compression. | [backend/middleware.py](backend/middleware.py) |
 | **AWS Infrastructure (IaC)** | VPC, EKS cluster, RDS, ElastiCache, S3, EFS, ALB, Route53 via Terraform. | [terraform/main.tf](terraform/main.tf) |
 
 ---
