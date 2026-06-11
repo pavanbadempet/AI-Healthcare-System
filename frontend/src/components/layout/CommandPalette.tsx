@@ -93,6 +93,7 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
                 <input
                   type="text"
                   placeholder="Search modules, predictors, billing, or profile settings..."
+                  aria-label="Search modules, predictors, billing, or profile settings"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="flex-1 text-xs text-[var(--text-primary)] placeholder-[var(--text-muted)] bg-transparent outline-none border-none py-0.5"

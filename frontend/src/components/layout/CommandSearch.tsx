@@ -114,6 +114,7 @@ export default function CommandSearch({ user }: CommandSearchProps) {
                 ref={searchInputRef}
                 type="text"
                 placeholder="Search patients, rooms, or tools..."
+                aria-label="Search patients, rooms, or tools"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={handleSearchKeyDown}
