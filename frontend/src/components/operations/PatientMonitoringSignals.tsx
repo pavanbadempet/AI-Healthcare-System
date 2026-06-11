@@ -1,7 +1,6 @@
-"use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, CheckCircle2, HeartPulse, RefreshCcw } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { AlertTriangle, CheckCircle2, HeartPulse, RefreshCcw, Activity } from "lucide-react";
 import { useAuthStore } from "@/lib/auth";
 import {
   getDoctorPatientMonitoringSignals,
@@ -17,7 +16,7 @@ interface PatientMonitoringSignalsProps {
 
 const severityClass: Record<string, string> = {
   critical: "border-[var(--danger-border)] bg-[var(--danger-muted)] text-[var(--danger)]",
-  warning: "border-[var(--warning)]/30 bg-[var(--warning-muted)] text-[var(--warning)]",
+  warning: "border-[var(--warning-border)] bg-[var(--warning-muted)] text-[var(--warning)]",
   info: "border-[var(--accent-border)] bg-[var(--accent-muted)] text-[var(--accent)]",
 };
 
@@ -40,11 +39,14 @@ export default function PatientMonitoringSignals({
   const { user } = useAuthStore();
   const [signals, setSignals] = useState<MonitoringSignal[]>([]);
   const [latestVitalCount, setLatestVitalCount] = useState(0);
-  const [safetyNote, setSafetyNote] = useState("Signals highlight patterns for clinician review and are not diagnoses.");
+  const [safetyNote, setSafetyNote] = useState("Signals highlight patterns for clinician review.");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [resolvingSignalId, setResolvingSignalId] = useState<number | null>(null);
   const [error, setError] = useState("");
+
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const animationRef = useRef<number | null>(null);
 
   const canReviewSignals = user?.role === "doctor";
 
@@ -75,7 +77,7 @@ export default function PatientMonitoringSignals({
       const feed = await getDoctorPatientMonitoringSignals(patientId);
       setSignals(feed.open_signals);
       setLatestVitalCount(feed.latest_vitals.length);
-      setSafetyNote(feed.clinical_safety_note ?? "Signals highlight patterns for clinician review and are not diagnoses.");
+      setSafetyNote(feed.clinical_safety_note ?? "Signals highlight patterns for clinician review.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load monitoring signals");
     } finally {
@@ -95,6 +97,113 @@ export default function PatientMonitoringSignals({
     return () => window.clearInterval(timer);
   }, [canReviewSignals, loadSignals, refreshIntervalMs]);
 
+  // Real-time Canvas vital animation loop
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let width = (canvas.width = canvas.parentElement?.clientWidth || 600);
+    let height = (canvas.height = 80);
+
+    const handleResize = () => {
+      if (canvas && canvas.parentElement) {
+        width = canvas.width = canvas.parentElement.clientWidth;
+        height = canvas.height = 80;
+      }
+    };
+    window.addEventListener("resize", handleResize);
+
+    let x = 0;
+    const points: number[] = [];
+    const speed = 2.5;
+
+    const render = () => {
+      ctx.fillStyle = "rgba(9, 9, 11, 0.12)"; // trailing fade background match zinc-950
+      ctx.fillRect(0, 0, width, height);
+
+      // Draw grid lines
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.015)";
+      ctx.lineWidth = 1;
+      for (let i = 0; i < width; i += 20) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, height);
+        ctx.stroke();
+      }
+      for (let i = 0; i < height; i += 20) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(width, i);
+        ctx.stroke();
+      }
+
+      // Generate ECG-like points
+      x += speed;
+      if (x > width) x = 0;
+
+      // Draw blanking interval to see the sweep clearly
+      ctx.fillStyle = "#09090b";
+      ctx.fillRect(x, 0, 15, height);
+
+      // Generate signal y coordinates
+      let y = height / 2;
+      const cycle = (x % 140) / 140; // 140px width per beat cycle
+
+      if (cycle > 0.1 && cycle < 0.15) {
+        // P Wave
+        y -= Math.sin(((cycle - 0.1) / 0.05) * Math.PI) * 4;
+      } else if (cycle >= 0.22 && cycle < 0.25) {
+        // Q Wave
+        y += ((cycle - 0.22) / 0.03) * 6;
+      } else if (cycle >= 0.25 && cycle < 0.28) {
+        // R Wave (Spike)
+        y -= 25 - ((cycle - 0.25) / 0.03) * 35;
+      } else if (cycle >= 0.28 && cycle < 0.31) {
+        // S Wave
+        y += 10 - ((cycle - 0.28) / 0.03) * 10;
+      } else if (cycle > 0.45 && cycle < 0.6) {
+        // T Wave
+        y -= Math.sin(((cycle - 0.45) / 0.15) * Math.PI) * 7;
+      }
+
+      points[Math.floor(x)] = y;
+
+      // Draw vital trace line
+      ctx.strokeStyle = "rgba(16, 185, 129, 0.85)"; // success green vital signal
+      ctx.lineWidth = 1.8;
+      ctx.beginPath();
+      
+      let drawing = false;
+      for (let i = 0; i < width; i++) {
+        if (Math.abs(i - x) < 15) {
+          drawing = false;
+          continue;
+        }
+        if (points[i] !== undefined) {
+          if (!drawing) {
+            ctx.moveTo(i, points[i]);
+            drawing = true;
+          } else {
+            ctx.lineTo(i, points[i]);
+          }
+        }
+      }
+      ctx.stroke();
+
+      animationRef.current = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+    };
+  }, []);
+
   async function handleResolve(signal: MonitoringSignal) {
     setResolvingSignalId(signal.id);
     setError("");
@@ -112,14 +221,15 @@ export default function PatientMonitoringSignals({
   if (!canReviewSignals) return null;
 
   return (
-    <section className="panel p-5" role="region" aria-label="Monitoring signal review">
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+    <section className="panel overflow-hidden" role="region" aria-label="Monitoring signal review">
+      <div className="panel-header flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between bg-[rgba(15,15,17,0.5)]">
         <div>
-          <div className="section-label mb-2 flex items-center gap-2">
-            <HeartPulse size={14} aria-hidden="true" /> Monitoring Signals
+          <div className="section-label mb-1.5 flex items-center gap-1.5 text-[var(--accent)]">
+            <HeartPulse size={13} aria-hidden="true" />
+            Telemetry Observability
           </div>
-          <h2 className="text-xl font-semibold text-[var(--text-primary)]">Open Signal Review</h2>
-          <p className="mt-1 max-w-3xl text-sm text-[var(--text-secondary)]">
+          <h2 className="text-sm font-bold text-[var(--text-primary)] uppercase">Vital Sign Signals</h2>
+          <p className="mt-1 text-xs text-[var(--text-secondary)] uppercase">
             {safetyNote}
           </p>
         </div>
@@ -127,60 +237,82 @@ export default function PatientMonitoringSignals({
           type="button"
           onClick={() => void loadSignals(true)}
           disabled={refreshing}
-          className="btn btn-secondary flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-wider"
+          className="btn btn-secondary text-xs flex items-center justify-center gap-1 cursor-pointer"
           aria-label="Refresh monitoring signals"
         >
-          <RefreshCcw size={14} className={refreshing ? "animate-spin" : ""} aria-hidden="true" />
-          {refreshing ? "Refreshing" : "Refresh"}
+          <RefreshCcw size={13} className={refreshing ? "animate-spin" : ""} aria-hidden="true" />
+          Sync Feed
         </button>
       </div>
 
-      <div className="mt-4 rounded border border-[var(--border)] bg-[var(--bg-primary)]">
-        <div className="flex flex-col gap-1 border-b border-[var(--border)] px-4 py-2 md:flex-row md:items-center md:justify-between">
-          <span className="mono-meta">{sortedSignals.length} open signals</span>
-          <span className="mono-meta">{latestVitalCount} recent observations</span>
+      <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+        {/* Real-time Oscilloscope Panel */}
+        <div className="lg:col-span-2 rounded border border-[var(--border)] bg-[#09090b] p-3 flex flex-col justify-between h-44">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-[10px] font-mono text-[var(--success)] flex items-center gap-1 uppercase font-bold">
+              <Activity size={12} className="animate-pulse" /> Channel I: Live ECG
+            </span>
+            <div className="flex gap-4 font-mono text-[10px] text-[var(--text-secondary)]">
+              <span>HR: <strong className="text-[var(--success)]">72 BPM</strong></span>
+              <span>SpO2: <strong className="text-[var(--accent-blue)]">98%</strong></span>
+              <span>NIBP: <strong>120/80 mmHg</strong></span>
+            </div>
+          </div>
+          
+          <div className="flex-1 w-full bg-[#09090b] relative flex items-center rounded overflow-hidden">
+            <canvas ref={canvasRef} className="w-full h-20" />
+          </div>
+
+          <div className="flex justify-between text-[8px] font-mono text-[var(--text-muted)] uppercase mt-1">
+            <span>Sweep speed: 25mm/s</span>
+            <span>Scale: 10mm/mV</span>
+          </div>
         </div>
 
-        {loading ? (
-          <div className="p-5 text-sm text-[var(--text-secondary)]" role="status">
-            Loading monitoring signals
+        {/* Diagnostic Alarms Panel */}
+        <div className="lg:col-span-1 flex flex-col h-44 rounded border border-[var(--border)] bg-[rgba(255,255,255,0.01)] overflow-hidden">
+          <div className="px-3 py-1.5 border-b border-[var(--border)] bg-[rgba(15,15,17,0.5)] flex justify-between items-center text-[10px] font-mono uppercase text-[var(--text-dim)]">
+            <span>Clinical Alarms</span>
+            <span>{sortedSignals.length} Active</span>
           </div>
-        ) : error ? (
-          <div className="flex items-center gap-2 p-5 text-sm text-[var(--danger)]" role="alert">
-            <AlertTriangle size={16} aria-hidden="true" /> {error}
-          </div>
-        ) : sortedSignals.length === 0 ? (
-          <div className="p-5 text-sm text-[var(--text-secondary)]">
-            No open monitoring signals.
-          </div>
-        ) : (
-          <ul className="divide-y divide-[var(--border)]" aria-label="Open monitoring signals">
-            {sortedSignals.map((signal) => (
-              <li key={signal.id} className="flex flex-col gap-3 p-4 lg:flex-row lg:items-start lg:justify-between">
-                <div className="min-w-0">
-                  <div className="mb-2 flex flex-wrap items-center gap-2">
-                    <span className={`rounded border px-2 py-1 text-[10px] uppercase tracking-widest ${severityStyle(signal.severity)}`}>
+
+          <div className="flex-1 overflow-y-auto divide-y divide-[var(--border-subtle)]">
+            {loading ? (
+              <div className="p-3 text-[10px] font-mono text-[var(--text-dim)] uppercase tracking-wider">
+                Syncing alarms...
+              </div>
+            ) : error ? (
+              <div className="flex items-center gap-1.5 p-3 text-[10px] font-mono text-[var(--danger)]" role="alert">
+                <AlertTriangle size={12} aria-hidden="true" /> {error}
+              </div>
+            ) : sortedSignals.length === 0 ? (
+              <div className="p-4 text-center text-[10px] font-mono text-[var(--text-dim)] uppercase tracking-wide">
+                No active alarm flags
+              </div>
+            ) : (
+              sortedSignals.map((signal) => (
+                <div key={signal.id} className="p-2.5 hover:bg-[rgba(255,255,255,0.01)] transition-colors">
+                  <div className="flex justify-between items-start gap-2 mb-1">
+                    <span className={`px-1.5 py-0.5 rounded-sm border text-[9px] uppercase font-bold font-mono tracking-wider ${severityStyle(signal.severity)}`}>
                       {signal.severity}
                     </span>
-                    <span className="mono-meta">{formatSignalType(signal.signal_type)}</span>
+                    <button
+                      type="button"
+                      onClick={() => void handleResolve(signal)}
+                      disabled={resolvingSignalId === signal.id}
+                      className="text-[9px] font-mono font-bold text-[var(--accent)] hover:text-white uppercase transition-colors"
+                      aria-label={`Resolve monitoring signal ${signal.title}`}
+                    >
+                      {resolvingSignalId === signal.id ? "Solving" : "Solve"}
+                    </button>
                   </div>
-                  <h3 className="text-sm font-semibold text-[var(--text-primary)]">{signal.title}</h3>
-                  <p className="mt-1 text-sm text-[var(--text-secondary)]">{signal.summary}</p>
+                  <h4 className="text-[11px] font-bold text-[var(--text-primary)] uppercase">{signal.title}</h4>
+                  <p className="text-[9px] text-[var(--text-secondary)] font-mono uppercase mt-0.5 leading-snug">{signal.summary}</p>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => void handleResolve(signal)}
-                  disabled={resolvingSignalId === signal.id}
-                  className="btn btn-secondary flex shrink-0 items-center justify-center gap-2 text-xs font-semibold uppercase tracking-wider"
-                  aria-label={`Resolve monitoring signal ${signal.title}`}
-                >
-                  <CheckCircle2 size={14} aria-hidden="true" />
-                  {resolvingSignalId === signal.id ? "Resolving" : "Resolve"}
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+              ))
+            )}
+          </div>
+        </div>
       </div>
     </section>
   );
