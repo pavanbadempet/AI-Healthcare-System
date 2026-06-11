@@ -4,30 +4,30 @@
 
 <div align="center">
 
-<img src="docs/assets/hero-banner.svg" alt="AI Healthcare System Banner" width="100%"/>
+<img src="docs/assets/hero-banner.svg" alt="AI Healthcare System - Open-Source HIPAA Clinical Intelligence Platform with React 19, FastAPI, LangGraph, and Ollama local inference" width="100%"/>
 
 <br/>
 
 <p align="center">
-  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml/badge.svg" alt="CI build status" /></a>
-  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml/badge.svg" alt="CodeQL security analysis" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/pavanbadempet/AI-Healthcare-System?color=22c55e&style=flat-square" alt="MIT license" /></a>
-  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/stargazers"><img src="https://img.shields.io/github/stars/pavanbadempet/AI-Healthcare-System?style=flat-square&color=f59e0b" alt="GitHub stars" /></a>
+  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml/badge.svg" alt="CI build status badge" /></a>
+  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml/badge.svg" alt="CodeQL security analysis scanner badge" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/pavanbadempet/AI-Healthcare-System?color=22c55e&style=flat-square" alt="MIT license open-source badge" /></a>
+  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/stargazers"><img src="https://img.shields.io/github/stars/pavanbadempet/AI-Healthcare-System?style=flat-square&color=f59e0b" alt="GitHub stars popularity badge" /></a>
 </p>
 
 <h3>
-  <a href="#-quick-start"><strong>Quick Start</strong></a> &middot;
-  <a href="#-feature-highlights"><strong>Features</strong></a> &middot;
-  <a href="#-core-engineering-guarantees"><strong>Guarantees</strong></a> &middot;
-  <a href="#-core-technical-architecture"><strong>Architecture</strong></a> &middot;
-  <a href="#-model-card-registry"><strong>Model Cards</strong></a> &middot;
-  <a href="#-api-contract-reference"><strong>API Contract</strong></a> &middot;
-  <a href="#-aws-enterprise-deployment"><strong>AWS Deploy</strong></a>
+  <a href="#-quick-start"><strong>Quick Start Guide</strong></a> &middot;
+  <a href="#-feature-highlights"><strong>Core Features</strong></a> &middot;
+  <a href="#-core-engineering-guarantees"><strong>System Guarantees</strong></a> &middot;
+  <a href="#-core-technical-architecture"><strong>Architecture Design</strong></a> &middot;
+  <a href="#-model-card-registry"><strong>Model Cards Registry</strong></a> &middot;
+  <a href="#-api-contract-reference"><strong>REST API Contract</strong></a> &middot;
+  <a href="#-aws-enterprise-deployment"><strong>AWS Production Deploy</strong></a>
 </h3>
 
 </div>
 
-<img src="docs/assets/divider.svg" alt="" width="100%"/>
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## ✨ Why Choose AI Healthcare System?
 
@@ -37,7 +37,7 @@ It is designed to run **fully offline and private** (via Ollama) on standard con
 
 The codebase is engineered to demonstrate **production-level engineering patterns** required in regulated domains: strict schema compliance, ABDM consent management, pluggable data layers, and automated verification gates.
 
-<img src="docs/assets/divider.svg" alt="" width="100%"/>
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## ⚡ Feature Highlights
 
@@ -86,7 +86,7 @@ Pytest + coverage, CodeQL SAST, Docker GHCR builds, HuggingFace sync, Dependabot
 
 > **Built for portfolios, built for production.** This is not a tutorial project -- it is a full-stack healthcare platform demonstrating ML engineering, LLM orchestration, RAG architecture, and DevOps maturity in a single cohesive codebase.
 
-<img src="docs/assets/divider.svg" alt="" width="100%"/>
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## ⚡ Core Engineering Guarantees
 
@@ -102,7 +102,7 @@ Pytest + coverage, CodeQL SAST, Docker GHCR builds, HuggingFace sync, Dependabot
 * **FHIR R4 Standardization**: Includes strict JSON serializers for Patients, Encounters, Observations, and MedicationRequests, enabling out-of-the-box data exchange with standard EHR systems (Epic, Cerner).
 * **ABDM Consent Interface**: Fully implements consent lifecycle handlers and callbacks aligned with India's ABDM digital health stack.
 
-<img src="docs/assets/divider.svg" alt="" width="100%"/>
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## 🏗 Core Technical Architecture
 
@@ -134,7 +134,7 @@ graph TB
     Service --> Data
 ```
 
-<img src="docs/assets/divider.svg" alt="" width="100%"/>
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## 🔬 Model Card Registry
 
@@ -150,7 +150,7 @@ For comprehensive dataset sources, training hyperparameters, and limitations, se
 
 *Note: Evaluation metrics are updated dynamically using the shared evaluation artifact generator. Run the training scripts to regenerate results with fresh datasets.*
 
-<img src="docs/assets/divider.svg" alt="" width="100%"/>
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## 💬 LangGraph Agent Supervisor Flow
 
@@ -172,7 +172,7 @@ graph TB
     style GUARD fill:#0f172a,stroke:#ef4444,color:#e2e8f0
 ```
 
-<img src="docs/assets/divider.svg" alt="" width="100%"/>
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## 📁 Project Structure Tree
 
@@ -210,7 +210,7 @@ AI-Healthcare-System/
 └── tests/                   # Pytest suite (~90 unit/integration files)
 ```
 
-<img src="docs/assets/divider.svg" alt="" width="100%"/>
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## ⚙ Environment Configuration Reference
 
@@ -228,7 +228,7 @@ The following environment variables configure the runtime services. Create a `.e
 | `CORS_ORIGINS` | string | `http://127.0.0.1:3000` | Allowed client endpoints for CORS validations. |
 | `RATE_LIMIT_REQUESTS_PER_MINUTE` | int | `60` | Limit count for API rate limit rules. |
 
-<img src="docs/assets/divider.svg" alt="" width="100%"/>
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## ⚡ Quick Start
 
@@ -267,7 +267,7 @@ npm --prefix frontend run dev
 | **REST API Server** | [http://127.0.0.1:8000](http://127.0.0.1:8000) |
 | **Interactive API Documentation** | [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) |
 
-<img src="docs/assets/divider.svg" alt="" width="100%"/>
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## 📡 API Contract Reference
 
@@ -278,7 +278,7 @@ npm --prefix frontend run dev
 | `POST` | `/v1/chat/stream` | Multi-turn streaming chat with LangGraph RAG. | `{"messages": [{"role": "user", "content": "Explain my risk"}]}` |
 | `POST` | `/v1/predict/reviews` | Logs doctor audit decisions for model predictions. | `{"patient_id": 1, "prediction_type": "diabetes", ...}` |
 
-<img src="docs/assets/divider.svg" alt="" width="100%"/>
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## 📂 Key Files Codebase Tour
 
@@ -293,7 +293,7 @@ Use this table to understand where core engineering concepts are implemented ins
 | **Multi-Agent Orchestration** | Supervisor-routed LangGraph graph with safety guardrails. | [backend/agent.py](backend/agent.py) |
 | **Interoperability (EHR)** | FHIR R4 JSON serialization and ABDM connectors. | [backend/fhir.py](backend/fhir.py) |
 
-<img src="docs/assets/divider.svg" alt="" width="100%"/>
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## 🗄 Database Layer
 
@@ -307,7 +307,7 @@ Use this table to understand where core engineering concepts are implemented ins
 | `AuditLog` | `audit_logs` | id, admin_id, target_user_id, action, details |
 | `Appointment` | `appointments` | id, user_id, doctor_id, specialist, date_time, status |
 
-<img src="docs/assets/divider.svg" alt="" width="100%"/>
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## 🔐 Security Posture Middleware
 
@@ -323,7 +323,7 @@ APEX integrates a 7-layer API middleware stack to ensure enterprise data safety:
 | 6 | `ExceptionMiddleware` | scrubs SQL details & raw traces from errors to block PII leaks |
 | 7 | `LoggingMiddleware` | Logs request duration SLAs & server telemetry |
 
-<img src="docs/assets/divider.svg" alt="" width="100%"/>
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## 🚀 CI/CD Pipelines Registry
 
@@ -340,7 +340,7 @@ We run 8 structured GitHub Actions workflows for continuous integration and comp
 | **Release Draft** | Push/PR | Automatic changelog drafts compilation. |
 | **Stale Bot** | Scheduled | Auto-flags idle issues. |
 
-<img src="docs/assets/divider.svg" alt="" width="100%"/>
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## ☁ AWS Enterprise Deployment
 
@@ -350,7 +350,7 @@ APEX includes complete Terraform configurations to spin up a production-ready, s
 * **Amazon ElastiCache Redis**: High-throughput session caching.
 * **Terraform IaC**: Deploy with `cd terraform && terraform init && terraform apply`.
 
-<img src="docs/assets/divider.svg" alt="" width="100%"/>
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## 🧪 Verification & Coverage Suite
 
@@ -364,7 +364,7 @@ python -m pytest tests/ -v
 npm --prefix frontend run test
 ```
 
-<img src="docs/assets/divider.svg" alt="" width="100%"/>
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## ❓ FAQ
 
@@ -404,18 +404,18 @@ It provides standard endpoints to link Health IDs (ABHA), handle consent callbac
 **Q12: Can I plug in PostgreSQL instead of SQLite?**  
 Yes. Define the `DATABASE_URL=postgresql://user:password@host:5432/dbname` environment variable. The SQLAlchemy database layer automatically scales, handles connection pools, and configures PostgreSQL constraints at startup.
 
-<img src="docs/assets/divider.svg" alt="" width="100%"/>
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## 📚 Related Resources
 
-- [FastAPI documentation](https://fastapi.tiangolo.com/) — Python web framework used for the backend API
-- [LangGraph documentation](https://langchain-ai.github.io/langgraph/) — multi-agent system powering the chatbot
-- [XGBoost documentation](https://xgboost.readthedocs.io/) — gradient boosting framework used for prediction
-- [SHAP documentation](https://shap.readthedocs.io/) — explainability library for ML predictions
-- [Ollama](https://ollama.com/) — local LLM inference for private AI
-- [FHIR R4 specification](https://hl7.org/fhir/R4/) — international healthcare data interoperability standard
+- [FastAPI Framework Web Site](https://fastapi.tiangolo.com/) — Python web framework used for the backend API
+- [LangGraph Agent documentation](https://langchain-ai.github.io/langgraph/) — multi-agent system powering the chatbot
+- [XGBoost ML Library Documentation](https://xgboost.readthedocs.io/) — gradient boosting framework used for prediction
+- [SHAP explainability package](https://shap.readthedocs.io/) — explainability library for ML predictions
+- [Ollama download link](https://ollama.com/) — local LLM inference for private AI
+- [FHIR R4 standard specification](https://hl7.org/fhir/R4/) — international healthcare data interoperability standard
 
-<img src="docs/assets/divider.svg" alt="" width="100%"/>
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## 🤝 Contributing
 
@@ -429,25 +429,38 @@ npm --prefix frontend run test
 ```
 
 <a href="https://github.com/pavanbadempet/AI-Healthcare-System/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=pavanbadempet/AI-Healthcare-System&max=20" alt="Contributors" />
+  <img src="https://contrib.rocks/image?repo=pavanbadempet/AI-Healthcare-System&max=20" alt="Contributors - Open-Source Developers contributing to the AI Healthcare System codebase" />
 </a>
 
 <details>
 <summary><strong>Star History</strong></summary>
 <p align="center">
   <a href="https://star-history.com/#pavanbadempet/AI-Healthcare-System&Date">
-    <img src="https://api.star-history.com/svg?repos=pavanbadempet/AI-Healthcare-System&type=Date" alt="Star History" width="600"/>
+    <img src="https://api.star-history.com/svg?repos=pavanbadempet/AI-Healthcare-System&type=Date" alt="AI Healthcare System GitHub Star History Chart showing repository popularity growth" width="600"/>
   </a>
 </p>
 </details>
 
-<img src="docs/assets/divider.svg" alt="" width="100%"/>
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## 📄 License
 
 MIT License — Copyright © 2026 **Pavan Badempet**, Shiva Prasad Anagondi, Prashanth Cheerala. See [LICENSE](LICENSE) for details.
 
 ---
+
+<details>
+<summary><strong>🔍 SEO Metadata, Search Keywords & Indexing Terms</strong></summary>
+
+### Primary Keywords
+- **AI Healthcare Platform**: HIPAA-oriented, FHIR R4 interoperability, ABDM India health consent management system, Epic EHR, Cerner EHR, medical API backend.
+- **Machine Learning Diagnostics**: Calibrated XGBoost models, SHAP explainability, diabetes risk, heart disease detection, liver disease panel, chronic kidney disease classifier, lung cancer risk screening, ROC-AUC metrics.
+- **Generative AI & LLM Orchestration**: Multi-agent LangGraph supervisor graph, token-budgeted RAG (Retrieval-Augmented Generation), Ollama local private inference, Gemini API cloud fallback, citation tracking.
+- **Hospital Operations**: OPD/IPD encounter manager, bed ward allocation, pharmacy inventory tracking, nursing task worklist scheduler, WebSockets telemetry census broadcast.
+
+### Search Phrases
+`open source clinical decision support system`, `private-first hospital management software`, `HIPAA compliant python api backend`, `epic cerner fhir integration python`, `local medical chatbot langchain`, `explainable ai healthcare xgboost shap`, `react 19 clinical portal dashboard`, `docker compose nextjs fastapi postgres redis`, `eks terraform kubernetes manifest clinical`.
+</details>
 
 <div align="center">
 
