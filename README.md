@@ -27,7 +27,7 @@
 
 </div>
 
----
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## ✨ Why Choose AI Healthcare System?
 
@@ -37,7 +37,7 @@ It is designed to run **fully offline and private** (via Ollama) on standard con
 
 The codebase is engineered to demonstrate **production-level engineering patterns** required in regulated domains: strict schema compliance, ABDM consent management, pluggable data layers, and automated verification gates.
 
----
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## ⚡ Core Pillars
 
@@ -64,7 +64,7 @@ A complete system to run your facility: OPD/IPD encounters, ward bed allocations
 </tr>
 </table>
 
----
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## ⚡ Core Engineering Guarantees
 
@@ -80,7 +80,7 @@ A complete system to run your facility: OPD/IPD encounters, ward bed allocations
 * **FHIR R4 Standardization**: Includes strict JSON serializers for Patients, Encounters, Observations, and MedicationRequests, enabling out-of-the-box data exchange with standard EHR systems (Epic, Cerner).
 * **ABDM Consent Interface**: Fully implements consent lifecycle handlers and callbacks aligned with India's ABDM digital health stack.
 
----
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 🏗 Core Technical Architecture
 
@@ -112,7 +112,7 @@ graph TB
     Service --> Data
 ```
 
----
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 🔬 Model Card Registry
 
@@ -128,7 +128,29 @@ For comprehensive dataset sources, training hyperparameters, and limitations, se
 
 *Note: Evaluation metrics are updated dynamically using the shared evaluation artifact generator. Run the training scripts to regenerate results with fresh datasets.*
 
----
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
+
+## 💬 LangGraph Agent Supervisor Flow
+
+APEX's multi-agent clinical reasoning assistant organizes multi-turn RAG chat sessions via supervisor-routing:
+
+```mermaid
+graph TB
+    SUP["Supervisor Router"]
+    SUP -->|"research"| RES["Researcher (Tavily)"]
+    SUP -->|"analyze"| ANA["Analyst (ML Tools)"]
+    SUP -->|"off-topic"| GUARD["Guardrail"]
+    SUP -->|"default"| GEN["Generate (core_ai)"]
+    RES --> GEN
+    ANA --> GEN
+    GEN --> E1(("END"))
+    GUARD --> E2(("END"))
+    style SUP fill:#1e293b,stroke:#f59e0b,color:#e2e8f0
+    style GEN fill:#0f172a,stroke:#06b6d4,color:#e2e8f0
+    style GUARD fill:#0f172a,stroke:#ef4444,color:#e2e8f0
+```
+
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## ⚡ Quick Start
 
@@ -167,7 +189,7 @@ npm --prefix frontend run dev
 | **REST API Server** | [http://127.0.0.1:8000](http://127.0.0.1:8000) |
 | **Interactive API Documentation** | [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) |
 
----
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 📡 API Contract Reference
 
@@ -178,7 +200,7 @@ npm --prefix frontend run dev
 | `POST` | `/v1/chat/stream` | Multi-turn streaming chat with LangGraph RAG. | `{"messages": [{"role": "user", "content": "Explain my risk"}]}` |
 | `POST` | `/v1/predict/reviews` | Logs doctor audit decisions for model predictions. | `{"patient_id": 1, "prediction_type": "diabetes", ...}` |
 
----
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 📂 Key Modules Directory
 
@@ -191,7 +213,7 @@ npm --prefix frontend run dev
 | **Multi-Agent Orchestration** | Supervisor-routed LangGraph graph with safety guardrails. | [backend/agent.py](backend/agent.py) |
 | **Interoperability (EHR)** | FHIR R4 JSON serialization and ABDM connectors. | [backend/fhir.py](backend/fhir.py) |
 
----
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## ☁ AWS Enterprise Deployment
 
@@ -201,7 +223,52 @@ APEX includes complete Terraform configurations to spin up a production-ready, s
 * **Amazon ElastiCache Redis**: High-throughput session caching.
 * **Terraform IaC**: Deploy with `cd terraform && terraform init && terraform apply`.
 
----
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
+
+## 🗄 Database Layer
+
+**File:** `backend/database.py` -- SQLAlchemy, auto-detects SQLite vs PostgreSQL.
+
+| Model | Table | Key Fields |
+|-------|-------|------------|
+| `User` | `users` | id, username, role, email, full_name, health fields, plan_tier |
+| `HealthRecord` | `health_records` | id, user_id, record_type, data (JSON), prediction |
+| `ChatLog` | `chat_logs` | id, user_id, role, content, timestamp |
+| `AuditLog` | `audit_logs` | id, admin_id, target_user_id, action, details |
+| `Appointment` | `appointments` | id, user_id, doctor_id, specialist, date_time, status |
+
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
+
+## 🔐 Security Posture
+
+| # | Middleware | Purpose |
+|---|-----------|---------|
+| 1 | `RateLimitMiddleware` | 60 req/min per IP |
+| 2 | `TrustedHostMiddleware` | Allowlisted hosts only |
+| 3 | `CORSMiddleware` | Origin-restricted |
+| 4 | `SecurityHeadersMiddleware` | X-Frame-Options, nosniff |
+| 5 | `GZipMiddleware` | Compression (1000+ bytes) |
+| 6 | `ExceptionMiddleware` | No PII in errors |
+| 7 | `LoggingMiddleware` | Request timing |
+
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
+
+## 🚀 CI/CD Pipelines
+
+**8 GitHub Actions workflows:**
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| CI Tests | Push/PR | pytest + coverage |
+| CodeQL | Push/PR + weekly | SAST scanning |
+| Docker | Push/PR | Build to `ghcr.io` |
+| HuggingFace | Push to main | Deploy to HF Spaces |
+| Keep-Alive | Scheduled | Prevent Render cold starts |
+| Labels | Push to main | Sync GitHub labels |
+| Release Draft | Push/PR | Auto release notes |
+| Stale Bot | Scheduled | Close stale issues |
+
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 🧪 Verification & Coverage Suite
 
@@ -215,7 +282,69 @@ python -m pytest tests/ -v
 npm --prefix frontend run test
 ```
 
----
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
+
+## ❓ FAQ
+
+**How do I run this without an API key?**
+Install [Ollama](https://ollama.com), run `ollama pull llama3.2`, set `OLLAMA_BASE_URL=http://127.0.0.1:11434` in `.env`, and leave `GOOGLE_API_KEY` unset. All inference runs locally — free and private.
+
+**Can I use this as a college final-year project?**
+Yes — it's MIT licensed and designed to be studied. Every module has one clear responsibility and is well-commented.
+
+**How do I deploy to the cloud for free?**
+Fork the repo and connect it to [Render](https://render.com). The `render.yaml` handles deployment automatically on the free tier.
+
+**Is this HIPAA compliant?**
+This platform implements HIPAA-oriented controls (bcrypt, JWT, RBAC, audit logging, PII-scrubbed errors, per-user consent). Full HIPAA compliance for production requires additional organizational controls, BAAs, and a formal compliance review.
+
+**How do I add a new disease prediction model?**
+Add a training script → register in `prediction.py:initialize_models()` → add Pydantic schema → add endpoint → add model card in `model_cards.py` → write unit test.
+
+**How does the chatbot remember my health history?**
+RAG — your health records are embedded with Gemini `text-embedding-004`, stored in a vector store, retrieved by cosine similarity when you ask a question, and assembled into context before the LLM responds. Your data is scoped to your account only.
+
+**What is FHIR R4 and why does this implement it?**
+FHIR R4 is the international standard for exchanging healthcare data. Implementing it means patient records can be exported to or imported from any FHIR-compatible EHR (Epic, Cerner, etc.) without custom integration.
+
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
+
+## 📚 Related Resources
+
+- [FastAPI documentation](https://fastapi.tiangolo.com/) — Python web framework used for the backend API
+- [LangGraph documentation](https://langchain-ai.github.io/langgraph/) — multi-agent system powering the chatbot
+- [XGBoost documentation](https://xgboost.readthedocs.io/) — gradient boosting framework used for prediction
+- [SHAP documentation](https://shap.readthedocs.io/) — explainability library for ML predictions
+- [Ollama](https://ollama.com/) — local LLM inference for private AI
+- [FHIR R4 specification](https://hl7.org/fhir/R4/) — international healthcare data interoperability standard
+
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
+
+## 🤝 Contributing
+
+Contributions are welcome — bug fixes, new ML models, docs, tests, or translations.
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). Follow [`AGENTS.md`](AGENTS.md) — the canonical instruction file for all code changes.
+
+```bash
+python -m pytest tests/ -v
+npm --prefix frontend run test
+```
+
+<a href="https://github.com/pavanbadempet/AI-Healthcare-System/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=pavanbadempet/AI-Healthcare-System&max=20" alt="Contributors" />
+</a>
+
+<details>
+<summary><strong>Star History</strong></summary>
+<p align="center">
+  <a href="https://star-history.com/#pavanbadempet/AI-Healthcare-System&Date">
+    <img src="https://api.star-history.com/svg?repos=pavanbadempet/AI-Healthcare-System&type=Date" alt="Star History" width="600"/>
+  </a>
+</p>
+</details>
+
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 📄 License
 
