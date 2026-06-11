@@ -154,8 +154,9 @@ For comprehensive dataset sources, training hyperparameters, and limitations, se
 
 ## 💬 LangGraph Agent Supervisor Flow
 
-APEX's multi-agent clinical reasoning assistant organizes multi-turn RAG chat sessions via supervisor-routing:
+APEX's multi-agent clinical reasoning assistant organizes multi-turn RAG chat sessions via supervisor-routing.
 
+### Orchestration Flow
 ```mermaid
 graph TB
     SUP["Supervisor Router"]
@@ -170,6 +171,27 @@ graph TB
     style SUP fill:#1e293b,stroke:#f59e0b,color:#e2e8f0
     style GEN fill:#0f172a,stroke:#06b6d4,color:#e2e8f0
     style GUARD fill:#0f172a,stroke:#ef4444,color:#e2e8f0
+```
+
+### Agent State Transitions
+```mermaid
+stateDiagram-v2
+    [*] --> Idle
+    Idle --> IngestQuery : POST /v1/chat/stream
+    IngestQuery --> GuardrailEvaluation : Evaluate Safety Rules
+    GuardrailEvaluation --> Terminated : Trigger Safety Violation (Off-Topic/PII)
+    GuardrailEvaluation --> SupervisorRouting : Passed Guardrails
+    
+    state SupervisorRouting <<choice>>
+    SupervisorRouting --> ResearchAgent : Route to 'research'
+    SupervisorRouting --> AnalysisAgent : Route to 'analyze'
+    SupervisorRouting --> GenerateResponse : Route to 'default'
+    
+    ResearchAgent --> GenerateResponse : Compile Tavily Search Context
+    AnalysisAgent --> GenerateResponse : Compile Model/SHAP Metrics
+    GenerateResponse --> StreamTokenOutput : Stream SSE Tokens
+    StreamTokenOutput --> Terminated : Done
+    Terminated --> [*]
 ```
 
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
@@ -297,7 +319,53 @@ Use this table to understand where core engineering concepts are implemented ins
 
 ## 🗄 Database Layer
 
-**File:** `backend/database.py` -- SQLAlchemy, auto-detects SQLite vs PostgreSQL.
+**File:** [backend/database.py](backend/database.py) -- SQLAlchemy, auto-detects SQLite vs PostgreSQL.
+
+```mermaid
+erDiagram
+    users {
+        int id PK
+        string username
+        string role
+        string email
+        string full_name
+        string plan_tier
+    }
+    health_records {
+        int id PK
+        int user_id FK
+        string record_type
+        json data
+        string prediction
+    }
+    chat_logs {
+        int id PK
+        int user_id FK
+        string role
+        string content
+        datetime timestamp
+    }
+    audit_logs {
+        int id PK
+        int admin_id FK
+        int target_user_id FK
+        string action
+        string details
+    }
+    appointments {
+        int id PK
+        int user_id FK
+        int doctor_id FK
+        string specialist
+        datetime date_time
+        string status
+    }
+
+    users ||--o{ health_records : owns
+    users ||--o{ chat_logs : participates
+    users ||--o{ appointments : schedules
+    users ||--o{ audit_logs : targets
+```
 
 | Model | Table | Key Fields |
 |-------|-------|------------|
