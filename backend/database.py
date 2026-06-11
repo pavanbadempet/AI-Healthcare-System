@@ -1,4 +1,5 @@
 import os
+from contextlib import contextmanager
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
@@ -18,6 +19,14 @@ def _load_database_url() -> str:
         return "sqlite:///:memory:"
 
     raise RuntimeError("DATABASE_URL environment variable is not set. Cannot start database engine.")
+
+
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA journal_mode=WAL")
+    cursor.execute("PRAGMA synchronous=NORMAL")  # Balance ACID with performance in WAL
+    cursor.execute("PRAGMA foreign_keys=ON")  # Strict OLTP data integrity
+    cursor.close()
 
 
 SQLALCHEMY_DATABASE_URL = _load_database_url()
@@ -45,14 +54,31 @@ engine = create_engine(
 # Enable WAL Mode for Performance (SQLite Only)
 if "sqlite" in SQLALCHEMY_DATABASE_URL:
     from sqlalchemy import event
-    @event.listens_for(engine, "connect")
-    def set_sqlite_pragma(dbapi_connection, connection_record):
-        cursor = dbapi_connection.cursor()
-        cursor.execute("PRAGMA journal_mode=WAL")
-        cursor.execute("PRAGMA synchronous=NORMAL") # Balance ACID with performance in WAL
-        cursor.execute("PRAGMA foreign_keys=ON") # Strict OLTP data integrity
-        cursor.close()
-from contextlib import contextmanager
+    event.listens_for(engine, "connect")(set_sqlite_pragma)
+
+
+def fallback_to_sqlite():
+    """Dynamically reconfigures the engine and sessionmaker to use a local SQLite database."""
+    global engine, SessionLocal, SQLALCHEMY_DATABASE_URL
+    import logging
+    logger = logging.getLogger(__name__)
+    logger.warning("Configuring database fallback to local SQLite: healthcare.db")
+
+    SQLALCHEMY_DATABASE_URL = "sqlite:///healthcare.db"
+    c_args = {"check_same_thread": False}
+    e_args = {
+        "connect_args": c_args,
+        "pool_pre_ping": True,
+        "pool_recycle": 300
+    }
+    engine = create_engine(
+        SQLALCHEMY_DATABASE_URL,
+        **e_args
+    )
+    from sqlalchemy import event
+    event.listens_for(engine, "connect")(set_sqlite_pragma)
+    SessionLocal.configure(bind=engine)
+
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

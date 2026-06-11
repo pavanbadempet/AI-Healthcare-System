@@ -19,7 +19,7 @@ services:
         - .github/**
         - README.md
     env: python
-    buildCommand: pip install --upgrade pip && pip install -r backend/requirements.txt && python scripts/generate_placeholder_models.py
+    buildCommand: pip install --upgrade pip && pip install --no-cache-dir -r backend/requirements.txt && python scripts/generate_placeholder_models.py
     startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
@@ -31,7 +31,7 @@ services:
       - key: SECRET_KEY
         generateValue: true
       - key: ALLOWED_HOSTS
-        value: aio-health-backend.onrender.com,aio-health-backend-gdzi.onrender.com,127.0.0.1
+        value: aio-health-backend.onrender.com,aio-health-backend-gdzi.onrender.com,127.0.0.1,localhost
       - key: CORS_ORIGINS
         value: https://ai-healthcare-system.streamlit.app,http://127.0.0.1:3000
       - key: DATABASE_URL

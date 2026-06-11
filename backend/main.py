@@ -142,6 +142,15 @@ def create_default_admin():
 async def lifespan(app: FastAPI):
     # Database initialization (runs here instead of module level to avoid
     # side effects during import and to support test isolation)
+    try:
+        from sqlalchemy import text
+        with database.engine.connect() as conn:
+            conn.execute(text("SELECT 1"))
+        logger.info("Connected to primary database successfully.")
+    except Exception as e:
+        logger.warning("Primary database connection failed: %s. Falling back to SQLite.", e)
+        database.fallback_to_sqlite()
+
     models.Base.metadata.create_all(bind=database.engine)
     run_migrations()
 
