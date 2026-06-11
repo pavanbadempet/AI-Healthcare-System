@@ -5,7 +5,7 @@ import yaml
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RENDER_HOSTS = {"aio-health-backend.onrender.com", "aio-health-backend-gdzi.onrender.com"}
 PUBLIC_FRONTEND_ORIGIN = "https://ai-healthcare-system.streamlit.app"
-RENDER_PYTHON_VERSION = "3.14.3"
+RENDER_PYTHON_VERSION = "3.12.8"
 
 
 def _render_env_vars() -> dict[str, str]:

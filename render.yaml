@@ -23,7 +23,7 @@ services:
     startCommand: uvicorn backend.main:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: PYTHON_VERSION
-        value: 3.14.3 # Align with Render's current Python runtime and dependency wheels
+        value: 3.12.8 # Align with Render's stable Python 3.12 runtime and dependency wheels
       - key: GOOGLE_API_KEY
         sync: false # User must enter this in dashboard
       - key: TAVILY_API_KEY
