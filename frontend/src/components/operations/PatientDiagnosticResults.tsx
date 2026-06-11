@@ -1,4 +1,3 @@
-"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AlertTriangle, FileText, RefreshCcw } from "lucide-react";
@@ -33,7 +32,7 @@ function formatReviewStatus(status: string) {
 
 function resultStatusStyle(result: DiagnosticResult) {
   if (result.review_status === "needs_follow_up") {
-    return "border-[var(--warning)]/30 bg-[var(--warning-muted)] text-[var(--warning)]";
+    return "border-[var(--warning-border)] bg-[var(--warning-muted)] text-[var(--warning)]";
   }
   if (result.abnormal_flag) {
     return "border-[var(--danger-border)] bg-[var(--danger-muted)] text-[var(--danger)]";
@@ -98,66 +97,66 @@ export default function PatientDiagnosticResults({
   if (!canViewPatientResults) return null;
 
   return (
-    <section className="panel p-5" role="region" aria-label="Reviewed diagnostic results">
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+    <section className="panel overflow-hidden" role="region" aria-label="Reviewed diagnostic results">
+      <div className="panel-header flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between bg-[rgba(15,15,17,0.5)]">
         <div>
-          <div className="section-label mb-2 flex items-center gap-2">
-            <FileText size={14} aria-hidden="true" /> Released Diagnostics
+          <div className="section-label mb-1.5 flex items-center gap-1.5 text-[var(--accent)]">
+            <FileText size={13} aria-hidden="true" /> Released Diagnostics
           </div>
-          <h2 className="text-xl font-semibold text-[var(--text-primary)]">Reviewed Diagnostic Results</h2>
-          <p className="mt-1 max-w-3xl text-sm text-[var(--text-secondary)]">
-            These results have been released after clinician review. Patients should consult a qualified clinician for diagnosis or treatment decisions; emergencies require immediate hospital or local emergency care.
+          <h2 className="text-sm font-bold text-[var(--text-primary)] uppercase">Reviewed Lab Results</h2>
+          <p className="mt-1 text-xs text-[var(--text-secondary)] uppercase">
+            Clinician reviewed reports and final diagnostic determinations. Patients should consult a qualified clinician for diagnosis or treatment decisions; emergencies require immediate hospital or local emergency care.
           </p>
         </div>
         <button
           type="button"
           onClick={() => void loadResults(true)}
           disabled={refreshing}
-          className="btn btn-secondary flex items-center justify-center gap-2 text-xs font-semibold uppercase tracking-wider"
+          className="btn btn-secondary text-xs flex items-center justify-center gap-1 cursor-pointer"
           aria-label="Refresh reviewed diagnostic results"
         >
-          <RefreshCcw size={14} className={refreshing ? "animate-spin" : ""} aria-hidden="true" />
-          {refreshing ? "Refreshing" : "Refresh"}
+          <RefreshCcw size={13} className={refreshing ? "animate-spin" : ""} aria-hidden="true" />
+          Sync Diagnostics
         </button>
       </div>
 
-      <div className="mt-4 rounded border border-[var(--border)] bg-[var(--bg-primary)]">
-        <div className="flex flex-col gap-1 border-b border-[var(--border)] px-4 py-2 md:flex-row md:items-center md:justify-between">
-          <span className="mono-meta">{releasedResults.length} released results</span>
-          <span className="mono-meta">Clinician reviewed</span>
+      <div className="p-4 space-y-3">
+        <div className="flex justify-between items-center text-[10px] font-mono uppercase text-[var(--text-dim)] pb-2 border-b border-[var(--border)]">
+          <span>{releasedResults.length} reports released</span>
+          <span>Observation list</span>
         </div>
 
         {loading ? (
-          <div className="p-5 text-sm text-[var(--text-secondary)]" role="status">
-            Loading diagnostic results
+          <div className="p-4 text-xs font-mono text-[var(--text-dim)] uppercase tracking-wider">
+            Syncing results...
           </div>
         ) : error ? (
-          <div className="flex items-center gap-2 p-5 text-sm text-[var(--danger)]" role="alert">
-            <AlertTriangle size={16} aria-hidden="true" /> {error}
+          <div className="flex items-center gap-1.5 p-4 text-xs font-mono text-[var(--danger)]" role="alert">
+            <AlertTriangle size={13} aria-hidden="true" /> {error}
           </div>
         ) : releasedResults.length === 0 ? (
-          <div className="p-5 text-sm text-[var(--text-secondary)]">
-            No reviewed diagnostic results.
+          <div className="p-4 text-xs font-mono text-[var(--text-dim)] uppercase tracking-wide">
+            No active records found.
           </div>
         ) : (
-          <ul className="divide-y divide-[var(--border)]" aria-label="Reviewed diagnostic result list">
+          <ul className="divide-y divide-[var(--border-subtle)]" aria-label="Reviewed diagnostic result list">
             {releasedResults.map((result) => (
-              <li key={result.id} className="p-4">
+              <div key={result.id} className="py-3 first:pt-0 last:pb-0">
                 <div className="mb-2 flex flex-wrap items-center gap-2">
-                  <span className={`rounded border px-2 py-1 text-[10px] uppercase tracking-widest ${resultStatusStyle(result)}`}>
+                  <span className={`px-1.5 py-0.5 rounded-sm border text-[9px] uppercase font-bold font-mono tracking-wider ${resultStatusStyle(result)}`}>
                     {formatReviewStatus(result.review_status)}
                   </span>
                   <span className="mono-meta">{formatResultType(result.result_type)}</span>
                   <span className="mono-meta">{result.abnormal_flag ? "Abnormal" : "Normal"}</span>
                 </div>
-                <h3 className="text-sm font-semibold text-[var(--text-primary)]">{result.title}</h3>
-                <p className="mt-1 text-sm text-[var(--text-secondary)]">{result.summary}</p>
+                <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase">{result.title}</h3>
+                <p className="mt-1 text-xs text-[var(--text-secondary)] font-mono uppercase leading-relaxed">{result.summary}</p>
                 {result.review_note && (
-                  <p className="mt-3 rounded border border-[var(--border)] bg-[var(--bg-secondary)] px-3 py-2 text-sm text-[var(--text-secondary)]">
-                    {result.review_note}
+                  <p className="mt-2.5 rounded border border-[var(--border)] bg-[rgba(255,255,255,0.015)] px-3 py-2 text-xs font-mono text-[var(--text-secondary)] uppercase">
+                    Review Context: {result.review_note}
                   </p>
                 )}
-              </li>
+              </div>
             ))}
           </ul>
         )}
