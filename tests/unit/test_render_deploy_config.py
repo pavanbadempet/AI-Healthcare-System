@@ -5,6 +5,7 @@ import yaml
 REPO_ROOT = Path(__file__).resolve().parents[2]
 RENDER_HOSTS = {"aio-health-backend.onrender.com", "aio-health-backend-gdzi.onrender.com"}
 PUBLIC_FRONTEND_ORIGIN = "https://ai-healthcare-system.streamlit.app"
+RENDER_PYTHON_VERSION = "3.14.3"
 
 
 def _render_env_vars() -> dict[str, str]:
@@ -27,6 +28,10 @@ def test_render_backend_accepts_render_health_check_hosts():
     }
 
     assert RENDER_HOSTS <= allowed_hosts
+
+
+def test_render_backend_uses_supported_python_for_dependency_wheels():
+    assert _render_env_vars()["PYTHON_VERSION"] == RENDER_PYTHON_VERSION
 
 
 def test_render_backend_allows_public_frontend_origin():
