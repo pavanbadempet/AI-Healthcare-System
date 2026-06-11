@@ -1,0 +1,84 @@
+{
+  "model_name": "lungs",
+  "evaluated_at": "2026-06-11T11:44:22.052394+00:00",
+  "test_set_size": 62,
+  "class_distribution": {
+    "0": 2,
+    "1": 60
+  },
+  "accuracy": 0.871,
+  "auc_roc": 0.925,
+  "sensitivity": 0.8833,
+  "specificity": 0.5,
+  "classification_report": {
+    "0": {
+      "precision": 0.125,
+      "recall": 0.5,
+      "f1-score": 0.2,
+      "support": 2.0
+    },
+    "1": {
+      "precision": 0.9814814814814815,
+      "recall": 0.8833333333333333,
+      "f1-score": 0.9298245614035088,
+      "support": 60.0
+    },
+    "macro avg": {
+      "precision": 0.5532407407407407,
+      "recall": 0.6916666666666667,
+      "f1-score": 0.5649122807017544,
+      "support": 62.0
+    },
+    "weighted avg": {
+      "precision": 0.9538530465949822,
+      "recall": 0.8709677419354839,
+      "f1-score": 0.9062818336162988,
+      "support": 62.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      1,
+      1
+    ],
+    [
+      7,
+      53
+    ]
+  ],
+  "feature_importances": {
+    "GENDER": 0.0185,
+    "AGE": 0.0194,
+    "SMOKING": 0.0256,
+    "YELLOW_FINGERS": 0.0661,
+    "ANXIETY": 0.061,
+    "PEER_PRESSURE": 0.068,
+    "CHRONIC_DISEASE": 0.0329,
+    "FATIGUE": 0.0736,
+    "ALLERGY": 0.1937,
+    "WHEEZING": 0.0461,
+    "ALCOHOL_CONSUMING": 0.1401,
+    "COUGHING": 0.0598,
+    "SHORTNESS_OF_BREATH": 0.0386,
+    "SWALLOWING_DIFFICULTY": 0.1308,
+    "CHEST_PAIN": 0.0258
+  },
+  "n_features": 15,
+  "feature_names": [
+    "GENDER",
+    "AGE",
+    "SMOKING",
+    "YELLOW_FINGERS",
+    "ANXIETY",
+    "PEER_PRESSURE",
+    "CHRONIC_DISEASE",
+    "FATIGUE",
+    "ALLERGY",
+    "WHEEZING",
+    "ALCOHOL_CONSUMING",
+    "COUGHING",
+    "SHORTNESS_OF_BREATH",
+    "SWALLOWING_DIFFICULTY",
+    "CHEST_PAIN"
+  ]
+}

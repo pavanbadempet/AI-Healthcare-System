@@ -8,6 +8,14 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
 try:
+    from backend.ml.evaluation import evaluate_and_save
+except ImportError:
+    try:
+        from ml.evaluation import evaluate_and_save
+    except ImportError:
+        from evaluation import evaluate_and_save
+
+try:
     from .features import HEART_FEATURES
 except ImportError:
     from features import HEART_FEATURES
@@ -138,6 +146,9 @@ def train_heart_model():
     y_pred = model.predict(X_test)
     acc = accuracy_score(Y_test, y_pred)
     print(f"Model Trained. Accuracy: {acc:.4f}")
+
+    # Run comprehensive evaluation and save JSON artifact
+    evaluate_and_save(model, X_test, Y_test, HEART_FEATURES, "heart")
 
     # 6. Save Model
     with open(MODEL_PATH, 'wb') as f:

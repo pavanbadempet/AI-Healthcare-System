@@ -1,0 +1,80 @@
+{
+  "model_name": "heart",
+  "evaluated_at": "2026-06-11T11:44:07.366807+00:00",
+  "test_set_size": 50736,
+  "class_distribution": {
+    "0": 45968,
+    "1": 4768
+  },
+  "accuracy": 0.7395,
+  "auc_roc": 0.8467,
+  "sensitivity": 0.8091,
+  "specificity": 0.7323,
+  "classification_report": {
+    "0.0": {
+      "precision": 0.973678121022793,
+      "recall": 0.7322920292377306,
+      "f1-score": 0.8359076235410976,
+      "support": 45968.0
+    },
+    "1.0": {
+      "precision": 0.2386785449146251,
+      "recall": 0.8091442953020134,
+      "f1-score": 0.3686222052360023,
+      "support": 4768.0
+    },
+    "macro avg": {
+      "precision": 0.606178332968709,
+      "recall": 0.770718162269872,
+      "f1-score": 0.6022649143885499,
+      "support": 50736.0
+    },
+    "weighted avg": {
+      "precision": 0.9046053131766139,
+      "recall": 0.739514348785872,
+      "f1-score": 0.7919936990204675,
+      "support": 50736.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      33662,
+      12306
+    ],
+    [
+      910,
+      3858
+    ]
+  ],
+  "feature_importances": {
+    "age": 0.1184,
+    "sex": 0.0748,
+    "cp": 0.3136,
+    "trestbps": 0.0081,
+    "chol": 0.1014,
+    "fbs": 0.0372,
+    "restecg": 0.1977,
+    "thalach": 0.0078,
+    "exang": 0.0906,
+    "oldpeak": 0.0409,
+    "slope": 0.0097,
+    "ca": 0.0,
+    "thal": 0.0
+  },
+  "n_features": 13,
+  "feature_names": [
+    "age",
+    "sex",
+    "cp",
+    "trestbps",
+    "chol",
+    "fbs",
+    "restecg",
+    "thalach",
+    "exang",
+    "oldpeak",
+    "slope",
+    "ca",
+    "thal"
+  ]
+}

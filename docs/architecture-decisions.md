@@ -576,6 +576,126 @@ Adopt a **multi-stage Docker build**:
 
 ---
 
+## ADR-015: XGBoost for Tabular Clinical Prediction
+
+### Status
+**Accepted**
+
+### Context
+The system needs to predict disease risk from structured clinical data (lab values, survey responses, vital signs). The datasets range from 300 to 250,000 records with 9–24 features each. The models must be explainable to clinicians (feature attribution), fast at inference (<100 ms on CPU), and small enough to ship inside a Docker container without GPU dependencies.
+
+### Decision
+Use **XGBoost gradient-boosted trees** for all 5 clinical prediction models (diabetes, heart disease, liver disease, kidney disease, lung health).
+
+### Trade-offs Analysis
+
+| Option | Accuracy on Tabular Data | Explainability | Inference Latency | GPU Required | Artifact Size |
+|--------|-------------------------|----------------|-------------------|-------------|---------------|
+| **Logistic Regression** | Lower (no feature interactions) | Excellent (coefficients) | <1 ms | No | <1 KB |
+| **Random Forest** | Good | Moderate (ensemble) | ~10 ms | No | ~50 MB |
+| **XGBoost (Chosen)** | Best for <30 features | Good (SHAP, gain) | <10 ms | No | 1–5 MB |
+| **Neural Network (MLP)** | Comparable or worse | Poor (black box) | ~5 ms | Optional | ~10 MB |
+| **TabNet** | Good | Built-in attention | ~50 ms | Preferred | ~20 MB |
+
+### Consequences
+**Positive:** XGBoost consistently outperforms neural networks on tabular data with <30 features and <250K samples (Grinsztajn et al., "Why do tree-based models still outperform deep learning on tabular data?", NeurIPS 2022). Built-in `feature_importances_` and SHAP compatibility support the clinical explainability requirement. `scale_pos_weight` handles class imbalance natively without external resampling (except liver, where extreme imbalance requires upsampling). Models serialize to 1–5 MB `.pkl` files — trivial to include in a Docker image.
+
+**Negative:** XGBoost does not natively handle missing values in categorical features (requires preprocessing). It cannot incorporate unstructured data (clinical notes, imaging) without feature engineering. A logistic regression baseline would be simpler and more interpretable — the XGBoost choice prioritizes predictive performance over maximum interpretability.
+
+**Alternatives Rejected:** Logistic regression was evaluated as a baseline but rejected due to lower accuracy on datasets with non-linear feature interactions (e.g., BMI × age interaction in diabetes). TabNet was considered for its built-in attention mechanism but rejected due to GPU preference and higher inference latency. Neural networks were rejected based on the NeurIPS 2022 evidence that they underperform tree-based models in this data regime.
+
+---
+
+## ADR-016: LangGraph for Multi-Agent Medical Orchestration
+
+### Status
+**Accepted**
+
+### Context
+The AI chat system requires a multi-step reasoning pipeline: (1) classify user intent, (2) retrieve relevant patient context via RAG, (3) route to specialized sub-agents (researcher, analyst, guardrail checker), (4) generate a response with citations and medical disclaimers, and (5) enforce safety guardrails on the output. This is a directed acyclic graph of LLM calls with conditional branching and state management.
+
+### Decision
+Use **LangGraph** (from the LangChain ecosystem) as the multi-agent orchestration framework. The medical agent is implemented as a `StateGraph` with supervisor routing in [`backend/services/agent.py`](../backend/services/agent.py).
+
+### Trade-offs Analysis
+
+| Option | State Management | Conditional Routing | Streaming | Debugging | Ecosystem |
+|--------|-----------------|--------------------|-----------|-----------|-----------| 
+| **Raw LLM Calls** | Manual dict passing | If/else chains | Manual | Print statements | None |
+| **LangChain Chains** | Implicit (chain of calls) | Limited | Built-in | LangSmith | Large |
+| **LangGraph (Chosen)** | Explicit TypedDict state | Graph edges + conditions | Built-in | Graph visualization | Growing |
+| **CrewAI** | Role-based agents | Implicit (crew task order) | Limited | Crew logs | Small |
+| **AutoGen** | Message-based | Conversation routing | Limited | Message logs | Microsoft |
+
+### Consequences
+**Positive:** LangGraph's explicit `StateGraph` makes the control flow auditable — critical for a medical system where each reasoning step must be traceable. Conditional edges (e.g., "if guardrail fails → reject; else → generate") are first-class graph primitives, not buried in Python if/else blocks. The `TypedDict` state schema ensures type safety across nodes. Supervisor routing enables adding new specialist agents (e.g., drug interaction checker) without modifying the core graph structure.
+
+**Negative:** LangGraph is newer and less battle-tested than raw LangChain chains. The graph abstraction adds a learning curve for engineers unfamiliar with state-machine patterns. Debugging requires understanding both the graph topology and the state transformations at each node. The LangChain dependency tree is large (~50 transitive packages).
+
+**Alternatives Rejected:** CrewAI was considered for its simpler role-based API but rejected because it lacks explicit conditional routing (the medical guardrail must be a hard gate, not a soft suggestion). AutoGen was considered but rejected because its conversation-based routing model is less suitable for the deterministic pipeline needed in a medical context. Raw LLM calls were the initial implementation but rejected due to unmaintainable control flow as the pipeline grew beyond 3 steps.
+
+---
+
+## ADR-017: In-Memory Cosine Similarity RAG over Vector Database
+
+### Status
+**Accepted**
+
+### Context
+The RAG pipeline retrieves patient-scoped medical context (past diagnoses, lab results, medications) to ground the AI chat responses. The current deployment serves a single clinic pilot with <1,000 patients, each with <100 medical records. The total vector corpus is <100,000 embeddings.
+
+### Decision
+Use an **in-memory vector store** (`SimpleVectorStore`) with cosine similarity search, persisted via pickle, rather than a managed vector database (Qdrant, Pinecone, pgvector).
+
+### Trade-offs Analysis
+
+| Option | Ops Complexity | Latency | Cost | Scale Limit | Migration Effort |
+|--------|---------------|---------|------|-------------|-----------------|
+| **In-Memory + Pickle (Chosen)** | Zero (no infra) | <5 ms | $0 | ~100K vectors | N/A |
+| **pgvector** | Low (Postgres extension) | ~10 ms | $0 (existing RDS) | ~10M vectors | Low |
+| **Qdrant (self-hosted)** | Medium (container) | <5 ms | ~$50/month | ~100M vectors | Medium |
+| **Pinecone (managed)** | Low (SaaS) | ~20 ms | ~$70/month | Unlimited | Medium |
+
+### Consequences
+**Positive:** Zero operational overhead. No additional infrastructure to provision, monitor, or pay for. Pickle persistence survives container restarts. Cosine similarity on <100K 768-dimensional vectors completes in <5 ms — faster than any network-attached vector database. The `VectorStoreBackend` ABC (see [ADR-011](#adr-011-pluggable-vectorstore-backend-for-rag)) means switching to pgvector or Qdrant requires implementing 7 methods on the interface, not rewriting RAG code.
+
+**Negative:** Does not scale beyond ~100K vectors (memory constraint). No metadata filtering (cannot filter by patient_id at the vector level — filtering is done post-retrieval in Python). Pickle persistence is not crash-safe (potential corruption on hard kill). No built-in HNSW or IVF indexing — linear scan, which is only viable at small scale.
+
+**When to Revisit:** When the patient count exceeds 5,000 or the vector corpus exceeds 500K embeddings, migrate to pgvector (lowest migration effort, reuses existing RDS infrastructure).
+
+**Alternatives Rejected:** Pinecone was rejected due to cost and the principle of not adding managed SaaS dependencies for a self-hostable system. Qdrant was evaluated but rejected as over-engineering for <100K vectors — the operational overhead of managing another container outweighs the performance benefit at this scale. pgvector is the planned migration target but deferred until the scale justifies it.
+
+---
+
+## ADR-018: Gemini Embeddings via Unified AI Provider Gateway
+
+### Status
+**Accepted**
+
+### Context
+The RAG pipeline and semantic search require text embeddings for medical queries and patient records. The system must support multiple AI providers (Ollama for local development, Gemini for cloud, OpenAI/Anthropic as fallbacks) without coupling route handlers to specific provider APIs.
+
+### Decision
+Use **Google Gemini `text-embedding-004`** as the primary embedding model, accessed through the unified `core_ai.py` provider gateway. The gateway implements a fallback chain: Ollama (local) → Gemini → OpenAI → Anthropic.
+
+### Trade-offs Analysis
+
+| Option | Embedding Dim | Quality (MTEB) | Cost per 1M tokens | Local Dev | Latency |
+|--------|--------------|----------------|--------------------|-----------|---------| 
+| **Gemini text-embedding-004 (Chosen)** | 768 | High | $0.004 | Via Ollama fallback | ~100 ms |
+| **OpenAI text-embedding-3-small** | 1536 | High | $0.02 | No | ~150 ms |
+| **sentence-transformers (local)** | 384–768 | Medium-High | $0 | Yes | ~50 ms |
+| **Ollama nomic-embed-text** | 768 | Medium | $0 | Yes | ~200 ms |
+
+### Consequences
+**Positive:** Gemini embeddings provide strong semantic quality at 5× lower cost than OpenAI. The 768-dimensional output is a good balance between quality and memory (vs. OpenAI's 1536d). The `core_ai.py` gateway means all embedding calls go through a single module with retry logic, TTL caching, and provider fallback — no provider API is called directly from route handlers (enforced by `AGENTS.md` rules). Local development uses Ollama as the first fallback, so no API key is required for development.
+
+**Negative:** Cloud dependency — the system cannot generate embeddings without network access (unless Ollama is running locally). Embedding model changes require re-vectorizing the entire corpus (no automatic migration). The 768-dimensional embeddings consume ~6 KB per vector in float32, which limits the in-memory vector store to ~100K vectors in 1 GB RAM.
+
+**Alternatives Rejected:** Local sentence-transformers was considered for zero-cost offline operation but rejected because model quality on medical terminology is lower than Gemini/OpenAI, and loading a 400 MB model at startup adds 10–15 seconds to cold boot time on Render free tier. OpenAI embeddings were rejected due to 5× higher cost. A hybrid approach (local for dev, cloud for prod) is effectively what the fallback chain provides.
+
+---
+
 ### Evaluation Criteria
 1. **Business Impact**: Does this solve a real business problem?
 2. **Performance**: Does it meet SLA requirements?
@@ -624,3 +744,4 @@ Adopt a **multi-stage Docker build**:
 ---
 
 *This document is living and updated as new decisions are made. Each ADR includes success metrics and post-implementation evaluation.*
+

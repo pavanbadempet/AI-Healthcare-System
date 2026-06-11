@@ -35,4 +35,13 @@ services:
       - key: CORS_ORIGINS
         value: https://ai-healthcare-system.streamlit.app,http://127.0.0.1:3000
       - key: DATABASE_URL
-        sync: false # User must provide this (e.g., Neon/Supabase URL)
+        fromDatabase:
+          name: aio-health-db
+          property: connectionString
+
+databases:
+  - name: aio-health-db
+    databaseName: aio_health
+    user: aio_health
+    region: singapore
+    plan: free

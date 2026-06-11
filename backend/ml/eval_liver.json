@@ -1,0 +1,74 @@
+{
+  "model_name": "liver",
+  "evaluated_at": "2026-06-11T11:44:17.852835+00:00",
+  "test_set_size": 6139,
+  "class_distribution": {
+    "0": 1755,
+    "1": 4384
+  },
+  "accuracy": 0.9133,
+  "auc_roc": 0.9799,
+  "sensitivity": 0.9792,
+  "specificity": 0.7487,
+  "classification_report": {
+    "0": {
+      "precision": 0.9352313167259787,
+      "recall": 0.7487179487179487,
+      "f1-score": 0.8316455696202532,
+      "support": 1755.0
+    },
+    "1": {
+      "precision": 0.9068441064638784,
+      "recall": 0.979242700729927,
+      "f1-score": 0.9416538714630401,
+      "support": 4384.0
+    },
+    "macro avg": {
+      "precision": 0.9210377115949285,
+      "recall": 0.8639803247239379,
+      "f1-score": 0.8866497205416466,
+      "support": 6139.0
+    },
+    "weighted avg": {
+      "precision": 0.9149593620445896,
+      "recall": 0.9133409350057012,
+      "f1-score": 0.9102050084993505,
+      "support": 6139.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      1314,
+      441
+    ],
+    [
+      91,
+      4293
+    ]
+  ],
+  "feature_importances": {
+    "Age": 0.0002,
+    "Gender": 0.0021,
+    "Total_Bilirubin": 0.2115,
+    "Direct_Bilirubin": 0.203,
+    "Alkaline_Phosphotase": 0.1007,
+    "Alamine_Aminotransferase": 0.1099,
+    "Aspartate_Aminotransferase": 0.1052,
+    "Total_Proteins": 0.0846,
+    "Albumin": 0.0902,
+    "Albumin_and_Globulin_Ratio": 0.0926
+  },
+  "n_features": 10,
+  "feature_names": [
+    "Age",
+    "Gender",
+    "Total_Bilirubin",
+    "Direct_Bilirubin",
+    "Alkaline_Phosphotase",
+    "Alamine_Aminotransferase",
+    "Aspartate_Aminotransferase",
+    "Total_Proteins",
+    "Albumin",
+    "Albumin_and_Globulin_Ratio"
+  ]
+}

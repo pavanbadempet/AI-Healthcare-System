@@ -10,9 +10,20 @@ from sklearn.preprocessing import RobustScaler
 from sklearn.utils import resample
 
 try:
-    from .features import LIVER_FEATURES  # noqa: F401
+    from backend.ml.evaluation import evaluate_and_save
 except ImportError:
-    pass
+    try:
+        from ml.evaluation import evaluate_and_save
+    except ImportError:
+        from evaluation import evaluate_and_save
+
+try:
+    from backend.features import LIVER_FEATURES
+except ImportError:
+    try:
+        from features import LIVER_FEATURES
+    except ImportError:
+        from .features import LIVER_FEATURES
 
 # --- Configuration ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -105,6 +116,9 @@ def train_liver_model():
     y_pred = model.predict(X_test_scaled)
     acc = accuracy_score(Y_test, y_pred)
     print(f"Model Trained. Honest Accuracy: {acc:.4f}")
+
+    # Run comprehensive evaluation and save JSON artifact
+    evaluate_and_save(model, X_test_scaled, Y_test, LIVER_FEATURES, "liver")
 
     # 8. Save Model
     with open(MODEL_PATH, 'wb') as f:

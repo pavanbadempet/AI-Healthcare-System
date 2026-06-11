@@ -6,6 +6,14 @@ import xgboost as xgb
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 
+try:
+    from backend.ml.evaluation import evaluate_and_save
+except ImportError:
+    try:
+        from ml.evaluation import evaluate_and_save
+    except ImportError:
+        from evaluation import evaluate_and_save
+
 # --- Configuration ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATASET_PATH = os.path.join(BASE_DIR, "..", "data", "processed", "diabetes.parquet")
@@ -66,6 +74,9 @@ def train_diabetes_model():
     y_pred = model.predict(X_test)
     acc = accuracy_score(Y_test, y_pred)
     print(f"Model Trained. Accuracy: {acc:.4f}")
+
+    # Run comprehensive evaluation and save JSON artifact
+    evaluate_and_save(model, X_test, Y_test, DIABETES_FEATURES, "diabetes")
 
     # 6. Save Model
     with open(MODEL_PATH, 'wb') as f:
