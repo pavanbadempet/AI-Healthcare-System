@@ -34,6 +34,8 @@ SQLALCHEMY_DATABASE_URL = _load_database_url()
 connect_args = {}
 if "sqlite" in SQLALCHEMY_DATABASE_URL:
     connect_args = {"check_same_thread": False}
+else:
+    connect_args = {"connect_timeout": 5}
 
 # Configure Pooling only for non-SQLite (e.g. Postgres)
 engine_args = {
