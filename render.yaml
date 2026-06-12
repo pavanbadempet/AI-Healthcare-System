@@ -3,7 +3,7 @@ services:
     name: aio-health-backend
     plan: free # Explicitly request Free Tier
     region: singapore # Southeast Asia
-    autoDeploy: true
+    autoDeploy: false
     healthCheckPath: /healthz
     buildFilter:
       paths:
