@@ -12,9 +12,15 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
   const { token } = useAuthStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [inIframe, setInIframe] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    try {
+      setInIframe(window.self !== window.top);
+    } catch (e) {
+      setInIframe(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -33,6 +39,24 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
         <TopNav mobileOpen={mobileMenuOpen} setMobileOpen={setMobileMenuOpen} />
         
         <main className="flex-1 overflow-auto relative w-full pt-16 z-10">
+          {inIframe && (
+            <div className="max-w-[1600px] mx-auto px-4 md:px-6 lg:px-8 pt-4 w-full">
+              <div className="p-3 bg-[rgba(234,179,8,0.1)] text-[var(--warning)] border border-yellow-500/20 text-[10px] font-mono rounded-xl flex items-center justify-between gap-4 uppercase tracking-wide">
+                <div className="flex items-center gap-2">
+                  <span className="text-[14px]">⚠️</span>
+                  <span>Running in iframe. Logins/sessions may not persist across tabs.</span>
+                </div>
+                <a
+                  href={window.location.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-1 px-3 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-lg transition-colors text-[9px] shrink-0"
+                >
+                  Switch to Direct Link ↗️
+                </a>
+              </div>
+            </div>
+          )}
           <div className="h-full p-4 md:p-6 lg:p-8 max-w-[1600px] mx-auto w-full">
             <AnimatePresence mode="wait">
               <motion.div

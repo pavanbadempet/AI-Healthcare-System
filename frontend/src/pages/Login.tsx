@@ -11,8 +11,14 @@ export default function LoginPage() {
   const [searchParams] = useSearchParams();
   const isExpired = searchParams.get("expired") === "1";
   const [mounted, setMounted] = useState(false);
+  const [inIframe, setInIframe] = useState(false);
   useEffect(() => {
     setMounted(true);
+    try {
+      setInIframe(window.self !== window.top);
+    } catch (e) {
+      setInIframe(true);
+    }
   }, []);
 
   const [username, setUsername] = useState("");
@@ -157,6 +163,29 @@ export default function LoginPage() {
                 Enter credentials to link with telemetry.
               </p>
             </div>
+
+            {inIframe && (
+              <motion.div
+                initial={{ opacity: 0, y: -5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-3 bg-[var(--warning-muted)] text-[var(--warning)] border border-[var(--warning-border)] text-[10px] font-mono rounded-xl mb-4 uppercase tracking-wide flex flex-col gap-1.5"
+              >
+                <div className="font-bold flex items-center gap-1">
+                  <span>⚠️</span> Nested in Iframe
+                </div>
+                <div className="text-[9px] leading-relaxed">
+                  Browser storage partitioning may cause issues or redirect to login on new tabs.
+                </div>
+                <a
+                  href={window.location.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-1 text-center py-1.5 px-2 bg-yellow-500 hover:bg-yellow-400 text-black font-black rounded-lg transition-colors text-[9px] uppercase tracking-wider block font-bold"
+                >
+                  Open Direct App Link ↗️
+                </a>
+              </motion.div>
+            )}
 
             {isExpired && !error && (
               <motion.div

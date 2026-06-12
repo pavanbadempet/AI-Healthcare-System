@@ -62,9 +62,24 @@ def fallback_to_sqlite():
     global engine, SessionLocal, SQLALCHEMY_DATABASE_URL
     import logging
     logger = logging.getLogger(__name__)
-    logger.warning("Configuring database fallback to local SQLite: healthcare.db")
 
-    SQLALCHEMY_DATABASE_URL = "sqlite:///healthcare.db"
+    db_path = "healthcare.db"
+    # Detect Hugging Face Space persistent storage (/data)
+    if os.path.exists("/data") and os.access("/data", os.W_OK):
+        db_path = "/data/healthcare.db"
+        logger.info("Hugging Face Space persistent storage detected. Using SQLite: %s", db_path)
+    elif os.getenv("SPACE_ID") or os.getenv("SPACES_ID"):
+        try:
+            os.makedirs("/data", exist_ok=True)
+            if os.access("/data", os.W_OK):
+                db_path = "/data/healthcare.db"
+                logger.info("Using Hugging Face Space persistent SQLite: %s", db_path)
+        except Exception as e:
+            logger.warning("Failed to initialize /data on Hugging Face: %s. Defaulting to local db.", e)
+
+    logger.warning("Configuring database fallback to SQLite: %s", db_path)
+
+    SQLALCHEMY_DATABASE_URL = f"sqlite:///{db_path}"
     c_args = {"check_same_thread": False}
     e_args = {
         "connect_args": c_args,
