@@ -137,9 +137,25 @@ def create_default_admin():
             logger.error("Failed to seed admin")
 
 
+startup_diagnostics = {}
+
+
 # --- App ---
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global startup_diagnostics
+    # Mask any sensitive database passwords in URL for logging/diagnostics
+    db_url = str(database.SQLALCHEMY_DATABASE_URL)
+    if "@" in db_url:
+        # e.g., postgresql://user:password@host/db -> postgresql://user:***@host/db
+        parts = db_url.split("@")
+        prefix = parts[0].rsplit(":", 1)[0]
+        startup_diagnostics["database_url"] = f"{prefix}:***@{parts[1]}"
+    else:
+        startup_diagnostics["database_url"] = db_url
+
+    startup_diagnostics["engine"] = str(database.engine)
+
     # Database initialization (runs here instead of module level to avoid
     # side effects during import and to support test isolation)
     try:
@@ -147,24 +163,43 @@ async def lifespan(app: FastAPI):
         with database.engine.connect() as conn:
             conn.execute(text("SELECT 1"))
         logger.info("Connected to primary database successfully.")
+        startup_diagnostics["primary_conn"] = "success"
     except Exception as e:
         logger.warning("Primary database connection failed: %s. Falling back to SQLite.", e)
+        startup_diagnostics["primary_conn"] = f"failed: {str(e)}"
         database.fallback_to_sqlite()
+        startup_diagnostics["fallback_engine"] = str(database.engine)
 
     try:
         models.Base.metadata.create_all(bind=database.engine)
         run_migrations()
+        startup_diagnostics["schema_creation"] = "success"
     except Exception as err:
         logger.warning("File-based SQLite creation/migration failed: %s. Falling back to in-memory SQLite.", err)
+        startup_diagnostics["schema_creation"] = f"failed: {str(err)}"
         database.fallback_to_memory()
-        models.Base.metadata.create_all(bind=database.engine)
-        run_migrations()
+        startup_diagnostics["fallback_memory_engine"] = str(database.engine)
+        try:
+            models.Base.metadata.create_all(bind=database.engine)
+            run_migrations()
+            startup_diagnostics["schema_creation_fallback"] = "success"
+        except Exception as err2:
+            startup_diagnostics["schema_creation_fallback"] = f"failed: {str(err2)}"
 
     # Seeding
-    create_default_admin()
+    try:
+        create_default_admin()
+        startup_diagnostics["seeding"] = "success"
+    except Exception as seed_err:
+        startup_diagnostics["seeding"] = f"failed: {str(seed_err)}"
 
     logger.info("Loading AI models...")
-    prediction.initialize_models()
+    try:
+        prediction.initialize_models()
+        startup_diagnostics["models_loaded"] = "success"
+    except Exception as model_err:
+        startup_diagnostics["models_loaded"] = f"failed: {str(model_err)}"
+
     yield
     logger.info("Shutting down...")
 
@@ -230,7 +265,10 @@ def root():
 
 @app.get("/healthz")
 def health():
-    return {"status": "ok"}
+    return {
+        "status": "ok",
+        "diagnostics": startup_diagnostics
+    }
 
 @app.post("/generate_report")
 async def generate_report(
