@@ -174,6 +174,7 @@ vi.mock('@/lib/api', () => ({
     ai_clinical_synthesis: 'Mock AI Clinical Synthesis',
     disclaimer: 'Mock disclaimer',
   })),
+  createClinicalOrder: vi.fn(() => Promise.resolve({ id: 99 })),
 }));
 
 describe('Patient detail identity', () => {
@@ -502,5 +503,82 @@ describe('Patient detail identity', () => {
     await screen.findByRole('heading', { name: /Assigned Patient/ });
     expect(screen.getByText(/Admission workflow active/i)).toBeInTheDocument();
     expect(screen.getByText(/Open a clinician-reviewed encounter before creating an admission/i)).toBeInTheDocument();
+  });
+
+  it('renders AI-recommended clinical orders and handles one-click submissions', async () => {
+    const { getPatientOrganHealth, createClinicalOrder } = await import('@/lib/api');
+    (getPatientOrganHealth as vi.Mock).mockResolvedValueOnce({
+      patient_id: 42,
+      patient_name: 'Assigned Patient',
+      age: 45,
+      gender: 'female',
+      vitals_source: 'baseline_fallback',
+      vitals: {
+        heart_rate: 72,
+        systolic_bp: 120,
+        diastolic_bp: 80,
+        spo2: 98,
+        temperature_c: 36.8,
+        respiratory_rate: 14,
+      },
+      organ_risks: {
+        heart: { risk_probability: 0.55, status: 'Guarded' },
+        lungs: { risk_probability: 0.1, status: 'Stable' },
+        kidney: { risk_probability: 0.1, status: 'Stable' },
+        diabetes: { risk_probability: 0.1, status: 'Stable' },
+        liver: { risk_probability: 0.1, status: 'Stable' },
+      },
+      labs_source: 'baseline_fallback',
+      labs: {
+        serum_creatinine: 1.0,
+        blood_urea: 40.0,
+        total_bilirubin: 1.0,
+        direct_bilirubin: 0.3,
+        alt: 30.0,
+        ast: 30.0,
+      },
+      recommended_orders: [
+        { order_type: 'lab', title: 'Serum Troponin Panel', reason: 'Elevated cardiovascular risk profile detected.' }
+      ],
+      ai_clinical_synthesis: 'Mock AI Clinical Synthesis showing elevated cardiac risks.',
+      disclaimer: 'Mock disclaimer',
+    });
+
+    await act(async () => {
+      render(
+        <Suspense fallback={<div>Loading patient record</div>}>
+          <PatientDetailPage params={Promise.resolve({ id: '42' })} />
+        </Suspense>
+      );
+      await Promise.resolve();
+    });
+
+    // Verify AI synthesis is displayed
+    expect(await screen.findByText(/Mock AI Clinical Synthesis showing elevated cardiac risks./i)).toBeInTheDocument();
+
+    // Verify recommended order title is displayed
+    expect(screen.getByText(/Serum Troponin Panel/i)).toBeInTheDocument();
+    expect(screen.getByText(/Elevated cardiovascular risk profile detected./i)).toBeInTheDocument();
+
+    // Find and click the Submit Order button
+    const submitBtn = screen.getByRole('button', { name: /Submit Order/i });
+    expect(submitBtn).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(submitBtn);
+    });
+
+    // Verify API call was made
+    expect(createClinicalOrder).toHaveBeenCalledWith({
+      patient_id: 42,
+      order_type: 'lab',
+      title: 'Serum Troponin Panel',
+      notes: 'Elevated cardiovascular risk profile detected.',
+    });
+
+    // Verify the button text changes to indicate submission
+    await waitFor(() => {
+      expect(screen.getByText(/Submitted/i)).toBeInTheDocument();
+    });
   });
 });
