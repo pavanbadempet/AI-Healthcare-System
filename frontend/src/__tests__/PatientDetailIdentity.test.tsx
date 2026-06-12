@@ -64,6 +64,12 @@ vi.mock('framer-motion', () => {
 });
 
 vi.mock('recharts', () => ({
+  ResponsiveContainer: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  RadarChart: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  PolarGrid: () => <div />,
+  PolarAngleAxis: () => <div />,
+  PolarRadiusAxis: () => <div />,
+  Radar: () => <div />,
   LineChart: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   Line: () => <div />,
 }));
@@ -133,6 +139,40 @@ vi.mock('@/lib/api', () => ({
     export: { id: 12, resource_count: 4 },
     manifest: { signature_algorithm: 'HMAC-SHA256' },
     standards_note: 'FHIR-style bundle for integration mapping; local validation and approvals are still required.',
+  })),
+  getPatientOrganHealth: vi.fn(() => Promise.resolve({
+    patient_id: 42,
+    patient_name: 'Assigned Patient',
+    age: 45,
+    gender: 'female',
+    vitals_source: 'baseline_fallback',
+    vitals: {
+      heart_rate: 72,
+      systolic_bp: 120,
+      diastolic_bp: 80,
+      spo2: 98,
+      temperature_c: 36.8,
+      respiratory_rate: 14,
+    },
+    organ_risks: {
+      heart: { risk_probability: 0.1, status: 'Stable' },
+      lungs: { risk_probability: 0.1, status: 'Stable' },
+      kidney: { risk_probability: 0.1, status: 'Stable' },
+      diabetes: { risk_probability: 0.1, status: 'Stable' },
+      liver: { risk_probability: 0.1, status: 'Stable' },
+    },
+    labs_source: 'baseline_fallback',
+    labs: {
+      serum_creatinine: 1.0,
+      blood_urea: 40.0,
+      total_bilirubin: 1.0,
+      direct_bilirubin: 0.3,
+      alt: 30.0,
+      ast: 30.0,
+    },
+    recommended_orders: [],
+    ai_clinical_synthesis: 'Mock AI Clinical Synthesis',
+    disclaimer: 'Mock disclaimer',
   })),
 }));
 

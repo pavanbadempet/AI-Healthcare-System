@@ -248,8 +248,10 @@ def process_conformed_record(db, record):
     avg_resp_rate = float(stats[5]) if stats[5] is not None else resp_rate
     
     # --- 3. Calculate ML Risk Probabilities ---
+    ml_start = time.perf_counter()
     heart_risk = predict_heart_disease_risk(avg_hr, avg_systolic_bp)
     lung_risk = predict_lung_risk(avg_spo2, avg_resp_rate)
+    ml_duration_ms = (time.perf_counter() - ml_start) * 1000
     
     # --- 4. Evaluate Alerts & Severity ---
     trigger_alert = False
@@ -315,6 +317,8 @@ def process_conformed_record(db, record):
         )
         db.add(signal)
 
+    return ml_duration_ms
+
 def process_batch(df, batch_id):
     """Processes a micro-batch of vitals data using native PySpark execution."""
     records = df.collect()
@@ -324,10 +328,29 @@ def process_batch(df, batch_id):
     logger.info(f"Processing micro-batch {batch_id} with {len(records)} records...")
     load_ml_models()
     db = SessionLocal()
+    start_time = time.perf_counter()
+    total_ml_latency = 0.0
     try:
         for row in records:
             record_dict = row.asDict()
-            process_conformed_record(db, record_dict)
+            ml_lat = process_conformed_record(db, record_dict)
+            if ml_lat is not None:
+                total_ml_latency += ml_lat
+        
+        # Calculate total batch processing duration
+        end_time = time.perf_counter()
+        processing_time_ms = (end_time - start_time) * 1000
+        
+        # Save Spark batch metrics
+        from backend.models.clinical import SparkStreamingMetrics
+        metric = SparkStreamingMetrics(
+            batch_id=batch_id,
+            records_processed=len(records),
+            processing_time_ms=processing_time_ms,
+            ml_latency_ms=total_ml_latency,
+            timestamp=datetime.now(timezone.utc)
+        )
+        db.add(metric)
         db.commit()
     except Exception as e:
         db.rollback()

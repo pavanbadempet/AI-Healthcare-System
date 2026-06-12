@@ -1,7 +1,26 @@
 import { use, useEffect, useState } from "react";
 import { useAuthStore } from "@/lib/auth";
-import { exportDoctorPatientFhirBundle, getAdminPatient, getDoctorPatients, type DoctorPatientSummary, type UserProfile } from "@/lib/api";
-import { ChevronLeft, FileDigit, BrainCircuit, Loader2, ShieldAlert } from "lucide-react";
+import { 
+  exportDoctorPatientFhirBundle, 
+  getAdminPatient, 
+  getDoctorPatients, 
+  getPatientOrganHealth,
+  createClinicalOrder,
+  type DoctorPatientSummary, 
+  type UserProfile,
+  type OrganHealthResult,
+  type RecommendedOrder
+} from "@/lib/api";
+import { notifyPatientCareEventsUpdated } from "@/lib/patientCareEvents";
+import { ChevronLeft, FileDigit, BrainCircuit, Loader2, ShieldAlert, RefreshCw, HeartPulse, Info, Check, Plus } from "lucide-react";
+import {
+  Radar,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  ResponsiveContainer,
+} from "recharts";
 import { Link } from "react-router-dom";
 import PatientCareActions from "@/components/operations/PatientCareActions";
 import PatientCareTimeline from "@/components/operations/PatientCareTimeline";
@@ -100,6 +119,33 @@ export default function PatientEMRView({
     temp: 36.8,
   });
 
+  const [organHealth, setOrganHealth] = useState<OrganHealthResult | null>(null);
+  const [organHealthLoading, setOrganHealthLoading] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
+  const [submittingOrders, setSubmittingOrders] = useState<Record<string, boolean>>({});
+  const [submittedOrders, setSubmittedOrders] = useState<Record<string, boolean>>({});
+  const [orderError, setOrderError] = useState<string | null>(null);
+
+  const handleSubmitRecommendedOrder = async (order: RecommendedOrder) => {
+    const key = `${order.order_type}-${order.title}`;
+    setSubmittingOrders(prev => ({ ...prev, [key]: true }));
+    setOrderError(null);
+    try {
+      await createClinicalOrder({
+        patient_id: patientId,
+        order_type: order.order_type,
+        title: order.title,
+        notes: order.reason,
+      });
+      setSubmittedOrders(prev => ({ ...prev, [key]: true }));
+      notifyPatientCareEventsUpdated(patientId);
+    } catch (err) {
+      setOrderError(err instanceof Error ? err.message : "Failed to submit order");
+    } finally {
+      setSubmittingOrders(prev => ({ ...prev, [key]: false }));
+    }
+  };
+
   useEffect(() => {
     if (!mounted) return;
     const timer = setInterval(() => {
@@ -124,6 +170,23 @@ export default function PatientEMRView({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!mounted || !Number.isFinite(patientId) || patientId <= 0) return;
+    setOrganHealthLoading(true);
+    getPatientOrganHealth(patientId)
+      .then(setOrganHealth)
+      .catch((err) => console.error("Failed to fetch organ health:", err))
+      .finally(() => setOrganHealthLoading(false));
+  }, [patientId, mounted]);
+
+  const handleRecalculateOrganHealth = () => {
+    setOrganHealthLoading(true);
+    getPatientOrganHealth(patientId)
+      .then(setOrganHealth)
+      .catch(console.error)
+      .finally(() => setOrganHealthLoading(false));
+  };
 
   useEffect(() => {
     let active = true;
@@ -353,6 +416,303 @@ export default function PatientEMRView({
         <PatientDiagnosticsReview patientId={patientId} />
         <PatientDiagnosticResults patientId={patientId} />
         <PatientCareTimeline patientId={patientId} />
+
+        {/* Organ Health & Risk Intelligence panel */}
+        {organHealth && (() => {
+          const criticalOrgans = Object.entries(organHealth.organ_risks)
+            .filter(([_, detail]) => detail.status === "Critical" || detail.status === "Guarded")
+            .map(([name]) => name === "heart" ? "Cardiovascular" : name === "lungs" ? "Respiratory" : name === "kidney" ? "Renal" : name === "diabetes" ? "Metabolic" : "Hepatic");
+
+          const clinicalInsight = criticalOrgans.length > 0 
+            ? `HIGH RISK WARNING: Elevated risk detected in ${criticalOrgans.join(", ")} system(s). Recommend ordering targeted diagnostic panels and verifying vital telemetry feeds.`
+            : "CLINICAL EVALUATION: All measured organ systems are currently stable and within baseline limits. Maintain standard observation.";
+
+          const borderGlowClass = 
+            organHealth.health_index > 80 ? "border-white/[0.06] shadow-[0_12px_40px_-12px_rgba(0,0,0,0.6)]" :
+            organHealth.health_index > 60 ? "border-yellow-500/20 shadow-[0_12px_40px_-12px_rgba(234,179,8,0.12)]" :
+            "border-rose-500/30 shadow-[0_12px_40px_-12px_rgba(239,68,68,0.2)]";
+
+          return (
+            <div className={`panel p-5 relative overflow-hidden bg-gradient-to-br from-indigo-950/20 via-indigo-900/5 to-black/40 border rounded-2xl transition-all duration-500 ${borderGlowClass}`}>
+              <div className="flex flex-col lg:flex-row justify-between items-start gap-6">
+                
+                {/* Score and Overview */}
+                <div className="flex-1 space-y-4 w-full">
+                  <div>
+                    <div className="section-label mb-1.5 flex items-center gap-2 text-[var(--accent)] tracking-wider">
+                      <HeartPulse size={12} className="text-[var(--accent)] animate-pulse" />
+                      Multi-Organ Screening Engine
+                    </div>
+                    <h2 className="text-lg font-bold text-[var(--text-primary)] uppercase tracking-wide">
+                      Organ Health & Risk Intelligence
+                    </h2>
+                    <p className="mt-1 text-xs text-[var(--text-secondary)] font-mono uppercase leading-relaxed">
+                      Unified assessment combining clinical vitals, demographics, and ensemble ML risk classifications (Diabetes, Heart, Liver, Kidney, Lungs).
+                    </p>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-6 pt-2">
+                    {/* Health Index Ring */}
+                    <div className="relative w-24 h-24 shrink-0 mx-auto sm:mx-0">
+                      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                        <path
+                          className="text-white/[0.04]"
+                          strokeWidth="3"
+                          stroke="currentColor"
+                          fill="transparent"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                        <path
+                          className={`transition-all duration-1000 ease-out ${
+                            organHealth.health_index > 80 ? "text-emerald-500" :
+                            organHealth.health_index > 60 ? "text-yellow-500" :
+                            organHealth.health_index > 40 ? "text-orange-500" : "text-rose-500"
+                          }`}
+                          strokeWidth="3"
+                          strokeDasharray={`${organHealth.health_index}, 100`}
+                          strokeLinecap="round"
+                          stroke="currentColor"
+                          fill="transparent"
+                          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                        />
+                      </svg>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center font-mono">
+                        <span className="text-2xl font-extrabold text-[var(--text-primary)]">{organHealth.health_index}</span>
+                        <span className="text-[7px] text-[var(--text-dim)] uppercase font-bold">Health Index</span>
+                      </div>
+                    </div>
+
+                    {/* Organ Risk Breakdown Cards */}
+                    <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 w-full">
+                      {Object.entries(organHealth.organ_risks).map(([organ, detail]) => {
+                        const organLabel = 
+                          organ === "heart" ? "Cardio" :
+                          organ === "lungs" ? "Respir" :
+                          organ === "kidney" ? "Renal" :
+                          organ === "diabetes" ? "Metab" : "Hepatic";
+
+                        const statusColor = 
+                          detail.status === "Critical" ? "text-rose-400 bg-rose-500/10 border-rose-500/20" :
+                          detail.status === "Guarded" ? "text-orange-400 bg-orange-500/10 border-orange-500/20" :
+                          detail.status === "Elevated" ? "text-yellow-400 bg-yellow-500/10 border-yellow-500/20" :
+                          "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
+
+                        return (
+                          <div key={organ} className="p-2.5 rounded-xl border border-white/[0.04] bg-white/[0.01] flex flex-col justify-between">
+                            <span className="text-[8px] font-mono text-[var(--text-dim)] uppercase">{organLabel} Risk</span>
+                            <div className="flex items-baseline justify-between mt-1">
+                              <span className="text-sm font-bold font-mono text-[var(--text-primary)]">{(detail.risk_probability * 100).toFixed(0)}%</span>
+                              <span className={`text-[7px] font-mono font-bold px-1 rounded border ${statusColor}`}>
+                                {detail.status}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Dynamic Diagnostics Insight Bar */}
+                  <div className={`p-3 rounded-xl border flex items-start gap-2.5 text-[10px] font-mono uppercase leading-relaxed ${
+                    criticalOrgans.length > 0 
+                      ? "text-rose-400 bg-rose-500/5 border-rose-500/10" 
+                      : "text-emerald-400 bg-emerald-500/5 border-emerald-500/10"
+                  }`}>
+                    <ShieldAlert size={14} className="shrink-0 mt-0.5" />
+                    <div>{clinicalInsight}</div>
+                  </div>
+
+                  {/* AI Clinical Synthesis block */}
+                  {organHealth.ai_clinical_synthesis && (
+                    <div className="p-3.5 rounded-xl border border-indigo-500/20 bg-indigo-950/10 flex flex-col gap-3">
+                      <div className="text-[10px] font-mono leading-relaxed text-indigo-200 flex items-start gap-2.5 uppercase">
+                        <BrainCircuit size={14} className="shrink-0 mt-0.5 text-indigo-400 animate-pulse" />
+                        <div>
+                          <span className="text-indigo-400 font-bold text-[10px]">AI Clinical Synthesis:</span>{" "}
+                          {organHealth.ai_clinical_synthesis}
+                        </div>
+                      </div>
+
+                      {/* AI-Recommended Orders */}
+                      {organHealth.recommended_orders && organHealth.recommended_orders.length > 0 && (
+                        <div className="mt-1 border-t border-indigo-500/10 pt-2.5">
+                          <div className="text-[9px] font-mono font-bold tracking-wider text-indigo-400 uppercase mb-2">
+                            AI-Recommended Clinical Orders:
+                          </div>
+                          {orderError && (
+                            <div className="mb-2 text-[9px] font-mono text-rose-400 border border-rose-500/20 bg-rose-500/5 p-2 rounded uppercase">
+                              Error: {orderError}
+                            </div>
+                          )}
+                          <div className="space-y-2">
+                            {organHealth.recommended_orders.map((order, idx) => {
+                              const key = `${order.order_type}-${order.title}`;
+                              const isSubmitting = submittingOrders[key];
+                              const isSubmitted = submittedOrders[key];
+
+                              return (
+                                <div 
+                                  key={idx} 
+                                  className="p-2 rounded-lg border border-indigo-500/10 bg-indigo-950/20 hover:bg-indigo-950/30 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-[10px] font-mono uppercase"
+                                >
+                                  <div className="flex-1 space-y-1">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                      <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                                        {order.order_type}
+                                      </span>
+                                      <span className="text-white font-semibold">{order.title}</span>
+                                    </div>
+                                    <p className="text-[9px] text-indigo-200/70 leading-normal lowercase first-letter:uppercase">
+                                      {order.reason}
+                                    </p>
+                                  </div>
+                                  <button
+                                    onClick={() => handleSubmitRecommendedOrder(order)}
+                                    disabled={isSubmitting || isSubmitted}
+                                    className={`btn shrink-0 self-end sm:self-auto py-1 px-2 text-[8px] uppercase tracking-wider font-semibold flex items-center gap-1 cursor-pointer ${
+                                      isSubmitted
+                                        ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/10 cursor-default"
+                                        : isSubmitting
+                                        ? "bg-indigo-500/10 text-indigo-300 border border-indigo-500/20 cursor-wait"
+                                        : "bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-100 border border-indigo-500/40"
+                                    }`}
+                                  >
+                                    {isSubmitted ? (
+                                      <>
+                                        <Check size={10} className="text-emerald-400" />
+                                        Submitted
+                                      </>
+                                    ) : isSubmitting ? (
+                                      <>
+                                        <Loader2 size={10} className="animate-spin text-indigo-400" />
+                                        Submitting
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Plus size={10} className="text-indigo-400" />
+                                        Submit Order
+                                      </>
+                                    )}
+                                  </button>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex flex-wrap items-center gap-3 pt-1">
+                    <button 
+                      onClick={handleRecalculateOrganHealth}
+                      disabled={organHealthLoading}
+                      className="btn btn-secondary text-[10px] uppercase tracking-wider flex items-center gap-1.5 cursor-pointer py-1.5 px-3"
+                    >
+                      {organHealthLoading ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />}
+                      Recalculate Index
+                    </button>
+                    <button
+                      onClick={() => setShowGuide(!showGuide)}
+                      className="btn btn-secondary text-[10px] uppercase tracking-wider flex items-center gap-1.5 cursor-pointer py-1.5 px-3"
+                    >
+                      <Info size={11} className="text-[var(--text-secondary)]" />
+                      {showGuide ? "Hide Parameters Guide" : "Parameters Guide"}
+                    </button>
+                    <span className="text-[8px] font-mono text-[var(--text-dim)] uppercase">
+                      Vitals Source: {organHealth.vitals_source === "latest_observation" ? "Live Telemetry Feed" : "Baseline Fallbacks"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Radar Chart (Recharts) */}
+                <div className="w-full lg:w-[320px] h-[220px] shrink-0 bg-black/25 rounded-2xl border border-white/[0.04] p-3 relative flex items-center justify-center mx-auto lg:mx-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RadarChart cx="50%" cy="50%" outerRadius="75%" data={[
+                      { subject: "Cardio", A: Math.round(organHealth.organ_risks.heart.risk_probability * 100), fullMark: 100 },
+                      { subject: "Respir", A: Math.round(organHealth.organ_risks.lungs.risk_probability * 100), fullMark: 100 },
+                      { subject: "Renal", A: Math.round(organHealth.organ_risks.kidney.risk_probability * 100), fullMark: 100 },
+                      { subject: "Metab", A: Math.round(organHealth.organ_risks.diabetes.risk_probability * 100), fullMark: 100 },
+                      { subject: "Hepat", A: Math.round(organHealth.organ_risks.liver.risk_probability * 100), fullMark: 100 },
+                    ]}>
+                      <PolarGrid stroke="rgba(255,255,255,0.06)" />
+                      <PolarAngleAxis 
+                        dataKey="subject" 
+                        tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 8, fontFamily: "monospace" }} 
+                      />
+                      <PolarRadiusAxis 
+                        angle={30} 
+                        domain={[0, 100]} 
+                        tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 6 }} 
+                        stroke="transparent"
+                      />
+                      <Radar
+                        name={organHealth.patient_name}
+                        dataKey="A"
+                        stroke="var(--accent)"
+                        fill="var(--accent)"
+                        fillOpacity={0.25}
+                      />
+                    </RadarChart>
+                  </ResponsiveContainer>
+                </div>
+
+              </div>
+
+              {/* Toggleable Parameters Guide & Clinical Inputs */}
+              {showGuide && (
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t border-white/[0.04]">
+                  {/* Parameter Guide */}
+                  <div className="text-[9px] font-mono leading-relaxed space-y-2 text-[var(--text-secondary)] uppercase">
+                    <div className="font-bold text-[var(--accent)] mb-1">Screening Parameters Guide:</div>
+                    <div>• <span className="text-[var(--text-primary)] font-bold">Cardio (Heart) Risk</span>: Multi-feature classification utilizing age, biological sex, systolic blood pressure, and heart rate telemetry.</div>
+                    <div>• <span className="text-[var(--text-primary)] font-bold">Respir (Lungs) Risk</span>: Classified using blood oxygen saturation (SpO2) thresholds, patient age, biological sex, and respiratory rate signals.</div>
+                    <div>• <span className="text-[var(--text-primary)] font-bold">Renal (Kidney) Risk</span>: Calculated based on age, blood pressure, and normal baseline ranges for serum creatinine and blood urea nitrogen.</div>
+                    <div>• <span className="text-[var(--text-primary)] font-bold">Metab (Diabetes) Risk</span>: Heuristic and ML scoring using BMI index, general physical activity indicators, and hypertensive state.</div>
+                    <div>• <span className="text-[var(--text-primary)] font-bold">Hepatic (Liver) Risk</span>: Evaluated using log-normalized direct bilirubin, alkaline phosphatase, and transaminase thresholds.</div>
+                  </div>
+
+                  {/* Laboratory Inputs */}
+                  {organHealth.labs && (
+                    <div className="text-[9px] font-mono leading-relaxed space-y-2 text-[var(--text-secondary)] uppercase bg-black/15 p-3.5 rounded-xl border border-white/[0.03]">
+                      <div className="font-bold text-[var(--accent)] mb-1 flex justify-between items-center">
+                        <span>Ingested Laboratory Inputs</span>
+                        <span className="text-[7px] text-[var(--text-dim)]">Source: {organHealth.labs_source === "clinical_history" ? "Parsed Clinical History" : "Default Baselines"}</span>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 mt-1.5">
+                        <div className="flex justify-between border-b border-white/[0.02] pb-1">
+                          <span>Creatinine</span>
+                          <span className="font-bold text-[var(--text-primary)]">{organHealth.labs.serum_creatinine} mg/dL</span>
+                        </div>
+                        <div className="flex justify-between border-b border-white/[0.02] pb-1">
+                          <span>Blood Urea (BUN)</span>
+                          <span className="font-bold text-[var(--text-primary)]">{organHealth.labs.blood_urea} mg/dL</span>
+                        </div>
+                        <div className="flex justify-between border-b border-white/[0.02] pb-1">
+                          <span>Total Bilirubin</span>
+                          <span className="font-bold text-[var(--text-primary)]">{organHealth.labs.total_bilirubin} mg/dL</span>
+                        </div>
+                        <div className="flex justify-between border-b border-white/[0.02] pb-1">
+                          <span>Direct Bilirubin</span>
+                          <span className="font-bold text-[var(--text-primary)]">{organHealth.labs.direct_bilirubin} mg/dL</span>
+                        </div>
+                        <div className="flex justify-between border-b border-white/[0.02] pb-1">
+                          <span>ALT (SGPT)</span>
+                          <span className="font-bold text-[var(--text-primary)]">{organHealth.labs.alt} U/L</span>
+                        </div>
+                        <div className="flex justify-between border-b border-white/[0.02] pb-1">
+                          <span>AST (SGOT)</span>
+                          <span className="font-bold text-[var(--text-primary)]">{organHealth.labs.ast} U/L</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+            </div>
+          );
+        })()}
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Left Column: Vitals & Labs */}

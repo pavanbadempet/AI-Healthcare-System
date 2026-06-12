@@ -27,6 +27,7 @@ from .clinical import (
     DiagnosticResult,
     MonitoringSignal,
     VitalObservation,
+    SparkStreamingMetrics,
 )
 
 # Discharge domain
@@ -74,6 +75,7 @@ __all__ = [
     "VitalObservation",
     "MonitoringSignal",
     "DiagnosticResult",
+    "SparkStreamingMetrics",
     # Pharmacy
     "MedicationInventory",
     "Prescription",

@@ -496,3 +496,31 @@ def test_admin_patterns_are_facility_scoped_for_assigned_admin(client, db_sessio
     assert payload["total_vital_observations"] == 1
     assert payload["open_signals"] >= 1
     assert str(other_department_id) not in payload["signals_by_department"]
+
+
+def test_admin_patterns_includes_spark_info(client, db_session):
+    from datetime import datetime, timezone
+    from backend.models.clinical import SparkStreamingMetrics
+    
+    admin = _create_user(db_session, "spark_admin", "admin")
+    
+    metric = SparkStreamingMetrics(
+        batch_id=456,
+        records_processed=5,
+        processing_time_ms=15.2,
+        ml_latency_ms=4.8,
+        timestamp=datetime.now(timezone.utc)
+    )
+    db_session.add(metric)
+    db_session.commit()
+    
+    response = client.get("/monitoring/admin/patterns", headers=_auth_headers(admin.username))
+    assert response.status_code == 200
+    payload = response.json()
+    assert "spark_info" in payload
+    assert payload["spark_info"] is not None
+    assert payload["spark_info"]["spark_batch_id"] == 456
+    assert payload["spark_info"]["spark_records_processed"] == 5
+    assert payload["spark_info"]["spark_latency_ms"] == 15.2
+    assert payload["spark_info"]["spark_ml_latency_ms"] == 4.8
+

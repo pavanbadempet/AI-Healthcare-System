@@ -65,6 +65,13 @@ export interface MonitoringAdminMetrics {
   total_vital_observations?: number;
   open_signals?: number;
   clinical_safety_note?: string;
+  spark_info?: {
+    spark_batch_id: number;
+    spark_latency_ms: number;
+    spark_ml_latency_ms: number;
+    spark_records_processed: number;
+    spark_timestamp: string;
+  } | null;
   [key: string]: unknown;
 }
 

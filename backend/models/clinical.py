@@ -130,3 +130,15 @@ class DiagnosticResult(Base):
     doctor = relationship("User", foreign_keys=[doctor_id])
     department = relationship("Department")
     reviewed_by = relationship("User", foreign_keys=[reviewed_by_id])
+
+
+class SparkStreamingMetrics(Base):
+    __tablename__ = "spark_streaming_metrics"
+
+    id = Column(Integer, primary_key=True, index=True)
+    batch_id = Column(Integer, nullable=False)
+    records_processed = Column(Integer, nullable=False)
+    processing_time_ms = Column(Float, nullable=False)
+    ml_latency_ms = Column(Float, nullable=False)
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+

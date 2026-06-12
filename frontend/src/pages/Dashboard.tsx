@@ -335,7 +335,9 @@ export default function DashboardPage() {
         {/* Card 3: Network Latency */}
         <div className="glass-card p-4 rounded-xl flex items-center justify-between group">
           <div className="space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">Server Connection</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+              {telemetry?.spark_batch_id !== undefined ? "Spark Engine Latency" : "Server Connection"}
+            </span>
             <div className="flex items-baseline gap-1">
               <span className="text-2xl font-black text-[var(--text-primary)] font-display">
                 {telemetry ? telemetry.system_latency_ms : "14"}
@@ -344,11 +346,11 @@ export default function DashboardPage() {
             </div>
             <p className="text-[9px] text-[var(--text-dim)] font-mono uppercase tracking-wide flex items-center gap-1">
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse" />
-              Normal Sync
+              {telemetry?.spark_batch_id !== undefined ? `Batch #${telemetry.spark_batch_id} Ingest` : "Normal Sync"}
             </p>
           </div>
           <div className="w-10 h-10 rounded-full flex items-center justify-center border border-white/[0.04] bg-white/[0.02] shrink-0">
-            <Activity size={18} className="text-[var(--accent-blue)]" />
+            <Activity size={18} className="text-[var(--accent-blue)] animate-pulse" />
           </div>
         </div>
 
@@ -378,6 +380,26 @@ export default function DashboardPage() {
           <h2 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">Live Patient Telemetry</h2>
           <p className="text-xs text-[var(--text-secondary)] mt-0.5">Monitoring {beds.length} Active Clinical Beds</p>
         </div>
+
+        {telemetry?.spark_batch_id !== undefined && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-wrap items-center gap-x-4 gap-y-1.5 bg-black/40 px-4 py-2 rounded-xl border border-white/[0.04] text-[10px] font-mono text-[var(--text-secondary)] uppercase tracking-wide"
+          >
+            <span className="flex items-center gap-1.5 text-[var(--accent-blue)] font-bold">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-blue)] animate-ping" />
+              Spark Stream Engine
+            </span>
+            <span className="border-l border-white/10 pl-3">Batch #{telemetry.spark_batch_id}</span>
+            <span className="border-l border-white/10 pl-3">In-Memory Ingest: {telemetry.spark_records_processed ?? 0} Recs</span>
+            <span className="border-l border-white/10 pl-3">Process Time: {telemetry.system_latency_ms} ms</span>
+            {telemetry.spark_ml_latency_ms !== undefined && (
+              <span className="border-l border-white/10 pl-3">ML Inference: {telemetry.spark_ml_latency_ms.toFixed(1)} ms</span>
+            )}
+          </motion.div>
+        )}
+
         <div className="flex flex-wrap gap-2">
           <span className="flex items-center gap-2 bg-[var(--success-muted)] text-[var(--success)] px-3 py-1.5 rounded-full border border-[var(--success-border)] text-xs font-bold uppercase tracking-wider">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)] status-pulse-emerald"></span>

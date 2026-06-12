@@ -432,3 +432,98 @@ def test_explain_diabetes_returns_shap_or_503(client):
     assert r.status_code in (200, 500)
     if r.status_code == 200:
         assert "html" in r.json() or "error" in r.json()
+
+
+def test_predict_organ_health_unauthorized(client):
+    r = client.get("/predict/organ_health/999")
+    assert r.status_code == 401
+
+
+def test_predict_organ_health_patient_not_found(client, db_session):
+    _signup(client, "pred_admin6")
+    h = _login(client, "pred_admin6")
+    r = client.get("/predict/organ_health/99999", headers=h)
+    assert r.status_code == 404
+
+
+def test_predict_organ_health_baseline_fallback(client, db_session):
+    _signup(client, "pred_admin7")
+    _signup(client, "pred_pat4")
+    pat_id = _get_id(db_session, "pred_pat4")
+    h = _login(client, "pred_admin7")
+    
+    r = client.get(f"/predict/organ_health/{pat_id}", headers=h)
+    assert r.status_code == 200
+    data = r.json()
+    assert data["patient_id"] == pat_id
+    assert data["vitals_source"] == "baseline_fallback"
+    assert data["vitals"]["heart_rate"] == 72.0
+    assert 0 <= data["health_index"] <= 100
+    assert "heart" in data["organ_risks"]
+    assert "lungs" in data["organ_risks"]
+    assert "kidney" in data["organ_risks"]
+    assert "diabetes" in data["organ_risks"]
+    assert "liver" in data["organ_risks"]
+
+
+def test_predict_organ_health_with_vitals(client, db_session):
+    from datetime import datetime, timezone
+    _signup(client, "pred_admin8")
+    _signup(client, "pred_pat5")
+    pat_id = _get_id(db_session, "pred_pat5")
+    h = _login(client, "pred_admin8")
+    
+    # Insert a VitalObservation
+    v = models.VitalObservation(
+        patient_id=pat_id,
+        heart_rate=110.0,
+        systolic_bp=150.0,
+        diastolic_bp=95.0,
+        spo2=93.0,
+        temperature_c=38.5,
+        respiratory_rate=24.0,
+        observed_at=datetime.now(timezone.utc)
+    )
+    db_session.add(v)
+    db_session.commit()
+    
+    r = client.get(f"/predict/organ_health/{pat_id}", headers=h)
+    assert r.status_code == 200
+    data = r.json()
+    assert data["patient_id"] == pat_id
+    assert data["vitals_source"] == "latest_observation"
+    assert data["vitals"]["heart_rate"] == 110.0
+    assert data["vitals"]["systolic_bp"] == 150.0
+    assert data["vitals"]["spo2"] == 93.0
+    assert 0 <= data["health_index"] <= 100
+    assert data["organ_risks"]["heart"]["risk_probability"] > 0
+
+
+def test_predict_organ_health_with_parsed_labs(client, db_session):
+    _signup(client, "pred_admin9")
+    _signup(client, "pred_pat6")
+    pat_id = _get_id(db_session, "pred_pat6")
+    h = _login(client, "pred_admin9")
+    
+    # Create an abnormal lab DiagnosticResult
+    lab = models.DiagnosticResult(
+        patient_id=pat_id,
+        order_id=1,  # Mock clinical order ID
+        result_type="lab",
+        title="Comprehensive Metabolic Panel",
+        summary="Serum Creatinine: 2.8 mg/dL (High). Blood Urea Nitrogen: 85 mg/dL. Direct Bilirubin: 1.5 mg/dL.",
+        abnormal_flag=1
+    )
+    db_session.add(lab)
+    db_session.commit()
+    
+    r = client.get(f"/predict/organ_health/{pat_id}", headers=h)
+    assert r.status_code == 200
+    data = r.json()
+    assert data["labs_source"] == "clinical_history"
+    assert data["labs"]["serum_creatinine"] == 2.8
+    assert data["labs"]["blood_urea"] == 85.0
+    assert data["labs"]["direct_bilirubin"] == 1.5
+    assert "ai_clinical_synthesis" in data
+
+

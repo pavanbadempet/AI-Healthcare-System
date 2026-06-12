@@ -176,6 +176,17 @@ function adminMetricCards(data: AdminOperationsCockpitData) {
       border: "border-[var(--success-border)] hover:border-[var(--success)]",
       detail: `${numberValue(data.interoperability.total_exports)} exports logged`,
     },
+    ...(data.monitoring.spark_info?.spark_batch_id !== undefined ? [
+      {
+        label: "Spark Stream Engine",
+        value: `Batch #${data.monitoring.spark_info.spark_batch_id}`,
+        icon: Radio,
+        tone: "text-[var(--accent-blue)]",
+        bg: "bg-[var(--accent-blue-muted)]",
+        border: "border-[var(--accent-blue-border)] hover:border-[var(--accent-blue)]",
+        detail: `Latency: ${data.monitoring.spark_info.spark_latency_ms.toFixed(1)}ms | ML: ${data.monitoring.spark_info.spark_ml_latency_ms.toFixed(1)}ms | Ingest: ${data.monitoring.spark_info.spark_records_processed} recs`,
+      }
+    ] : []),
   ];
 }
 

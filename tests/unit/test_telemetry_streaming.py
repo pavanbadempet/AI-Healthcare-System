@@ -110,3 +110,46 @@ def test_process_conformed_record_db_inserts():
     assert monitoring_signals[0].patient_id == 42
     assert monitoring_signals[0].severity == "critical"
     assert "Hypoxia" in monitoring_signals[0].title or "Arrhythmia" in monitoring_signals[0].title or "Risk" in monitoring_signals[0].title
+
+
+def test_spark_streaming_metrics_logging():
+    """Verify that process_batch successfully measures processing times and logs SparkStreamingMetrics."""
+    mock_db = MagicMock()
+    
+    mock_row = MagicMock()
+    mock_row.asDict.return_value = {
+        "patient_id": 42,
+        "heart_rate": 80.0,
+        "systolic_bp": 120.0,
+        "diastolic_bp": 80.0,
+        "spo2": 98.0,
+        "temperature_c": 37.0,
+        "respiratory_rate": 14.0,
+        "facility_id": 1,
+        "encounter_id": 12,
+        "department_id": 3,
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+    
+    mock_df = MagicMock()
+    mock_df.collect.return_value = [mock_row]
+    
+    with patch("scripts.runners.run_telemetry_streaming.SessionLocal", return_value=mock_db), \
+         patch("scripts.runners.run_telemetry_streaming.process_conformed_record", return_value=1.5) as mock_process_rec:
+        
+        from scripts.runners.run_telemetry_streaming import process_batch
+        process_batch(mock_df, batch_id=123)
+        
+        mock_process_rec.assert_called_once()
+        
+        assert mock_db.add.call_count >= 1
+        called_instances = [args[0] for args, _ in mock_db.add.call_args_list]
+        
+        metrics = [x for x in called_instances if x.__class__.__name__ == "SparkStreamingMetrics"]
+        assert len(metrics) == 1
+        assert metrics[0].batch_id == 123
+        assert metrics[0].records_processed == 1
+        assert metrics[0].processing_time_ms >= 0
+        assert metrics[0].ml_latency_ms == 1.5
+        mock_db.commit.assert_called_once()
+

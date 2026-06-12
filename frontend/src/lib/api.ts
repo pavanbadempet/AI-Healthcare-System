@@ -50,7 +50,11 @@ export {
   predictLiver,
   predictKidney,
   predictLungs,
+  getPatientOrganHealth,
   type PredictionResult,
+  type OrganRiskDetail,
+  type OrganHealthResult,
+  type RecommendedOrder,
 } from './apiPredictions';
 
 // ── Hospital Operations ─────────────────────────────────────────
