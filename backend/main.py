@@ -151,8 +151,14 @@ async def lifespan(app: FastAPI):
         logger.warning("Primary database connection failed: %s. Falling back to SQLite.", e)
         database.fallback_to_sqlite()
 
-    models.Base.metadata.create_all(bind=database.engine)
-    run_migrations()
+    try:
+        models.Base.metadata.create_all(bind=database.engine)
+        run_migrations()
+    except Exception as err:
+        logger.warning("File-based SQLite creation/migration failed: %s. Falling back to in-memory SQLite.", err)
+        database.fallback_to_memory()
+        models.Base.metadata.create_all(bind=database.engine)
+        run_migrations()
 
     # Seeding
     create_default_admin()

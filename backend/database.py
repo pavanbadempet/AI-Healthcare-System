@@ -106,6 +106,28 @@ def fallback_to_sqlite():
     SessionLocal.configure(bind=engine)
 
 
+def fallback_to_memory():
+    """Dynamically reconfigures the engine and sessionmaker to use an in-memory SQLite database with a StaticPool."""
+    global engine, SessionLocal, SQLALCHEMY_DATABASE_URL
+    import logging
+    from sqlalchemy.pool import StaticPool
+    logger = logging.getLogger(__name__)
+
+    logger.warning("Configuring database fallback to in-memory SQLite (sqlite:///:memory:)")
+
+    SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"
+    c_args = {"check_same_thread": False}
+    e_args = {
+        "connect_args": c_args,
+        "poolclass": StaticPool,
+    }
+    engine = create_engine(
+        SQLALCHEMY_DATABASE_URL,
+        **e_args
+    )
+    SessionLocal.configure(bind=engine)
+
+
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()
