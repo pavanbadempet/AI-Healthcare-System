@@ -110,6 +110,7 @@ def fallback_to_memory():
     """Dynamically reconfigures the engine and sessionmaker to use an in-memory SQLite database with a StaticPool."""
     global engine, SessionLocal, SQLALCHEMY_DATABASE_URL
     import logging
+
     from sqlalchemy.pool import StaticPool
     logger = logging.getLogger(__name__)
 
