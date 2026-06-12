@@ -1,8 +1,3 @@
-import pytest
-from fastapi.testclient import TestClient
-from backend.main import app
-import logging
-from backend.schemas import HeartInput, LiverInput, DiabetesInput
 
 
 def _auth_headers(client, username: str = "prediction_api_user") -> dict[str, str]:
@@ -120,7 +115,8 @@ def test_lung_prediction(client):
 
 def test_chat_context(client):
     """Chat endpoint returns a response when called with authenticated user and prediction context."""
-    from unittest.mock import MagicMock, patch
+    from unittest.mock import patch
+
     from langchain_core.messages import AIMessage
 
     headers = _auth_headers(client, username="chat_context_user")

@@ -13,10 +13,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from backend import diagnostics, models, pharmacy
 from backend.database import Base, get_db
 from backend.main import app
 from backend.prediction import initialize_models
-from backend import diagnostics, discharge, nursing, pharmacy, models
 
 engine = create_engine(
     "sqlite:///:memory:",

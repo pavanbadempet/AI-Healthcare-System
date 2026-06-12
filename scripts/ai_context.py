@@ -22,7 +22,6 @@ import pathlib
 import socket
 import subprocess
 
-
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 SERVICE_PORTS = [
     ("Backend (FastAPI)", 8000),
@@ -59,7 +58,7 @@ def plugin_info() -> dict[str, object]:
     plugins_dir = pathlib.Path.home() / ".gemini" / "config" / "plugins"
     if not plugins_dir.exists():
         return {"exists": False, "plugins": []}
-    
+
     plugins = []
     heavy_enabled = []
     for item in plugins_dir.iterdir():
@@ -71,7 +70,7 @@ def plugin_info() -> dict[str, object]:
                 plugins.append({"name": name, "enabled": True})
                 if name.lower() in ("science", "android-cli-plugin"):
                     heavy_enabled.append(name)
-                    
+
     return {
         "exists": True,
         "plugins": plugins,

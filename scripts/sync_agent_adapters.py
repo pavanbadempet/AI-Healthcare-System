@@ -22,7 +22,6 @@ import argparse
 import json
 import pathlib
 
-
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 MANIFEST_PATH = ROOT / "scripts" / "agent_adapter_manifest.json"
 GENERATED_NOTE = (

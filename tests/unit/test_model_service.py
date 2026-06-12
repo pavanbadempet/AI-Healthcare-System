@@ -3,16 +3,20 @@ Tests for the ModelService — the centralized ML model lifecycle manager.
 Validates initialization, health checks, prediction delegation, and SHAP explainability.
 """
 import os
-import pytest
+
 import numpy as np
+import pytest
 
 os.environ["TESTING"] = "1"
 
 from backend.model_service import (
-    ModelService, ModelStatus, PredictionResult,
-    get_age_bucket, _normalize_prediction, _classify_confidence,
+    ModelService,
+    ModelStatus,
+    PredictionResult,
+    _classify_confidence,
+    _normalize_prediction,
+    get_age_bucket,
 )
-
 
 # ── ModelService Initialization ─────────────────────────────────────
 

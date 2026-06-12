@@ -66,15 +66,15 @@ def _department_name_by_id(db: Session, current_user: models.User) -> dict[int, 
 def build_telemetry_snapshot(db: Session, current_user: models.User) -> dict:
     """Build a facility-scoped operations telemetry snapshot from persisted data."""
     _require_admin(current_user)
-    
+
     from backend.models.clinical import SparkStreamingMetrics
     latest_metric = db.query(SparkStreamingMetrics).order_by(SparkStreamingMetrics.timestamp.desc()).first()
-    
+
     system_latency_ms = 12  # default baseline
     spark_batch_id = None
     spark_records_processed = 0
     spark_ml_latency_ms = 0.0
-    
+
     if latest_metric:
         system_latency_ms = int(latest_metric.processing_time_ms)
         spark_batch_id = latest_metric.batch_id

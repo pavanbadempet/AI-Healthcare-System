@@ -2,16 +2,15 @@
 Tests for hospital_operations.py, data_quality.py, and backup_readiness.py.
 """
 import pytest
-from fastapi import HTTPException
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from backend import backup_readiness, data_quality, models
 from backend.database import Base, get_db
 from backend.main import app
 from backend.prediction import initialize_models
-from backend import models, data_quality, backup_readiness
 
 engine = create_engine(
     "sqlite:///:memory:",
@@ -503,13 +502,13 @@ def test_backup_readiness_parse_datetime_invalid_returns_none(monkeypatch):
 
 
 def test_backup_readiness_is_stale_false_for_recent():
-    from datetime import datetime, timezone, timedelta
+    from datetime import datetime, timedelta, timezone
     recent = datetime.now(timezone.utc) - timedelta(days=10)
     assert backup_readiness._is_stale(recent) is False
 
 
 def test_backup_readiness_is_stale_true_for_old():
-    from datetime import datetime, timezone, timedelta
+    from datetime import datetime, timedelta, timezone
     old = datetime.now(timezone.utc) - timedelta(days=100)
     assert backup_readiness._is_stale(old) is True
 

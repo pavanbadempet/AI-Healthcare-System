@@ -1,9 +1,9 @@
-import os
-import sys
 import json
+import logging
+import os
 import shutil
 import subprocess
-import logging
+import sys
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("KaggleTrigger")
@@ -12,7 +12,7 @@ def setup_kaggle_credentials():
     """Read Kaggle credentials from environment or .env and write to ~/.kaggle/kaggle.json"""
     username = os.getenv("KAGGLE_USERNAME")
     key = os.getenv("KAGGLE_KEY")
-    
+
     # Try reading from .env if not in environment
     if not username or not key:
         dot_env_path = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), ".env")
@@ -25,25 +25,25 @@ def setup_kaggle_credentials():
                             username = parts[1].strip('"').strip("'")
                         elif parts[0] == "KAGGLE_KEY":
                             key = parts[1].strip('"').strip("'")
-                            
+
     if not username or not key:
         raise RuntimeError("Kaggle credentials not found. Please set KAGGLE_USERNAME and KAGGLE_KEY in your environment or .env file.")
-        
+
     # Write to standard Kaggle config directory
     home_dir = os.path.expanduser("~")
     kaggle_config_dir = os.path.join(home_dir, ".kaggle")
     os.makedirs(kaggle_config_dir, exist_ok=True)
-    
+
     kaggle_json_path = os.path.join(kaggle_config_dir, "kaggle.json")
     with open(kaggle_json_path, "w") as f:
         json.dump({"username": username, "key": key}, f)
-        
+
     # Ensure correct permissions (especially on Unix/Linux)
     try:
         os.chmod(kaggle_json_path, 0o600)
     except Exception:
         pass
-        
+
     logger.info("Successfully configured Kaggle API credentials.")
     return username
 
@@ -52,7 +52,7 @@ def build_kaggle_kernel(username):
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     build_dir = os.path.join(base_dir, "kaggle_build")
     os.makedirs(build_dir, exist_ok=True)
-    
+
     # 1. Create the Jupyter Notebook content
     notebook_content = {
       "cells": [
@@ -102,11 +102,11 @@ def build_kaggle_kernel(username):
       "nbformat": 4,
       "nbformat_minor": 0
     }
-    
+
     notebook_path = os.path.join(build_dir, "healthcare_retrain_notebook.ipynb")
     with open(notebook_path, "w") as f:
         json.dump(notebook_content, f, indent=2)
-        
+
     # 2. Create the Kaggle metadata configuration
     metadata = {
       "id": f"{username}/healthcare-retrain-pipeline",
@@ -122,11 +122,11 @@ def build_kaggle_kernel(username):
       "kernel_sources": [],
       "competition_sources": []
     }
-    
+
     metadata_path = os.path.join(build_dir, "kernel-metadata.json")
     with open(metadata_path, "w") as f:
         json.dump(metadata, f, indent=2)
-        
+
     logger.info(f"Built Kaggle kernel files in {build_dir}")
     return build_dir
 
@@ -134,11 +134,11 @@ def push_to_kaggle(build_dir, username):
     """Execute kaggle CLI or python API to push and run the kernel in the cloud."""
     # Install the official kaggle pip package if not present
     try:
-        import kaggle
+        import kaggle  # noqa: F401
     except ImportError:
         logger.info("Installing official 'kaggle' API python package...")
         subprocess.run([sys.executable, "-m", "pip", "install", "kaggle"], check=True)
-        
+
     # Trigger kernel push
     logger.info("Pushing and launching the kernel on Kaggle's cloud servers...")
     try:
@@ -161,7 +161,7 @@ if __name__ == "__main__":
         username = setup_kaggle_credentials()
         build_dir = build_kaggle_kernel(username)
         push_to_kaggle(build_dir, username)
-        
+
         # Clean up local temporary build directory
         shutil.rmtree(build_dir)
         logger.info("Cleaned up local build directory.")

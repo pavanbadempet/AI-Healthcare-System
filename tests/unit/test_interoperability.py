@@ -6,7 +6,7 @@ Covers: pure logic helpers, consent lifecycle, export endpoints,
 readiness checks, and metrics.
 """
 from datetime import datetime, timedelta, timezone
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi import HTTPException
@@ -15,22 +15,20 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from backend import models
 from backend.database import Base, get_db
+from backend.interoperability import (
+    ALLOWED_EXPORT_RESOURCES,
+    CONSENT_SCOPE,
+    _bundle_sha256,
+    _canonical_json,
+    _dt,
+    _is_active_consent,
+    _to_utc,
+    _validate_resource_types,
+)
 from backend.main import app
 from backend.prediction import initialize_models
-from backend import models
-from backend.interoperability import (
-    _is_active_consent,
-    _require_active_export_consent,
-    _canonical_json,
-    _bundle_sha256,
-    _validate_resource_types,
-    _dt,
-    _to_utc,
-    CONSENT_SCOPE,
-    ALLOWED_EXPORT_RESOURCES,
-)
-
 
 # ── DB + client ───────────────────────────────────────────────────────────────
 
@@ -119,8 +117,6 @@ def test_to_utc_naive_adds_utc():
 
 
 def test_to_utc_aware_converts_to_utc():
-    from datetime import timezone as tz
-    import pytz
     # Use UTC+5:30 (IST) if available, else just UTC
     dt = datetime(2024, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
     result = _to_utc(dt)

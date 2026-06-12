@@ -8,7 +8,7 @@ prediction.py: age_bucket helper, _get_confidence, model reload,
 prediction review endpoint, SHAP explanation endpoints.
 """
 from datetime import timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import numpy as np
 import pytest
@@ -17,10 +17,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from backend import auth, models, prediction
 from backend.database import Base, get_db
 from backend.main import app
 from backend.prediction import initialize_models
-from backend import auth, prediction, models
 
 engine = create_engine(
     "sqlite:///:memory:",
@@ -451,7 +451,7 @@ def test_predict_organ_health_baseline_fallback(client, db_session):
     _signup(client, "pred_pat4")
     pat_id = _get_id(db_session, "pred_pat4")
     h = _login(client, "pred_admin7")
-    
+
     r = client.get(f"/predict/organ_health/{pat_id}", headers=h)
     assert r.status_code == 200
     data = r.json()
@@ -472,7 +472,7 @@ def test_predict_organ_health_with_vitals(client, db_session):
     _signup(client, "pred_pat5")
     pat_id = _get_id(db_session, "pred_pat5")
     h = _login(client, "pred_admin8")
-    
+
     # Insert a VitalObservation
     v = models.VitalObservation(
         patient_id=pat_id,
@@ -486,7 +486,7 @@ def test_predict_organ_health_with_vitals(client, db_session):
     )
     db_session.add(v)
     db_session.commit()
-    
+
     r = client.get(f"/predict/organ_health/{pat_id}", headers=h)
     assert r.status_code == 200
     data = r.json()
@@ -504,7 +504,7 @@ def test_predict_organ_health_with_parsed_labs(client, db_session):
     _signup(client, "pred_pat6")
     pat_id = _get_id(db_session, "pred_pat6")
     h = _login(client, "pred_admin9")
-    
+
     # Create an abnormal lab DiagnosticResult
     lab = models.DiagnosticResult(
         patient_id=pat_id,
@@ -516,7 +516,7 @@ def test_predict_organ_health_with_parsed_labs(client, db_session):
     )
     db_session.add(lab)
     db_session.commit()
-    
+
     r = client.get(f"/predict/organ_health/{pat_id}", headers=h)
     assert r.status_code == 200
     data = r.json()

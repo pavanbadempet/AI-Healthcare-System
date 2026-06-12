@@ -6,13 +6,12 @@ Requires:
 Run with: python -m pytest tests/e2e -m e2e
 """
 import re
-import uuid
 import urllib.error
 import urllib.request
+import uuid
 
 import pytest
 from playwright.sync_api import Page, expect
-
 
 BASE_URL = "http://127.0.0.1:3000"
 BACKEND_URL = "http://127.0.0.1:8000"

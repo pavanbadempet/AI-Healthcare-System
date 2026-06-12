@@ -2,14 +2,13 @@ import re
 import uuid
 from unittest.mock import patch
 
-from fastapi import FastAPI
-from fastapi import Request
+from fastapi import FastAPI, Request
 from fastapi.routing import APIRoute
 from fastapi.testclient import TestClient
 
 from backend.main import (
-    app,
     _load_allowed_hosts,
+    app,
 )
 from backend.middleware import (
     REQUEST_ID_HEADER,

@@ -1,6 +1,5 @@
-import pytest
 import logging
-from unittest.mock import patch, MagicMock
+
 from mlops.train import train_model
 
 

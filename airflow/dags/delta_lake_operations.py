@@ -3,12 +3,14 @@ Airflow DAG for Databricks Delta Lake Operations
 Liquid Clustering, Time Travel, CDC, and Healthcare-Specific Pipelines
 """
 
+import logging
 from datetime import timedelta
-from airflow import DAG
+
 from airflow.operators.python import PythonOperator
 from airflow.providers.spark.operators.spark_submit import SparkSubmitOperator
 from airflow.utils.dates import days_ago
-import logging
+
+from airflow import DAG
 
 logger = logging.getLogger(__name__)
 
@@ -49,9 +51,10 @@ dag = DAG(
 
 def create_delta_lab_results(**context):
     """Create Delta Lake table for lab results with Liquid Clustering"""
-    from backend.delta_lake_integration import get_delta_manager
     from pyspark.sql import types as T
-    from pyspark.sql.functions import to_timestamp, col, current_timestamp
+    from pyspark.sql.functions import col, current_timestamp, to_timestamp
+
+    from backend.delta_lake_integration import get_delta_manager
 
     spark = _create_spark("DeltaLabResults")
 
@@ -118,9 +121,10 @@ def evolve_lab_results_schema(**context):
 
 def create_delta_patient_dimension(**context):
     """Create patient dimension with SCD Type 2 and HIPAA audit columns"""
-    from backend.delta_lake_integration import get_delta_manager
     from pyspark.sql import types as T
-    from pyspark.sql.functions import current_timestamp, to_date, col
+    from pyspark.sql.functions import col, current_timestamp, to_date
+
+    from backend.delta_lake_integration import get_delta_manager
 
     spark = _create_spark("DeltaPatientDimension")
 

@@ -210,7 +210,7 @@ def test_vital_department_must_match_encounter_department(client, db_session):
     patient = _create_user(db_session, "monitor_dept_patient", "patient")
     doctor_username = doctor.username
     patient_id = patient.id
-    department = _assign_patient_to_doctor(db_session, patient_id, doctor.id)
+    _assign_patient_to_doctor(db_session, patient_id, doctor.id)
     other_department = models.Department(
         name="Monitoring Other Department",
         department_type="OPD",
@@ -500,10 +500,11 @@ def test_admin_patterns_are_facility_scoped_for_assigned_admin(client, db_sessio
 
 def test_admin_patterns_includes_spark_info(client, db_session):
     from datetime import datetime, timezone
+
     from backend.models.clinical import SparkStreamingMetrics
-    
+
     admin = _create_user(db_session, "spark_admin", "admin")
-    
+
     metric = SparkStreamingMetrics(
         batch_id=456,
         records_processed=5,
@@ -513,7 +514,7 @@ def test_admin_patterns_includes_spark_info(client, db_session):
     )
     db_session.add(metric)
     db_session.commit()
-    
+
     response = client.get("/monitoring/admin/patterns", headers=_auth_headers(admin.username))
     assert response.status_code == 200
     payload = response.json()

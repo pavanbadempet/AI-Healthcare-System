@@ -9,43 +9,42 @@ building, callback normalization, and demo mode.
 
 ml_service.py: Legacy ML service wrapper methods.
 """
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import MagicMock, patch
 
 import pytest
 
-from backend import fhir, abdm, ml_service
-from backend.fhir import (
-    FHIRValidationError,
-    patient_resource,
-    encounter_resource,
-    observation_resource,
-    diagnostic_report_resource,
-    medication_request_resource,
-    invoice_resource,
-    care_event_resource,
-    bundle_entry,
-    build_bundle,
-    fhir_datetime,
-    _remove_none,
-    _date_string,
-    _string_id,
-)
+from backend import abdm, ml_service
 from backend.abdm import (
     ABDMConfigurationError,
     ABDMValidationError,
+    _validate_callback_status,
+    _validate_date_range,
+    _validate_hi_types,
+    _validate_patient_abha_address,
+    _validate_purpose_code,
+    build_consent_request_payload,
     get_readiness,
     get_settings,
     normalize_consent_callback,
-    build_consent_request_payload,
-    _validate_patient_abha_address,
-    _validate_purpose_code,
-    _validate_hi_types,
-    _validate_callback_status,
-    _validate_date_range,
+)
+from backend.fhir import (
+    FHIRValidationError,
+    _date_string,
+    _remove_none,
+    _string_id,
+    build_bundle,
+    bundle_entry,
+    care_event_resource,
+    diagnostic_report_resource,
+    encounter_resource,
+    fhir_datetime,
+    invoice_resource,
+    medication_request_resource,
+    observation_resource,
+    patient_resource,
 )
 from backend.prediction import initialize_models
-
 
 # ══════════════════════════════════════════════════════════════════════
 # FHIR — helpers

@@ -26,8 +26,8 @@ from .clinical import (
     ClinicalOrder,
     DiagnosticResult,
     MonitoringSignal,
-    VitalObservation,
     SparkStreamingMetrics,
+    VitalObservation,
 )
 
 # Discharge domain

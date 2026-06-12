@@ -1,6 +1,6 @@
 import os
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 
 class BaseAgent:
@@ -31,7 +31,7 @@ class BaseAgent:
         self.end_time = time.time()
         self.status = status
         self.log_step("Shutdown Agent", f"Agent '{self.name}' execution completed with status: {status}.")
-        
+
         # Handle GitHub Actions environment integration
         if self.is_github_actions():
             self.write_github_step_summary()
@@ -100,7 +100,7 @@ class BaseAgent:
         md.append(f"| **Est. Output Tokens** | {self.output_tokens_estimated:,} |")
         md.append(f"| **Est. Cost (USD)** | ${self.estimated_cost:.6f} |")
         md.append("")
-        
+
         md.append("## 🧠 Reasoning & Execution Log")
         md.append("| Step | Action | Result | Status |")
         md.append("|---|---|---|---|")

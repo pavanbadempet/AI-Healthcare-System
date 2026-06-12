@@ -6,9 +6,6 @@ SimpleVectorStore (add/search/delete/save/load), ACL filtering,
 public API (add_checkup_to_db, add_interaction_to_db,
 search_similar_records, delete_record_from_db), and metadata ACL helpers.
 """
-import json
-import os
-import tempfile
 from unittest.mock import patch
 
 import pytest
@@ -27,7 +24,6 @@ from backend.rag import (
     delete_record_from_db,
     search_similar_records,
 )
-
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -362,7 +358,6 @@ def test_search_similar_records_isolates_by_user():
 
 
 def test_search_similar_records_returns_empty_on_error():
-    from backend.rag import get_vector_store
     with patch("backend.rag.get_vector_store", side_effect=Exception("db error")):
         results = search_similar_records("1", "anything")
     assert results == []

@@ -1,5 +1,6 @@
 import sqlite3
 
+
 def run():
     conn = sqlite3.connect("healthcare.db")
     cursor = conn.cursor()

@@ -8,9 +8,8 @@ from datetime import datetime
 
 import pytest
 
-from backend.pdf_service import generate_medical_report
 from backend.pdf_generator import generate_health_report
-
+from backend.pdf_service import generate_medical_report
 
 # ── pdf_service.generate_medical_report ──────────────────────────────────────
 
@@ -379,7 +378,7 @@ def test_chart_vitals_trends_returns_none_for_single_vital():
 
 def test_chart_risk_assessment_history_returns_png_bytes():
     """Valid records → PNG bytes starting with PNG magic."""
-    from backend.pdf_generator import _chart_risk_assessment_history, _MPL_AVAILABLE
+    from backend.pdf_generator import _MPL_AVAILABLE, _chart_risk_assessment_history
     if not _MPL_AVAILABLE:
         pytest.skip("matplotlib not installed")
     records = [
@@ -393,7 +392,7 @@ def test_chart_risk_assessment_history_returns_png_bytes():
 
 def test_chart_vitals_trends_returns_png_bytes():
     """Valid vitals → PNG bytes."""
-    from backend.pdf_generator import _chart_vitals_trends, _MPL_AVAILABLE
+    from backend.pdf_generator import _MPL_AVAILABLE, _chart_vitals_trends
     if not _MPL_AVAILABLE:
         pytest.skip("matplotlib not installed")
     vitals = [

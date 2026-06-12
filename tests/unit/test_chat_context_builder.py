@@ -7,16 +7,14 @@ full build_chat_context assembly, truncation, and suggested questions.
 """
 
 from datetime import datetime, timezone
-from unittest.mock import MagicMock, patch
 
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from backend.database import Base
 from backend import chat_context, models
-
+from backend.database import Base
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 

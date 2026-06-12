@@ -10,11 +10,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from backend import billing, email_service, models, telemetry
 from backend.database import Base, get_db
 from backend.main import app
 from backend.prediction import initialize_models
-from backend import email_service, billing, telemetry, models
-
 
 # ── DB + client ───────────────────────────────────────────────────────────────
 

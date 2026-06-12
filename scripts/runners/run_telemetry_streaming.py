@@ -6,14 +6,12 @@ calculates sliding window vital sign averages, applies pre-trained ML models (he
 and commits conformed observations and critical alerts (MonitoringSignals) to the database.
 """
 
-import os
-import sys
-import json
-import pickle
-import logging
 import argparse
+import logging
+import os
+import pickle
+import sys
 import time
-import threading
 from datetime import datetime, timezone
 
 # Ensure project root is in python path
@@ -21,7 +19,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.append(BASE_DIR)
 
 from backend.database import SessionLocal
-from backend.models import VitalObservation, MonitoringSignal
+from backend.models import MonitoringSignal, VitalObservation
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -40,9 +38,9 @@ def load_ml_models():
     global _models_loaded, heart_model, lungs_model, lungs_scaler
     if _models_loaded:
         return
-        
+
     backend_dir = os.path.join(BASE_DIR, "backend")
-    
+
     # Load heart disease model
     heart_path = os.path.join(backend_dir, "heart_disease_model.pkl")
     if os.path.exists(heart_path):
@@ -54,17 +52,17 @@ def load_ml_models():
             logger.error(f"Failed to load Heart model: {e}")
     else:
         logger.warning(f"Heart model not found at {heart_path}. Using fallback heuristics.")
-        
+
     # Load lung model and scaler
     lungs_path = os.path.join(backend_dir, "lungs_model.pkl")
     scaler_path = os.path.join(backend_dir, "lungs_scaler.pkl")
-    
+
     if os.path.exists(lungs_path):
         try:
             with open(lungs_path, "rb") as f:
                 lungs_model = pickle.load(f)
             logger.info("Successfully loaded pre-trained Lungs model.")
-            
+
             if os.path.exists(scaler_path):
                 with open(scaler_path, "rb") as f:
                     lungs_scaler = pickle.load(f)
@@ -73,7 +71,7 @@ def load_ml_models():
             logger.error(f"Failed to load Lungs model/scaler: {e}")
     else:
         logger.warning(f"Lungs model not found at {lungs_path}. Using fallback heuristics.")
-        
+
     _models_loaded = True
 
 def predict_heart_disease_risk(avg_hr, avg_systolic_bp):
@@ -99,7 +97,7 @@ def predict_heart_disease_risk(avg_hr, avg_systolic_bp):
                 0.0,    # ca
                 2.0     # thal
             ]
-            
+
             # Predict probabilities
             if hasattr(heart_model, "predict_proba"):
                 probs = heart_model.predict_proba([input_list])[0]
@@ -109,7 +107,7 @@ def predict_heart_disease_risk(avg_hr, avg_systolic_bp):
                 return 0.85 if pred == 1 else 0.15
         except Exception as e:
             logger.debug(f"Heart model prediction failed: {e}. Falling back to heuristics.")
-            
+
     # Fallback heuristic: high blood pressure + high heart rate = increased cardiac strain
     risk = 0.10
     if avg_hr > 100: risk += 0.25
@@ -123,7 +121,7 @@ def predict_lung_risk(avg_spo2, avg_resp_rate):
     if lungs_model is not None:
         try:
             import pandas as pd
-            # Lungs features: 
+            # Lungs features:
             # ['GENDER', 'AGE', 'SMOKING', 'YELLOW_FINGERS', 'ANXIETY', 'PEER_PRESSURE',
             #  'CHRONIC_DISEASE', 'FATIGUE', 'ALLERGY', 'WHEEZING', 'ALCOHOL_CONSUMING',
             #  'COUGHING', 'SHORTNESS_OF_BREATH', 'SWALLOWING_DIFFICULTY', 'CHEST_PAIN']
@@ -133,7 +131,7 @@ def predict_lung_risk(avg_spo2, avg_resp_rate):
             coughing = 2 if avg_resp_rate > 18.0 else 1
             fatigue = 2 if avg_spo2 < 95.0 else 1
             chest_pain = 2 if avg_spo2 < 92.0 else 1
-            
+
             input_list = [
                 1,      # GENDER (Male)
                 55,     # AGE
@@ -151,19 +149,19 @@ def predict_lung_risk(avg_spo2, avg_resp_rate):
                 1,      # SWALLOWING_DIFFICULTY
                 chest_pain
             ]
-            
+
             feature_names = [
                 'GENDER', 'AGE', 'SMOKING', 'YELLOW_FINGERS', 'ANXIETY', 'PEER_PRESSURE',
                 'CHRONIC_DISEASE', 'FATIGUE', 'ALLERGY', 'WHEEZING', 'ALCOHOL_CONSUMING',
                 'COUGHING', 'SHORTNESS_OF_BREATH', 'SWALLOWING_DIFFICULTY', 'CHEST_PAIN'
             ]
-            
+
             df = pd.DataFrame([input_list], columns=feature_names)
             if lungs_scaler is not None:
                 X = lungs_scaler.transform(df)
             else:
                 X = df.values
-                
+
             if hasattr(lungs_model, "predict_proba"):
                 probs = lungs_model.predict_proba(X)[0]
                 return float(probs[1]) # probability of lung issue
@@ -173,7 +171,7 @@ def predict_lung_risk(avg_spo2, avg_resp_rate):
                 return 0.85 if pred == 1 else 0.15
         except Exception as e:
             logger.debug(f"Lung model prediction failed: {e}. Falling back to heuristics.")
-            
+
     # Fallback heuristic: low oxygen + high respiration = respiratory strain
     risk = 0.05
     if avg_spo2 < 95: risk += 0.20
@@ -192,17 +190,17 @@ def process_conformed_record(db, record):
     spo2 = float(record["spo2"]) if record.get("spo2") is not None else 98.0
     temp = float(record["temperature_c"]) if record.get("temperature_c") is not None else 37.0
     resp_rate = float(record["respiratory_rate"]) if record.get("respiratory_rate") is not None else 14.0
-    
+
     facility_id = int(record["facility_id"]) if record.get("facility_id") is not None else 1
     encounter_id = int(record["encounter_id"]) if record.get("encounter_id") is not None else None
     department_id = int(record["department_id"]) if record.get("department_id") is not None else None
-    
+
     observed_at_str = record["timestamp"]
     try:
         observed_at = datetime.fromisoformat(observed_at_str.replace("Z", "+00:00"))
     except Exception:
         observed_at = datetime.now(timezone.utc)
-        
+
     # --- 1. Write conformed vital observation ---
     observation = VitalObservation(
         facility_id=facility_id,
@@ -221,12 +219,13 @@ def process_conformed_record(db, record):
     )
     db.add(observation)
     db.flush() # Flush to get observation.id
-    
+
     # --- 2. Calculate Rolling Averages (last 2 minutes) ---
-    from sqlalchemy import func
     from datetime import timedelta
+
+    from sqlalchemy import func
     two_minutes_ago = observed_at - timedelta(minutes=2)
-    
+
     # Fetch averages from DB
     stats = db.query(
         func.avg(VitalObservation.heart_rate),
@@ -239,26 +238,26 @@ def process_conformed_record(db, record):
         VitalObservation.patient_id == patient_id,
         VitalObservation.observed_at >= two_minutes_ago
     ).first()
-    
+
     avg_hr = float(stats[0]) if stats[0] is not None else heart_rate
     avg_systolic_bp = float(stats[1]) if stats[1] is not None else systolic_bp
     avg_diastolic_bp = float(stats[2]) if stats[2] is not None else diastolic_bp
     avg_spo2 = float(stats[3]) if stats[3] is not None else spo2
-    avg_temp = float(stats[4]) if stats[4] is not None else temp
+    avg_temp = float(stats[4]) if stats[4] is not None else temp  # noqa: F841
     avg_resp_rate = float(stats[5]) if stats[5] is not None else resp_rate
-    
+
     # --- 3. Calculate ML Risk Probabilities ---
     ml_start = time.perf_counter()
     heart_risk = predict_heart_disease_risk(avg_hr, avg_systolic_bp)
     lung_risk = predict_lung_risk(avg_spo2, avg_resp_rate)
     ml_duration_ms = (time.perf_counter() - ml_start) * 1000
-    
+
     # --- 4. Evaluate Alerts & Severity ---
     trigger_alert = False
     severity = "info"
     title = ""
     summary = []
-    
+
     if avg_spo2 < 92.0:
         trigger_alert = True
         severity = "critical"
@@ -269,7 +268,7 @@ def process_conformed_record(db, record):
         severity = "warning" if severity != "critical" else severity
         title = title or "Borderline Hypoxia Alert"
         summary.append(f"Borderline blood oxygen levels: {avg_spo2:.1f}%.")
-        
+
     if avg_hr > 130.0 or avg_hr < 45.0:
         trigger_alert = True
         severity = "critical"
@@ -280,13 +279,13 @@ def process_conformed_record(db, record):
         severity = "warning" if severity != "critical" else severity
         title = title or "Abnormal Heart Rate Alert"
         summary.append(f"Abnormal heart rate: {avg_hr:.1f} bpm.")
-        
+
     if avg_systolic_bp > 160.0 or avg_diastolic_bp > 100.0:
         trigger_alert = True
         severity = "warning" if severity != "critical" else severity
         title = title or "Severe Hypertension Alert"
         summary.append(f"Elevated blood pressure: {avg_systolic_bp:.1f}/{avg_diastolic_bp:.1f} mmHg.")
-        
+
     if lung_risk > 0.75:
         trigger_alert = True
         severity = "critical"
@@ -297,11 +296,11 @@ def process_conformed_record(db, record):
         severity = "critical"
         title = title or "High Cardiac Distress Risk"
         summary.append(f"Heart ML model predicts {heart_risk*100:.1f}% risk of cardiovascular collapse.")
-        
+
     if trigger_alert:
         alert_summary = " ".join(summary)
         logger.warning(f"ALERT! Patient {patient_id} - {title}: {alert_summary}")
-        
+
         signal = MonitoringSignal(
             facility_id=facility_id,
             patient_id=patient_id,
@@ -324,7 +323,7 @@ def process_batch(df, batch_id):
     records = df.collect()
     if not records:
         return
-        
+
     logger.info(f"Processing micro-batch {batch_id} with {len(records)} records...")
     load_ml_models()
     db = SessionLocal()
@@ -336,11 +335,11 @@ def process_batch(df, batch_id):
             ml_lat = process_conformed_record(db, record_dict)
             if ml_lat is not None:
                 total_ml_latency += ml_lat
-        
+
         # Calculate total batch processing duration
         end_time = time.perf_counter()
         processing_time_ms = (end_time - start_time) * 1000
-        
+
         # Save Spark batch metrics
         from backend.models.clinical import SparkStreamingMetrics
         metric = SparkStreamingMetrics(
@@ -367,7 +366,7 @@ def main():
     parser.add_argument("--processing-time", default="5 seconds", help="Trigger processing time interval")
     parser.add_argument("--checkpoint-dir", default=os.path.join(BASE_DIR, "data", "checkpoints", "telemetry"), help="Checkpoint directory")
     args = parser.parse_args()
-    
+
     # Configure HADOOP_HOME for Windows PySpark execution
     if os.name == "nt":
         local_hadoop = os.path.join(BASE_DIR, ".hadoop")
@@ -381,33 +380,33 @@ def main():
         else:
             logger.warning(f"Windows environment detected but local .hadoop directory not found at {local_hadoop}. "
                            "PySpark may fail if HADOOP_HOME is not set globally.")
-    
+
     # Ensure Spark workers use the exact same Python environment as the driver
     os.environ["PYSPARK_PYTHON"] = sys.executable
     os.environ["PYSPARK_DRIVER_PYTHON"] = sys.executable
     logger.info(f"Set PYSPARK_PYTHON and PYSPARK_DRIVER_PYTHON to: {sys.executable}")
-    
+
     print("=" * 60)
     print("SPARK STRUCTURED STREAMING VITAL SIGNS PIPELINE")
     print("=" * 60)
-    
+
     try:
         from pyspark.sql import SparkSession
-        from pyspark.sql.types import StructType, StructField, IntegerType, DoubleType, StringType
-        from pyspark.sql.functions import col, to_timestamp, window, avg, first, max
+        from pyspark.sql.functions import avg, col, first, max, to_timestamp, window  # noqa: F401
+        from pyspark.sql.types import DoubleType, IntegerType, StringType, StructField, StructType
     except ImportError:
         print("ERROR: PySpark is not installed. Run 'pip install pyspark' before executing this streaming pipeline.")
         sys.exit(1)
-        
+
     os.makedirs(args.checkpoint_dir, exist_ok=True)
-    
+
     spark = SparkSession.builder \
         .appName("TelemetryStreamingPipeline") \
         .config("spark.sql.streaming.forceDeleteTempCheckpointLocation", "true") \
         .getOrCreate()
-        
+
     logger.info("Created PySpark session successfully.")
-    
+
     # Define conformed vitals schema
     vitals_schema = StructType([
         StructField("patient_id", IntegerType(), False),
@@ -423,19 +422,19 @@ def main():
         StructField("source", StringType(), True),
         StructField("timestamp", StringType(), False)
     ])
-    
+
     # Configure input stream
     if args.kafka:
         logger.info(f"Subscribing to Kafka bootstrap={args.kafka_servers} topic={args.kafka_topic}...")
         from pyspark.sql.functions import from_json
-        
+
         kafka_stream = spark.readStream \
             .format("kafka") \
             .option("kafka.bootstrap.servers", args.kafka_servers) \
             .option("subscribe", args.kafka_topic) \
             .option("startingOffsets", "latest") \
             .load()
-            
+
         vitals_stream = kafka_stream.select(
             from_json(col("value").cast("string"), vitals_schema).alias("data")
         ).select("data.*")
@@ -443,13 +442,13 @@ def main():
         logger.info(f"Monitoring local directory stream source: '{args.input_dir}'")
         if not os.path.exists(args.input_dir):
             os.makedirs(args.input_dir, exist_ok=True)
-            
+
         vitals_stream = spark.readStream \
             .format("json") \
             .schema(vitals_schema) \
             .option("maxFilesPerTrigger", 10) \
             .load(args.input_dir)
-            
+
     # Start the Structured Streaming query with foreachBatch
     logger.info("Initializing Structured Streaming query with foreachBatch...")
     query = vitals_stream.writeStream \
@@ -457,7 +456,7 @@ def main():
         .option("checkpointLocation", args.checkpoint_dir) \
         .trigger(processingTime=args.processing_time) \
         .start()
-        
+
     try:
         query.awaitTermination()
     except KeyboardInterrupt:

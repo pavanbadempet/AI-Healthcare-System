@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
+import argparse
+import json
 import os
 import sys
-import json
-import argparse
 from pathlib import Path
-from datetime import datetime
 
 ROOT = Path(__file__).resolve().parent.parent
 BRAIN_DIR = Path.home() / ".gemini" / "antigravity" / "brain"
@@ -20,7 +19,7 @@ def find_active_transcript(cid=None):
     # Find the most recently modified transcript.jsonl
     latest_time = 0
     latest_path = None
-    
+
     if not BRAIN_DIR.exists():
         print(f"Error: Antigravity app data folder not found at: {BRAIN_DIR}")
         return None
@@ -33,14 +32,14 @@ def find_active_transcript(cid=None):
                 if mtime > latest_time:
                     latest_time = mtime
                     latest_path = t_path
-                    
+
     return latest_path
 
 def parse_transcript(transcript_path):
     modified_files = set()
     user_inputs = []
     failed_commands = []
-    
+
     with open(transcript_path, "r", encoding="utf-8", errors="ignore") as f:
         for line in f:
             if not line.strip():
@@ -49,10 +48,10 @@ def parse_transcript(transcript_path):
                 step = json.loads(line)
             except Exception:
                 continue
-            
+
             step_type = step.get("type")
             source = step.get("source")
-            
+
             # Extract User Queries
             if step_type == "USER_INPUT" and source == "USER_EXPLICIT":
                 content = step.get("content", "")
@@ -61,7 +60,7 @@ def parse_transcript(transcript_path):
                     cleaned = content.replace("<USER_REQUEST>", "").replace("</USER_REQUEST>", "").strip()
                     if cleaned and cleaned.lower() != "continue":
                         user_inputs.append(cleaned)
-            
+
             # Extract File Modifications from tool calls
             tool_calls = step.get("tool_calls", [])
             if not tool_calls and "tool_calls" in step.get("content", ""):
@@ -70,7 +69,7 @@ def parse_transcript(transcript_path):
                     tool_calls = json.loads(step.get("content")).get("tool_calls", [])
                 except Exception:
                     pass
-                    
+
             if tool_calls:
                 for tc in tool_calls:
                     name = tc.get("name")
@@ -80,7 +79,7 @@ def parse_transcript(transcript_path):
                             args = json.loads(args)
                         except Exception:
                             pass
-                    
+
                     if name in ("write_to_file", "replace_file_content", "multi_replace_file_content"):
                         target_file = args.get("TargetFile")
                         if target_file:
@@ -95,12 +94,12 @@ def parse_transcript(transcript_path):
                                     modified_files.add(f"file:///{norm_path.as_posix()}")
                             except Exception:
                                 modified_files.add(f"file:///{norm_path.as_posix()}")
-            
+
             # Check for failed terminal commands
             if step_type == "RUN_COMMAND" and step.get("status") == "ERROR":
                 cmd = step.get("command", "")
                 failed_commands.append(cmd)
-                
+
     return {
         "modified_files": sorted(list(modified_files)),
         "user_inputs": user_inputs,
@@ -112,12 +111,12 @@ def generate_handoff_prompt(cid, data):
     print("  RECOMMENDED HANDOFF PROMPT (Copy the text below for your next session)")
     print("=" * 70)
     print()
-    
+
     prompt = []
-    prompt.append(f"# Session Handoff Context")
+    prompt.append("# Session Handoff Context")
     prompt.append(f"Resume context from prior session: `{cid}`.")
     prompt.append("")
-    
+
     prompt.append("## Files Modified")
     if data["modified_files"]:
         for f in data["modified_files"]:
@@ -125,7 +124,7 @@ def generate_handoff_prompt(cid, data):
     else:
         prompt.append("- None detected.")
     prompt.append("")
-    
+
     prompt.append("## Tasks Accomplished")
     recent_goals = data["user_inputs"][-5:] if data["user_inputs"] else []
     if recent_goals:
@@ -134,7 +133,7 @@ def generate_handoff_prompt(cid, data):
     else:
         prompt.append("- Initial setup and alignment tasks completed.")
     prompt.append("")
-    
+
     prompt.append("## Active Errors / Failures")
     if data["failed_commands"]:
         for cmd in data["failed_commands"][-3:]:
@@ -142,41 +141,41 @@ def generate_handoff_prompt(cid, data):
     else:
         prompt.append("- None. System builds and runs correctly.")
     prompt.append("")
-    
+
     prompt.append("## Next Steps")
     prompt.append("- Verify the modified files are in active use.")
     prompt.append("- Continue addressing follow-up requirements.")
-    
+
     full_prompt = "\n".join(prompt)
     print(full_prompt)
     print()
     print("=" * 70)
-    
+
     # Calculate estimated tokens saved
-    # The active conversation system prompt + skills is about 80k tokens. 
+    # The active conversation system prompt + skills is about 80k tokens.
     # With N turns, this compacter resets N turns of history (approx 20k-200k tokens).
-    print(f"\n[TIP] Start a fresh session with the prompt above to reset active token overhead back to ZERO.")
+    print("\n[TIP] Start a fresh session with the prompt above to reset active token overhead back to ZERO.")
     return full_prompt
 
 def main():
     parser = argparse.ArgumentParser(description="Parse active transcript to generate a session handoff compacter.")
     parser.add_argument("--cid", help="Specify conversation ID directly")
     args = parser.parse_args()
-    
+
     transcript_path = find_active_transcript(args.cid)
     if not transcript_path:
         return 1
-        
+
     cid = transcript_path.parent.parent.name
     print(f"Reading active session transcript: {cid}")
-    
+
     data = parse_transcript(transcript_path)
     prompt_content = generate_handoff_prompt(cid, data)
-    
+
     handoff_file = ROOT / "active_handoff.md"
     try:
         handoff_file.write_text(prompt_content, encoding="utf-8")
-        print(f"\n[SAVED] Handoff context successfully written to: active_handoff.md")
+        print("\n[SAVED] Handoff context successfully written to: active_handoff.md")
     except Exception as e:
         print(f"\n[WARNING] Could not write active_handoff.md: {e}")
     return 0

@@ -26,11 +26,10 @@ import types
 from typing import Any, Dict, List, Optional, Tuple
 from unittest.mock import patch
 
-from hypothesis import given, settings, assume, HealthCheck
-from hypothesis import strategies as st
-
 import numpy as np
 import pytest
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
 
 # ---------------------------------------------------------------------------
 # DictIdMapIndex — dict-backed stub that mimics turbovec.IdMapIndex
@@ -230,12 +229,11 @@ def store(tmp_path, monkeypatch):
     if "backend.turbovec_store" in sys.modules:
         del sys.modules["backend.turbovec_store"]
 
-    from backend.turbovec_store import TurboVecVectorStore
-
     # Patch get_embedding/get_query_embedding inside the turbovec_store module
     # (they are imported from .rag; turbovec_store.py calls get_embedding with
     # task_type kwarg which the raw wrapper doesn't accept)
     import backend.turbovec_store as tvs_mod
+    from backend.turbovec_store import TurboVecVectorStore
     monkeypatch.setattr(tvs_mod, "get_embedding", lambda text, **kw: [1.0] * 768)
     monkeypatch.setattr(tvs_mod, "get_query_embedding", lambda text, **kw: [1.0] * 768)
 
@@ -281,8 +279,8 @@ def test_load_existing_index_calls_idmapindex_load(tmp_path, monkeypatch):
     if "backend.turbovec_store" in sys.modules:
         del sys.modules["backend.turbovec_store"]
 
-    from backend.turbovec_store import TurboVecVectorStore
     import backend.turbovec_store as tvs_mod
+    from backend.turbovec_store import TurboVecVectorStore
     monkeypatch.setattr(tvs_mod, "get_embedding", lambda text, **kw: [1.0] * 768)
     monkeypatch.setattr(tvs_mod, "get_query_embedding", lambda text, **kw: [1.0] * 768)
 
@@ -297,8 +295,8 @@ def test_load_existing_index_calls_idmapindex_load(tmp_path, monkeypatch):
     if "backend.turbovec_store" in sys.modules:
         del sys.modules["backend.turbovec_store"]
 
-    from backend.turbovec_store import TurboVecVectorStore as TVS2
     import backend.turbovec_store as tvs_mod2
+    from backend.turbovec_store import TurboVecVectorStore as TVS2
     monkeypatch.setattr(tvs_mod2, "get_embedding", lambda text, **kw: [1.0] * 768)
     monkeypatch.setattr(tvs_mod2, "get_query_embedding", lambda text, **kw: [1.0] * 768)
 
@@ -355,8 +353,8 @@ def test_get_vector_store_returns_turbovec_when_importable(tmp_path, monkeypatch
         if "turbovec_store" in mod_name:
             del sys.modules[mod_name]
 
-    from backend.turbovec_store import TurboVecVectorStore
     import backend.turbovec_store as tvs_mod
+    from backend.turbovec_store import TurboVecVectorStore
     monkeypatch.setattr(tvs_mod, "get_embedding", lambda text, **kw: [1.0] * 768)
     monkeypatch.setattr(tvs_mod, "get_query_embedding", lambda text, **kw: [1.0] * 768)
 
@@ -469,8 +467,8 @@ def test_save_creates_missing_directory(tmp_path, monkeypatch):
     if "backend.turbovec_store" in sys.modules:
         del sys.modules["backend.turbovec_store"]
 
-    from backend.turbovec_store import TurboVecVectorStore
     import backend.turbovec_store as tvs_mod
+    from backend.turbovec_store import TurboVecVectorStore
     monkeypatch.setattr(tvs_mod, "get_embedding", lambda text, **kw: [1.0] * 768)
     monkeypatch.setattr(tvs_mod, "get_query_embedding", lambda text, **kw: [1.0] * 768)
 
@@ -770,8 +768,8 @@ def _make_pbt_store(tmp_path, monkeypatch):
     rag_module._store = None
     if "backend.turbovec_store" in sys.modules:
         del sys.modules["backend.turbovec_store"]
-    from backend.turbovec_store import TurboVecVectorStore
     import backend.turbovec_store as tvs_mod
+    from backend.turbovec_store import TurboVecVectorStore
     monkeypatch.setattr(tvs_mod, "get_embedding", lambda text, **kw: [1.0] * 768)
     monkeypatch.setattr(tvs_mod, "get_query_embedding", lambda text, **kw: [1.0] * 768)
     s = TurboVecVectorStore()
@@ -954,8 +952,8 @@ def test_property_persistence_round_trip(records, tmp_path, monkeypatch):
     rag_module._store = None
     if "backend.turbovec_store" in sys.modules:
         del sys.modules["backend.turbovec_store"]
-    from backend.turbovec_store import TurboVecVectorStore
     import backend.turbovec_store as tvs_mod
+    from backend.turbovec_store import TurboVecVectorStore
     monkeypatch.setattr(tvs_mod, "get_embedding", lambda text, **kw: [1.0] * 768)
     monkeypatch.setattr(tvs_mod, "get_query_embedding", lambda text, **kw: [1.0] * 768)
 
@@ -970,8 +968,8 @@ def test_property_persistence_round_trip(records, tmp_path, monkeypatch):
     # Load a fresh instance
     if "backend.turbovec_store" in sys.modules:
         del sys.modules["backend.turbovec_store"]
-    from backend.turbovec_store import TurboVecVectorStore as TVS2
     import backend.turbovec_store as tvs_mod2
+    from backend.turbovec_store import TurboVecVectorStore as TVS2
     monkeypatch.setattr(tvs_mod2, "get_embedding", lambda text, **kw: [1.0] * 768)
     monkeypatch.setattr(tvs_mod2, "get_query_embedding", lambda text, **kw: [1.0] * 768)
 
@@ -1089,7 +1087,6 @@ def test_property_invalid_quantization_fallback(quant, tmp_path, monkeypatch):
         del sys.modules["backend.turbovec_store"]
 
     # Import the module fresh so the module-level logger is bound, then patch it.
-    import backend.turbovec_store as tvs_mod_fresh
 
     with patch("backend.turbovec_store.logger") as mock_logger:
         from backend.turbovec_store import TurboVecVectorStore

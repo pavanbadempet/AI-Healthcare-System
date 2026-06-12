@@ -4,7 +4,6 @@ import pytest
 
 from backend import auth, models
 
-
 SECURITY_ENV_KEYS = (
     "SECURITY_ASSURANCE_ENABLED",
     "SECURITY_OWNER_CONTACT",

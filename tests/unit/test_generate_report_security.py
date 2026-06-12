@@ -3,8 +3,7 @@ from unittest.mock import patch
 import pytest
 from fastapi import HTTPException
 
-from backend import auth, models
-from backend import main
+from backend import auth, main, models
 
 
 class JsonRequest:

@@ -5,8 +5,8 @@ Covers: registration, versioning, activation, get, get_info, list_all,
 summary, duplicate version update, error paths, and default prompts.
 """
 import pytest
-from backend.prompt_registry import PromptRegistry, get_prompt, register_prompt
 
+from backend.prompt_registry import PromptRegistry, get_prompt, register_prompt
 
 # ── Fixtures ──────────────────────────────────────────────────────────────────
 

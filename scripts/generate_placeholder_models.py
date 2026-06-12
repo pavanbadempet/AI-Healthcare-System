@@ -1,10 +1,9 @@
 
-import pickle
 import os
+import pickle
+
 import numpy as np
-import pandas as pd
 from sklearn.dummy import DummyClassifier
-from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
 
 # Define model paths
@@ -22,19 +21,19 @@ MODELS = {
 
 def generate_placeholders():
     print(f"Checking for models in: {BACKEND_DIR}")
-    
+
     if not os.path.exists(BACKEND_DIR):
         os.makedirs(BACKEND_DIR)
 
     for filename, config in MODELS.items():
         filepath = os.path.join(BACKEND_DIR, filename)
-        
+
         if os.path.exists(filepath):
             print(f"FOUND existing: {filename}")
             continue
-            
+
         print(f"MISSING: {filename}. Generating placeholder...")
-        
+
         obj = None
         if config["type"] == "classifier":
             # Create a simple dummy classifier
@@ -43,11 +42,11 @@ def generate_placeholders():
             y = np.array(config["classes"][:2]) if len(config["classes"]) >=2 else np.array([config["classes"][0]] * 2)
             # Ensure y matches X length
             if len(y) < 2: y = np.array([config["classes"][0]] * 2)
-                
+
             clf = DummyClassifier(strategy="constant", constant=config["classes"][0])
             clf.fit(X, y)
             obj = clf
-            
+
         elif config["type"] == "scaler":
             n_features = config.get("features", 1)
             scaler = StandardScaler()

@@ -7,7 +7,6 @@ generation_node prompt assembly, guardrail_node, CoreAIWrapper invoke paths.
 """
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from backend.agent import (
@@ -24,7 +23,6 @@ from backend.agent import (
     supervisor_node,
     tavily_search,
 )
-
 
 # ── _coerce_context / _compact_context ───────────────────────────────────────
 

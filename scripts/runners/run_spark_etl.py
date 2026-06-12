@@ -1,13 +1,13 @@
-import os
-import sys
 import json
-import pickle
 import logging
+import os
 import subprocess
-import pandas as pd
-import numpy as np
+import sys
 import time
 from datetime import datetime
+
+import numpy as np
+import pandas as pd
 
 # Setup basic logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -28,11 +28,11 @@ def get_hf_client():
     """Create a Hugging Face HfApi client if token and dataset ID are configured."""
     hf_token = os.getenv("HF_TOKEN")
     dataset_id = os.getenv("HF_DATASET_ID")
-    
+
     if not (hf_token and dataset_id):
         logger.info("HF_TOKEN or HF_DATASET_ID environment variables not set. HF private dataset sync disabled.")
         return None, None
-        
+
     try:
         from huggingface_hub import HfApi
         api = HfApi(token=hf_token)
@@ -51,7 +51,7 @@ def download_folder_from_hf(api, dataset_id, folder_name, local_dir):
         # We list files in the dataset folder and download them
         files = api.list_repo_files(repo_id=dataset_id, repo_type="dataset")
         matching_files = [f for f in files if f.startswith(f"{folder_name}/")]
-        
+
         for file in matching_files:
             api.hf_hub_download(
                 repo_id=dataset_id,
@@ -88,17 +88,17 @@ def get_spark_session():
         builder = SparkSession.builder \
             .appName("HealthcareETL-Retraining") \
             .config("spark.sql.adaptive.enabled", "true")
-        
+
         # Configure Delta Lake settings if possible
         try:
-            import delta
+            import delta  # noqa: F401
             builder = builder \
                 .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
                 .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog")
             logger.info("Spark session configured with Delta Lake extension.")
         except ImportError:
             logger.warning("Delta Lake package not found, falling back to standard Spark.")
-            
+
         spark = builder.getOrCreate()
         return spark
     except ImportError:
@@ -110,32 +110,32 @@ def run_medallion_etl():
     start_time = time.time()
     database_url = os.getenv("DATABASE_URL")
     hf_client, hf_dataset_id = get_hf_client()
-    
+
     # --- PHASE 1: SYNC FROM CLOUD (Download Baseline Data) ---
     if hf_client is not None:
         download_folder_from_hf(hf_client, hf_dataset_id, "bronze", BASE_DIR)
         download_folder_from_hf(hf_client, hf_dataset_id, "silver", BASE_DIR)
-        
+
     # --- PHASE 2: BRONZE LAYER (Extract & Store Raw Data) ---
     logger.info("=== STARTING BRONZE LAYER INGESTION ===")
     new_records = []
-    
+
     if database_url:
         logger.info("Extracting raw clinical records from Neon Postgres...")
         try:
             from sqlalchemy import create_engine
             if database_url.startswith("postgres://"):
                 database_url = database_url.replace("postgres://", "postgresql://", 1)
-                
+
             engine = create_engine(database_url)
             query = "SELECT record_type, data, prediction FROM health_records"
-            
+
             df_db = pd.read_sql(query, engine)
             logger.info(f"Extracted {len(df_db)} raw records from database.")
             new_records = df_db.to_dict(orient="records")
         except Exception as e:
             logger.error(f"Database raw extraction failed: {e}. Falling back to existing Bronze Parquet.")
-            
+
     # Load or create raw bronze file
     bronze_path = os.path.join(BRONZE_DIR, "raw_health_records.parquet")
     df_bronze_base = None
@@ -145,17 +145,17 @@ def run_medallion_etl():
             logger.info(f"Loaded existing Bronze data: {len(df_bronze_base)} raw samples.")
         except Exception as e:
             logger.error(f"Failed to load Bronze base: {e}")
-            
+
     if new_records:
         df_new_bronze = pd.DataFrame(new_records)
         if df_bronze_base is not None:
             df_bronze_merged = pd.concat([df_bronze_base, df_new_bronze], ignore_index=True).drop_duplicates()
         else:
             df_bronze_merged = df_new_bronze
-            
+
         df_bronze_merged.to_parquet(bronze_path, index=False)
         logger.info(f"Bronze raw table updated: {len(df_bronze_merged)} total records.")
-        
+
         # Upload updated Bronze raw to HF private dataset
         if hf_client is not None:
             upload_file_to_hf(hf_client, hf_dataset_id, bronze_path, "bronze/raw_health_records.parquet")
@@ -170,12 +170,12 @@ def run_medallion_etl():
     logger.info("=== STARTING SILVER LAYER TRANSFORMATION ===")
     spark = get_spark_session()
     model_types = ['diabetes', 'heart', 'liver', 'kidney', 'lungs']
-    
+
     # Process each model type into clean Silver datasets
     for mtype in model_types:
         silver_path = os.path.join(SILVER_DIR, f"{mtype}_cleaned.parquet")
         processed_path = os.path.join(PROCESSED_DIR, f"{mtype}.parquet")
-        
+
         # Load baseline conformed Silver dataset if exists
         df_silver_base = None
         if os.path.exists(silver_path):
@@ -191,18 +191,18 @@ def run_medallion_etl():
                 logger.info(f"Loaded processed fallback baseline for {mtype}: {len(df_silver_base)} rows.")
             except Exception as e:
                 logger.error(f"Error loading processed fallback {mtype}: {e}")
-                
+
         # Filter new raw Bronze records of this type
         mtype_raw = df_bronze_merged[df_bronze_merged['record_type'] == mtype]
         parsed_records = []
-        
+
         if not mtype_raw.empty:
             logger.info(f"Parsing and cleaning {len(mtype_raw)} raw {mtype} records into conformed schema...")
             for _, r in mtype_raw.iterrows():
                 try:
                     data_dict = json.loads(r['data'])
                     pred_str = str(r['prediction']).lower()
-                    
+
                     # Target assignment mapping
                     if mtype == 'diabetes':
                         target_val = 1 if 'high' in pred_str else 0
@@ -216,15 +216,15 @@ def run_medallion_etl():
                         target_val = 1 if 'detected' in pred_str or 'issue' in pred_str else 0
                     else:
                         target_val = 0
-                        
+
                     data_dict['target'] = target_val
                     parsed_records.append(data_dict)
                 except Exception as e:
                     logger.debug(f"Failed to parse raw data JSON: {e}")
-                    
+
             if parsed_records:
                 df_new_silver = pd.DataFrame(parsed_records)
-                
+
                 # Apply Spark transformations for schema checking if spark is active
                 if spark is not None:
                     try:
@@ -233,7 +233,7 @@ def run_medallion_etl():
                         df_new_silver = spark_df.toPandas()
                     except Exception as e:
                         logger.warning(f"Spark schema checking failed: {e}. Falling back to Pandas.")
-                        
+
                 # Merge new conformed Silver records with conformed baseline
                 if df_silver_base is not None:
                     # Align columns to match conformed baseline
@@ -248,7 +248,7 @@ def run_medallion_etl():
                 df_conformed = df_silver_base
         else:
             df_conformed = df_silver_base
-            
+
         # Write clean conformed Silver tables
         if df_conformed is not None:
             try:
@@ -256,12 +256,12 @@ def run_medallion_etl():
                 # Keep processed folder in sync for training scripts to load conformed data
                 df_conformed.to_parquet(processed_path, index=False)
                 logger.info(f"Silver conformed {mtype} dataset updated: {len(df_conformed)} rows.")
-                
+
                 if hf_client is not None:
                     upload_file_to_hf(hf_client, hf_dataset_id, silver_path, f"silver/{mtype}_cleaned.parquet")
             except Exception as e:
                 logger.error(f"Failed to write Silver table {mtype}: {e}")
-                
+
     if spark is not None:
         spark.stop()
         logger.info("Spark Session stopped.")
@@ -273,7 +273,7 @@ def run_medallion_etl():
 def generate_gold_insights(start_time, model_accuracies=None):
     """Generate business-level Gold aggregates and write Data Science report."""
     hf_client, hf_dataset_id = get_hf_client()
-    
+
     # Load all silver datasets to calculate aggregations
     metrics = {
         "report_generated_at": datetime.now().isoformat(),
@@ -296,12 +296,12 @@ def generate_gold_insights(start_time, model_accuracies=None):
             "status": "success"
         }
     }
-    
+
     total_rows = 0
     all_ages = []
     all_bmis = []
     all_genders = []
-    
+
     model_types = ['diabetes', 'heart', 'liver', 'kidney', 'lungs']
     for mtype in model_types:
         silver_path = os.path.join(SILVER_DIR, f"{mtype}_cleaned.parquet")
@@ -310,37 +310,37 @@ def generate_gold_insights(start_time, model_accuracies=None):
                 df = pd.read_parquet(silver_path)
                 count = len(df)
                 total_rows += count
-                
+
                 # Prevalence rate calculation
                 if "target" in df.columns:
                     pos_rate = float((df["target"] == 1).mean())
                     metrics["prevalence_rates"][mtype] = round(pos_rate * 100, 2)
-                    
+
                 # Collect demographics if present
                 if "age" in df.columns:
                     all_ages.extend(df["age"].dropna().tolist())
                 elif "AGE" in df.columns:
                     all_ages.extend(df["AGE"].dropna().tolist())
-                    
+
                 if "bmi" in df.columns:
                     all_bmis.extend(df["bmi"].dropna().tolist())
                 elif "BMI" in df.columns:
                     all_bmis.extend(df["BMI"].dropna().tolist())
-                    
+
                 if "gender" in df.columns:
                     all_genders.extend(df["gender"].dropna().tolist())
                 elif "GENDER" in df.columns:
                     all_genders.extend(df["GENDER"].dropna().tolist())
             except Exception as e:
                 logger.error(f"Failed to read conformed Silver dataset {mtype} for Gold: {e}")
-                
+
     # Calculate aggregates
     metrics["total_records_analyzed"] = total_rows
     if all_ages:
         metrics["demographics"]["avg_age"] = round(float(np.mean(all_ages)), 1)
     if all_bmis:
         metrics["demographics"]["avg_bmi"] = round(float(np.mean(all_bmis)), 1)
-        
+
     if all_genders:
         # standardizing genders: 1 for Male / 0 for Female
         male_count = sum(1 for g in all_genders if str(g) in ['1', '1.0', 'M', 'Male'])
@@ -352,7 +352,7 @@ def generate_gold_insights(start_time, model_accuracies=None):
     with open(report_path, "w") as f:
         json.dump(metrics, f, indent=2)
     logger.info(f"Gold Analyst JSON report generated at {report_path}")
-    
+
     # Save a Gold insights parquet table
     try:
         gold_insights_df = pd.DataFrame([{
@@ -361,11 +361,11 @@ def generate_gold_insights(start_time, model_accuracies=None):
             "model_accuracy": metrics["model_performance"].get(mtype, 0.0),
             "records_count": total_rows // 5
         } for mtype in model_types])
-        
+
         gold_insights_path = os.path.join(GOLD_DIR, "gold_health_insights.parquet")
         gold_insights_df.to_parquet(gold_insights_path, index=False)
         logger.info(f"Gold insights parquet written to {gold_insights_path}")
-        
+
         # Sync Gold folder to HF private dataset
         if hf_client is not None:
             upload_file_to_hf(hf_client, hf_dataset_id, report_path, "gold/analyst_report.json")
@@ -377,11 +377,11 @@ def retrain_models():
     """Trigger the retraining script for each model and verify weights are updated."""
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     backend_dir = os.path.join(base_dir, "backend")
-    
+
     models = ['diabetes', 'heart', 'kidney', 'liver', 'lungs']
     results = {}
     accuracies = {}
-    
+
     logger.info("Starting model retraining loop...")
     for model in models:
         script = os.path.join(backend_dir, f"train_{model}.py")
@@ -390,12 +390,12 @@ def retrain_models():
             try:
                 env = os.environ.copy()
                 env["PYTHONPATH"] = backend_dir + os.pathsep + env.get("PYTHONPATH", "")
-                
+
                 res = subprocess.run([sys.executable, script], capture_output=True, text=True, env=env, timeout=600)
                 if res.returncode == 0:
                     logger.info(f"Successfully retrained {model} model.")
                     results[model] = 'success'
-                    
+
                     # Parse accuracy from script stdout if printed (e.g. "Accuracy: 0.9200")
                     for line in res.stdout.split("\n"):
                         if "Accuracy:" in line:
@@ -413,18 +413,18 @@ def retrain_models():
         else:
             logger.warning(f"Training script {script} not found. Skipping.")
             results[model] = 'skipped'
-            
+
     return results, accuracies
 
 def reload_models_via_api():
     """Trigger model reload on the backend API if configured."""
     backend_url = os.getenv("BACKEND_URL", "http://127.0.0.1:8000")
     token = os.getenv("ADMIN_JWT_TOKEN")
-    
+
     if not token:
         logger.warning("ADMIN_JWT_TOKEN environment variable not set. Skipping API model reload trigger.")
         return
-        
+
     logger.info("Triggering backend zero-downtime model reload...")
     import requests
     try:
@@ -443,19 +443,19 @@ def reload_models_via_api():
 if __name__ == "__main__":
     logger.info("--- STARTING MEDALLION ETL & RETRAINING RUNNER ---")
     start_time = time.time()
-    
+
     # 1. Run Ingestion and Conformance through Bronze, Silver & Gold
     run_medallion_etl()
-    
+
     # 2. Retrain models on conformed Silver data
     results, accuracies = retrain_models()
     logger.info(f"Retraining results summary: {results}")
-    
+
     # 3. Regenerate Gold report with newly computed accuracies
     if accuracies:
         logger.info("Updating Gold report with actual training accuracies...")
         generate_gold_insights(start_time, accuracies)
-    
+
     # 4. Trigger Model Reload on active space
     reload_models_via_api()
     logger.info("--- MEDALLION RUNNER COMPLETED ---")

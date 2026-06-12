@@ -1,17 +1,13 @@
 """
 Tests for facility_scope.py, ai_function_registry.py, and demo_readiness.py.
 """
-import os
-from unittest.mock import patch
 
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from backend.database import Base
 from backend import models
-from backend.facility_scope import users_share_facility_context
 from backend.ai_function_registry import (
     AI_FUNCTIONS,
     AIFunction,
@@ -22,15 +18,14 @@ from backend.ai_function_registry import (
     registry_response,
     validate_ai_registry,
 )
+from backend.database import Base
 from backend.demo_readiness import (
     _env_configured,
     _env_trueish,
-    _optional_status,
-    _required_status,
     _status,
     get_demo_readiness,
 )
-
+from backend.facility_scope import users_share_facility_context
 
 # ── DB fixture ────────────────────────────────────────────────────────────────
 

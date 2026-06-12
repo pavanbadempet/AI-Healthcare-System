@@ -1,7 +1,6 @@
 import os
 import subprocess
 import sys
-from pathlib import Path
 
 # Group definitions: list of dictionaries with matching patterns, commit messages, and dates.
 # Dates are in ISO 8601 format or standard git format.
@@ -453,7 +452,7 @@ def match_files_to_groups(dirty_files):
     """Maps dirty files to groups."""
     unmatched = []
     group_files = {g["name"]: [] for g in GROUPS}
-    
+
     for status, path in dirty_files:
         matched = False
         path_lower = path.lower()
@@ -468,7 +467,7 @@ def match_files_to_groups(dirty_files):
                 break
         if not matched:
             unmatched.append(path)
-            
+
     return group_files, unmatched
 
 def commit_group(group_name, files, commit_msg, commit_date):
@@ -477,12 +476,12 @@ def commit_group(group_name, files, commit_msg, commit_date):
     # Git add the files
     for file in files:
         subprocess.run(["git", "add", file], check=True)
-        
+
     # Setup backdated environment variables
     env = os.environ.copy()
     env["GIT_AUTHOR_DATE"] = commit_date
     env["GIT_COMMITTER_DATE"] = commit_date
-    
+
     # Commit
     res = subprocess.run(
         ["git", "commit", "-m", commit_msg],
@@ -498,21 +497,21 @@ def main():
     if not dirty_files:
         print("No dirty files found to commit!")
         return 0
-        
+
     print(f"Found {len(dirty_files)} dirty files.")
     group_files, unmatched = match_files_to_groups(dirty_files)
-    
+
     # Process each group
     for g in GROUPS:
         files = group_files[g["name"]]
         if files:
             commit_group(g["name"], files, g["msg"], g["date"])
-            
+
     # Process unmatched files in a final cleanup commit
     if unmatched:
         print(f"Found {len(unmatched)} unmatched files. Committing them in a cleanup commit...")
         commit_group("Unmatched files cleanup", unmatched, "chore: general cleanup and remaining integrations", "2026-05-28 09:30:00")
-        
+
     print("Done redistributing commits!")
     return 0
 

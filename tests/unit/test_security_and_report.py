@@ -4,7 +4,7 @@ and explainability.py.
 """
 import io
 import json
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from fastapi import HTTPException
@@ -13,11 +13,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from backend import explainability, security, vision_service
 from backend.database import Base, get_db
 from backend.main import app
 from backend.prediction import initialize_models
-from backend import security, vision_service, explainability
-
 
 # ── Test DB & client ──────────────────────────────────────────────────────────
 

@@ -1,9 +1,9 @@
+import os
 import subprocess
 import sys
-import os
-import signal
-import time
 import threading
+import time
+
 
 def log_stream(proc, prefix):
     try:

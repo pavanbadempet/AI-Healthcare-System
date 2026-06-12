@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-import os
-import sys
 import argparse
+import sys
 from pathlib import Path
 
 PLUGINS_DIR = Path.home() / ".gemini" / "config" / "plugins"
@@ -20,7 +19,7 @@ def get_plugin_status():
                 plugins.append({"name": original_name, "enabled": False, "dir_name": name})
             else:
                 plugins.append({"name": name, "enabled": True, "dir_name": name})
-    
+
     # Sort by name
     plugins.sort(key=lambda x: x["name"])
     return plugins
@@ -43,13 +42,13 @@ def print_status():
 def toggle_plugin(name, enable=True):
     plugins = get_plugin_status()
     matching = [p for p in plugins if p["name"].lower() == name.lower()]
-    
+
     if not matching:
         print(f"Error: Plugin '{name}' not found.")
         return False
-    
+
     plugin = matching[0]
-    
+
     if enable:
         if plugin["enabled"]:
             print(f"Plugin '{plugin['name']}' is already enabled.")
@@ -82,22 +81,22 @@ def main():
     parser.add_argument("--status", action="store_true", help="Show current status of all plugins")
     parser.add_argument("--disable", nargs="+", help="Disable one or more plugins by name")
     parser.add_argument("--enable", nargs="+", help="Enable one or more plugins by name")
-    
+
     args = parser.parse_args()
-    
+
     if len(sys.argv) == 1:
         parser.print_help()
         print_status()
         return
-    
+
     if args.status:
         print_status()
-        
+
     if args.disable:
         for name in args.disable:
             toggle_plugin(name, enable=False)
         print_status()
-            
+
     if args.enable:
         for name in args.enable:
             toggle_plugin(name, enable=True)

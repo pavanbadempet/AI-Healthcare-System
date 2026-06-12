@@ -6,21 +6,26 @@ All modules expose pure readiness/metadata functions — no DB needed.
 """
 import pytest
 
-from backend import smart_fhir, dicomweb, retention_policy, incident_response, security_assurance
-from backend.smart_fhir import (
-    SMARTConfigurationError, SMARTValidationError,
-    get_readiness as smart_readiness,
-    build_authorization_url,
-    build_authorization_response,
-    _safe_token,
+from backend import incident_response, retention_policy, security_assurance
+from backend.dicomweb import (
+    DICOMwebConfigurationError,
+    DICOMwebValidationError,
+    _validate_study_instance_uid,
+    build_study_metadata_links,
 )
 from backend.dicomweb import (
-    DICOMwebConfigurationError, DICOMwebValidationError,
     get_readiness as dicom_readiness,
-    build_study_metadata_links,
-    _validate_study_instance_uid,
 )
-
+from backend.smart_fhir import (
+    SMARTConfigurationError,
+    SMARTValidationError,
+    _safe_token,
+    build_authorization_response,
+    build_authorization_url,
+)
+from backend.smart_fhir import (
+    get_readiness as smart_readiness,
+)
 
 # ── smart_fhir.get_readiness ─────────────────────────────────────────────────
 

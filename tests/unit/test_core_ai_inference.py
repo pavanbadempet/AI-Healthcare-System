@@ -13,7 +13,6 @@ import pytest
 
 from backend import core_ai
 
-
 # ── helpers ──────────────────────────────────────────────────────────────────
 
 def _make_ollama_response(content: str, status: int = 200):

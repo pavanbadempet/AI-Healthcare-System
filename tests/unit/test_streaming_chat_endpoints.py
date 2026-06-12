@@ -4,8 +4,7 @@ Tests for streaming_chat.py endpoints.
 Covers: /chat/stream (AI available, fallback, empty message),
 /chat/context, and /chat/suggestions — all with mocked auth and AI.
 """
-import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from fastapi.testclient import TestClient
@@ -15,9 +14,7 @@ from sqlalchemy.pool import StaticPool
 
 from backend.database import Base, get_db
 from backend.main import app
-from backend import auth, models
 from backend.prediction import initialize_models
-
 
 # ── Test DB & client setup ────────────────────────────────────────────────────
 

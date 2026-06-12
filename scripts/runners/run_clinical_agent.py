@@ -8,8 +8,8 @@ from datetime import datetime, timezone
 # Add the project root to python path to resolve backend imports
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
 
-from backend.database import SessionLocal
 from backend.agents.clinical_audit_agent import ClinicalAuditAgent
+from backend.database import SessionLocal
 
 
 async def main():
@@ -34,13 +34,13 @@ async def main():
     try:
         import json
         agent = ClinicalAuditAgent(db, name="Clinical Deterioration Audit Agent")
-        
+
         # Run agent
         report_md, report_json = await agent.run(hours=args.hours, dry_run=args.dry_run)
-        
+
         # Save output reports (Markdown & JSON)
         timestamp = int(time.time())
-        
+
         # Save Markdown Report
         report_path = os.path.join(args.output_dir, f"clinical_audit_report_{timestamp}.md")
         with open(report_path, "w", encoding="utf-8") as f:
@@ -67,7 +67,7 @@ async def main():
         print("\n" + "=" * 40 + "\n")
         print(agent.get_summary_markdown())
         print("\n" + "=" * 40 + "\n")
-        
+
     except Exception as e:
         print(f"Fatal error during agent execution: {e}", file=sys.stderr)
         import traceback

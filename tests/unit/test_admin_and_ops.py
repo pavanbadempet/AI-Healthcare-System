@@ -5,8 +5,7 @@ Covers: admin CRUD (users, roles, facilities, audit logs, stats),
 monitoring signal generation logic, vital submission, admin patterns,
 and operational health report checks.
 """
-from datetime import datetime, timezone
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 from fastapi import HTTPException
@@ -15,10 +14,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from backend import models
 from backend.database import Base, get_db
 from backend.main import app
-from backend.prediction import initialize_models
-from backend import models, monitoring, operational_health
 from backend.monitoring import _generate_signals, _validate_vital_measurements
 from backend.operational_health import (
     _check,
@@ -27,7 +25,7 @@ from backend.operational_health import (
     _route_pairs,
     build_operational_health_report,
 )
-
+from backend.prediction import initialize_models
 
 # ── DB + client ───────────────────────────────────────────────────────────────
 

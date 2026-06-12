@@ -1,9 +1,11 @@
 """
 Test for backend/explanation.py — core_ai-backed explanation service.
 """
+from unittest.mock import AsyncMock, patch
+
 import pytest
-from unittest.mock import patch, AsyncMock
-from backend.explanation import explain_prediction, ExplanationRequest
+
+from backend.explanation import ExplanationRequest, explain_prediction
 
 
 @pytest.mark.asyncio(loop_scope="session")

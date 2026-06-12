@@ -6,12 +6,12 @@ for active patients in the hospital admissions table. Supports writing to a loca
 as JSON files (for file-stream Structured Streaming) or publishing to a Kafka topic.
 """
 
-import os
-import sys
-import json
-import random
-import time
 import argparse
+import json
+import os
+import random
+import sys
+import time
 from datetime import datetime, timezone
 
 # Ensure project root is in python path
@@ -19,7 +19,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 sys.path.append(BASE_DIR)
 
 from backend.database import SessionLocal
-from backend.models import User, Admission
+from backend.models import Admission
 
 DEFAULT_STREAM_DIR = os.path.join(BASE_DIR, "data", "telemetry_stream")
 os.makedirs(DEFAULT_STREAM_DIR, exist_ok=True)
@@ -59,7 +59,7 @@ def get_active_patients():
         print(f"Database query failed ({e}). Falling back to baseline seed patients.")
     finally:
         db.close()
-        
+
     # Fallback seed data
     return [
         {"patient_id": 2, "facility_id": 1, "encounter_id": None, "department_id": None},
@@ -71,13 +71,13 @@ def get_active_patients():
 def generate_vitals(patient, anomaly_rate):
     """Generate vital observations. Normal ranges vs. distress anomalies."""
     is_anomaly = random.random() < anomaly_rate
-    
+
     timestamp = datetime.now(timezone.utc).isoformat()
-    
+
     if is_anomaly:
         anomaly_type = random.choice(["hypoxia", "tachycardia", "hypertension", "fever"])
         print(f"Generating clinical anomaly [{anomaly_type}] for patient {patient['patient_id']}")
-        
+
         if anomaly_type == "hypoxia":
             heart_rate = float(random.randint(105, 130))
             spo2 = float(random.randint(85, 92))  # Critical drop in oxygen
@@ -154,7 +154,7 @@ def main():
     print("=" * 60)
     print(f"Interval: {args.interval}s")
     print(f"Anomaly Rate: {args.anomaly_rate * 100:.1f}%")
-    
+
     # Initialize Kafka if configured
     producer = None
     if args.kafka:
@@ -175,16 +175,16 @@ def main():
     else:
         print(f"Publishing mode: Local Directory Stream -> '{args.output_dir}'")
         os.makedirs(args.output_dir, exist_ok=True)
-        
+
     iteration = 0
     try:
         while True:
             patients = get_active_patients()
             print(f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}] Simulating {len(patients)} patients...")
-            
+
             for patient in patients:
                 vital_reading = generate_vitals(patient, args.anomaly_rate)
-                
+
                 if producer is not None:
                     # Write to Kafka
                     producer.send(args.kafka_topic, value=vital_reading)
@@ -195,18 +195,18 @@ def main():
                     filepath = os.path.join(args.output_dir, filename)
                     with open(filepath, "w") as f:
                         json.dump(vital_reading, f)
-                        
+
             if producer is not None:
                 producer.flush()
-                
+
             iteration += 1
-            
+
             # Run cleanup every 10 iterations to prevent file buildup
             if not args.kafka and iteration % 10 == 0:
                 cleanup_old_files(args.output_dir, args.cleanup_minutes * 60)
-                
+
             time.sleep(args.interval)
-            
+
     except KeyboardInterrupt:
         print("\nSimulator stopped by user.")
     finally:

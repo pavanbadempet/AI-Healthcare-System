@@ -2,23 +2,23 @@
 AI Healthcare System - Training Pipeline
 """
 
-import sys
-import os
-import pickle
-import joblib
-import pandas as pd
-import numpy as np
 import logging
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import VotingClassifier, RandomForestClassifier, GradientBoostingClassifier
-from xgboost import XGBClassifier
+import os
+import sys
+
+import joblib
+import numpy as np
+import pandas as pd
 from lightgbm import LGBMClassifier
+from sklearn.ensemble import GradientBoostingClassifier, RandomForestClassifier, VotingClassifier
 from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
+from xgboost import XGBClassifier
 
 # --- Logging Configuration (Standardized) ---
 logging.basicConfig(
-    level=logging.INFO, 
+    level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
         logging.StreamHandler(sys.stdout),
@@ -46,22 +46,22 @@ def train_diabetes():
 
     df = pd.read_parquet(parquet_path)
     target = 'diabetes'
-    
+
     # Select only the features available in the Web UI/API
     # Mapped from original: HighBP, HighChol, BMI, Smoker, HeartDiseaseorAttack, PhysActivity, GenHlth, Sex, Age
     feature_cols = ['HighBP', 'HighChol', 'BMI', 'Smoker', 'HeartDiseaseorAttack', 'PhysActivity', 'GenHlth', 'Sex', 'Age']
-    
+
     X = df[feature_cols]
     y = df[target]
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     eclf = VotingClassifier(estimators=[
-        ('xgb', XGBClassifier(**xgb_params)), 
-        ('rf', RandomForestClassifier(**rf_params)), 
+        ('xgb', XGBClassifier(**xgb_params)),
+        ('rf', RandomForestClassifier(**rf_params)),
         ('gb', GradientBoostingClassifier(**gb_params))
     ], voting='soft')
     eclf.fit(X_train, y_train)
-    
+
     acc = accuracy_score(y_test, eclf.predict(X_test))
     logger.info(f"[Diabetes] Accuracy: {acc:.4f}")
     with open(os.path.join(MODEL_DIR, 'diabetes_model.pkl'), 'wb') as f: joblib.dump(eclf, f, compress=3)
@@ -74,21 +74,21 @@ def train_heart():
     df = pd.read_parquet(parquet_path)
     # Schema: target, high_bp, high_chol, bmi, smoker, stroke, diabetes, phys_activity, hvy_alcohol, gen_hlth, sex, age
     # No clinical cleaning needed as BRFSS is already cleaned/categorical.
-    
+
     target = 'target'
     X = df.drop(columns=[target])
     y = df[target]
-    
+
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
     # 3. SOTA Ensemble for Large Categorical Data
     # LightGBM is King here.
     eclf = VotingClassifier(estimators=[
-        ('xgb', XGBClassifier(**xgb_params)), 
-        ('rf', RandomForestClassifier(**rf_params)), 
+        ('xgb', XGBClassifier(**xgb_params)),
+        ('rf', RandomForestClassifier(**rf_params)),
         ('lgbm', LGBMClassifier(**lgbm_params))
     ], voting='soft')
-    
+
     eclf.fit(X_train, y_train)
 
     acc = accuracy_score(y_test, eclf.predict(X_test))
@@ -113,13 +113,13 @@ def train_liver():
     X = df[feature_cols]
     y = df[target]
     X_scaled = scaler.fit_transform(X)
-    
+
     with open(os.path.join(MODEL_DIR, 'scaler.pkl'), 'wb') as f: joblib.dump(scaler, f, compress=3)
-    
+
     X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
     eclf = VotingClassifier(estimators=[
-        ('xgb', XGBClassifier(**xgb_params)), 
-        ('rf', RandomForestClassifier(**rf_params)), 
+        ('xgb', XGBClassifier(**xgb_params)),
+        ('rf', RandomForestClassifier(**rf_params)),
         ('gb', GradientBoostingClassifier(**gb_params))
     ], voting='soft')
     eclf.fit(X_train, y_train)
@@ -135,10 +135,10 @@ def train_kidney():
     df = pd.read_parquet(parquet_path)
     if 'classification' in df.columns: df.drop(columns=['classification'], inplace=True)
     target = 'target'
-    
+
     X = df.drop(columns=[target])
     y = df[target]
-    
+
     # Scale because some values (WBC) are large
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
@@ -148,17 +148,17 @@ def train_kidney():
 
     # XGBoost Only (User Request)
     model = XGBClassifier(
-        n_estimators=200, 
-        max_depth=4, 
-        learning_rate=0.05, 
+        n_estimators=200,
+        max_depth=4,
+        learning_rate=0.05,
         eval_metric='logloss',
         random_state=42
     )
     model.fit(X_train, y_train)
-    
+
     acc = accuracy_score(y_test, model.predict(X_test))
     logger.info(f"[Kidney] XGBoost Accuracy: {acc:.4f}")
-    
+
     with open(os.path.join(MODEL_DIR, 'kidney_model.pkl'), 'wb') as f: joblib.dump(model, f, compress=3)
 
 def train_lungs():
@@ -168,10 +168,10 @@ def train_lungs():
 
     df = pd.read_parquet(parquet_path)
     target = 'target'
-    
+
     X = df.drop(columns=[target])
     y = df[target]
-    
+
     # 0/1 Scaling (MinMax is fine or Standard)
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
@@ -180,21 +180,21 @@ def train_lungs():
     X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
     model = XGBClassifier(
-        n_estimators=100, 
-        max_depth=3, 
-        learning_rate=0.05, 
+        n_estimators=100,
+        max_depth=3,
+        learning_rate=0.05,
         eval_metric='logloss',
         random_state=42
     )
     model.fit(X_train, y_train)
-    
+
     acc = accuracy_score(y_test, model.predict(X_test))
     logger.info(f"[Lungs] XGBoost Accuracy: {acc:.4f}")
-    
+
     with open(os.path.join(MODEL_DIR, 'lungs_model.pkl'), 'wb') as f: joblib.dump(model, f, compress=3)
 
 if __name__ == "__main__":
-    train_diabetes() 
+    train_diabetes()
     train_heart()
     train_liver()
     train_kidney()

@@ -2,7 +2,6 @@
 Tests for payments.py — plan catalog, credential loading, order validation,
 endpoint auth, and error handling.
 """
-import os
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -12,11 +11,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from backend import payments
 from backend.database import Base, get_db
 from backend.main import app
 from backend.prediction import initialize_models
-from backend import payments, models
-
 
 # ── DB + client ───────────────────────────────────────────────────────────────
 

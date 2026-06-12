@@ -1,16 +1,17 @@
 import os
 import tempfile
+from datetime import datetime, timezone
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, MagicMock
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from datetime import datetime, timezone
 
-from backend.database import Base
-from backend.models.auth import User
-from backend.models.clinical import VitalObservation, MonitoringSignal
 from backend.agents.base_agent import BaseAgent
 from backend.agents.clinical_audit_agent import ClinicalAuditAgent
+from backend.database import Base
+from backend.models.auth import User
+from backend.models.clinical import MonitoringSignal, VitalObservation
 
 
 # Setup in-memory SQLite database for testing
@@ -101,7 +102,7 @@ async def test_clinical_audit_agent_no_data(db_session):
     """Verify ClinicalAuditAgent behavior on empty database."""
     agent = ClinicalAuditAgent(db_session, "Empty DB Auditor")
     report, report_json = await agent.run(hours=24, dry_run=True)
-    
+
     assert "No high-risk patients or critical alerts found" in report
     assert agent.status == "completed"
     assert len(agent.steps) == 5  # Init, Fetch, Filter, Skip, Shutdown

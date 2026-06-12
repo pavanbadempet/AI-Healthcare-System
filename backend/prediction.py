@@ -444,11 +444,13 @@ async def predict_organ_health(
 ) -> Dict[str, Any]:
     """Calculate a patient's Unified Multi-Organ Health Index based on their vitals and demographics."""
     from datetime import datetime
+
     import numpy as np
     import pandas as pd
+
     import backend.prediction as _pred
+
     from . import features as _features
-    from .model_service import _extract_confidence, _normalize_prediction
 
     # 1. Fetch patient
     patient = db.query(db_models.User).filter(db_models.User.id == patient_id).first()
@@ -462,7 +464,7 @@ async def predict_organ_health(
         .order_by(db_models.VitalObservation.observed_at.desc())
         .first()
     )
-    
+
     vitals_source = "latest_observation" if latest_vital else "baseline_fallback"
     heart_rate = float(latest_vital.heart_rate) if latest_vital and latest_vital.heart_rate is not None else 72.0
     systolic_bp = float(latest_vital.systolic_bp) if latest_vital and latest_vital.systolic_bp is not None else 120.0
@@ -474,7 +476,7 @@ async def predict_organ_health(
     # 2.5 Get laboratory results from patient clinical history
     import re
     labs = db.query(db_models.DiagnosticResult).filter(db_models.DiagnosticResult.patient_id == patient_id).all()
-    
+
     # Default laboratory values
     serum_creatinine = 1.0
     blood_urea = 40.0
@@ -495,43 +497,43 @@ async def predict_organ_health(
 
     for lab in labs:
         combined_text = f"{lab.title or ''} {lab.summary or ''}"
-        
+
         c_val = extract_lab_value(combined_text, r'creatinine\s*[:=]\s*([0-9.]+)')
         if c_val is not None:
             serum_creatinine = c_val
             labs_extracted = True
-            
+
         bu_val = extract_lab_value(combined_text, r'(?:blood urea(?: nitrogen)?|bun)\s*[:=]\s*([0-9.]+)')
         if bu_val is not None:
             blood_urea = bu_val
             labs_extracted = True
-            
+
         tb_val = extract_lab_value(combined_text, r'total bilirubin\s*[:=]\s*([0-9.]+)')
         if tb_val is not None:
             total_bilirubin = tb_val
             labs_extracted = True
-            
+
         db_val = extract_lab_value(combined_text, r'direct bilirubin\s*[:=]\s*([0-9.]+)')
         if db_val is not None:
             direct_bilirubin = db_val
             labs_extracted = True
-            
+
         alt_e = extract_lab_value(combined_text, r'(?:alt|alamine aminotransferase)\s*[:=]\s*([0-9.]+)')
         if alt_e is not None:
             alt_val = alt_e
             labs_extracted = True
-            
+
         ast_e = extract_lab_value(combined_text, r'(?:ast|aspartate aminotransferase)\s*[:=]\s*([0-9.]+)')
         if ast_e is not None:
             ast_val = ast_e
             labs_extracted = True
-            
+
     labs_source = "clinical_history" if labs_extracted else "baseline_fallback"
 
     # 3. Demographics & Lifestyle
     gender_str = (patient.gender or "female").strip().lower()
     is_male_num = 1 if gender_str in ["male", "m"] else 0
-    
+
     # Calculate age
     age = 45
     dob_str = patient.dob
@@ -549,7 +551,6 @@ async def predict_organ_health(
                 pass
 
     # 4. Predict Organ Risks
-    risks = {}
 
     # --- Heart Risk ---
     if _pred.heart_model is not None:
@@ -580,7 +581,7 @@ async def predict_organ_health(
             coughing_val = 2 if resp_rate > 18.0 else 1
             sob_val = 2 if spo2 < 94.0 or resp_rate > 22.0 else 1
             chest_pain_val = 2 if spo2 < 92.0 else 1
-            
+
             lungs_input = [
                 is_male_num, age, 1, 1, 1, 1, 1, fatigue_val, 1, wheezing_val, 1, coughing_val, sob_val, 1, chest_pain_val
             ]
@@ -589,7 +590,7 @@ async def predict_organ_health(
                 X_lungs = _pred.lungs_scaler.transform(df_lungs)
             else:
                 X_lungs = df_lungs.values
-                
+
             if hasattr(_pred.lungs_model, "predict_proba"):
                 lungs_prob = float(_pred.lungs_model.predict_proba(X_lungs)[0][1])
             else:
@@ -620,7 +621,7 @@ async def predict_organ_health(
                 X_kidney = _pred.kidney_scaler.transform(df_kidney)
             else:
                 X_kidney = df_kidney.values
-                
+
             if hasattr(_pred.kidney_model, "predict_proba"):
                 kidney_prob = float(_pred.kidney_model.predict_proba(X_kidney)[0][1])
             else:
@@ -645,7 +646,7 @@ async def predict_organ_health(
                 except Exception:
                     pass
             active_val = 1 if patient.activity_level and "active" in str(patient.activity_level).lower() else 0
-            
+
             diabetes_input = [
                 float(htn_val), 0.0, float(bmi_val), 0.0,
                 0.0, float(active_val), 4.0, float(is_male_num), float(get_age_bucket(age))
@@ -683,7 +684,7 @@ async def predict_organ_health(
                 X_liver = _pred.liver_scaler.transform(df_liver)
             else:
                 X_liver = df_liver.values
-                
+
             if hasattr(_pred.liver_model, "predict_proba"):
                 liver_prob = float(_pred.liver_model.predict_proba(X_liver)[0][1])
             else:

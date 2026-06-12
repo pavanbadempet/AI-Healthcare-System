@@ -820,9 +820,9 @@ def test_list_beds(client, db_session):
     admin = _create_user(db_session, "beds_list_admin", "admin")
     admin_username = admin.username
     department = _create_department(client, admin_username, "General Dept")
-    
+
     # Create two beds
-    bed1 = client.post(
+    client.post(
         "/hospital/beds",
         headers=_auth_headers(admin_username),
         json={
@@ -831,8 +831,8 @@ def test_list_beds(client, db_session):
             "status": "available",
         },
     ).json()
-    
-    bed2 = client.post(
+
+    client.post(
         "/hospital/beds",
         headers=_auth_headers(admin_username),
         json={
@@ -841,7 +841,7 @@ def test_list_beds(client, db_session):
             "status": "occupied",
         },
     ).json()
-    
+
     # List all beds
     list_response = client.get(
         "/hospital/beds",
@@ -850,7 +850,7 @@ def test_list_beds(client, db_session):
     assert list_response.status_code == 200
     beds = list_response.json()
     assert len(beds) == 2
-    
+
     # List available beds only
     avail_response = client.get(
         "/hospital/beds?status=available",
