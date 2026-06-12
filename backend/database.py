@@ -23,9 +23,18 @@ def _load_database_url() -> str:
 
 def set_sqlite_pragma(dbapi_connection, connection_record):
     cursor = dbapi_connection.cursor()
-    cursor.execute("PRAGMA journal_mode=WAL")
-    cursor.execute("PRAGMA synchronous=NORMAL")  # Balance ACID with performance in WAL
-    cursor.execute("PRAGMA foreign_keys=ON")  # Strict OLTP data integrity
+    try:
+        cursor.execute("PRAGMA journal_mode=WAL")
+        cursor.execute("PRAGMA synchronous=NORMAL")
+    except Exception:
+        try:
+            cursor.execute("PRAGMA journal_mode=DELETE")
+        except Exception:
+            pass
+    try:
+        cursor.execute("PRAGMA foreign_keys=ON")
+    except Exception:
+        pass
     cursor.close()
 
 
