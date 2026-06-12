@@ -41,9 +41,9 @@ describe('HospitalSetupPanel', () => {
         department_type: 'Emergency',
         location: 'Ground',
       });
+      expect(screen.getByText('Department created successfully.')).toBeInTheDocument();
+      expect(screen.getAllByText('Emergency').length).toBeGreaterThan(0);
     });
-    expect(screen.getByText('Department created successfully.')).toBeInTheDocument();
-    expect(screen.getAllByText('Emergency').length).toBeGreaterThan(0);
   });
 
   it('creates a bed for the selected department', async () => {
@@ -65,7 +65,7 @@ describe('HospitalSetupPanel', () => {
         ward: 'ICU',
         status: 'available',
       });
+      expect(screen.getByText('Bed registered successfully.')).toBeInTheDocument();
     });
-    expect(screen.getByText('Bed registered successfully.')).toBeInTheDocument();
   });
 });
