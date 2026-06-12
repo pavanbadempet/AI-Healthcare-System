@@ -100,11 +100,13 @@ def test_base_agent_github_actions():
 async def test_clinical_audit_agent_no_data(db_session):
     """Verify ClinicalAuditAgent behavior on empty database."""
     agent = ClinicalAuditAgent(db_session, "Empty DB Auditor")
-    report = await agent.run(hours=24, dry_run=True)
+    report, report_json = await agent.run(hours=24, dry_run=True)
     
     assert "No high-risk patients or critical alerts found" in report
     assert agent.status == "completed"
     assert len(agent.steps) == 5  # Init, Fetch, Filter, Skip, Shutdown
+    assert report_json["status"] == "completed"
+    assert report_json["audited_patients_count"] == 0
 
 
 @pytest.mark.asyncio
@@ -151,12 +153,14 @@ async def test_clinical_audit_agent_with_data(db_session):
 
     # Run agent in dry run mode (uses local mockup assessment)
     agent = ClinicalAuditAgent(db_session, "Active DB Auditor")
-    report = await agent.run(hours=24, dry_run=True)
+    report, report_json = await agent.run(hours=24, dry_run=True)
 
     assert "Jane Doe" in report
     assert "88.0%" in report
     assert "Critical Hypoxia" in report
-    assert "[DRY RUN ASSESSMENT]" in report
+    assert "[HEURISTIC LOCAL ASSESSMENT" in report
     assert agent.status == "completed"
     assert agent.input_tokens_estimated > 0
     assert agent.output_tokens_estimated > 0
+    assert report_json["audited_patients_count"] == 1
+    assert report_json["audits"][0]["patient_name"] == "Jane Doe"

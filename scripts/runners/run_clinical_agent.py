@@ -32,25 +32,36 @@ async def main():
     # Initialize DB session
     db = SessionLocal()
     try:
+        import json
         agent = ClinicalAuditAgent(db, name="Clinical Deterioration Audit Agent")
         
         # Run agent
-        report_md = await agent.run(hours=args.hours, dry_run=args.dry_run)
+        report_md, report_json = await agent.run(hours=args.hours, dry_run=args.dry_run)
         
-        # Save output report
+        # Save output reports (Markdown & JSON)
         timestamp = int(time.time())
-        report_file_name = f"clinical_audit_report_{timestamp}.md"
-        report_path = os.path.join(args.output_dir, report_file_name)
         
+        # Save Markdown Report
+        report_path = os.path.join(args.output_dir, f"clinical_audit_report_{timestamp}.md")
         with open(report_path, "w", encoding="utf-8") as f:
             f.write(report_md)
         print(f"Success: Clinical audit report written to: {report_path}")
 
-        # Also write a fixed path report for GHA or downstream scripts to find easily
         latest_path = os.path.join(args.output_dir, "latest_clinical_audit.md")
         with open(latest_path, "w", encoding="utf-8") as f:
             f.write(report_md)
         print(f"Success: Latest clinical audit link updated at: {latest_path}")
+
+        # Save JSON Report (for SaaS / Billing / Downstream API integration)
+        json_path = os.path.join(args.output_dir, f"clinical_audit_report_{timestamp}.json")
+        with open(json_path, "w", encoding="utf-8") as f:
+            json.dump(report_json, f, indent=2)
+        print(f"Success: Structured JSON audit written to: {json_path}")
+
+        latest_json_path = os.path.join(args.output_dir, "latest_clinical_audit.json")
+        with open(latest_json_path, "w", encoding="utf-8") as f:
+            json.dump(report_json, f, indent=2)
+        print(f"Success: Latest JSON audit link updated at: {latest_json_path}")
 
         # Print reasoning telemetry summary
         print("\n" + "=" * 40 + "\n")

@@ -1,6 +1,6 @@
 import asyncio
 from datetime import datetime, timedelta, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Tuple
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 
@@ -21,13 +21,11 @@ class ClinicalAuditAgent(BaseAgent):
         super().__init__(name)
         self.db = db
 
-    async def run(self, hours: int = 24, dry_run: bool = False) -> str:
+    async def run(self, hours: int = 24, dry_run: bool = False) -> Tuple[str, Dict[str, Any]]:
         """
         Runs the clinical audit agent loop.
-        1. Fetch critical vital observations and signals from the last `hours` hours.
-        2. Format context for high-risk patients.
-        3. Query AI for clinical assessment.
-        4. Construct markdown report.
+        Returns:
+            A tuple of (report_markdown: str, report_json: dict)
         """
         self.start()
         
@@ -75,7 +73,17 @@ class ClinicalAuditAgent(BaseAgent):
             self.finish("completed")
             
             report = f"# 🩺 Clinical Audit Report\n\nGenerated on: {datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')} UTC\n\n{no_data_msg}\n"
-            return report
+            report_json = {
+                "name": self.name,
+                "status": self.status,
+                "duration_seconds": self.duration,
+                "cost_usd": self.estimated_cost,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "scope_hours": hours,
+                "audited_patients_count": 0,
+                "audits": []
+            }
+            return report, report_json
 
         # 2. Perform AI assessment for each high-risk patient
         audits = []
@@ -127,9 +135,45 @@ class ClinicalAuditAgent(BaseAgent):
             self.estimate_tokens(user_prompt, is_output=False)
             
             if dry_run:
+                # Dynamic clinical heuristic fallback
+                recs = []
+                concerns = []
+                if latest:
+                    if latest.spo2 and latest.spo2 < 90:
+                        concerns.append("Severe oxygen desaturation (hypoxia)")
+                        recs.append("Immediately check/escalate oxygen flow rate and elevate head of bed.")
+                    elif latest.spo2 and latest.spo2 < 94:
+                        concerns.append("Mild hypoxia desaturation")
+                        recs.append("Monitor blood oxygen saturation closely every 1 hour.")
+                        
+                    if latest.heart_rate and latest.heart_rate > 120:
+                        concerns.append("Severe tachycardia (elevated pulse)")
+                        recs.append("Request a 12-lead ECG, assess hydration, check serum electrolytes.")
+                    elif latest.heart_rate and latest.heart_rate > 100:
+                        concerns.append("Mild tachycardia")
+                        recs.append("Assess patient for pain, anxiety, or fever.")
+                        
+                    if latest.temperature_c and latest.temperature_c > 38.5:
+                        concerns.append("High fever (pyrexia)")
+                        recs.append("Administer antipyretics as ordered, obtain blood cultures if indicated.")
+                        
+                    if latest.respiratory_rate and latest.respiratory_rate > 24:
+                        concerns.append("Tachypnea (rapid breathing)")
+                        recs.append("Assess work of breathing, monitor respiratory fatigue.")
+
+                if not concerns:
+                    concerns.append("Borderline vital fluctuations or anomaly reports.")
+                    recs.append("Re-evaluate vitals in 2 hours and review medication list.")
+                
+                # Format recommendations list
+                recs_str = "\n".join([f"{idx+1}. {r}" for idx, r in enumerate(recs[:3])])
+                if len(recs) < 3:
+                    recs_str += f"\n{len(recs)+1}. Continue continuous vitals tracking."
+
                 ai_response = (
-                    f"**[DRY RUN ASSESSMENT]** Patient {patient_name} shows warning signs. "
-                    f"Recommend monitoring oxygen levels and calling bedside nurse."
+                    f"**[HEURISTIC LOCAL ASSESSMENT (DRY RUN)]**\n"
+                    f"Clinical Deterioration Likelihood: Elevated. Major Concerns: {', '.join(concerns)}\n\n"
+                    f"Priority Clinical Recommendations:\n{recs_str}"
                 )
             else:
                 try:
@@ -141,6 +185,7 @@ class ClinicalAuditAgent(BaseAgent):
             self.estimate_tokens(ai_response, is_output=True)
             
             audits.append({
+                "patient_id": patient_id,
                 "patient_name": patient_name,
                 "latest_vitals": vitals_str,
                 "alerts": signals_str,
@@ -178,4 +223,14 @@ class ClinicalAuditAgent(BaseAgent):
         report_md.append("\n*Disclaimer: AI-generated health suggestions are for auditing support only. Always consult a qualified clinician for patient care.*")
         
         self.finish("completed")
-        return "\n".join(report_md)
+        report_json = {
+            "name": self.name,
+            "status": self.status,
+            "duration_seconds": self.duration,
+            "cost_usd": self.estimated_cost,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "scope_hours": hours,
+            "audited_patients_count": len(audits),
+            "audits": audits
+        }
+        return "\n".join(report_md), report_json
