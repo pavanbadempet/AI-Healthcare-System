@@ -62,6 +62,7 @@ export default function MobileDrawer({
             onClose();
             setCommandMenuOpen(true);
           }}
+          aria-label="Open quick search"
           className="w-full flex items-center justify-between p-2.5 rounded-lg border border-[var(--border)] bg-white/[0.02] text-[var(--text-secondary)] mb-6 text-xs text-left"
         >
           <span className="flex items-center gap-2">
