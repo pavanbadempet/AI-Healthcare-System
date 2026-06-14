@@ -1,17 +1,18 @@
+import logging
+import os
+import re
 from datetime import datetime, timedelta, timezone
-from typing import Optional, List, Dict, Any
+from typing import Any, Dict, List, Optional
+
+from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-import os
-import re
-import logging
-from dotenv import load_dotenv
+from sqlalchemy.orm import Session
 
-from . import audit, models, database, schemas
+from . import audit, database, models, schemas
 
 # Initialize Logger
 logger = logging.getLogger(__name__)
@@ -98,7 +99,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-        
+
     user = db.query(models.User).filter(models.User.username == username).first()
     if user is None:
         raise credentials_exception
@@ -134,7 +135,7 @@ def signup(user: schemas.UserCreate, db: Session = Depends(database.get_db)) -> 
         # Password Complexity Check (Regex: 8+ chars, letters + numbers)
         if not re.match(r"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$", user.password):
             raise HTTPException(
-                status_code=400, 
+                status_code=400,
                 detail="Password must be at least 8 characters and contain both letters and numbers."
             )
 
@@ -142,7 +143,7 @@ def signup(user: schemas.UserCreate, db: Session = Depends(database.get_db)) -> 
         db_user = db.query(models.User).filter(models.User.username == user.username).first()
         if db_user:
             raise HTTPException(status_code=400, detail="Username already registered")
-        
+
         # Check Duplicate Email
         if user.email:
              db_email = db.query(models.User).filter(models.User.email == user.email).first()
@@ -150,9 +151,9 @@ def signup(user: schemas.UserCreate, db: Session = Depends(database.get_db)) -> 
                  raise HTTPException(status_code=400, detail="Email already registered")
 
         hashed_password = get_password_hash(user.password)
-        
+
         new_user = models.User(
-            username=user.username, 
+            username=user.username,
             hashed_password=hashed_password,
             email=user.email,
             full_name=user.full_name,
@@ -165,7 +166,7 @@ def signup(user: schemas.UserCreate, db: Session = Depends(database.get_db)) -> 
         db.commit()
         db.refresh(new_user)
         return new_user
-        
+
     except HTTPException as he:
         raise he
     except IntegrityError:
@@ -185,15 +186,15 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
         user = db.query(models.User).filter(models.User.username == form_data.username).first()
         if not user:
             raise HTTPException(status_code=401, detail="Incorrect username or password")
-        
+
         if not verify_password(form_data.password, user.hashed_password):
             raise HTTPException(status_code=401, detail="Incorrect username or password")
-            
+
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
             data={"sub": user.username}, expires_delta=access_token_expires
         )
-        
+
         audit.record_audit_event(
             db,
             actor_user_id=user.id,
@@ -205,7 +206,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
                 "occurred_at": datetime.now(timezone.utc),
             },
         )
-            
+
         return {"access_token": access_token, "token_type": "bearer"}
     except HTTPException:
         raise
@@ -239,19 +240,19 @@ def get_user_profile(current_user: models.User = Depends(get_current_user)) -> D
 
 @router.put("/profile")
 def update_user_profile(
-    profile: schemas.UserProfileUpdate, 
-    current_user: models.User = Depends(get_current_user), 
+    profile: schemas.UserProfileUpdate,
+    current_user: models.User = Depends(get_current_user),
     db: Session = Depends(database.get_db)
 ) -> Dict[str, Any]:
     """Update user profile fields."""
-    
+
     updates = profile.model_dump(exclude_unset=True)
     for field, value in updates.items():
          if field == 'allow_data_collection':
              current_user.allow_data_collection = 1 if value else 0
          elif hasattr(current_user, field):
              setattr(current_user, field, value)
-    
+
     db.commit()
     db.refresh(current_user)
     if updates:
@@ -265,10 +266,10 @@ def update_user_profile(
                 "updated_fields": sorted(updates.keys()),
             },
         )
-    
+
     return {
-        "status": "success", 
-        "message": "Profile updated", 
+        "status": "success",
+        "message": "Profile updated",
         "user": get_user_profile(current_user)
     }
 
@@ -288,12 +289,12 @@ def get_user_full_details(user_id: int, current_user: models.User = Depends(get_
     """Admin only: Get full user details including health records and chat logs (Audit Logged)."""
     if not is_admin(current_user):
         raise HTTPException(status_code=403, detail="Admin access only")
-    
+
     user = db.query(models.User).filter(models.User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     _ensure_admin_can_access_user(current_user, user)
-    
+
     audit.record_audit_event(
         db,
         actor_user_id=current_user.id,
@@ -306,15 +307,126 @@ def get_user_full_details(user_id: int, current_user: models.User = Depends(get_
     # Eagerly load the collections so they can be read post-expunge
     _ = user.health_records
     _ = user.chat_logs
-    
+
     # Detach from session so we don't accidentally commit redactions to OLTP DB
     db.expunge(user)
-    
+
     if not user.allow_data_collection:
         # Redact Sensitive Data for privacy opted-out users
-        user.health_records = [] 
+        user.health_records = []
         user.chat_logs = []
         user.about_me = "[REDACTED - PRIVACY RESTRICTED]"
         user.existing_ailments = "[REDACTED]"
-        
+
     return user
+
+
+def create_reset_token(email: str, username: str) -> str:
+    """Create a 15-minute password reset JWT token."""
+    expire = datetime.now(timezone.utc) + timedelta(minutes=15)
+    to_encode = {
+        "sub": username,
+        "email": email,
+        "action": "reset_password",
+        "exp": expire
+    }
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+
+def verify_reset_token(token: str, db: Session) -> Optional[models.User]:
+    """Verify reset token and return matching User."""
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        action: str = payload.get("action")
+        if username is None or action != "reset_password":
+            return None
+    except JWTError:
+        return None
+    return db.query(models.User).filter(models.User.username == username).first()
+
+
+@router.post("/forgot-password")
+def forgot_password(
+    request: schemas.ForgotPasswordRequest,
+    db: Session = Depends(database.get_db)
+) -> dict[str, str]:
+    """
+    Generate a password reset link and log/simulate sending it.
+    Always returns a generic success message to prevent user/email enumeration.
+    """
+    generic_success = {
+        "status": "success",
+        "message": "If this email is registered, a password reset link has been sent."
+    }
+    
+    email = request.email.strip().lower()
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if not user:
+        return generic_success
+
+    # Generate token
+    token = create_reset_token(email=email, username=user.username)
+    
+    # Construct reset link
+    frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:3000")
+    reset_link = f"{frontend_url.rstrip('/')}/reset-password?token={token}"
+    
+    # Send email (which will simulate or send real SMTP)
+    from .email_service import send_password_reset
+    send_password_reset(to_email=user.email, username=user.username, reset_link=reset_link)
+    
+    # Print to logs for testing/simulation
+    logger.info("=============================================")
+    logger.info("   SIMULATED PASSWORD RESET LINK")
+    logger.info(f"   User: {user.username} ({user.email})")
+    logger.info(f"   Link: {reset_link}")
+    logger.info("=============================================")
+    
+    return generic_success
+
+
+@router.post("/reset-password")
+def reset_password(
+    request: schemas.ResetPasswordRequest,
+    db: Session = Depends(database.get_db)
+) -> dict[str, str]:
+    """
+    Reset user password using a valid reset token.
+    """
+    user = verify_reset_token(request.token, db)
+    if not user:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid or expired reset token"
+        )
+        
+    # Enforce password complexity
+    if not re.match(r"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$", request.new_password):
+        raise HTTPException(
+            status_code=400,
+            detail="Password must be at least 8 characters and contain both letters and numbers."
+        )
+
+    # Hash new password
+    hashed_password = get_password_hash(request.new_password)
+    user.hashed_password = hashed_password
+    db.commit()
+    db.refresh(user)
+    
+    # Audit event
+    audit.record_audit_event(
+        db,
+        actor_user_id=user.id,
+        target_user_id=user.id,
+        action="PASSWORD_RESET_SUCCESS",
+        details={
+            "resource_type": "user_auth",
+            "outcome": "success",
+            "occurred_at": datetime.now(timezone.utc),
+        },
+    )
+    
+    return {"status": "success", "message": "Password has been reset successfully"}
+
