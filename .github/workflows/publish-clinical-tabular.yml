@@ -1,0 +1,58 @@
+name: Publish clinical-tabular to PyPI
+
+on:
+  push:
+    tags:
+      - "clinical-tabular-v*"
+
+permissions:
+  contents: read
+  id-token: write  # Required for trusted publishing
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        working-directory: packages/clinical-tabular
+        run: |
+          pip install -e ".[all]"
+      - name: Run tests
+        working-directory: packages/clinical-tabular
+        run: |
+          pytest tests/ -v --tb=short
+
+  publish:
+    name: Publish to PyPI
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/clinical-tabular
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install build tools
+        run: pip install build twine
+      - name: Build package
+        working-directory: packages/clinical-tabular
+        run: python -m build
+      - name: Check package
+        working-directory: packages/clinical-tabular
+        run: twine check dist/*
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: packages/clinical-tabular/dist/
