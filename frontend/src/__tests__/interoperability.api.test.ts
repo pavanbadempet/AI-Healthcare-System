@@ -1,7 +1,7 @@
 import { exportDoctorPatientFhirBundle, setTokenGetter } from '@/lib/api';
 
 describe('interoperability API helpers', () => {
-  const fetchMock = jest.fn();
+  const fetchMock = vi.fn();
 
   beforeEach(() => {
     fetchMock.mockReset();
@@ -24,7 +24,7 @@ describe('interoperability API helpers', () => {
     await expect(exportDoctorPatientFhirBundle(42)).resolves.toEqual(payload);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://127.0.0.1:8000/interop/doctor/patients/42/fhir-bundle',
+      'http://127.0.0.1:8000/v1/interop/doctor/patients/42/fhir-bundle',
       expect.objectContaining({
         headers: expect.objectContaining({
           Authorization: 'Bearer doctor-token',

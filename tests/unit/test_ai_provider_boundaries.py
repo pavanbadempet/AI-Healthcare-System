@@ -1,12 +1,11 @@
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from PIL import Image
 
 from backend import ollama_routes, rag, vision_service
 from backend.prompt_registry import get_prompt
-
 
 ROOT = Path(__file__).resolve().parents[2]
 

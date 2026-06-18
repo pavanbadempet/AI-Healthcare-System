@@ -1,7 +1,9 @@
 import warnings
+
 warnings.filterwarnings("ignore", message=".*google.generativeai.*", category=FutureWarning)
 
 import os
+
 os.environ["TESTING"] = "1"
 
 import pytest
@@ -24,6 +26,7 @@ engine = create_engine(
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 from backend.prediction import initialize_models
+
 initialize_models()
 
 
@@ -79,7 +82,7 @@ def client(db_session):
     app.dependency_overrides[get_db] = override_get_db
     # Initialize models (will use mocks if TESTING=1)
     initialize_models()
-    
+
     with TestClient(app, base_url="http://127.0.0.1") as c:
         yield c
     app.dependency_overrides.clear()

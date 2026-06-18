@@ -409,3 +409,23 @@ def test_facility_admin_cannot_claim_unassigned_user(client, db_session):
     assert response.status_code == 403
     assert response.json()["detail"] == "Admin resource is outside the user's facility"
     assert db_session.get(models.User, unassigned_user.id).facility_id is None
+
+
+def test_get_analytics_report_success(client, db_session):
+    headers = _auth_headers(db_session, "analytics_admin", "admin")
+
+    response = client.get("/admin/analytics/report", headers=headers)
+    assert response.status_code == 200
+    payload = response.json()
+    assert "total_records_analyzed" in payload
+    assert isinstance(payload["total_records_analyzed"], int)
+    assert "pipeline_execution" in payload
+    assert "status" in payload["pipeline_execution"]
+
+
+def test_get_analytics_report_forbidden_for_patient(client, db_session):
+    headers = _auth_headers(db_session, "analytics_patient", "patient")
+
+    response = client.get("/admin/analytics/report", headers=headers)
+    assert response.status_code == 403
+

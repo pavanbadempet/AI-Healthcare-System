@@ -1,32 +1,35 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { ModelManager } from '@/components/chat/ModelManager';
 
-const fetchMock = jest.fn();
+const fetchMock = vi.fn();
 let authState = {
   token: 'admin-token',
   user: { username: 'admin_user', role: 'admin' },
 };
 
-jest.mock('@/lib/auth', () => ({
+vi.mock('@/lib/auth', () => ({
   useAuthStore: () => authState,
 }));
 
-jest.mock('@/lib/webllm', () => ({
+vi.mock('@/lib/webllm', () => ({
   isWebGPUSupported: () => false,
   WEBLLM_MODELS: [],
-  loadModel: jest.fn(),
+  loadModel: vi.fn(),
 }));
 
 function renderModelManager() {
   return render(
     <ModelManager
-      onClose={jest.fn()}
-      onOllamaSelect={jest.fn()}
-      onWebLLMSelect={jest.fn()}
-      onWebLLMUnload={jest.fn()}
+      onClose={vi.fn()}
+      onOllamaSelect={vi.fn()}
+      onWebLLMSelect={vi.fn()}
+      onWebLLMUnload={vi.fn()}
+      onWebLLMLoad={vi.fn()}
       currentOllamaModel=""
       currentWebLLMModel={null}
       webllmActive={false}
+      webllmLoading={null}
+      webllmProgress={null}
     />
   );
 }
@@ -131,7 +134,7 @@ describe('ModelManager admin model actions', () => {
   it('sends the bearer token when an admin deletes an installed Ollama model', async () => {
     mockDownloadedModelFetches();
     fetchMock.mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({ success: true }) });
-    jest.spyOn(window, 'confirm').mockReturnValueOnce(true);
+    vi.spyOn(window, 'confirm').mockReturnValueOnce(true);
 
     renderModelManager();
 

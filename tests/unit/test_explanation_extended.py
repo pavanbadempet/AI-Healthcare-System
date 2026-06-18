@@ -2,13 +2,12 @@
 Extended tests for backend/explanation.py — core_ai-backed explanation service.
 Tests response parsing, error handling, and edge cases.
 """
-import pytest
-from fastapi.testclient import TestClient
+from unittest.mock import AsyncMock, patch
+
 from fastapi import FastAPI
-from unittest.mock import patch, AsyncMock
+from fastapi.testclient import TestClient
 
 from backend import auth, explanation, models
-
 
 # Create test app
 app = FastAPI()

@@ -10,28 +10,28 @@ let mockAuthUser = {
   role: 'doctor',
 };
 
-jest.mock('@/lib/auth', () => ({
+vi.mock('@/lib/auth', () => ({
   useAuthStore: () => ({
     user: mockAuthUser,
   }),
 }));
 
-jest.mock('@/lib/api', () => ({
-  getDoctorPatientMonitoringSignals: jest.fn(),
-  resolveMonitoringSignal: jest.fn(),
+vi.mock('@/lib/api', () => ({
+  getDoctorPatientMonitoringSignals: vi.fn(),
+  resolveMonitoringSignal: vi.fn(),
 }));
 
 describe('PatientMonitoringSignals', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockAuthUser = {
+    vi.clearAllMocks();
+    Object.assign(mockAuthUser, {
       id: 7,
       username: 'doctor_user',
       email: 'doctor@example.com',
       full_name: 'Doctor User',
       role: 'doctor',
-    };
-    (getDoctorPatientMonitoringSignals as jest.Mock)
+    });
+    (getDoctorPatientMonitoringSignals as vi.Mock)
       .mockResolvedValueOnce({
         patient_id: 42,
         latest_vitals: [],
@@ -55,7 +55,7 @@ describe('PatientMonitoringSignals', () => {
         open_signals: [],
         clinical_safety_note: 'Signals highlight patterns for clinician review and are not final clinical conclusions.',
       });
-    (resolveMonitoringSignal as jest.Mock).mockResolvedValue({
+    (resolveMonitoringSignal as vi.Mock).mockResolvedValue({
       id: 11,
       patient_id: 42,
       signal_type: 'oxygen_saturation',
@@ -80,17 +80,21 @@ describe('PatientMonitoringSignals', () => {
     await waitFor(() => {
       expect(getDoctorPatientMonitoringSignals).toHaveBeenCalledTimes(2);
     });
-    expect(await screen.findByText(/No open monitoring signals/i)).toBeInTheDocument();
+    expect(await screen.findByText(/No active alarm flags/i)).toBeInTheDocument();
   });
 
   it('does not render the doctor signal panel for patient users', () => {
-    mockAuthUser = {
+    // Clear properties to prevent leftovers, then assign
+    for (const key in mockAuthUser) {
+      delete (mockAuthUser as any)[key];
+    }
+    Object.assign(mockAuthUser, {
       id: 42,
       username: 'patient_user',
       email: 'patient@example.com',
       full_name: 'Patient User',
       role: 'patient',
-    };
+    });
 
     const { container } = render(<PatientMonitoringSignals patientId={42} refreshIntervalMs={0} />);
 

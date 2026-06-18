@@ -1,14 +1,15 @@
-import requests
-import uuid
 import sys
 import time
+import uuid
+
+import requests
 
 BASE_URL = "http://127.0.0.1:8000"
 
 def run_checks():
     print("[INFO] AIO SYSTEM HEALTH CHECK")
     print("==========================")
-    
+
     # 1. Check Root
     try:
         res = requests.get(BASE_URL)
@@ -26,7 +27,7 @@ def run_checks():
     run_id = str(uuid.uuid4())[:8]
     username = f"bot_{run_id}"
     password = "TestUser123!"
-    
+
     print(f"[INFO] Creating Test User: {username}")
     payload = {
         "username": username,
@@ -35,7 +36,7 @@ def run_checks():
         "full_name": "Health Bot",
         "dob": "2000-01-01"
     }
-    
+
     res = requests.post(f"{BASE_URL}/signup", json=payload)
     if res.status_code == 200:
         print("[OK] [Auth] Signup Successful")
@@ -73,7 +74,7 @@ def run_checks():
     start = time.time()
     res = requests.post(f"{BASE_URL}/chat", json=chat_payload, headers=headers)
     duration = time.time() - start
-    
+
     if res.status_code == 200:
         print(f"[OK] [AI] Chat Response Received in {duration:.2f}s")
         response_text = res.json()['response'][:50]

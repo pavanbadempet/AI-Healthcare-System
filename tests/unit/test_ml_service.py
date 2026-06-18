@@ -2,9 +2,7 @@
 Tests for backend/ml_service.py to increase coverage.
 Tests the legacy MLService class methods.
 """
-import pytest
-from unittest.mock import patch, MagicMock
-import numpy as np
+from unittest.mock import patch
 
 from backend import ml_service as ml_service_module
 from backend.ml_service import MLService, ml_service
@@ -12,11 +10,11 @@ from backend.ml_service import MLService, ml_service
 
 class TestMLServiceDiabetes:
     """Tests for MLService.predict_diabetes method."""
-    
+
     def test_predict_diabetes_success(self):
         """Test successful diabetes prediction via MLService."""
         mock_result = {"prediction": "High Risk", "raw": 1}
-        
+
         with patch("backend.ml_service.prediction.predict_diabetes", return_value=mock_result):
             service = MLService()
             result = service.predict_diabetes(
@@ -29,13 +27,13 @@ class TestMLServiceDiabetes:
                 hba1c_level=6.5,
                 blood_glucose_level=150
             )
-            
+
             assert result == "High Risk"
-    
+
     def test_predict_diabetes_female(self):
         """Test diabetes prediction for female."""
         mock_result = {"prediction": "Low Risk", "raw": 0}
-        
+
         with patch("backend.ml_service.prediction.predict_diabetes", return_value=mock_result):
             service = MLService()
             result = service.predict_diabetes(
@@ -48,16 +46,16 @@ class TestMLServiceDiabetes:
                 hba1c_level=5.5,
                 blood_glucose_level=100
             )
-            
+
             assert result == "Low Risk"
-    
+
     def test_predict_diabetes_smoking_mapping(self):
         """Test all smoking history mappings."""
         mock_result = {"prediction": "Low Risk", "raw": 0}
-        
+
         with patch("backend.ml_service.prediction.predict_diabetes", return_value=mock_result):
             service = MLService()
-            
+
             # Test different smoking values
             for smoking in ["never", "current", "former", "ever", "not current", "unknown"]:
                 result = service.predict_diabetes(
@@ -65,7 +63,7 @@ class TestMLServiceDiabetes:
                     smoking_history=smoking, bmi=25.0, hba1c_level=5.0, blood_glucose_level=100
                 )
                 assert result is not None
-    
+
     def test_predict_diabetes_exception(self):
         """Test error handling in diabetes prediction."""
         with patch("backend.ml_service.prediction.predict_diabetes", side_effect=Exception("Model error")):
@@ -74,7 +72,7 @@ class TestMLServiceDiabetes:
                 gender="male", age=50, hypertension=1, heart_disease=0,
                 smoking_history="never", bmi=28.0, hba1c_level=7.0, blood_glucose_level=200
             )
-            
+
             assert "Error" in result
 
     def test_predict_diabetes_exception_hides_sensitive_details(self, caplog):
@@ -97,11 +95,11 @@ class TestMLServiceDiabetes:
 
 class TestMLServiceHeart:
     """Tests for MLService.predict_heart_disease method."""
-    
+
     def test_predict_heart_success(self):
         """Test successful heart prediction."""
         mock_result = {"prediction": "Heart Disease Detected", "raw": 1}
-        
+
         with patch("backend.ml_service.prediction.predict_heart", return_value=mock_result):
             service = MLService()
             result = service.predict_heart_disease(
@@ -109,9 +107,9 @@ class TestMLServiceHeart:
                 fbs=1, restecg=0, thalach=150, exang=0, oldpeak=1.5,
                 slope=1, ca=0, thal=2
             )
-            
+
             assert result == "Heart Disease Detected"
-    
+
 
     def test_predict_heart_exception(self):
         """Test error handling in heart prediction."""
@@ -122,7 +120,7 @@ class TestMLServiceHeart:
                 fbs=1, restecg=0, thalach=150, exang=0, oldpeak=1.5,
                 slope=1, ca=0, thal=2
             )
-            
+
             assert "Error" in result
 
     def test_predict_heart_exception_hides_sensitive_details(self, caplog):
@@ -146,11 +144,11 @@ class TestMLServiceHeart:
 
 class TestMLServiceLiver:
     """Tests for MLService.predict_liver_disease method."""
-    
+
     def test_predict_liver_success(self):
         """Test successful liver prediction."""
         mock_result = {"prediction": "Healthy Liver", "raw": 0}
-        
+
         with patch("backend.ml_service.prediction.predict_liver", return_value=mock_result):
             service = MLService()
             result = service.predict_liver_disease(
@@ -158,13 +156,13 @@ class TestMLServiceLiver:
                 alkaline_phosphotase=150, alamine_aminotransferase=25,
                 albumin_globulin_ratio=1.2
             )
-            
+
             assert result == "Healthy Liver"
-    
+
     def test_predict_liver_female(self):
         """Test liver prediction for female."""
         mock_result = {"prediction": "Liver Disease", "raw": 1}
-        
+
         with patch("backend.ml_service.prediction.predict_liver", return_value=mock_result):
             service = MLService()
             result = service.predict_liver_disease(
@@ -172,9 +170,9 @@ class TestMLServiceLiver:
                 alkaline_phosphotase=300, alamine_aminotransferase=80,
                 albumin_globulin_ratio=0.7
             )
-            
+
             assert result == "Liver Disease"
-    
+
     def test_predict_liver_exception(self):
         """Test error handling in liver prediction."""
         with patch("backend.ml_service.prediction.predict_liver", side_effect=Exception("Liver model error")):
@@ -184,7 +182,7 @@ class TestMLServiceLiver:
                 alkaline_phosphotase=200, alamine_aminotransferase=40,
                 albumin_globulin_ratio=1.0
             )
-            
+
             assert "Error" in result
 
     def test_predict_liver_exception_hides_sensitive_details(self, caplog):
@@ -208,7 +206,7 @@ class TestMLServiceLiver:
 
 class TestMLServiceSingleton:
     """Tests for the module-level ml_service singleton."""
-    
+
     def test_singleton_exists(self):
         """Test that ml_service singleton is created."""
         assert ml_service is not None

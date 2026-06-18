@@ -1,6 +1,6 @@
 import { getAdminPatientCareEventFeed, getDoctorPatientCareEventFeed, getPatientCareEventFeed, setTokenGetter } from '@/lib/api';
 
-const fetchMock = jest.fn();
+const fetchMock = vi.fn();
 
 beforeEach(() => {
   fetchMock.mockReset();
@@ -79,7 +79,7 @@ describe('patient care timeline API adapter', () => {
 
     expect(fetchMock.mock.calls).toEqual([
       [
-        'http://127.0.0.1:8000/events/doctor/patients/42/feed?limit=25',
+        'http://127.0.0.1:8000/v1/events/doctor/patients/42/feed?limit=25',
         {
           headers: {
             'Content-Type': 'application/json',
@@ -88,7 +88,7 @@ describe('patient care timeline API adapter', () => {
         },
       ],
       [
-        'http://127.0.0.1:8000/events/admin/patients/42/feed?limit=25',
+        'http://127.0.0.1:8000/v1/events/admin/patients/42/feed?limit=25',
         {
           headers: {
             'Content-Type': 'application/json',
@@ -97,7 +97,7 @@ describe('patient care timeline API adapter', () => {
         },
       ],
       [
-        'http://127.0.0.1:8000/events/patient/feed?limit=10',
+        'http://127.0.0.1:8000/v1/events/patient/feed?limit=10',
         {
           headers: {
             'Content-Type': 'application/json',

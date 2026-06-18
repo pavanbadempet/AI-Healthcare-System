@@ -4,7 +4,6 @@ import pytest
 
 from backend import auth, models
 
-
 BACKUP_ENV_KEYS = (
     "BACKUP_ENABLED",
     "BACKUP_PROVIDER",

@@ -1,17 +1,18 @@
 import { act, render, screen, waitFor } from '@testing-library/react';
 import OperationsCockpit from '@/components/operations/OperationsCockpit';
 import { getAdminOperationsCockpit } from '@/lib/api';
+import { ApiConnectionError } from '@/lib/apiErrors';
 
 let mockAuthUser = { username: 'admin_user', full_name: 'Admin User', role: 'admin' };
 
-jest.mock('@/lib/auth', () => ({
+vi.mock('@/lib/auth', () => ({
   useAuthStore: () => ({
     user: mockAuthUser,
   }),
 }));
 
-jest.mock('@/lib/api', () => ({
-  getAdminOperationsCockpit: jest.fn(() => Promise.resolve({
+vi.mock('@/lib/api', () => ({
+  getAdminOperationsCockpit: vi.fn(() => Promise.resolve({
     hospital: { open_encounters: 5, active_admissions: 2, open_orders: 8, total_beds: 20, occupied_beds: 12 },
     monitoring: { open_signals: 3, total_vital_observations: 15 },
     diagnostics: { pending_review: 4, abnormal_results: 1, total_results: 7 },
@@ -25,8 +26,9 @@ jest.mock('@/lib/api', () => ({
 }));
 
 beforeEach(() => {
-  jest.clearAllMocks();
-  mockAuthUser = { username: 'admin_user', full_name: 'Admin User', role: 'admin' };
+  vi.clearAllMocks();
+  for (const key in mockAuthUser) delete (mockAuthUser as any)[key];
+    Object.assign(mockAuthUser, { username: 'admin_user', full_name: 'Admin User', role: 'admin' });
 });
 
 async function renderCockpit() {
@@ -42,10 +44,10 @@ describe('OperationsCockpit', () => {
     await renderCockpit();
 
     await waitFor(() => {
-      expect(screen.getByText('Hospital Operations Cockpit')).toBeInTheDocument();
+      expect(screen.getByText('Operational Dashboard Cockpit')).toBeInTheDocument();
     });
     expect(getAdminOperationsCockpit).toHaveBeenCalledTimes(1);
-    expect(screen.getByText('Admin command view')).toBeInTheDocument();
+    expect(screen.getByText('Admin Command Console')).toBeInTheDocument();
     expect(screen.getByText('5')).toBeInTheDocument();
     expect(screen.getByText('Open encounters')).toBeInTheDocument();
     expect(screen.getByText('INR 12,500')).toBeInTheDocument();
@@ -55,13 +57,27 @@ describe('OperationsCockpit', () => {
   });
 
   it('shows a doctor care-team cockpit without calling admin-only endpoints', async () => {
-    mockAuthUser = { username: 'doctor_user', full_name: 'Doctor User', role: 'doctor' };
+    for (const key in mockAuthUser) delete (mockAuthUser as any)[key];
+    Object.assign(mockAuthUser, { username: 'doctor_user', full_name: 'Doctor User', role: 'doctor' });
 
     await renderCockpit();
 
     expect(getAdminOperationsCockpit).not.toHaveBeenCalled();
-    expect(screen.getByText('Doctor care-team view')).toBeInTheDocument();
-    expect(screen.getByText('Assigned patient panel')).toBeInTheDocument();
-    expect(screen.getByText('Clinician review remains required for every AI-assisted signal.')).toBeInTheDocument();
+    expect(screen.getByText('Doctor Care-Team Interface')).toBeInTheDocument();
+    expect(screen.getByText('Patient panel')).toBeInTheDocument();
+    expect(screen.getByText(/does not prescribe, diagnose, or override/i)).toBeInTheDocument();
+  });
+
+  it('shows buyer-safe degraded copy when operations metrics are unavailable', async () => {
+    (getAdminOperationsCockpit as vi.Mock).mockRejectedValueOnce(
+      new ApiConnectionError('/admin/operations-cockpit')
+    );
+
+    await renderCockpit();
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Backend connection unavailable. Demo data may be incomplete.'
+    );
+    expect(screen.queryByText('/admin/operations-cockpit')).not.toBeInTheDocument();
   });
 });

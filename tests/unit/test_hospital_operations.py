@@ -814,3 +814,49 @@ def test_admission_bed_must_match_admission_department(client, db_session):
 
     assert response.status_code == 400
     assert response.json()["detail"] == "Admission bed must belong to admission department"
+
+
+def test_list_beds(client, db_session):
+    admin = _create_user(db_session, "beds_list_admin", "admin")
+    admin_username = admin.username
+    department = _create_department(client, admin_username, "General Dept")
+
+    # Create two beds
+    client.post(
+        "/hospital/beds",
+        headers=_auth_headers(admin_username),
+        json={
+            "department_id": department["id"],
+            "bed_number": "G-01",
+            "status": "available",
+        },
+    ).json()
+
+    client.post(
+        "/hospital/beds",
+        headers=_auth_headers(admin_username),
+        json={
+            "department_id": department["id"],
+            "bed_number": "G-02",
+            "status": "occupied",
+        },
+    ).json()
+
+    # List all beds
+    list_response = client.get(
+        "/hospital/beds",
+        headers=_auth_headers(admin_username),
+    )
+    assert list_response.status_code == 200
+    beds = list_response.json()
+    assert len(beds) == 2
+
+    # List available beds only
+    avail_response = client.get(
+        "/hospital/beds?status=available",
+        headers=_auth_headers(admin_username),
+    )
+    assert avail_response.status_code == 200
+    avail_beds = avail_response.json()
+    assert len(avail_beds) == 1
+    assert avail_beds[0]["bed_number"] == "G-01"
