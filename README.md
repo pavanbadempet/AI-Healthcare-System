@@ -631,6 +631,27 @@ Yes. Define the `DATABASE_URL=postgresql://user:password@host:5432/dbname` envir
 
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
+## 🔄 MLOps & Data Platform Architecture
+
+The platform integrates an automated Big Data and Machine Learning Operations (MLOps) pipeline designed to process real-time streams and orchestrate model lifecycles at scale.
+
+### 1. PySpark Structured Streaming & Medallion Lakehouse
+* **Streaming Vitals Ingestion**: Employs **PySpark Structured Streaming** (`scripts/runners/run_telemetry_streaming.py`) to process high-frequency vitals and clinical measurements from simulated active ward monitors.
+* **Medallion Architecture**: Streamed telemetry is parsed and structured into a Delta Lake Medallion architecture (Raw, Silver, and Gold parquet tables) with full transaction ACID safety.
+* **Compact Scheduling**: Compacts Delta Lake tables and consolidates historical partitions daily via PySpark Cron workflows to optimize disk usage and query times.
+
+### 2. Kaggle API Serverless Cloud Retraining
+* **Automated Cloud Triggers**: Initiates model retraining loops programmatically via `scripts/runners/trigger_kaggle_retrain.py` using the **Kaggle API**.
+* **Zero Local Compute**: Offloads memory-intensive deep learning training (fitting the `FTTransformerClassifier` and `ClinicalTemporalLSTM` models) to Kaggle's serverless cloud runtimes.
+* **Credentials Injection**: Securely injects database parameters and environment credentials (`HF_TOKEN`) directly into the temporary cloud runtime cells for seamless dataset extraction.
+
+### 3. Private Hugging Face Hub Synchronization
+* **Dynamic Model Storage**: Stores large trained model binaries (`.pkl`) and scaler artifacts in a secure, private **Hugging Face Dataset** repository rather than committing large weights directly to Git.
+* **Build-Time Verification**: On container startup or build-time compilation, the model service (`backend/model_service.py`) calls the `huggingface_hub` API to check for missing or placeholder weights and dynamically downloads high-accuracy binaries in memory.
+* **Workflow Decoupling**: Decouples model training pipelines from active deployment branches, preventing Git repository bloating while ensuring 100% build reproducibility.
+
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+
 ## 📚 Related Resources
 
 - [FastAPI Framework Web Site](https://fastapi.tiangolo.com/) — Python web framework used for the backend API
