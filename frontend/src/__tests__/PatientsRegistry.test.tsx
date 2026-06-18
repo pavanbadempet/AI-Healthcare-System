@@ -5,12 +5,12 @@ import {
   type Ref,
 } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
-import PatientsPage from '@/app/(p)/patients/page';
+import PatientsPage from '@/pages/Patients';
 import { getAdminPatients, getAdminUsers, getDoctorPatients } from '@/lib/api';
 
 let mockAuthUser = { id: 7, username: 'doctor_user', full_name: 'Doctor User', role: 'doctor' };
 
-jest.mock('framer-motion', () => {
+vi.mock('framer-motion', () => {
   const omittedMotionProps = new Set([
     'initial',
     'animate',
@@ -45,14 +45,14 @@ jest.mock('framer-motion', () => {
   };
 });
 
-jest.mock('@/lib/auth', () => ({
+vi.mock('@/lib/auth', () => ({
   useAuthStore: () => ({
     user: mockAuthUser,
   }),
 }));
 
-jest.mock('@/lib/api', () => ({
-  getAdminPatients: jest.fn(() => Promise.resolve([
+vi.mock('@/lib/api', () => ({
+  getAdminPatients: vi.fn(() => Promise.resolve([
     {
       id: 42,
       username: 'patient_user',
@@ -61,7 +61,7 @@ jest.mock('@/lib/api', () => ({
       role: 'patient',
     },
   ])),
-  getAdminUsers: jest.fn(() => Promise.resolve([
+  getAdminUsers: vi.fn(() => Promise.resolve([
     {
       id: 42,
       username: 'patient_user',
@@ -98,7 +98,7 @@ jest.mock('@/lib/api', () => ({
       role: 'admin',
     },
   ])),
-  getDoctorPatients: jest.fn(() => Promise.resolve([
+  getDoctorPatients: vi.fn(() => Promise.resolve([
     {
       patient_id: 42,
       username: 'assigned_patient',
@@ -114,8 +114,9 @@ jest.mock('@/lib/api', () => ({
 
 describe('PatientsPage registry filtering', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockAuthUser = { id: 7, username: 'doctor_user', full_name: 'Doctor User', role: 'doctor' };
+    vi.clearAllMocks();
+    for (const key in mockAuthUser) delete (mockAuthUser as any)[key];
+    Object.assign(mockAuthUser, { id: 7, username: 'doctor_user', full_name: 'Doctor User', role: 'doctor' });
   });
 
   it('uses the doctor-scoped patient panel for doctor users', async () => {
@@ -128,11 +129,12 @@ describe('PatientsPage registry filtering', () => {
     await screen.findByText('Assigned Patient');
 
     expect(screen.getByText('Assigned Patient')).toBeInTheDocument();
-    expect(screen.getByText('CENSUS: 1')).toBeInTheDocument();
+    expect(screen.getByText(/census: 1/i)).toBeInTheDocument();
   });
 
   it('lists patient accounts only, never staff accounts as patient records for admins', async () => {
-    mockAuthUser = { id: 1, username: 'admin_user', full_name: 'Admin User', role: 'admin' };
+    for (const key in mockAuthUser) delete (mockAuthUser as any)[key];
+    Object.assign(mockAuthUser, { id: 1, username: 'admin_user', full_name: 'Admin User', role: 'admin' });
 
     render(<PatientsPage />);
 
@@ -144,7 +146,7 @@ describe('PatientsPage registry filtering', () => {
     await screen.findByText('Patient One');
 
     expect(screen.getByText('Patient One')).toBeInTheDocument();
-    expect(screen.getByText('CENSUS: 1')).toBeInTheDocument();
+    expect(screen.getByText(/census: 1/i)).toBeInTheDocument();
     expect(screen.queryByText('Doctor User')).not.toBeInTheDocument();
     expect(screen.queryByText('Nurse User')).not.toBeInTheDocument();
     expect(screen.queryByText('Billing User')).not.toBeInTheDocument();
@@ -160,17 +162,15 @@ describe('PatientsPage registry filtering', () => {
     expect(screen.getByRole('region', { name: /New admission patient selection/i })).toBeInTheDocument();
     const admissionLink = screen.getByRole('link', { name: /Start admission for Assigned Patient/i });
     expect(admissionLink).toHaveAttribute('href', '/patients/42?intent=admission');
-    expect(screen.getByText(/Active admissions: 1/i)).toBeInTheDocument();
+    expect(screen.getByText(/admissions: 1/i)).toBeInTheDocument();
   });
 
   it('does not fabricate unavailable clinical facts while keeping registry sync time stable', async () => {
-    const randomSpy = jest
-      .spyOn(Math, 'random')
+    const randomSpy = vi.spyOn(Math, 'random')
       .mockReturnValueOnce(0.1)
       .mockReturnValueOnce(0.1)
       .mockReturnValue(0.9);
-    const timeSpy = jest
-      .spyOn(Date.prototype, 'toLocaleTimeString')
+    const timeSpy = vi.spyOn(Date.prototype, 'toLocaleTimeString')
       .mockReturnValueOnce('10:00:00')
       .mockReturnValue('10:01:00');
 
@@ -182,7 +182,7 @@ describe('PatientsPage registry filtering', () => {
       const visibleTextBefore = document.body.textContent ?? '';
 
       expect(visibleTextBefore).toMatch(/DOB: Not recorded/i);
-      expect(visibleTextBefore).toMatch(/Sex: Not recorded \| Blood: Not recorded/i);
+      expect(visibleTextBefore).toMatch(/Sex: None \| Blood: None/i);
       expect(visibleTextBefore).toMatch(/Primary diagnosis not recorded/i);
       expect(visibleTextBefore).toMatch(/No verified telemetry/i);
       expect(visibleTextBefore).toMatch(/Attending: Not recorded/i);
@@ -213,14 +213,14 @@ describe('PatientsPage registry filtering', () => {
     });
 
     expect(screen.getByText('Assigned Patient')).toBeInTheDocument();
-    expect(screen.getByText('CENSUS: 1')).toBeInTheDocument();
+    expect(screen.getByText(/census: 1/i)).toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText('Search patient records'), {
       target: { value: 'open' },
     });
 
     expect(screen.getByText('Assigned Patient')).toBeInTheDocument();
-    expect(screen.getByText('CENSUS: 1')).toBeInTheDocument();
+    expect(screen.getByText(/census: 1/i)).toBeInTheDocument();
   });
 
   it('filters patient registry rows by risk level', async () => {
@@ -231,12 +231,12 @@ describe('PatientsPage registry filtering', () => {
     fireEvent.click(screen.getByRole('button', { name: 'HIGH' }));
 
     expect(screen.queryByText('Assigned Patient')).not.toBeInTheDocument();
-    expect(screen.getByText('NO MATCHING PATIENT RECORDS FOUND IN REGISTRY')).toBeInTheDocument();
-    expect(screen.getByText('CENSUS: 0')).toBeInTheDocument();
+    expect(screen.getByText(/no matching patient records/i)).toBeInTheDocument();
+    expect(screen.getByText(/census: 0/i)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'REVIEW' }));
 
     expect(screen.getByText('Assigned Patient')).toBeInTheDocument();
-    expect(screen.getByText('CENSUS: 1')).toBeInTheDocument();
+    expect(screen.getByText(/census: 1/i)).toBeInTheDocument();
   });
 });

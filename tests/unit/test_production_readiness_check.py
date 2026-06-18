@@ -1,17 +1,17 @@
-from pathlib import Path
 import sys
+from pathlib import Path
 
 from scripts.production_readiness_check import (
-    CheckResult,
     REQUIRED_DOCS,
-    _ensure_repo_root_on_path,
+    CheckResult,
     _build_route_check_env,
-    classify_route_auth,
+    _ensure_repo_root_on_path,
     check_duplicate_routes,
     check_object_identifier_inventory,
     check_required_docs,
     check_required_environment,
     check_route_inventory,
+    classify_route_auth,
     extract_object_identifier_params,
     find_duplicate_routes,
     run_checks,

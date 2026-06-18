@@ -1,8 +1,3 @@
-import pytest
-from fastapi.testclient import TestClient
-from backend.main import app
-import logging
-from backend.schemas import HeartInput, LiverInput, DiabetesInput
 
 
 def _auth_headers(client, username: str = "prediction_api_user") -> dict[str, str]:
@@ -119,20 +114,28 @@ def test_lung_prediction(client):
     assert "prediction" in response.json()
 
 def test_chat_context(client):
-    # Test Chat with injected medical context
+    """Chat endpoint returns a response when called with authenticated user and prediction context."""
+    from unittest.mock import patch
+
+    from langchain_core.messages import AIMessage
+
+    headers = _auth_headers(client, username="chat_context_user")
+
     payload = {
         "message": "What does my heart result mean?",
         "history": [],
         "current_context": {
             "Heart Disease": {"prediction": "Healthy Heart", "data": {"age": 25}},
-            "Diabetes": {"prediction": "High Risk", "data": {"glucose": 150}}
-        }
+            "Diabetes": {"prediction": "High Risk", "data": {"glucose": 150}},
+        },
     }
-    # Note: We need a valid token for this. 
-    # Since auth is mocked/difficult in simple test without setup, we might hit 401.
-    # However, the goal is to check schema validation.
-    # If endpoint allows no-auth or we can mock it...
-    # For now, let's skip auth if strictly required, or assume test environment disables it?
-    # Looking at code, chat_endpoint uses `get_current_user`.
-    # Setting dependency override is needed for auth.
-    pass 
+
+    mock_result = {"messages": [AIMessage(content="Your heart result looks normal. Please consult a doctor.")]}
+    with patch("backend.agent.medical_agent.invoke", return_value=mock_result):
+        response = client.post("/chat", json=payload, headers=headers)
+
+    assert response.status_code == 200
+    data = response.json()
+    assert "response" in data
+    assert isinstance(data["response"], str)
+    assert len(data["response"]) > 0

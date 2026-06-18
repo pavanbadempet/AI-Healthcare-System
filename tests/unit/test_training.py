@@ -1,12 +1,12 @@
-import pytest
-from unittest.mock import MagicMock, patch, mock_open
+from unittest.mock import mock_open, patch
+
 import pandas as pd
-import numpy as np
 
 # Import the training functions
 from backend.train_diabetes import train_diabetes_model
 from backend.train_heart import train_heart_model
 from backend.train_liver import train_liver_model
+
 
 def test_train_diabetes():
     with patch("pandas.read_parquet") as mock_read, \
@@ -14,7 +14,7 @@ def test_train_diabetes():
          patch("backend.train_diabetes.pickle.dump") as mock_pickle, \
          patch("xgboost.XGBClassifier") as mock_xgb, \
          patch("builtins.open", mock_open()):
-        
+
         df = pd.DataFrame({
             "gender": [1, 0, 1] * 10,
             "age_bucket": [5] * 30,
@@ -28,13 +28,13 @@ def test_train_diabetes():
             "diabetes": [0] * 30
         })
         mock_read.return_value = df
-        
+
         # Mock Predict to return a list (not a Mock)
         mock_xgb.return_value.predict.side_effect = lambda x: [0] * len(x)
-        
+
         # Run
         train_diabetes_model()
-        
+
         # Verify
         assert mock_read.called
         assert mock_xgb.return_value.fit.called
@@ -46,7 +46,7 @@ def test_train_heart():
          patch("backend.train_heart.pickle.dump") as mock_pickle, \
          patch("xgboost.XGBClassifier") as mock_xgb, \
          patch("builtins.open", mock_open()):
-        
+
         df = pd.DataFrame({
             "age": [50] * 30,
             "sex": [1] * 30,
@@ -65,9 +65,9 @@ def test_train_heart():
         })
         mock_read.return_value = df
         mock_xgb.return_value.predict.side_effect = lambda x: [0] * len(x)
-        
+
         train_heart_model()
-        
+
         assert mock_xgb.return_value.fit.called
         assert mock_pickle.called
 
@@ -77,7 +77,7 @@ def test_train_liver():
          patch("backend.train_liver.pickle.dump") as mock_pickle, \
          patch("xgboost.XGBClassifier") as mock_xgb, \
          patch("builtins.open", mock_open()):
-        
+
         # Dataset needs mixed classes 1 and 2
         df = pd.DataFrame({
             "Age": [40] * 30,
@@ -95,9 +95,9 @@ def test_train_liver():
         # Note: I am fixing the mocked column name to 'target' to match train_liver.py logic.
         mock_read.return_value = df
         mock_xgb.return_value.predict.side_effect = lambda x: [1] * len(x)
-        
+
         train_liver_model()
-        
+
         assert mock_read.called
         assert mock_xgb.return_value.fit.called
         assert mock_pickle.called

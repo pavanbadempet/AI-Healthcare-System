@@ -1,7 +1,10 @@
-import pytest
-from backend import auth
-from jose import jwt
 from datetime import datetime, timedelta, timezone
+
+import pytest
+from jose import jwt
+
+from backend import auth
+
 
 def test_password_hashing():
     pwd = "securepassword"
@@ -21,7 +24,7 @@ def test_access_token_expiry():
     data = {"sub": "testuser"}
     expires = timedelta(minutes=-1) # Already expired
     token = auth.create_access_token(data, expires_delta=expires)
-    
+
     with pytest.raises(jwt.ExpiredSignatureError):
         jwt.decode(token, auth.SECRET_KEY, algorithms=[auth.ALGORITHM])
 

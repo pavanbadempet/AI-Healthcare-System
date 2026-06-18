@@ -10,27 +10,28 @@ let mockAuthUser = {
   role: 'patient',
 };
 
-jest.mock('@/lib/auth', () => ({
+vi.mock('@/lib/auth', () => ({
   useAuthStore: () => ({
     user: mockAuthUser,
   }),
 }));
 
-jest.mock('@/lib/api', () => ({
-  getPatientDiagnosticResults: jest.fn(),
+vi.mock('@/lib/api', () => ({
+  getPatientDiagnosticResults: vi.fn(),
 }));
 
 describe('PatientDiagnosticResults', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockAuthUser = {
+    vi.clearAllMocks();
+    for (const key in mockAuthUser) delete (mockAuthUser as any)[key];
+    Object.assign(mockAuthUser, {
       id: 42,
       username: 'patient_user',
       email: 'patient@example.com',
       full_name: 'Patient User',
       role: 'patient',
-    };
-    (getPatientDiagnosticResults as jest.Mock).mockResolvedValue([
+    });
+    (getPatientDiagnosticResults as vi.Mock).mockResolvedValue([
       {
         id: 10,
         order_id: 4,
@@ -90,13 +91,14 @@ describe('PatientDiagnosticResults', () => {
   });
 
   it('does not render patient diagnostic results for staff users', () => {
-    mockAuthUser = {
+    for (const key in mockAuthUser) delete (mockAuthUser as any)[key];
+    Object.assign(mockAuthUser, {
       id: 7,
       username: 'doctor_user',
       email: 'doctor@example.com',
       full_name: 'Doctor User',
       role: 'doctor',
-    };
+    });
 
     const { container } = render(<PatientDiagnosticResults patientId={42} refreshIntervalMs={0} />);
 

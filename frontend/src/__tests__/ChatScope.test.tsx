@@ -5,12 +5,12 @@ import {
   type Ref,
 } from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import ChatCopilotPage from '@/app/(p)/chat/page';
+import ChatCopilotPage from '@/pages/Chat';
 
-const mockStreamChat = jest.fn();
+const mockStreamChat = vi.fn();
 let mockAuthUser = { username: 'patient_user', full_name: 'Patient User', role: 'patient' };
 
-jest.mock('framer-motion', () => {
+vi.mock('framer-motion', () => {
   const omittedMotionProps = new Set(['initial', 'animate', 'exit', 'transition']);
 
   return {
@@ -36,37 +36,38 @@ jest.mock('framer-motion', () => {
   };
 });
 
-jest.mock('@/lib/auth', () => ({
+vi.mock('@/lib/auth', () => ({
   useAuthStore: () => ({
     user: mockAuthUser,
   }),
 }));
 
-jest.mock('react-markdown', () => ({
+vi.mock('react-markdown', () => ({
   __esModule: true,
   default: ({ children }: { children?: ReactNode }) => <>{children}</>,
 }));
 
-jest.mock('remark-gfm', () => ({
+vi.mock('remark-gfm', () => ({
   __esModule: true,
-  default: jest.fn(),
+  default: vi.fn(),
 }));
 
-jest.mock('@/lib/api', () => ({
-  getChatHistory: jest.fn(() => Promise.resolve([])),
-  clearChatHistory: jest.fn(() => Promise.resolve()),
-  getChatSuggestions: jest.fn(() => Promise.resolve({ suggestions: [] })),
+vi.mock('@/lib/api', () => ({
+  getChatHistory: vi.fn(() => Promise.resolve([])),
+  clearChatHistory: vi.fn(() => Promise.resolve()),
+  getChatSuggestions: vi.fn(() => Promise.resolve({ suggestions: [] })),
   streamChat: (...args: unknown[]) => mockStreamChat(...args),
 }));
 
 beforeEach(() => {
-  window.HTMLElement.prototype.scrollIntoView = jest.fn();
+  window.HTMLElement.prototype.scrollIntoView = vi.fn();
   mockStreamChat.mockReset();
   mockStreamChat.mockImplementation((_message, _history, _onChunk, onDone) => {
     onDone();
-    return jest.fn();
+    return vi.fn();
   });
-  mockAuthUser = { username: 'patient_user', full_name: 'Patient User', role: 'patient' };
+  for (const key in mockAuthUser) delete (mockAuthUser as any)[key];
+    Object.assign(mockAuthUser, { username: 'patient_user', full_name: 'Patient User', role: 'patient' });
 });
 
 async function renderChatPage() {
@@ -127,7 +128,8 @@ describe('chat RAG scope controls', () => {
   });
 
   it('lets doctors opt into global RAG with the canonical scope value', async () => {
-    mockAuthUser = { username: 'doctor_user', full_name: 'Doctor User', role: 'doctor' };
+    for (const key in mockAuthUser) delete (mockAuthUser as any)[key];
+    Object.assign(mockAuthUser, { username: 'doctor_user', full_name: 'Doctor User', role: 'doctor' });
     await renderChatPage();
 
     openSettings();

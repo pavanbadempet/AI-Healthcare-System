@@ -4,9 +4,10 @@
 
 ## Stack
 
-- **pytest** with `pytest-asyncio` for async tests.
+- Backend tests use **pytest** with `pytest-asyncio` for async tests.
 - Config in `pytest.ini` at project root.
 - Test database uses SQLite in-memory or temp file - never touch `healthcare.db`.
+- Frontend Jest and Playwright tests are under `frontend/`; read `frontend/AGENTS.md` for those.
 
 ## Rules
 

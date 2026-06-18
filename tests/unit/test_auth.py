@@ -1,9 +1,9 @@
+from unittest.mock import MagicMock, patch
+
 import pytest
 from fastapi import HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
-from fastapi.testclient import TestClient
-from unittest.mock import MagicMock
-from unittest.mock import patch
+
 from backend import auth, models
 
 

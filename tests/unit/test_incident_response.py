@@ -4,7 +4,6 @@ import pytest
 
 from backend import auth, models
 
-
 INCIDENT_ENV_KEYS = (
     "INCIDENT_RESPONSE_ENABLED",
     "INCIDENT_RESPONSE_OWNER_CONTACT",
