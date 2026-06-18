@@ -1,5 +1,6 @@
-from backend import auth, models
 from unittest.mock import MagicMock, patch
+
+from backend import auth, models
 
 
 def _create_user(db_session, username: str, role: str = "patient") -> models.User:

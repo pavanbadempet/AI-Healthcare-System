@@ -1,9 +1,10 @@
+import datetime
+from unittest.mock import MagicMock, patch
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from unittest.mock import MagicMock, patch, ANY
-import pytest
-import datetime
-from backend import models, chat
+
+from backend import chat, models
 
 # Setup App
 app = FastAPI()
@@ -59,12 +60,12 @@ def test_chat_db_save_failure(caplog):
     caplog.set_level("ERROR", logger="backend.chat")
     mock_db = MagicMock()
     mock_db.commit.side_effect = Exception("DB Error with patient context")
-    
+
     app.dependency_overrides[chat.database.get_db] = lambda: mock_db
-    
+
     # Needs valid agent response
     mock_agent_resp = {"messages": [MagicMock(content="Hello")]}
-    
+
     with patch("backend.chat.agent.medical_agent.invoke", return_value=mock_agent_resp):
         # This will error on User Log Save (first commit)
         # The code catches it and prints error, but proceeds?
@@ -97,32 +98,32 @@ def test_chat_record_validation():
     valid_rec.data = '{"glucose": 120, "bmi": 25}'
     valid_rec.timestamp = datetime.datetime.now()
     valid_rec.prediction = "Healthy"
-    
+
     invalid_rec = MagicMock(spec=models.HealthRecord)
     invalid_rec.id = 2
     invalid_rec.record_type = "Diabetes"
     invalid_rec.data = '{"glucose": 0, "bmi": 25}' # Invalid glucose
     invalid_rec.timestamp = datetime.datetime.now()
-    
+
     malformed_rec = MagicMock(spec=models.HealthRecord)
     malformed_rec.id = 3
     malformed_rec.data = "Not JSON"
-    
+
     mock_db = MagicMock()
     # For GET query (first call): return list
     mock_db.query.return_value.filter.return_value.order_by.return_value.all.return_value = [valid_rec, invalid_rec, malformed_rec]
-    
+
     # For DELETE query (second call, filter(...).first()): return None to trigger 404
     mock_db.query.return_value.filter.return_value.first.return_value = None
-    
+
     app.dependency_overrides[chat.database.get_db] = lambda: mock_db
-    
+
     # Spy on agent call to check inputs
     with patch("backend.chat.agent.medical_agent.invoke") as mock_invoke:
         mock_invoke.return_value = {"messages": [MagicMock(content="Ok")]}
-        
+
         client.post("/chat", json={"message": "Analyze"})
-        
+
         # Check arguments passed to agent
     resp = client.delete("/records/999")
     assert resp.status_code == 404

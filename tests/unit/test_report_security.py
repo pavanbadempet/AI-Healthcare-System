@@ -2,7 +2,6 @@ from unittest.mock import patch
 
 from backend import auth, models, report
 
-
 EXPECTED_ANALYSIS_DISCLAIMER = (
     "This AI-assisted report analysis is for informational support only and is not a medical diagnosis. "
     "Please consult a qualified clinician for diagnosis, treatment, or emergencies."

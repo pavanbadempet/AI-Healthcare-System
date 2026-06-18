@@ -2,16 +2,13 @@
 Comprehensive tests for backend/pdf_service.py
 Tests the PDF report generation functionality.
 """
-import pytest
-from unittest.mock import patch, MagicMock
-import datetime
 
 from backend.pdf_service import PDFReport, generate_medical_report
 
 
 class TestPDFReport:
     """Tests for the PDFReport class."""
-    
+
     def test_pdf_report_header(self):
         """Test that PDFReport header is rendered correctly."""
         pdf = PDFReport()
@@ -19,7 +16,7 @@ class TestPDFReport:
         # Just ensure no exception is raised
         output = pdf.output(dest='S')
         assert len(output) > 0
-    
+
     def test_pdf_report_footer(self):
         """Test that PDFReport footer is rendered correctly."""
         pdf = PDFReport()
@@ -31,7 +28,7 @@ class TestPDFReport:
 
 class TestGenerateMedicalReport:
     """Tests for the generate_medical_report function."""
-    
+
     def test_generate_report_basic(self):
         """Test basic report generation with minimal data."""
         result = generate_medical_report(
@@ -42,7 +39,7 @@ class TestGenerateMedicalReport:
         )
         assert isinstance(result, bytes)
         assert len(result) > 0
-    
+
     def test_generate_report_high_risk(self):
         """Test report with High Risk prediction (red color)."""
         result = generate_medical_report(
@@ -53,7 +50,7 @@ class TestGenerateMedicalReport:
         )
         assert isinstance(result, bytes)
         assert len(result) > 0
-    
+
     def test_generate_report_with_advice(self):
         """Test report generation with advice list."""
         result = generate_medical_report(
@@ -65,7 +62,7 @@ class TestGenerateMedicalReport:
         )
         assert isinstance(result, bytes)
         assert len(result) > 0
-    
+
     def test_generate_report_empty_data(self):
         """Test report with empty data dictionary."""
         result = generate_medical_report(
@@ -76,7 +73,7 @@ class TestGenerateMedicalReport:
         )
         assert isinstance(result, bytes)
         assert len(result) > 0
-    
+
     def test_generate_report_complex_data(self):
         """Test report with many data fields."""
         result = generate_medical_report(
@@ -95,7 +92,7 @@ class TestGenerateMedicalReport:
         )
         assert isinstance(result, bytes)
         assert len(result) > 0
-    
+
     def test_generate_report_special_characters(self):
         """Test report with special characters in data."""
         result = generate_medical_report(
@@ -105,7 +102,7 @@ class TestGenerateMedicalReport:
             data={"test_value": "100mg/dL"}
         )
         assert isinstance(result, bytes)
-    
+
     def test_generate_report_empty_advice(self):
         """Test report with explicitly empty advice list."""
         result = generate_medical_report(

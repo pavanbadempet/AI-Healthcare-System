@@ -4,3 +4,6 @@ pytest-asyncio
 pytest-playwright
 httpx
 playwright
+hypothesis
+pytz
+alembic

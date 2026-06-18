@@ -1,6 +1,6 @@
 import { getDoctorPatientMonitoringSignals, resolveMonitoringSignal, setTokenGetter } from '@/lib/api';
 
-const fetchMock = jest.fn();
+const fetchMock = vi.fn();
 
 beforeEach(() => {
   fetchMock.mockReset();
@@ -28,7 +28,7 @@ describe('monitoring API adapter', () => {
     const result = await getDoctorPatientMonitoringSignals(42);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://127.0.0.1:8000/monitoring/doctor/patients/42/signals',
+      'http://127.0.0.1:8000/v1/monitoring/doctor/patients/42/signals',
       expect.objectContaining({
         headers: {
           'Content-Type': 'application/json',
@@ -54,7 +54,7 @@ describe('monitoring API adapter', () => {
     const result = await resolveMonitoringSignal(7);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://127.0.0.1:8000/monitoring/signals/7/resolve',
+      'http://127.0.0.1:8000/v1/monitoring/signals/7/resolve',
       expect.objectContaining({
         method: 'PUT',
         headers: {

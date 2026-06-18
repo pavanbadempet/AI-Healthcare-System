@@ -1,12 +1,13 @@
-import pytest
-from fastapi.testclient import TestClient
 from unittest.mock import MagicMock, mock_open, patch
+
 import numpy as np
 
 # Import app to get router, but we might need to patch dependencies
 # backend.main includes prediction router.
 # Let's import prediction module directly to patch globals.
 from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
 import backend.prediction
 from backend.prediction import router
 
@@ -58,7 +59,7 @@ def test_predict_diabetes_success():
     # Setup Mock
     mock_model = MagicMock()
     mock_model.predict.return_value = np.array([1]) # High Risk
-    
+
     with patch("backend.prediction.diabetes_model", mock_model):
         resp = client.post("/predict/diabetes", json={
             "gender": 1, "age": 50, "hypertension": 0, "heart_disease": 0,
@@ -82,7 +83,7 @@ def test_predict_diabetes_exception(caplog):
     caplog.set_level("ERROR", logger="backend.prediction")
     mock_model = MagicMock()
     mock_model.predict.side_effect = Exception(SENSITIVE_ERROR)
-    
+
     with patch("backend.prediction.diabetes_model", mock_model):
         resp = client.post("/predict/diabetes", json={
             "gender": 1, "age": 50, "hypertension": 0, "heart_disease": 0,
@@ -91,11 +92,11 @@ def test_predict_diabetes_exception(caplog):
         _assert_generic_prediction_failure(resp, caplog)
 
 # --- Heart Tests ---
-    
+
 def test_predict_heart_success():
     mock_model = MagicMock()
     mock_model.predict.return_value = np.array([1]) # Disease
-    
+
     with patch("backend.prediction.heart_model", mock_model):
         resp = client.post("/predict/heart", json={
             "age": 50, "sex": 1, "cp": 3, "trestbps": 145, "chol": 233,
@@ -118,7 +119,7 @@ def test_predict_heart_exception(caplog):
     caplog.set_level("ERROR", logger="backend.prediction")
     mock_model = MagicMock()
     mock_model.predict.side_effect = Exception(SENSITIVE_ERROR)
-    
+
     with patch("backend.prediction.heart_model", mock_model):
         resp = client.post("/predict/heart", json={
             "age": 50, "sex": 1, "cp": 3, "trestbps": 145, "chol": 233,
@@ -134,10 +135,10 @@ def test_predict_liver_success():
     mock_model.predict.return_value = np.array([0]) # Healthy
     mock_scaler = MagicMock()
     mock_scaler.transform.return_value = np.array([[1,2,3,4,5,6]])
-    
+
     with patch("backend.prediction.liver_model", mock_model), \
          patch("backend.prediction.liver_scaler", mock_scaler):
-        
+
         resp = client.post("/predict/liver", json={
             "age": 45, "gender": 1, "total_bilirubin": 1.0,
             "alkaline_phosphotase": 100, "alamine_aminotransferase": 30,
@@ -164,10 +165,10 @@ def test_predict_liver_exception(caplog):
     mock_model.predict.side_effect = Exception(SENSITIVE_ERROR)
     mock_scaler = MagicMock()
     mock_scaler.transform.return_value = np.array([[1,2,3,4,5,6]])
-    
+
     with patch("backend.prediction.liver_model", mock_model), \
          patch("backend.prediction.liver_scaler", mock_scaler):
-         
+
         resp = client.post("/predict/liver", json={
             "age": 45, "gender": 1, "total_bilirubin": 1.0,
             "alkaline_phosphotase": 100, "alamine_aminotransferase": 30,
@@ -217,7 +218,7 @@ def test_predict_lungs_exception(caplog):
 # --- Import Error Test ---
 # This is tricky because it runs at import time. We use reload.
 import importlib
-import builtins
+
 
 def test_model_loading_failure():
     # Patch open to fail, forcing exception block
@@ -227,15 +228,15 @@ def test_model_loading_failure():
         importlib.reload(backend.prediction)
         # Initialize models manually
         backend.prediction.initialize_models()
-        
+
         # Check globals are None (since we unset TESTING)
         assert backend.prediction.diabetes_model is None
         assert backend.prediction.heart_model is None
-        
+
     # Restore module (reload again without patch) to fix state for other tests?
     try:
         importlib.reload(backend.prediction)
         backend.prediction.initialize_models()
-    except:
+    except Exception:
         pass # If local files are missing, it stays None, which is fine.
 

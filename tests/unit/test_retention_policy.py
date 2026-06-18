@@ -4,7 +4,6 @@ import pytest
 
 from backend import auth, models
 
-
 RETENTION_ENV_KEYS = (
     "RETENTION_POLICY_ENABLED",
     "RETENTION_OWNER_CONTACT",

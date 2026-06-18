@@ -26,7 +26,7 @@ def test_login(client):
             "dob": "1990-01-01"
         },
     )
-    
+
     # Login
     response = client.post(
         "/token",
@@ -43,7 +43,7 @@ def test_get_profile(client):
     # 2. Login
     login_res = client.post("/token", data={"username": "prof", "password": "Password1"})
     token = login_res.json()["access_token"]
-    
+
     # 3. Get Profile
     headers = {"Authorization": f"Bearer {token}"}
     res = client.get("/profile", headers=headers)

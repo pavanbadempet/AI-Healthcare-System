@@ -1,22 +1,25 @@
-import pytest
 from unittest.mock import patch
-from backend.vision_service import analyze_lab_report
+
+import pytest
 from fastapi import HTTPException
+
+from backend.vision_service import analyze_lab_report
+
 
 def test_analyze_report_success():
     with patch("backend.vision_service.core_ai.has_gemini_api_key", return_value=True), \
          patch("backend.vision_service.core_ai.generate_vision_content", return_value='{"extracted_data": {"glucose": 100}, "summary": "Healthy"}'), \
          patch("backend.vision_service.Image.open"):
-        
+
         result = analyze_lab_report(b"fake_image_data")
-        
+
         assert result["extracted_data"]["glucose"] == 100
         assert "Healthy" in result["summary"]
 
 def test_analyze_report_api_failure():
     with patch("backend.vision_service.core_ai.has_gemini_api_key", return_value=True), \
          patch("backend.vision_service.core_ai.generate_vision_content", side_effect=Exception("API Error")):
-        
+
         # Expect generic success dict with empty data (as per service logic)
         result = analyze_lab_report(b"data")
         assert result["extracted_data"] == {}
@@ -49,6 +52,6 @@ def test_missing_api_key():
     with patch("backend.vision_service.core_ai.has_gemini_api_key", return_value=False):
         with pytest.raises(HTTPException) as excinfo:
             analyze_lab_report(b"fake_image_bytes")
-        
+
         assert excinfo.value.status_code == 503
         assert "Vision API Key not configured" in excinfo.value.detail
