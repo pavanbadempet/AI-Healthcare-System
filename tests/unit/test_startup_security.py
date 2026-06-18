@@ -52,19 +52,11 @@ def test_default_admin_seed_hides_error_details(monkeypatch, caplog):
 
 
 def test_run_migrations_hides_column_error_details(caplog):
-    inspector = MagicMock()
-    inspector.has_table.return_value = True
-    inspector.get_columns.return_value = []
-    connection = MagicMock()
     sensitive_error = "alter table failed db_password=secret-db patient_name=Sensitive User"
-    connection.execute.side_effect = Exception(sensitive_error)
-    connect_context = MagicMock()
-    connect_context.__enter__.return_value = connection
-    connect_context.__exit__.return_value = False
-    caplog.set_level("ERROR", logger="backend.main")
+    caplog.set_level("WARNING", logger="backend.main")
 
-    with patch("backend.main.inspect", return_value=inspector), \
-         patch("backend.main.database.engine.connect", return_value=connect_context):
+    with patch("alembic.command.upgrade", side_effect=Exception(sensitive_error)), \
+         patch("os.getenv", return_value=None):
         main.run_migrations()
 
     assert sensitive_error not in caplog.text

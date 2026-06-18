@@ -5,7 +5,7 @@ import {
   setTokenGetter,
 } from '@/lib/api';
 
-const fetchMock = jest.fn();
+const fetchMock = vi.fn();
 
 beforeEach(() => {
   fetchMock.mockReset();
@@ -32,7 +32,7 @@ describe('diagnostics API adapter', () => {
     const result = await getDoctorPatientDiagnosticResults(42);
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://127.0.0.1:8000/diagnostics/doctor/patients/42/results',
+      'http://127.0.0.1:8000/v1/diagnostics/doctor/patients/42/results',
       expect.objectContaining({
         headers: {
           'Content-Type': 'application/json',
@@ -66,7 +66,7 @@ describe('diagnostics API adapter', () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://127.0.0.1:8000/diagnostics/results/9/review',
+      'http://127.0.0.1:8000/v1/diagnostics/results/9/review',
       expect.objectContaining({
         method: 'PUT',
         body: JSON.stringify({
@@ -104,7 +104,7 @@ describe('diagnostics API adapter', () => {
     const result = await getPatientDiagnosticResults();
 
     expect(fetchMock).toHaveBeenCalledWith(
-      'http://127.0.0.1:8000/diagnostics/patient/results',
+      'http://127.0.0.1:8000/v1/diagnostics/patient/results',
       expect.objectContaining({
         headers: {
           'Content-Type': 'application/json',

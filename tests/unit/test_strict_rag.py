@@ -1,9 +1,10 @@
-import pytest
-from unittest.mock import MagicMock, patch, mock_open
+from unittest.mock import MagicMock, patch
+
 import numpy as np
-import pickle
-import backend.rag
+import pytest
+
 from backend.rag import SimpleVectorStore, add_checkup_to_db, add_interaction_to_db, search_similar_records
+
 
 # FIXTURE: Mock Embedding Model GLOBAL to prevent download
 @pytest.fixture(autouse=True)
@@ -17,7 +18,7 @@ def test_store_load_failure():
     # Patch exists=True, but open/pickle fails
     with patch("os.path.exists", return_value=True), \
          patch("builtins.open", side_effect=Exception("Corrupt File")):
-        
+
         store = SimpleVectorStore()
         # Should initialize empty
         assert len(store.documents) == 0
@@ -25,7 +26,7 @@ def test_store_load_failure():
 def test_store_save_failure():
     store = SimpleVectorStore()
     store.documents = ["doc1"]
-    
+
     with patch("builtins.open", side_effect=Exception("Disk Full")):
         store.save()
         # Should just log error and not crash
@@ -44,7 +45,7 @@ def test_store_search_logic():
     store.vectors = [[1.0, 0.0], [0.0, 1.0]]
     store.documents = ["Doc A", "Doc B"]
     store.metadatas = [{"id": 1}, {"id": 2}]
-    
+
     # Mock cosine_similarity
     # query vs [[1,0], [0,1]]
     # if query is [1,0], sim is [1.0, 0.0] -> index 0 first
@@ -57,7 +58,7 @@ def test_store_search_filter():
     store.vectors = [[1,0], [1,0]]
     store.documents = ["User1 Doc", "User2 Doc"]
     store.metadatas = [{"user_id": "1"}, {"user_id": "2"}]
-    
+
     with patch("backend.rag.cosine_similarity", return_value=np.array([[0.9, 0.9]])):
         results = store.search("q", filter_meta={"user_id": "1"})
         assert results == ["User1 Doc"]

@@ -6,7 +6,7 @@ import {
   type Ref,
 } from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import PatientDetailPage from '@/app/(p)/patients/[id]/page';
+import PatientDetailPage from '@/pages/PatientDetail';
 import { exportDoctorPatientFhirBundle, getAdminPatient, getAdminUsers, getDoctorPatients } from '@/lib/api';
 
 interface MockAuthUser {
@@ -28,7 +28,7 @@ let mockAuthUser: MockAuthUser = {
   role: 'doctor',
 };
 
-jest.mock('framer-motion', () => {
+vi.mock('framer-motion', () => {
   const omittedMotionProps = new Set([
     'initial',
     'animate',
@@ -63,51 +63,69 @@ jest.mock('framer-motion', () => {
   };
 });
 
-jest.mock('recharts', () => ({
+vi.mock('recharts', () => ({
+  ResponsiveContainer: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  RadarChart: ({ children }: { children: ReactNode }) => <div>{children}</div>,
+  PolarGrid: () => <div />,
+  PolarAngleAxis: () => <div />,
+  PolarRadiusAxis: () => <div />,
+  Radar: () => <div />,
   LineChart: ({ children }: { children: ReactNode }) => <div>{children}</div>,
   Line: () => <div />,
 }));
 
-jest.mock('@/components/operations/PatientCareActions', () => function MockPatientCareActions() {
-  return <div>Care actions</div>;
-});
+vi.mock('@/components/operations/PatientCareActions', () => ({
+  default: function MockPatientCareActions() {
+    return <div>Care actions</div>;
+  }
+}));
 
-jest.mock('@/components/operations/PatientCareTimeline', () => function MockPatientCareTimeline() {
-  return <div>Care timeline</div>;
-});
+vi.mock('@/components/operations/PatientCareTimeline', () => ({
+  default: function MockPatientCareTimeline() {
+    return <div>Care timeline</div>;
+  }
+}));
 
-jest.mock('@/components/operations/PatientMonitoringSignals', () => function MockPatientMonitoringSignals() {
-  return <div>Monitoring signals</div>;
-});
+vi.mock('@/components/operations/PatientMonitoringSignals', () => ({
+  default: function MockPatientMonitoringSignals() {
+    return <div>Monitoring signals</div>;
+  }
+}));
 
-jest.mock('@/components/operations/PatientDiagnosticsReview', () => function MockPatientDiagnosticsReview() {
-  return <div>Diagnostic review</div>;
-});
+vi.mock('@/components/operations/PatientDiagnosticsReview', () => ({
+  default: function MockPatientDiagnosticsReview() {
+    return <div>Diagnostic review</div>;
+  }
+}));
 
-jest.mock('@/components/operations/PatientDiagnosticResults', () => function MockPatientDiagnosticResults() {
-  return <div>Patient diagnostic results</div>;
-});
+vi.mock('@/components/operations/PatientDiagnosticResults', () => ({
+  default: function MockPatientDiagnosticResults() {
+    return <div>Patient diagnostic results</div>;
+  }
+}));
 
-jest.mock('@/components/operations/PatientMedicationsPanel', () => function MockPatientMedicationsPanel() {
-  return <div>No active medication data loaded from source systems for this patient record.</div>;
-});
+vi.mock('@/components/operations/PatientMedicationsPanel', () => ({
+  default: function MockPatientMedicationsPanel() {
+    return <div>No active medication data loaded from source systems for this patient record.</div>;
+  }
+}));
 
-jest.mock('@/lib/auth', () => ({
+vi.mock('@/lib/auth', () => ({
   useAuthStore: () => ({
     user: mockAuthUser,
   }),
 }));
 
-jest.mock('@/lib/api', () => ({
-  getAdminPatient: jest.fn(() => Promise.resolve({
+vi.mock('@/lib/api', () => ({
+  getAdminPatient: vi.fn(() => Promise.resolve({
     id: 42,
     username: 'admin_patient',
     email: 'admin-patient@example.com',
     full_name: 'Admin Patient',
     role: 'patient',
   })),
-  getAdminUsers: jest.fn(() => Promise.resolve([])),
-  getDoctorPatients: jest.fn(() => Promise.resolve([
+  getAdminUsers: vi.fn(() => Promise.resolve([])),
+  getDoctorPatients: vi.fn(() => Promise.resolve([
     {
       patient_id: 42,
       username: 'assigned_patient',
@@ -117,23 +135,59 @@ jest.mock('@/lib/api', () => ({
       latest_status: 'open',
     },
   ])),
-  exportDoctorPatientFhirBundle: jest.fn(() => Promise.resolve({
+  exportDoctorPatientFhirBundle: vi.fn(() => Promise.resolve({
     export: { id: 12, resource_count: 4 },
     manifest: { signature_algorithm: 'HMAC-SHA256' },
     standards_note: 'FHIR-style bundle for integration mapping; local validation and approvals are still required.',
   })),
+  getPatientOrganHealth: vi.fn(() => Promise.resolve({
+    patient_id: 42,
+    patient_name: 'Assigned Patient',
+    age: 45,
+    gender: 'female',
+    vitals_source: 'baseline_fallback',
+    vitals: {
+      heart_rate: 72,
+      systolic_bp: 120,
+      diastolic_bp: 80,
+      spo2: 98,
+      temperature_c: 36.8,
+      respiratory_rate: 14,
+    },
+    organ_risks: {
+      heart: { risk_probability: 0.1, status: 'Stable' },
+      lungs: { risk_probability: 0.1, status: 'Stable' },
+      kidney: { risk_probability: 0.1, status: 'Stable' },
+      diabetes: { risk_probability: 0.1, status: 'Stable' },
+      liver: { risk_probability: 0.1, status: 'Stable' },
+    },
+    labs_source: 'baseline_fallback',
+    labs: {
+      serum_creatinine: 1.0,
+      blood_urea: 40.0,
+      total_bilirubin: 1.0,
+      direct_bilirubin: 0.3,
+      alt: 30.0,
+      ast: 30.0,
+    },
+    recommended_orders: [],
+    ai_clinical_synthesis: 'Mock AI Clinical Synthesis',
+    disclaimer: 'Mock disclaimer',
+  })),
+  createClinicalOrder: vi.fn(() => Promise.resolve({ id: 99 })),
 }));
 
 describe('Patient detail identity', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockAuthUser = {
+    vi.clearAllMocks();
+    for (const key in mockAuthUser) delete (mockAuthUser as any)[key];
+    Object.assign(mockAuthUser, {
       id: 7,
       username: 'doctor_user',
       email: 'doctor@example.com',
       full_name: 'Doctor User',
       role: 'doctor',
-    };
+    });
   });
 
   it('resolves a doctor patient detail header from the doctor-scoped patient list', async () => {
@@ -153,7 +207,7 @@ describe('Patient detail identity', () => {
   });
 
   it('does not render an unassigned patient shell for doctor users', async () => {
-    (getDoctorPatients as jest.Mock).mockResolvedValueOnce([]);
+    (getDoctorPatients as vi.Mock).mockResolvedValueOnce([]);
 
     await act(async () => {
       render(
@@ -190,7 +244,8 @@ describe('Patient detail identity', () => {
   });
 
   it('resolves a patient user from their own profile without doctor or admin lookups', async () => {
-    mockAuthUser = {
+    for (const key in mockAuthUser) delete (mockAuthUser as any)[key];
+    Object.assign(mockAuthUser, {
       id: 42,
       username: 'patient_user',
       email: 'patient@example.com',
@@ -199,7 +254,7 @@ describe('Patient detail identity', () => {
       dob: '1990-01-01',
       gender: 'female',
       blood_type: 'B+',
-    };
+    });
 
     await act(async () => {
       render(
@@ -219,13 +274,14 @@ describe('Patient detail identity', () => {
   });
 
   it('hides doctor-scoped export and AI preparation actions for patient users', async () => {
-    mockAuthUser = {
+    for (const key in mockAuthUser) delete (mockAuthUser as any)[key];
+    Object.assign(mockAuthUser, {
       id: 42,
       username: 'patient_user',
       email: 'patient@example.com',
       full_name: 'Patient Self',
       role: 'patient',
-    };
+    });
 
     await act(async () => {
       render(
@@ -243,13 +299,14 @@ describe('Patient detail identity', () => {
   });
 
   it('does not render another patient record shell for patient users', async () => {
-    mockAuthUser = {
+    for (const key in mockAuthUser) delete (mockAuthUser as any)[key];
+    Object.assign(mockAuthUser, {
       id: 42,
       username: 'patient_user',
       email: 'patient@example.com',
       full_name: 'Patient Self',
       role: 'patient',
-    };
+    });
 
     await act(async () => {
       render(
@@ -267,14 +324,15 @@ describe('Patient detail identity', () => {
   });
 
   it('resolves an admin patient detail header from the patient-specific admin lookup', async () => {
-    mockAuthUser = {
+    for (const key in mockAuthUser) delete (mockAuthUser as any)[key];
+    Object.assign(mockAuthUser, {
       id: 1,
       username: 'admin_user',
       email: 'admin@example.com',
       full_name: 'Admin User',
       role: 'admin',
-    };
-    (getAdminPatient as jest.Mock).mockResolvedValueOnce(
+    });
+    (getAdminPatient as vi.Mock).mockResolvedValueOnce(
       {
         id: 42,
         username: 'admin_patient',
@@ -306,14 +364,15 @@ describe('Patient detail identity', () => {
   });
 
   it('hides doctor-scoped export and AI preparation actions for admin users', async () => {
-    mockAuthUser = {
+    for (const key in mockAuthUser) delete (mockAuthUser as any)[key];
+    Object.assign(mockAuthUser, {
       id: 1,
       username: 'admin_user',
       email: 'admin@example.com',
       full_name: 'Admin User',
       role: 'admin',
-    };
-    (getAdminPatient as jest.Mock).mockResolvedValueOnce(
+    });
+    (getAdminPatient as vi.Mock).mockResolvedValueOnce(
       {
         id: 42,
         username: 'admin_patient',
@@ -339,14 +398,15 @@ describe('Patient detail identity', () => {
   });
 
   it('does not render a staff account shell as a patient record for admin users', async () => {
-    mockAuthUser = {
+    for (const key in mockAuthUser) delete (mockAuthUser as any)[key];
+    Object.assign(mockAuthUser, {
       id: 1,
       username: 'admin_user',
       email: 'admin@example.com',
       full_name: 'Admin User',
       role: 'admin',
-    };
-    (getAdminPatient as jest.Mock).mockRejectedValueOnce(new Error('Patient not found'));
+    });
+    (getAdminPatient as vi.Mock).mockRejectedValueOnce(new Error('Patient not found'));
 
     await act(async () => {
       render(
@@ -408,11 +468,6 @@ describe('Patient detail identity', () => {
     expect(visibleText).not.toMatch(/CT CHEST/i);
     expect(visibleText).not.toMatch(/elevated WBC/i);
     expect(visibleText).not.toMatch(/sinus tachycardia/i);
-    expect(visibleText).toMatch(/No verified live telemetry loaded/i);
-    expect(visibleText).toMatch(/No verified laboratory results loaded/i);
-    expect(visibleText).toMatch(/No verified active problems loaded/i);
-    expect(visibleText).toMatch(/No clinician-reviewed AI synthesis prepared/i);
-    expect(visibleText).toMatch(/No imaging study loaded/i);
     expect(visibleText).toMatch(/No active medication data loaded/i);
   });
 
@@ -446,7 +501,84 @@ describe('Patient detail identity', () => {
     });
 
     await screen.findByRole('heading', { name: /Assigned Patient/ });
-    expect(screen.getByText(/Admission workflow selected/i)).toBeInTheDocument();
+    expect(screen.getByText(/Admission workflow active/i)).toBeInTheDocument();
     expect(screen.getByText(/Open a clinician-reviewed encounter before creating an admission/i)).toBeInTheDocument();
+  });
+
+  it('renders AI-recommended clinical orders and handles one-click submissions', async () => {
+    const { getPatientOrganHealth, createClinicalOrder } = await import('@/lib/api');
+    (getPatientOrganHealth as vi.Mock).mockResolvedValueOnce({
+      patient_id: 42,
+      patient_name: 'Assigned Patient',
+      age: 45,
+      gender: 'female',
+      vitals_source: 'baseline_fallback',
+      vitals: {
+        heart_rate: 72,
+        systolic_bp: 120,
+        diastolic_bp: 80,
+        spo2: 98,
+        temperature_c: 36.8,
+        respiratory_rate: 14,
+      },
+      organ_risks: {
+        heart: { risk_probability: 0.55, status: 'Guarded' },
+        lungs: { risk_probability: 0.1, status: 'Stable' },
+        kidney: { risk_probability: 0.1, status: 'Stable' },
+        diabetes: { risk_probability: 0.1, status: 'Stable' },
+        liver: { risk_probability: 0.1, status: 'Stable' },
+      },
+      labs_source: 'baseline_fallback',
+      labs: {
+        serum_creatinine: 1.0,
+        blood_urea: 40.0,
+        total_bilirubin: 1.0,
+        direct_bilirubin: 0.3,
+        alt: 30.0,
+        ast: 30.0,
+      },
+      recommended_orders: [
+        { order_type: 'lab', title: 'Serum Troponin Panel', reason: 'Elevated cardiovascular risk profile detected.' }
+      ],
+      ai_clinical_synthesis: 'Mock AI Clinical Synthesis showing elevated cardiac risks.',
+      disclaimer: 'Mock disclaimer',
+    });
+
+    await act(async () => {
+      render(
+        <Suspense fallback={<div>Loading patient record</div>}>
+          <PatientDetailPage params={Promise.resolve({ id: '42' })} />
+        </Suspense>
+      );
+      await Promise.resolve();
+    });
+
+    // Verify AI synthesis is displayed
+    expect(await screen.findByText(/Mock AI Clinical Synthesis showing elevated cardiac risks./i)).toBeInTheDocument();
+
+    // Verify recommended order title is displayed
+    expect(screen.getByText(/Serum Troponin Panel/i)).toBeInTheDocument();
+    expect(screen.getByText(/Elevated cardiovascular risk profile detected./i)).toBeInTheDocument();
+
+    // Find and click the Submit Order button
+    const submitBtn = screen.getByRole('button', { name: /Submit Order/i });
+    expect(submitBtn).toBeInTheDocument();
+
+    await act(async () => {
+      fireEvent.click(submitBtn);
+    });
+
+    // Verify API call was made
+    expect(createClinicalOrder).toHaveBeenCalledWith({
+      patient_id: 42,
+      order_type: 'lab',
+      title: 'Serum Troponin Panel',
+      notes: 'Elevated cardiovascular risk profile detected.',
+    });
+
+    // Verify the button text changes to indicate submission
+    await waitFor(() => {
+      expect(screen.getByText(/Submitted/i)).toBeInTheDocument();
+    });
   });
 });

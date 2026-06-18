@@ -36,43 +36,44 @@ const prescription = {
   ],
 };
 
-jest.mock('@/lib/auth', () => ({
+vi.mock('@/lib/auth', () => ({
   useAuthStore: () => ({
     user: mockAuthUser,
   }),
 }));
 
-jest.mock('@/lib/api', () => ({
-  getDoctorPatientPrescriptions: jest.fn(),
-  getPatientPrescriptions: jest.fn(),
+vi.mock('@/lib/api', () => ({
+  getDoctorPatientPrescriptions: vi.fn(),
+  getPatientPrescriptions: vi.fn(),
 }));
 
 describe('PatientMedicationsPanel', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
-    mockAuthUser = {
+    vi.clearAllMocks();
+    for (const key in mockAuthUser) delete (mockAuthUser as any)[key];
+    Object.assign(mockAuthUser, {
       id: 7,
       username: 'doctor_user',
       email: 'doctor@example.com',
       full_name: 'Doctor User',
       role: 'doctor',
-    };
-    (getDoctorPatientPrescriptions as jest.Mock).mockResolvedValue({
+    });
+    (getDoctorPatientPrescriptions as vi.Mock).mockResolvedValue({
       patient_id: 42,
       prescriptions: [prescription],
       clinical_safety_note: 'Prescriptions support clinician and pharmacist workflows; clinicians remain responsible for treatment decisions.',
     });
-    (getPatientPrescriptions as jest.Mock).mockResolvedValue([prescription]);
+    (getPatientPrescriptions as vi.Mock).mockResolvedValue([prescription]);
   });
 
   it('shows doctor-scoped medication orders for assigned patients', async () => {
     render(<PatientMedicationsPanel patientId={42} refreshIntervalMs={0} />);
 
-    expect(await screen.findByRole('heading', { name: /Medication Orders/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /Active Medications/i })).toBeInTheDocument();
     expect(await screen.findByText(/Paracetamol/i)).toBeInTheDocument();
     expect(screen.getByText(/500mg/i)).toBeInTheDocument();
     expect(screen.getByText(/Twice daily/i)).toBeInTheDocument();
-    expect(screen.getByText(/6 prescribed/i)).toBeInTheDocument();
+    expect(screen.getByText(/6 units prescribed/i)).toBeInTheDocument();
     expect(screen.getByText(/0 dispensed/i)).toBeInTheDocument();
     expect(screen.getByText(/clinicians remain responsible/i)).toBeInTheDocument();
     await waitFor(() => {
@@ -82,19 +83,20 @@ describe('PatientMedicationsPanel', () => {
   });
 
   it('shows patient-scoped prescriptions to the owning patient', async () => {
-    mockAuthUser = {
+    for (const key in mockAuthUser) delete (mockAuthUser as any)[key];
+    Object.assign(mockAuthUser, {
       id: 42,
       username: 'patient_user',
       email: 'patient@example.com',
       full_name: 'Patient User',
       role: 'patient',
-    };
+    });
 
     render(<PatientMedicationsPanel patientId={42} refreshIntervalMs={0} />);
 
     expect(await screen.findByText(/Paracetamol/i)).toBeInTheDocument();
     expect(screen.getByText(/Medication details are for review/i)).toBeInTheDocument();
-    expect(screen.getByText(/consult a qualified clinician or pharmacist/i)).toBeInTheDocument();
+    expect(screen.getByText(/Consult your provider before changes/i)).toBeInTheDocument();
     await waitFor(() => {
       expect(getPatientPrescriptions).toHaveBeenCalledTimes(1);
     });

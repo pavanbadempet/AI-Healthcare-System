@@ -1,14 +1,13 @@
-from fastapi import FastAPI, Depends, HTTPException
-from fastapi.testclient import TestClient
-from unittest.mock import MagicMock, patch
 from datetime import timedelta
-import pytest
-from jose import JWTError 
+from unittest.mock import MagicMock, patch
+
+from fastapi import Depends, FastAPI
+from fastapi.testclient import TestClient
+from jose import JWTError
 
 # Import module to patch globals or functions
 import backend.auth
-from backend.auth import router, get_current_user, create_access_token
-from backend import models
+from backend.auth import create_access_token, get_current_user, router
 
 # Setup App
 app = FastAPI()
@@ -61,10 +60,10 @@ def test_get_current_user_not_found():
         # Mock DB query to return None
         mock_db = MagicMock()
         mock_db.query.return_value.filter.return_value.first.return_value = None
-        
+
         # We need to inject this mock_db into the dependency
         app.dependency_overrides[backend.auth.database.get_db] = lambda: mock_db
-        
+
         resp = client.get("/test/me", headers={"Authorization": "Bearer valid_token"})
         assert resp.status_code == 401
 
@@ -77,16 +76,16 @@ def test_signup_db_integrity_error():
     # If standard SQLAlchemy error occurs, FastAPI returns 500.
     # We want to verify that behavior or if there's custom handling I missed.
     # Looking at auth.py specific to Lines 95-100... it explicitly checks username existence.
-    pass 
+    pass
     # If I want to test lines 10 or generic DB failures:
     mock_db = MagicMock()
     # Ensure username check passes (returns None)
     mock_db.query.return_value.filter.return_value.first.return_value = None
     # Fail on add or commit
     mock_db.commit.side_effect = Exception("DB Down")
-    
+
     app.dependency_overrides[backend.auth.database.get_db] = lambda: mock_db
-    
+
     resp = client.post("/signup", json={
         "username": "crash",
         "password": "Password123!",

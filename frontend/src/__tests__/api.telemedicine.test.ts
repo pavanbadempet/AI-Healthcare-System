@@ -1,6 +1,6 @@
 import { bookAppointment, getAppointments, getDoctors, setTokenGetter } from '@/lib/api';
 
-const fetchMock = jest.fn();
+const fetchMock = vi.fn();
 
 beforeEach(() => {
   fetchMock.mockReset();
@@ -34,7 +34,7 @@ describe('telemedicine API adapter', () => {
       notes: 'Follow-up visit',
     });
 
-    expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8000/appointments/', {
+    expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8000/v1/appointments/', {
       method: 'POST',
       body: JSON.stringify({
         doctor_id: 2,
@@ -72,7 +72,7 @@ describe('telemedicine API adapter', () => {
 
     const result = await getAppointments();
 
-    expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8000/appointments/', {
+    expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8000/v1/appointments/', {
       headers: {
         'Content-Type': 'application/json',
         Authorization: 'Bearer test-token',
@@ -109,6 +109,32 @@ describe('telemedicine API adapter', () => {
         name: 'Dr. Mira Rao',
         specialization: 'General Physician',
       },
+    ]);
+  });
+
+  it('rejects invalid appointment dates before posting to the backend', async () => {
+    await expect(bookAppointment({
+      doctor_id: 2,
+      appointment_date: 'not-a-date',
+      notes: 'Follow-up visit',
+    })).rejects.toThrow('Invalid appointment date');
+
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it('uses default doctor labels when backend fields are sparse', async () => {
+    fetchMock.mockReturnValueOnce(mockJsonResponse([{ id: 13 }]));
+
+    const result = await getDoctors();
+
+    expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8000/v1/appointments/doctors', {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: 'Bearer test-token',
+      },
+    });
+    expect(result).toEqual([
+      { id: 13, name: 'Doctor', specialization: 'General Physician' },
     ]);
   });
 });
