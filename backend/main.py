@@ -149,6 +149,11 @@ startup_diagnostics = {}
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global startup_diagnostics
+    try:
+        from .axiom_logger import setup_axiom_logging
+        setup_axiom_logging()
+    except Exception as e:
+        logger.warning("Failed to initialize Axiom logging: %s", e)
     # Mask any sensitive database passwords in URL for logging/diagnostics
     db_url = str(database.SQLALCHEMY_DATABASE_URL)
     if "@" in db_url:
