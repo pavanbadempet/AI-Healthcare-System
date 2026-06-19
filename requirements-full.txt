@@ -44,7 +44,7 @@ plotly>=5.21.0
 # --- AI & LLM (Full) ---
 google-generativeai>=0.5.2
 langchain-huggingface>=0.0.3
-langchain-community>=0.0.38
+langchain-community>=0.4.2
 langchain-core
 langgraph>=1.2.4
 
