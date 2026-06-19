@@ -216,17 +216,25 @@ class ModelService:
     # ── Loading ──────────────────────────────────────────────────
 
     def _load_pkl(self, filenames: List[str]) -> Any:
-        """Attempt to load a pickle/joblib file from the models directory."""
+        """Attempt to load a pickle/joblib file from the models directory with memory-mapping."""
         for f_name in filenames:
             path = os.path.join(self._model_dir, f_name)
             if os.path.exists(path):
                 try:
-                    with open(path, 'rb') as f:
-                        obj = joblib.load(f)
-                        logger.info("Successfully loaded model: %s", f_name)
-                        return obj
-                except Exception:
-                    logger.error("Failed to load model file %s", f_name)
+                    # Use memory mapping to read scikit-learn arrays directly from disk.
+                    # This drastically reduces RSS RAM usage and speeds up model loads.
+                    obj = joblib.load(path, mmap_mode='r')
+                    logger.info("Successfully loaded model via mmap: %s", f_name)
+                    return obj
+                except Exception as mmap_err:
+                    # Fallback to regular file stream loading if memory-mapping fails
+                    try:
+                        with open(path, 'rb') as f:
+                            obj = joblib.load(f)
+                            logger.info("Successfully loaded model (fallback): %s", f_name)
+                            return obj
+                    except Exception:
+                        logger.error("Failed to load model file %s: %s", f_name, mmap_err)
 
         logger.warning("Could not find any of: %s in %s", filenames, self._model_dir)
         return None
