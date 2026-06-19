@@ -1,6 +1,7 @@
 import logging
 
 from . import prediction, schemas
+from .model_service import model_service
 
 logger = logging.getLogger(__name__)
 ML_PREDICTION_FAILURE_MESSAGE = "Error running prediction. Please try again later."
@@ -35,8 +36,8 @@ class MLService:
                 general_health=3 # Default 'Good'
             )
 
-            result = prediction.predict_diabetes(data)
-            return result["prediction"]
+            result = model_service.predict_diabetes(data)
+            return result.prediction
 
         except Exception:
             logger.error("Legacy diabetes prediction failed")
@@ -62,8 +63,8 @@ class MLService:
                 thal=int(thal)
             )
 
-            result = prediction.predict_heart(data)
-            return result["prediction"]
+            result = model_service.predict_heart(data)
+            return result.prediction
         except Exception:
              logger.error("Legacy heart prediction failed")
              return ML_PREDICTION_FAILURE_MESSAGE
@@ -86,8 +87,8 @@ class MLService:
                 albumin=3.0
             )
 
-            result = prediction.predict_liver(data)
-            return result["prediction"]
+            result = model_service.predict_liver(data)
+            return result.prediction
         except Exception:
             logger.error("Legacy liver prediction failed")
             return ML_PREDICTION_FAILURE_MESSAGE

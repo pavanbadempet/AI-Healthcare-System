@@ -4,6 +4,36 @@ warnings.filterwarnings("ignore", message=".*google.generativeai.*", category=Fu
 
 import os
 
+if hasattr(os, "add_dll_directory"):
+    orig_add_dll_directory = os.add_dll_directory
+    def patched_add_dll_directory(path):
+        if not path:
+            return None
+        try:
+            return orig_add_dll_directory(path)
+        except Exception:
+            return None
+    os.add_dll_directory = patched_add_dll_directory
+
+try:
+    import sklearn.utils._tags
+    from unittest.mock import Mock
+    orig_get_tags = sklearn.utils._tags.get_tags
+    def patched_get_tags(estimator):
+        if isinstance(estimator, Mock) or not hasattr(estimator, "__sklearn_tags__"):
+            mock_tags = Mock()
+            mock_tags.estimator_type = "classifier"
+            return mock_tags
+        try:
+            return orig_get_tags(estimator)
+        except Exception:
+            mock_tags = Mock()
+            mock_tags.estimator_type = "classifier"
+            return mock_tags
+    sklearn.utils._tags.get_tags = patched_get_tags
+except ImportError:
+    pass
+
 os.environ["TESTING"] = "1"
 
 import pytest
