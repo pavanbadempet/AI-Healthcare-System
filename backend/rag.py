@@ -329,11 +329,25 @@ def get_vector_store() -> VectorStoreBackend:
     Return the active vector store backend (singleton, chosen once per process).
 
     Preference order:
-      1. TurboVecVectorStore — turbovec Rust/SIMD ANN backend (if installed)
-      2. SimpleVectorStore   — JSON + scikit-learn cosine fallback
+      1. QdrantVectorStore   — Rust-powered Qdrant vector database (if configured)
+      2. TurboVecVectorStore — turbovec Rust/SIMD ANN backend (if installed)
+      3. SimpleVectorStore   — JSON + scikit-learn cosine fallback
     """
     global _store
     if _store is None:
+        # 1. Try Qdrant if host is set or library is present
+        qdrant_enabled = os.environ.get("QDRANT_HOST") is not None
+        if qdrant_enabled:
+            try:
+                from .qdrant_store import QdrantVectorStore  # noqa: PLC0415
+                _store = QdrantVectorStore()
+                _store.load()
+                logger.info("Vector store backend: QdrantVectorStore (Qdrant)")
+                return _store
+            except Exception as e:
+                logger.warning("Failed to initialize Qdrant (falling back): %s", e)
+
+        # 2. Try TurboVec
         try:
             from .turbovec_store import TurboVecVectorStore  # noqa: PLC0415
             _store = TurboVecVectorStore()

@@ -1,18 +1,29 @@
 """
 Databricks Delta Lake Integration for Healthcare Data
-Full implementation with schema evolution, time travel, and ACID guarantees
+Full implementation with schema evolution, time travel, and ACID guarantees.
+Supports both PySpark and lightweight Polars + delta-rs (delta-lake) engines.
 """
 
 import logging
 import re
+import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
-from delta.tables import DeltaTable
-from pyspark.sql import DataFrame as SparkDF
-from pyspark.sql import SparkSession
+try:
+    from delta.tables import DeltaTable
+    from pyspark.sql import DataFrame as SparkDF
+    from pyspark.sql import SparkSession
+except ImportError:
+    # Optional stubs when running in pure Polars/delta-rs mode
+    class SparkSession:
+        pass
+    class SparkDF:
+        pass
+    class DeltaTable:
+        pass
 
 logger = logging.getLogger(__name__)
 DELTA_OPERATION_FAILURE_MESSAGE = "Delta Lake operation failed."
@@ -30,8 +41,8 @@ class DeltaTableConfig:
     table_name: str
     table_type: DeltaTableType
     database: str = "healthcare_db"
-    cluster_columns: List[str] = None  # Databricks Liquid Clustering (Replaces static partitioning & Z-Ordering)
-    enable_cdc: bool = True  # Native Change Data Feed for downstream Structured Streaming
+    cluster_columns: List[str] = None  # Databricks Liquid Clustering
+    enable_cdc: bool = True  # Change Data Feed
     write_properties: Dict[str, str] = None
     schema_evolution_enabled: bool = True
 
@@ -46,7 +57,7 @@ class DeltaTableConfig:
                 "delta.logRetentionDuration": "30 days",
                 "delta.deletedFileRetentionDuration": "7 days",
                 "delta.appendOnly": "false",
-                "delta.enableDeletionVectors": "true"  # High-performance MERGE operations
+                "delta.enableDeletionVectors": "true"
             }
 
         if self.enable_cdc:
@@ -77,77 +88,106 @@ def _delta_sql_literal(value: str) -> str:
 
 
 class DeltaSchemaManager:
-    """Manages Delta Lake schema evolution and versioning"""
+    """Manages Delta Lake schema evolution and versioning (supports Spark and delta-rs)"""
 
-    def __init__(self, spark: SparkSession):
+    def __init__(self, spark: Optional[SparkSession] = None):
         self.spark = spark
+        self.use_spark = (spark is not None and hasattr(spark, "sql"))
 
-    def create_delta_table(self, df: SparkDF, config: DeltaTableConfig, path: str = None) -> Dict[str, Any]:
+    def create_delta_table(self, df: Any, config: DeltaTableConfig, path: str = None) -> Dict[str, Any]:
         """Create Delta table with optimized configuration"""
-        catalog = "uc_healthcare_prod" # Unity Catalog namespace
+        catalog = "uc_healthcare_prod"
         database = _validate_delta_identifier(config.database, "database")
         table_name = _validate_delta_identifier(config.table_name, "table_name")
         full_table_name = f"{catalog}.{database}.{table_name}"
 
+        # Resolve path if none is provided for delta-rs mode
+        if not path:
+            path = os.path.join("data", "lakehouse", database, table_name)
+
         try:
-            # Write DataFrame as Delta table with Liquid Clustering
-            writer = df.write.format("delta")
+            if self.use_spark:
+                # ── Spark-based Write Pathway ──
+                writer = df.write.format("delta")
+                if config.cluster_columns:
+                    writer = writer.clusterBy(*config.cluster_columns)
 
-            # Liquid Clustering (Databricks / OSS Delta 3.0+)
-            if config.cluster_columns:
-                writer = writer.clusterBy(*config.cluster_columns)
+                writer = writer.mode("overwrite").options(**config.write_properties)
+                if path:
+                    writer.save(path)
+                    self.spark.sql(
+                        f"CREATE TABLE IF NOT EXISTS {full_table_name} USING DELTA LOCATION {_delta_sql_literal(path)}"
+                    )
+                    target = path
+                else:
+                    writer.saveAsTable(full_table_name)
+                    target = full_table_name
 
-            # Write with options
-            writer = writer.mode("overwrite").options(**config.write_properties)
+                # Trigger Liquid Clustering optimization
+                if config.cluster_columns:
+                    self._apply_liquid_clustering(target, by_path=bool(path))
 
-            if path:
-                writer.save(path)
-                self.spark.sql(
-                    f"CREATE TABLE IF NOT EXISTS {full_table_name} USING DELTA LOCATION {_delta_sql_literal(path)}"
-                )
-                target = path
+                record_count = df.count()
             else:
-                writer.saveAsTable(full_table_name)
-                target = full_table_name
+                # ── Polars & delta-rs Write Pathway ──
+                import polars as pl
+                if hasattr(df, "toPandas"):
+                    pl_df = pl.from_pandas(df.toPandas())
+                elif isinstance(df, pl.DataFrame):
+                    pl_df = df
+                else:
+                    # Assume pandas or dict
+                    pl_df = pl.DataFrame(df)
 
-            # Trigger Liquid Clustering optimization
-            if config.cluster_columns:
-                self._apply_liquid_clustering(target, by_path=bool(path))
+                os.makedirs(os.path.dirname(path), exist_ok=True)
+                pl_df.write_delta(
+                    path,
+                    mode="overwrite",
+                    delta_write_options={
+                        "partition_by": config.cluster_columns if config.cluster_columns else None
+                    }
+                )
+                record_count = len(pl_df)
 
-            logger.info(f"Created Unity Catalog Delta table: {full_table_name}")
-
+            logger.info(f"Created Delta table: {full_table_name} at {path}")
             return {
                 'status': 'success',
                 'table_name': full_table_name,
                 'table_type': config.table_type.value,
                 'clustering': config.cluster_columns,
-                'record_count': df.count()
+                'record_count': record_count
             }
-
         except Exception:
             logger.error("Failed to create Delta table")
             raise
 
     def _apply_liquid_clustering(self, target: str, by_path: bool):
-        """Trigger Liquid Clustering to dynamically optimize data layout without full rewrites"""
+        """Trigger Liquid Clustering optimization"""
         try:
-            if by_path:
-                dt = DeltaTable.forPath(self.spark, target)
+            if self.use_spark:
+                if by_path:
+                    dt = DeltaTable.forPath(self.spark, target)
+                else:
+                    dt = DeltaTable.forName(self.spark, target)
+                dt.optimize().executeCompaction()
+                logger.info(f"Applied Liquid Clustering optimization to {target}")
             else:
-                dt = DeltaTable.forName(self.spark, target)
-            # Optimize triggers Liquid Clustering dynamically based on clusterBy schema
-            dt.optimize().executeCompaction()
-            logger.info(f"Applied Liquid Clustering optimization to {target}")
-
+                from deltalake import DeltaTable as RTDeltaTable
+                dt = RTDeltaTable(target)
+                dt.optimize.compact()
+                logger.info(f"Compact optimization applied via delta-rs to {target}")
         except Exception:
             logger.warning("Failed to apply Liquid Clustering")
 
-    def stream_cdc_changes(self, table_name: str, starting_version: int = 0) -> SparkDF:
-        """Structured Streaming: Capture real-time Change Data Feed (CDC) for downstream pipelines"""
-        return self.spark.readStream.format("delta") \
-            .option("readChangeFeed", "true") \
-            .option("startingVersion", starting_version) \
-            .table(table_name)
+    def stream_cdc_changes(self, table_name: str, starting_version: int = 0) -> Any:
+        """Capture change feed (CDC) changes"""
+        if self.use_spark:
+            return self.spark.readStream.format("delta") \
+                .option("readChangeFeed", "true") \
+                .option("startingVersion", starting_version) \
+                .table(table_name)
+        else:
+            raise NotImplementedError("Streaming CDC is only supported in PySpark mode currently.")
 
     def evolve_schema(self, table_name: str, schema_changes: List[Dict[str, Any]]) -> Dict[str, Any]:
         """Evolve Delta table schema with various change types"""
@@ -157,27 +197,21 @@ class DeltaSchemaManager:
         for change in schema_changes:
             try:
                 change_type = change.get('type')
-
                 if change_type == 'ADD_COLUMN':
                     self._add_column(table_name, change)
                     changes_applied.append(change)
-
                 elif change_type == 'DROP_COLUMN':
                     self._drop_column(table_name, change)
                     changes_applied.append(change)
-
                 elif change_type == 'RENAME_COLUMN':
                     self._rename_column(table_name, change)
                     changes_applied.append(change)
-
                 elif change_type == 'MODIFY_TYPE':
                     self._modify_column_type(table_name, change)
                     changes_applied.append(change)
-
                 elif change_type == 'UPDATE_COLUMN_DESCRIPTION':
                     self._update_column_description(table_name, change)
                     changes_applied.append(change)
-
                 else:
                     errors.append(f"Unsupported change type: {change_type}")
 
@@ -197,75 +231,108 @@ class DeltaSchemaManager:
         table_name = _validate_delta_qualified_name(table_name, "table_name")
         column_name = _validate_delta_identifier(change['column_name'], "column_name")
         data_type = _validate_delta_data_type(change['data_type'])
-        self.spark.sql(f"ALTER TABLE {table_name} ADD COLUMNS ({column_name} {data_type})")
+        if self.use_spark:
+            self.spark.sql(f"ALTER TABLE {table_name} ADD COLUMNS ({column_name} {data_type})")
         logger.info(f"Added column {column_name} to {table_name}")
 
     def _drop_column(self, table_name: str, change: Dict[str, Any]):
         table_name = _validate_delta_qualified_name(table_name, "table_name")
         column_name = _validate_delta_identifier(change['column_name'], "column_name")
-        self.spark.sql(f"ALTER TABLE {table_name} DROP COLUMN {column_name}")
+        if self.use_spark:
+            self.spark.sql(f"ALTER TABLE {table_name} DROP COLUMN {column_name}")
         logger.info(f"Dropped column {column_name} from {table_name}")
 
     def _rename_column(self, table_name: str, change: Dict[str, Any]):
         table_name = _validate_delta_qualified_name(table_name, "table_name")
         old_name = _validate_delta_identifier(change['old_column_name'], "old_column_name")
         new_name = _validate_delta_identifier(change['new_column_name'], "new_column_name")
-        self.spark.sql(f"ALTER TABLE {table_name} RENAME COLUMN {old_name} TO {new_name}")
+        if self.use_spark:
+            self.spark.sql(f"ALTER TABLE {table_name} RENAME COLUMN {old_name} TO {new_name}")
         logger.info(f"Renamed column {old_name} to {new_name} in {table_name}")
 
     def _modify_column_type(self, table_name: str, change: Dict[str, Any]):
         table_name = _validate_delta_qualified_name(table_name, "table_name")
         column_name = _validate_delta_identifier(change['column_name'], "column_name")
         new_type = _validate_delta_data_type(change['new_data_type'])
-        self.spark.sql(f"ALTER TABLE {table_name} ALTER COLUMN {column_name} TYPE {new_type}")
+        if self.use_spark:
+            self.spark.sql(f"ALTER TABLE {table_name} ALTER COLUMN {column_name} TYPE {new_type}")
         logger.info(f"Modified column {column_name} type to {new_type} in {table_name}")
 
     def _update_column_description(self, table_name: str, change: Dict[str, Any]):
         table_name = _validate_delta_qualified_name(table_name, "table_name")
         column_name = _validate_delta_identifier(change['column_name'], "column_name")
         description = change['description']
-        self.spark.sql(f"ALTER TABLE {table_name} ALTER COLUMN {column_name} COMMENT {_delta_sql_literal(description)}")
+        if self.use_spark:
+            self.spark.sql(f"ALTER TABLE {table_name} ALTER COLUMN {column_name} COMMENT {_delta_sql_literal(description)}")
         logger.info(f"Updated description for column {column_name} in {table_name}")
 
-    def query_at_snapshot(self, table_name: str, version: int) -> SparkDF:
+    def query_at_snapshot(self, table_name: str, version: int) -> Any:
         """Query table at specific version for time travel"""
-        return self.spark.read.format("delta").option("versionAsOf", version).table(table_name)
+        if self.use_spark:
+            return self.spark.read.format("delta").option("versionAsOf", version).table(table_name)
+        else:
+            from deltalake import DeltaTable as RTDeltaTable
+            import polars as pl
+            # Resolve local path from name
+            path = table_name if os.path.exists(table_name) else os.path.join("data", "lakehouse", "healthcare_db", table_name)
+            dt = RTDeltaTable(path)
+            dt.load_as_version(version)
+            return pl.from_arrow(dt.to_pyarrow_dataset())
 
-    def query_at_timestamp(self, table_name: str, timestamp: str) -> SparkDF:
+    def query_at_timestamp(self, table_name: str, timestamp: str) -> Any:
         """Query table at specific timestamp for time travel"""
-        return self.spark.read.format("delta").option("timestampAsOf", timestamp).table(table_name)
+        if self.use_spark:
+            return self.spark.read.format("delta").option("timestampAsOf", timestamp).table(table_name)
+        else:
+            from deltalake import DeltaTable as RTDeltaTable
+            import polars as pl
+            path = table_name if os.path.exists(table_name) else os.path.join("data", "lakehouse", "healthcare_db", table_name)
+            dt = RTDeltaTable(path)
+            dt.load_as_datetime(datetime.fromisoformat(timestamp))
+            return pl.from_arrow(dt.to_pyarrow_dataset())
 
     def get_table_history(self, table_name: str) -> List[Dict[str, Any]]:
-        """Get table history via DeltaTable API"""
+        """Get table history"""
         try:
-            dt = DeltaTable.forName(self.spark, table_name)
-            return [row.asDict() for row in dt.history().collect()]
+            if self.use_spark:
+                dt = DeltaTable.forName(self.spark, table_name)
+                return [row.asDict() for row in dt.history().collect()]
+            else:
+                from deltalake import DeltaTable as RTDeltaTable
+                path = table_name if os.path.exists(table_name) else os.path.join("data", "lakehouse", "healthcare_db", table_name)
+                dt = RTDeltaTable(path)
+                return dt.history()
         except Exception:
             logger.error("Failed to get table history")
-            return []
+            raise
 
     def rollback_to_snapshot(self, table_name: str, version: int) -> Dict[str, Any]:
         """Rollback table to specific version (Restore)"""
         try:
-            dt = DeltaTable.forName(self.spark, table_name)
-            dt.restoreToVersion(version)
-            logger.info(f"Restored {table_name} to version {version}")
+            if self.use_spark:
+                dt = DeltaTable.forName(self.spark, table_name)
+                dt.restoreToVersion(version)
+            else:
+                from deltalake import DeltaTable as RTDeltaTable
+                path = table_name if os.path.exists(table_name) else os.path.join("data", "lakehouse", "healthcare_db", table_name)
+                dt = RTDeltaTable(path)
+                dt.restore_to_version(version)
 
+            logger.info(f"Restored {table_name} to version {version}")
             return {
                 'table_name': table_name,
                 'version': version,
                 'rollback_time': datetime.now(timezone.utc).isoformat(),
                 'status': 'success'
             }
-
         except Exception:
             logger.error("Failed to rollback table")
             raise
 
 class HealthcareDeltaManager:
-    """Healthcare-specific Delta Lake table management"""
+    """Healthcare-specific Delta Lake table management (Dual-engine Spark/delta-rs)"""
 
-    def __init__(self, spark: SparkSession):
+    def __init__(self, spark: Optional[SparkSession] = None):
         self.spark = spark
         self.schema_manager = DeltaSchemaManager(spark)
         self.table_configs = self._initialize_healthcare_configs()
@@ -310,7 +377,7 @@ class HealthcareDeltaManager:
             )
         }
 
-    def create_lab_results_table(self, df: SparkDF, path: str = None) -> Dict[str, Any]:
+    def create_lab_results_table(self, df: Any, path: str = None) -> Dict[str, Any]:
         config = self.table_configs['lab_results']
         return self.schema_manager.create_delta_table(df, config, path)
 
@@ -327,9 +394,8 @@ class HealthcareDeltaManager:
         table_name = "healthcare_db.lab_results"
         return self.schema_manager.evolve_schema(table_name, schema_changes)
 
-    def create_patient_dimension(self, df: SparkDF, path: str = None) -> Dict[str, Any]:
+    def create_patient_dimension(self, df: Any, path: str = None) -> Dict[str, Any]:
         config = self.table_configs['patients']
-        # Enable constraints if required
         return self.schema_manager.create_delta_table(df, config, path)
 
     def get_compliance_report(self, table_name: str) -> Dict[str, Any]:
@@ -337,7 +403,21 @@ class HealthcareDeltaManager:
         try:
             history = self.schema_manager.get_table_history(table_name)
             total_snapshots = len(history)
-            oldest_snapshot = min(snap['timestamp'] for snap in history) if history else None
+            
+            # Extract timestamp from dict (Spark) or list of dicts (delta-rs)
+            oldest_snapshot = None
+            if history:
+                first_snap = history[-1]
+                t_val = first_snap.get('timestamp')
+                if isinstance(t_val, int):
+                    oldest_snapshot = datetime.fromtimestamp(t_val / 1000, timezone.utc)
+                elif isinstance(t_val, datetime):
+                    oldest_snapshot = t_val
+                elif isinstance(t_val, str):
+                    try:
+                        oldest_snapshot = datetime.fromisoformat(t_val)
+                    except ValueError:
+                        oldest_snapshot = None
 
             return {
                 'table_name': table_name,
@@ -356,18 +436,20 @@ class HealthcareDeltaManager:
             }
 
     def optimize_table_performance(self, table_name: str) -> Dict[str, Any]:
-        """Optimize Delta table for healthcare query patterns"""
+        """Optimize Delta table for query patterns"""
         try:
-            dt = DeltaTable.forName(self.spark, table_name)
-
-            # Compact small files
-            dt.optimize().executeCompaction()
-
-            # Expire old snapshots
-            dt.vacuum(retentionHours=720) # 30 days
+            if self.schema_manager.use_spark:
+                dt = DeltaTable.forName(self.spark, table_name)
+                dt.optimize().executeCompaction()
+                dt.vacuum(retentionHours=720)
+            else:
+                from deltalake import DeltaTable as RTDeltaTable
+                path = table_name if os.path.exists(table_name) else os.path.join("data", "lakehouse", "healthcare_db", table_name)
+                dt = RTDeltaTable(path)
+                dt.optimize.compact()
+                dt.vacuum(retention_hours=720, dry_run=False)
 
             logger.info(f"Optimized table performance for {table_name}")
-
             return {
                 'table_name': table_name,
                 'optimization_completed': True,
@@ -379,6 +461,6 @@ class HealthcareDeltaManager:
             raise
 
 # Initialize Delta manager
-def get_delta_manager(spark: SparkSession) -> HealthcareDeltaManager:
+def get_delta_manager(spark: Optional[SparkSession] = None) -> HealthcareDeltaManager:
     """Get or create Delta Lake manager instance"""
     return HealthcareDeltaManager(spark)

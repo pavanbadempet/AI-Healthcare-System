@@ -14,10 +14,11 @@ Usage:
     status = model_service.health_check()
 """
 
+import json
 import logging
 import os
 import threading
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -56,6 +57,12 @@ class ModelEntry:
     model_version: str = "2.1.0-extratrees"
     training_timestamp: str = "2026-06-18T00:00:00"
     model_card_id: str = ""
+    # ONNX support fields
+    onnx_session: Any = None
+    scaler_onnx_session: Any = None
+    onnx_estimators: Dict[str, Any] = field(default_factory=dict)
+    onnx_weights: Optional[List[float]] = None
+    is_voting: bool = False
 
 
 @dataclass
@@ -129,6 +136,59 @@ def _normalize_prediction(prediction: Any) -> int:
         return 1 if prediction in (1, 2) else 0
     s = str(prediction).strip().lower()
     return 1 if s in ('1', 'high', 'medium') or 'detected' in s or 'chronic' in s else 0
+
+
+def _run_onnx_inference(session: Any, input_data: np.ndarray) -> List[Any]:
+    """Helper to run inference on an ONNX session."""
+    input_name = session.get_inputs()[0].name
+    # Ensure float32 format for standard ONNX conversion
+    feed = {input_name: input_data.astype(np.float32)}
+    return session.run(None, feed)
+
+
+def _predict_onnx_probs(entry: ModelEntry, input_data: np.ndarray) -> Tuple[int, float]:
+    """
+    Run ONNX inference and return (predicted_class, class_1_probability).
+    Handles VotingClassifier models and normalizes probability formats.
+    """
+    if entry.is_voting:
+        probs = []
+        for name, session in entry.onnx_estimators.items():
+            outputs = _run_onnx_inference(session, input_data)
+            probabilities = outputs[1]
+            if isinstance(probabilities, list) and len(probabilities) > 0 and isinstance(probabilities[0], dict):
+                p = probabilities[0].get(1, 0.0)
+            elif isinstance(probabilities, np.ndarray):
+                p = float(probabilities[0][1]) if probabilities.shape[1] > 1 else float(probabilities[0][0])
+            else:
+                p = 0.5
+            probs.append(p)
+        
+        if entry.onnx_weights:
+            weights = np.array(entry.onnx_weights)
+            avg_prob = np.average(probs, weights=weights)
+        else:
+            avg_prob = np.mean(probs)
+        
+        pred_label = 1 if avg_prob >= 0.5 else 0
+        return pred_label, avg_prob
+    else:
+        outputs = _run_onnx_inference(entry.onnx_session, input_data)
+        prediction = outputs[0]
+        if isinstance(prediction, np.ndarray):
+            pred_label = int(prediction[0])
+        else:
+            pred_label = int(prediction)
+
+        probabilities = outputs[1]
+        if isinstance(probabilities, list) and len(probabilities) > 0 and isinstance(probabilities[0], dict):
+            prob = probabilities[0].get(1, 0.0)
+        elif isinstance(probabilities, np.ndarray):
+            prob = float(probabilities[0][1]) if probabilities.shape[1] > 1 else float(probabilities[0][0])
+        else:
+            prob = 0.5
+        
+        return pred_label, prob
 
 
 # ── Model Service ────────────────────────────────────────────────────
@@ -290,6 +350,46 @@ class ModelService:
             entry = self._entries[key]
             entry.status = ModelStatus.LOADING
             try:
+                # Try loading ONNX model first
+                try:
+                    import onnxruntime as ort
+                    onnx_name = model_pkl[0].replace(".pkl", ".onnx")
+                    onnx_path = os.path.join(self._model_dir, onnx_name)
+                    meta_path = onnx_path.replace(".onnx", ".meta.json")
+
+                    if os.path.exists(onnx_path) or os.path.exists(meta_path):
+                        if os.path.exists(meta_path):
+                            with open(meta_path, "r") as f_meta:
+                                meta = json.load(f_meta)
+                            if meta.get("type") == "VotingClassifier":
+                                entry.onnx_estimators = {}
+                                base_name = onnx_name.replace(".onnx", "")
+                                for name in meta["estimators"]:
+                                    est_onnx_name = f"{base_name}_{name}.onnx"
+                                    est_onnx_path = os.path.join(self._model_dir, est_onnx_name)
+                                    entry.onnx_estimators[name] = ort.InferenceSession(est_onnx_path)
+                                entry.onnx_weights = meta.get("weights")
+                                entry.is_voting = True
+                        else:
+                            entry.onnx_session = ort.InferenceSession(onnx_path)
+                            entry.is_voting = False
+
+                        if scaler_pkl:
+                            scaler_onnx_name = scaler_pkl[0].replace(".pkl", ".onnx")
+                            scaler_onnx_path = os.path.join(self._model_dir, scaler_onnx_name)
+                            if os.path.exists(scaler_onnx_path):
+                                entry.scaler_onnx_session = ort.InferenceSession(scaler_onnx_path)
+
+                        entry.model_version = "2.1.0-onnx"
+                        entry.training_timestamp = "2026-06-19T00:00:00"
+                        entry.model_card_id = f"card-{key}-v2"
+                        entry.status = ModelStatus.READY
+                        entry.loaded_at = _time.monotonic()
+                        logger.info("Successfully loaded ONNX model for %s", key)
+                        return
+                except Exception as ex_onnx:
+                    logger.warning("ONNX load failed for %s, falling back to pickle: %s", key, ex_onnx)
+
                 loaded_obj = self._load_pkl(model_pkl)
                 if isinstance(loaded_obj, dict) and "model" in loaded_obj:
                     entry.model = loaded_obj["model"]
@@ -371,11 +471,17 @@ class ModelService:
             data.heart_disease, data.physical_activity, data.general_health,
             data.gender, age_bucket
         ]
-        prediction = entry.model.predict([input_list])
-        raw = _normalize_prediction(prediction)
-        confidence, risk_level = _extract_confidence(entry.model, [input_list])
-        result = "High Risk" if raw == 1 else "Low Risk"
 
+        if entry.onnx_session is not None or entry.is_voting:
+            input_array = np.array([input_list], dtype=np.float32)
+            raw, prob = _predict_onnx_probs(entry, input_array)
+            confidence, risk_level = _classify_confidence(prob)
+        else:
+            prediction = entry.model.predict([input_list])
+            raw = _normalize_prediction(prediction)
+            confidence, risk_level = _extract_confidence(entry.model, [input_list])
+
+        result = "High Risk" if raw == 1 else "Low Risk"
         entry.prediction_count += 1
         return PredictionResult(
             prediction=result, raw=raw,
@@ -394,11 +500,17 @@ class ModelService:
             data.fbs, data.restecg, data.thalach, data.exang,
             data.oldpeak, data.slope, data.ca, data.thal
         ]
-        prediction = entry.model.predict([input_list])
-        raw = _normalize_prediction(prediction)
-        confidence, risk_level = _extract_confidence(entry.model, [input_list])
-        result = "Heart Disease Detected" if raw == 1 else "Healthy Heart"
 
+        if entry.onnx_session is not None or entry.is_voting:
+            input_array = np.array([input_list], dtype=np.float32)
+            raw, prob = _predict_onnx_probs(entry, input_array)
+            confidence, risk_level = _classify_confidence(prob)
+        else:
+            prediction = entry.model.predict([input_list])
+            raw = _normalize_prediction(prediction)
+            confidence, risk_level = _extract_confidence(entry.model, [input_list])
+
+        result = "Heart Disease Detected" if raw == 1 else "Healthy Heart"
         entry.prediction_count += 1
         return PredictionResult(
             prediction=result, raw=raw,
@@ -409,7 +521,7 @@ class ModelService:
     def predict_liver(self, data: Any) -> PredictionResult:
         """Predict liver disease risk from LiverInput schema."""
         entry = self._entries["liver"]
-        if not self.is_available("liver") or not entry.scaler:
+        if not self.is_available("liver") or (not entry.scaler and entry.scaler_onnx_session is None):
             raise ValueError("Liver model or scaler not available")
 
         feature_names = features.LIVER_FEATURES
@@ -419,17 +531,32 @@ class ModelService:
             data.aspartate_aminotransferase, data.total_proteins,
             data.albumin, data.albumin_and_globulin_ratio
         ]
-        df = pd.DataFrame([input_list], columns=feature_names)
-        skewed = ['Total_Bilirubin', 'Alkaline_Phosphotase', 'Alamine_Aminotransferase', 'Albumin_and_Globulin_Ratio']
-        for col in skewed:
-            df[col] = np.log1p(df[col])
 
-        X_scaled = entry.scaler.transform(df)
-        prediction = entry.model.predict(X_scaled)
-        raw = _normalize_prediction(prediction)
-        confidence, risk_level = _extract_confidence(entry.model, X_scaled)
+        if entry.onnx_session is not None or entry.is_voting:
+            df = pd.DataFrame([input_list], columns=feature_names)
+            skewed = ['Total_Bilirubin', 'Alkaline_Phosphotase', 'Alamine_Aminotransferase', 'Albumin_and_Globulin_Ratio']
+            for col in skewed:
+                df[col] = np.log1p(df[col])
+
+            if entry.scaler_onnx_session:
+                X_scaled = _run_onnx_inference(entry.scaler_onnx_session, df.to_numpy(dtype=np.float32))[0]
+            else:
+                X_scaled = entry.scaler.transform(df)
+
+            raw, prob = _predict_onnx_probs(entry, X_scaled)
+            confidence, risk_level = _classify_confidence(prob)
+        else:
+            df = pd.DataFrame([input_list], columns=feature_names)
+            skewed = ['Total_Bilirubin', 'Alkaline_Phosphotase', 'Alamine_Aminotransferase', 'Albumin_and_Globulin_Ratio']
+            for col in skewed:
+                df[col] = np.log1p(df[col])
+
+            X_scaled = entry.scaler.transform(df)
+            prediction = entry.model.predict(X_scaled)
+            raw = _normalize_prediction(prediction)
+            confidence, risk_level = _extract_confidence(entry.model, X_scaled)
+
         result = "Liver Disease Detected" if raw == 1 else "Healthy Liver"
-
         entry.prediction_count += 1
         return PredictionResult(
             prediction=result, raw=raw,
@@ -440,7 +567,7 @@ class ModelService:
     def predict_kidney(self, data: Any) -> PredictionResult:
         """Predict kidney disease risk from KidneyInput schema."""
         entry = self._entries["kidney"]
-        if not self.is_available("kidney") or not entry.scaler:
+        if not self.is_available("kidney") or (not entry.scaler and entry.scaler_onnx_session is None):
             raise ValueError("Kidney model or scaler not available")
 
         feature_names = features.KIDNEY_FEATURES
@@ -450,13 +577,24 @@ class ModelService:
             data.bgr, data.bu, data.sc, data.sod, data.pot, data.hemo, data.pcv, data.wc, data.rc,
             data.htn, data.dm, data.cad, data.appet, data.pe, data.ane
         ]
-        df = pd.DataFrame([input_list], columns=feature_names)
-        input_scaled = entry.scaler.transform(df)
-        prediction = entry.model.predict(input_scaled)
-        raw = _normalize_prediction(prediction)
-        confidence, risk_level = _extract_confidence(entry.model, input_scaled)
-        result = "Chronic Kidney Disease Detected" if raw == 1 else "Healthy Kidney"
 
+        if entry.onnx_session is not None or entry.is_voting:
+            df = pd.DataFrame([input_list], columns=feature_names)
+            if entry.scaler_onnx_session:
+                input_scaled = _run_onnx_inference(entry.scaler_onnx_session, df.to_numpy(dtype=np.float32))[0]
+            else:
+                input_scaled = entry.scaler.transform(df)
+
+            raw, prob = _predict_onnx_probs(entry, input_scaled)
+            confidence, risk_level = _classify_confidence(prob)
+        else:
+            df = pd.DataFrame([input_list], columns=feature_names)
+            input_scaled = entry.scaler.transform(df)
+            prediction = entry.model.predict(input_scaled)
+            raw = _normalize_prediction(prediction)
+            confidence, risk_level = _extract_confidence(entry.model, input_scaled)
+
+        result = "Chronic Kidney Disease Detected" if raw == 1 else "Healthy Kidney"
         entry.prediction_count += 1
         return PredictionResult(
             prediction=result, raw=raw,
@@ -467,7 +605,7 @@ class ModelService:
     def predict_lungs(self, data: Any) -> PredictionResult:
         """Predict lung/respiratory risk from LungInput schema."""
         entry = self._entries["lungs"]
-        if not self.is_available("lungs") or not entry.scaler:
+        if not self.is_available("lungs") or (not entry.scaler and entry.scaler_onnx_session is None):
             raise ValueError("Lung model or scaler not available")
 
         feature_names = features.LUNG_FEATURES
@@ -477,13 +615,24 @@ class ModelService:
             data.allergy, data.wheezing, data.alcohol, data.coughing,
             data.shortness_of_breath, data.swallowing_difficulty, data.chest_pain
         ]
-        df = pd.DataFrame([input_list], columns=feature_names)
-        input_scaled = entry.scaler.transform(df)
-        prediction = entry.model.predict(input_scaled)
-        raw = _normalize_prediction(prediction)
-        confidence, risk_level = _extract_confidence(entry.model, input_scaled)
-        result = "Respiratory Issue Detected" if raw == 1 else "Healthy Lungs"
 
+        if entry.onnx_session is not None or entry.is_voting:
+            df = pd.DataFrame([input_list], columns=feature_names)
+            if entry.scaler_onnx_session:
+                input_scaled = _run_onnx_inference(entry.scaler_onnx_session, df.to_numpy(dtype=np.float32))[0]
+            else:
+                input_scaled = entry.scaler.transform(df)
+
+            raw, prob = _predict_onnx_probs(entry, input_scaled)
+            confidence, risk_level = _classify_confidence(prob)
+        else:
+            df = pd.DataFrame([input_list], columns=feature_names)
+            input_scaled = entry.scaler.transform(df)
+            prediction = entry.model.predict(input_scaled)
+            raw = _normalize_prediction(prediction)
+            confidence, risk_level = _extract_confidence(entry.model, input_scaled)
+
+        result = "Respiratory Issue Detected" if raw == 1 else "Healthy Lungs"
         entry.prediction_count += 1
         return PredictionResult(
             prediction=result, raw=raw,
