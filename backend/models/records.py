@@ -11,7 +11,7 @@ class HealthRecord(Base):
     __tablename__ = "health_records"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
     record_type = Column(String)  # 'diabetes', 'heart', 'liver'
     data = Column(Text)  # JSON string of input data
     prediction = Column(String)
@@ -24,7 +24,7 @@ class ChatLog(Base):
     __tablename__ = "chat_logs"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
     role = Column(String)  # 'user' or 'assistant'
     content = Column(String)
     timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
@@ -37,7 +37,7 @@ class AuditLog(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     facility_id = Column(Integer, ForeignKey("hospital_facilities.id"), nullable=True, index=True)
-    admin_id = Column(Integer, ForeignKey("users.id"))
+    admin_id = Column(Integer, ForeignKey("users.id"), index=True)
     target_user_id = Column(Integer)  # Keep generic or link, but generic is safer if user deleted
     action = Column(String)  # VIEW_FULL, DELETE, BAN
     timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))

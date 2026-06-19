@@ -12,12 +12,12 @@ class Appointment(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     facility_id = Column(Integer, ForeignKey("hospital_facilities.id"), nullable=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    doctor_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # Link to specific doctor
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    doctor_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)  # Link to specific doctor
     specialist = Column(String)  # Keep for fallback name display
     date_time = Column(DateTime)
     reason = Column(Text)
-    status = Column(String, default="Scheduled")  # Scheduled, Completed, Cancelled
+    status = Column(String, default="Scheduled", index=True)  # Scheduled, Completed, Cancelled
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     owner = relationship("User", back_populates="appointments", foreign_keys=[user_id])
