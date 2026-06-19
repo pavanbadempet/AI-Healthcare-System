@@ -42,7 +42,7 @@ class Bed(Base):
     department_id = Column(Integer, ForeignKey("departments.id"))
     bed_number = Column(String, index=True)
     ward = Column(String, nullable=True)
-    status = Column(String, default="available")  # available, occupied, maintenance
+    status = Column(String, default="available", index=True)  # available, occupied, maintenance
     current_patient_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
@@ -62,7 +62,7 @@ class Encounter(Base):
     encounter_type = Column(String)  # OPD, IPD, Emergency
     reason = Column(Text, nullable=True)
     priority = Column(String, default="routine")  # routine, urgent, emergency
-    status = Column(String, default="open")  # open, closed, cancelled
+    status = Column(String, default="open", index=True)  # open, closed, cancelled
     started_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     ended_at = Column(DateTime, nullable=True)
 
@@ -85,7 +85,7 @@ class Admission(Base):
     admitted_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     discharged_at = Column(DateTime, nullable=True)
     reason = Column(Text, nullable=True)
-    status = Column(String, default="active")
+    status = Column(String, default="active", index=True)
 
     facility = relationship("HospitalFacility")
     encounter = relationship("Encounter")
