@@ -15,7 +15,7 @@ Inspired by Universe Dex chat_context.py, adapted for healthcare domain.
 
 import logging
 import re
-from typing import Optional, Any
+from typing import Any, Optional
 
 from sqlalchemy.orm import Session
 

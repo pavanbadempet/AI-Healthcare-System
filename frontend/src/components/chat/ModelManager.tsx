@@ -3,7 +3,7 @@ import { Download, Trash2, Check, Loader2, HardDrive, Zap, ChevronLeft, AlertCir
 import * as webllm from '@/lib/webllm';
 import { useAuthStore } from '@/lib/auth';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://127.0.0.1:8000";
+const API_BASE = import.meta.env.NEXT_PUBLIC_API_URL || import.meta.env.VITE_PUBLIC_API_URL || "http://127.0.0.1:8000";
 
 /* Types */
 interface CatalogModel {
@@ -51,10 +51,13 @@ export const ModelManager: React.FC<{
   onOllamaSelect: (model: string) => void;
   onWebLLMSelect: (modelId: string) => void;
   onWebLLMUnload: () => void;
+  onWebLLMLoad: (modelId: string) => Promise<void>;
   currentOllamaModel: string;
   currentWebLLMModel: string | null;
   webllmActive: boolean;
-}> = ({ onClose, onOllamaSelect, onWebLLMSelect, onWebLLMUnload, currentOllamaModel, currentWebLLMModel, webllmActive }) => {
+  webllmLoading: string | null;
+  webllmProgress: webllm.WebLLMProgress | null;
+}> = ({ onClose, onOllamaSelect, onWebLLMSelect, onWebLLMUnload, onWebLLMLoad, currentOllamaModel, currentWebLLMModel, webllmActive, webllmLoading, webllmProgress }) => {
   const { token, user } = useAuthStore();
   const isAdmin = user?.role === 'admin';
   const [catalog, setCatalog] = useState<CatalogModel[]>([]);
@@ -68,8 +71,6 @@ export const ModelManager: React.FC<{
 
   // WebLLM state
   const [webGPUSupported] = useState(() => webllm.isWebGPUSupported());
-  const [webllmLoading, setWebllmLoading] = useState<string | null>(null);
-  const [webllmProgress, setWebllmProgress] = useState<webllm.WebLLMProgress | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
 
@@ -190,23 +191,6 @@ export const ModelManager: React.FC<{
   }, [onOllamaSelect, onClose]);
 
   /* WebLLM Handlers */
-  const handleWebLLMLoad = useCallback(async (modelId: string) => {
-    if (webllmLoading) return;
-    setWebllmLoading(modelId);
-    setWebllmProgress({ text: 'Initializing WebGPU...', progress: 0 });
-    try {
-      await webllm.loadModel(modelId, (p) => {
-        setWebllmProgress(p);
-      });
-      onWebLLMSelect(modelId);
-      setWebllmProgress(null);
-    } catch (err) {
-      setWebllmProgress({ text: `Error: ${err}`, progress: 0 });
-      setTimeout(() => setWebllmProgress(null), 4000);
-    } finally {
-      setWebllmLoading(null);
-    }
-  }, [webllmLoading, onWebLLMSelect]);
 
   const downloadedNames = new Set(downloaded.map(m => m.name));
 
@@ -215,7 +199,7 @@ export const ModelManager: React.FC<{
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-zinc-800/50 bg-zinc-900/50">
         <div className="flex items-center gap-3">
-          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors">
+          <button onClick={onClose} aria-label="Close model manager" className="p-1.5 rounded-lg hover:bg-zinc-800 text-zinc-400 hover:text-white transition-colors">
             <ChevronLeft className="w-4 h-4" />
           </button>
           <div className="flex items-center gap-2">
@@ -368,7 +352,7 @@ export const ModelManager: React.FC<{
                             </>
                           ) : (
                             <button
-                              onClick={() => handleWebLLMLoad(model.id)}
+                              onClick={() => onWebLLMLoad(model.id)}
                               disabled={!!webllmLoading}
                               className="w-full py-2.5 rounded-lg bg-white text-zinc-950 text-xs font-bold hover:bg-zinc-200 transition-all flex items-center justify-center gap-2 disabled:opacity-40"
                             >

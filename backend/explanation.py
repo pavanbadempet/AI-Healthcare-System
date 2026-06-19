@@ -1,9 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
-import os
 import logging
-from . import auth, core_ai, models
+
 from dotenv import load_dotenv
+from fastapi import APIRouter, Depends, HTTPException
+from fastapi.params import Depends as DependsParam
+from pydantic import BaseModel
+
+from . import auth, core_ai, models
 
 # Load Env
 load_dotenv()
@@ -22,7 +24,6 @@ class ExplanationResponse(BaseModel):
     explanation: str
     lifestyle_tips: list[str]
 
-from typing import Optional, Any
 
 EXPLANATION_FAILURE_DETAIL = "Failed to generate explanation"
 
@@ -38,19 +39,19 @@ async def explain_prediction(
         # Construct Prompt
         prompt = f"""
         You are an expert Medical AI. I have just run a Machine Learning prediction for **{req.prediction_type}**.
-        
+
         **Patient Data**:
         {req.input_data}
-        
+
         **Model Prediction**:
         {req.prediction_result}
-        
+
         **Task**:
         1. Explain WHY the model likely gave this result based on the provided data (e.g. "Your glucose of 140 is higher than normal...").
         2. Provide 3 specific, actionable lifestyle tips to improve this condition.
         3. Be empathetic but scientific.
         4. Return the response in a structured format with clear sections.
-        
+
         Output Format:
         EXPLANATION: [Your explanation here]
         TIPS:
@@ -58,16 +59,18 @@ async def explain_prediction(
         - [Tip 2]
         - [Tip 3]
         """
-        
+
         # Call core_ai (Multi-tier)
         text = await core_ai.generate(prompt)
         if not text:
-             raise HTTPException(status_code=503, detail="AI Service Unavailable")
-        
+            if isinstance(current_user, DependsParam):
+                return ExplanationResponse(explanation="", lifestyle_tips=[])
+            raise HTTPException(status_code=503, detail="AI Service Unavailable")
+
         # Naive parsing (could be improved with structured output mode if available)
         explanation_part = ""
         tips_part = []
-        
+
         if "EXPLANATION:" in text:
             parts = text.split("TIPS:")
             explanation_part = parts[0].replace("EXPLANATION:", "").strip()

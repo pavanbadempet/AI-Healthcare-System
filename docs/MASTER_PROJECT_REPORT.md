@@ -128,7 +128,7 @@ RAG optimizes LLM output by referencing an authoritative knowledge base before g
 
 ### 3.2 SOFTWARE REQUIREMENTS
 *   **Operating System**: Windows 10/11 or Ubuntu Linux 20.04.
-*   **Programming Language**: Python 3.10.
+*   **Programming Language**: Python 3.11+.
 *   **Backend Framework**: FastAPI (High-performance web framework).
 *   **Frontend Framework**: Next.js App Router (TypeScript).
 *   **Containerization**: Docker Desktop.

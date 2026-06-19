@@ -13,10 +13,9 @@ Or set GITHUB_TOKEN env var:
     python scripts/github_seo.py
 """
 
+import argparse
 import os
 import sys
-import json
-import argparse
 
 try:
     import requests
@@ -109,7 +108,7 @@ def check_current(token: str):
         print(f"❌ Cannot access repo: {r.status_code}")
         return
     data = r.json()
-    print(f"\n📊 Current State:")
+    print("\n📊 Current State:")
     print(f"   Description: {data.get('description', 'NONE')}")
     print(f"   Homepage:    {data.get('homepage', 'NONE')}")
     print(f"   Stars:       {data.get('stargazers_count', 0)}")

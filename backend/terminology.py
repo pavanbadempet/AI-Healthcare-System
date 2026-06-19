@@ -9,7 +9,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-
 LOINC_SYSTEM = "http://loinc.org"
 SNOMED_SYSTEM = "http://snomed.info/sct"
 ICD10_CM_SYSTEM = "http://hl7.org/fhir/sid/icd-10-cm"

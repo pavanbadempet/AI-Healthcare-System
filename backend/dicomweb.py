@@ -11,7 +11,6 @@ import os
 import re
 from typing import Any
 
-
 DICOMWEB_STANDARDS_NOTE = (
     "DICOMweb metadata links for PACS integration planning; validate against "
     "the target archive conformance statement before production exchange."

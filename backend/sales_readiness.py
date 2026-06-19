@@ -7,7 +7,8 @@ from typing import Any
 
 from fastapi import APIRouter, Depends
 
-from . import admin as admin_dependencies, models
+from . import admin as admin_dependencies
+from . import models
 
 router = APIRouter(prefix="/admin", tags=["Sales Readiness"])
 

@@ -1,0 +1,62 @@
+{
+  "model_name": "diabetes",
+  "evaluated_at": "2026-06-18T15:59:01.454501+00:00",
+  "test_set_size": 50736,
+  "class_distribution": {
+    "0": 43739,
+    "1": 6997
+  },
+  "accuracy": 0.8674,
+  "auc_roc": 0.8295,
+  "sensitivity": 0.1646,
+  "specificity": 0.9799,
+  "classification_report": {
+    "0.0": {
+      "precision": 0.8799868591257212,
+      "recall": 0.9798577928164796,
+      "f1-score": 0.9272408645420912,
+      "support": 43739.0
+    },
+    "1.0": {
+      "precision": 0.5666502705361535,
+      "recall": 0.16464198942403888,
+      "f1-score": 0.25514950166112954,
+      "support": 6997.0
+    },
+    "macro avg": {
+      "precision": 0.7233185648309373,
+      "recall": 0.5722498911202593,
+      "f1-score": 0.5911951831016103,
+      "support": 50736.0
+    },
+    "weighted avg": {
+      "precision": 0.8367746210627834,
+      "recall": 0.8674314096499527,
+      "f1-score": 0.8345527680016053,
+      "support": 50736.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      42858,
+      881
+    ],
+    [
+      5845,
+      1152
+    ]
+  ],
+  "feature_importances": {},
+  "n_features": 9,
+  "feature_names": [
+    "hypertension",
+    "high_chol",
+    "bmi",
+    "smoking_history",
+    "heart_disease",
+    "physical_activity",
+    "general_health",
+    "gender",
+    "age_bucket"
+  ]
+}

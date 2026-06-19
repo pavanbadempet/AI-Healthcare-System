@@ -488,6 +488,18 @@ def get_admin_patterns(
         department_key: int | str = signal.department_id if signal.department_id is not None else "unassigned"
         signals_by_department[department_key] = signals_by_department.get(department_key, 0) + 1
 
+    from backend.models.clinical import SparkStreamingMetrics
+    latest_metric = db.query(SparkStreamingMetrics).order_by(SparkStreamingMetrics.timestamp.desc()).first()
+    spark_info = None
+    if latest_metric:
+        spark_info = {
+            "spark_batch_id": latest_metric.batch_id,
+            "spark_latency_ms": latest_metric.processing_time_ms,
+            "spark_ml_latency_ms": latest_metric.ml_latency_ms,
+            "spark_records_processed": latest_metric.records_processed,
+            "spark_timestamp": latest_metric.timestamp.isoformat()
+        }
+
     return {
         "total_vital_observations": vital_query.count(),
         "open_signals": signal_query.filter(
@@ -496,5 +508,6 @@ def get_admin_patterns(
         "signals_by_type": signals_by_type,
         "signals_by_severity": signals_by_severity,
         "signals_by_department": signals_by_department,
+        "spark_info": spark_info,
         "clinical_safety_note": "Monitoring patterns support clinician and administrator review; clinicians make care decisions.",
     }

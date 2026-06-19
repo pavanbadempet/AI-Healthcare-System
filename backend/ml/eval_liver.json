@@ -1,0 +1,63 @@
+{
+  "model_name": "liver",
+  "evaluated_at": "2026-06-18T08:41:59.832661+00:00",
+  "test_set_size": 6139,
+  "class_distribution": {
+    "0": 1755,
+    "1": 4384
+  },
+  "accuracy": 0.9272,
+  "auc_roc": 0.9767,
+  "sensitivity": 0.9407,
+  "specificity": 0.8934,
+  "classification_report": {
+    "0": {
+      "precision": 0.8577680525164114,
+      "recall": 0.8934472934472935,
+      "f1-score": 0.8752442087636059,
+      "support": 1755.0
+    },
+    "1": {
+      "precision": 0.9566225933658083,
+      "recall": 0.9406934306569343,
+      "f1-score": 0.9485911443358251,
+      "support": 4384.0
+    },
+    "macro avg": {
+      "precision": 0.9071953229411098,
+      "recall": 0.9170703620521139,
+      "f1-score": 0.9119176765497155,
+      "support": 6139.0
+    },
+    "weighted avg": {
+      "precision": 0.9283623361267316,
+      "recall": 0.9271868382472715,
+      "f1-score": 0.927622929328618,
+      "support": 6139.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      1568,
+      187
+    ],
+    [
+      260,
+      4124
+    ]
+  ],
+  "feature_importances": {},
+  "n_features": 10,
+  "feature_names": [
+    "Age",
+    "Gender",
+    "Total_Bilirubin",
+    "Direct_Bilirubin",
+    "Alkaline_Phosphotase",
+    "Alamine_Aminotransferase",
+    "Aspartate_Aminotransferase",
+    "Total_Proteins",
+    "Albumin",
+    "Albumin_and_Globulin_Ratio"
+  ]
+}

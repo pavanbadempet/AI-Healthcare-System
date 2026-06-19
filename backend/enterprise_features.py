@@ -6,19 +6,20 @@ Enterprise Features for AI Healthcare System
 - Audit & Logging
 """
 
-import time
-import os
-import psutil
-import logging
-from typing import Dict, Any, Optional
-from functools import wraps
-from contextlib import contextmanager
-from prometheus_client import Counter, Histogram, Gauge
-from sqlalchemy import text
-from fastapi import Request
-import redis
 import json
+import logging
+import os
+import time
+from contextlib import contextmanager
 from datetime import datetime, timezone
+from functools import wraps
+from typing import Any, Dict, Optional
+
+import psutil
+import redis
+from fastapi import Request
+from prometheus_client import Counter, Gauge, Histogram
+from sqlalchemy import text
 
 logger = logging.getLogger(__name__)
 HEALTH_CHECK_UNHEALTHY = "unhealthy"
@@ -37,15 +38,15 @@ SYSTEM_MEMORY = Gauge('system_memory_percent', 'System memory usage')
 
 class EnterpriseMetrics:
     """Enterprise-grade metrics collection and monitoring"""
-    
+
     def __init__(self, redis_client: Optional[redis.Redis] = None):
         self.redis = redis_client
-        
+
     def record_prediction(self, model_type: str, result: str, duration: float):
         """Record ML prediction metrics"""
         PREDICTION_COUNT.labels(model_type=model_type, result=result).inc()
         PREDICTION_DURATION.labels(model_type=model_type).observe(duration)
-        
+
         # Store detailed metrics in Redis for analytics
         if self.redis:
             key = f"predictions:{model_type}:{datetime.now().strftime('%Y%m%d')}"
@@ -55,12 +56,12 @@ class EnterpriseMetrics:
                 'duration': duration
             }))
             self.redis.expire(key, 86400 * 30)  # Keep 30 days
-    
+
     def update_system_metrics(self):
         """Update system-level metrics"""
         SYSTEM_CPU.set(psutil.cpu_percent())
         SYSTEM_MEMORY.set(psutil.virtual_memory().percent)
-        
+
         # Update database connections
         try:
             from .database import engine
@@ -69,7 +70,7 @@ class EnterpriseMetrics:
                 DATABASE_CONNECTIONS.set(result.scalar())
         except Exception:
             logger.error("Failed to get DB connections")
-    
+
     def get_health_status(self) -> Dict[str, Any]:
         """Get comprehensive health status"""
         health = {
@@ -77,7 +78,7 @@ class EnterpriseMetrics:
             'timestamp': datetime.now(timezone.utc).isoformat(),
             'checks': {}
         }
-        
+
         # Database health
         try:
             from .database import engine
@@ -87,7 +88,7 @@ class EnterpriseMetrics:
         except Exception:
             health['checks']['database'] = HEALTH_CHECK_UNHEALTHY
             health['status'] = 'unhealthy'
-        
+
         # Redis health
         if self.redis:
             try:
@@ -96,7 +97,7 @@ class EnterpriseMetrics:
             except Exception:
                 health['checks']['redis'] = HEALTH_CHECK_UNHEALTHY
                 health['status'] = 'unhealthy'
-        
+
         # AI models health
         try:
             from .ml_service import ml_service
@@ -105,23 +106,23 @@ class EnterpriseMetrics:
         except Exception:
             health['checks']['ml_models'] = HEALTH_CHECK_UNHEALTHY
             health['status'] = 'degraded'
-        
+
         return health
 
 class ComplianceAudit:
     """HIPAA/GDPR compliance and audit logging"""
-    
+
     def __init__(self, db_session):
         self.db = db_session
-    
-    def log_access(self, user_id: int, resource_type: str, resource_id: str, 
+
+    def log_access(self, user_id: int, resource_type: str, resource_id: str,
                    action: str, ip_address: str, user_agent: str = None):
         """Log data access for compliance"""
         try:
             from .database import engine
             with engine.connect() as conn:
                 conn.execute(text("""
-                    INSERT INTO audit.activity_log 
+                    INSERT INTO audit.activity_log
                     (user_id, action_type, resource_type, resource_id, ip_address, user_agent, success)
                     VALUES (:user_id, :action, :resource_type, :resource_id, :ip, :ua, true)
                 """), {
@@ -135,7 +136,7 @@ class ComplianceAudit:
                 conn.commit()
         except Exception:
             logger.error("Audit log failed")
-    
+
     def check_data_retention(self) -> Dict[str, Any]:
         """Check data retention policies"""
         try:
@@ -149,7 +150,7 @@ class ComplianceAudit:
                     WHERE hr.created_at < CURRENT_TIMESTAMP - INTERVAL '1 day' * u.data_retention_days
                 """))
                 expired = result.scalar()
-                
+
                 return {
                     'expired_records': expired,
                     'compliance_status': 'compliant' if expired == 0 else 'action_required'
@@ -160,21 +161,18 @@ class ComplianceAudit:
 
 class PerformanceOptimizer:
     """Advanced performance optimization features"""
-    
+
     def __init__(self, redis_client: Optional[redis.Redis] = None):
         self.redis = redis_client
         self.cache_ttl = 3600  # 1 hour default
-    
+
     @contextmanager
     def database_connection_pool(self):
         """Optimized database connection management"""
-        from .database import SessionLocal
-        db = SessionLocal()
-        try:
+        from .database import get_db_context
+        with get_db_context() as db:
             yield db
-        finally:
-            db.close()
-    
+
     def cache_prediction(self, cache_key: str, result: Dict[str, Any], ttl: int = None):
         """Cache ML predictions for performance"""
         if self.redis:
@@ -184,7 +182,7 @@ class PerformanceOptimizer:
                 ttl,
                 json.dumps(result)
             )
-    
+
     def get_cached_prediction(self, cache_key: str) -> Optional[Dict[str, Any]]:
         """Retrieve cached prediction"""
         if self.redis:
@@ -192,7 +190,7 @@ class PerformanceOptimizer:
             if cached:
                 return json.loads(cached)
         return None
-    
+
     def invalidate_user_cache(self, user_id: int):
         """Invalidate all cache entries for a user"""
         if self.redis:
@@ -204,9 +202,9 @@ class PerformanceOptimizer:
 def metrics_middleware(request: Request, call_next):
     """FastAPI middleware for metrics collection"""
     start_time = time.time()
-    
+
     response = call_next(request)
-    
+
     # Record metrics
     duration = time.time() - start_time
     REQUEST_COUNT.labels(
@@ -218,7 +216,7 @@ def metrics_middleware(request: Request, call_next):
         method=request.method,
         endpoint=request.url.path
     ).observe(duration)
-    
+
     return response
 
 def audit_decorator(resource_type: str):
@@ -229,13 +227,13 @@ def audit_decorator(resource_type: str):
             # Extract request context if available
             request = None
             user_id = None
-            
+
             for arg in args:
                 if hasattr(arg, 'client'):
                     request = arg
                 elif hasattr(arg, 'user'):
                     user_id = getattr(arg.user, 'id', None)
-            
+
             # Execute function
             time.time()
             try:
@@ -254,43 +252,43 @@ def audit_decorator(resource_type: str):
                         ip_address=request.client.host if request else 'unknown',
                         user_agent=request.headers.get('user-agent')
                     )
-            
+
             return result
         return wrapper
     return decorator
 
 class AdvancedSecurity:
     """Advanced security features for enterprise deployment"""
-    
+
     @staticmethod
     def rate_limit_key(user_id: int, action: str) -> str:
         """Generate rate limit key"""
         return f"rate_limit:{action}:user_{user_id}"
-    
+
     @staticmethod
-    def check_rate_limit(redis_client: redis.Redis, user_id: int, action: str, 
+    def check_rate_limit(redis_client: redis.Redis, user_id: int, action: str,
                         limit: int, window: int) -> bool:
         """Check if user exceeds rate limit"""
         key = AdvancedSecurity.rate_limit_key(user_id, action)
         current = redis_client.incr(key)
-        
+
         if current == 1:
             redis_client.expire(key, window)
-        
+
         return current <= limit
-    
+
     @staticmethod
     def detect_anomalies(user_id: int, action: str, ip_address: str) -> Dict[str, Any]:
         """Detect anomalous behavior patterns"""
         # This would integrate with a more sophisticated anomaly detection system
         # For now, basic heuristics
-        
+
         anomalies = []
-        
+
         # Check for multiple IPs in short time
         # Check for unusual request patterns
         # Check for data access patterns
-        
+
         return {
             'anomaly_score': 0.1,  # Low score for now
             'anomalies': anomalies,
@@ -301,13 +299,13 @@ class AdvancedSecurity:
 def init_enterprise_features(app):
     """Initialize all enterprise features"""
     from fastapi.middleware.gzip import GZipMiddleware
-    
+
     # Add metrics middleware
     app.middleware("http")(metrics_middleware)
-    
+
     # Add compression
     app.add_middleware(GZipMiddleware, minimum_size=1000)
-    
+
     # Initialize Redis client
     try:
         redis_client = redis.Redis(
@@ -321,7 +319,7 @@ def init_enterprise_features(app):
     except Exception:
         logger.warning("Redis connection failed")
         redis_client = None
-    
+
     return {
         'metrics': EnterpriseMetrics(redis_client),
         'performance': PerformanceOptimizer(redis_client),
