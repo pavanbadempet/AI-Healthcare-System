@@ -622,6 +622,25 @@ def generate_data_quality_report(**context):
         json.dumps(quality_report)
     )
 
+    # Alerting logic for Data Quality
+    overall_score = quality_report['overall_score']
+    if overall_score < 0.95:
+        logger.warning(f"ALERT: Data Quality Score ({overall_score}) below SLA threshold (0.95)!")
+        # Programmatically send webhook alert if configured
+        import os
+        import urllib.request
+        slack_url = os.getenv("SLACK_WEBHOOK_URL")
+        if slack_url:
+            payload = json.dumps({
+                "text": f"🚨 *AI Healthcare System Data Quality Alert*\n*Execution Date*: {context['ds']}\n*Overall Quality Score*: {overall_score:.4f}\n*SLA Status*: FAILED"
+            }).encode('utf-8')
+            try:
+                req = urllib.request.Request(slack_url, data=payload, headers={'Content-Type': 'application/json'})
+                with urllib.request.urlopen(req, timeout=5) as response:
+                    pass
+            except Exception as e:
+                logger.error(f"Failed to send Slack alert: {e}")
+
     logger.info(f"Data quality report generated with {len(quality_checks)} checks")
     return quality_report
 
@@ -658,7 +677,36 @@ def update_pipeline_metrics(**context):
     logger.info(f"Pipeline metrics updated for {execution_date}")
     return metrics
 
+def cleanup_staging_files(**context):
+    """Clean up staging files for this run to keep disk utilization low"""
+    import os
+    ds = context['ds']
+    files_to_clean = [
+        f"/tmp/airflow/staging/patient_data_{ds}.parquet",
+        f"/tmp/airflow/staging/lab_results_{ds}.parquet",
+        f"/tmp/airflow/staging/claims_data_{ds}.parquet",
+        f"/tmp/airflow/staging/cleaned_patients_{ds}.parquet",
+        f"/tmp/airflow/staging/enriched_lab_results_{ds}.parquet",
+        f"/tmp/airflow/staging/cleaned_claims_{ds}.parquet",
+    ]
+    cleaned_count = 0
+    for filepath in files_to_clean:
+        if os.path.exists(filepath):
+            try:
+                os.remove(filepath)
+                cleaned_count += 1
+            except Exception as e:
+                logger.warning(f"Failed to delete transient file {filepath}: {e}")
+    logger.info(f"Transient storage cleanup: deleted {cleaned_count} staging Parquet files.")
+    return cleaned_count
+
 # Task definitions
+cleanup_staging_task = PythonOperator(
+    task_id='cleanup_staging_files',
+    python_callable=cleanup_staging_files,
+    dag=dag,
+)
+
 extract_patients_task = PythonOperator(
     task_id='extract_patients',
     python_callable=extract_patient_data,
@@ -749,5 +797,5 @@ process_dlq_task = PythonOperator(
 transform_data_task >> [ml_enrichment_task, spark_processing_task]
 ml_enrichment_task >> load_to_warehouse_task
 spark_processing_task >> load_to_warehouse_task
-load_to_warehouse_task >> data_quality_task
+load_to_warehouse_task >> [data_quality_task, cleanup_staging_task]
 data_quality_task >> [update_metrics_task, process_dlq_task]
