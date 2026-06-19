@@ -3,10 +3,28 @@ Admin Dashboard Logic
 =====================
 Endpoints for system administration, analytics, and user management.
 """
+import json
+import os
+from typing import Dict, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
-from . import ai_function_registry, audit, backup_readiness, data_quality, database, incident_response, model_cards, models, operational_health, privacy_operations, retention_policy, security_assurance, auth
-from typing import Dict, Optional
+
+from . import (
+    ai_function_registry,
+    audit,
+    auth,
+    backup_readiness,
+    data_quality,
+    database,
+    incident_response,
+    model_cards,
+    models,
+    operational_health,
+    privacy_operations,
+    retention_policy,
+    security_assurance,
+)
 
 router = APIRouter(prefix="/admin", tags=["Admin Dashboard"])
 ADMIN_FACILITY_ACCESS_DETAIL = "Admin resource is outside the user's facility"
@@ -42,6 +60,7 @@ def get_current_admin(current_user: models.User = Depends(auth.get_current_user)
 
 
 def _scope_users_to_admin_facility(query, admin: models.User):
+    query = query.filter(models.User.is_deleted == False)
     if admin.facility_id is None:
         return query
     return query.filter(models.User.facility_id == admin.facility_id)
@@ -80,12 +99,71 @@ def _scope_audit_logs_to_admin_facility(query, admin: models.User):
 
 # --- Endpoints ---
 
+@router.get("/analytics/report")
+def get_analytics_report(
+    admin: models.User = Depends(get_current_admin)
+) -> Dict:
+    """Fetch the Gold Layer analyst report."""
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    report_path = os.path.join(base_dir, "data", "gold", "analyst_report.json")
+
+    if not os.path.exists(report_path):
+        return {
+            "report_generated_at": None,
+            "total_records_analyzed": 0,
+            "prevalence_rates": {
+                "diabetes": 0.0,
+                "heart": 0.0,
+                "kidney": 0.0,
+                "liver": 0.0,
+                "lungs": 0.0
+            },
+            "demographics": {
+                "avg_age": 0.0,
+                "avg_bmi": 0.0,
+                "gender_distribution": {"male_ratio": 50.0, "female_ratio": 50.0}
+            },
+            "model_performance": {
+                "diabetes": 0.0,
+                "heart": 0.0,
+                "kidney": 0.0,
+                "liver": 0.0,
+                "lungs": 0.0
+            },
+            "pipeline_execution": {
+                "duration_seconds": 0.0,
+                "status": "not_run"
+            }
+        }
+
+    try:
+        with open(report_path, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to read Gold analyst report: {str(e)}"
+        )
+
+
 @router.get("/stats")
 def get_admin_stats(
     db: Session = Depends(database.get_db),
     admin: models.User = Depends(get_current_admin)
 ) -> Dict:
     """Get high-level system statistics."""
+    facility_id = admin.facility_id or "global"
+    cache_key = f"dashboard_statistics:{facility_id}"
+    
+    from backend.cache_service import cache
+    try:
+        cached_stats = cache.get(cache_key)
+        if cached_stats is not None:
+            return cached_stats
+    except Exception as e:
+        # Import logger at runtime if needed, but admin.py already has a logger defined at module level
+        pass
+
     user_query = _scope_users_to_admin_facility(db.query(models.User), admin)
     user_ids = [user_id for (user_id,) in user_query.with_entities(models.User.id).all()]
     prediction_query = db.query(models.HealthRecord)
@@ -93,14 +171,22 @@ def get_admin_stats(
     if admin.facility_id is not None:
         prediction_query = prediction_query.filter(models.HealthRecord.user_id.in_(user_ids))
         message_query = message_query.filter(models.ChatLog.user_id.in_(user_ids))
-    
-    return {
+
+    stats = {
         "total_users": user_query.count(),
         "total_predictions": prediction_query.count(),
         "total_messages": message_query.count(),
         "server_status": "Online",
-        "database_status": "Connected"
+        "database_status": "Connected",
+        "database_type": "sqlite" if "sqlite" in database.SQLALCHEMY_DATABASE_URL else "postgresql"
     }
+
+    try:
+        cache.set(cache_key, stats, ttl=3600)
+    except Exception:
+        pass
+
+    return stats
 
 @router.get("/audit-logs")
 def get_audit_logs(
@@ -234,7 +320,7 @@ def get_patient_deletion_plan(
 
 @router.get("/users")
 def get_recent_users(
-    skip: int = 0, 
+    skip: int = 0,
     limit: int = 20,
     db: Session = Depends(database.get_db),
     admin: models.User = Depends(get_current_admin)
@@ -279,6 +365,7 @@ def get_admin_patient_profile(
     patient = db.query(models.User).filter(
         models.User.id == patient_id,
         models.User.role == "patient",
+        models.User.is_deleted == False,
     ).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -287,13 +374,13 @@ def get_admin_patient_profile(
 
 @router.put("/users/{user_id}/role")
 def update_user_role(
-    user_id: int, 
-    role: str, 
+    user_id: int,
+    role: str,
     admin: models.User = Depends(get_current_admin),
     db: Session = Depends(database.get_db)
 ):
     """Update a user's system role."""
-    user = db.query(models.User).filter(models.User.id == user_id).first()
+    user = db.query(models.User).filter(models.User.id == user_id, models.User.is_deleted == False).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     _ensure_admin_can_access_user(admin, user)
@@ -365,18 +452,20 @@ def delete_user(
     admin: models.User = Depends(get_current_admin),
     db: Session = Depends(database.get_db)
 ):
-    """Permanently delete a user and their data."""
-    user = db.query(models.User).filter(models.User.id == user_id).first()
+    """Soft delete a user and their data."""
+    user = db.query(models.User).filter(models.User.id == user_id, models.User.is_deleted == False).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     _ensure_admin_can_access_user(admin, user)
-        
+
     if user.id == admin.id:
         raise HTTPException(status_code=400, detail="Cannot delete yourself.")
 
+    from datetime import datetime, timezone
     deleted_user_id = user.id
     deleted_user_facility_id = user.facility_id
-    db.delete(user)
+    user.is_deleted = True
+    user.deleted_at = datetime.now(timezone.utc)
     db.commit()
     audit.record_audit_event(
         db,

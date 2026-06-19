@@ -1,9 +1,9 @@
-"use client";
 
 import { useState, useRef, useEffect, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Activity, AlertTriangle, FileText, CheckCircle2, ChevronDown, Cpu, Sparkles } from "lucide-react";
 import type { PredictionResult } from "@/lib/api";
+import Tooltip from "../layout/Tooltip";
 
 interface Field {
   name: string;
@@ -88,7 +88,7 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
       <div className="relative w-full" ref={selectRef}>
         <div 
           onClick={() => setOpen(!open)}
-          className={`w-full bg-[var(--bg-card)] border ${open ? 'border-[var(--accent)] ring-2 ring-[var(--accent-border)]' : 'border-[var(--border)] hover:bg-[var(--bg-card-hover)]'} px-3 py-2 text-[var(--text-secondary)] text-xs cursor-pointer transition-all flex justify-between items-center`}
+          className={`w-full bg-[rgba(255,255,255,0.02)] border ${open ? 'border-[var(--accent)] ring-1 ring-[var(--accent)]' : 'border-[var(--border)] hover:bg-[rgba(255,255,255,0.04)]'} px-3 py-2 text-[var(--text-secondary)] text-xs rounded cursor-pointer transition-all flex justify-between items-center`}
           role="combobox"
           aria-expanded={open}
           aria-controls={listboxId}
@@ -97,25 +97,25 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
           tabIndex={0}
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(!open); } }}
         >
-          <span className={selectedOption ? "text-[var(--text-primary)] font-medium" : "text-[var(--text-muted)]"}>
-            {selectedOption ? selectedOption.label : `Select ${field.label}`}
+          <span className={selectedOption ? "text-[var(--text-primary)] font-medium uppercase font-mono" : "text-[var(--text-muted)] font-mono uppercase"}>
+            {selectedOption ? selectedOption.label : `-- SELECT ${field.label} --`}
           </span>
-          <ChevronDown size={14} className={`text-[var(--text-dim)] transition-transform ${open ? "rotate-180 text-[var(--accent)]" : ""}`} aria-hidden="true" />
+          <ChevronDown size={13} className={`text-[var(--text-dim)] transition-transform ${open ? "rotate-180 text-[var(--accent)]" : ""}`} aria-hidden="true" />
         </div>
         
         <AnimatePresence>
           {open && (
             <motion.div 
-              initial={{ opacity: 0, y: -10 }}
+              initial={{ opacity: 0, y: -4 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.15 }}
-              className="absolute top-full left-0 right-0 mt-2 bg-[var(--bg-card)] border border-[var(--border-focus)] overflow-hidden z-50 shadow-[var(--shadow-lg)]"
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.1 }}
+              className="absolute top-full left-0 right-0 mt-1 bg-[#18181b] border border-[var(--border-focus)] rounded overflow-hidden z-50 shadow-[var(--shadow-lg)]"
               id={listboxId}
               role="listbox"
               aria-label={`Options for ${field.label}`}
             >
-              <div className="max-h-60 overflow-y-auto py-1">
+              <div className="max-h-52 overflow-y-auto py-1">
                 {field.options?.map((opt) => (
                   <div 
                     key={opt.value}
@@ -123,7 +123,7 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
                       onChange(opt.value);
                       setOpen(false);
                     }}
-                    className={`px-3 py-2.5 hover:bg-[var(--accent-muted)] hover:text-[var(--accent)] text-xs cursor-pointer transition-colors ${value === opt.value ? 'text-[var(--accent)] bg-[var(--accent-muted)]' : 'text-[var(--text-secondary)]'}`}
+                    className={`px-3 py-2 hover:bg-[var(--accent-muted)] hover:text-[var(--accent)] text-xs font-mono uppercase cursor-pointer transition-colors ${value === opt.value ? 'text-[var(--accent)] bg-[var(--accent-muted)] font-bold' : 'text-[var(--text-secondary)]'}`}
                     role="option"
                     aria-selected={value === opt.value}
                     tabIndex={0}
@@ -141,27 +141,27 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 w-full">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
       
       {/* Left Column: Form */}
       <motion.div 
-        initial={{ opacity: 0, y: 10 }} 
+        initial={{ opacity: 0, y: 8 }} 
         animate={{ opacity: 1, y: 0 }} 
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.25 }}
         className="lg:col-span-7 space-y-6"
       >
-        <div className="panel p-6 md:p-8 relative">
-          <div className="absolute top-0 right-0 p-2 mono-meta border-b border-l border-[var(--border)] bg-[var(--bg-primary)]">
-            INPUT VECTORS
+        <div className="panel p-5 relative">
+          <div className="absolute top-0 right-0 p-2 text-[9px] font-mono border-b border-l border-[var(--border)] bg-[#09090b] text-[var(--text-dim)] uppercase">
+            Input Vector Map
           </div>
           
-          <div className="mb-8 mt-2">
-            <div className="status-badge status-badge-accent mb-4">
-              <span className="w-1.5 h-1.5 rounded-sm bg-[var(--accent)] animate-pulse" aria-hidden="true"></span>
-              DIAGNOSTIC SUBSYSTEM
+          <div className="mb-6 mt-2">
+            <div className="status-badge status-badge-accent mb-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" aria-hidden="true"></span>
+              DIAGNOSTIC PIPELINE
             </div>
-            <h2 className="text-2xl font-bold text-[var(--text-primary)] uppercase tracking-wider mb-2">{title}</h2>
-            <p className="text-[var(--text-secondary)] text-[11px] font-mono tracking-wide max-w-xl">{description}</p>
+            <h2 className="text-md font-bold text-[var(--text-primary)] uppercase tracking-wider mb-1">{title}</h2>
+            <p className="text-[var(--text-secondary)] text-xs font-mono uppercase tracking-wide max-w-xl">{description}</p>
           </div>
 
           <AnimatePresence>
@@ -170,23 +170,29 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
                 initial={{ opacity: 0, height: 0 }} 
                 animate={{ opacity: 1, height: "auto" }} 
                 exit={{ opacity: 0, height: 0 }}
-                className="overflow-hidden mb-6"
+                className="overflow-hidden mb-4"
               >
                 <div className="p-3 bg-[var(--danger-muted)] border border-[var(--danger-border)] text-[var(--danger)] flex items-start gap-2" role="alert">
                   <AlertTriangle size={14} className="shrink-0 mt-0.5" aria-hidden="true" />
-                  <p className="text-[11px] font-mono uppercase tracking-wider">{error}</p>
+                  <p className="text-[10px] font-mono uppercase tracking-wider">{error}</p>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
 
           <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5">
-              {fields.map((field, i) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {fields.map((field) => (
                 <div key={field.name} className="space-y-1.5">
-                  <label className="section-label flex items-center gap-1.5 mb-1" htmlFor={`field-${field.name}`}>
+                  <label className="section-label flex items-center gap-1 mb-1" htmlFor={`field-${field.name}`}>
                     {field.label} 
-                    {field.tooltip && <span title={field.tooltip} className="cursor-help text-[var(--border-focus)] hover:text-[var(--text-primary)] transition-colors"><Activity size={10} aria-hidden="true" /></span>}
+                    {field.tooltip && (
+                      <Tooltip content={field.tooltip} position="top">
+                        <span className="cursor-help text-[var(--text-dim)] hover:text-[var(--text-primary)] transition-colors">
+                          <Activity size={10} aria-hidden="true" />
+                        </span>
+                      </Tooltip>
+                    )}
                   </label>
                   
                   <div className="relative">
@@ -205,7 +211,7 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
                         step={field.step || 1}
                         value={formData[field.name] ?? ""}
                         onChange={(e) => setFormData({ ...formData, [field.name]: Number(e.target.value) })}
-                        placeholder={field.placeholder}
+                        placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}...`}
                         required
                         className="input-clinical"
                         aria-label={field.label}
@@ -219,35 +225,20 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
             <button 
               type="submit" 
               disabled={loading} 
-              className="w-full mt-6 relative overflow-hidden group"
-              aria-label={loading ? "Running clinical assessment" : "Execute clinical assessment"}
+              className="w-full mt-4 btn btn-primary py-2.5 cursor-pointer flex items-center justify-center gap-2"
+              aria-label={loading ? "Running diagnostic pipeline" : "Execute diagnostics compute"}
             >
-              <div className={`absolute inset-0 transition-all duration-300 ${loading ? 'bg-[var(--bg-card)]' : 'bg-[var(--accent)] group-hover:bg-[var(--accent-hover)]'}`} />
-              
-              {/* Button Progress Bar (Hidden when not loading) */}
-              {loading && (
-                <motion.div 
-                  initial={{ width: 0 }}
-                  animate={{ width: "100%" }}
-                  transition={{ duration: 2, ease: "linear" }}
-                  className="absolute bottom-0 left-0 h-0.5 bg-[var(--success)] z-20"
-                  aria-hidden="true"
-                />
+              {loading ? (
+                <>
+                  <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  INVERTING NEURAL GRAPH...
+                </>
+              ) : (
+                <>
+                  <Sparkles size={13} aria-hidden="true" />
+                  EXECUTE COMPUTE
+                </>
               )}
-
-              <span className="relative z-10 flex items-center justify-center gap-3 py-3 px-4 text-[var(--text-primary)] font-bold uppercase tracking-[0.3em] text-[11px]">
-                {loading ? (
-                  <motion.div 
-                    animate={{ rotate: 360 }}
-                    transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-                  >
-                    <Activity size={14} className="text-[var(--success)]" aria-hidden="true" />
-                  </motion.div>
-                ) : (
-                  <Sparkles size={14} className="opacity-50" aria-hidden="true" />
-                )}
-                {loading ? "INITIALIZING NEURAL COMPUTE..." : "EXECUTE CLINICAL ASSESSMENT"}
-              </span>
             </button>
           </form>
         </div>
@@ -256,9 +247,9 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
       {/* Right Column: Results */}
       <motion.div 
         ref={resultRef} 
-        initial={{ opacity: 0, y: 10 }} 
+        initial={{ opacity: 0, y: 8 }} 
         animate={{ opacity: 1, y: 0 }} 
-        transition={{ duration: 0.3, delay: 0.1 }}
+        transition={{ duration: 0.25, delay: 0.05 }}
         className="lg:col-span-5 h-full"
       >
         <AnimatePresence mode="wait">
@@ -268,51 +259,32 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="h-full min-h-[500px] panel flex flex-col items-center justify-center text-center p-8 relative"
+              className="h-full min-h-[420px] panel flex flex-col items-center justify-center text-center p-8 relative bg-[rgba(24,24,27,0.4)]"
             >
-              <div className="absolute top-0 left-0 p-2 mono-meta border-b border-r border-[var(--border)] bg-[var(--bg-primary)]">
-                ANALYSIS OUTPUT
+              <div className="absolute top-0 left-0 p-2 text-[9px] font-mono border-b border-r border-[var(--border)] bg-[#09090b] text-[var(--text-dim)] uppercase">
+                Analysis Matrix
               </div>
               
               {loading ? (
-                <div className="space-y-6 w-full max-w-xs" role="status" aria-label="Processing diagnostic analysis">
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="relative">
-                      <motion.div 
-                        animate={{ rotate: 360 }}
-                        transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
-                        className="w-16 h-16 border-2 border-dashed border-[var(--accent-border)] rounded-full"
-                        aria-hidden="true"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <Activity className="text-[var(--accent)] animate-pulse" size={24} aria-hidden="true" />
-                      </div>
+                <div className="space-y-4 w-full max-w-xs" role="status" aria-label="Processing diagnostic analysis">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="relative w-12 h-12 flex items-center justify-center">
+                      <span className="w-10 h-10 border-2 border-dashed border-[var(--accent)] rounded-full animate-spin absolute" />
+                      <Activity className="text-[var(--accent)]" size={18} aria-hidden="true" />
                     </div>
-                    <div className="text-center">
-                      <p className="text-[11px] font-mono text-[var(--accent)] animate-pulse uppercase tracking-[0.2em] mb-1">Processing Telemetry</p>
-                      <p className="text-[11px] font-mono text-[var(--border-focus)] uppercase">Neural Net Inversion: v4.2</p>
+                    <div className="text-center font-mono text-[10px] uppercase">
+                      <p className="text-[var(--accent)] animate-pulse tracking-widest font-bold">Computing Vectors</p>
+                      <p className="text-[var(--text-dim)] mt-0.5">Neural Graph: v3.2</p>
                     </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="h-[1px] w-full bg-[var(--border-subtle)] relative overflow-hidden" aria-hidden="true">
-                        <motion.div 
-                          animate={{ x: ["-100%", "100%"] }}
-                          transition={{ repeat: Infinity, duration: 1.5, delay: i * 0.3 }}
-                          className="absolute inset-0 w-1/3 bg-gradient-to-r from-transparent via-[var(--accent-border)] to-transparent"
-                        />
-                      </div>
-                    ))}
                   </div>
                 </div>
               ) : (
                 <>
-                  <div className="w-16 h-16 bg-[var(--bg-card)] border border-[var(--border)] flex items-center justify-center mb-6">
-                    <Cpu size={24} className="text-[var(--border-focus)]" aria-hidden="true" />
+                  <div className="w-12 h-12 bg-[rgba(255,255,255,0.02)] border border-[var(--border)] rounded flex items-center justify-center mb-4">
+                    <Cpu size={20} className="text-[var(--text-dim)]" aria-hidden="true" />
                   </div>
-                  <h3 className="text-[13px] font-bold text-[var(--text-primary)] mb-2 uppercase tracking-widest">Awaiting Telemetry</h3>
-                  <p className="text-[11px] font-mono text-[var(--text-dim)] max-w-sm uppercase leading-relaxed">Enter patient metrics into the diagnostic subsystem to generate a clinical assessment matrix.</p>
+                  <h3 className="text-xs font-bold text-[var(--text-primary)] mb-1 uppercase tracking-widest">Awaiting Telemetry</h3>
+                  <p className="text-[10px] font-mono text-[var(--text-dim)] max-w-xs uppercase leading-relaxed">Submit patient metrics to start the secure inference pipeline.</p>
                 </>
               )}
             </motion.div>
@@ -321,92 +293,94 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
               key="result"
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }} 
-              className={`panel p-8 h-full flex flex-col ${isHighRisk ? 'border-[var(--danger)]' : 'border-[var(--success)]'}`}
+              className={`panel p-6 h-full flex flex-col justify-between ${isHighRisk ? 'border-[var(--danger)] shadow-[0_0_12px_rgba(239,68,68,0.1)]' : 'border-[var(--success)] shadow-[0_0_12px_rgba(16,185,129,0.1)]'}`}
               role="region"
               aria-label="Diagnostic results"
             >
-              <div className="flex items-start gap-4 mb-8">
-                <div className={`p-3 border ${isHighRisk ? 'bg-[var(--danger-muted)] text-[var(--danger)] border-[var(--danger-border)]' : 'bg-[var(--success-muted)] text-[var(--success)] border-[var(--success-border)]'}`}>
-                  {isHighRisk ? <AlertTriangle size={20} aria-hidden="true" /> : <CheckCircle2 size={20} aria-hidden="true" />}
+              <div className="space-y-6">
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded border ${isHighRisk ? 'bg-[var(--danger-muted)] text-[var(--danger)] border-[var(--danger-border)]' : 'bg-[var(--success-muted)] text-[var(--success)] border-[var(--success-border)]'}`}>
+                    {isHighRisk ? <AlertTriangle size={18} aria-hidden="true" /> : <CheckCircle2 size={18} aria-hidden="true" />}
+                  </div>
+                  <div>
+                    <h3 className="section-label mb-0.5">Classification Output</h3>
+                    <p className={`text-md font-bold uppercase tracking-wider ${isHighRisk ? 'text-[var(--danger)]' : 'text-[var(--success)]'}`}>
+                      {result.prediction.split('.')[0]}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="section-label mb-1">Diagnostic Classification</h3>
-                  <p className={`text-xl font-bold uppercase tracking-wider ${isHighRisk ? 'text-[var(--danger)]' : 'text-[var(--success)]'}`}>
-                    {result.prediction.split('.')[0]}
-                  </p>
-                </div>
-              </div>
 
-              {(result.confidence !== undefined || result.probability !== undefined) && (
-                <div className="mb-6 p-4 bg-[var(--bg-card)] border border-[var(--border)]">
-                  <div className="flex justify-between items-end mb-3">
-                    <span className="section-label">Confidence Score</span>
-                    <span className="text-xl font-mono font-semibold text-[var(--text-primary)]">
-                      {result.confidence !== undefined ? `${result.confidence}%` : `${((result.probability ?? 0) * 100).toFixed(1)}%`}
-                    </span>
-                  </div>
-                  <div className="h-2 w-full bg-[var(--border)] overflow-hidden rounded-sm">
-                    <motion.div 
-                      initial={{ width: 0 }} 
-                      animate={{ width: `${result.confidence ?? ((result.probability ?? 0) * 100)}%` }} 
-                      transition={{ duration: 0.8, ease: "easeOut" }}
-                      className={`h-full ${
-                        (result.confidence ?? ((result.probability ?? 0) * 100)) >= 75 
-                          ? 'bg-[var(--danger)]' 
-                          : (result.confidence ?? ((result.probability ?? 0) * 100)) >= 40 
-                            ? 'bg-[var(--warning)]' 
-                            : 'bg-[var(--success)]'
-                      }`}
-                      role="progressbar"
-                      aria-valuenow={Math.round(result.confidence ?? ((result.probability ?? 0) * 100))}
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-label={`Confidence: ${result.confidence ?? ((result.probability ?? 0) * 100)}%`}
-                    />
-                  </div>
-                  
-                  {result.risk_level && (
-                    <div className="flex items-center gap-2 mt-3">
-                      <span className="section-label">Risk Classification:</span>
-                      <span className={`text-[11px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 border ${
-                        result.risk_level === 'High' 
-                          ? 'text-[var(--danger)] bg-[var(--danger-muted)] border-[var(--danger-border)]'
-                          : result.risk_level === 'Moderate'
-                            ? 'text-[var(--warning)] bg-[var(--warning-muted)] border-[var(--warning-border)]'
-                            : 'text-[var(--success)] bg-[var(--success-muted)] border-[var(--success-border)]'
-                      }`}>
-                        {result.risk_level}
+                {(result.confidence !== undefined || result.probability !== undefined) && (
+                  <div className="p-3 bg-[rgba(255,255,255,0.015)] border border-[var(--border)] rounded">
+                    <div className="flex justify-between items-end mb-2">
+                      <span className="section-label">Confidence Probability</span>
+                      <span className="text-sm font-mono font-bold text-[var(--text-primary)]">
+                        {result.confidence !== undefined ? `${result.confidence}%` : `${((result.probability ?? 0) * 100).toFixed(1)}%`}
                       </span>
                     </div>
-                  )}
-                </div>
-              )}
+                    <div className="h-1.5 w-full bg-[var(--border)] overflow-hidden rounded-full">
+                      <motion.div 
+                        initial={{ width: 0 }} 
+                        animate={{ width: `${result.confidence ?? ((result.probability ?? 0) * 100)}%` }} 
+                        transition={{ duration: 0.6, ease: "easeOut" }}
+                        className={`h-full ${
+                          (result.confidence ?? ((result.probability ?? 0) * 100)) >= 75 
+                            ? 'bg-[var(--danger)]' 
+                            : (result.confidence ?? ((result.probability ?? 0) * 100)) >= 40 
+                              ? 'bg-[var(--warning)]' 
+                              : 'bg-[var(--success)]'
+                        }`}
+                        role="progressbar"
+                        aria-valuenow={Math.round(result.confidence ?? ((result.probability ?? 0) * 100))}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-label={`Confidence: ${result.confidence ?? ((result.probability ?? 0) * 100)}%`}
+                      />
+                    </div>
+                    
+                    {result.risk_level && (
+                      <div className="flex items-center gap-1.5 mt-2.5">
+                        <span className="section-label">Acuity Stratification:</span>
+                        <span className={`text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${
+                          result.risk_level === 'High' 
+                            ? 'text-[var(--danger)] bg-[var(--danger-muted)] border-[var(--danger-border)]'
+                            : result.risk_level === 'Moderate'
+                              ? 'text-[var(--warning)] bg-[var(--warning-muted)] border-[var(--warning-border)]'
+                              : 'text-[var(--success)] bg-[var(--success-muted)] border-[var(--success-border)]'
+                        }`}>
+                          {result.risk_level}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
 
-              {result.advice && result.advice.length > 0 && (
-                <div className="flex-1">
-                  <h4 className="section-label mb-4 flex items-center gap-2 border-b border-[var(--border)] pb-2">
-                    <FileText size={12} className="text-[var(--accent)]" aria-hidden="true" /> Recommended Protocol
-                  </h4>
-                  <ul className="space-y-2">
-                    {result.advice.map((item, i) => (
-                      <li 
-                        key={i} 
-                        className="text-[11px] font-mono leading-relaxed flex items-start gap-3 p-3 bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-primary)]"
-                      >
-                        <span className="text-[var(--accent)]" aria-hidden="true">{`>`}</span>
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
+                {result.advice && result.advice.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="section-label flex items-center gap-1.5 border-b border-[var(--border)] pb-1.5">
+                      <FileText size={12} className="text-[var(--accent)]" aria-hidden="true" /> Recommended Protocol
+                    </h4>
+                    <div className="space-y-2">
+                      {result.advice.map((item, i) => (
+                        <div 
+                          key={i} 
+                          className="text-[10px] font-mono uppercase leading-normal flex items-start gap-2 p-2.5 bg-[rgba(255,255,255,0.01)] border border-[var(--border)] rounded text-[var(--text-primary)]"
+                        >
+                          <span className="text-[var(--accent)] font-bold">{`>`}</span>
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
               
-              <div className="mt-8 pt-4 border-t border-[var(--border)]">
-                <p className="text-[10px] text-[var(--text-dim)] font-mono leading-relaxed mb-1">
-                  {result.disclaimer || "This is an AI-assisted screening tool, not a medical diagnosis. Please consult a qualified healthcare professional for clinical decisions."}
+              <div className="mt-6 pt-4 border-t border-[var(--border)]">
+                <p className="text-[9px] text-[var(--text-dim)] font-mono uppercase leading-normal mb-2">
+                  {result.disclaimer || "AI-assisted screening tool, not a medical diagnosis. Consult a qualified professional."}
                 </p>
-                <p className="text-[11px] text-[var(--text-dim)] font-bold uppercase tracking-widest text-center mt-2">
-                  AI Prediction • Not for Official Diagnostic Use
+                <p className="text-[9px] text-[var(--text-dim)] font-bold uppercase tracking-wider text-center border border-[var(--border)] py-1 bg-[rgba(255,255,255,0.01)] font-mono">
+                  Clinical Support Feed • Not Diagnostic
                 </p>
               </div>
             </motion.div>

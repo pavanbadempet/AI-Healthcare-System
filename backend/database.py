@@ -26,6 +26,9 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     try:
         cursor.execute("PRAGMA journal_mode=WAL")
         cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.execute("PRAGMA cache_size=-64000")  # 64MB page cache
+        cursor.execute("PRAGMA temp_store=MEMORY")   # Store temp tables in RAM
+        cursor.execute("PRAGMA mmap_size=268435456") # 256MB memory-mapped I/O
     except Exception:
         try:
             cursor.execute("PRAGMA journal_mode=DELETE")
@@ -50,12 +53,13 @@ else:
 engine_args = {
     "connect_args": connect_args,
     "pool_pre_ping": True,
-    "pool_recycle": 300
+    "pool_recycle": 60  # Recycle connections after 60s to let serverless Neon scale down to 0 CUs
 }
 
 if "sqlite" not in SQLALCHEMY_DATABASE_URL:
     engine_args["pool_size"] = 5
-    engine_args["max_overflow"] = 0
+    engine_args["max_overflow"] = 5   # Allow temporary burst connections under load
+    engine_args["pool_timeout"] = 30  # Wait up to 30s for a connection before failing
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
@@ -130,6 +134,12 @@ def fallback_to_memory():
 
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+from sqlalchemy import Column, Boolean, DateTime
+
+class SoftDeleteMixin(object):
+    is_deleted = Column(Boolean, default=False, nullable=False, index=True)
+    deleted_at = Column(DateTime, nullable=True)
 
 Base = declarative_base()
 

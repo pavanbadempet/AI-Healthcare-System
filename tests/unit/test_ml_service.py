@@ -6,6 +6,7 @@ from unittest.mock import patch
 
 from backend import ml_service as ml_service_module
 from backend.ml_service import MLService, ml_service
+from backend.model_service import PredictionResult
 
 
 class TestMLServiceDiabetes:
@@ -13,9 +14,9 @@ class TestMLServiceDiabetes:
 
     def test_predict_diabetes_success(self):
         """Test successful diabetes prediction via MLService."""
-        mock_result = {"prediction": "High Risk", "raw": 1}
+        mock_result = PredictionResult(prediction="High Risk", raw=1)
 
-        with patch("backend.ml_service.prediction.predict_diabetes", return_value=mock_result):
+        with patch("backend.ml_service.model_service.predict_diabetes", return_value=mock_result):
             service = MLService()
             result = service.predict_diabetes(
                 gender="male",
@@ -32,9 +33,9 @@ class TestMLServiceDiabetes:
 
     def test_predict_diabetes_female(self):
         """Test diabetes prediction for female."""
-        mock_result = {"prediction": "Low Risk", "raw": 0}
+        mock_result = PredictionResult(prediction="Low Risk", raw=0)
 
-        with patch("backend.ml_service.prediction.predict_diabetes", return_value=mock_result):
+        with patch("backend.ml_service.model_service.predict_diabetes", return_value=mock_result):
             service = MLService()
             result = service.predict_diabetes(
                 gender="female",
@@ -51,9 +52,9 @@ class TestMLServiceDiabetes:
 
     def test_predict_diabetes_smoking_mapping(self):
         """Test all smoking history mappings."""
-        mock_result = {"prediction": "Low Risk", "raw": 0}
+        mock_result = PredictionResult(prediction="Low Risk", raw=0)
 
-        with patch("backend.ml_service.prediction.predict_diabetes", return_value=mock_result):
+        with patch("backend.ml_service.model_service.predict_diabetes", return_value=mock_result):
             service = MLService()
 
             # Test different smoking values
@@ -66,7 +67,7 @@ class TestMLServiceDiabetes:
 
     def test_predict_diabetes_exception(self):
         """Test error handling in diabetes prediction."""
-        with patch("backend.ml_service.prediction.predict_diabetes", side_effect=Exception("Model error")):
+        with patch("backend.ml_service.model_service.predict_diabetes", side_effect=Exception("Model error")):
             service = MLService()
             result = service.predict_diabetes(
                 gender="male", age=50, hypertension=1, heart_disease=0,
@@ -80,7 +81,7 @@ class TestMLServiceDiabetes:
         sensitive_error = "Model error token=diabetes-secret patient_name=Sensitive User"
         caplog.set_level("ERROR", logger="backend.ml_service")
 
-        with patch("backend.ml_service.prediction.predict_diabetes", side_effect=Exception(sensitive_error)):
+        with patch("backend.ml_service.model_service.predict_diabetes", side_effect=Exception(sensitive_error)):
             service = MLService()
             result = service.predict_diabetes(
                 gender="male", age=50, hypertension=1, heart_disease=0,
@@ -98,9 +99,9 @@ class TestMLServiceHeart:
 
     def test_predict_heart_success(self):
         """Test successful heart prediction."""
-        mock_result = {"prediction": "Heart Disease Detected", "raw": 1}
+        mock_result = PredictionResult(prediction="Heart Disease Detected", raw=1)
 
-        with patch("backend.ml_service.prediction.predict_heart", return_value=mock_result):
+        with patch("backend.ml_service.model_service.predict_heart", return_value=mock_result):
             service = MLService()
             result = service.predict_heart_disease(
                 age=60, gender="male", cp=2, trestbps=140, chol=250,
@@ -113,7 +114,7 @@ class TestMLServiceHeart:
 
     def test_predict_heart_exception(self):
         """Test error handling in heart prediction."""
-        with patch("backend.ml_service.prediction.predict_heart", side_effect=Exception("Heart model error")):
+        with patch("backend.ml_service.model_service.predict_heart", side_effect=Exception("Heart model error")):
             service = MLService()
             result = service.predict_heart_disease(
                 age=60, gender="male", cp=2, trestbps=140, chol=250,
@@ -128,7 +129,7 @@ class TestMLServiceHeart:
         sensitive_error = "Heart model error token=heart-secret patient_name=Sensitive User"
         caplog.set_level("ERROR", logger="backend.ml_service")
 
-        with patch("backend.ml_service.prediction.predict_heart", side_effect=Exception(sensitive_error)):
+        with patch("backend.ml_service.model_service.predict_heart", side_effect=Exception(sensitive_error)):
             service = MLService()
             result = service.predict_heart_disease(
                 age=60, gender="male", cp=2, trestbps=140, chol=250,
@@ -147,9 +148,9 @@ class TestMLServiceLiver:
 
     def test_predict_liver_success(self):
         """Test successful liver prediction."""
-        mock_result = {"prediction": "Healthy Liver", "raw": 0}
+        mock_result = PredictionResult(prediction="Healthy Liver", raw=0)
 
-        with patch("backend.ml_service.prediction.predict_liver", return_value=mock_result):
+        with patch("backend.ml_service.model_service.predict_liver", return_value=mock_result):
             service = MLService()
             result = service.predict_liver_disease(
                 age=45, gender="male", total_bilirubin=0.8,
@@ -161,9 +162,9 @@ class TestMLServiceLiver:
 
     def test_predict_liver_female(self):
         """Test liver prediction for female."""
-        mock_result = {"prediction": "Liver Disease", "raw": 1}
+        mock_result = PredictionResult(prediction="Liver Disease", raw=1)
 
-        with patch("backend.ml_service.prediction.predict_liver", return_value=mock_result):
+        with patch("backend.ml_service.model_service.predict_liver", return_value=mock_result):
             service = MLService()
             result = service.predict_liver_disease(
                 age=55, gender="female", total_bilirubin=2.5,
@@ -175,7 +176,7 @@ class TestMLServiceLiver:
 
     def test_predict_liver_exception(self):
         """Test error handling in liver prediction."""
-        with patch("backend.ml_service.prediction.predict_liver", side_effect=Exception("Liver model error")):
+        with patch("backend.ml_service.model_service.predict_liver", side_effect=Exception("Liver model error")):
             service = MLService()
             result = service.predict_liver_disease(
                 age=50, gender="male", total_bilirubin=1.0,
@@ -190,7 +191,7 @@ class TestMLServiceLiver:
         sensitive_error = "Liver model error token=liver-secret patient_name=Sensitive User"
         caplog.set_level("ERROR", logger="backend.ml_service")
 
-        with patch("backend.ml_service.prediction.predict_liver", side_effect=Exception(sensitive_error)):
+        with patch("backend.ml_service.model_service.predict_liver", side_effect=Exception(sensitive_error)):
             service = MLService()
             result = service.predict_liver_disease(
                 age=50, gender="male", total_bilirubin=1.0,

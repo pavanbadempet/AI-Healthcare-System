@@ -3,12 +3,16 @@ Airflow DAG for Databricks Delta Lake Operations
 Liquid Clustering, Time Travel, CDC, and Healthcare-Specific Pipelines
 """
 
-from datetime import timedelta
-from airflow import DAG
+import logging
+import os
+from datetime import datetime, timedelta
+
+SPARK_JOBS_DIR = os.getenv("SPARK_JOBS_DIR", "/opt/airflow/spark_jobs")
+
 from airflow.operators.python import PythonOperator
 from airflow.providers.spark.operators.spark_submit import SparkSubmitOperator
-from airflow.utils.dates import days_ago
-import logging
+
+from airflow import DAG
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +20,7 @@ logger = logging.getLogger(__name__)
 default_args = {
     'owner': 'data-engineering',
     'depends_on_past': False,
-    'start_date': days_ago(1),
+    'start_date': datetime(2026, 6, 1),
     'email_on_failure': True,
     'email_on_retry': False,
     'retries': 2,
@@ -49,9 +53,10 @@ dag = DAG(
 
 def create_delta_lab_results(**context):
     """Create Delta Lake table for lab results with Liquid Clustering"""
-    from backend.delta_lake_integration import get_delta_manager
     from pyspark.sql import types as T
-    from pyspark.sql.functions import to_timestamp, col, current_timestamp
+    from pyspark.sql.functions import col, current_timestamp, to_timestamp
+
+    from backend.delta_lake_integration import get_delta_manager
 
     spark = _create_spark("DeltaLabResults")
 
@@ -118,9 +123,10 @@ def evolve_lab_results_schema(**context):
 
 def create_delta_patient_dimension(**context):
     """Create patient dimension with SCD Type 2 and HIPAA audit columns"""
-    from backend.delta_lake_integration import get_delta_manager
     from pyspark.sql import types as T
-    from pyspark.sql.functions import current_timestamp, to_date, col
+    from pyspark.sql.functions import col, current_timestamp, to_date
+
+    from backend.delta_lake_integration import get_delta_manager
 
     spark = _create_spark("DeltaPatientDimension")
 
@@ -276,7 +282,7 @@ def optimize_delta_tables(**context):
 # Spark job for Delta operations
 spark_delta_job = SparkSubmitOperator(
     task_id='spark_delta_operations',
-    application='/opt/airflow/spark_jobs/delta_healthcare_operations.py',
+    application=os.path.join(SPARK_JOBS_DIR, 'delta_healthcare_operations.py'),
     conn_id='spark_default',
     driver_memory='6g',
     executor_memory='4g',

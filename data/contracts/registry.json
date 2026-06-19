@@ -1,0 +1,154 @@
+{
+  "contracts": {
+    "etl_patient_extract": {
+      "contract_id": "etl_patient_extract",
+      "name": "ETL Patient Data Ingestion Contract",
+      "version": 1,
+      "producer": "registration_service",
+      "consumer": "etl_pipeline",
+      "schema_definition": {
+        "id": "int",
+        "username": "string",
+        "email": "string",
+        "facility_id": "int"
+      },
+      "required_fields": [
+        "id",
+        "username",
+        "facility_id"
+      ],
+      "compatibility_mode": "BACKWARD",
+      "sla_freshness_minutes": 1440,
+      "quality_threshold": 1,
+      "created_at": "2026-06-19T15:23:52.311468",
+      "updated_at": "2026-06-19T15:23:52.311468"
+    },
+    "etl_lab_results": {
+      "contract_id": "etl_lab_results",
+      "name": "ETL Lab Results Pipeline Contract",
+      "version": 1,
+      "producer": "diagnostics_lab",
+      "consumer": "etl_pipeline",
+      "schema_definition": {
+        "id": "int",
+        "encounter_id": "int",
+        "test_type": "string",
+        "result_value": "string"
+      },
+      "required_fields": [
+        "id",
+        "encounter_id",
+        "test_type"
+      ],
+      "compatibility_mode": "BACKWARD",
+      "sla_freshness_minutes": 1440,
+      "quality_threshold": 1,
+      "created_at": "2026-06-19T15:23:52.567397",
+      "updated_at": "2026-06-19T15:23:52.567397"
+    },
+    "prediction_input": {
+      "contract_id": "prediction_input",
+      "name": "Inference Prediction Inputs Contract",
+      "version": 1,
+      "producer": "frontend_service",
+      "consumer": "ml_prediction_service",
+      "schema_definition": {
+        "pregnancies": "float",
+        "glucose": "float",
+        "insulin": "float",
+        "bmi": "float"
+      },
+      "required_fields": [
+        "glucose",
+        "bmi"
+      ],
+      "compatibility_mode": "BACKWARD",
+      "sla_freshness_minutes": 1440,
+      "quality_threshold": 1,
+      "created_at": "2026-06-19T15:23:52.819182",
+      "updated_at": "2026-06-19T15:23:52.819182"
+    },
+    "test_contract": {
+      "contract_id": "test_contract",
+      "name": "Test Contract",
+      "version": 1,
+      "producer": "test_prod",
+      "consumer": "test_cons",
+      "schema_definition": {
+        "id": "int",
+        "name": "string",
+        "active": "bool",
+        "score": "float"
+      },
+      "required_fields": [
+        "id",
+        "name"
+      ],
+      "compatibility_mode": "BACKWARD",
+      "sla_freshness_minutes": 1440,
+      "quality_threshold": 0.95,
+      "created_at": "2026-06-19T17:11:48.661669+00:00",
+      "updated_at": "2026-06-19T17:11:48.661669+00:00"
+    }
+  },
+  "violations": {
+    "test_contract": [
+      {
+        "timestamp": "2026-06-19T15:23:53.488197",
+        "errors": [
+          "Record 0: Missing required field 'id'"
+        ],
+        "record_count": 1
+      },
+      {
+        "timestamp": "2026-06-19T15:23:53.694557",
+        "errors": [
+          "Record 0: Field 'id' expects 'int', found 'str'"
+        ],
+        "record_count": 1
+      },
+      {
+        "timestamp": "2026-06-19T16:03:46.983108",
+        "errors": [
+          "Record 0: Missing required field 'id'"
+        ],
+        "record_count": 1
+      },
+      {
+        "timestamp": "2026-06-19T16:03:47.195094",
+        "errors": [
+          "Record 0: Field 'id' expects 'int', found 'str'"
+        ],
+        "record_count": 1
+      },
+      {
+        "timestamp": "2026-06-19T16:21:15.339254",
+        "errors": [
+          "Record 0: Missing required field 'id'"
+        ],
+        "record_count": 1
+      },
+      {
+        "timestamp": "2026-06-19T16:21:15.547981",
+        "errors": [
+          "Record 0: Field 'id' expects 'int', found 'str'"
+        ],
+        "record_count": 1
+      },
+      {
+        "timestamp": "2026-06-19T17:11:48.946074+00:00",
+        "errors": [
+          "Record 0: Missing required field 'id'"
+        ],
+        "record_count": 1
+      },
+      {
+        "timestamp": "2026-06-19T17:11:49.161622+00:00",
+        "errors": [
+          "Record 0: Field 'id' expects 'int', found 'str'"
+        ],
+        "record_count": 1
+      }
+    ]
+  }
+}

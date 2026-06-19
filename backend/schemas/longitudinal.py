@@ -8,7 +8,6 @@ from typing import List, Optional
 
 from pydantic import BaseModel, Field
 
-
 # ---------------------------------------------------------------------------
 # Per-visit feature records (one per disease domain)
 # ---------------------------------------------------------------------------

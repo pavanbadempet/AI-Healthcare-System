@@ -15,41 +15,64 @@ jobs:
       TESTING: "true"
 
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v6
     
-    - name: Set up Python 3.10
-      uses: actions/setup-python@v3
+    - name: Set up Python 3.12
+      uses: actions/setup-python@v6
       with:
-        python-version: "3.10"
+        python-version: "3.12"
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v6
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: 'frontend/package-lock.json'
+
+    - name: Install Frontend Dependencies
+      run: npm --prefix frontend ci
+
+    - name: Lint React Frontend
+      run: npm --prefix frontend run lint
+
+    - name: Build React Frontend
+      run: npm --prefix frontend run build
+
+    - name: Check agent adapter sync
+      run: python scripts/sync_agent_adapters.py --check
         
-    - name: Install dependencies
+    - name: Install Python dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install pytest pytest-cov pytest-asyncio pytest-playwright httpx
-        if [ -f requirements.txt ]; then pip install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt; fi
-        if [ -f backend/requirements.txt ]; then pip install --extra-index-url https://download.pytorch.org/whl/cpu -r backend/requirements.txt; fi
-        pip install scikit-learn
+        pip install -r tests/requirements-test.txt
+        pip install --extra-index-url https://download.pytorch.org/whl/cpu -r requirements.txt
         
-    - name: Install Playwright Browsers (Minimal)
-      run: playwright install chromium
+    - name: Lint Python Code with Ruff
+      run: python -m ruff check backend/
 
-    - name: Generate Placeholder Models (Fixes Missing Models CI)
+    - name: Install Playwright Browsers
+      run: |
+        npx --prefix frontend playwright install chromium --with-deps
+        playwright install chromium
+
+    - name: Generate Placeholder Models
       run: python scripts/generate_placeholder_models.py
         
-    - name: Start Backend & Wait
+    - name: Start Backend in Background
       run: |
         nohup uvicorn backend.main:app --host 127.0.0.1 --port 8000 > /tmp/uvicorn.log 2>&1 &
-        python scripts/wait_for_server.py || (echo "Server failed to start; last 200 lines of /tmp/uvicorn.log:" && tail -n 200 /tmp/uvicorn.log && exit 1)
 
-    - name: Run All Tests (Unit, Integration, MLOps, Strict)
+    - name: Wait for Servers
       run: |
-        # Run everything in tests/ folder with backend coverage, excluding E2E (requires running app)
+        python scripts/wait_for_server.py http://127.0.0.1:8000 || (echo "Backend failed; log:" && tail -n 100 /tmp/uvicorn.log && exit 1)
+
+    - name: Run Backend Tests (Unit, Integration)
+      run: |
         pytest tests/ --ignore=tests/e2e --cov=backend --cov-report=term-missing
-        
-    # Optional: Run E2E if we start the app in background
-    # - name: Start App & Run E2E
-    #   run: |
-    #     uvicorn backend.main:app --host 127.0.0.1 --port 8000 &
-    #     cd frontend && npm ci && npm run dev -- -p 3000 &
-    #     sleep 10
-    #     pytest tests/e2e/
+
+    - name: Run Frontend Unit Tests with Coverage
+      run: npm --prefix frontend run test -- --coverage
+
+    - name: Run Frontend E2E Playwright Tests
+      run: npm --prefix frontend run test:e2e
+

@@ -7,10 +7,9 @@ incident ownership, escalation, and alert thresholds are configured.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import os
+from datetime import datetime, timezone
 from typing import Any
-
 
 INCIDENT_PHASES = [
     "prepare",

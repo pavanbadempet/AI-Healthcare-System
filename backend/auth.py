@@ -100,7 +100,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     except JWTError:
         raise credentials_exception
 
-    user = db.query(models.User).filter(models.User.username == username).first()
+    user = db.query(models.User).filter(models.User.username == username, models.User.is_deleted == False).first()
     if user is None:
         raise credentials_exception
     return user
@@ -112,6 +112,7 @@ def is_admin(user: models.User) -> bool:
 
 
 def _scope_users_to_admin_facility(query, admin: models.User):
+    query = query.filter(models.User.is_deleted == False)
     if admin.facility_id is None:
         return query
     return query.filter(models.User.facility_id == admin.facility_id)
@@ -183,7 +184,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
     Authenticate user and return JWT access token.
     """
     try:
-        user = db.query(models.User).filter(models.User.username == form_data.username).first()
+        user = db.query(models.User).filter(models.User.username == form_data.username, models.User.is_deleted == False).first()
         if not user:
             raise HTTPException(status_code=401, detail="Incorrect username or password")
 
@@ -290,7 +291,7 @@ def get_user_full_details(user_id: int, current_user: models.User = Depends(get_
     if not is_admin(current_user):
         raise HTTPException(status_code=403, detail="Admin access only")
 
-    user = db.query(models.User).filter(models.User.id == user_id).first()
+    user = db.query(models.User).filter(models.User.id == user_id, models.User.is_deleted == False).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     _ensure_admin_can_access_user(current_user, user)
@@ -344,7 +345,7 @@ def verify_reset_token(token: str, db: Session) -> Optional[models.User]:
             return None
     except JWTError:
         return None
-    return db.query(models.User).filter(models.User.username == username).first()
+    return db.query(models.User).filter(models.User.username == username, models.User.is_deleted == False).first()
 
 
 @router.post("/forgot-password")
@@ -360,30 +361,30 @@ def forgot_password(
         "status": "success",
         "message": "If this email is registered, a password reset link has been sent."
     }
-    
+
     email = request.email.strip().lower()
-    user = db.query(models.User).filter(models.User.email == email).first()
+    user = db.query(models.User).filter(models.User.email == email, models.User.is_deleted == False).first()
     if not user:
         return generic_success
 
     # Generate token
     token = create_reset_token(email=email, username=user.username)
-    
+
     # Construct reset link
     frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:3000")
     reset_link = f"{frontend_url.rstrip('/')}/reset-password?token={token}"
-    
+
     # Send email (which will simulate or send real SMTP)
     from .email_service import send_password_reset
     send_password_reset(to_email=user.email, username=user.username, reset_link=reset_link)
-    
+
     # Print to logs for testing/simulation
     logger.info("=============================================")
     logger.info("   SIMULATED PASSWORD RESET LINK")
     logger.info(f"   User: {user.username} ({user.email})")
     logger.info(f"   Link: {reset_link}")
     logger.info("=============================================")
-    
+
     return generic_success
 
 
@@ -401,7 +402,7 @@ def reset_password(
             status_code=400,
             detail="Invalid or expired reset token"
         )
-        
+
     # Enforce password complexity
     if not re.match(r"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$", request.new_password):
         raise HTTPException(
@@ -414,7 +415,7 @@ def reset_password(
     user.hashed_password = hashed_password
     db.commit()
     db.refresh(user)
-    
+
     # Audit event
     audit.record_audit_event(
         db,
@@ -427,6 +428,6 @@ def reset_password(
             "occurred_at": datetime.now(timezone.utc),
         },
     )
-    
+
     return {"status": "success", "message": "Password has been reset successfully"}
 

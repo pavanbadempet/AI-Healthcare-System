@@ -13,7 +13,6 @@ from typing import Any
 from urllib.parse import urlencode
 from uuid import uuid4
 
-
 DEFAULT_SMART_SCOPES = "launch/patient patient/*.read openid fhirUser"
 SMART_STANDARDS_NOTE = (
     "SMART on FHIR launch metadata for EHR integration planning; complete "

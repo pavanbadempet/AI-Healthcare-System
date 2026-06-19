@@ -1,5 +1,7 @@
 import logging
-from . import prediction, schemas
+
+from . import schemas
+from .model_service import model_service
 
 logger = logging.getLogger(__name__)
 ML_PREDICTION_FAILURE_MESSAGE = "Error running prediction. Please try again later."
@@ -14,14 +16,14 @@ class MLService:
     def predict_diabetes(self, gender, age, hypertension, heart_disease, smoking_history, bmi, hba1c_level, blood_glucose_level):
         try:
             # Map Inputs to Schema expected by prediction.py
-            
+
             # Map Gender
             g_val = 1 if str(gender).lower() == 'male' else 0
-            
+
             # Map smoking string to int (0-5)
             s_map = {'never': 0, 'current': 1, 'former': 2, 'ever': 3, 'not current': 4}
             s_val = s_map.get(str(smoking_history).lower(), 0)
-            
+
             data = schemas.DiabetesInput(
                 gender=g_val,
                 age=float(age),
@@ -33,10 +35,10 @@ class MLService:
                 physical_activity=0, # Default
                 general_health=3 # Default 'Good'
             )
-            
-            result = prediction.predict_diabetes(data)
-            return result["prediction"]
-            
+
+            result = model_service.predict_diabetes(data)
+            return result.prediction
+
         except Exception:
             logger.error("Legacy diabetes prediction failed")
             return ML_PREDICTION_FAILURE_MESSAGE
@@ -44,7 +46,7 @@ class MLService:
     def predict_heart_disease(self, age, gender, cp, trestbps, chol, fbs, restecg, thalach, exang, oldpeak, slope, ca, thal):
         try:
             g_val = 1 if str(gender).lower() == 'male' else 0
-            
+
             data = schemas.HeartInput(
                 age=float(age),
                 sex=g_val,
@@ -60,9 +62,9 @@ class MLService:
                 ca=int(ca),
                 thal=int(thal)
             )
-             
-            result = prediction.predict_heart(data)
-            return result["prediction"]
+
+            result = model_service.predict_heart(data)
+            return result.prediction
         except Exception:
              logger.error("Legacy heart prediction failed")
              return ML_PREDICTION_FAILURE_MESSAGE
@@ -70,7 +72,7 @@ class MLService:
     def predict_liver_disease(self, age, gender, total_bilirubin, alkaline_phosphotase, alamine_aminotransferase, albumin_globulin_ratio):
         try:
             g_val = 1 if str(gender).lower() == 'male' else 0
-            
+
             data = schemas.LiverInput(
                 age=float(age),
                 gender=g_val,
@@ -84,9 +86,9 @@ class MLService:
                 total_proteins=6.0,
                 albumin=3.0
             )
-            
-            result = prediction.predict_liver(data)
-            return result["prediction"]
+
+            result = model_service.predict_liver(data)
+            return result.prediction
         except Exception:
             logger.error("Legacy liver prediction failed")
             return ML_PREDICTION_FAILURE_MESSAGE

@@ -1,14 +1,15 @@
 """Chat and Records API"""
+import json
+import logging
+from typing import Any, Dict, List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import Response
-from sqlalchemy.orm import Session
+from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import BaseModel
-from langchain_core.messages import HumanMessage, AIMessage
-from . import audit, models, database, auth, rag, agent, schemas, pdf_generator
-import json
-import datetime
-from typing import List, Dict, Any, Optional
-import logging
+from sqlalchemy.orm import Session
+
+from . import agent, audit, auth, database, models, pdf_generator, rag, schemas
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -17,6 +18,33 @@ CHAT_MEDICAL_DISCLAIMER = (
     "This is AI-generated information and is not a medical diagnosis. "
     "Please consult a qualified healthcare professional for medical decisions or emergencies."
 )
+
+# Maximum input lengths to prevent abuse
+MAX_CHAT_MESSAGE_LENGTH = 4000
+MAX_RECORD_TYPE_LENGTH = 50
+
+
+def _sanitize_chat_input(message: str) -> str:
+    """Sanitize chat input: strip, limit length, reject obviously malicious content."""
+    if not message or not message.strip():
+        raise HTTPException(status_code=400, detail="Message cannot be empty")
+    sanitized = message.strip()
+    if len(sanitized) > MAX_CHAT_MESSAGE_LENGTH:
+        raise HTTPException(status_code=400, detail=f"Message exceeds maximum length of {MAX_CHAT_MESSAGE_LENGTH} characters")
+    # Reject null bytes and control characters (except newline/tab)
+    if '\x00' in sanitized or any(ord(c) < 32 and c not in ('\n', '\t') for c in sanitized):
+        raise HTTPException(status_code=400, detail="Message contains invalid characters")
+    return sanitized
+
+
+def _sanitize_record_type(record_type: str) -> str:
+    """Validate record type against allowed values."""
+    if not record_type or not record_type.strip():
+        raise HTTPException(status_code=400, detail="Record type cannot be empty")
+    sanitized = record_type.strip().lower()
+    if len(sanitized) > MAX_RECORD_TYPE_LENGTH:
+        raise HTTPException(status_code=400, detail="Record type too long")
+    return sanitized
 
 
 def _with_medical_disclaimer(response: str) -> str:
@@ -65,45 +93,46 @@ def get_chat_history(current_user: models.User = Depends(auth.get_current_user),
 @router.post("/chat")
 def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
     """AI Chat with RAG context."""
+    sanitized_message = _sanitize_chat_input(request.message)
     save_data = bool(current_user.allow_data_collection)
-    
+
     # Build profile
     profile = f"Name: {current_user.full_name or 'N/A'}, Age: {current_user.dob or 'N/A'}, " \
               f"Gender: {current_user.gender or 'N/A'}, Height/Weight: {current_user.height}/{current_user.weight}"
-    
+
     # Save user message
     if save_data:
         try:
-            log = models.ChatLog(user_id=current_user.id, role="user", content=request.message)
+            log = models.ChatLog(user_id=current_user.id, role="user", content=sanitized_message)
             db.add(log)
             db.commit()
         except Exception:
             logger.error("Failed to save chat message")
-    
+
     # Build message history
-    messages = [HumanMessage(content=m.content) if m.role == "user" else AIMessage(content=m.content) 
+    messages = [HumanMessage(content=m.content) if m.role == "user" else AIMessage(content=m.content)
                 for m in request.history]
-    messages.append(HumanMessage(content=request.message))
-    
+    messages.append(HumanMessage(content=sanitized_message))
+
     # Get medical context
     context = ""
     if request.current_context:
         context = "\n".join([f"{k}: {v.get('prediction', 'N/A')}" for k, v in request.current_context.items() if isinstance(v, dict)])
-    
+
     records = db.query(models.HealthRecord).filter(models.HealthRecord.user_id == current_user.id)\
         .order_by(models.HealthRecord.timestamp.desc()).limit(10).all()
     if records:
         context += "\nHistory: " + ", ".join([f"{r.record_type}:{r.prediction}" for r in records[:5]])
-    
+
     # RAG memory
     rag_context = ""
     try:
-        memories = rag.search_similar_records(str(current_user.id), request.message, n_results=5)
+        memories = rag.search_similar_records(str(current_user.id), sanitized_message, n_results=5)
         if memories:
             rag_context = "\n".join(memories[:3])
-    except Exception:
+    except (ValueError, RuntimeError):
         pass
-    
+
     # Invoke agent
     try:
         result = agent.medical_agent.invoke({
@@ -115,17 +144,17 @@ def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth
             "conversation_count": len(messages)
         })
         response = _with_medical_disclaimer(result['messages'][-1].content)
-        
+
         # Save AI response
         if save_data:
             try:
                 db.add(models.ChatLog(user_id=current_user.id, role="assistant", content=response))
                 db.commit()
             except Exception:
-                pass
-        
+                logger.error("Failed to save chat response")
+
         return {"response": response}
-        
+
     except Exception:
         logger.error("Agent error while processing chat request")
         return {"response": "Sorry, I'm having trouble right now. Please try again."}
@@ -135,9 +164,10 @@ def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth
 
 @router.post("/records")
 def save_health_record(record: RecordCreate, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
+    record_type = _sanitize_record_type(record.record_type)
     db_record = models.HealthRecord(
         user_id=current_user.id,
-        record_type=record.record_type,
+        record_type=record_type,
         data=json.dumps(record.data),
         prediction=record.prediction
     )
@@ -154,7 +184,7 @@ def save_health_record(record: RecordCreate, current_user: models.User = Depends
             "resource_id": db_record.id,
         },
     )
-    rag.add_checkup_to_db(str(current_user.id), str(db_record.id), record.record_type, record.data, record.prediction, str(db_record.timestamp))
+    rag.add_checkup_to_db(str(current_user.id), str(db_record.id), record_type, record.data, record.prediction, str(db_record.timestamp))
     return {"status": "success"}
 
 @router.get("/records", response_model=List[schemas.HealthRecordResponse])

@@ -7,10 +7,9 @@ readiness review.
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
 import os
+from datetime import datetime, timezone
 from typing import Any
-
 
 POLICY_WINDOWS = (
     ("patient_records", "Patient medical and account records", "PATIENT_RECORD_RETENTION_YEARS", "years"),
