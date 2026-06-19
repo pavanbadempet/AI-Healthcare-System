@@ -10,11 +10,15 @@ class AxiomHandler(logging.Handler):
     Thread-safe asynchronous log handler for Axiom.co ingestion API.
     Batches logs in a background thread and streams them to prevent blocking the web app.
     """
-    def __init__(self, token: str, dataset: str):
+    def __init__(self, token: str, dataset: str, base_url: str = ""):
         super().__init__()
         self.token = token
         self.dataset = dataset
-        self.url = f"https://api.axiom.co/v1/datasets/{dataset}/ingest"
+        # Support regional endpoints via AXIOM_URL env var.
+        # Default: https://api.axiom.co (US). For EU: https://api.eu.axiom.co
+        api_base = (base_url or os.environ.get("AXIOM_URL", "").strip().strip('"')
+                    or "https://api.axiom.co").rstrip("/")
+        self.url = f"{api_base}/v1/datasets/{dataset}/ingest"
         self.queue = queue.Queue()
         self.stop_event = threading.Event()
         
@@ -69,8 +73,8 @@ class AxiomHandler(logging.Handler):
 
 def setup_axiom_logging():
     """Dynamically integrates Axiom logging handler if configuration variables exist in the environment."""
-    token = os.environ.get("AXIOM_TOKEN")
-    dataset = os.environ.get("AXIOM_DATASET")
+    token = os.environ.get("AXIOM_TOKEN", "").strip().strip('"')
+    dataset = os.environ.get("AXIOM_DATASET", "").strip().strip('"')
     
     if token and dataset:
         try:

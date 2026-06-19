@@ -53,12 +53,13 @@ else:
 engine_args = {
     "connect_args": connect_args,
     "pool_pre_ping": True,
-    "pool_recycle": 300
+    "pool_recycle": 60  # Recycle connections after 60s to let serverless Neon scale down to 0 CUs
 }
 
 if "sqlite" not in SQLALCHEMY_DATABASE_URL:
     engine_args["pool_size"] = 5
-    engine_args["max_overflow"] = 0
+    engine_args["max_overflow"] = 5   # Allow temporary burst connections under load
+    engine_args["pool_timeout"] = 30  # Wait up to 30s for a connection before failing
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
