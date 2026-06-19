@@ -44,7 +44,7 @@ langgraph>=1.2.4
 turbovec>=0.5.0
 
 # --- Visualization ---
-matplotlib>=3.8.0
+matplotlib>=3.11.0
 
 # --- Utilities ---
 fpdf2
