@@ -53,6 +53,14 @@ from .pharmacy import DispenseRecord, MedicationInventory, Prescription, Prescri
 # Records domain
 from .records import AuditLog, ChatLog, HealthRecord
 
+# Data Governance domain
+from .data_governance import (
+    DbSchemaContract,
+    DbContractViolation,
+    DbDatasetEntry,
+    DbDatasetLineage,
+)
+
 __all__ = [
     "Base",
     # Auth
@@ -95,4 +103,10 @@ __all__ = [
     "ABDMConsentEvent",
     "InteroperabilityExportProfile",
     "InteroperabilityExport",
+    # Data Governance
+    "DbSchemaContract",
+    "DbContractViolation",
+    "DbDatasetEntry",
+    "DbDatasetLineage",
 ]
+

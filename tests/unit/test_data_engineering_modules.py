@@ -304,3 +304,40 @@ def test_feature_store_client():
     # List feature groups
     groups = feature_store_client.list_feature_groups()
     assert "patient_vitals" in groups
+
+
+# ===========================================================================
+# 7. Data Catalog Tests
+# ===========================================================================
+
+def test_data_catalog_persistence():
+    from backend.data_catalog import DatasetEntry, data_catalog
+    
+    entry = DatasetEntry(
+        dataset_id="test_catalog_dataset",
+        name="Test Catalog Dataset",
+        description="Testing SQL backing and metadata persistence",
+        owner="ml_team",
+        schema={"id": "int", "value": "float"},
+        tags=["test", "ml"]
+    )
+    
+    # Register dataset
+    data_catalog.register_dataset(entry)
+    
+    # Verify retrieval
+    retrieved = data_catalog.get_dataset("test_catalog_dataset")
+    assert retrieved is not None
+    assert retrieved.name == "Test Catalog Dataset"
+    assert "test" in retrieved.tags
+    
+    # Update quality score
+    data_catalog.update_quality_score("test_catalog_dataset", 0.98)
+    retrieved = data_catalog.get_dataset("test_catalog_dataset")
+    assert retrieved.quality_score == 0.98
+    
+    # Add dependency lineage
+    data_catalog.add_lineage("patient_accounts", "test_catalog_dataset")
+    lineage = data_catalog.get_lineage("test_catalog_dataset")
+    assert "patient_accounts" in lineage["upstream"]
+
