@@ -154,6 +154,13 @@ async def lifespan(app: FastAPI):
         setup_axiom_logging()
     except Exception as e:
         logger.warning("Failed to initialize Axiom logging: %s", e)
+
+    # Restore SQLite database from Supabase Storage backup if configured
+    try:
+        from .supabase_backup import restore_database
+        restore_database()
+    except Exception as e:
+        logger.warning("Failed to restore database from Supabase: %s", e)
     # Mask any sensitive database passwords in URL for logging/diagnostics
     db_url = str(database.SQLALCHEMY_DATABASE_URL)
     if "@" in db_url:
@@ -212,6 +219,12 @@ async def lifespan(app: FastAPI):
 
     yield
     logger.info("Shutting down...")
+    # Backup SQLite database to Supabase Storage backup if configured
+    try:
+        from .supabase_backup import backup_database
+        backup_database()
+    except Exception as e:
+        logger.warning("Failed to backup database to Supabase: %s", e)
 
 
 app = FastAPI(title="AI Healthcare API", default_response_class=JSONResponse, lifespan=lifespan)
