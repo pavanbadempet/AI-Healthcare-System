@@ -29,6 +29,14 @@ export default defineConfig({
               id.includes('node_modules/scheduler/')) {
             return 'vendor-react';
           }
+          // WebLLM — local browser AI, huge package
+          if (id.includes('node_modules/@mlc-ai/web-llm') || id.includes('node_modules/@mlc-ai/')) {
+            return 'vendor-webllm';
+          }
+          // ONNX runtime web — local browser inference
+          if (id.includes('node_modules/onnxruntime-web')) {
+            return 'vendor-onnx';
+          }
           // Framer Motion — animation library
           if (id.includes('node_modules/framer-motion/') ||
               id.includes('node_modules/motion/')) {
