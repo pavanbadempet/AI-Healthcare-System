@@ -284,7 +284,8 @@ def root():
         index_file = os.path.join(_frontend_dist, "index.html")
         if os.path.exists(index_file):
             from fastapi.responses import FileResponse
-            return FileResponse(index_file)
+            # Prevent browser caching of index.html so clients always load newly deployed JS/CSS bundles
+            return FileResponse(index_file, headers={"Cache-Control": "no-store, no-cache, must-revalidate"})
     return {"message": "AI Healthcare API"}
 
 @app.get("/healthz")
@@ -353,6 +354,7 @@ if os.path.isdir(_frontend_dist):
         # Fallback to index.html for browser client-side routing
         index_file = os.path.join(_frontend_dist, "index.html")
         if os.path.exists(index_file):
-            return FileResponse(index_file)
+            # Prevent browser caching of index.html so clients always load newly deployed JS/CSS bundles
+            return FileResponse(index_file, headers={"Cache-Control": "no-store, no-cache, must-revalidate"})
 
         raise HTTPException(status_code=404)
