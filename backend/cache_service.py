@@ -14,6 +14,7 @@ from typing import Any, Optional
 logger = logging.getLogger(__name__)
 
 # Redis configuration from environment variables
+REDIS_URL = os.environ.get("REDIS_URL", None)
 REDIS_HOST = os.environ.get("REDIS_HOST", None)
 REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
 REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", None)
@@ -36,25 +37,37 @@ class SystemCache:
         self._store_lock = threading.Lock()
         self.redis_client = None
 
-        if REDIS_HOST:
+        if REDIS_URL or REDIS_HOST:
             try:
                 import redis
-                self.redis_client = redis.Redis(
-                    host=REDIS_HOST,
-                    port=REDIS_PORT,
-                    password=REDIS_PASSWORD,
-                    db=REDIS_DB,
-                    socket_timeout=2.0,
-                    decode_responses=False # Keep binary/pickle serialization flexible
-                )
+                if REDIS_URL:
+                    # Strip quotes if present (common in .env files)
+                    url = REDIS_URL.strip('"').strip("'")
+                    self.redis_client = redis.Redis.from_url(
+                        url,
+                        socket_timeout=2.0,
+                        decode_responses=False
+                    )
+                else:
+                    self.redis_client = redis.Redis(
+                        host=REDIS_HOST,
+                        port=REDIS_PORT,
+                        password=REDIS_PASSWORD,
+                        db=REDIS_DB,
+                        socket_timeout=2.0,
+                        decode_responses=False # Keep binary/pickle serialization flexible
+                    )
                 # Test connection
                 self.redis_client.ping()
-                logger.info("Connected to Redis cache server at %s:%d", REDIS_HOST, REDIS_PORT)
+                if REDIS_URL:
+                    logger.info("Connected to Redis cache server using REDIS_URL")
+                else:
+                    logger.info("Connected to Redis cache server at %s:%d", REDIS_HOST, REDIS_PORT)
             except Exception as e:
                 logger.warning("Redis configured but failed to connect (falling back to in-memory): %s", e)
                 self.redis_client = None
         else:
-            logger.info("No REDIS_HOST configured. Initialized in-memory TTL cache.")
+            logger.info("No Redis configuration found (neither REDIS_URL nor REDIS_HOST). Initialized in-memory TTL cache.")
 
     def get(self, key: str) -> Optional[Any]:
         """Retrieve a value from the cache. Returns None on cache miss or expiration."""
