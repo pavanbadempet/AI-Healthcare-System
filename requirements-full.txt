@@ -42,7 +42,7 @@ matplotlib>=3.10.9
 plotly>=5.21.0
 
 # --- AI & LLM (Full) ---
-google-generativeai>=0.5.2
+google-generativeai>=0.8.6
 langchain-huggingface>=0.0.3
 langchain-community>=0.0.38
 langchain-core

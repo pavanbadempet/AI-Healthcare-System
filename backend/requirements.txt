@@ -32,7 +32,7 @@ shap>=0.51.0
 joblib>=1.5.3
 
 # --- AI & LLM ---
-google-generativeai>=0.5.2
+google-generativeai>=0.8.6
 langchain-core
 langgraph>=1.2.4
 
