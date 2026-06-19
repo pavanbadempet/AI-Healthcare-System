@@ -1,4 +1,3 @@
-"use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Activity, AlertTriangle, Clock3, RefreshCcw, ShieldAlert } from "lucide-react";
@@ -19,7 +18,7 @@ const defaultSafetyNote = "Care events are operational records for review and do
 
 const severityClass: Record<string, string> = {
   critical: "bg-[var(--danger-muted)] border-[var(--danger-border)] text-[var(--danger)]",
-  warning: "bg-[var(--warning-muted)] border-[var(--warning)]/30 text-[var(--warning)]",
+  warning: "bg-[var(--warning-muted)] border-[var(--warning-border)] text-[var(--warning)]",
   info: "bg-[var(--accent-muted)] border-[var(--accent-border)] text-[var(--accent)]",
   success: "bg-[var(--success-muted)] border-[var(--success-border)] text-[var(--success)]",
 };
@@ -132,14 +131,14 @@ export default function PatientCareTimeline({
 
   if (!canViewTimeline) {
     return (
-      <section className="panel p-5" role="region" aria-label="Patient care timeline">
+      <section className="panel p-4" role="region" aria-label="Patient care timeline">
         <div className="flex items-start gap-3">
-          <ShieldAlert size={18} className="text-[var(--text-dim)] mt-0.5" aria-hidden="true" />
+          <ShieldAlert size={16} className="text-[var(--text-dim)] mt-0.5" aria-hidden="true" />
           <div>
-            <div className="section-label mb-2">Operational Timeline</div>
-            <h2 className="text-lg font-semibold text-[var(--text-primary)]">Care timeline unavailable</h2>
-            <p className="text-sm text-[var(--text-secondary)] mt-1">
-              Timeline access is limited to assigned clinicians, admins, or the patient account.
+            <div className="section-label mb-1">Operational Timeline</div>
+            <h2 className="text-sm font-bold text-[var(--text-primary)] uppercase">Care timeline unavailable</h2>
+            <p className="text-xs text-[var(--text-secondary)] mt-1 uppercase font-mono">
+              Timeline access is limited to authorized clinicial operators.
             </p>
           </div>
         </div>
@@ -148,71 +147,71 @@ export default function PatientCareTimeline({
   }
 
   return (
-    <section className="panel p-5" role="region" aria-label="Patient care timeline">
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+    <section className="panel overflow-hidden" role="region" aria-label="Patient care timeline">
+      <div className="panel-header flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between bg-[rgba(15,15,17,0.5)]">
         <div>
-          <div className="section-label mb-2 flex items-center gap-2">
-            <Activity size={14} aria-hidden="true" /> Operational Feed
+          <div className="section-label mb-1.5 flex items-center gap-1.5 text-[var(--accent)]">
+            <Activity size={13} aria-hidden="true" /> Operational Activity Logs
           </div>
-          <h2 className="text-xl font-semibold text-[var(--text-primary)]">Live Care Timeline</h2>
-          <p className="text-sm text-[var(--text-secondary)] mt-1 max-w-3xl">
-            Role-scoped care events from encounters, orders, diagnostics, pharmacy, nursing, discharge, and interoperability workflows.
+          <h2 className="text-sm font-bold text-[var(--text-primary)] uppercase">Live Care Timeline</h2>
+          <p className="text-xs text-[var(--text-secondary)] mt-1 uppercase">
+            Aggregated operational feeds from admissions, order logs, diagnostics, and integrations.
           </p>
         </div>
         <button
           type="button"
           onClick={() => void loadTimeline(true)}
           disabled={refreshing}
-          className="btn btn-secondary text-xs font-semibold uppercase tracking-wider flex items-center justify-center gap-2"
+          className="btn btn-secondary text-xs flex items-center justify-center gap-1 cursor-pointer"
           aria-label="Refresh timeline"
         >
-          <RefreshCcw size={14} className={refreshing ? "animate-spin" : ""} aria-hidden="true" />
-          {refreshing ? "Refreshing" : "Refresh"}
+          <RefreshCcw size={13} className={refreshing ? "animate-spin" : ""} aria-hidden="true" />
+          Sync Feed
         </button>
       </div>
 
-      <div className="mt-4 border border-[var(--border)] bg-[var(--bg-primary)] rounded overflow-hidden">
-        <div className="px-4 py-2 border-b border-[var(--border)] flex flex-col gap-1 md:flex-row md:items-center md:justify-between">
-          <p className="text-xs text-[var(--warning)]">{safetyNote}</p>
-          <span className="mono-meta">
-            {nextAfterId ? `Synced through event #${nextAfterId}` : "Awaiting event sync"}
+      <div className="p-4 space-y-4">
+        <div className="flex flex-col gap-1 md:flex-row md:items-center md:justify-between pb-2 border-b border-[var(--border)] text-[10px] font-mono uppercase text-[var(--text-dim)]">
+          <p className="text-[var(--warning)]">{safetyNote}</p>
+          <span>
+            {nextAfterId ? `Synced Event ID: #${nextAfterId}` : "Awaiting event feed..."}
           </span>
         </div>
 
         {loading ? (
-          <div className="p-5 text-sm text-[var(--text-secondary)]" role="status">
-            Loading care timeline
+          <div className="p-3 text-xs font-mono text-[var(--text-dim)] uppercase tracking-wider">
+            Loading timeline...
           </div>
         ) : error ? (
-          <div className="p-5 text-sm text-[var(--danger)] flex items-center gap-2" role="alert">
-            <AlertTriangle size={16} aria-hidden="true" /> {error}
+          <div className="p-3 text-xs font-mono text-[var(--danger)] flex items-center gap-1.5" role="alert">
+            <AlertTriangle size={13} aria-hidden="true" /> {error}
           </div>
         ) : sortedEvents.length === 0 ? (
-          <div className="p-5 text-sm text-[var(--text-secondary)]">
-            No care events have been recorded for this patient yet.
+          <div className="p-3 text-xs font-mono text-[var(--text-dim)] uppercase tracking-wide">
+            No care events recorded.
           </div>
         ) : (
-          <ol className="divide-y divide-[var(--border)]" aria-label="Timeline events">
+          <div className="space-y-2.5" aria-label="Timeline events">
             {sortedEvents.map((event) => (
-              <li key={event.id} className="p-4 flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <span className={`text-[10px] uppercase tracking-widest border px-2 py-1 rounded ${severityStyle(event.severity)}`}>
+              <div key={event.id} className="p-3 rounded border border-[var(--border)] bg-[rgba(255,255,255,0.01)] hover:border-[var(--border-focus)] transition-colors flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div className="min-w-0 space-y-1.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`px-1.5 py-0.5 rounded-sm border text-[9px] uppercase font-bold font-mono tracking-wider ${severityStyle(event.severity)}`}>
                       {event.severity}
                     </span>
                     <span className="mono-meta">{formatEventType(event.event_type)}</span>
                   </div>
-                  <h3 className="text-sm font-semibold text-[var(--text-primary)]">{event.title}</h3>
+                  <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase">{event.title}</h3>
                   {event.summary && (
-                    <p className="text-sm text-[var(--text-secondary)] mt-1">{event.summary}</p>
+                    <p className="text-xs text-[var(--text-secondary)] font-mono uppercase mt-0.5 leading-relaxed">{event.summary}</p>
                   )}
                 </div>
-                <div className="flex items-center gap-2 text-xs text-[var(--text-dim)] font-mono shrink-0">
-                  <Clock3 size={13} aria-hidden="true" /> {formatEventTime(event.created_at)}
+                <div className="flex items-center gap-1.5 text-[10px] text-[var(--text-dim)] font-mono uppercase shrink-0">
+                  <Clock3 size={12} aria-hidden="true" /> {formatEventTime(event.created_at)}
                 </div>
-              </li>
+              </div>
             ))}
-          </ol>
+          </div>
         )}
       </div>
     </section>

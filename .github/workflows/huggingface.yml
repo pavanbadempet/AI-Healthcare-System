@@ -10,7 +10,7 @@ jobs:
   sync-to-hub:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           lfs: true
@@ -22,8 +22,8 @@ jobs:
           HF_SPACE_NAME: ${{ secrets.HF_SPACE_NAME }}
         run: |
           if [ -z "$HF_TOKEN" ] || [ -z "$HF_USERNAME" ] || [ -z "$HF_SPACE_NAME" ]; then
-            echo "Error: Missing Hugging Face Secrets. Please add HF_TOKEN, HF_USERNAME, and HF_SPACE_NAME to GitHub Secrets."
-            exit 1
+            echo "Warning: Missing Hugging Face Secrets. Skipping Hugging Face Sync."
+            exit 0
           fi
           
           # Rename the specific Dockerfile for Hugging Face
@@ -58,11 +58,18 @@ jobs:
           find . -name "*.db" -type f -delete
           find . -name "*.sqlite3" -type f -delete
           find . -name "__pycache__" -type d -exec rm -rf {} +
-          # Remove binary files rejected by HF Xet policy
+          # Remove binary files rejected by Hugging Face pre-receive hooks.
+          # Dockerfile.hf regenerates placeholder model files during the Space build.
           find . -name "*.pkl" -type f -delete
           find . -name "*.png" -type f -delete
           find . -name "*.joblib" -type f -delete
           rm -f pytest_output.txt
+
+          if find . \( -name "*.pkl" -o -name "*.joblib" -o -name "*.parquet" -o -name "*.db" -o -name "*.sqlite3" \) -type f | grep -q .; then
+            echo "Refusing to push binary/data artifacts to Hugging Face:"
+            find . \( -name "*.pkl" -o -name "*.joblib" -o -name "*.parquet" -o -name "*.db" -o -name "*.sqlite3" \) -type f -print
+            exit 1
+          fi
           
           git add .
           git commit -m "Deploy to Hugging Face Space"

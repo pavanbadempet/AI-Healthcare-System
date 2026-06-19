@@ -3,14 +3,16 @@ Security & Compliance Module
 ============================
 Handles Audit Logging and Rate Limiting logic.
 """
-from sqlalchemy.orm import Session
-from . import audit, models
-from fastapi import Request, HTTPException
-from datetime import datetime, timezone
-import time
 import logging
 import os
+import time
+from datetime import datetime, timezone
 from typing import Dict
+
+from fastapi import HTTPException, Request
+from sqlalchemy.orm import Session
+
+from . import audit, models
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +27,7 @@ def log_audit_event(
 ):
     """
     Log a security-critical event to the AuditLog table.
-    
+
     Args:
         db: Database session
         action: Short string code (e.g. 'VIEW_PROFILE', 'DELETE_USER')
@@ -66,32 +68,32 @@ class RateLimiter:
     def __init__(self, requests_per_minute: int = 60):
         self.requests_per_minute = requests_per_minute
         self.storage: Dict[str, list] = {}
-        
+
     def check(self, request: Request, identifier: str):
         """
         Check if request is allowed. Raises 429 if not.
         Uses a sliding window algorithm.
         """
         now = time.time()
-        
+
         # Cleanup old entries occasionally (simple garbage collection)
         if len(self.storage) > 1000:
             self._cleanup(now)
-            
+
         history = self.storage.get(identifier, [])
-        
+
         # Filter timestamps older than 60 seconds
         valid_history = [t for t in history if now - t < 60]
-        
+
         if len(valid_history) >= self.requests_per_minute:
             raise HTTPException(
-                status_code=429, 
+                status_code=429,
                 detail="Too many requests. Please slow down."
             )
-            
+
         valid_history.append(now)
         self.storage[identifier] = valid_history
-        
+
     def _cleanup(self, now: float):
         keys_to_delete = []
         for key, history in self.storage.items():
@@ -100,7 +102,7 @@ class RateLimiter:
                 keys_to_delete.append(key)
             else:
                 self.storage[key] = valid
-        
+
         for k in keys_to_delete:
             del self.storage[k]
 

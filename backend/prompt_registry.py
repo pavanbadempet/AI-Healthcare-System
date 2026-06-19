@@ -335,6 +335,27 @@ class PromptRegistry:
             description="Compact system prompt for streaming chat (token-efficient)",
         )
 
+        self.register(
+            "clinical_narrative",
+            version="1.0",
+            template=(
+                "You are an expert clinical artificial intelligence assistant assisting a clinician. "
+                "Output only a concise, professional clinical narrative summary of the prediction findings "
+                "for the doctor's chart notes. Be precise, objective, and clear. Limit to 3-4 sentences.\n\n"
+                "Patient Clinical Prediction Results:\n"
+                "- Disease: {disease}\n"
+                "- Prediction: {prediction}\n"
+                "- Confidence: {confidence}% (Risk level: {risk_level})\n"
+                "- Uncertainty Status: {uncertainty_status}\n"
+                "- Conformal Prediction Set: {conformal_set}\n"
+                "- Triage Recommendation: {triage_recommendation}\n"
+                "- Top Contributing Risk Factors (SHAP): {top_risk_factors}\n"
+                "- Clinical Action Recourse (Lifestyle Counterfactual): {clinical_recourse}\n\n"
+                "Remember to include a brief, standard medical disclaimer at the end."
+            ),
+            description="Synthesis of clinical predictions, conformal uncertainty, SHAP, and recourse into a chart-ready narrative report",
+        )
+
 
 # ── Global Singleton ──────────────────────────────────────────────────
 

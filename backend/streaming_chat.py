@@ -20,15 +20,14 @@ import asyncio
 import json
 import logging
 import time
-from typing import Optional, AsyncGenerator, List
+from typing import AsyncGenerator, List, Optional
 
-from pydantic import BaseModel
 from fastapi import APIRouter, Depends, Header
 from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from . import models, database, auth
-from . import core_ai
+from . import auth, core_ai, database, models
 from .chat_context import build_chat_context, get_suggested_questions
 from .prompt_registry import get_prompt
 
@@ -107,6 +106,7 @@ async def stream_chat(
             """Robust streaming generator with heartbeat and error handling."""
             last_activity = time.time()
             streamed_reply_parts: list[str] = []
+            stream_task = None
 
             try:
                 # 1. Send sources immediately
@@ -197,7 +197,8 @@ async def stream_chat(
     async def fallback_generator():
         yield f"data: {json.dumps({'sources': [], 'model': 'fallback'})}\n\n"
         yield f"data: {json.dumps({'reply': fallback_msg})}\n\n"
-        yield f"data: {json.dumps({'reply': f'\\n\\n{STREAM_MEDICAL_DISCLAIMER}'})}\n\n"
+        disclaimer_reply = '\n\n' + STREAM_MEDICAL_DISCLAIMER
+        yield f"data: {json.dumps({'reply': disclaimer_reply})}\n\n"
         yield f"data: {json.dumps({'status': 'complete'})}\n\n"
 
     return StreamingResponse(

@@ -9,8 +9,17 @@ from fastapi.routing import APIRoute
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 
-from . import abdm, ai_function_registry, backup_readiness, data_quality, dicomweb, incident_response, retention_policy, security_assurance, smart_fhir
-
+from . import (
+    abdm,
+    ai_function_registry,
+    backup_readiness,
+    data_quality,
+    dicomweb,
+    incident_response,
+    retention_policy,
+    security_assurance,
+    smart_fhir,
+)
 
 EXPECTED_SECURITY_HEADERS = {
     "X-Frame-Options": "DENY",

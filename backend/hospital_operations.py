@@ -236,6 +236,22 @@ def create_bed(
     return db_bed
 
 
+@router.get("/beds", response_model=list[schemas.BedResponse])
+def list_beds(
+    status: str | None = None,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    query = _scope_query_to_user_facility(
+        db.query(models.Bed),
+        models.Bed.facility_id,
+        current_user,
+    )
+    if status:
+        query = query.filter(models.Bed.status == status)
+    return query.order_by(models.Bed.bed_number.asc()).all()
+
+
 @router.post("/encounters", response_model=schemas.EncounterResponse)
 def create_encounter(
     encounter: schemas.EncounterCreate,

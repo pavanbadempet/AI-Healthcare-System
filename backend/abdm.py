@@ -2,12 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-from datetime import datetime, timezone
 import hashlib
 import json
 import os
 import re
+from dataclasses import dataclass
+from datetime import datetime, timezone
 from typing import Any, Callable
 from urllib import request as urllib_request
 from uuid import uuid4
@@ -380,7 +380,7 @@ def prepare_consent_request(
 ) -> dict[str, Any]:
     settings = get_settings()
     endpoint = f"{settings.base_url.rstrip('/')}{settings.consent_request_path}" if settings.base_url else None
-    
+
     # Enable a fallback mock response if ABDM_DEMO_MODE=true is enabled
     demo_mode = os.getenv("ABDM_DEMO_MODE", "").strip().lower() in {"1", "true", "yes"}
     if submit and demo_mode:

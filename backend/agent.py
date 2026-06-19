@@ -1,12 +1,13 @@
-from typing import TypedDict, Annotated, List
-from langgraph.graph import StateGraph, END
-from langchain_core.messages import SystemMessage, HumanMessage, AIMessage, BaseMessage
 import asyncio
-import operator
 import logging
-import requests
+import operator
 import os
+from typing import Annotated, List, TypedDict
+
+import requests
 from dotenv import load_dotenv
+from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
+from langgraph.graph import END, StateGraph
 
 # All AI inference goes through core_ai — never call providers directly.
 from . import core_ai
@@ -115,7 +116,7 @@ class AgentState(TypedDict, total=False):
     available_reports: str     # Medical history context
     rag_memories: str          # Semantic memory from vector store (RAG)
     conversation_count: int    # Number of messages for engagement style
-    
+
     # Internal Scratchpad
     tavily_results: str
     analysis_results: str
@@ -127,7 +128,7 @@ def tavily_search(query: str):
     """Real-time web search for medical breakthroughs."""
     if not TAVILY_API_KEY:
         return "Tavily Key Missing."
-    
+
     try:
         url = "https://api.tavily.com/search"
         payload = {
@@ -167,7 +168,7 @@ def supervisor_node(state: AgentState):
     # Heuristics for speed (saving LLM calls for routing)
     if any(w in last_msg for w in ["latest", "news", "treatment", "research", "study", "2024", "2025"]):
         return {"next_step": "research"}
-    
+
     if any(w in last_msg for w in ["predict", "risk", "chance", "probability", "analyze"]):
         return {"next_step": "analyze"}
 
@@ -247,9 +248,9 @@ def profiler_node(state: AgentState):
     Updates the 'psych_profile' in the DB based on the interaction.
     (In a real app, this runs async after response, here we mock it or update state).
     """
-    # We don't actually write to DB in this turn to avoid latency, 
+    # We don't actually write to DB in this turn to avoid latency,
     # but we acknowledge the memory update potential.
-    return {} 
+    return {}
 
 def generation_node(state: AgentState):
     """
@@ -264,7 +265,7 @@ def generation_node(state: AgentState):
     web_data = state.get("tavily_results", "")
     analysis_context = state.get("analysis_results", "")
     conv_count = state.get("conversation_count", 1)
-    
+
     # Determine conversation phase for engagement style
     if conv_count <= 2:
         engagement_style = "WELCOMING: This is a new or early conversation. Be warm and build rapport."
@@ -272,7 +273,7 @@ def generation_node(state: AgentState):
         engagement_style = "ENGAGED: User is actively chatting. Reference their previous messages in this session."
     else:
         engagement_style = "DEEP SESSION: Long conversation. Summarize key points discussed and offer next steps."
-    
+
     # Use version-controlled prompt from the registry
     system_prompt = get_prompt("chat_system").format(
         user_profile=profile,
@@ -282,7 +283,7 @@ def generation_node(state: AgentState):
         web_context=web_data if web_data else "N/A",
         engagement_style=engagement_style,
     )
-    
+
     final_msgs = [SystemMessage(content=system_prompt)] + messages
     response = llm.invoke(final_msgs)
     return {"messages": [response]}

@@ -1,9 +1,9 @@
 """
 Comprehensive Bug Hunt — Tests ALL endpoints, edge cases, and error handling
 """
-import httpx
-import json
 import os
+
+import httpx
 
 BASE = "http://127.0.0.1:8000"
 bugs = []
@@ -31,14 +31,14 @@ check("Diabetes returns 200", r.status_code == 200, f"Got {r.status_code}")
 check("Diabetes has prediction", "prediction" in d, f"Keys: {d.keys()}")
 check("Diabetes has confidence", "confidence" in d and d["confidence"] is not None, f"confidence={d.get('confidence')}")
 check("Diabetes has risk_level", "risk_level" in d and d["risk_level"] is not None, f"risk_level={d.get('risk_level')}")
-check("Diabetes has disclaimer", "disclaimer" in d and len(d.get("disclaimer",""))>0, f"disclaimer missing")
+check("Diabetes has disclaimer", "disclaimer" in d and len(d.get("disclaimer",""))>0, "disclaimer missing")
 
 heart_data = {"age":55,"sex":1,"cp":1,"trestbps":28,"chol":1,"fbs":1,"restecg":3,"thalach":1,"exang":0,"oldpeak":0,"slope":0,"ca":0,"thal":0}
 r = httpx.post(f"{BASE}/predict/heart", json=heart_data)
 d = r.json()
 check("Heart returns 200", r.status_code == 200, f"Got {r.status_code}")
 check("Heart has confidence", "confidence" in d and d["confidence"] is not None, f"confidence={d.get('confidence')}")
-check("Heart has risk_level", "risk_level" in d, f"Missing risk_level")
+check("Heart has risk_level", "risk_level" in d, "Missing risk_level")
 
 liver_data = {"age":45,"gender":1,"total_bilirubin":1.2,"direct_bilirubin":0.3,"alkaline_phosphotase":200,"alamine_aminotransferase":40,"aspartate_aminotransferase":35,"total_proteins":6.8,"albumin":3.5,"albumin_and_globulin_ratio":0.9}
 r = httpx.post(f"{BASE}/predict/liver", json=liver_data)
@@ -95,15 +95,15 @@ else:
 
 if r is not None and r.status_code == 200:
     token = r.json()["access_token"]
-    
+
     # Profile
     r2 = httpx.get(f"{BASE}/profile", headers={"Authorization":f"Bearer {token}"})
     check("Profile endpoint works", r2.status_code == 200, f"Got {r2.status_code}")
-    
+
     # Records
     r3 = httpx.get(f"{BASE}/records", headers={"Authorization":f"Bearer {token}"})
     check("Records endpoint works", r3.status_code == 200, f"Got {r3.status_code}")
-    
+
     # Admin stats
     r4 = httpx.get(f"{BASE}/admin/stats", headers={"Authorization":f"Bearer {token}"})
     check("Admin stats works", r4.status_code == 200, f"Got {r4.status_code}")
@@ -133,7 +133,7 @@ check("Login page loads", r.status_code == 200, f"Got {r.status_code}")
 # REPORT
 # ============================================================
 print(f"\n{'='*60}")
-print(f"  BUG HUNT RESULTS")
+print("  BUG HUNT RESULTS")
 print(f"{'='*60}")
 print(f"\nPASSED: {len(passes)}")
 for p in passes:
@@ -144,6 +144,6 @@ if bugs:
     for b in bugs:
         print(f"  [FAIL] {b}")
 else:
-    print(f"\n>> NO BUGS FOUND!")
+    print("\n>> NO BUGS FOUND!")
 
 print(f"\nTotal: {len(passes)} passed, {len(bugs)} bugs")
