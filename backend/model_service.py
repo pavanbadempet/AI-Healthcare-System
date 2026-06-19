@@ -274,7 +274,7 @@ class ModelService:
         logger.info("TESTING MODE: Injected mock models")
 
     def _load_real_models(self) -> None:
-        """Load real .pkl models from disk."""
+        """Load real .pkl models from disk concurrently."""
         model_files = {
             "diabetes": (["diabetes_model.pkl"], None),
             "heart":    (["heart_disease_model.pkl"], None),
@@ -284,7 +284,9 @@ class ModelService:
         }
 
         import time as _time
-        for key, (model_pkl, scaler_pkl) in model_files.items():
+        from concurrent.futures import ThreadPoolExecutor
+
+        def load_single_model(key, model_pkl, scaler_pkl):
             entry = self._entries[key]
             entry.status = ModelStatus.LOADING
             try:
@@ -315,6 +317,14 @@ class ModelService:
                 entry.status = ModelStatus.ERROR
                 entry.error_message = "Model load failed"
                 logger.error("Failed to load %s model", key)
+
+        with ThreadPoolExecutor(max_workers=len(model_files)) as executor:
+            futures = [
+                executor.submit(load_single_model, key, model_pkl, scaler_pkl)
+                for key, (model_pkl, scaler_pkl) in model_files.items()
+            ]
+            for future in futures:
+                future.result()
 
     def reload(self) -> Dict[str, Any]:
         """Force reload all models from disk. Returns status dict."""
