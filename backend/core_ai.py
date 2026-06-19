@@ -329,7 +329,7 @@ def _get_gemini_model():
 
 
 def embed_text(text: str, task_type: str = "retrieval_document") -> list[float]:
-    """Generate a text embedding through the canonical AI provider boundary.
+    """Generate a text embedding through the centralized AI provider boundary.
 
     This is a synchronous function intentionally kept sync for callers that
     cannot be async (e.g. startup-time vector store population). Async callers
@@ -339,6 +339,19 @@ def embed_text(text: str, task_type: str = "retrieval_document") -> list[float]:
     if not has_gemini_api_key():
         logger.warning("GOOGLE_API_KEY not found, using zero vector")
         return [0.0] * 768
+
+    import hashlib
+    from .cache_service import cache
+    # Generate MD5 hash of text to create a compact, unique cache key
+    text_hash = hashlib.md5(text.encode("utf-8")).hexdigest()
+    cache_key = f"emb:{task_type}:{text_hash}"
+
+    try:
+        cached_val = cache.get(cache_key)
+        if cached_val is not None:
+            return cached_val
+    except Exception as ex_cache:
+        logger.debug("Embedding cache lookup failed: %s", ex_cache)
 
     try:
         import google.generativeai as genai
@@ -350,7 +363,12 @@ def embed_text(text: str, task_type: str = "retrieval_document") -> list[float]:
             content=text,
             task_type=task_type,
         )
-        return result.get("embedding") or [0.0] * 768
+        embedding = result.get("embedding") or [0.0] * 768
+        try:
+            cache.set(cache_key, embedding, ttl=86400) # Cache for 24 hours
+        except Exception as ex_cache:
+            logger.debug("Embedding cache set failed: %s", ex_cache)
+        return embedding
     except Exception:
         logger.error("Embedding failed")
         return [0.0] * 768
