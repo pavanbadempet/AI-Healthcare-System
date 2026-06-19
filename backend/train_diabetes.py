@@ -1,5 +1,6 @@
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import pickle
 
@@ -65,11 +66,11 @@ def train_diabetes_model():
     X_test_imputed = imputer.transform(X_test)
 
     # 4. Training (Calibrated Soft Voting Quad-Ensemble: XGBoost + LightGBM + CatBoost + Random Forest)
-    from sklearn.ensemble import RandomForestClassifier, VotingClassifier
-    from sklearn.calibration import CalibratedClassifierCV
-    import lightgbm as lgb
     import catboost as cb
+    import lightgbm as lgb
     import numpy as np
+    from sklearn.calibration import CalibratedClassifierCV
+    from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 
     neg_count = int((Y_train == 0).sum())
     pos_count = int((Y_train == 1).sum()) + int((Y_train == 2).sum())
@@ -159,7 +160,7 @@ def train_diabetes_model():
     # 5. Conformal Prediction Threshold (95% Confidence) - Class-Conditional
     y_proba = model.predict_proba(X_test_imputed)
     Y_test_vals = Y_test.values if hasattr(Y_test, 'values') else Y_test
-    
+
     conformal_q = {}
     alpha = 0.05
     for c in [0, 1]:

@@ -5,9 +5,10 @@ Provides high-performance vectorized query execution on Delta tables, Parquet, a
 decoupling analytical (OLAP) queries from transactional (OLTP) user databases.
 """
 
-import os
 import logging
-from typing import Any, List, Dict, Optional
+import os
+from typing import Any, Dict, List, Optional
+
 import duckdb
 
 logger = logging.getLogger(__name__)
@@ -27,7 +28,7 @@ class DuckDBClient:
         self.db_path = db_path or os.environ.get("DUCKDB_PATH", ":memory:")
         if self.db_path != ":memory:":
             os.makedirs(os.path.dirname(os.path.abspath(self.db_path)), exist_ok=True)
-        
+
         try:
             self.conn = duckdb.connect(self.db_path)
             # Load required extensions (parquet support is built-in, but we can load others)
@@ -75,7 +76,7 @@ class DuckDBClient:
         if not os.path.exists(delta_table_path):
             logger.warning("Delta table path %s does not exist", delta_table_path)
             return []
-        
+
         parquet_glob = os.path.join(delta_table_path, "**", "*.parquet")
         query = f"SELECT * FROM read_parquet('{parquet_glob}') {query_suffix}"
         return self.execute_query(query)

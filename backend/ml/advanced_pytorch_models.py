@@ -1,10 +1,11 @@
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-from torch.utils.data import DataLoader, TensorDataset
-import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.utils.validation import check_is_fitted
+from torch.utils.data import DataLoader, TensorDataset
+
 
 class NumericalFeatureTokenizer(nn.Module):
     """
@@ -15,7 +16,7 @@ class NumericalFeatureTokenizer(nn.Module):
         # Each feature gets its own weights and bias for linear projection
         self.weights = nn.Parameter(torch.randn(num_features, d_embedding))
         self.biases = nn.Parameter(torch.randn(num_features, d_embedding))
-        
+
     def forward(self, x):
         # x shape: (batch_size, num_features)
         # We want to multiply each feature x[:, i] by self.weights[i] and add self.biases[i]
@@ -34,13 +35,13 @@ class TransformerEncoderBlock(nn.Module):
         super().__init__()
         self.ln1 = nn.LayerNorm(d_embedding)
         self.mha = nn.MultiheadAttention(
-            embed_dim=d_embedding, 
-            num_heads=n_heads, 
-            dropout=dropout, 
+            embed_dim=d_embedding,
+            num_heads=n_heads,
+            dropout=dropout,
             batch_first=True
         )
         self.dropout1 = nn.Dropout(dropout)
-        
+
         self.ln2 = nn.LayerNorm(d_embedding)
         self.ffn = nn.Sequential(
             nn.Linear(d_embedding, ffn_dim),
@@ -49,13 +50,13 @@ class TransformerEncoderBlock(nn.Module):
             nn.Linear(ffn_dim, d_embedding)
         )
         self.dropout2 = nn.Dropout(dropout)
-        
+
     def forward(self, x):
         # Pre-LN Multi-Head Attention
         x_norm = self.ln1(x)
         attn_out, _ = self.mha(x_norm, x_norm, x_norm)
         x = x + self.dropout1(attn_out)
-        
+
         # Pre-LN Feed Forward
         x_norm2 = self.ln2(x)
         ffn_out = self.ffn(x_norm2)
@@ -69,44 +70,44 @@ class FTTransformerNet(nn.Module):
     def __init__(self, num_features, d_embedding=32, n_heads=2, depth=2, ffn_dim=64, dropout=0.1):
         super().__init__()
         self.tokenizer = NumericalFeatureTokenizer(num_features, d_embedding)
-        
+
         # [CLS] token representation
         self.cls_token = nn.Parameter(torch.randn(1, 1, d_embedding))
-        
+
         # Transformer layers
         self.layers = nn.ModuleList([
             TransformerEncoderBlock(d_embedding, n_heads, ffn_dim, dropout)
             for _ in range(depth)
         ])
-        
+
         self.ln_final = nn.LayerNorm(d_embedding)
-        
+
         # Binary classification head: maps CLS output to 2 classes (logits)
         self.head = nn.Linear(d_embedding, 2)
-        
+
     def forward(self, x):
         # x shape: (batch_size, num_features)
         batch_size = x.shape[0]
-        
+
         # Tokenize features
         tokens = self.tokenizer(x)  # Shape: (batch_size, num_features, d_embedding)
-        
+
         # Expand [CLS] token to match batch size
         cls_tokens = self.cls_token.expand(batch_size, -1, -1)  # Shape: (batch_size, 1, d_embedding)
-        
+
         # Prepend [CLS] token to feature tokens
         tokens = torch.cat([cls_tokens, tokens], dim=1)  # Shape: (batch_size, num_features + 1, d_embedding)
-        
+
         # Apply Transformer blocks
         for layer in self.layers:
             tokens = layer(tokens)
-            
+
         # Final layer normalization
         tokens = self.ln_final(tokens)
-        
+
         # Extract the output of the CLS token
         cls_output = tokens[:, 0]  # Shape: (batch_size, d_embedding)
-        
+
         # Output logits
         logits = self.head(cls_output)  # Shape: (batch_size, 2)
         return logits
@@ -135,16 +136,16 @@ class FTTransformerClassifier(ClassifierMixin, BaseEstimator):
             X = X.values
         if hasattr(y, "values"):
             y = y.values
-            
+
         X = np.array(X, dtype=np.float32)
         y = np.array(y, dtype=np.int64)
-        
+
         self.n_features_in_ = X.shape[1]
         self.classes_ = np.unique(y)
-        
+
         # Determine FFN hidden dimension (typically 2x or 4x d_embedding)
         ffn_dim = self.d_embedding * 2
-        
+
         # Initialize network
         self.model_ = FTTransformerNet(
             num_features=self.n_features_in_,
@@ -154,15 +155,15 @@ class FTTransformerClassifier(ClassifierMixin, BaseEstimator):
             ffn_dim=ffn_dim,
             dropout=self.ffn_dropout
         )
-        
+
         # Setup optimizer and loss
         optimizer = optim.AdamW(self.model_.parameters(), lr=self.lr, weight_decay=self.weight_decay)
         criterion = nn.CrossEntropyLoss()
-        
+
         # Create dataset and loader
         dataset = TensorDataset(torch.tensor(X), torch.tensor(y))
         loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
-        
+
         self.model_.train()
         for epoch in range(self.epochs):
             for batch_x, batch_y in loader:
@@ -171,7 +172,7 @@ class FTTransformerClassifier(ClassifierMixin, BaseEstimator):
                 loss = criterion(logits, batch_y)
                 loss.backward()
                 optimizer.step()
-                
+
         self.model_.eval()
         self.model_state_ = self.model_.state_dict()
         return self
@@ -193,19 +194,19 @@ class FTTransformerClassifier(ClassifierMixin, BaseEstimator):
 
     def predict_proba(self, X):
         check_is_fitted(self, ["model_state_"])
-        
+
         if hasattr(X, "values"):
             X = X.values
-            
+
         X = np.array(X, dtype=np.float32)
         self._ensure_model_loaded(X.shape[1])
-        
+
         self.model_.eval()
         with torch.no_grad():
             x_tensor = torch.tensor(X)
             logits = self.model_(x_tensor)
             probs = torch.softmax(logits, dim=1).numpy()
-            
+
         return probs
 
     def predict(self, X):

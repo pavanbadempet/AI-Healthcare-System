@@ -163,13 +163,13 @@ def _predict_onnx_probs(entry: ModelEntry, input_data: np.ndarray) -> Tuple[int,
             else:
                 p = 0.5
             probs.append(p)
-        
+
         if entry.onnx_weights:
             weights = np.array(entry.onnx_weights)
             avg_prob = np.average(probs, weights=weights)
         else:
             avg_prob = np.mean(probs)
-        
+
         pred_label = 1 if avg_prob >= 0.5 else 0
         return pred_label, avg_prob
     else:
@@ -187,7 +187,7 @@ def _predict_onnx_probs(entry: ModelEntry, input_data: np.ndarray) -> Tuple[int,
             prob = float(probabilities[0][1]) if probabilities.shape[1] > 1 else float(probabilities[0][0])
         else:
             prob = 0.5
-        
+
         return pred_label, prob
 
 
@@ -285,7 +285,6 @@ class ModelService:
 
                 for file in model_files:
                     filename = os.path.basename(file)
-                    local_path = os.path.join(self._model_dir, filename)
                     logger.info("Downloading %s from HF...", filename)
                     api.hf_hub_download(
                         repo_id=hf_dataset_id,

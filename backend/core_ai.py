@@ -341,6 +341,7 @@ def embed_text(text: str, task_type: str = "retrieval_document") -> list[float]:
         return [0.0] * 768
 
     import hashlib
+
     from .cache_service import cache
     # Generate MD5 hash of text to create a compact, unique cache key
     text_hash = hashlib.md5(text.encode("utf-8")).hexdigest()
@@ -408,18 +409,18 @@ async def _generate_gemini(prompt: str, system: str = "") -> str:
     model = _get_gemini_model()
     if not model:
         return ""
-    
+
     # Enable Gemini Context Caching if system prompt is exceptionally large (>32k tokens / ~130k chars)
     if system and len(system) > 130000:
         try:
             import datetime
             import hashlib
-            import google.generativeai as genai
+
             from google.generativeai import caching
 
             system_hash = hashlib.md5(system.encode("utf-8")).hexdigest()
             cache_name = f"sys-cache-{system_hash}"
-            
+
             cached_content = None
             try:
                 for c in caching.CachedContent.list():
@@ -428,7 +429,7 @@ async def _generate_gemini(prompt: str, system: str = "") -> str:
                         break
             except Exception:
                 pass
-                
+
             if not cached_content:
                 logger.info("Creating Gemini Context Cache for large system prompt (%s)...", cache_name)
                 cached_content = await asyncio.to_thread(
@@ -438,7 +439,7 @@ async def _generate_gemini(prompt: str, system: str = "") -> str:
                     contents=system,
                     ttl=datetime.timedelta(minutes=10)
                 )
-            
+
             response = await asyncio.to_thread(
                 model.generate_content,
                 prompt,
@@ -448,7 +449,7 @@ async def _generate_gemini(prompt: str, system: str = "") -> str:
         except Exception as cache_err:
             logger.debug("Failed to use Gemini Context Caching: %s", cache_err)
             # Fall back to standard content generation below
-            
+
     full_prompt = f"{system}\n\n{prompt}" if system else prompt
     try:
         response = await asyncio.to_thread(model.generate_content, full_prompt)

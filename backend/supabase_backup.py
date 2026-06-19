@@ -1,5 +1,6 @@
-import os
 import logging
+import os
+
 import requests
 
 logger = logging.getLogger(__name__)
@@ -29,11 +30,11 @@ def restore_database():
     base_url = SUPABASE_URL.strip().rstrip("/")
     bucket = SUPABASE_BUCKET.strip()
     url = f"{base_url}/storage/v1/object/authenticated/{bucket}/healthcare.db"
-    
+
     try:
         logger.info("Checking Supabase Storage for database backup...")
         response = requests.get(url, headers=get_supabase_headers(), stream=True, timeout=10.0)
-        
+
         if response.status_code == 200:
             # Overwrite or create file
             with open(db_path, "wb") as f:
@@ -66,14 +67,14 @@ def backup_database():
     base_url = SUPABASE_URL.strip().rstrip("/")
     bucket = SUPABASE_BUCKET.strip()
     url = f"{base_url}/storage/v1/object/{bucket}/healthcare.db"
-    
+
     try:
         logger.info("Uploading database backup to Supabase Storage...")
         # Check size to prevent uploading empty files
         if os.path.getsize(db_path) == 0:
             logger.warning("Database file is empty. Skipping upload.")
             return False
-            
+
         with open(db_path, "rb") as f:
             file_data = f.read()
 

@@ -1,13 +1,12 @@
 import os
-import sys
 import pickle
+import sys
 
 # Ensure parent directory is in python path so backend is importable as package
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import numpy as np
 import pandas as pd
-import xgboost as xgb
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
@@ -102,14 +101,14 @@ def train_lungs_model():
                 from ml.pytorch_models import PyTorchTabularMLP
             except ImportError:
                 from .ml.pytorch_models import PyTorchTabularMLP
-        
+
         model = PyTorchTabularMLP(hidden_dims=[64, 32], lr=0.005, epochs=150)
         model.fit(X_train_scaled, Y_train)
 
     # 7. Conformal Prediction Threshold (95% Confidence) - Class-Conditional
     y_proba = model.predict_proba(X_test_scaled)
     Y_test_vals = Y_test.values if hasattr(Y_test, 'values') else Y_test
-    
+
     conformal_q = {}
     alpha = 0.05
     for c in [0, 1]:

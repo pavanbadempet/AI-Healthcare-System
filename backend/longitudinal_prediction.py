@@ -11,7 +11,7 @@ loaded lazily on first request and cached in memory.
 
 import logging
 import os
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 import joblib
 import numpy as np
@@ -19,10 +19,6 @@ from fastapi import APIRouter, HTTPException
 
 from .model_service import MEDICAL_DISCLAIMER
 from .schemas.longitudinal import (
-    DiabetesVisit,
-    HeartVisit,
-    KidneyVisit,
-    LiverVisit,
     LongitudinalDiabetesRequest,
     LongitudinalHeartRequest,
     LongitudinalKidneyRequest,

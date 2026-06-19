@@ -91,9 +91,9 @@ def train_kidney_model():
             print("[INFO] No TABPFN_TOKEN found in environment. Bypassing TabPFN to run offline.")
             print("To enable TabPFN, run 'python scripts/setup_tabpfn.py' to configure your API key.")
         print("Falling back to Calibrated Soft Voting Ensemble (XGBoost + LightGBM + Random Forest)...")
-        from sklearn.ensemble import RandomForestClassifier, VotingClassifier
-        from sklearn.calibration import CalibratedClassifierCV
         import lightgbm as lgb
+        from sklearn.calibration import CalibratedClassifierCV
+        from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 
         neg_count = int((Y_train == 0).sum())
         pos_count = int((Y_train == 1).sum())
@@ -157,7 +157,7 @@ def train_kidney_model():
     # 7. Conformal Prediction Threshold (95% Confidence) - Class-Conditional
     y_proba = model.predict_proba(X_test_scaled)
     Y_test_vals = Y_test.values if hasattr(Y_test, 'values') else Y_test
-    
+
     conformal_q = {}
     alpha = 0.05
     for c in [0, 1]:

@@ -89,7 +89,7 @@ def _calculate_conformal_prediction(proba_positive: float, conformal_q: Any):
     """
     p0 = 1.0 - proba_positive
     p1 = proba_positive
-    
+
     prediction_set = []
     if isinstance(conformal_q, dict):
         q0 = conformal_q.get(0, conformal_q.get("0", 0.0))
@@ -104,14 +104,14 @@ def _calculate_conformal_prediction(proba_positive: float, conformal_q: Any):
             prediction_set.append(0)
         if p1 >= threshold:
             prediction_set.append(1)
-        
+
     if len(prediction_set) == 1:
         uncertainty_status = "Low Uncertainty"
     elif len(prediction_set) > 1:
         uncertainty_status = "High Uncertainty (Ambiguous Case)"
     else:
         uncertainty_status = "High Uncertainty (Out-of-Distribution Case)"
-        
+
     return {
         "conformal_prediction_set": prediction_set,
         "significance_level": 0.05,
@@ -141,27 +141,27 @@ def _get_top_risk_factors(model: Any, imputed_list: list, feature_names: list) -
         import shap
     except ImportError:
         return []
-        
+
     try:
         # Strategy: Unwrap model to find a tree-based estimator for fast TreeExplainer
         target_estimator = model
         if hasattr(model, 'estimators_'):
             # First member is XGBoost / Calibrated XGBoost in our train pipelines
             target_estimator = model.estimators_[0]
-            
+
         if hasattr(target_estimator, 'calibrated_classifiers_') and len(target_estimator.calibrated_classifiers_) > 0:
             target_estimator = target_estimator.calibrated_classifiers_[0].estimator
         elif hasattr(target_estimator, 'estimator'):
             target_estimator = target_estimator.estimator
-            
+
         # Bypass deep learning model TabPFN since it doesn't support TreeExplainer
         if "TabPFNClassifier" in str(type(target_estimator)):
             return ["Deep Attention Model: Tabular transformer predictions are computed via in-context attention over similar patients."]
-            
+
         input_vector = np.array([imputed_list])
         explainer = shap.TreeExplainer(target_estimator)
         shap_values = explainer.shap_values(input_vector)
-        
+
         # Handle different SHAP version output shapes
         if isinstance(shap_values, list):
             sv = shap_values[1][0] if len(shap_values) > 1 else shap_values[0][0]
@@ -171,22 +171,22 @@ def _get_top_risk_factors(model: Any, imputed_list: list, feature_names: list) -
             sv = shap_values[0]
         else:
             sv = shap_values
-            
+
         # Create list of (feature_name, shap_value)
         contributions = []
         for feat, val in zip(feature_names, sv):
             contributions.append((feat, float(val)))
-            
+
         # Sort by absolute SHAP value descending (largest impact first)
         contributions.sort(key=lambda x: abs(x[1]), reverse=True)
-        
+
         # Format as readable strings
         top_factors = []
         for feat, val in contributions[:3]:
             direction = "increases risk" if val > 0 else "decreases risk"
             display_name = feat.replace('_', ' ').title()
             top_factors.append(f"{display_name} ({direction})")
-            
+
         return top_factors
     except Exception:
         return []
@@ -201,12 +201,12 @@ def _get_model_metadata(model_name: str, current_model_obj: Any) -> dict:
     version = "2.1.0-extratrees"
     timestamp = "2026-06-18T00:00:00"
     model_card_id = f"card-{model_name}-v2"
-    
+
     if entry and entry.model is current_model_obj:
         version = getattr(entry, "model_version", version)
         timestamp = getattr(entry, "training_timestamp", timestamp)
         model_card_id = getattr(entry, "model_card_id", model_card_id)
-        
+
     return {
         "model_version": version,
         "training_timestamp": timestamp,
@@ -222,17 +222,17 @@ def _calculate_clinical_recourse(
     scaler: Any = None
 ) -> Optional[str]:
     """
-    Simulates a counterfactual 'what-if' patient profile by searching combinations of 
+    Simulates a counterfactual 'what-if' patient profile by searching combinations of
     controllable lifestyle features to find the optimal risk reduction path.
     """
     try:
         if current_prob < 0.5:
             # Recourse is only relevant for high-risk patients
             return None
-            
+
         import itertools
+
         import pandas as pd
-        import numpy as np
 
         # Define candidate modifications per model: (index, check_fn, target_value, description)
         candidates = {
@@ -277,7 +277,7 @@ def _calculate_clinical_recourse(
                 test_profile = list(imputed_list)
                 for index, target_val, desc in comb:
                     test_profile[index] = target_val
-                
+
                 if model_name in ("kidney", "liver", "lungs"):
                     from . import features as _feat
                     feat_names = {
@@ -340,7 +340,7 @@ async def _generate_clinical_narrative(
     try:
         from .core_ai import generate
         from .prompt_registry import get_prompt
-        
+
         template = get_prompt("clinical_narrative")
         prompt = template.format(
             disease=model_name.upper(),
@@ -527,7 +527,7 @@ async def predict_kidney(
             data.pcv, data.wc, data.rc,
             data.htn, data.dm, data.cad, data.appet, data.pe, data.ane
         ]
-        
+
         imputer, conformal_q = _get_imputer_and_conformal("kidney", _pred.kidney_model)
         if imputer is not None:
             imputed_arr = imputer.transform([input_list])
@@ -565,16 +565,16 @@ async def predict_kidney(
             if conformal_q is not None:
                 try:
                     conformal_metrics = _calculate_conformal_prediction(proba_pos, conformal_q)
-                    
+
                     # Add Triage recommendation
                     triage = _get_triage_recommendation(raw, conformal_metrics["conformal_prediction_set"])
                     conformal_metrics["triage_recommendation"] = triage
-                    
+
                     # Add Top Risk Factors
                     top_factors = _get_top_risk_factors(_pred.kidney_model, imputed_list, feature_names)
                     if top_factors:
                         conformal_metrics["top_risk_factors"] = top_factors
-                    
+
                     clinical_indices.update(conformal_metrics)
                 except Exception as e:
                     logger.warning("Conformal prediction calculation failed for Kidney: %s", e)
@@ -627,7 +627,7 @@ async def predict_lungs(
             data.allergy, data.wheezing, data.alcohol, data.coughing,
             data.shortness_of_breath, data.swallowing_difficulty, data.chest_pain
         ]
-        
+
         imputer, conformal_q = _get_imputer_and_conformal("lungs", _pred.lungs_model)
         if imputer is not None:
             imputed_arr = imputer.transform([input_list])
@@ -644,7 +644,7 @@ async def predict_lungs(
         raw = _normalize_prediction(raw_pred)
         confidence, risk_level = _extract_confidence(_pred.lungs_model, X)
         prediction = "Respiratory Issue Detected" if raw == 1 else "Healthy Lungs"
-        
+
         clinical_indices = {}
         proba_pos = None
         try:
@@ -657,16 +657,16 @@ async def predict_lungs(
             if conformal_q is not None:
                 try:
                     conformal_metrics = _calculate_conformal_prediction(proba_pos, conformal_q)
-                    
+
                     # Add Triage recommendation
                     triage = _get_triage_recommendation(raw, conformal_metrics["conformal_prediction_set"])
                     conformal_metrics["triage_recommendation"] = triage
-                    
+
                     # Add Top Risk Factors
                     top_factors = _get_top_risk_factors(_pred.lungs_model, imputed_list, feature_names)
                     if top_factors:
                         conformal_metrics["top_risk_factors"] = top_factors
-                    
+
                     clinical_indices.update(conformal_metrics)
                 except Exception as e:
                     logger.warning("Conformal prediction calculation failed for Lungs: %s", e)
@@ -710,14 +710,14 @@ async def predict_diabetes(
         raise HTTPException(status_code=503, detail="Diabetes Model not available")
     try:
         from .model_service import _extract_confidence, _normalize_prediction
-        
+
         age_bucket = get_age_bucket(data.age) if data.age is not None else None
         input_list = [
             data.hypertension, data.high_chol, data.bmi, data.smoking_history,
             data.heart_disease, data.physical_activity, data.general_health,
             data.gender, age_bucket
         ]
-        
+
         imputer, conformal_q = _get_imputer_and_conformal("diabetes", _pred.diabetes_model)
         if imputer is not None:
             imputed_arr = imputer.transform([input_list])
@@ -729,7 +729,7 @@ async def predict_diabetes(
         raw = _normalize_prediction(raw_pred)
         confidence, risk_level = _extract_confidence(_pred.diabetes_model, [imputed_list])
         prediction = "High Risk" if raw == 1 else "Low Risk"
-        
+
         clinical_indices = {}
         proba_pos = None
         try:
@@ -742,16 +742,16 @@ async def predict_diabetes(
             if conformal_q is not None:
                 try:
                     conformal_metrics = _calculate_conformal_prediction(proba_pos, conformal_q)
-                    
+
                     # Add Triage recommendation
                     triage = _get_triage_recommendation(raw, conformal_metrics["conformal_prediction_set"])
                     conformal_metrics["triage_recommendation"] = triage
-                    
+
                     # Add Top Risk Factors
                     top_factors = _get_top_risk_factors(_pred.diabetes_model, imputed_list, _features.DIABETES_FEATURES)
                     if top_factors:
                         conformal_metrics["top_risk_factors"] = top_factors
-                    
+
                     clinical_indices.update(conformal_metrics)
                 except Exception as e:
                     logger.warning("Conformal prediction calculation failed for Diabetes: %s", e)
@@ -800,7 +800,7 @@ async def predict_heart(
             data.fbs, data.restecg, data.thalach, data.exang,
             data.oldpeak, data.slope, data.ca, data.thal
         ]
-        
+
         imputer, conformal_q = _get_imputer_and_conformal("heart", _pred.heart_model)
         if imputer is not None:
             imputed_arr = imputer.transform([input_list])
@@ -844,16 +844,16 @@ async def predict_heart(
             if conformal_q is not None:
                 try:
                     conformal_metrics = _calculate_conformal_prediction(proba_pos, conformal_q)
-                    
+
                     # Add Triage recommendation
                     triage = _get_triage_recommendation(raw, conformal_metrics["conformal_prediction_set"])
                     conformal_metrics["triage_recommendation"] = triage
-                    
+
                     # Add Top Risk Factors
                     top_factors = _get_top_risk_factors(_pred.heart_model, imputed_list, _features.HEART_FEATURES)
                     if top_factors:
                         conformal_metrics["top_risk_factors"] = top_factors
-                    
+
                     clinical_indices.update(conformal_metrics)
                 except Exception as e:
                     logger.warning("Conformal prediction calculation failed for Heart: %s", e)
@@ -907,7 +907,7 @@ async def predict_liver(
             data.aspartate_aminotransferase, data.total_proteins,
             data.albumin, data.albumin_and_globulin_ratio
         ]
-        
+
         imputer, conformal_q = _get_imputer_and_conformal("liver", _pred.liver_model)
         if imputer is not None:
             imputed_arr = imputer.transform([input_list])
@@ -952,16 +952,16 @@ async def predict_liver(
             if conformal_q is not None:
                 try:
                     conformal_metrics = _calculate_conformal_prediction(proba_pos, conformal_q)
-                    
+
                     # Add Triage recommendation
                     triage = _get_triage_recommendation(raw, conformal_metrics["conformal_prediction_set"])
                     conformal_metrics["triage_recommendation"] = triage
-                    
+
                     # Add Top Risk Factors
                     top_factors = _get_top_risk_factors(_pred.liver_model, imputed_list, feature_names)
                     if top_factors:
                         conformal_metrics["top_risk_factors"] = top_factors
-                    
+
                     clinical_indices.update(conformal_metrics)
                 except Exception as e:
                     logger.warning("Conformal prediction calculation failed for Liver: %s", e)

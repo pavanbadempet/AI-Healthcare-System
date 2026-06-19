@@ -1,6 +1,6 @@
 import logging
 
-from . import prediction, schemas
+from . import schemas
 from .model_service import model_service
 
 logger = logging.getLogger(__name__)
