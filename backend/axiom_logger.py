@@ -49,13 +49,14 @@ class AxiomHandler(logging.Handler):
             "Authorization": f"Bearer {self.token}",
             "Content-Type": "application/json"
         }
-        while not self.stop_event.is_set():
+        # Continue working until stop is signaled AND all queued logs are fully drained
+        while not self.stop_event.is_set() or not self.queue.empty():
             batch = []
             try:
                 # Retrieve all currently queued logs up to a batch size of 50
                 while len(batch) < 50:
-                    # Timeout of 2.0s ensures frequent flushes
-                    item = self.queue.get(timeout=2.0)
+                    # Timeout of 1.0s allows faster shutdown check
+                    item = self.queue.get(timeout=1.0)
                     batch.append(item)
                     self.queue.task_done()
             except queue.Empty:
@@ -69,6 +70,15 @@ class AxiomHandler(logging.Handler):
                         print(f"[AxiomLogger Warning] Failed ingestion (status {response.status_code}): {response.text}", flush=True)
                 except Exception as e:
                     print(f"[AxiomLogger Error] Connection failed: {e}", flush=True)
+
+    def close(self):
+        """Signals the background worker thread to stop and blocks up to 2 seconds to flush pending logs."""
+        self.stop_event.set()
+        try:
+            self.worker.join(timeout=2.0)
+        except Exception:
+            pass
+        super().close()
 
 
 def setup_axiom_logging():
