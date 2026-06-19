@@ -5,19 +5,19 @@ Implements ``VectorStoreBackend`` using Qdrant client.
 Qdrant is a high-performance vector search engine written in Rust.
 """
 
+import logging
 import os
 import uuid
-import logging
 from typing import Any, Dict, List, Optional
 
 try:
     from qdrant_client import QdrantClient
-    from qdrant_client.models import Distance, VectorParams, PointStruct, Filter, FieldCondition, MatchValue
+    from qdrant_client.models import Distance, FieldCondition, Filter, MatchValue, PointStruct, VectorParams
 except ImportError:
     QdrantClient = None
 
-from .vector_store_base import VectorStoreBackend
 from .rag import get_embedding, get_query_embedding
+from .vector_store_base import VectorStoreBackend
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +33,7 @@ class QdrantVectorStore(VectorStoreBackend):
     def __init__(self) -> None:
         if QdrantClient is None:
             raise ImportError("qdrant-client is not installed. Run 'pip install qdrant-client'")
-        
+
         self.client: Optional[QdrantClient] = None
         self.collection_name = QDRANT_COLLECTION
         self.dimension = None
@@ -43,7 +43,7 @@ class QdrantVectorStore(VectorStoreBackend):
         try:
             # Connect via HTTP
             self.client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT, api_key=QDRANT_API_KEY, timeout=5.0)
-            
+
             # Determine embedding dimension dynamically
             test_emb = get_embedding("test")
             self.dimension = len(test_emb)
@@ -71,10 +71,10 @@ class QdrantVectorStore(VectorStoreBackend):
         """Add or update a document embedding in Qdrant."""
         if not self.client:
             raise RuntimeError("Qdrant store is not loaded.")
-        
+
         vector = get_embedding(text)
         point_id = self._get_uuid(record_id)
-        
+
         payload = {
             "text": text,
             "record_id": record_id,
@@ -97,7 +97,7 @@ class QdrantVectorStore(VectorStoreBackend):
         """Delete a document by ID. Returns True if successful."""
         if not self.client:
             raise RuntimeError("Qdrant store is not loaded.")
-        
+
         point_id = self._get_uuid(record_id)
         try:
             self.client.delete(
@@ -112,7 +112,7 @@ class QdrantVectorStore(VectorStoreBackend):
     def _build_filter(self, filter_meta: Optional[Dict[str, Any]]) -> Optional[Any]:
         if not filter_meta:
             return None
-        
+
         must_conditions = []
         for key, val in filter_meta.items():
             must_conditions.append(
@@ -132,7 +132,7 @@ class QdrantVectorStore(VectorStoreBackend):
         """Semantic search returning documents with similarity scores and metadata."""
         if not self.client:
             raise RuntimeError("Qdrant store is not loaded.")
-        
+
         query_vector = get_query_embedding(query)
         qdrant_filter = self._build_filter(filter_meta)
 
@@ -149,10 +149,10 @@ class QdrantVectorStore(VectorStoreBackend):
             payload = res.payload or {}
             text = payload.get("text", "")
             record_id = payload.get("record_id", "")
-            
+
             # Reconstruct metadata (all fields except text and record_id)
             metadata = {k: v for k, v in payload.items() if k not in ("text", "record_id")}
-            
+
             output.append({
                 "text": text,
                 "score": float(res.score),

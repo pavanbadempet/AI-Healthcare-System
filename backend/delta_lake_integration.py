@@ -5,8 +5,8 @@ Supports both PySpark and lightweight Polars + delta-rs (delta-lake) engines.
 """
 
 import logging
-import re
 import os
+import re
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
@@ -271,8 +271,8 @@ class DeltaSchemaManager:
         if self.use_spark:
             return self.spark.read.format("delta").option("versionAsOf", version).table(table_name)
         else:
-            from deltalake import DeltaTable as RTDeltaTable
             import polars as pl
+            from deltalake import DeltaTable as RTDeltaTable
             # Resolve local path from name
             path = table_name if os.path.exists(table_name) else os.path.join("data", "lakehouse", "healthcare_db", table_name)
             dt = RTDeltaTable(path)
@@ -284,8 +284,8 @@ class DeltaSchemaManager:
         if self.use_spark:
             return self.spark.read.format("delta").option("timestampAsOf", timestamp).table(table_name)
         else:
-            from deltalake import DeltaTable as RTDeltaTable
             import polars as pl
+            from deltalake import DeltaTable as RTDeltaTable
             path = table_name if os.path.exists(table_name) else os.path.join("data", "lakehouse", "healthcare_db", table_name)
             dt = RTDeltaTable(path)
             dt.load_as_datetime(datetime.fromisoformat(timestamp))
@@ -403,7 +403,7 @@ class HealthcareDeltaManager:
         try:
             history = self.schema_manager.get_table_history(table_name)
             total_snapshots = len(history)
-            
+
             # Extract timestamp from dict (Spark) or list of dicts (delta-rs)
             oldest_snapshot = None
             if history:

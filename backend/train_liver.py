@@ -1,5 +1,6 @@
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import pickle
 
@@ -136,9 +137,9 @@ def train_liver_model():
             print("[INFO] No TABPFN_TOKEN found in environment. Bypassing TabPFN to run offline.")
             print("To enable TabPFN, run 'python scripts/setup_tabpfn.py' to configure your API key.")
         print("Falling back to Calibrated Soft Voting Ensemble (XGBoost + LightGBM + Random Forest)...")
-        from sklearn.ensemble import RandomForestClassifier, VotingClassifier
-        from sklearn.calibration import CalibratedClassifierCV
         import lightgbm as lgb
+        from sklearn.calibration import CalibratedClassifierCV
+        from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 
         clf_xgb = xgb.XGBClassifier(
             n_estimators=200,
@@ -229,7 +230,7 @@ def train_liver_model():
     # 7. Conformal Prediction Threshold (95% Confidence) - Class-Conditional
     y_proba = model.predict_proba(X_test_scaled)
     Y_test_vals = Y_test.values if hasattr(Y_test, 'values') else Y_test
-    
+
     conformal_q = {}
     alpha = 0.05
     for c in [0, 1]:

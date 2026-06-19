@@ -5,10 +5,10 @@ Provides low-latency caching for heavy SQL reads, API results, and LLM/embedding
 Falls back silently to an in-memory TTL dictionary if Redis is not configured or unavailable.
 """
 
-import os
-import time
 import logging
+import os
 import threading
+import time
 from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
@@ -79,7 +79,7 @@ class SystemCache:
                     return pickle.loads(val)
             except Exception as e:
                 logger.warning("Redis get failed: %s", e)
-        
+
         # In-memory fallback
         with self._store_lock:
             entry = self._in_memory_store.get(key)
@@ -133,7 +133,7 @@ class SystemCache:
                 self.redis_client.flushdb()
             except Exception as e:
                 logger.warning("Redis flushdb failed: %s", e)
-        
+
         with self._store_lock:
             self._in_memory_store.clear()
 

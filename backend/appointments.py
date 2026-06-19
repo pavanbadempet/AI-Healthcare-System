@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -13,6 +14,7 @@ PAST_APPOINTMENT_DETAIL = "Appointment time must be in the future"
 DUPLICATE_APPOINTMENT_DETAIL = "Doctor already has an active appointment at that time"
 APPOINTMENT_FACILITY_MISMATCH_DETAIL = "Appointment participants must belong to the same facility"
 APPOINTMENT_FACILITY_ACCESS_DETAIL = "Appointment resource is outside the user's facility"
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix="/appointments",

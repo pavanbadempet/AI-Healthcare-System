@@ -1,9 +1,10 @@
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
-import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
-from torch.utils.data import TensorDataset, DataLoader
+from torch.utils.data import DataLoader, TensorDataset
+
 
 class PyTorchTabularMLP(ClassifierMixin, BaseEstimator):
     def __init__(self, input_dim=None, hidden_dims=[64, 32], lr=0.005, epochs=150, batch_size=128, weight_decay=1e-4, dropout=0.1):
@@ -35,20 +36,20 @@ class PyTorchTabularMLP(ClassifierMixin, BaseEstimator):
             X = X.values
         if hasattr(y, "values"):
             y = y.values
-        
+
         X = np.array(X, dtype=np.float32)
         y = np.array(y, dtype=np.float32)
-        
+
         self.classes_ = np.unique(y)
         self.input_dim = X.shape[1]
         self.model = self._build_model(self.input_dim)
-        
+
         dataset = TensorDataset(torch.tensor(X), torch.tensor(y).unsqueeze(1))
         loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
-        
+
         optimizer = optim.Adam(self.model.parameters(), lr=self.lr, weight_decay=self.weight_decay)
         criterion = nn.BCEWithLogitsLoss()
-        
+
         self.model.train()
         for epoch in range(self.epochs):
             for batch_x, batch_y in loader:
@@ -57,7 +58,7 @@ class PyTorchTabularMLP(ClassifierMixin, BaseEstimator):
                 loss = criterion(out, batch_y)
                 loss.backward()
                 optimizer.step()
-        
+
         self.model.eval()
         self.model_state_ = self.model.state_dict()
         return self
@@ -74,12 +75,12 @@ class PyTorchTabularMLP(ClassifierMixin, BaseEstimator):
             X = X.values
         X = np.array(X, dtype=np.float32)
         self._ensure_model_loaded(X.shape[1])
-        
+
         self.model.eval()
         with torch.no_grad():
             logits = self.model(torch.tensor(X))
             probs = torch.sigmoid(logits).numpy()
-        
+
         p1 = probs
         p0 = 1.0 - p1
         return np.hstack((p0, p1))

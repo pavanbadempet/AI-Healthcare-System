@@ -1,9 +1,11 @@
+import logging
 import os
 import queue
-import logging
 import threading
 from datetime import datetime, timezone
+
 import requests
+
 
 class AxiomHandler(logging.Handler):
     """
@@ -21,7 +23,7 @@ class AxiomHandler(logging.Handler):
         self.url = f"{api_base}/v1/datasets/{dataset}/ingest"
         self.queue = queue.Queue()
         self.stop_event = threading.Event()
-        
+
         # Start background worker thread
         self.worker = threading.Thread(target=self._worker_loop, daemon=True, name="AxiomLoggerThread")
         self.worker.start()
@@ -61,7 +63,7 @@ class AxiomHandler(logging.Handler):
                     self.queue.task_done()
             except queue.Empty:
                 pass
-            
+
             if batch:
                 try:
                     # Send logs using synchronous requests inside background daemon thread
@@ -85,7 +87,7 @@ def setup_axiom_logging():
     """Dynamically integrates Axiom logging handler if configuration variables exist in the environment."""
     token = os.environ.get("AXIOM_TOKEN", "").strip().strip('"')
     dataset = os.environ.get("AXIOM_DATASET", "").strip().strip('"')
-    
+
     if token and dataset:
         try:
             axiom_handler = AxiomHandler(token=token, dataset=dataset)
@@ -93,7 +95,7 @@ def setup_axiom_logging():
             formatter = logging.Formatter('%(name)s - %(levelname)s - %(message)s')
             axiom_handler.setFormatter(formatter)
             axiom_handler.setLevel(logging.INFO)
-            
+
             # Attach to the root logger so it captures logs from all backend modules
             root_logger = logging.getLogger()
             root_logger.addHandler(axiom_handler)
