@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 from .hospital import AdmissionResponse, EncounterResponse
 
@@ -69,6 +69,48 @@ class VitalObservationCreate(BaseModel):
     temperature_c: Optional[float] = None
     respiratory_rate: Optional[float] = None
     observed_at: Optional[datetime] = None
+
+    @field_validator("heart_rate")
+    @classmethod
+    def validate_heart_rate(cls, v: Optional[float]) -> Optional[float]:
+        if v is not None and (v < 20 or v > 250):
+            raise ValueError("Heart rate must be between 20 and 250 bpm")
+        return v
+
+    @field_validator("systolic_bp")
+    @classmethod
+    def validate_systolic_bp(cls, v: Optional[float]) -> Optional[float]:
+        if v is not None and (v < 40 or v > 300):
+            raise ValueError("Systolic blood pressure must be between 40 and 300 mmHg")
+        return v
+
+    @field_validator("diastolic_bp")
+    @classmethod
+    def validate_diastolic_bp(cls, v: Optional[float]) -> Optional[float]:
+        if v is not None and (v < 20 or v > 200):
+            raise ValueError("Diastolic blood pressure must be between 20 and 200 mmHg")
+        return v
+
+    @field_validator("spo2")
+    @classmethod
+    def validate_spo2(cls, v: Optional[float]) -> Optional[float]:
+        if v is not None and (v < 0 or v > 100):
+            raise ValueError("SpO2 oxygen saturation must be between 0 and 100%")
+        return v
+
+    @field_validator("temperature_c")
+    @classmethod
+    def validate_temperature_c(cls, v: Optional[float]) -> Optional[float]:
+        if v is not None and (v < 30.0 or v > 45.0):
+            raise ValueError("Temperature must be between 30.0 and 45.0 °C")
+        return v
+
+    @field_validator("respiratory_rate")
+    @classmethod
+    def validate_respiratory_rate(cls, v: Optional[float]) -> Optional[float]:
+        if v is not None and (v < 4 or v > 80):
+            raise ValueError("Respiratory rate must be between 4 and 80 breaths/min")
+        return v
 
 
 class VitalObservationResponse(BaseModel):

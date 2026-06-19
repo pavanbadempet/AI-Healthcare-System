@@ -137,5 +137,208 @@ class SystemCache:
         with self._store_lock:
             self._in_memory_store.clear()
 
+    # ── Cache Metrics ──────────────────────────────────────────────────
+    _hits: int = 0
+    _misses: int = 0
+
+    def record_hit(self) -> None:
+        """Increment cache hit counter."""
+        self._hits += 1
+
+    def record_miss(self) -> None:
+        """Increment cache miss counter."""
+        self._misses += 1
+
+    @property
+    def hit_rate(self) -> float:
+        """Return cache hit rate as a float between 0.0 and 1.0."""
+        total = self._hits + self._misses
+        return self._hits / total if total > 0 else 0.0
+
+    @property
+    def stats(self) -> dict:
+        """Return cache statistics."""
+        total = self._hits + self._misses
+        return {
+            "hits": self._hits,
+            "misses": self._misses,
+            "total": total,
+            "hit_rate": self.hit_rate,
+            "backend": "redis" if self.redis_client else "in_memory",
+            "in_memory_keys": len(self._in_memory_store),
+        }
+
+    def get_with_metrics(self, key: str) -> Optional[Any]:
+        """Retrieve a value from the cache, recording hit/miss metrics."""
+        value = self.get(key)
+        if value is not None:
+            self.record_hit()
+        else:
+            self.record_miss()
+        return value
+
+    # ── Serialization helpers (msgpack preferred, pickle fallback) ────
+    @staticmethod
+    def _serialize(value: Any) -> bytes:
+        """Serialize a value using msgpack if available, otherwise pickle."""
+        try:
+            import msgpack
+            return msgpack.packb(value, use_bin_type=True, default=str)
+        except (ImportError, TypeError):
+            import pickle
+            return pickle.dumps(value)
+
+    @staticmethod
+    def _deserialize(data: bytes) -> Any:
+        """Deserialize bytes using msgpack if available, otherwise pickle."""
+        try:
+            import msgpack
+            return msgpack.unpackb(data, raw=False)
+        except (ImportError, Exception):
+            import pickle
+            return pickle.loads(data)
+
+    def safe_set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
+        """Store a value using secure serialization (msgpack preferred)."""
+        if self.redis_client:
+            try:
+                serialized = self._serialize(value)
+                if ttl:
+                    self.redis_client.setex(key, ttl, serialized)
+                else:
+                    self.redis_client.set(key, serialized)
+                return
+            except Exception as e:
+                logger.warning("Redis safe_set failed: %s", e)
+        # In-memory fallback
+        with self._store_lock:
+            expiry = (time.time() + ttl) if ttl else None
+            self._in_memory_store[key] = (expiry, value)
+
+    def safe_get(self, key: str) -> Optional[Any]:
+        """Retrieve a value using secure deserialization (msgpack preferred)."""
+        if self.redis_client:
+            try:
+                val = self.redis_client.get(key)
+                if val is not None:
+                    self.record_hit()
+                    return self._deserialize(val)
+            except Exception as e:
+                logger.warning("Redis safe_get failed: %s", e)
+        # In-memory fallback
+        with self._store_lock:
+            entry = self._in_memory_store.get(key)
+            if entry:
+                expiry, val = entry
+                if expiry is None or expiry > time.time():
+                    self.record_hit()
+                    return val
+                else:
+                    self._in_memory_store.pop(key, None)
+        self.record_miss()
+        return None
+
+
+# ── API Response Caching Decorator ─────────────────────────────────────
+import functools
+import hashlib
+import json
+
+
+def cached_response(ttl: int = 300, key_prefix: str = "api"):
+    """
+    FastAPI endpoint caching decorator.
+
+    Caches the return value of a route handler based on its arguments.
+    Automatically invalidated after ``ttl`` seconds.
+
+    Usage::
+
+        @router.get("/dashboard/stats")
+        @cached_response(ttl=60, key_prefix="dashboard")
+        async def get_dashboard_stats(db: Session = Depends(get_db)):
+            ...
+    """
+    def decorator(func):
+        @functools.wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            # Build a cache key from the function name and hashable args
+            key_parts = [key_prefix, func.__module__, func.__qualname__]
+            # Include only serializable kwargs (skip db sessions, requests, etc.)
+            for k, v in sorted(kwargs.items()):
+                if isinstance(v, (str, int, float, bool, type(None))):
+                    key_parts.append(f"{k}={v}")
+            raw_key = ":".join(key_parts)
+            cache_key = f"resp:{hashlib.sha256(raw_key.encode()).hexdigest()[:16]}"
+
+            # Try cache first
+            cached = cache.get_with_metrics(cache_key)
+            if cached is not None:
+                return cached
+
+            # Call the actual function
+            result = await func(*args, **kwargs)
+
+            # Cache the result
+            try:
+                cache.set(cache_key, result, ttl=ttl)
+            except Exception as e:
+                logger.warning("Failed to cache response for %s: %s", func.__qualname__, e)
+
+            return result
+
+        @functools.wraps(func)
+        def sync_wrapper(*args, **kwargs):
+            key_parts = [key_prefix, func.__module__, func.__qualname__]
+            for k, v in sorted(kwargs.items()):
+                if isinstance(v, (str, int, float, bool, type(None))):
+                    key_parts.append(f"{k}={v}")
+            raw_key = ":".join(key_parts)
+            cache_key = f"resp:{hashlib.sha256(raw_key.encode()).hexdigest()[:16]}"
+
+            cached = cache.get_with_metrics(cache_key)
+            if cached is not None:
+                return cached
+
+            result = func(*args, **kwargs)
+            try:
+                cache.set(cache_key, result, ttl=ttl)
+            except Exception as e:
+                logger.warning("Failed to cache response for %s: %s", func.__qualname__, e)
+            return result
+
+        import asyncio
+        if asyncio.iscoroutinefunction(func):
+            return async_wrapper
+        return sync_wrapper
+    return decorator
+
+
+def invalidate_cache_prefix(prefix: str) -> int:
+    """
+    Invalidate all cache keys matching a prefix.
+    Returns count of keys invalidated.
+    """
+    count = 0
+    with cache._store_lock:
+        keys_to_remove = [k for k in cache._in_memory_store if k.startswith(f"resp:{prefix}")]
+        for key in keys_to_remove:
+            cache._in_memory_store.pop(key, None)
+            count += 1
+    if cache.redis_client:
+        try:
+            cursor = 0
+            while True:
+                cursor, keys = cache.redis_client.scan(cursor, match=f"resp:{prefix}*", count=100)
+                for key in keys:
+                    cache.redis_client.delete(key)
+                    count += 1
+                if cursor == 0:
+                    break
+        except Exception as e:
+            logger.warning("Redis invalidation scan failed: %s", e)
+    return count
+
+
 # Global cache helper
 cache = SystemCache()

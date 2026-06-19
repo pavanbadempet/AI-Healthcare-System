@@ -1,14 +1,18 @@
 """Authentication and user-related ORM models."""
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import CheckConstraint, Column, DateTime, Float, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
-from ..database import Base
+from ..database import Base, SoftDeleteMixin
 
 
-class User(Base):
+class User(Base, SoftDeleteMixin):
     __tablename__ = "users"
+
+    __table_args__ = (
+        CheckConstraint("role IN ('patient', 'doctor', 'nurse', 'pharmacist', 'billing', 'admin')", name="check_user_role"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)

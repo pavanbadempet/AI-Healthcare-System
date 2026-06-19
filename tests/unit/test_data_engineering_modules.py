@@ -341,3 +341,50 @@ def test_data_catalog_persistence():
     lineage = data_catalog.get_lineage("test_catalog_dataset")
     assert "patient_accounts" in lineage["upstream"]
 
+
+def test_expectation_runner_chunked_validation():
+    from backend.data_expectations import ExpectationRunner, Expectation
+    runner = ExpectationRunner()
+    suite = runner.create_suite("test_chunked_suite", "test_dataset")
+    runner.add_expectation("test_chunked_suite", Expectation("expect_column_values_between", "val", {"min_value": 0, "max_value": 10}))
+    runner.add_expectation("test_chunked_suite", Expectation("expect_column_mean_between", "val", {"min_value": 3, "max_value": 6}))
+    runner.add_expectation("test_chunked_suite", Expectation("expect_table_row_count_between", "val", {"min_value": 5, "max_value": 15}))
+    runner.add_expectation("test_chunked_suite", Expectation("expect_column_unique_value_count_between", "val", {"min_value": 2, "max_value": 10}))
+
+    # 10 rows: if chunk_size = 3, it will trigger chunked validation pathway
+    data = [{"val": 2}, {"val": 3}, {"val": 4}, {"val": 5}, {"val": 6}, {"val": 2}, {"val": 3}, {"val": 4}, {"val": 5}, {"val": 6}]
+    report = runner.validate("test_chunked_suite", data, chunk_size=3)
+    assert report.success is True
+    assert report.success_rate == 1.0
+
+    # Test out of bounds failure in chunked pathway
+    data_fail = [{"val": 2}, {"val": 30}]
+    report_fail = runner.validate("test_chunked_suite", data_fail, chunk_size=1)
+    assert report_fail.success is False
+
+
+def test_column_level_lineage():
+    from backend.data_catalog import data_catalog
+    data_catalog.add_column_lineage(
+        dataset_id="gold_health_insights",
+        target_col="test_target",
+        source_dataset="patient_accounts",
+        source_col="test_source",
+        transform="anonymized"
+    )
+    lineage = data_catalog.get_lineage("gold_health_insights")
+    assert "column_lineage" in lineage
+    assert lineage["column_lineage"]["test_target"]["source_dataset"] == "patient_accounts"
+    assert lineage["column_lineage"]["test_target"]["source_column"] == "test_source"
+    assert lineage["column_lineage"]["test_target"]["transform"] == "anonymized"
+
+
+def test_schema_drift_detector_normalization():
+    from backend.schema_drift_detector import schema_drift_detector
+    assert schema_drift_detector._normalize_type("VARCHAR(255)") == "VARCHAR"
+    assert schema_drift_detector._normalize_type("JSONB") == "VARCHAR"
+    assert schema_drift_detector._normalize_type("BIGINT") == "INTEGER"
+    assert schema_drift_detector._normalize_type("FLOAT8") == "DECIMAL"
+    assert schema_drift_detector._normalize_type("DATE") == "TIMESTAMP"
+
+

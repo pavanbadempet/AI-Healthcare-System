@@ -181,7 +181,7 @@ def predict_lung_risk(avg_spo2, avg_resp_rate):
     if avg_resp_rate > 26: risk += 0.20
     return min(risk, 0.99)
 
-def process_conformed_record(db, record):
+def process_conformed_record(db, record, avg_stats=None, heart_risk=None, lung_risk=None, flush=True):
     """Processes a single conformed vital observation record and generates alerts."""
     patient_id = int(record["patient_id"])
     heart_rate = float(record["heart_rate"]) if record.get("heart_rate") is not None else 75.0
@@ -218,38 +218,41 @@ def process_conformed_record(db, record):
         created_at=datetime.now(timezone.utc)
     )
     db.add(observation)
-    db.flush() # Flush to get observation.id
+    if flush:
+        db.flush() # Flush to get observation.id
 
     # --- 2. Calculate Rolling Averages (last 2 minutes) ---
-    from datetime import timedelta
+    if avg_stats is not None:
+        avg_hr, avg_systolic_bp, avg_diastolic_bp, avg_spo2, avg_temp, avg_resp_rate = avg_stats
+    else:
+        from datetime import timedelta
+        from sqlalchemy import func
+        two_minutes_ago = observed_at - timedelta(minutes=2)
 
-    from sqlalchemy import func
-    two_minutes_ago = observed_at - timedelta(minutes=2)
+        # Fetch averages from DB
+        stats = db.query(
+            func.avg(VitalObservation.heart_rate),
+            func.avg(VitalObservation.systolic_bp),
+            func.avg(VitalObservation.diastolic_bp),
+            func.avg(VitalObservation.spo2),
+            func.avg(VitalObservation.temperature_c),
+            func.avg(VitalObservation.respiratory_rate)
+        ).filter(
+            VitalObservation.patient_id == patient_id,
+            VitalObservation.observed_at >= two_minutes_ago
+        ).first()
 
-    # Fetch averages from DB
-    stats = db.query(
-        func.avg(VitalObservation.heart_rate),
-        func.avg(VitalObservation.systolic_bp),
-        func.avg(VitalObservation.diastolic_bp),
-        func.avg(VitalObservation.spo2),
-        func.avg(VitalObservation.temperature_c),
-        func.avg(VitalObservation.respiratory_rate)
-    ).filter(
-        VitalObservation.patient_id == patient_id,
-        VitalObservation.observed_at >= two_minutes_ago
-    ).first()
-
-    avg_hr = float(stats[0]) if stats[0] is not None else heart_rate
-    avg_systolic_bp = float(stats[1]) if stats[1] is not None else systolic_bp
-    avg_diastolic_bp = float(stats[2]) if stats[2] is not None else diastolic_bp
-    avg_spo2 = float(stats[3]) if stats[3] is not None else spo2
-    avg_temp = float(stats[4]) if stats[4] is not None else temp  # noqa: F841
-    avg_resp_rate = float(stats[5]) if stats[5] is not None else resp_rate
+        avg_hr = float(stats[0]) if stats[0] is not None else heart_rate
+        avg_systolic_bp = float(stats[1]) if stats[1] is not None else systolic_bp
+        avg_diastolic_bp = float(stats[2]) if stats[2] is not None else diastolic_bp
+        avg_spo2 = float(stats[3]) if stats[3] is not None else spo2
+        avg_temp = float(stats[4]) if stats[4] is not None else temp
+        avg_resp_rate = float(stats[5]) if stats[5] is not None else resp_rate
 
     # --- 3. Calculate ML Risk Probabilities ---
     ml_start = time.perf_counter()
-    heart_risk = predict_heart_disease_risk(avg_hr, avg_systolic_bp)
-    lung_risk = predict_lung_risk(avg_spo2, avg_resp_rate)
+    h_risk = heart_risk if heart_risk is not None else predict_heart_disease_risk(avg_hr, avg_systolic_bp)
+    l_risk = lung_risk if lung_risk is not None else predict_lung_risk(avg_spo2, avg_resp_rate)
     ml_duration_ms = (time.perf_counter() - ml_start) * 1000
 
     # --- 4. Evaluate Alerts & Severity ---
@@ -286,37 +289,44 @@ def process_conformed_record(db, record):
         title = title or "Severe Hypertension Alert"
         summary.append(f"Elevated blood pressure: {avg_systolic_bp:.1f}/{avg_diastolic_bp:.1f} mmHg.")
 
-    if lung_risk > 0.75:
+    if l_risk > 0.75:
         trigger_alert = True
         severity = "critical"
         title = title or "High Respiratory Distress Risk"
-        summary.append(f"Lung ML model predicts {lung_risk*100:.1f}% risk of respiratory failure.")
-    elif heart_risk > 0.75:
+        summary.append(f"Lung ML model predicts {l_risk*100:.1f}% risk of respiratory failure.")
+    elif h_risk > 0.75:
         trigger_alert = True
         severity = "critical"
         title = title or "High Cardiac Distress Risk"
-        summary.append(f"Heart ML model predicts {heart_risk*100:.1f}% risk of cardiovascular collapse.")
+        summary.append(f"Heart ML model predicts {h_risk*100:.1f}% risk of cardiovascular collapse.")
 
+    alert_summary = " ".join(summary)
     if trigger_alert:
-        alert_summary = " ".join(summary)
         logger.warning(f"ALERT! Patient {patient_id} - {title}: {alert_summary}")
 
-        signal = MonitoringSignal(
-            facility_id=facility_id,
-            patient_id=patient_id,
-            vital_observation_id=observation.id,
-            encounter_id=encounter_id,
-            department_id=department_id,
-            signal_type="critical_collapse_risk" if severity == "critical" else "vital_anomaly",
-            severity=severity,
-            title=title,
-            summary=alert_summary,
-            status="open",
-            created_at=datetime.now(timezone.utc)
-        )
-        db.add(signal)
+        if flush:
+            signal = MonitoringSignal(
+                facility_id=facility_id,
+                patient_id=patient_id,
+                vital_observation_id=observation.id,
+                encounter_id=encounter_id,
+                department_id=department_id,
+                signal_type="critical_collapse_risk" if severity == "critical" else "vital_anomaly",
+                severity=severity,
+                title=title,
+                summary=alert_summary,
+                status="open",
+                created_at=datetime.now(timezone.utc)
+            )
+            db.add(signal)
+            return ml_duration_ms
+        else:
+            return ml_duration_ms, (observation, severity, title, alert_summary, facility_id, encounter_id, department_id)
 
-    return ml_duration_ms
+    if flush:
+        return ml_duration_ms
+    else:
+        return ml_duration_ms, None
 
 def process_batch(df, batch_id):
     """Processes a micro-batch of vitals data using native PySpark execution."""
@@ -330,11 +340,193 @@ def process_batch(df, batch_id):
     start_time = time.perf_counter()
     total_ml_latency = 0.0
     try:
-        for row in records:
-            record_dict = row.asDict()
-            ml_lat = process_conformed_record(db, record_dict)
-            if ml_lat is not None:
-                total_ml_latency += ml_lat
+        # Convert records to dictionary format
+        records_dict = [row.asDict() for row in records]
+
+        # 1. Bulk pre-fetch historical vitals for all patient_ids in the batch
+        patient_ids = list({int(r["patient_id"]) for r in records_dict if r.get("patient_id") is not None})
+
+        # Extract and parse timestamps
+        record_datetimes = []
+        for r in records_dict:
+            ts_str = r.get("timestamp")
+            try:
+                dt = datetime.fromisoformat(ts_str.replace("Z", "+00:00"))
+            except Exception:
+                dt = datetime.now(timezone.utc)
+            r["_datetime"] = dt
+            record_datetimes.append(dt)
+
+        min_observed_at = min(record_datetimes) if record_datetimes else datetime.now(timezone.utc)
+        from datetime import timedelta
+        two_minutes_before_min = min_observed_at - timedelta(minutes=2)
+
+        # Query DB in bulk for these patients
+        historical_vitals = db.query(
+            VitalObservation.patient_id,
+            VitalObservation.heart_rate,
+            VitalObservation.systolic_bp,
+            VitalObservation.diastolic_bp,
+            VitalObservation.spo2,
+            VitalObservation.temperature_c,
+            VitalObservation.respiratory_rate,
+            VitalObservation.observed_at
+        ).filter(
+            VitalObservation.patient_id.in_(patient_ids),
+            VitalObservation.observed_at >= two_minutes_before_min
+        ).all()
+
+        # Group historical vitals by patient_id
+        patient_history = {}
+        for hv in historical_vitals:
+            pid = hv.patient_id
+            if pid not in patient_history:
+                patient_history[pid] = []
+            patient_history[pid].append({
+                "heart_rate": hv.heart_rate,
+                "systolic_bp": hv.systolic_bp,
+                "diastolic_bp": hv.diastolic_bp,
+                "spo2": hv.spo2,
+                "temperature_c": hv.temperature_c,
+                "respiratory_rate": hv.respiratory_rate,
+                "observed_at": hv.observed_at.replace(tzinfo=timezone.utc) if hv.observed_at.tzinfo is None else hv.observed_at
+            })
+
+        # 2. Compute rolling averages for each record in the batch (chronologically)
+        sorted_records = sorted(records_dict, key=lambda x: x["_datetime"])
+
+        calculated_stats = []
+        for r in sorted_records:
+            pid = int(r["patient_id"])
+            obs_at = r["_datetime"].replace(tzinfo=timezone.utc) if r["_datetime"].tzinfo is None else r["_datetime"]
+
+            if pid not in patient_history:
+                patient_history[pid] = []
+
+            # Add current observation to history
+            patient_history[pid].append({
+                "heart_rate": float(r["heart_rate"]) if r.get("heart_rate") is not None else 75.0,
+                "systolic_bp": float(r["systolic_bp"]) if r.get("systolic_bp") is not None else 120.0,
+                "diastolic_bp": float(r["diastolic_bp"]) if r.get("diastolic_bp") is not None else 80.0,
+                "spo2": float(r["spo2"]) if r.get("spo2") is not None else 98.0,
+                "temperature_c": float(r["temperature_c"]) if r.get("temperature_c") is not None else 37.0,
+                "respiratory_rate": float(r["respiratory_rate"]) if r.get("respiratory_rate") is not None else 14.0,
+                "observed_at": obs_at
+            })
+
+            # Filter history to last 2 minutes
+            cutoff = obs_at - timedelta(minutes=2)
+            patient_history[pid] = [h for h in patient_history[pid] if h["observed_at"] >= cutoff]
+
+            # Calculate averages
+            hist = patient_history[pid]
+            avg_hr = sum(h["heart_rate"] for h in hist) / len(hist)
+            avg_systolic_bp = sum(h["systolic_bp"] for h in hist) / len(hist)
+            avg_diastolic_bp = sum(h["diastolic_bp"] for h in hist) / len(hist)
+            avg_spo2 = sum(h["spo2"] for h in hist) / len(hist)
+            avg_temp = sum(h["temperature_c"] for h in hist) / len(hist)
+            avg_resp_rate = sum(h["respiratory_rate"] for h in hist) / len(hist)
+
+            stats = (avg_hr, avg_systolic_bp, avg_diastolic_bp, avg_spo2, avg_temp, avg_resp_rate)
+            calculated_stats.append(stats)
+            r["_avg_stats"] = stats
+
+        # 3. Vectorized ML Inference
+        import numpy as np
+        import pandas as pd
+
+        heart_inputs = []
+        lung_inputs = []
+
+        for r in sorted_records:
+            avg_hr, avg_systolic_bp, _, avg_spo2, _, avg_resp_rate = r["_avg_stats"]
+            heart_inputs.append([
+                55.0, 1.0, 1.0, float(avg_systolic_bp), 230.0, 0.0, 1.0, float(avg_hr), 0.0, 1.0, 1.0, 0.0, 2.0
+            ])
+            shortness_of_breath = 2 if avg_spo2 < 94.0 or avg_resp_rate > 22.0 else 1
+            wheezing = 2 if avg_resp_rate > 20.0 else 1
+            coughing = 2 if avg_resp_rate > 18.0 else 1
+            fatigue = 2 if avg_spo2 < 95.0 else 1
+            chest_pain = 2 if avg_spo2 < 92.0 else 1
+            lung_inputs.append([
+                1, 55, 2, 1, 1, 1, 1, fatigue, 1, wheezing, 1, coughing, shortness_of_breath, 1, chest_pain
+            ])
+
+        heart_probs = None
+        lung_probs = None
+
+        ml_start = time.perf_counter()
+        if heart_model is not None and hasattr(heart_model, "predict_proba"):
+            try:
+                heart_probs = heart_model.predict_proba(heart_inputs)[:, 1]
+            except Exception as ex:
+                logger.debug(f"Vectorized heart model prediction failed: {ex}")
+
+        if lungs_model is not None and hasattr(lungs_model, "predict_proba"):
+            try:
+                feature_names = [
+                    'GENDER', 'AGE', 'SMOKING', 'YELLOW_FINGERS', 'ANXIETY', 'PEER_PRESSURE',
+                    'CHRONIC_DISEASE', 'FATIGUE', 'ALLERGY', 'WHEEZING', 'ALCOHOL_CONSUMING',
+                    'COUGHING', 'SHORTNESS_OF_BREATH', 'SWALLOWING_DIFFICULTY', 'CHEST_PAIN'
+                ]
+                df_lung = pd.DataFrame(lung_inputs, columns=feature_names)
+                if lungs_scaler is not None:
+                    X_lung = lungs_scaler.transform(df_lung)
+                else:
+                    X_lung = df_lung.values
+                lung_probs = lungs_model.predict_proba(X_lung)[:, 1]
+            except Exception as ex:
+                logger.debug(f"Vectorized lungs model prediction failed: {ex}")
+        ml_duration_ms = (time.perf_counter() - ml_start) * 1000
+
+        # 4. Process records individually with pre-computed values, without flushing yet
+        pending_alerts = []
+        for i, r in enumerate(sorted_records):
+            h_risk = float(heart_probs[i]) if heart_probs is not None else None
+            l_risk = float(lung_probs[i]) if lung_probs is not None else None
+
+            res = process_conformed_record(
+                db, r,
+                avg_stats=r["_avg_stats"],
+                heart_risk=h_risk,
+                lung_risk=l_risk,
+                flush=False
+            )
+
+            # Handle mock returning float/int or tuple (for unit test compatibility)
+            if isinstance(res, tuple):
+                ml_lat, alert_tuple = res
+            else:
+                ml_lat = res
+                alert_tuple = None
+
+            total_ml_latency += ml_lat
+            if alert_tuple is not None:
+                pending_alerts.append(alert_tuple)
+
+        # 5. Bulk insert observations and flush to generate auto-incrementing IDs
+        db.flush()
+
+        # 6. Bulk insert monitoring signals using generated observation IDs
+        signals_to_add = []
+        for obs_obj, severity, title, alert_summary, fac_id, enc_id, dept_id in pending_alerts:
+            signal = MonitoringSignal(
+                facility_id=fac_id,
+                patient_id=obs_obj.patient_id,
+                vital_observation_id=obs_obj.id,
+                encounter_id=enc_id,
+                department_id=dept_id,
+                signal_type="critical_collapse_risk" if severity == "critical" else "vital_anomaly",
+                severity=severity,
+                title=title,
+                summary=alert_summary,
+                status="open",
+                created_at=datetime.now(timezone.utc)
+            )
+            signals_to_add.append(signal)
+
+        if signals_to_add:
+            db.add_all(signals_to_add)
 
         # Calculate total batch processing duration
         end_time = time.perf_counter()
@@ -351,9 +543,12 @@ def process_batch(df, batch_id):
         )
         db.add(metric)
         db.commit()
+        logger.info(f"Successfully processed micro-batch {batch_id} with {len(records)} records in {processing_time_ms:.1f}ms")
+
     except Exception as e:
         db.rollback()
         logger.error(f"Failed to process micro-batch {batch_id}: {e}")
+        raise e
     finally:
         db.close()
 

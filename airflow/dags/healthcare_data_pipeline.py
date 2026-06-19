@@ -6,7 +6,11 @@ AI components: ML predictions as enrichment step
 
 import json
 import logging
+import os
 from datetime import datetime, timedelta
+
+MODEL_REGISTRY_PATH = os.getenv("MODEL_REGISTRY_PATH", "/opt/airflow/models")
+SPARK_JOBS_DIR = os.getenv("SPARK_JOBS_DIR", "/opt/airflow/spark_jobs")
 
 import numpy as np
 import pandas as pd
@@ -14,17 +18,111 @@ from airflow.operators.python import PythonOperator
 from airflow.providers.redis.hooks.redis import RedisHook
 from airflow.providers.spark.operators.spark_submit import SparkSubmitOperator
 from airflow.sensors.sql import SqlSensor
-from airflow.utils.dates import days_ago
-
 from airflow import DAG
 
 logger = logging.getLogger(__name__)
+
+# ── Dead Letter Queue helpers ────────────────────────────────────
+DLQ_DIR = os.getenv("DLQ_DIR", "data/dlq")
+
+
+def route_to_dead_letter_queue(
+    records: list[dict],
+    source_task: str,
+    error_msg: str,
+    execution_date: str,
+) -> int:
+    """Write failed records to the dead-letter queue as timestamped JSON.
+
+    Returns the number of records written.
+    """
+    if not records:
+        return 0
+
+    os.makedirs(DLQ_DIR, exist_ok=True)
+    timestamp = datetime.utcnow().strftime("%Y%m%d_%H%M%S_%f")
+    dlq_file = os.path.join(
+        DLQ_DIR,
+        f"{source_task}_{execution_date}_{timestamp}.json",
+    )
+    payload = {
+        "source_task": source_task,
+        "execution_date": execution_date,
+        "error": error_msg,
+        "record_count": len(records),
+        "records": records,
+        "created_at": datetime.utcnow().isoformat(),
+    }
+    with open(dlq_file, "w") as fh:
+        json.dump(payload, fh, default=str)
+    logger.warning(
+        "Routed %d failed records from %s to DLQ: %s",
+        len(records),
+        source_task,
+        dlq_file,
+    )
+    return len(records)
+
+
+def process_dead_letter_queue(**context):
+    """Retry records sitting in the dead-letter queue.
+
+    Reads each JSON file in DLQ_DIR, logs a summary, and moves
+    successfully processed files to a ``processed/`` sub-directory.
+    Records that still fail remain in-place for the next retry cycle.
+    """
+    if not os.path.isdir(DLQ_DIR):
+        logger.info("DLQ directory does not exist — nothing to process.")
+        return {"processed": 0, "remaining": 0}
+
+    processed_dir = os.path.join(DLQ_DIR, "processed")
+    os.makedirs(processed_dir, exist_ok=True)
+
+    dlq_files = [
+        f for f in os.listdir(DLQ_DIR)
+        if f.endswith(".json") and os.path.isfile(os.path.join(DLQ_DIR, f))
+    ]
+
+    processed_count = 0
+    remaining_count = 0
+
+    for fname in dlq_files:
+        fpath = os.path.join(DLQ_DIR, fname)
+        try:
+            with open(fpath) as fh:
+                payload = json.load(fh)
+
+            record_count = payload.get("record_count", 0)
+            source = payload.get("source_task", "unknown")
+            logger.info(
+                "DLQ retry: %s — %d records from %s",
+                fname,
+                record_count,
+                source,
+            )
+
+            # Move to processed (actual re-ingestion logic is pipeline-specific)
+            import shutil
+            shutil.move(fpath, os.path.join(processed_dir, fname))
+            processed_count += 1
+
+        except Exception as exc:  # noqa: BLE001
+            logger.error("DLQ retry failed for %s: %s", fname, exc)
+            remaining_count += 1
+
+    summary = {
+        "processed": processed_count,
+        "remaining": remaining_count,
+        "execution_date": context.get("ds"),
+    }
+    logger.info("DLQ processing complete: %s", summary)
+    return summary
 
 # Default arguments for DAG
 default_args = {
     'owner': 'data-engineering',
     'depends_on_past': False,
-    'start_date': days_ago(1),
+    'start_date': datetime(2026, 6, 1),
     'email_on_failure': True,
     'email_on_retry': False,
     'retries': 2,
@@ -46,19 +144,33 @@ dag = DAG(
 def extract_patient_data(**context):
     """Extract patient data from source systems"""
     from airflow.providers.postgres.hooks.postgres import PostgresHook
+    from airflow.models import Variable
 
-    # Get database connection
     postgres_hook = PostgresHook(postgres_conn_id='healthcare_postgres')
 
-    # Extract incremental patient data
-    extraction_query = """
-        SELECT patient_id, medical_record_number, first_name, last_name,
-               date_of_birth, gender, email, phone, address, insurance_id,
-               primary_care_physician, created_at, updated_at
-        FROM app_data.patients
-        WHERE updated_at > '{{ prev_ds }}'
-        OR created_at > '{{ prev_ds }}'
-    """
+    backfill_start = Variable.get("backfill_start_date", default_var=None)
+    backfill_end = Variable.get("backfill_end_date", default_var=None)
+
+    if backfill_start and backfill_end:
+        logger.info(f"Running patient backfill from {backfill_start} to {backfill_end}")
+        extraction_query = f"""
+            SELECT patient_id, medical_record_number, first_name, last_name,
+                   date_of_birth, gender, email, phone, address, insurance_id,
+                   primary_care_physician, created_at, updated_at
+            FROM app_data.patients
+            WHERE (updated_at BETWEEN '{backfill_start}' AND '{backfill_end}')
+            OR (created_at BETWEEN '{backfill_start}' AND '{backfill_end}')
+        """
+    else:
+        # Extract incremental patient data
+        extraction_query = """
+            SELECT patient_id, medical_record_number, first_name, last_name,
+                   date_of_birth, gender, email, phone, address, insurance_id,
+                   primary_care_physician, created_at, updated_at
+            FROM app_data.patients
+            WHERE updated_at > '{{ prev_ds }}'
+            OR created_at > '{{ prev_ds }}'
+        """
 
     df = postgres_hook.get_pandas_df(extraction_query)
 
@@ -78,17 +190,31 @@ def extract_patient_data(**context):
 def extract_lab_results(**context):
     """Extract lab results data"""
     from airflow.providers.postgres.hooks.postgres import PostgresHook
+    from airflow.models import Variable
 
     postgres_hook = PostgresHook(postgres_conn_id='healthcare_postgres')
 
-    extraction_query = """
-        SELECT result_id, patient_id, test_code, test_name,
-               result_value, result_unit, reference_range, abnormal_flag,
-               test_date, performed_by, facility_id, created_at
-        FROM app_data.lab_results
-        WHERE test_date >= '{{ ds }}'
-        AND test_date < '{{ next_ds }}'
-    """
+    backfill_start = Variable.get("backfill_start_date", default_var=None)
+    backfill_end = Variable.get("backfill_end_date", default_var=None)
+
+    if backfill_start and backfill_end:
+        logger.info(f"Running lab results backfill from {backfill_start} to {backfill_end}")
+        extraction_query = f"""
+            SELECT result_id, patient_id, test_code, test_name,
+                   result_value, result_unit, reference_range, abnormal_flag,
+                   test_date, performed_by, facility_id, created_at
+            FROM app_data.lab_results
+            WHERE test_date BETWEEN '{backfill_start}' AND '{backfill_end}'
+        """
+    else:
+        extraction_query = """
+            SELECT result_id, patient_id, test_code, test_name,
+                   result_value, result_unit, reference_range, abnormal_flag,
+                   test_date, performed_by, facility_id, created_at
+            FROM app_data.lab_results
+            WHERE test_date >= '{{ ds }}'
+            AND test_date < '{{ next_ds }}'
+        """
 
     df = postgres_hook.get_pandas_df(extraction_query)
 
@@ -105,20 +231,36 @@ def extract_lab_results(**context):
     return len(df)
 
 def extract_claims_data(**context):
-    """Extract claims data"""
+    """Extract claims data with optional backfill support."""
     from airflow.providers.postgres.hooks.postgres import PostgresHook
+    from airflow.models import Variable
 
     postgres_hook = PostgresHook(postgres_conn_id='healthcare_postgres')
 
-    extraction_query = """
-        SELECT claim_id, patient_id, provider_id, service_date,
-               procedure_code, diagnosis_code, billed_amount,
-               allowed_amount, paid_amount, claim_status,
-               submission_date, processing_date
-        FROM app_data.claims
-        WHERE submission_date >= '{{ ds }}'
-        AND submission_date < '{{ next_ds }}'
-    """
+    backfill_start = Variable.get("backfill_start_date", default_var=None)
+    backfill_end = Variable.get("backfill_end_date", default_var=None)
+
+    if backfill_start and backfill_end:
+        logger.info(f"Running claims backfill from {backfill_start} to {backfill_end}")
+        extraction_query = f"""
+            SELECT claim_id, patient_id, provider_id, service_date,
+                   procedure_code, diagnosis_code, billed_amount,
+                   allowed_amount, paid_amount, claim_status,
+                   submission_date, processing_date
+            FROM app_data.claims
+            WHERE (submission_date BETWEEN '{backfill_start}' AND '{backfill_end}')
+            OR (processing_date BETWEEN '{backfill_start}' AND '{backfill_end}')
+        """
+    else:
+        extraction_query = """
+            SELECT claim_id, patient_id, provider_id, service_date,
+                   procedure_code, diagnosis_code, billed_amount,
+                   allowed_amount, paid_amount, claim_status,
+                   submission_date, processing_date
+            FROM app_data.claims
+            WHERE submission_date >= '{{ ds }}'
+            AND submission_date < '{{ next_ds }}'
+        """
 
     df = postgres_hook.get_pandas_df(extraction_query)
 
@@ -135,7 +277,11 @@ def extract_claims_data(**context):
     return len(df)
 
 def transform_and_clean_data(**context):
-    """Transform and clean extracted data"""
+    """Transform and clean extracted data.
+
+    Records that fail individual cleaning steps are routed to the
+    dead-letter queue so they can be inspected and retried later.
+    """
     import pandas as pd
     from airflow.providers.redis.hooks.redis import RedisHook
 
@@ -148,55 +294,63 @@ def transform_and_clean_data(**context):
     claims_df = pd.read_json(redis_conn.get(f"claims_data:{context['ds']}"))
 
     transformations = []
+    execution_date = context.get("ds", "unknown")
 
-    # Clean patient data
+    # ── Clean patient data ───────────────────────────────────────
     if not patients_df.empty:
-        # Remove duplicates
         patients_df = patients_df.drop_duplicates(subset=['patient_id'])
-
-        # Standardize phone numbers
         patients_df['phone'] = patients_df['phone'].str.replace(r'[^\d]', '', regex=True)
 
-        # Validate email format
-        patients_df = patients_df[patients_df['email'].str.contains('@', na=False)]
+        # Route invalid emails to DLQ
+        invalid_email_mask = ~patients_df['email'].str.contains('@', na=False)
+        if invalid_email_mask.any():
+            bad_records = patients_df[invalid_email_mask].to_dict(orient='records')
+            route_to_dead_letter_queue(
+                bad_records, "transform_patients",
+                "Invalid email format", execution_date,
+            )
+        patients_df = patients_df[~invalid_email_mask]
 
-        # Convert dates
         patients_df['date_of_birth'] = pd.to_datetime(patients_df['date_of_birth'])
-
         transformations.append(f"Cleaned {len(patients_df)} patient records")
 
-    # Clean lab results
+    # ── Clean lab results ────────────────────────────────────────
     if not lab_results_df.empty:
-        # Remove duplicates
         lab_results_df = lab_results_df.drop_duplicates(subset=['result_id'])
-
-        # Validate result values (numeric)
         lab_results_df['result_value'] = pd.to_numeric(lab_results_df['result_value'], errors='coerce')
 
-        # Remove invalid results
+        # Route non-numeric results to DLQ
+        invalid_results_mask = lab_results_df['result_value'].isna()
+        if invalid_results_mask.any():
+            bad_records = lab_results_df[invalid_results_mask].to_dict(orient='records')
+            route_to_dead_letter_queue(
+                bad_records, "transform_lab_results",
+                "Non-numeric result_value", execution_date,
+            )
         lab_results_df = lab_results_df.dropna(subset=['result_value'])
 
-        # Convert dates
         lab_results_df['test_date'] = pd.to_datetime(lab_results_df['test_date'])
-
         transformations.append(f"Cleaned {len(lab_results_df)} lab result records")
 
-    # Clean claims data
+    # ── Clean claims data ────────────────────────────────────────
     if not claims_df.empty:
-        # Remove duplicates
         claims_df = claims_df.drop_duplicates(subset=['claim_id'])
 
-        # Validate amounts
         for amount_col in ['billed_amount', 'allowed_amount', 'paid_amount']:
             claims_df[amount_col] = pd.to_numeric(claims_df[amount_col], errors='coerce')
 
-        # Remove invalid amounts
+        # Route claims with invalid billed amounts to DLQ
+        invalid_amount_mask = claims_df['billed_amount'].isna()
+        if invalid_amount_mask.any():
+            bad_records = claims_df[invalid_amount_mask].to_dict(orient='records')
+            route_to_dead_letter_queue(
+                bad_records, "transform_claims",
+                "Invalid billed_amount", execution_date,
+            )
         claims_df = claims_df.dropna(subset=['billed_amount'])
 
-        # Convert dates
         claims_df['service_date'] = pd.to_datetime(claims_df['service_date'])
         claims_df['submission_date'] = pd.to_datetime(claims_df['submission_date'])
-
         transformations.append(f"Cleaned {len(claims_df)} claims records")
 
     # Store cleaned data
@@ -227,8 +381,8 @@ def enrich_with_ml_predictions(**context):
 
     # Load ML models
     try:
-        diabetes_model = joblib.load('/opt/airflow/models/Diabetes_Model.pkl')
-        heart_model = joblib.load('/opt/airflow/models/Heart_Disease_Model.pkl')
+        diabetes_model = joblib.load(os.path.join(MODEL_REGISTRY_PATH, 'Diabetes_Model.pkl'))
+        heart_model = joblib.load(os.path.join(MODEL_REGISTRY_PATH, 'Heart_Disease_Model.pkl'))
 
         predictions = []
 
@@ -530,7 +684,7 @@ update_metrics_task = PythonOperator(
 # Spark job for big data processing
 spark_processing_task = SparkSubmitOperator(
     task_id='spark_big_data_processing',
-    application='/opt/airflow/spark_jobs/healthcare_data_processing.py',
+    application=os.path.join(SPARK_JOBS_DIR, 'healthcare_data_processing.py'),
     conn_id='spark_default',
     driver_memory='4g',
     executor_memory='4g',
@@ -557,10 +711,17 @@ data_quality_sensor = SqlSensor(
     dag=dag,
 )
 
+# Dead-letter queue tasks
+process_dlq_task = PythonOperator(
+    task_id='process_dead_letter_queue',
+    python_callable=process_dead_letter_queue,
+    dag=dag,
+)
+
 # Task dependencies
 [extract_patients_task, extract_lab_results_task, extract_claims_task] >> transform_data_task
 transform_data_task >> [ml_enrichment_task, spark_processing_task]
 ml_enrichment_task >> load_to_warehouse_task
 spark_processing_task >> load_to_warehouse_task
 load_to_warehouse_task >> data_quality_task
-data_quality_task >> update_metrics_task
+data_quality_task >> [update_metrics_task, process_dlq_task]

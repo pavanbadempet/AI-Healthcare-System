@@ -88,6 +88,20 @@ class DeltaLakeManager:
         if config.cluster_columns:
             delta_table.optimize().executeCompaction()
 
+        # Enforce storage-level data integrity constraints via Delta check constraints
+        if config.table_name == "patients":
+            try:
+                self.spark.sql(f"ALTER TABLE delta.`{self.table_path}` ADD CONSTRAINT patient_id_not_null CHECK (patient_id IS NOT NULL)")
+                logger.info(f"Added patient_id NOT NULL constraint to {self.table_name}")
+            except Exception as e:
+                logger.warning(f"Could not add patient_id constraint on Delta table: {e}")
+        elif config.table_name == "lab_results":
+            try:
+                self.spark.sql(f"ALTER TABLE delta.`{self.table_path}` ADD CONSTRAINT result_value_non_negative CHECK (result_value >= 0)")
+                logger.info(f"Added result_value >= 0 constraint to {self.table_name}")
+            except Exception as e:
+                logger.warning(f"Could not add result_value constraint on Delta table: {e}")
+
         logger.info(f"Created Delta table: {self.table_name}")
         return delta_table
 

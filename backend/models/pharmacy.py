@@ -1,10 +1,10 @@
 """Pharmacy domain models: medication inventory, prescriptions, and dispensing."""
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import relationship
 
-from ..database import Base
+from ..database import Base, SoftDeleteMixin
 
 
 class MedicationInventory(Base):
@@ -24,8 +24,12 @@ class MedicationInventory(Base):
     facility = relationship("HospitalFacility")
 
 
-class Prescription(Base):
+class Prescription(Base, SoftDeleteMixin):
     __tablename__ = "prescriptions"
+
+    __table_args__ = (
+        Index("idx_prescriptions_patient_created", "patient_id", "created_at"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     facility_id = Column(Integer, ForeignKey("hospital_facilities.id"), nullable=True, index=True)

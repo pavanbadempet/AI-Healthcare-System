@@ -1,10 +1,10 @@
 """Clinical order, care event, vital observation, monitoring signal, and diagnostic result ORM models."""
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Column, DateTime, Float, ForeignKey, Index, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
-from ..database import Base
+from ..database import Base, SoftDeleteMixin
 
 
 class ClinicalOrder(Base):
@@ -53,8 +53,13 @@ class CareEvent(Base):
     department = relationship("Department")
 
 
-class VitalObservation(Base):
+class VitalObservation(Base, SoftDeleteMixin):
     __tablename__ = "vital_observations"
+
+    __table_args__ = (
+        UniqueConstraint("patient_id", "observed_at", name="uq_vital_obs_patient_observed"),
+        Index("idx_vital_obs_patient_observed", "patient_id", "observed_at"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     facility_id = Column(Integer, ForeignKey("hospital_facilities.id"), nullable=True, index=True)
@@ -82,6 +87,10 @@ class VitalObservation(Base):
 class MonitoringSignal(Base):
     __tablename__ = "monitoring_signals"
 
+    __table_args__ = (
+        UniqueConstraint("patient_id", "created_at", name="uq_monitoring_signal_patient_created"),
+    )
+
     id = Column(Integer, primary_key=True, index=True)
     facility_id = Column(Integer, ForeignKey("hospital_facilities.id"), nullable=True, index=True)
     patient_id = Column(Integer, ForeignKey("users.id"), index=True)
@@ -102,8 +111,12 @@ class MonitoringSignal(Base):
     department = relationship("Department")
 
 
-class DiagnosticResult(Base):
+class DiagnosticResult(Base, SoftDeleteMixin):
     __tablename__ = "diagnostic_results"
+
+    __table_args__ = (
+        Index("idx_diagnostic_res_patient_created", "patient_id", "created_at"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     facility_id = Column(Integer, ForeignKey("hospital_facilities.id"), nullable=True, index=True)
