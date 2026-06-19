@@ -92,7 +92,7 @@ class MonitoringSignal(Base):
     severity = Column(String, default="info")  # info, warning, critical
     title = Column(String)
     summary = Column(Text)
-    status = Column(String, default="open")  # open, acknowledged, resolved
+    status = Column(String, default="open", index=True)  # open, acknowledged, resolved
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     facility = relationship("HospitalFacility")
