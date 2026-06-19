@@ -306,10 +306,17 @@ if os.path.isdir(_static_dir):
 # --- Serve React Frontend SPA ---
 _frontend_dist = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend", "dist")
 if os.path.isdir(_frontend_dist):
+    class ImmutableStaticFiles(StaticFiles):
+        """Custom StaticFiles subclass to add Cache-Control: immutable headers for hashed production assets."""
+        def file_response(self, *args, **kwargs):
+            response = super().file_response(*args, **kwargs)
+            response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+            return response
+
     # Serve static assets folder
     assets_dir = os.path.join(_frontend_dist, "assets")
     if os.path.isdir(assets_dir):
-        app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
+        app.mount("/assets", ImmutableStaticFiles(directory=assets_dir), name="assets")
 
     from fastapi.responses import FileResponse
 
