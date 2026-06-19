@@ -40,7 +40,7 @@ class DeltaTableConfig:
     """Configuration for Delta Lake table creation and management"""
     table_name: str
     table_type: DeltaTableType
-    database: str = "healthcare_db"
+    database: str = os.getenv("DELTA_DATABASE", "healthcare_db")
     cluster_columns: List[str] = None  # Databricks Liquid Clustering
     enable_cdc: bool = True  # Change Data Feed
     write_properties: Dict[str, str] = None
@@ -96,7 +96,7 @@ class DeltaSchemaManager:
 
     def create_delta_table(self, df: Any, config: DeltaTableConfig, path: str = None) -> Dict[str, Any]:
         """Create Delta table with optimized configuration"""
-        catalog = "uc_healthcare_prod"
+        catalog = os.getenv("DELTA_CATALOG", "uc_healthcare_prod")
         database = _validate_delta_identifier(config.database, "database")
         table_name = _validate_delta_identifier(config.table_name, "table_name")
         full_table_name = f"{catalog}.{database}.{table_name}"
@@ -274,7 +274,7 @@ class DeltaSchemaManager:
             import polars as pl
             from deltalake import DeltaTable as RTDeltaTable
             # Resolve local path from name
-            path = table_name if os.path.exists(table_name) else os.path.join("data", "lakehouse", "healthcare_db", table_name)
+            path = table_name if os.path.exists(table_name) else os.path.join("data", "lakehouse", os.getenv("DELTA_DATABASE", "healthcare_db"), table_name)
             dt = RTDeltaTable(path)
             dt.load_as_version(version)
             return pl.from_arrow(dt.to_pyarrow_dataset())
@@ -286,7 +286,7 @@ class DeltaSchemaManager:
         else:
             import polars as pl
             from deltalake import DeltaTable as RTDeltaTable
-            path = table_name if os.path.exists(table_name) else os.path.join("data", "lakehouse", "healthcare_db", table_name)
+            path = table_name if os.path.exists(table_name) else os.path.join("data", "lakehouse", os.getenv("DELTA_DATABASE", "healthcare_db"), table_name)
             dt = RTDeltaTable(path)
             dt.load_as_datetime(datetime.fromisoformat(timestamp))
             return pl.from_arrow(dt.to_pyarrow_dataset())
@@ -299,7 +299,7 @@ class DeltaSchemaManager:
                 return [row.asDict() for row in dt.history().collect()]
             else:
                 from deltalake import DeltaTable as RTDeltaTable
-                path = table_name if os.path.exists(table_name) else os.path.join("data", "lakehouse", "healthcare_db", table_name)
+                path = table_name if os.path.exists(table_name) else os.path.join("data", "lakehouse", os.getenv("DELTA_DATABASE", "healthcare_db"), table_name)
                 dt = RTDeltaTable(path)
                 return dt.history()
         except Exception:
@@ -314,7 +314,7 @@ class DeltaSchemaManager:
                 dt.restoreToVersion(version)
             else:
                 from deltalake import DeltaTable as RTDeltaTable
-                path = table_name if os.path.exists(table_name) else os.path.join("data", "lakehouse", "healthcare_db", table_name)
+                path = table_name if os.path.exists(table_name) else os.path.join("data", "lakehouse", os.getenv("DELTA_DATABASE", "healthcare_db"), table_name)
                 dt = RTDeltaTable(path)
                 dt.restore_to_version(version)
 
@@ -391,7 +391,7 @@ class HealthcareDeltaManager:
                 'description': f'Result value for {lab_code} test'
             })
 
-        table_name = "healthcare_db.lab_results"
+        table_name = f"{os.getenv('DELTA_DATABASE', 'healthcare_db')}.lab_results"
         return self.schema_manager.evolve_schema(table_name, schema_changes)
 
     def create_patient_dimension(self, df: Any, path: str = None) -> Dict[str, Any]:
@@ -444,7 +444,7 @@ class HealthcareDeltaManager:
                 dt.vacuum(retentionHours=720)
             else:
                 from deltalake import DeltaTable as RTDeltaTable
-                path = table_name if os.path.exists(table_name) else os.path.join("data", "lakehouse", "healthcare_db", table_name)
+                path = table_name if os.path.exists(table_name) else os.path.join("data", "lakehouse", os.getenv("DELTA_DATABASE", "healthcare_db"), table_name)
                 dt = RTDeltaTable(path)
                 dt.optimize.compact()
                 dt.vacuum(retention_hours=720, dry_run=False)
