@@ -1,5 +1,13 @@
-
 import sqlite3
+import warnings
+
+# Deprecation warning to use Alembic migrations
+warnings.warn(
+    "fix_db.py is deprecated and will be removed in future versions. Please use Alembic migrations instead.",
+    DeprecationWarning,
+    stacklevel=2
+)
+print("⚠️ WARNING: fix_db.py is deprecated. Use Alembic migrations: alembic upgrade head")
 
 DB_FILE = "healthcare.db"
 

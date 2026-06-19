@@ -7,11 +7,10 @@
 
 import logging
 import os
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from airflow.operators.empty import EmptyOperator
 from airflow.operators.python import BranchPythonOperator, PythonOperator
-from airflow.utils.dates import days_ago
 
 from airflow import DAG
 
@@ -29,7 +28,7 @@ dag = DAG(
     default_args=default_args,
     description='Weekly model retraining with PySpark ETL',
     schedule_interval='0 2 * * 0',
-    start_date=days_ago(1),
+    start_date=datetime(2026, 6, 1),
     catchup=False,
     tags=['ml', 'pyspark', 'etl'],
 )

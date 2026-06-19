@@ -1,14 +1,19 @@
 """Health records, chat logs, and audit log ORM models."""
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import relationship
 
-from ..database import Base
+from ..database import Base, SoftDeleteMixin
 
 
-class HealthRecord(Base):
+class HealthRecord(Base, SoftDeleteMixin):
     __tablename__ = "health_records"
+
+    __table_args__ = (
+        Index("idx_health_records_user_timestamp", "user_id", "timestamp"),
+        CheckConstraint("record_type IN ('diabetes', 'heart', 'liver', 'kidney', 'lungs')", name="check_health_record_type"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), index=True)
@@ -20,7 +25,7 @@ class HealthRecord(Base):
     owner = relationship("User", back_populates="health_records")
 
 
-class ChatLog(Base):
+class ChatLog(Base, SoftDeleteMixin):
     __tablename__ = "chat_logs"
 
     id = Column(Integer, primary_key=True, index=True)
@@ -32,8 +37,13 @@ class ChatLog(Base):
     owner = relationship("User", back_populates="chat_logs")
 
 
-class AuditLog(Base):
+class AuditLog(Base, SoftDeleteMixin):
     __tablename__ = "audit_logs"
+
+    __table_args__ = (
+        Index("idx_audit_logs_admin_timestamp", "admin_id", "timestamp"),
+        Index("idx_audit_logs_target_timestamp", "target_user_id", "timestamp"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     facility_id = Column(Integer, ForeignKey("hospital_facilities.id"), nullable=True, index=True)
@@ -44,3 +54,4 @@ class AuditLog(Base):
     details = Column(String, nullable=True)
 
     facility = relationship("HospitalFacility")
+    admin = relationship("User", foreign_keys=[admin_id], backref="audit_logs_created")

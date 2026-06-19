@@ -1,14 +1,19 @@
 """Appointment ORM model."""
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import relationship
 
-from ..database import Base
+from ..database import Base, SoftDeleteMixin
 
 
-class Appointment(Base):
+class Appointment(Base, SoftDeleteMixin):
     __tablename__ = "appointments"
+
+    __table_args__ = (
+        Index("idx_appointments_user_datetime", "user_id", "date_time"),
+        CheckConstraint("status IN ('Scheduled', 'Completed', 'Cancelled')", name="check_appt_status"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     facility_id = Column(Integer, ForeignKey("hospital_facilities.id"), nullable=True, index=True)

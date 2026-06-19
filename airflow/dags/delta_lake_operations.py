@@ -4,11 +4,13 @@ Liquid Clustering, Time Travel, CDC, and Healthcare-Specific Pipelines
 """
 
 import logging
-from datetime import timedelta
+import os
+from datetime import datetime, timedelta
+
+SPARK_JOBS_DIR = os.getenv("SPARK_JOBS_DIR", "/opt/airflow/spark_jobs")
 
 from airflow.operators.python import PythonOperator
 from airflow.providers.spark.operators.spark_submit import SparkSubmitOperator
-from airflow.utils.dates import days_ago
 
 from airflow import DAG
 
@@ -18,7 +20,7 @@ logger = logging.getLogger(__name__)
 default_args = {
     'owner': 'data-engineering',
     'depends_on_past': False,
-    'start_date': days_ago(1),
+    'start_date': datetime(2026, 6, 1),
     'email_on_failure': True,
     'email_on_retry': False,
     'retries': 2,
@@ -280,7 +282,7 @@ def optimize_delta_tables(**context):
 # Spark job for Delta operations
 spark_delta_job = SparkSubmitOperator(
     task_id='spark_delta_operations',
-    application='/opt/airflow/spark_jobs/delta_healthcare_operations.py',
+    application=os.path.join(SPARK_JOBS_DIR, 'delta_healthcare_operations.py'),
     conn_id='spark_default',
     driver_memory='6g',
     executor_memory='4g',

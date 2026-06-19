@@ -1,10 +1,10 @@
 """Hospital facility, department, bed, encounter, and admission ORM models."""
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import CheckConstraint, Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import relationship
 
-from ..database import Base
+from ..database import Base, SoftDeleteMixin
 
 
 class HospitalFacility(Base):
@@ -51,8 +51,13 @@ class Bed(Base):
     current_patient = relationship("User", foreign_keys=[current_patient_id])
 
 
-class Encounter(Base):
+class Encounter(Base, SoftDeleteMixin):
     __tablename__ = "encounters"
+
+    __table_args__ = (
+        Index("idx_encounters_patient_started", "patient_id", "started_at"),
+        CheckConstraint("status IN ('open', 'closed', 'cancelled')", name="check_encounter_status"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     facility_id = Column(Integer, ForeignKey("hospital_facilities.id"), nullable=True, index=True)
@@ -72,8 +77,13 @@ class Encounter(Base):
     department = relationship("Department")
 
 
-class Admission(Base):
+class Admission(Base, SoftDeleteMixin):
     __tablename__ = "admissions"
+
+    __table_args__ = (
+        Index("idx_admissions_patient_admitted", "patient_id", "admitted_at"),
+        CheckConstraint("status IN ('active', 'discharged', 'cancelled')", name="check_admission_status"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     facility_id = Column(Integer, ForeignKey("hospital_facilities.id"), nullable=True, index=True)

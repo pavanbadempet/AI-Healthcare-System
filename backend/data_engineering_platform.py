@@ -436,12 +436,49 @@ class HealthcareDataPipeline:
             # Data enrichment with lookups
             enrichments = transformation.get('enrichments', [])
             for enrichment in enrichments:
-                enrichment.get('lookup_table')
-                enrichment.get('key_column')
-                enrichment.get('value_column')
-
-                # This would implement lookup logic
-
+                system_col = enrichment.get('system_column')
+                code_col = enrichment.get('code_column')
+                target_col = enrichment.get('target_column')
+                
+                if system_col and code_col and target_col:
+                    if hasattr(df, "withColumn"):
+                        # PySpark DataFrame
+                        from pyspark.sql.functions import udf
+                        from pyspark.sql.types import StringType
+                        from backend.terminology import lookup_code
+                        
+                        def lookup_display_fn(sys_val, code_val):
+                            if not sys_val or not code_val:
+                                return ""
+                            res = lookup_code(str(sys_val), str(code_val))
+                            return res.get("display", "") if res else ""
+                            
+                        lookup_udf = udf(lookup_display_fn, StringType())
+                        df = df.withColumn(target_col, lookup_udf(col(system_col), col(code_col)))
+                    else:
+                        # Pandas or Polars DataFrame
+                        import pandas as pd
+                        from backend.terminology import lookup_code
+                        if isinstance(df, pd.DataFrame):
+                            df[target_col] = df.apply(
+                                lambda row: (lookup_code(str(row[system_col]), str(row[code_col])) or {}).get("display", "")
+                                if system_col in row and code_col in row and pd.notna(row[system_col]) and pd.notna(row[code_col]) else "",
+                                axis=1
+                            )
+                        else:
+                            # Assume Polars DataFrame
+                            import polars as pl
+                            if isinstance(df, pl.DataFrame):
+                                def local_lookup(struct):
+                                    sys_val = struct.get(system_col)
+                                    code_val = struct.get(code_col)
+                                    if not sys_val or not code_val:
+                                        return ""
+                                    res = lookup_code(str(sys_val), str(code_val))
+                                    return res.get("display", "") if res else ""
+                                df = df.with_columns(
+                                    pl.struct([system_col, code_col]).map_elements(local_lookup, return_dtype=pl.String).alias(target_col)
+                                )
             return df
 
         else:

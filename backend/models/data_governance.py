@@ -60,4 +60,5 @@ class DbDatasetLineage(Base):
     dataset_id = Column(String, ForeignKey("data_catalog_datasets.dataset_id", ondelete="CASCADE"), index=True, nullable=False)
     upstream = Column(JSON, nullable=False)    # List of upstream dataset_ids
     downstream = Column(JSON, nullable=False)  # List of downstream dataset_ids
+    column_lineage = Column(JSON, nullable=True)  # Dict mapping target_col -> source dict
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
