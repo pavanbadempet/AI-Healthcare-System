@@ -67,6 +67,19 @@ def build_telemetry_snapshot(db: Session, current_user: models.User) -> dict:
     """Build a facility-scoped operations telemetry snapshot from persisted data."""
     _require_admin(current_user)
 
+    facility_id = current_user.facility_id or "global"
+    cache_key = f"telemetry_snapshot:{facility_id}"
+
+    from backend.cache_service import cache
+    try:
+        cached_res = cache.get(cache_key)
+        if cached_res is not None:
+            # Refresh timestamp to represent active stream connection
+            cached_res["timestamp"] = datetime.now(timezone.utc).isoformat()
+            return cached_res
+    except Exception as ex_cache:
+        logger.debug("Telemetry snapshot cache lookup failed: %s", ex_cache)
+
     from backend.models.clinical import SparkStreamingMetrics
     latest_metric = db.query(SparkStreamingMetrics).order_by(SparkStreamingMetrics.timestamp.desc()).first()
 
@@ -147,7 +160,7 @@ def build_telemetry_snapshot(db: Session, current_user: models.User) -> dict:
             status = "Stable"
         department_loads.append({"dept": unit["unit"], "load": load, "status": status})
 
-    return {
+    snapshot = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "facility_id": current_user.facility_id,
         "source": "database",
@@ -167,6 +180,14 @@ def build_telemetry_snapshot(db: Session, current_user: models.User) -> dict:
         "department_loads": department_loads,
         "bed_units": bed_units,
     }
+
+    try:
+        # Cache for 2 seconds to absorb concurrent telemetry polls or streaming clients
+        cache.set(cache_key, snapshot, ttl=2)
+    except Exception as ex_cache:
+        logger.debug("Telemetry snapshot cache set failed: %s", ex_cache)
+
+    return snapshot
 
 
 @router.get("/snapshot")
