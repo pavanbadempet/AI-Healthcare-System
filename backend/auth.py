@@ -360,7 +360,7 @@ def forgot_password(
         "status": "success",
         "message": "If this email is registered, a password reset link has been sent."
     }
-    
+
     email = request.email.strip().lower()
     user = db.query(models.User).filter(models.User.email == email).first()
     if not user:
@@ -368,22 +368,22 @@ def forgot_password(
 
     # Generate token
     token = create_reset_token(email=email, username=user.username)
-    
+
     # Construct reset link
     frontend_url = os.getenv("FRONTEND_URL", "http://127.0.0.1:3000")
     reset_link = f"{frontend_url.rstrip('/')}/reset-password?token={token}"
-    
+
     # Send email (which will simulate or send real SMTP)
     from .email_service import send_password_reset
     send_password_reset(to_email=user.email, username=user.username, reset_link=reset_link)
-    
+
     # Print to logs for testing/simulation
     logger.info("=============================================")
     logger.info("   SIMULATED PASSWORD RESET LINK")
     logger.info(f"   User: {user.username} ({user.email})")
     logger.info(f"   Link: {reset_link}")
     logger.info("=============================================")
-    
+
     return generic_success
 
 
@@ -401,7 +401,7 @@ def reset_password(
             status_code=400,
             detail="Invalid or expired reset token"
         )
-        
+
     # Enforce password complexity
     if not re.match(r"^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*#?&]{8,}$", request.new_password):
         raise HTTPException(
@@ -414,7 +414,7 @@ def reset_password(
     user.hashed_password = hashed_password
     db.commit()
     db.refresh(user)
-    
+
     # Audit event
     audit.record_audit_event(
         db,
@@ -427,6 +427,6 @@ def reset_password(
             "occurred_at": datetime.now(timezone.utc),
         },
     )
-    
+
     return {"status": "success", "message": "Password has been reset successfully"}
 

@@ -1,6 +1,6 @@
+import logging
 import os
 import pickle
-import logging
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -64,7 +64,7 @@ def convert_to_onnx(model_path: str, output_path: str, initial_types: list = Non
             base_name = os.path.basename(output_path).replace(".onnx", "")
             for name, est in zip(model.estimators_names_, sub_estimators):
                 sub_output = os.path.join(base_dir, f"{base_name}_{name}.onnx")
-                
+
                 # Make sure to use the right FloatTensorType type for the sub-estimator
                 est_classname = est.__class__.__name__
                 if "XGB" in est_classname or "LGBM" in est_classname:
@@ -96,8 +96,8 @@ def convert_to_onnx(model_path: str, output_path: str, initial_types: list = Non
 
 def save_single_estimator(model: Any, output_path: str, initial_types: list) -> bool:
     import onnx
-    from skl2onnx import convert_sklearn
     import onnxmltools
+    from skl2onnx import convert_sklearn
 
     model_classname = model.__class__.__name__
 

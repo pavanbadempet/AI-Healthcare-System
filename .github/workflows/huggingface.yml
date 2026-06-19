@@ -61,13 +61,14 @@ jobs:
           # Remove binary files rejected by Hugging Face pre-receive hooks.
           # Dockerfile.hf regenerates placeholder model files during the Space build.
           find . -name "*.pkl" -type f -delete
+          find . -name "*.onnx" -type f -delete
           find . -name "*.png" -type f -delete
           find . -name "*.joblib" -type f -delete
           rm -f pytest_output.txt
 
-          if find . \( -name "*.pkl" -o -name "*.joblib" -o -name "*.parquet" -o -name "*.db" -o -name "*.sqlite3" \) -type f | grep -q .; then
+          if find . \( -name "*.pkl" -o -name "*.onnx" -o -name "*.joblib" -o -name "*.parquet" -o -name "*.db" -o -name "*.sqlite3" \) -type f | grep -q .; then
             echo "Refusing to push binary/data artifacts to Hugging Face:"
-            find . \( -name "*.pkl" -o -name "*.joblib" -o -name "*.parquet" -o -name "*.db" -o -name "*.sqlite3" \) -type f -print
+            find . \( -name "*.pkl" -o -name "*.onnx" -o -name "*.joblib" -o -name "*.parquet" -o -name "*.db" -o -name "*.sqlite3" \) -type f -print
             exit 1
           fi
           
