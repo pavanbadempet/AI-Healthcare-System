@@ -143,6 +143,7 @@ dag = DAG(
 
 def extract_patient_data(**context):
     """Extract patient data from source systems"""
+    import os
     from airflow.providers.postgres.hooks.postgres import PostgresHook
     from airflow.models import Variable
 
@@ -177,18 +178,17 @@ def extract_patient_data(**context):
     # Log extraction metrics
     logger.info(f"Extracted {len(df)} patient records")
 
-    # Store in Redis for downstream tasks
-    redis_hook = RedisHook(redis_conn_id='healthcare_redis')
-    redis_hook.get_conn().setex(
-        f"patient_data:{context['ds']}",
-        3600,
-        df.to_json()
-    )
+    # Store in staging Parquet file for downstream tasks to prevent Redis memory bloat
+    os.makedirs('/tmp/airflow/staging', exist_ok=True)
+    filepath = f"/tmp/airflow/staging/patient_data_{context['ds']}.parquet"
+    df.to_parquet(filepath, index=False)
+    logger.info(f"Stored patient data at {filepath}")
 
-    return len(df)
+    return filepath
 
 def extract_lab_results(**context):
     """Extract lab results data"""
+    import os
     from airflow.providers.postgres.hooks.postgres import PostgresHook
     from airflow.models import Variable
 
@@ -220,18 +220,17 @@ def extract_lab_results(**context):
 
     logger.info(f"Extracted {len(df)} lab result records")
 
-    # Store in Redis
-    redis_hook = RedisHook(redis_conn_id='healthcare_redis')
-    redis_hook.get_conn().setex(
-        f"lab_results:{context['ds']}",
-        3600,
-        df.to_json()
-    )
+    # Store in staging Parquet file
+    os.makedirs('/tmp/airflow/staging', exist_ok=True)
+    filepath = f"/tmp/airflow/staging/lab_results_{context['ds']}.parquet"
+    df.to_parquet(filepath, index=False)
+    logger.info(f"Stored lab results data at {filepath}")
 
-    return len(df)
+    return filepath
 
 def extract_claims_data(**context):
     """Extract claims data with optional backfill support."""
+    import os
     from airflow.providers.postgres.hooks.postgres import PostgresHook
     from airflow.models import Variable
 
@@ -266,15 +265,13 @@ def extract_claims_data(**context):
 
     logger.info(f"Extracted {len(df)} claims records")
 
-    # Store in Redis
-    redis_hook = RedisHook(redis_conn_id='healthcare_redis')
-    redis_hook.get_conn().setex(
-        f"claims_data:{context['ds']}",
-        3600,
-        df.to_json()
-    )
+    # Store in staging Parquet file
+    os.makedirs('/tmp/airflow/staging', exist_ok=True)
+    filepath = f"/tmp/airflow/staging/claims_data_{context['ds']}.parquet"
+    df.to_parquet(filepath, index=False)
+    logger.info(f"Stored claims data at {filepath}")
 
-    return len(df)
+    return filepath
 
 def transform_and_clean_data(**context):
     """Transform and clean extracted data.
@@ -282,16 +279,13 @@ def transform_and_clean_data(**context):
     Records that fail individual cleaning steps are routed to the
     dead-letter queue so they can be inspected and retried later.
     """
+    import os
     import pandas as pd
-    from airflow.providers.redis.hooks.redis import RedisHook
 
-    redis_hook = RedisHook(redis_conn_id='healthcare_redis')
-    redis_conn = redis_hook.get_conn()
-
-    # Get extracted data
-    patients_df = pd.read_json(redis_conn.get(f"patient_data:{context['ds']}"))
-    lab_results_df = pd.read_json(redis_conn.get(f"lab_results:{context['ds']}"))
-    claims_df = pd.read_json(redis_conn.get(f"claims_data:{context['ds']}"))
+    # Get extracted data from Parquet staging files
+    patients_df = pd.read_parquet(f"/tmp/airflow/staging/patient_data_{context['ds']}.parquet")
+    lab_results_df = pd.read_parquet(f"/tmp/airflow/staging/lab_results_{context['ds']}.parquet")
+    claims_df = pd.read_parquet(f"/tmp/airflow/staging/claims_data_{context['ds']}.parquet")
 
     transformations = []
     execution_date = context.get("ds", "unknown")
@@ -353,10 +347,10 @@ def transform_and_clean_data(**context):
         claims_df['submission_date'] = pd.to_datetime(claims_df['submission_date'])
         transformations.append(f"Cleaned {len(claims_df)} claims records")
 
-    # Store cleaned data
-    redis_conn.setex(f"cleaned_patients:{context['ds']}", 3600, patients_df.to_json())
-    redis_conn.setex(f"cleaned_lab_results:{context['ds']}", 3600, lab_results_df.to_json())
-    redis_conn.setex(f"cleaned_claims:{context['ds']}", 3600, claims_df.to_json())
+    # Store cleaned data in Parquet staging files
+    patients_df.to_parquet(f"/tmp/airflow/staging/cleaned_patients_{context['ds']}.parquet", index=False)
+    lab_results_df.to_parquet(f"/tmp/airflow/staging/cleaned_lab_results_{context['ds']}.parquet", index=False)
+    claims_df.to_parquet(f"/tmp/airflow/staging/cleaned_claims_{context['ds']}.parquet", index=False)
 
     logger.info(f"Data transformations: {', '.join(transformations)}")
 
@@ -365,15 +359,13 @@ def transform_and_clean_data(**context):
 def enrich_with_ml_predictions(**context):
     """Enrich data with ML predictions"""
 
+    import os
     import joblib
     import pandas as pd
-    from airflow.providers.redis.hooks.redis import RedisHook
 
-    redis_hook = RedisHook(redis_conn_id='healthcare_redis')
-    redis_conn = redis_hook.get_conn()
-
-    # Get cleaned lab results
-    lab_results_df = pd.read_json(redis_conn.get(f"cleaned_lab_results:{context['ds']}"))
+    # Get cleaned lab results and patients from Parquet staging
+    lab_results_df = pd.read_parquet(f"/tmp/airflow/staging/cleaned_lab_results_{context['ds']}.parquet")
+    patients_df = pd.read_parquet(f"/tmp/airflow/staging/cleaned_patients_{context['ds']}.parquet")
 
     if lab_results_df.empty:
         logger.info("No lab results to enrich")
@@ -385,33 +377,34 @@ def enrich_with_ml_predictions(**context):
         heart_model = joblib.load(os.path.join(MODEL_REGISTRY_PATH, 'Heart_Disease_Model.pkl'))
 
         predictions = []
+        enriched_data = lab_results_df.copy()
 
         # Process lab results for diabetes prediction
         diabetes_lab_data = lab_results_df[lab_results_df['test_code'].isin(['GLU', 'HBA1C', 'BMI'])]
         if not diabetes_lab_data.empty:
-            # Feature engineering for diabetes
-            features = prepare_diabetes_features(diabetes_lab_data)
+            # Feature engineering for diabetes using patients profile
+            features = prepare_diabetes_features(diabetes_lab_data, patients_df)
             diabetes_predictions = diabetes_model.predict_proba(features)
 
-            # Add predictions to dataframe
-            enriched_data = diabetes_lab_data.copy()
-            enriched_data['diabetes_risk_score'] = diabetes_predictions[:, 1]  # Probability of diabetes
-            predictions.append(f"Generated {len(enriched_data)} diabetes risk predictions")
+            # Map predictions back to the main lab results copy
+            diabetes_indices = diabetes_lab_data.index
+            enriched_data.loc[diabetes_indices, 'diabetes_risk_score'] = diabetes_predictions[:, 1]
+            predictions.append(f"Generated {len(diabetes_lab_data)} diabetes risk predictions")
 
         # Process lab results for heart disease prediction
         heart_lab_data = lab_results_df[lab_results_df['test_code'].isin(['CHOL', 'HDL', 'LDL', 'TRIG', 'BP'])]
         if not heart_lab_data.empty:
-            # Feature engineering for heart disease
-            features = prepare_heart_features(heart_lab_data)
+            # Feature engineering for heart disease using patients profile
+            features = prepare_heart_features(heart_lab_data, patients_df)
             heart_predictions = heart_model.predict_proba(features)
 
-            # Add predictions to dataframe
-            enriched_heart_data = heart_lab_data.copy()
-            enriched_heart_data['heart_disease_risk_score'] = heart_predictions[:, 1]
-            predictions.append(f"Generated {len(enriched_heart_data)} heart disease risk predictions")
+            # Map predictions back to the main lab results copy
+            heart_indices = heart_lab_data.index
+            enriched_data.loc[heart_indices, 'heart_disease_risk_score'] = heart_predictions[:, 1]
+            predictions.append(f"Generated {len(heart_lab_data)} heart disease risk predictions")
 
-        # Store enriched data
-        redis_conn.setex(f"enriched_lab_results:{context['ds']}", 3600, enriched_data.to_json())
+        # Store enriched data in Parquet staging file
+        enriched_data.to_parquet(f"/tmp/airflow/staging/enriched_lab_results_{context['ds']}.parquet", index=False)
 
         logger.info(f"ML enrichment: {', '.join(predictions)}")
         return len(predictions)
@@ -420,15 +413,29 @@ def enrich_with_ml_predictions(**context):
         logger.error(f"ML enrichment failed: {e}")
         return 0
 
-def prepare_diabetes_features(df):
-    """Prepare features for diabetes prediction"""
-    features = []
+def prepare_diabetes_features(df, patients_df=None):
+    """Prepare features for diabetes prediction using actual patient profiles to avoid skew"""
+    import numpy as np
+    from datetime import datetime
 
+    if patients_df is not None and not patients_df.empty:
+        df = df.merge(patients_df, on='patient_id', how='left')
+
+    features = []
     for _, row in df.iterrows():
+        # Compute actual age
+        age = 45  # fallback
+        if 'date_of_birth' in row and pd.notnull(row['date_of_birth']):
+            try:
+                dob = pd.to_datetime(row['date_of_birth'])
+                age = datetime.now().year - dob.year
+            except Exception:
+                pass
+
         feature_vector = [
             row.get('result_value', 0),  # glucose or other lab value
-            25.0,  # BMI placeholder - would get from patient data
-            45,    # Age placeholder
+            25.0,  # BMI placeholder
+            age,   # Dynamic Patient Age
             100,   # Insulin placeholder
             120    # Blood pressure placeholder
         ]
@@ -436,14 +443,31 @@ def prepare_diabetes_features(df):
 
     return np.array(features)
 
-def prepare_heart_features(df):
-    """Prepare features for heart disease prediction"""
-    features = []
+def prepare_heart_features(df, patients_df=None):
+    """Prepare features for heart disease prediction using actual patient profiles to avoid skew"""
+    import numpy as np
+    from datetime import datetime
 
+    if patients_df is not None and not patients_df.empty:
+        df = df.merge(patients_df, on='patient_id', how='left')
+
+    features = []
     for _, row in df.iterrows():
+        # Compute actual age and gender
+        age = 45  # fallback
+        if 'date_of_birth' in row and pd.notnull(row['date_of_birth']):
+            try:
+                dob = pd.to_datetime(row['date_of_birth'])
+                age = datetime.now().year - dob.year
+            except Exception:
+                pass
+
+        gender_val = str(row.get('gender', 'M')).upper()
+        sex = 1 if gender_val.startswith('M') or gender_val == '1' else 0
+
         feature_vector = [
-            45,    # Age placeholder
-            1,     # Sex placeholder
+            age,   # Dynamic Patient Age
+            sex,   # Dynamic Patient Sex
             3,     # Chest pain type
             140,   # Blood pressure
             row.get('result_value', 200),  # Cholesterol
@@ -462,19 +486,21 @@ def prepare_heart_features(df):
 
 def load_to_data_warehouse(**context):
     """Load processed data to data warehouse"""
+    import os
     from airflow.providers.postgres.hooks.postgres import PostgresHook
 
     postgres_hook = PostgresHook(postgres_conn_id='healthcare_warehouse')
 
-    # Get enriched data
-    redis_hook = RedisHook(redis_conn_id='healthcare_redis')
-    redis_conn = redis_hook.get_conn()
-
     load_results = []
 
+    # Paths to staging Parquet files
+    patients_path = f"/tmp/airflow/staging/cleaned_patients_{context['ds']}.parquet"
+    lab_results_path = f"/tmp/airflow/staging/enriched_lab_results_{context['ds']}.parquet"
+    claims_path = f"/tmp/airflow/staging/cleaned_claims_{context['ds']}.parquet"
+
     # Load patients
-    if redis_conn.exists(f"cleaned_patients:{context['ds']}"):
-        patients_df = pd.read_json(redis_conn.get(f"cleaned_patients:{context['ds']}"))
+    if os.path.exists(patients_path):
+        patients_df = pd.read_parquet(patients_path)
         if not patients_df.empty:
             postgres_hook.insert_rows(
                 table='warehouse.patients_dim',
@@ -484,8 +510,8 @@ def load_to_data_warehouse(**context):
             load_results.append(f"Loaded {len(patients_df)} patient records")
 
     # Load enriched lab results
-    if redis_conn.exists(f"enriched_lab_results:{context['ds']}"):
-        lab_results_df = pd.read_json(redis_conn.get(f"enriched_lab_results:{context['ds']}"))
+    if os.path.exists(lab_results_path):
+        lab_results_df = pd.read_parquet(lab_results_path)
         if not lab_results_df.empty:
             postgres_hook.insert_rows(
                 table='warehouse.lab_results_fact',
@@ -495,8 +521,8 @@ def load_to_data_warehouse(**context):
             load_results.append(f"Loaded {len(lab_results_df)} enriched lab result records")
 
     # Load claims
-    if redis_conn.exists(f"cleaned_claims:{context['ds']}"):
-        claims_df = pd.read_json(redis_conn.get(f"cleaned_claims:{context['ds']}"))
+    if os.path.exists(claims_path):
+        claims_df = pd.read_parquet(claims_path)
         if not claims_df.empty:
             postgres_hook.insert_rows(
                 table='warehouse.claims_fact',

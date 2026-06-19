@@ -31,12 +31,14 @@ default_args = {
 
 # Shared Spark session builder for Delta Lake + Unity Catalog
 def _create_spark(app_name: str):
+    import os
     from pyspark.sql import SparkSession
+    catalog = os.getenv("DELTA_CATALOG", "uc_healthcare_prod")
     return SparkSession.builder \
         .appName(app_name) \
         .config("spark.sql.extensions", "io.delta.sql.DeltaSparkSessionExtension") \
         .config("spark.sql.catalog.spark_catalog", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
-        .config("spark.sql.catalog.uc_healthcare_prod", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
+        .config(f"spark.sql.catalog.{catalog}", "org.apache.spark.sql.delta.catalog.DeltaCatalog") \
         .config("spark.databricks.delta.schema.autoMerge.enabled", "true") \
         .getOrCreate()
 
@@ -174,9 +176,12 @@ def test_time_travel_queries(**context):
 
     spark = _create_spark("DeltaTimeTravel")
 
+    import os
     try:
         delta_manager = get_delta_manager(spark)
-        table_name = "uc_healthcare_prod.healthcare_db.lab_results"
+        catalog = os.getenv("DELTA_CATALOG", "uc_healthcare_prod")
+        database = os.getenv("DELTA_DATABASE", "healthcare_db")
+        table_name = f"{catalog}.{database}.lab_results"
 
         # Get table history
         history = delta_manager.schema_manager.get_table_history(table_name)
