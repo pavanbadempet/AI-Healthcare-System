@@ -26,6 +26,9 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
     try:
         cursor.execute("PRAGMA journal_mode=WAL")
         cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.execute("PRAGMA cache_size=-64000")  # 64MB page cache
+        cursor.execute("PRAGMA temp_store=MEMORY")   # Store temp tables in RAM
+        cursor.execute("PRAGMA mmap_size=268435456") # 256MB memory-mapped I/O
     except Exception:
         try:
             cursor.execute("PRAGMA journal_mode=DELETE")
