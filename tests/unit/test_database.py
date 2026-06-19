@@ -72,9 +72,12 @@ class TestSetSqlitePragma:
 
         set_sqlite_pragma(mock_connection, None)
 
-        assert mock_cursor.execute.call_count == 3
+        assert mock_cursor.execute.call_count == 6
         mock_cursor.execute.assert_any_call("PRAGMA journal_mode=WAL")
         mock_cursor.execute.assert_any_call("PRAGMA synchronous=NORMAL")
+        mock_cursor.execute.assert_any_call("PRAGMA cache_size=-64000")
+        mock_cursor.execute.assert_any_call("PRAGMA temp_store=MEMORY")
+        mock_cursor.execute.assert_any_call("PRAGMA mmap_size=268435456")
         mock_cursor.execute.assert_any_call("PRAGMA foreign_keys=ON")
         mock_cursor.close.assert_called_once()
 

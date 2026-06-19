@@ -95,12 +95,18 @@ class DataCatalog:
             entry.updated_at = datetime.now(timezone.utc).isoformat()
             self._catalog[entry.dataset_id] = entry
             if entry.dataset_id not in self._lineage:
-                self._lineage[entry.dataset_id] = {"upstream": [], "downstream": []}
+                self._lineage[entry.dataset_id] = {"upstream": [], "downstream": [], "column_lineage": {}}
             
             self._db_save_dataset(entry)
-            self._db_save_lineage(entry.dataset_id, self._lineage[entry.dataset_id]["upstream"], self._lineage[entry.dataset_id]["downstream"])
+            self._db_save_lineage(
+                entry.dataset_id,
+                self._lineage[entry.dataset_id]["upstream"],
+                self._lineage[entry.dataset_id]["downstream"],
+                self._lineage[entry.dataset_id].get("column_lineage", {})
+            )
             self._save_to_disk()
             logger.info("Registered dataset: %s", entry.dataset_id)
+
 
     def get_dataset(self, dataset_id: str) -> Optional[DatasetEntry]:
         """Retrieves catalog metadata for a specific dataset ID."""
@@ -145,23 +151,62 @@ class DataCatalog:
         """Adds a directed dependency edge between two datasets."""
         with self._lock:
             if upstream_id not in self._lineage:
-                self._lineage[upstream_id] = {"upstream": [], "downstream": []}
+                self._lineage[upstream_id] = {"upstream": [], "downstream": [], "column_lineage": {}}
             if downstream_id not in self._lineage:
-                self._lineage[downstream_id] = {"upstream": [], "downstream": []}
+                self._lineage[downstream_id] = {"upstream": [], "downstream": [], "column_lineage": {}}
 
             if downstream_id not in self._lineage[upstream_id]["downstream"]:
                 self._lineage[upstream_id]["downstream"].append(downstream_id)
             if upstream_id not in self._lineage[downstream_id]["upstream"]:
                 self._lineage[downstream_id]["upstream"].append(upstream_id)
             
-            self._db_save_lineage(upstream_id, self._lineage[upstream_id]["upstream"], self._lineage[upstream_id]["downstream"])
-            self._db_save_lineage(downstream_id, self._lineage[downstream_id]["upstream"], self._lineage[downstream_id]["downstream"])
+            self._db_save_lineage(
+                upstream_id,
+                self._lineage[upstream_id]["upstream"],
+                self._lineage[upstream_id]["downstream"],
+                self._lineage[upstream_id].get("column_lineage", {})
+            )
+            self._db_save_lineage(
+                downstream_id,
+                self._lineage[downstream_id]["upstream"],
+                self._lineage[downstream_id]["downstream"],
+                self._lineage[downstream_id].get("column_lineage", {})
+            )
             self._save_to_disk()
 
-    def get_lineage(self, dataset_id: str) -> Dict[str, List[str]]:
-        """Returns direct upstream and downstream dependencies for a dataset."""
+    def add_column_lineage(self, dataset_id: str, target_col: str, source_dataset: str, source_col: str, transform: str) -> None:
+        """Adds column-level dependency information to a dataset's lineage metadata."""
         with self._lock:
-            return self._lineage.get(dataset_id, {"upstream": [], "downstream": []})
+            if dataset_id not in self._lineage:
+                self._lineage[dataset_id] = {"upstream": [], "downstream": [], "column_lineage": {}}
+            elif "column_lineage" not in self._lineage[dataset_id]:
+                self._lineage[dataset_id]["column_lineage"] = {}
+
+            self._lineage[dataset_id]["column_lineage"][target_col] = {
+                "source_dataset": source_dataset,
+                "source_column": source_col,
+                "transform": transform
+            }
+            
+            if source_dataset not in self._lineage[dataset_id]["upstream"]:
+                self._lineage[dataset_id]["upstream"].append(source_dataset)
+            if source_dataset not in self._lineage:
+                self._lineage[source_dataset] = {"upstream": [], "downstream": [], "column_lineage": {}}
+            if dataset_id not in self._lineage[source_dataset]["downstream"]:
+                self._lineage[source_dataset]["downstream"].append(dataset_id)
+                
+            self._db_save_lineage(dataset_id, self._lineage[dataset_id]["upstream"], self._lineage[dataset_id]["downstream"], self._lineage[dataset_id]["column_lineage"])
+            self._db_save_lineage(source_dataset, self._lineage[source_dataset]["upstream"], self._lineage[source_dataset]["downstream"], self._lineage[source_dataset].get("column_lineage", {}))
+            self._save_to_disk()
+
+    def get_lineage(self, dataset_id: str) -> Dict[str, Any]:
+        """Returns direct upstream, downstream dependencies, and column lineage for a dataset."""
+        with self._lock:
+            lin = self._lineage.get(dataset_id, {"upstream": [], "downstream": [], "column_lineage": {}})
+            if "column_lineage" not in lin:
+                lin["column_lineage"] = {}
+            return lin
+
 
     def get_stale_datasets(self, threshold_hours: Optional[float] = None) -> List[Dict[str, Any]]:
         """Finds datasets that have not been refreshed within their SLA hours."""
@@ -270,15 +315,27 @@ class DataCatalog:
                 self._db_save_dataset(dataset)
 
         # Pre-wire lineage
-        self._lineage.setdefault("patient_accounts", {"upstream": [], "downstream": []})
-        self._lineage.setdefault("silver_diabetes", {"upstream": ["patient_accounts"], "downstream": ["gold_health_insights"]})
-        self._lineage.setdefault("silver_heart", {"upstream": ["patient_accounts"], "downstream": ["gold_health_insights"]})
-        self._lineage.setdefault("gold_health_insights", {"upstream": ["silver_diabetes", "silver_heart"], "downstream": []})
+        self._lineage.setdefault("patient_accounts", {"upstream": [], "downstream": [], "column_lineage": {}})
+        self._lineage.setdefault("silver_diabetes", {"upstream": ["patient_accounts"], "downstream": ["gold_health_insights"], "column_lineage": {}})
+        self._lineage.setdefault("silver_heart", {"upstream": ["patient_accounts"], "downstream": ["gold_health_insights"], "column_lineage": {}})
+        self._lineage.setdefault("gold_health_insights", {"upstream": ["silver_diabetes", "silver_heart"], "downstream": [], "column_lineage": {}})
+
+        # Populate sample column lineage
+        self._lineage["silver_diabetes"]["column_lineage"] = {
+            "patient_id": {"source_dataset": "patient_accounts", "source_column": "id", "transform": "direct"},
+            "pregnancies": {"source_dataset": "patient_accounts", "source_column": "pregnancies", "transform": "direct"},
+            "glucose": {"source_dataset": "patient_accounts", "source_column": "glucose", "transform": "anonymized"}
+        }
+        self._lineage["gold_health_insights"]["column_lineage"] = {
+            "facility_id": {"source_dataset": "patient_accounts", "source_column": "facility_id", "transform": "direct"},
+            "avg_diabetes_risk": {"source_dataset": "silver_diabetes", "source_column": "diabetes_risk", "transform": "aggregated"}
+        }
         
         for dataset_id, lin in self._lineage.items():
-            self._db_save_lineage(dataset_id, lin["upstream"], lin["downstream"])
+            self._db_save_lineage(dataset_id, lin["upstream"], lin["downstream"], lin.get("column_lineage", {}))
 
         self._save_to_disk()
+
 
     def _db_load(self) -> bool:
         """Attempts to load datasets and lineage from the database. Returns True on success."""
@@ -316,13 +373,15 @@ class DataCatalog:
                 for dbl in db_lineages:
                     self._lineage[dbl.dataset_id] = {
                         "upstream": dbl.upstream,
-                        "downstream": dbl.downstream
+                        "downstream": dbl.downstream,
+                        "column_lineage": dbl.column_lineage or {}
                     }
                 logger.info("Successfully loaded data catalog from database.")
                 return True
         except Exception as e:
             logger.warning("Failed to load catalog from database (falling back to JSON disk): %s", e)
             return False
+
 
     def _db_save_dataset(self, entry: DatasetEntry) -> bool:
         """Saves or updates a dataset catalog entry in the database."""
@@ -356,7 +415,7 @@ class DataCatalog:
             logger.warning("Failed to save dataset %s to database: %s", entry.dataset_id, e)
             return False
 
-    def _db_save_lineage(self, dataset_id: str, upstream: List[str], downstream: List[str]) -> bool:
+    def _db_save_lineage(self, dataset_id: str, upstream: List[str], downstream: List[str], column_lineage: Optional[Dict[str, Any]] = None) -> bool:
         """Saves dataset dependency lineage to the database."""
         try:
             from backend.database import get_db_context
@@ -372,11 +431,14 @@ class DataCatalog:
                     db.add(dbl)
                 dbl.upstream = upstream
                 dbl.downstream = downstream
+                if column_lineage is not None:
+                    dbl.column_lineage = column_lineage
                 db.commit()
                 return True
         except Exception as e:
             logger.warning("Failed to save lineage for %s to database: %s", dataset_id, e)
             return False
+
 
 # Global instance
 data_catalog = DataCatalog()

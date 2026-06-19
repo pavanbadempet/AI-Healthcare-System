@@ -290,6 +290,38 @@ async def telemetry_stream(websocket: WebSocket, db: Session = Depends(database.
     try:
         while True:
             if current_user is not None and _is_database_session(db):
+                # Simulate a live Spark Streaming batch ingestion
+                try:
+                    from backend.models.clinical import SparkStreamingMetrics
+                    # Check if there is a recent metric, if not or randomly, insert one
+                    latest_m = db.query(SparkStreamingMetrics).order_by(SparkStreamingMetrics.timestamp.desc()).first()
+                    # If latest metric is older than 5 seconds, insert a new one
+                    if not latest_m or (datetime.now(timezone.utc) - latest_m.timestamp.replace(tzinfo=timezone.utc)).total_seconds() > 5:
+                        new_batch_id = (latest_m.batch_id + 1) if latest_m else 1000
+                        new_metric = SparkStreamingMetrics(
+                            batch_id=new_batch_id,
+                            records_processed=random.randint(5, 25),
+                            processing_time_ms=float(random.randint(8, 22)),
+                            ml_latency_ms=float(random.uniform(2.5, 6.8)),
+                            timestamp=datetime.now(timezone.utc)
+                        )
+                        db.add(new_metric)
+                        db.commit()
+
+                        # Keep table pruned to last 100 rows
+                        row_count = db.query(SparkStreamingMetrics).count()
+                        if row_count > 100:
+                            oldest = db.query(SparkStreamingMetrics).order_by(SparkStreamingMetrics.timestamp.asc()).first()
+                            if oldest:
+                                db.delete(oldest)
+                                db.commit()
+                except Exception as ingest_ex:
+                    try:
+                        db.rollback()
+                    except Exception:
+                        pass
+                    logger.warning("Simulated streaming telemetry ingestion failed: %s", ingest_ex)
+
                 snapshot = build_telemetry_snapshot(db, current_user)
             else:
                 snapshot = _generate_telemetry_snapshot()

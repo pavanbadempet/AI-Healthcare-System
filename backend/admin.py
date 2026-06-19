@@ -60,6 +60,7 @@ def get_current_admin(current_user: models.User = Depends(auth.get_current_user)
 
 
 def _scope_users_to_admin_facility(query, admin: models.User):
+    query = query.filter(models.User.is_deleted == False)
     if admin.facility_id is None:
         return query
     return query.filter(models.User.facility_id == admin.facility_id)
@@ -151,6 +152,18 @@ def get_admin_stats(
     admin: models.User = Depends(get_current_admin)
 ) -> Dict:
     """Get high-level system statistics."""
+    facility_id = admin.facility_id or "global"
+    cache_key = f"dashboard_statistics:{facility_id}"
+    
+    from backend.cache_service import cache
+    try:
+        cached_stats = cache.get(cache_key)
+        if cached_stats is not None:
+            return cached_stats
+    except Exception as e:
+        # Import logger at runtime if needed, but admin.py already has a logger defined at module level
+        pass
+
     user_query = _scope_users_to_admin_facility(db.query(models.User), admin)
     user_ids = [user_id for (user_id,) in user_query.with_entities(models.User.id).all()]
     prediction_query = db.query(models.HealthRecord)
@@ -159,7 +172,7 @@ def get_admin_stats(
         prediction_query = prediction_query.filter(models.HealthRecord.user_id.in_(user_ids))
         message_query = message_query.filter(models.ChatLog.user_id.in_(user_ids))
 
-    return {
+    stats = {
         "total_users": user_query.count(),
         "total_predictions": prediction_query.count(),
         "total_messages": message_query.count(),
@@ -167,6 +180,13 @@ def get_admin_stats(
         "database_status": "Connected",
         "database_type": "sqlite" if "sqlite" in database.SQLALCHEMY_DATABASE_URL else "postgresql"
     }
+
+    try:
+        cache.set(cache_key, stats, ttl=3600)
+    except Exception:
+        pass
+
+    return stats
 
 @router.get("/audit-logs")
 def get_audit_logs(
@@ -345,6 +365,7 @@ def get_admin_patient_profile(
     patient = db.query(models.User).filter(
         models.User.id == patient_id,
         models.User.role == "patient",
+        models.User.is_deleted == False,
     ).first()
     if not patient:
         raise HTTPException(status_code=404, detail="Patient not found")
@@ -359,7 +380,7 @@ def update_user_role(
     db: Session = Depends(database.get_db)
 ):
     """Update a user's system role."""
-    user = db.query(models.User).filter(models.User.id == user_id).first()
+    user = db.query(models.User).filter(models.User.id == user_id, models.User.is_deleted == False).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     _ensure_admin_can_access_user(admin, user)
@@ -431,8 +452,8 @@ def delete_user(
     admin: models.User = Depends(get_current_admin),
     db: Session = Depends(database.get_db)
 ):
-    """Permanently delete a user and their data."""
-    user = db.query(models.User).filter(models.User.id == user_id).first()
+    """Soft delete a user and their data."""
+    user = db.query(models.User).filter(models.User.id == user_id, models.User.is_deleted == False).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     _ensure_admin_can_access_user(admin, user)
@@ -440,9 +461,11 @@ def delete_user(
     if user.id == admin.id:
         raise HTTPException(status_code=400, detail="Cannot delete yourself.")
 
+    from datetime import datetime, timezone
     deleted_user_id = user.id
     deleted_user_facility_id = user.facility_id
-    db.delete(user)
+    user.is_deleted = True
+    user.deleted_at = datetime.now(timezone.utc)
     db.commit()
     audit.record_audit_event(
         db,

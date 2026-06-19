@@ -265,3 +265,36 @@ async def test_load_data_hides_target_exception_details(monkeypatch):
     assert sensitive_error not in str(result)
     assert "load-secret" not in str(result)
     assert "Sensitive User" not in str(result)
+
+
+@pytest.mark.asyncio
+async def test_enrichment_lookup_pandas(monkeypatch):
+    data_engineering_platform = _load_data_engineering_platform(monkeypatch)
+    pipeline = data_engineering_platform.HealthcareDataPipeline(
+        spark_session=object(),
+        redis_client=object(),
+        db_session=object(),
+    )
+    
+    import pandas as pd
+    df = pd.DataFrame([
+        {"system": "http://loinc.org", "code": "8867-4"},
+        {"system": "http://loinc.org", "code": "invalid_code"}
+    ])
+    
+    transformation = {
+        "type": "enrich",
+        "enrichments": [
+            {
+                "system_column": "system",
+                "code_column": "code",
+                "target_column": "display_name"
+            }
+        ]
+    }
+    
+    res_df = await pipeline._apply_transformation(df, transformation)
+    assert isinstance(res_df, pd.DataFrame)
+    assert res_df["display_name"].iloc[0] == "Heart rate"
+    assert res_df["display_name"].iloc[1] == ""
+

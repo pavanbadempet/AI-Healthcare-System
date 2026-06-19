@@ -1,7 +1,7 @@
 """Auth domain schemas: tokens, user creation, profile updates."""
 from typing import List, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from .records import ChatLogResponse, HealthRecordResponse
 
@@ -18,6 +18,31 @@ class UserCreate(BaseModel):
     email: str
     full_name: str
     dob: str = Field(..., description="YYYY-MM-DD format")
+
+    @field_validator("full_name")
+    @classmethod
+    def validate_full_name(cls, v: str) -> str:
+        clean = v.strip()
+        if not clean:
+            raise ValueError("Full name cannot be empty or only spaces")
+        if len(clean) < 2 or len(clean) > 100:
+            raise ValueError("Full name must be between 2 and 100 characters")
+        return clean
+
+    @field_validator("dob")
+    @classmethod
+    def validate_dob(cls, v: str) -> str:
+        from datetime import date
+        try:
+            born = date.fromisoformat(v)
+        except ValueError:
+            raise ValueError("Date of birth must be in YYYY-MM-DD format")
+        
+        if born > date.today():
+            raise ValueError("Date of birth cannot be in the future")
+        if born.year < 1900:
+            raise ValueError("Date of birth must be after year 1900")
+        return v
 
 
 class UserResponse(BaseModel):
@@ -49,6 +74,35 @@ class UserProfileUpdate(BaseModel):
     stress_level: Optional[str] = None
     specialization: Optional[str] = None
     allow_data_collection: Optional[bool] = None
+
+    @field_validator("full_name")
+    @classmethod
+    def validate_full_name(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        clean = v.strip()
+        if not clean:
+            raise ValueError("Full name cannot be empty or only spaces")
+        if len(clean) < 2 or len(clean) > 100:
+            raise ValueError("Full name must be between 2 and 100 characters")
+        return clean
+
+    @field_validator("dob")
+    @classmethod
+    def validate_dob(cls, v: Optional[str]) -> Optional[str]:
+        if v is None:
+            return None
+        from datetime import date
+        try:
+            born = date.fromisoformat(v)
+        except ValueError:
+            raise ValueError("Date of birth must be in YYYY-MM-DD format")
+        
+        if born > date.today():
+            raise ValueError("Date of birth cannot be in the future")
+        if born.year < 1900:
+            raise ValueError("Date of birth must be after year 1900")
+        return v
 
 
 class UserFullResponse(UserResponse):

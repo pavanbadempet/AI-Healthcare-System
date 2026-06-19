@@ -4,11 +4,15 @@ Delta Lake, SCD Patterns, Schema Evolution, Time Travel
 """
 
 import logging
-from datetime import timedelta
+import os
+from datetime import datetime, timedelta
+
+# Environment-configurable paths to support multiple deployment environments
+WAREHOUSE_PATH = os.getenv("LAKEHOUSE_PATH", "/tmp/healthcare_warehouse")
+SPARK_JOBS_DIR = os.getenv("SPARK_JOBS_DIR", "/opt/airflow/spark_jobs")
 
 from airflow.operators.python import PythonOperator
 from airflow.providers.spark.operators.spark_submit import SparkSubmitOperator
-from airflow.utils.dates import days_ago
 
 from airflow import DAG
 
@@ -18,7 +22,7 @@ logger = logging.getLogger(__name__)
 default_args = {
     'owner': 'data-engineering',
     'depends_on_past': False,
-    'start_date': days_ago(1),
+    'start_date': datetime(2026, 6, 1),
     'email_on_failure': True,
     'email_on_retry': False,
     'retries': 2,
@@ -78,7 +82,7 @@ def create_patient_dimension_scd2(**context):
                              .withColumn("updated_at", current_timestamp())
 
         # Initialize data modeler
-        data_modeler = get_data_modeler(spark, "/tmp/healthcare_warehouse")
+        data_modeler = get_data_modeler(spark, WAREHOUSE_PATH)
 
         # Create patient dimension with SCD Type 2
         result = data_modeler.create_patient_dimension(patient_df)
@@ -132,7 +136,7 @@ def create_lab_results_fact_delta(**context):
                       .withColumn("created_at", current_timestamp())
 
         # Initialize data modeler
-        data_modeler = get_data_modeler(spark, "/tmp/healthcare_warehouse")
+        data_modeler = get_data_modeler(spark, WAREHOUSE_PATH)
 
         # Create lab results fact with Delta Lake
         result = data_modeler.create_lab_results_fact(lab_df)
@@ -154,7 +158,7 @@ def apply_schema_evolution_demo(**context):
 
     try:
         # Initialize data modeler
-        data_modeler = get_data_modeler(spark, "/tmp/healthcare_warehouse")
+        data_modeler = get_data_modeler(spark, WAREHOUSE_PATH)
 
         # Apply schema evolution example
         result = data_modeler.apply_schema_evolution_example()
@@ -207,7 +211,7 @@ def create_claims_dimension_scd2(**context):
                            .withColumn("updated_at", current_timestamp())
 
         # Create claims table with SCD Type 2
-        table_path = "/tmp/healthcare_warehouse/claims"
+        table_path = os.path.join(WAREHOUSE_PATH, "claims")
         from backend.advanced_data_modeling import DataModelConfig, DeltaLakeManager, SCDType, TableFormat
 
         delta_manager = DeltaLakeManager(spark, table_path)
@@ -259,7 +263,7 @@ def time_travel_query_demo(**context):
 
     try:
         # Query historical data
-        table_path = "/tmp/healthcare_warehouse/patients"
+        table_path = os.path.join(WAREHOUSE_PATH, "patients")
 
         if spark.catalog._existsTable("patients"):
             # Get current version
@@ -306,7 +310,7 @@ def get_data_lineage_report(**context):
 
     try:
         # Initialize data modeler
-        data_modeler = get_data_modeler(spark, "/tmp/healthcare_warehouse")
+        data_modeler = get_data_modeler(spark, WAREHOUSE_PATH)
 
         # Generate lineage report
         lineage_report = data_modeler.get_data_lineage_report()
@@ -336,7 +340,7 @@ def optimize_delta_tables(**context):
         optimization_results = []
 
         # Optimize patient table
-        patient_path = "/tmp/healthcare_warehouse/patients"
+        patient_path = os.path.join(WAREHOUSE_PATH, "patients")
         if spark.catalog._existsTable("patients"):
             delta_manager = DeltaLakeManager(spark, patient_path)
             config = DataModelConfig(
@@ -351,7 +355,7 @@ def optimize_delta_tables(**context):
             optimization_results.append(patient_opt)
 
         # Optimize claims table
-        claims_path = "/tmp/healthcare_warehouse/claims"
+        claims_path = os.path.join(WAREHOUSE_PATH, "claims")
         if spark.catalog._existsTable("claims"):
             delta_manager = DeltaLakeManager(spark, claims_path)
             config = DataModelConfig(
@@ -383,7 +387,7 @@ def optimize_delta_tables(**context):
 # Spark job for advanced data modeling
 spark_modeling_task = SparkSubmitOperator(
     task_id='spark_advanced_modeling',
-    application='/opt/airflow/spark_jobs/healthcare_data_modeling.py',
+    application=os.path.join(SPARK_JOBS_DIR, 'healthcare_data_modeling.py'),
     conn_id='spark_default',
     driver_memory='6g',
     executor_memory='4g',
