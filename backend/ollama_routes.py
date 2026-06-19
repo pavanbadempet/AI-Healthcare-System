@@ -1,7 +1,8 @@
+import json
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
-import json
 
 from . import auth, core_ai, models
 

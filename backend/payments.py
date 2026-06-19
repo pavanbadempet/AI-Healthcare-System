@@ -3,15 +3,17 @@ Payments Module (Razorpay)
 ==========================
 Handles order creation and signature verification.
 """
-import os
 import logging
+import os
+from datetime import datetime, timedelta, timezone
+from typing import Any, Optional
+
 import razorpay
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from datetime import datetime, timedelta, timezone
-from . import database, models, auth
 from pydantic import BaseModel
-from typing import Any, Optional
+from sqlalchemy.orm import Session
+
+from . import auth, database, models
 
 router = APIRouter(prefix="/payments", tags=["Payments"])
 logger = logging.getLogger(__name__)
@@ -142,19 +144,19 @@ def verify_payment(
         })
         order = payment_client.order.fetch(req.razorpay_order_id)
         plan = validate_order_for_user(order, current_user)
-        
+
         # If successful, update user
         user = db.query(models.User).filter(models.User.id == current_user.id).first()
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
         user.plan_tier = plan["tier"]
-        
+
         # Set expiry to 30 days from now (Mock logic, real recurring needs webhook)
         user.subscription_expiry = datetime.now(timezone.utc) + timedelta(days=30)
-        
+
         db.commit()
-        
+
         return {
             "success": True,
             "status": "success",
@@ -162,7 +164,7 @@ def verify_payment(
             "tier": user.plan_tier,
             "plan_tier": user.plan_tier,
         }
-        
+
     except HTTPException:
         raise
     except razorpay.errors.SignatureVerificationError:

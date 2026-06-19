@@ -22,7 +22,6 @@ import argparse
 import json
 import pathlib
 
-
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 MANIFEST_PATH = ROOT / "scripts" / "agent_adapter_manifest.json"
 GENERATED_NOTE = (
@@ -50,6 +49,18 @@ def render_wrapper(path_name: str, repo_name: str, target: str) -> str:
             f"# {path_name} - {repo_name}",
             "",
             f"@./{target}",
+            "",
+        ]
+    )
+
+
+def render_scoped_wrapper(path_name: str, repo_name: str, targets: list[str]) -> str:
+    return "\n".join(
+        [
+            GENERATED_NOTE,
+            f"# {path_name} - {repo_name}",
+            "",
+            *[f"@{target}" for target in targets],
             "",
         ]
     )
@@ -136,6 +147,8 @@ def render_kiro_file(title: str, lines: list[str]) -> str:
             "",
             f"# {title}",
             "",
+            "- Canonical coding instructions live in AGENTS.md; also read the nearest scoped AGENTS.md before editing files.",
+            "",
             _lines(lines),
             "",
         ]
@@ -149,6 +162,9 @@ def build_generated_files(manifest: dict) -> dict[str, str]:
 
     for wrapper in manifest["wrapper_files"]:
         files[wrapper] = render_wrapper(wrapper, repo_name, target)
+
+    for wrapper in manifest.get("scoped_wrapper_files", []):
+        files[wrapper["path"]] = render_scoped_wrapper(wrapper["path"], repo_name, wrapper["targets"])
 
     files[".cursorrules"] = render_cursorrules(manifest["cursor_legacy_shim_lines"])
     files[".github/copilot-instructions.md"] = render_copilot_repo(repo_name, manifest["copilot_repo_lines"])
@@ -198,6 +214,8 @@ def check_generated_files(files: dict[str, str]) -> list[str]:
     for rel_path, expected in files.items():
         path = ROOT / rel_path
         if not path.exists():
+            if _is_local_only_generated_file(rel_path):
+                continue
             errors.append(f"missing generated file: {rel_path}")
             continue
         actual = path.read_text(encoding="utf-8")
@@ -206,12 +224,64 @@ def check_generated_files(files: dict[str, str]) -> list[str]:
     return errors
 
 
+def _is_local_only_generated_file(rel_path: str) -> bool:
+    path = pathlib.PurePosixPath(rel_path)
+    return (
+        rel_path in {"CLAUDE.md", "GEMINI.md", ".cursorrules"}
+        or path.parts[:1] in {(".cursor",), (".kiro",)}
+    )
+
+
 def check_obsolete_files(manifest: dict) -> list[str]:
     errors: list[str] = []
     for rel_path in manifest.get("obsolete_files", []):
         if (ROOT / rel_path).exists():
             errors.append(f"obsolete adapter file still present: {rel_path}")
     return errors
+
+
+def _is_ignored_adapter_path(path: pathlib.Path) -> bool:
+    ignored_parts = {
+        ".git",
+        ".next",
+        ".pytest_cache",
+        ".swc",
+        "__pycache__",
+        "node_modules",
+        "playwright-report",
+        "test-results",
+    }
+    return any(part in ignored_parts for part in path.parts)
+
+
+def _adapter_candidates() -> set[str]:
+    candidates: set[str] = set()
+
+    for file_name in ("CLAUDE.md", "GEMINI.md"):
+        for path in ROOT.rglob(file_name):
+            if not _is_ignored_adapter_path(path.relative_to(ROOT)):
+                candidates.add(path.relative_to(ROOT).as_posix())
+
+    for rel_path in (".cursorrules", ".github/copilot-instructions.md"):
+        if (ROOT / rel_path).exists():
+            candidates.add(rel_path)
+
+    for pattern in (
+        ".github/instructions/*.instructions.md",
+        ".cursor/rules/*.mdc",
+        ".kiro/steering/*.md",
+    ):
+        for path in ROOT.glob(pattern):
+            candidates.add(path.relative_to(ROOT).as_posix())
+
+    return candidates
+
+
+def check_unmanaged_adapter_files(generated_files: dict[str, str], manifest: dict) -> list[str]:
+    expected = {pathlib.PurePosixPath(path).as_posix() for path in generated_files}
+    obsolete = {pathlib.PurePosixPath(path).as_posix() for path in manifest.get("obsolete_files", [])}
+    unmanaged = sorted(_adapter_candidates() - expected - obsolete)
+    return [f"unmanaged adapter file: {path}" for path in unmanaged]
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -227,6 +297,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.check:
         errors = check_generated_files(files)
         errors.extend(check_obsolete_files(manifest))
+        errors.extend(check_unmanaged_adapter_files(files, manifest))
         if errors:
             print("Agent adapter sync: FAIL")
             for error in errors:

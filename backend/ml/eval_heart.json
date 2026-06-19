@@ -1,0 +1,66 @@
+{
+  "model_name": "heart",
+  "evaluated_at": "2026-06-18T08:46:11.309823+00:00",
+  "test_set_size": 50736,
+  "class_distribution": {
+    "0": 45968,
+    "1": 4768
+  },
+  "accuracy": 0.9079,
+  "auc_roc": 0.8475,
+  "sensitivity": 0.1355,
+  "specificity": 0.9881,
+  "classification_report": {
+    "0.0": {
+      "precision": 0.9167961890151591,
+      "recall": 0.9880569091541942,
+      "f1-score": 0.9510936142143672,
+      "support": 45968.0
+    },
+    "1.0": {
+      "precision": 0.5405857740585774,
+      "recall": 0.13548657718120805,
+      "f1-score": 0.21666946168036225,
+      "support": 4768.0
+    },
+    "macro avg": {
+      "precision": 0.7286909815368683,
+      "recall": 0.5617717431677012,
+      "f1-score": 0.5838815379473647,
+      "support": 50736.0
+    },
+    "weighted avg": {
+      "precision": 0.8814411894386655,
+      "recall": 0.9079351939451277,
+      "f1-score": 0.8820748827557947,
+      "support": 50736.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      45419,
+      549
+    ],
+    [
+      4122,
+      646
+    ]
+  ],
+  "feature_importances": {},
+  "n_features": 13,
+  "feature_names": [
+    "age",
+    "sex",
+    "cp",
+    "trestbps",
+    "chol",
+    "fbs",
+    "restecg",
+    "thalach",
+    "exang",
+    "oldpeak",
+    "slope",
+    "ca",
+    "thal"
+  ]
+}

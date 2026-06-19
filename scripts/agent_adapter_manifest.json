@@ -5,10 +5,16 @@
     "CLAUDE.md",
     "GEMINI.md"
   ],
+  "scoped_wrapper_files": [
+    {
+      "path": "frontend/CLAUDE.md",
+      "targets": ["../AGENTS.md", "./AGENTS.md"]
+    }
+  ],
   "cursor_legacy_shim_lines": [
     "All canonical instructions live in AGENTS.md - read that first.",
-    "Use 127.0.0.1, never localhost.",
-    "All AI inference goes through backend/core_ai.py.",
+    "Use 127.0.0.1 for host-bound local dev URLs; container service names are allowed inside container networks.",
+    "Provider-backed AI/LLM/embedding/vision inference goes through backend/core_ai.py.",
     "Never inline system prompts - use prompt_registry.py.",
     "Never log or expose PII in error messages.",
     "AI-generated health advice must include a medical disclaimer and recommend consulting a qualified clinician.",
@@ -17,22 +23,22 @@
   ],
   "copilot_repo_lines": [
     "All canonical instructions live in AGENTS.md - read that first.",
-    "Use 127.0.0.1, never localhost.",
-    "All AI inference goes through backend/core_ai.py.",
+    "Use 127.0.0.1 for host-bound local dev URLs; container service names are allowed inside container networks.",
+    "Provider-backed AI/LLM/embedding/vision inference goes through backend/core_ai.py.",
     "Never inline system prompts - use prompt_registry.py.",
     "Never log or expose PII in error messages.",
     "AI-generated health advice must include a medical disclaimer and recommend consulting a qualified clinician.",
     "Database schema changes must update SQLAlchemy models, Pydantic schemas, and migration/startup logic together.",
-    "Backend is FastAPI (Python), frontend is Next.js App Router (TypeScript).",
+    "Backend is FastAPI (Python 3.11+), frontend is a Vite 6 React SPA (TypeScript/React 19, React Router DOM).",
     "ML model loading is owned by prediction.py.",
-    "Database sessions via Depends(database.get_db) in routes."
+    "Database sessions go through backend.database.get_db in routes."
   ],
   "cursor_root_rule": {
     "description": "AI Healthcare System - Root rules (always apply)",
     "lines": [
       "All canonical instructions live in AGENTS.md - read that first.",
-      "Use 127.0.0.1, never localhost.",
-      "All AI inference goes through backend/core_ai.py.",
+      "Use 127.0.0.1 for host-bound local dev URLs; container service names are allowed inside container networks.",
+      "Provider-backed AI/LLM/embedding/vision inference goes through backend/core_ai.py.",
       "Never inline system prompts - use prompt_registry.py.",
       "Never log or expose PII in error messages.",
       "AI-generated health advice must include a medical disclaimer and recommend consulting a qualified clinician.",
@@ -49,8 +55,8 @@
       "copilot_apply_to": "backend/**",
       "copilot_lines": [
         "Read backend/AGENTS.md for backend-specific rules.",
-        "All AI calls go through core_ai.py - never import google.generativeai directly.",
-        "Use Depends(database.get_db) for DB sessions in routes.",
+        "Provider-backed AI calls go through core_ai.py - never import provider SDKs directly outside core_ai.py.",
+        "Use backend.database.get_db for DB sessions in routes.",
         "Update models.py, schemas.py, and main.py migration/startup logic together for schema changes.",
         "Prompts are version-controlled in prompt_registry.py.",
         "HIPAA: Health data must be scoped to current_user.id."
@@ -60,7 +66,8 @@
       "cursor_globs": ["backend/**/*.py"],
       "cursor_lines": [
         "Read backend/AGENTS.md for backend-specific rules.",
-        "All AI calls go through core_ai.py.",
+        "Provider-backed AI calls go through core_ai.py.",
+        "Use backend.database.get_db for DB sessions in routes.",
         "Update models.py, schemas.py, and main.py migration/startup logic together for schema changes.",
         "Prompts are version-controlled in prompt_registry.py.",
         "HIPAA: Health data must be scoped to current_user.id."
@@ -73,20 +80,45 @@
       "copilot_apply_to": "frontend/**",
       "copilot_lines": [
         "Read frontend/AGENTS.md for frontend-specific rules.",
-        "Frontend is Next.js App Router (TypeScript).",
-        "Use NEXT_PUBLIC_API_URL for browser-facing backend URLs and default to http://127.0.0.1:8000.",
-        "Include medical disclaimers in prediction views."
+        "Frontend is a Vite 6 React SPA (TypeScript/React 19, React Router DOM). No Next.js — no server components, no server actions, no App Router.",
+        "Routes are client-side via React Router DOM; page components live in frontend/src/pages/.",
+        "Use VITE_PUBLIC_API_URL or fallback to http://127.0.0.1:8000 for backend URLs.",
+        "Include medical disclaimers in prediction, chat, report-analysis, and other patient-facing medical AI views.",
+        "Vitest unit tests live in frontend/src/__tests__; Playwright E2E tests live in frontend/tests."
       ],
       "cursor_rule_file": "02-frontend.mdc",
-      "cursor_description": "Next.js frontend rules",
+      "cursor_description": "Vite React SPA frontend rules",
       "cursor_globs": ["frontend/**/*.{ts,tsx,js,jsx}"],
       "cursor_lines": [
         "Read frontend/AGENTS.md for frontend-specific rules.",
-        "Frontend is Next.js App Router (TypeScript).",
-        "Use NEXT_PUBLIC_API_URL for browser-facing backend URLs.",
-        "Include medical disclaimers in prediction views."
+        "Frontend is a Vite 6 React SPA (TypeScript/React 19, React Router DOM). No Next.js.",
+        "Routes are client-side via React Router DOM; page components live in frontend/src/pages/.",
+        "Use VITE_PUBLIC_API_URL or fallback to http://127.0.0.1:8000 for backend URLs.",
+        "Include medical disclaimers in prediction, chat, report-analysis, and other patient-facing medical AI views.",
+        "Vitest unit tests live in frontend/src/__tests__; Playwright E2E tests live in frontend/tests."
       ],
       "cursor_refs": ["frontend/AGENTS.md"]
+    },
+    {
+      "id": "frontend_legacy",
+      "scope_path": "frontend_legacy",
+      "copilot_apply_to": "frontend_legacy/**",
+      "copilot_lines": [
+        "Read frontend_legacy/AGENTS.md for legacy Streamlit frontend rules.",
+        "This subtree is reference-only unless the user explicitly asks for legacy frontend changes.",
+        "Use shared API client utilities from frontend_legacy/utils/.",
+        "Default backend URL to http://127.0.0.1:8000 through BACKEND_URL."
+      ],
+      "cursor_rule_file": "04-frontend-legacy.mdc",
+      "cursor_description": "Legacy Streamlit frontend rules",
+      "cursor_globs": ["frontend_legacy/**/*.py"],
+      "cursor_lines": [
+        "Read frontend_legacy/AGENTS.md for legacy Streamlit frontend rules.",
+        "This subtree is reference-only unless the user explicitly asks for legacy frontend changes.",
+        "Use shared API client utilities from frontend_legacy/utils/.",
+        "Default backend URL to http://127.0.0.1:8000 through BACKEND_URL."
+      ],
+      "cursor_refs": ["frontend_legacy/AGENTS.md"]
     },
     {
       "id": "tests",
@@ -94,6 +126,7 @@
       "copilot_apply_to": "tests/**",
       "copilot_lines": [
         "Read tests/AGENTS.md for test-specific rules.",
+        "These are backend pytest tests; frontend Jest and Playwright tests live under frontend/.",
         "Mock all AI calls - never hit real APIs in tests.",
         "Use fresh test database per session.",
         "Don't assert exact ML prediction values."
@@ -103,6 +136,7 @@
       "cursor_globs": ["tests/**/*.py"],
       "cursor_lines": [
         "Read tests/AGENTS.md for test-specific rules.",
+        "These are backend pytest tests; frontend Jest and Playwright tests live under frontend/.",
         "Mock all AI calls - never hit real APIs.",
         "Use fresh test database per session."
       ],
@@ -120,17 +154,17 @@
     ],
     "tech": [
       "Backend: FastAPI (Python 3.11+), SQLAlchemy ORM, SQLite/PostgreSQL.",
-      "Frontend: Next.js App Router (TypeScript).",
+      "Frontend: Vite 6 React SPA (TypeScript/React 19, React Router DOM, Node >=20.9.0). No Next.js.",
       "AI: Multi-tier - Ollama (local), Google Gemini (cloud), OpenAI/Anthropic (optional).",
       "ML: scikit-learn models (pickle), ensemble predictions.",
-      "RAG: Gemini embeddings, cosine similarity vector store.",
+      "RAG: core_ai-managed embeddings, cosine similarity vector store.",
       "Auth: JWT tokens, bcrypt password hashing.",
       "Deployment: Docker, Render, Hugging Face Spaces."
     ],
     "structure": [
       "backend/ - FastAPI app, API routes, AI modules, ML services, database models.",
-      "frontend/ - Next.js App Router UI with src/app, src/components, hooks, and lib.",
-      "frontend_legacy/ - old Python UI kept for reference only.",
+      "frontend/ - Vite React SPA with src/pages, src/components, src/lib, Vitest unit tests, and Playwright E2E tests.",
+      "frontend_legacy/ - legacy Streamlit UI kept for reference only.",
       "scripts/ - DevX utilities (ai_context.py, sync_agent_adapters.py), DB management.",
       "tests/ - Pytest test suite.",
       "docs/ - Architecture documentation, whitepapers.",

@@ -22,17 +22,18 @@ Instead of a single massive `.cursorrules` file, instructions are broken into a 
 
 | Level | File | Purpose |
 |-------|------|---------|
-| Root | `AGENTS.md` | Global, unbreakable rules (use `127.0.0.1`, PII handling, etc.) |
+| Root | `AGENTS.md` | Global rules (host-bound local URLs use `127.0.0.1`, PII handling, etc.) |
 | Scoped | `backend/AGENTS.md` | Backend-specific rules (AI provider abstraction, DB sessions) |
 | Scoped | `frontend/AGENTS.md` | Frontend-specific rules (Next.js App Router, browser API URLs) |
-| Scoped | `tests/AGENTS.md` | Test-specific rules (mocking, isolation) |
+| Scoped | `frontend_legacy/AGENTS.md` | Legacy Streamlit frontend rules |
+| Scoped | `tests/AGENTS.md` | Backend pytest rules (mocking, isolation) |
 | Deep Ref | `backend/CONTEXT.md` | Verbose module-level documentation (read only when needed) |
 
 **Why it works**: When an agent edits a backend file, it reads Root `AGENTS.md` + `backend/AGENTS.md`. It's shielded from frontend Next.js rules, saving tokens and eliminating context confusion.
 
 ### 1.2 Automated Adapter Synchronization
 
-Different AI tools expect instructions in proprietary formats. We write rules **once** in canonical `AGENTS.md` files, then a sync engine distributes them:
+Different AI tools expect instructions in proprietary formats. Canonical rules live in `AGENTS.md` files. The adapter manifest contains thin tool-specific summaries and references to those canonical files, then the sync engine distributes them:
 
 ```
 AGENTS.md (canonical)
@@ -40,6 +41,7 @@ AGENTS.md (canonical)
     |-- .cursorrules
     |-- .cursor/rules/00-root.mdc
     |-- .cursor/rules/01-backend.mdc
+    |-- .cursor/rules/04-frontend-legacy.mdc
     |-- .github/copilot-instructions.md
     |-- .github/instructions/backend.instructions.md
     |-- CLAUDE.md
@@ -47,9 +49,9 @@ AGENTS.md (canonical)
     `-- .kiro/steering/*.md
 ```
 
-**Manifest**: `scripts/agent_adapter_manifest.json` defines the mapping schema.
+**Manifest**: `scripts/agent_adapter_manifest.json` defines the generated adapter mapping and short compatibility summaries.
 **Sync**: `python scripts/sync_agent_adapters.py` writes all adapter files.
-**Check**: `python scripts/sync_agent_adapters.py --check` verifies sync in CI.
+**Check**: `python scripts/sync_agent_adapters.py --check` verifies sync, obsolete-file removal, and unmanaged adapter files in CI.
 
 ### 1.3 Dynamic Context Injection (`ai_context.py`)
 
@@ -79,7 +81,7 @@ The agent immediately knows what's running, what models are trained, and what co
 
 ### 2.1 Multi-Tier Inference Engine (`backend/core_ai.py`)
 
-All AI inference routes through a single module with automatic fallback:
+Provider-backed AI/LLM/embedding/vision inference routes through a single module with automatic fallback:
 
 ```
 Tier A: Ollama (Local)     -> Zero cloud-provider cost when local; prompts stay on the configured Ollama host

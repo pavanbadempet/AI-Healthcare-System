@@ -1,7 +1,6 @@
 
-import pickle
 import os
-import sys
+import pickle
 
 BASE_DIR = os.path.join(os.getcwd(), "backend")
 MODELS = ["diabetes_model.pkl", "heart_disease_model.pkl", "liver_scaler.pkl", "liver_disease_model.pkl", "kidney_model.pkl", "lungs_model.pkl"]
@@ -12,7 +11,7 @@ for m in MODELS:
     if not os.path.exists(path):
         print(f"MISSING: {path}")
         continue
-        
+
     try:
         with open(path, "rb") as f:
             obj = pickle.load(f)

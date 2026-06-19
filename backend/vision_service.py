@@ -1,10 +1,11 @@
 
+import io
 import json
 import logging
-from PIL import Image
-import io
-from typing import Dict, Any
+from typing import Any, Dict
+
 from fastapi import HTTPException
+from PIL import Image
 
 from . import core_ai
 from .prompt_registry import get_prompt
@@ -16,10 +17,10 @@ logger = logging.getLogger(__name__)
 def analyze_lab_report(image_bytes: bytes) -> Dict[str, Any]:
     """
     Analyzes a medical lab report image using Google Gemini Vision.
-    
+
     Args:
         image_bytes (bytes): Raw image data (JPEG/PNG).
-        
+
     Returns:
         dict: Structured JSON containing 'extracted_data' (metrics) and 'summary'.
     """
@@ -29,7 +30,7 @@ def analyze_lab_report(image_bytes: bytes) -> Dict[str, Any]:
 
 
         image = Image.open(io.BytesIO(image_bytes))
-        
+
         prompt = get_prompt("lab_report_vision")
 
         text = core_ai.generate_vision_content(prompt, image)
@@ -37,7 +38,7 @@ def analyze_lab_report(image_bytes: bytes) -> Dict[str, Any]:
             raise HTTPException(status_code=503, detail="Vision Model Unavailable")
 
         text = text.replace("```json", "").replace("```", "").strip()
-        
+
 
         result = json.loads(text)
         return result

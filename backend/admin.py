@@ -3,10 +3,28 @@ Admin Dashboard Logic
 =====================
 Endpoints for system administration, analytics, and user management.
 """
+import json
+import os
+from typing import Dict, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy.orm import Session
-from . import ai_function_registry, audit, backup_readiness, data_quality, database, incident_response, model_cards, models, operational_health, privacy_operations, retention_policy, security_assurance, auth
-from typing import Dict, Optional
+
+from . import (
+    ai_function_registry,
+    audit,
+    auth,
+    backup_readiness,
+    data_quality,
+    database,
+    incident_response,
+    model_cards,
+    models,
+    operational_health,
+    privacy_operations,
+    retention_policy,
+    security_assurance,
+)
 
 router = APIRouter(prefix="/admin", tags=["Admin Dashboard"])
 ADMIN_FACILITY_ACCESS_DETAIL = "Admin resource is outside the user's facility"
@@ -80,6 +98,53 @@ def _scope_audit_logs_to_admin_facility(query, admin: models.User):
 
 # --- Endpoints ---
 
+@router.get("/analytics/report")
+def get_analytics_report(
+    admin: models.User = Depends(get_current_admin)
+) -> Dict:
+    """Fetch the Gold Layer analyst report."""
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    report_path = os.path.join(base_dir, "data", "gold", "analyst_report.json")
+
+    if not os.path.exists(report_path):
+        return {
+            "report_generated_at": None,
+            "total_records_analyzed": 0,
+            "prevalence_rates": {
+                "diabetes": 0.0,
+                "heart": 0.0,
+                "kidney": 0.0,
+                "liver": 0.0,
+                "lungs": 0.0
+            },
+            "demographics": {
+                "avg_age": 0.0,
+                "avg_bmi": 0.0,
+                "gender_distribution": {"male_ratio": 50.0, "female_ratio": 50.0}
+            },
+            "model_performance": {
+                "diabetes": 0.0,
+                "heart": 0.0,
+                "kidney": 0.0,
+                "liver": 0.0,
+                "lungs": 0.0
+            },
+            "pipeline_execution": {
+                "duration_seconds": 0.0,
+                "status": "not_run"
+            }
+        }
+
+    try:
+        with open(report_path, "r") as f:
+            return json.load(f)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to read Gold analyst report: {str(e)}"
+        )
+
+
 @router.get("/stats")
 def get_admin_stats(
     db: Session = Depends(database.get_db),
@@ -93,13 +158,14 @@ def get_admin_stats(
     if admin.facility_id is not None:
         prediction_query = prediction_query.filter(models.HealthRecord.user_id.in_(user_ids))
         message_query = message_query.filter(models.ChatLog.user_id.in_(user_ids))
-    
+
     return {
         "total_users": user_query.count(),
         "total_predictions": prediction_query.count(),
         "total_messages": message_query.count(),
         "server_status": "Online",
-        "database_status": "Connected"
+        "database_status": "Connected",
+        "database_type": "sqlite" if "sqlite" in database.SQLALCHEMY_DATABASE_URL else "postgresql"
     }
 
 @router.get("/audit-logs")
@@ -234,7 +300,7 @@ def get_patient_deletion_plan(
 
 @router.get("/users")
 def get_recent_users(
-    skip: int = 0, 
+    skip: int = 0,
     limit: int = 20,
     db: Session = Depends(database.get_db),
     admin: models.User = Depends(get_current_admin)
@@ -287,8 +353,8 @@ def get_admin_patient_profile(
 
 @router.put("/users/{user_id}/role")
 def update_user_role(
-    user_id: int, 
-    role: str, 
+    user_id: int,
+    role: str,
     admin: models.User = Depends(get_current_admin),
     db: Session = Depends(database.get_db)
 ):
@@ -370,7 +436,7 @@ def delete_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     _ensure_admin_can_access_user(admin, user)
-        
+
     if user.id == admin.id:
         raise HTTPException(status_code=400, detail="Cannot delete yourself.")
 

@@ -27,5 +27,5 @@ echo ========================================
 echo      Starting Healthcare Frontend...
 echo ========================================
 cd /d frontend
-npm run dev -- -p 3000
+npm run dev -- -H 127.0.0.1 -p 3000
 pause

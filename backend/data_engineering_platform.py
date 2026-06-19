@@ -5,20 +5,24 @@ AI components: ML models for data quality and predictions
 """
 
 import asyncio
+import json
 import logging
 import re
-from typing import Dict, List, Any, Optional
-from datetime import datetime, timedelta
-from dataclasses import dataclass
-from enum import Enum
-import json
-from urllib.parse import urlparse
-from pyspark.sql import SparkSession, DataFrame as SparkDF
-from pyspark.sql.functions import col, count, sum, avg, max as spark_max, min as spark_min
-from pyspark.sql.types import StructType, StructField, StringType, FloatType, DateType, TimestampType
-import redis
-from concurrent.futures import ThreadPoolExecutor
 import time
+from concurrent.futures import ThreadPoolExecutor
+from dataclasses import dataclass
+from datetime import datetime, timedelta
+from enum import Enum
+from typing import Any, Dict, List, Optional
+from urllib.parse import urlparse
+
+import redis
+from pyspark.sql import DataFrame as SparkDF
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import avg, col, count, sum
+from pyspark.sql.functions import max as spark_max
+from pyspark.sql.functions import min as spark_min
+from pyspark.sql.types import DateType, FloatType, StringType, StructField, StructType, TimestampType
 
 logger = logging.getLogger(__name__)
 PIPELINE_FAILURE_MESSAGE = "Data pipeline failed. Please review operational logs."
@@ -85,13 +89,13 @@ def _validate_api_base_url(base_url: str | None) -> str:
 
 class HealthcareDataPipeline:
     """Enterprise-grade healthcare data processing platform"""
-    
+
     def __init__(self, spark_session: SparkSession, redis_client: redis.Redis, db_session):
         self.spark = spark_session
         self.redis = redis_client
         self.db = db_session
         self.executor = ThreadPoolExecutor(max_workers=8)
-        
+
         # Initialize data schemas
         self.patient_schema = StructType([
             StructField("patient_id", StringType(), False),
@@ -108,7 +112,7 @@ class HealthcareDataPipeline:
             StructField("created_at", TimestampType(), False),
             StructField("updated_at", TimestampType(), False)
         ])
-        
+
         self.lab_results_schema = StructType([
             StructField("result_id", StringType(), False),
             StructField("patient_id", StringType(), False),
@@ -123,7 +127,7 @@ class HealthcareDataPipeline:
             StructField("facility_id", StringType(), True),
             StructField("created_at", TimestampType(), False)
         ])
-        
+
         self.claims_schema = StructType([
             StructField("claim_id", StringType(), False),
             StructField("patient_id", StringType(), False),
@@ -138,25 +142,25 @@ class HealthcareDataPipeline:
             StructField("submission_date", TimestampType(), False),
             StructField("processing_date", TimestampType(), True)
         ])
-    
+
     async def run_etl_pipeline(self, pipeline_config: Dict[str, Any]) -> Dict[str, Any]:
         """Execute comprehensive ETL pipeline with data quality checks"""
         start_time = time.time()
         pipeline_id = pipeline_config.get('pipeline_id', f"pipeline_{int(time.time())}")
-        
+
         try:
             # Extract phase
             extract_result = await self._extract_data(pipeline_config)
-            
+
             # Transform phase
             transform_result = await self._transform_data(extract_result, pipeline_config)
-            
+
             # Load phase
             load_result = await self._load_data(transform_result, pipeline_config)
-            
+
             # Data quality assessment
             quality_metrics = await self._assess_data_quality(load_result)
-            
+
             # Performance metrics
             duration = time.time() - start_time
             performance_metrics = {
@@ -167,10 +171,10 @@ class HealthcareDataPipeline:
                 'data_quality_score': quality_metrics.overall_score,
                 'status': 'completed'
             }
-            
+
             # Cache metrics for monitoring
             await self._cache_pipeline_metrics(performance_metrics)
-            
+
             return {
                 'status': 'success',
                 'pipeline_id': pipeline_id,
@@ -180,7 +184,7 @@ class HealthcareDataPipeline:
                 'transform_result': transform_result,
                 'load_result': load_result
             }
-            
+
         except Exception:
             logger.error("ETL pipeline failed")
             return {
@@ -189,33 +193,33 @@ class HealthcareDataPipeline:
                 'error': PIPELINE_FAILURE_MESSAGE,
                 'duration_seconds': time.time() - start_time
             }
-    
+
     async def _extract_data(self, config: Dict[str, Any]) -> Dict[str, Any]:
         """Extract data from multiple sources with parallel processing"""
         sources = config.get('sources', [])
         extract_results = {}
-        
+
         # Parallel extraction from multiple sources
         extract_tasks = []
         for source in sources:
             task = self._extract_from_source(source)
             extract_tasks.append(task)
-        
+
         results = await asyncio.gather(*extract_tasks, return_exceptions=True)
-        
+
         for i, result in enumerate(results):
             source_name = sources[i].get('name', f'source_{i}')
             if isinstance(result, Exception):
                 extract_results[source_name] = {'error': PIPELINE_FAILURE_MESSAGE}
             else:
                 extract_results[source_name] = result
-        
+
         return extract_results
-    
+
     async def _extract_from_source(self, source_config: Dict[str, Any]) -> Dict[str, Any]:
         """Extract data from specific source"""
         source_type = source_config.get('type')
-        
+
         if source_type == 'database':
             return await self._extract_from_database(source_config)
         elif source_type == 'api':
@@ -226,63 +230,63 @@ class HealthcareDataPipeline:
             return await self._extract_from_stream(source_config)
         else:
             raise ValueError(f"Unsupported source type: {source_type}")
-    
+
     async def _extract_from_database(self, config: Dict[str, Any]) -> Dict[str, Any]:
         """Extract data from database with incremental loading"""
         connection_string = config.get('connection_string')
         query = config.get('query')
         incremental_column = config.get('incremental_column')
         last_extract_value = config.get('last_extract_value')
-        
+
         # Build incremental query if specified
         if incremental_column and last_extract_value is not None:
             query = _append_incremental_filter(query, incremental_column, last_extract_value)
-        
+
         # Execute query using Spark for large datasets
         df = self.spark.read.format("jdbc").options(
             url=connection_string,
             driver="org.postgresql.Driver",
             query=query
         ).load()
-        
+
         # Get max value for next incremental load
         max_value = None
         if incremental_column:
             max_row = df.agg({incremental_column: "max"}).collect()
             if max_row and max_row[0][0]:
                 max_value = max_row[0][0]
-        
+
         return {
             'dataframe': df,
             'record_count': df.count(),
             'max_incremental_value': max_value,
             'schema': df.schema
         }
-    
+
     async def _extract_from_api(self, config: Dict[str, Any]) -> Dict[str, Any]:
         """Extract data from REST API with pagination"""
         import requests
-        
+
         base_url = config.get('base_url')
         endpoint = config.get('endpoint')
         headers = config.get('headers', {})
         pagination_param = config.get('pagination_param', 'page')
         request_timeout = config.get('request_timeout_seconds', 30)
         base_url = _validate_api_base_url(base_url)
-        
+
         all_data = []
         page = 1
         has_more = True
-        
+
         while has_more:
             url = f"{base_url}/{endpoint}?{pagination_param}={page}"
             response = requests.get(url, headers=headers, timeout=request_timeout)
-            
+
             if response.status_code != 200:
                 break
-            
+
             data = response.json()
-            
+
             # Handle different API response formats
             if isinstance(data, list):
                 page_data = data
@@ -292,28 +296,28 @@ class HealthcareDataPipeline:
                 has_more = len(page_data) > 0
             else:
                 break
-            
+
             all_data.extend(page_data)
             page += 1
-        
+
         # Convert to Spark DataFrame
         if all_data:
             df = self.spark.createDataFrame(all_data)
         else:
             df = self.spark.createDataFrame([], StructType([]))
-        
+
         return {
             'dataframe': df,
             'record_count': len(all_data),
             'pages_processed': page - 1
         }
-    
+
     async def _extract_from_file(self, config: Dict[str, Any]) -> Dict[str, Any]:
         """Extract data from files (CSV, JSON, Parquet)"""
         file_path = config.get('file_path')
         file_format = config.get('format', 'csv')
         options = config.get('options', {})
-        
+
         if file_format == 'csv':
             df = self.spark.read.csv(file_path, header=True, **options)
         elif file_format == 'json':
@@ -322,77 +326,77 @@ class HealthcareDataPipeline:
             df = self.spark.read.parquet(file_path, **options)
         else:
             raise ValueError(f"Unsupported file format: {file_format}")
-        
+
         return {
             'dataframe': df,
             'record_count': df.count(),
             'file_format': file_format
         }
-    
+
     async def _extract_from_stream(self, config: Dict[str, Any]) -> Dict[str, Any]:
         """Extract data from streaming sources (Kafka, Kinesis)"""
         stream_type = config.get('stream_type')
-        
+
         if stream_type == 'kafka':
             df = self.spark.readStream.format("kafka") \
                 .option("kafka.bootstrap.servers", config.get('bootstrap_servers')) \
                 .option("subscribe", config.get('topic')) \
                 .load()
-            
+
             # Parse JSON values
             from pyspark.sql.functions import from_json
             schema = config.get('schema')
             df = df.select(from_json(col("value").cast("string"), schema).alias("data"))
-            
+
         else:
             raise ValueError(f"Unsupported stream type: {stream_type}")
-        
+
         return {
             'streaming_dataframe': df,
             'stream_type': stream_type
         }
-    
+
     async def _transform_data(self, extract_results: Dict[str, Any], config: Dict[str, Any]) -> Dict[str, Any]:
         """Transform data with business logic and data quality improvements"""
         transformations = config.get('transformations', [])
         transformed_dfs = {}
-        
+
         for source_name, extract_result in extract_results.items():
             if 'dataframe' in extract_result:
                 df = extract_result['dataframe']
-                
+
                 # Apply transformations
                 for transformation in transformations:
                     df = await self._apply_transformation(df, transformation)
-                
+
                 transformed_dfs[source_name] = df
-        
+
         # Merge data if specified
         merge_config = config.get('merge')
         if merge_config and len(transformed_dfs) > 1:
             merged_df = await self._merge_dataframes(transformed_dfs, merge_config)
             return {'merged_dataframe': merged_df, 'source_dataframes': transformed_dfs}
-        
+
         return {'transformed_dataframes': transformed_dfs}
-    
+
     async def _apply_transformation(self, df: SparkDF, transformation: Dict[str, Any]) -> SparkDF:
         """Apply specific transformation to DataFrame"""
         transform_type = transformation.get('type')
-        
+
         if transform_type == 'filter':
             condition = transformation.get('condition')
             return df.filter(condition)
-        
+
         elif transform_type == 'aggregate':
             group_by = transformation.get('group_by')
             aggregations = transformation.get('aggregations', [])
-            
+
             df_grouped = df.groupBy(group_by)
             for agg in aggregations:
                 agg_type = agg.get('type')
                 column = agg.get('column')
                 alias = agg.get('alias')
-                
+
                 if agg_type == 'sum':
                     df_grouped = df_grouped.agg(sum(col(column)).alias(alias))
                 elif agg_type == 'count':
@@ -403,20 +407,20 @@ class HealthcareDataPipeline:
                     df_grouped = df_grouped.agg(spark_max(col(column)).alias(alias))
                 elif agg_type == 'min':
                     df_grouped = df_grouped.agg(spark_min(col(column)).alias(alias))
-            
+
             return df_grouped
-        
+
         elif transform_type == 'join':
             join_df = transformation.get('dataframe')
             join_condition = transformation.get('condition')
             join_type = transformation.get('join_type', 'inner')
             return df.join(join_df, join_condition, join_type)
-        
+
         elif transform_type == 'clean':
             # Data cleaning operations
             # Remove duplicates
             df = df.dropDuplicates()
-            
+
             # Handle null values
             null_handling = transformation.get('null_handling', {})
             for column, strategy in null_handling.items():
@@ -425,9 +429,9 @@ class HealthcareDataPipeline:
                 elif strategy == 'default':
                     default_value = transformation.get('default_values', {}).get(column)
                     df = df.fillna({column: default_value})
-            
+
             return df
-        
+
         elif transform_type == 'enrich':
             # Data enrichment with lookups
             enrichments = transformation.get('enrichments', [])
@@ -435,19 +439,19 @@ class HealthcareDataPipeline:
                 enrichment.get('lookup_table')
                 enrichment.get('key_column')
                 enrichment.get('value_column')
-                
+
                 # This would implement lookup logic
-            
+
             return df
-        
+
         else:
             logger.warning(f"Unknown transformation type: {transform_type}")
             return df
-    
+
     async def _merge_dataframes(self, dataframes: Dict[str, SparkDF], merge_config: Dict[str, Any]) -> SparkDF:
         """Merge multiple DataFrames based on configuration"""
         merge_type = merge_config.get('type', 'union')
-        
+
         if merge_type == 'union':
             # Union all DataFrames
             result_df = None
@@ -457,7 +461,7 @@ class HealthcareDataPipeline:
                 else:
                     result_df = result_df.union(df)
             return result_df
-        
+
         elif merge_type == 'join':
             # Join DataFrames
             primary_df = list(dataframes.values())[0]
@@ -466,36 +470,36 @@ class HealthcareDataPipeline:
                 if join_condition:
                     primary_df = primary_df.join(df, join_condition, merge_config.get('join_type', 'inner'))
             return primary_df
-        
+
         else:
             raise ValueError(f"Unsupported merge type: {merge_type}")
-    
+
     async def _load_data(self, transform_results: Dict[str, Any], config: Dict[str, Any]) -> Dict[str, Any]:
         """Load transformed data to target systems"""
         targets = config.get('targets', [])
         load_results = {}
-        
+
         # Parallel loading to multiple targets
         load_tasks = []
         for target in targets:
             task = self._load_to_target(transform_results, target)
             load_tasks.append(task)
-        
+
         results = await asyncio.gather(*load_tasks, return_exceptions=True)
-        
+
         for i, result in enumerate(results):
             target_name = targets[i].get('name', f'target_{i}')
             if isinstance(result, Exception):
                 load_results[target_name] = {'error': PIPELINE_FAILURE_MESSAGE}
             else:
                 load_results[target_name] = result
-        
+
         return load_results
-    
+
     async def _load_to_target(self, transform_results: Dict[str, Any], target_config: Dict[str, Any]) -> Dict[str, Any]:
         """Load data to specific target"""
         target_type = target_config.get('type')
-        
+
         # Get the DataFrame to load
         if 'merged_dataframe' in transform_results:
             df = transform_results['merged_dataframe']
@@ -504,7 +508,7 @@ class HealthcareDataPipeline:
             df = list(transform_results['transformed_dataframes'].values())[0]
         else:
             raise ValueError("No DataFrame found to load")
-        
+
         if target_type == 'database':
             return await self._load_to_database(df, target_config)
         elif target_type == 'file':
@@ -515,16 +519,16 @@ class HealthcareDataPipeline:
             return await self._load_to_warehouse(df, target_config)
         else:
             raise ValueError(f"Unsupported target type: {target_type}")
-    
+
     async def _load_to_database(self, df: SparkDF, config: Dict[str, Any]) -> Dict[str, Any]:
         """Load DataFrame to database with batch processing"""
         connection_string = config.get('connection_string')
         table_name = config.get('table_name')
         write_mode = config.get('write_mode', 'append')
-        
+
         # Write in batches for large datasets
         batch_size = config.get('batch_size', 10000)
-        
+
         try:
             df.write.format("jdbc").options(
                 url=connection_string,
@@ -533,31 +537,31 @@ class HealthcareDataPipeline:
                 mode=write_mode,
                 batchsize=batch_size
             ).save()
-            
+
             return {
                 'target': 'database',
                 'table': table_name,
                 'records_written': df.count(),
                 'write_mode': write_mode
             }
-            
+
         except Exception:
             logger.error("Database load failed")
             raise
-    
+
     async def _load_to_file(self, df: SparkDF, config: Dict[str, Any]) -> Dict[str, Any]:
         """Load DataFrame to file"""
         file_path = config.get('file_path')
         file_format = config.get('format', 'parquet')
         write_mode = config.get('write_mode', 'overwrite')
         partition_by = config.get('partition_by')
-        
+
         try:
             writer = df.write.mode(write_mode)
-            
+
             if partition_by:
                 writer = writer.partitionBy(partition_by)
-            
+
             if file_format == 'parquet':
                 writer.parquet(file_path)
             elif file_format == 'csv':
@@ -566,52 +570,52 @@ class HealthcareDataPipeline:
                 writer.json(file_path)
             else:
                 raise ValueError(f"Unsupported file format: {file_format}")
-            
+
             return {
                 'target': 'file',
                 'file_path': file_path,
                 'format': file_format,
                 'records_written': df.count()
             }
-            
+
         except Exception:
             logger.error("File load failed")
             raise
-    
+
     async def _load_to_data_lake(self, df: SparkDF, config: Dict[str, Any]) -> Dict[str, Any]:
         """Load DataFrame to data lake (S3, ADLS, GCS)"""
         storage_path = config.get('storage_path')
         file_format = config.get('format', 'parquet')
         partition_by = config.get('partition_by')
-        
+
         try:
             writer = df.write.mode('overwrite')
-            
+
             if partition_by:
                 writer = writer.partitionBy(partition_by)
-            
+
             if file_format == 'parquet':
                 writer.parquet(storage_path)
             elif file_format == 'delta':
                 writer.format('delta').save(storage_path)
             else:
                 raise ValueError(f"Unsupported data lake format: {file_format}")
-            
+
             return {
                 'target': 'data_lake',
                 'storage_path': storage_path,
                 'format': file_format,
                 'records_written': df.count()
             }
-            
+
         except Exception:
             logger.error("Data lake load failed")
             raise
-    
+
     async def _load_to_warehouse(self, df: SparkDF, config: Dict[str, Any]) -> Dict[str, Any]:
         """Load DataFrame to data warehouse (Snowflake, BigQuery, Redshift)"""
         warehouse_type = config.get('warehouse_type')
-        
+
         if warehouse_type == 'snowflake':
             return await self._load_to_snowflake(df, config)
         elif warehouse_type == 'bigquery':
@@ -620,7 +624,7 @@ class HealthcareDataPipeline:
             return await self._load_to_redshift(df, config)
         else:
             raise ValueError(f"Unsupported warehouse type: {warehouse_type}")
-    
+
     async def _assess_data_quality(self, load_results: Dict[str, Any]) -> DataQualityMetrics:
         """Assess data quality metrics"""
         # Get sample data for quality assessment
@@ -629,7 +633,7 @@ class HealthcareDataPipeline:
                 # This would need to be implemented based on target type
                 # For now, return default metrics
                 break
-        
+
         # Calculate quality metrics
         completeness = 0.95  # Placeholder - would calculate from data
         accuracy = 0.93      # Placeholder - would validate against reference
@@ -637,9 +641,9 @@ class HealthcareDataPipeline:
         timeliness = 0.96   # Placeholder - would check data freshness
         validity = 0.97     # Placeholder - would validate formats
         uniqueness = 0.98   # Placeholder - would check duplicates
-        
+
         overall_score = (completeness + accuracy + consistency + timeliness + validity + uniqueness) / 6
-        
+
         return DataQualityMetrics(
             completeness=completeness,
             accuracy=accuracy,
@@ -649,17 +653,17 @@ class HealthcareDataPipeline:
             uniqueness=uniqueness,
             overall_score=overall_score
         )
-    
+
     async def _cache_pipeline_metrics(self, metrics: Dict[str, Any]):
         """Cache pipeline metrics for monitoring"""
         key = f"pipeline_metrics:{metrics['pipeline_id']}"
         self.redis.setex(key, 3600, json.dumps(metrics))  # Cache for 1 hour
-        
+
         # Also cache daily aggregates
         daily_key = f"daily_metrics:{datetime.now().strftime('%Y-%m-%d')}"
         self.redis.lpush(daily_key, json.dumps(metrics))
         self.redis.expire(daily_key, 86400 * 30)  # Keep 30 days
-    
+
     def get_pipeline_monitoring_dashboard(self) -> Dict[str, Any]:
         """Get comprehensive pipeline monitoring dashboard"""
         # Get recent pipeline executions
@@ -667,13 +671,13 @@ class HealthcareDataPipeline:
         for key in self.redis.scan_iter("pipeline_metrics:*"):
             metrics = json.loads(self.redis.get(key))
             recent_pipelines.append(metrics)
-        
+
         # Calculate aggregates
         total_pipelines = len(recent_pipelines)
         success_rate = sum(1 for p in recent_pipelines if p['status'] == 'completed') / total_pipelines if total_pipelines > 0 else 0
         avg_duration = sum(p['duration_seconds'] for p in recent_pipelines) / total_pipelines if total_pipelines > 0 else 0
         avg_quality_score = sum(p['data_quality_score'] for p in recent_pipelines) / total_pipelines if total_pipelines > 0 else 0
-        
+
         return {
             'summary': {
                 'total_pipelines': total_pipelines,
@@ -685,14 +689,14 @@ class HealthcareDataPipeline:
             'data_quality_trends': self._get_quality_trends(),
             'performance_metrics': self._get_performance_metrics()
         }
-    
+
     def _get_quality_trends(self) -> List[Dict[str, Any]]:
         """Get data quality trends over time"""
         trends = []
         for i in range(7):  # Last 7 days
             date = (datetime.now() - timedelta(days=i)).strftime('%Y-%m-%d')
             daily_key = f"daily_metrics:{date}"
-            
+
             if self.redis.exists(daily_key):
                 daily_metrics = self.redis.lrange(daily_key, 0, -1)
                 if daily_metrics:
@@ -702,9 +706,9 @@ class HealthcareDataPipeline:
                         'avg_quality_score': avg_quality,
                         'pipeline_count': len(daily_metrics)
                     })
-        
+
         return trends
-    
+
     def _get_performance_metrics(self) -> Dict[str, Any]:
         """Get system performance metrics"""
         return {

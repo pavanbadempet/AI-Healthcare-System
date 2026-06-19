@@ -1,6 +1,8 @@
-import time
-import requests
 import sys
+import time
+
+import requests
+
 
 def wait_for_server(url="http://127.0.0.1:8000", timeout=60):
     print(f"Waiting for server at {url}...")
@@ -15,10 +17,12 @@ def wait_for_server(url="http://127.0.0.1:8000", timeout=60):
             pass
         time.sleep(1)
         print(".", end="", flush=True)
-    
+
     print("\nServer failed to start within timeout.")
     return False
 
 if __name__ == "__main__":
-    if not wait_for_server():
+    import sys
+    url = sys.argv[1] if len(sys.argv) > 1 else "http://127.0.0.1:8000"
+    if not wait_for_server(url):
         sys.exit(1)

@@ -1,9 +1,11 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
-from . import database, models, auth, schemas
+
+from . import auth, database, models, schemas
 from .facility_scope import users_share_facility_context
-from datetime import datetime
 
 ACTIVE_APPOINTMENT_STATUSES = ("Scheduled", "Rescheduled")
 DEFAULT_SPECIALIZATION = "General Physician"
@@ -99,7 +101,7 @@ def create_appointment(
     facility_id = _resolve_appointment_facility_id(current_user, doctor)
     _ensure_future_slot(appointment_dt)
     _ensure_doctor_slot_available(db, doctor.id, appointment_dt)
-    
+
     new_appt = models.Appointment(
         facility_id=facility_id,
         user_id=current_user.id,
@@ -109,15 +111,15 @@ def create_appointment(
         reason=appt.reason,
         status="Scheduled"
     )
-    
+
     db.add(new_appt)
     db.commit()
     db.refresh(new_appt)
-    
+
     # Send Confirmation Email (Async/Background in production, Sync here for safety)
     from . import email_service
     video_link = f"https://meet.jit.si/ai-health-{new_appt.id}" # Secure unique link
-    
+
     email_service.send_booking_confirmation(
         to_email=current_user.email or "patient@example.com",
         patient_name=current_user.full_name or current_user.username,
@@ -125,7 +127,7 @@ def create_appointment(
         date_time=dt_str,
         link=video_link
     )
-    
+
     return new_appt
 
 @router.get("/", response_model=list[schemas.AppointmentResponse])
@@ -141,7 +143,7 @@ def get_appointments(
         return db.query(models.Appointment).filter(
             models.Appointment.doctor_id == current_user.id
         ).order_by(models.Appointment.date_time.asc()).all()
-        
+
     return db.query(models.Appointment).filter(
         models.Appointment.user_id == current_user.id
     ).order_by(models.Appointment.date_time.asc()).all()
@@ -184,11 +186,11 @@ def cancel_appointment(
     if not appt:
         raise HTTPException(status_code=404, detail="Appointment not found")
     _ensure_admin_can_access_appointment(current_user, appt)
-        
+
     # Permission check
     if current_user.role != "admin" and appt.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
-        
+
     appt.status = "Cancelled"
     db.commit()
     return {"message": "Appointment cancelled"}
@@ -205,7 +207,7 @@ def reschedule_appointment(
     if not appt:
         raise HTTPException(status_code=404, detail="Appointment not found")
     _ensure_admin_can_access_appointment(current_user, appt)
-        
+
     if current_user.role != "admin" and appt.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
 
@@ -218,7 +220,7 @@ def reschedule_appointment(
             new_dt,
             exclude_appointment_id=appt.id,
         )
-    
+
     appt.date_time = new_dt
     appt.status = "Rescheduled"
     db.commit()
@@ -235,10 +237,10 @@ def delete_appointment(
     if not appt:
         raise HTTPException(status_code=404, detail="Appointment not found")
     _ensure_admin_can_access_appointment(current_user, appt)
-        
+
     if current_user.role != "admin" and appt.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="Not authorized")
-        
+
     db.delete(appt)
     db.commit()
     return {"message": "Appointment deleted"}
