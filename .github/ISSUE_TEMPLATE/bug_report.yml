@@ -17,7 +17,7 @@ body:
       description: Which part of the system is affected?
       options:
         - Backend API
-        - Frontend (Next.js)
+        - Frontend (React/Vite)
         - ML Models / Predictions
         - AI Chat / RAG
         - Authentication

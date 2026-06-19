@@ -1,0 +1,23 @@
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+
+[tool.ruff.lint]
+# Enable Pyflakes (F), pycodestyle (E, W), isort (I), and McCabe complexity (C90)
+select = ["F", "E", "W", "I", "C90"]
+
+# Ignore specific rules if necessary (can be empty or tailored)
+ignore = [
+    "E501", # Line length
+    "C901", # McCabe complexity
+    "E701", # Multiple statements on one line (colon)
+    "E702", # Multiple statements on one line (semicolon)
+    "E712", # Comparison to True/False
+    "E731", # Lambda assignment
+    "E402", # Module level import not at top
+]
+# E722 (bare except) is intentionally NOT ignored — healthcare code
+# must catch specific exceptions to avoid silently swallowing errors.
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
