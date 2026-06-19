@@ -27,7 +27,7 @@ python-dotenv
 # --- Data Science & ML (Full) ---
 pandas>=2.2.2
 numpy>=2.4.6
-scikit-learn>=1.4.2
+scikit-learn>=1.9.0
 # Optional — ANN vector backend; falls back to SimpleVectorStore when absent
 turbovec>=0.5.0
 joblib>=1.5.3
