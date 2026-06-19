@@ -17,7 +17,7 @@ body:
       description: Which area does this feature relate to?
       options:
         - Backend API
-        - Frontend (Next.js)
+        - Frontend (React/Vite)
         - ML Models / Predictions
         - AI Chat / RAG
         - Authentication / Security

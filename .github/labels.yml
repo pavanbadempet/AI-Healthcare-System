@@ -50,7 +50,7 @@
 
 - name: "frontend"
   color: "5319e7"
-  description: "Next.js Frontend"
+  description: "React/Vite Frontend"
 
 - name: "ml-models"
   color: "006b75"
