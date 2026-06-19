@@ -58,6 +58,7 @@ export default function MobileDrawer({
 
         {/* Mobile Quick Search */}
         <button
+          aria-label="Open quick search"
           onClick={() => {
             onClose();
             setCommandMenuOpen(true);
