@@ -154,6 +154,18 @@ def get_doctors(
     current_user: models.User = Depends(auth.get_current_user),
 ):
     """Fetch all users with role='doctor'"""
+    facility_id = current_user.facility_id or "global"
+    is_admin_user = auth.is_admin(current_user)
+    cache_key = f"doctors:{facility_id}:{is_admin_user}"
+
+    from .cache_service import cache
+    try:
+        cached_res = cache.get(cache_key)
+        if cached_res is not None:
+            return cached_res
+    except Exception as ex_cache:
+        logger.debug("Doctor list cache lookup failed: %s", ex_cache)
+
     query = db.query(models.User).filter(models.User.role == "doctor")
     if auth.is_admin(current_user) and current_user.facility_id is not None:
         query = query.filter(models.User.facility_id == current_user.facility_id)
@@ -175,6 +187,13 @@ def get_doctors(
             consultation_fee=doc.consultation_fee or 500.0,
             profile_picture=doc.profile_picture
         ))
+
+    try:
+        # Cache for 10 seconds to absorb page load bursts
+        cache.set(cache_key, response, ttl=10)
+    except Exception as ex_cache:
+        logger.debug("Doctor list cache set failed: %s", ex_cache)
+
     return response
 @router.put("/{appointment_id}/cancel")
 def cancel_appointment(
