@@ -12,8 +12,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          fetch-depth: 0
-          lfs: true
+          fetch-depth: 1
+          lfs: false
       
       - name: Push to Hugging Face Hub
         env:
