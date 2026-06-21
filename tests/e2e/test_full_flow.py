@@ -76,7 +76,7 @@ def test_signup_and_dashboard_flow(page: Page):
         page.wait_for_url(re.compile(r"/dashboard"), timeout=15000)
 
     # 6. Verify Dashboard loaded
-    expect(page.locator("text=Command Center")).to_be_visible(timeout=10000)
+    expect(page.get_by_role("heading", name="Nexus Vitalis")).to_be_visible(timeout=10000)
 
     # 7. Navigate to Diabetes Prediction
     page.goto(f"{BASE_URL}/predict/diabetes")

@@ -22,11 +22,11 @@
 
 ```bash
 # Full suite
-python -m pytest tests/ -v
+python -m pytest tests/ -n auto -v
 
 # Specific module
-python -m pytest tests/test_auth.py -v
+python -m pytest tests/test_auth.py -n auto -v
 
 # With coverage
-python -m pytest tests/ --cov=backend --cov-report=term-missing
+python -m pytest tests/ -n auto --cov=backend --cov-report=term-missing
 ```

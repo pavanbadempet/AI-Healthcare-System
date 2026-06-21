@@ -14,7 +14,7 @@ class TestPDFReport:
         pdf = PDFReport()
         pdf.add_page()  # This triggers header()
         # Just ensure no exception is raised
-        output = pdf.output(dest='S')
+        output = pdf.output()
         assert len(output) > 0
 
     def test_pdf_report_footer(self):
@@ -22,7 +22,7 @@ class TestPDFReport:
         pdf = PDFReport()
         pdf.add_page()
         # Footer is rendered on output
-        output = pdf.output(dest='S')
+        output = pdf.output()
         assert len(output) > 0
 
 
@@ -32,10 +32,7 @@ class TestGenerateMedicalReport:
     def test_generate_report_basic(self):
         """Test basic report generation with minimal data."""
         result = generate_medical_report(
-            user_name="Test Patient",
-            report_type="Diabetes",
-            prediction="Low Risk",
-            data={"glucose": 100}
+            user_name="Test Patient", report_type="Diabetes", prediction="Low Risk", data={"glucose": 100}
         )
         assert isinstance(result, bytes)
         assert len(result) > 0
@@ -46,7 +43,7 @@ class TestGenerateMedicalReport:
             user_name="Test Patient",
             report_type="Heart Disease",
             prediction="High Risk",
-            data={"bp": 140, "cholesterol": 250}
+            data={"bp": 140, "cholesterol": 250},
         )
         assert isinstance(result, bytes)
         assert len(result) > 0
@@ -58,19 +55,14 @@ class TestGenerateMedicalReport:
             report_type="Liver",
             prediction="Healthy",
             data={"bilirubin": 1.0},
-            advice=["Eat healthy", "Exercise regularly", "Stay hydrated"]
+            advice=["Eat healthy", "Exercise regularly", "Stay hydrated"],
         )
         assert isinstance(result, bytes)
         assert len(result) > 0
 
     def test_generate_report_empty_data(self):
         """Test report with empty data dictionary."""
-        result = generate_medical_report(
-            user_name="Patient",
-            report_type="General",
-            prediction="Normal",
-            data={}
-        )
+        result = generate_medical_report(user_name="Patient", report_type="General", prediction="Normal", data={})
         assert isinstance(result, bytes)
         assert len(result) > 0
 
@@ -86,9 +78,9 @@ class TestGenerateMedicalReport:
                 "cholesterol": 220,
                 "blood_pressure": 130,
                 "heart_rate": 72,
-                "bmi": 28.5
+                "bmi": 28.5,
             },
-            advice=["Reduce sugar intake", "Monitor regularly"]
+            advice=["Reduce sugar intake", "Monitor regularly"],
         )
         assert isinstance(result, bytes)
         assert len(result) > 0
@@ -96,20 +88,13 @@ class TestGenerateMedicalReport:
     def test_generate_report_special_characters(self):
         """Test report with special characters in data."""
         result = generate_medical_report(
-            user_name="José García",
-            report_type="Test",
-            prediction="OK",
-            data={"test_value": "100mg/dL"}
+            user_name="José García", report_type="Test", prediction="OK", data={"test_value": "100mg/dL"}
         )
         assert isinstance(result, bytes)
 
     def test_generate_report_empty_advice(self):
         """Test report with explicitly empty advice list."""
         result = generate_medical_report(
-            user_name="Patient",
-            report_type="Test",
-            prediction="Normal",
-            data={"value": 1},
-            advice=[]
+            user_name="Patient", report_type="Test", prediction="Normal", data={"value": 1}, advice=[]
         )
         assert isinstance(result, bytes)

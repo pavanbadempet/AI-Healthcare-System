@@ -12,7 +12,10 @@ class Appointment(Base, SoftDeleteMixin):
 
     __table_args__ = (
         Index("idx_appointments_user_datetime", "user_id", "date_time"),
-        CheckConstraint("status IN ('Scheduled', 'Completed', 'Cancelled')", name="check_appt_status"),
+        CheckConstraint(
+            "status IN ('Scheduled', 'Rescheduled', 'Completed', 'Cancelled')",
+            name="check_appt_status",
+        ),
     )
 
     id = Column(Integer, primary_key=True, index=True)
@@ -22,7 +25,7 @@ class Appointment(Base, SoftDeleteMixin):
     specialist = Column(String)  # Keep for fallback name display
     date_time = Column(DateTime)
     reason = Column(Text)
-    status = Column(String, default="Scheduled", index=True)  # Scheduled, Completed, Cancelled
+    status = Column(String, default="Scheduled", index=True)  # Scheduled, Rescheduled, Completed, Cancelled
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     owner = relationship("User", back_populates="appointments", foreign_keys=[user_id])

@@ -88,7 +88,11 @@ class MonitoringSignal(Base):
     __tablename__ = "monitoring_signals"
 
     __table_args__ = (
-        UniqueConstraint("patient_id", "created_at", name="uq_monitoring_signal_patient_created"),
+        UniqueConstraint(
+            "vital_observation_id",
+            "signal_type",
+            name="uq_monitoring_signal_vital_type",
+        ),
     )
 
     id = Column(Integer, primary_key=True, index=True)

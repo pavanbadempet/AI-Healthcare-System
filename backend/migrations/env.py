@@ -23,6 +23,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 target_metadata = Base.metadata
 
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
 
@@ -57,12 +58,28 @@ def run_migrations_online() -> None:
     connectable = engine
 
     with connectable.connect() as connection:
+        is_sqlite = connection.dialect.name == "sqlite"
+        dbapi_connection = connection.connection.dbapi_connection
+        if is_sqlite:
+            dbapi_connection.execute("PRAGMA foreign_keys=OFF")
+
         context.configure(
             connection=connection, target_metadata=target_metadata
         )
 
-        with context.begin_transaction():
-            context.run_migrations()
+        try:
+            with context.begin_transaction():
+                context.run_migrations()
+
+            if is_sqlite:
+                violations = dbapi_connection.execute("PRAGMA foreign_key_check").fetchall()
+                if violations:
+                    raise RuntimeError(
+                        f"SQLite foreign key violations after migrations: {violations}"
+                    )
+        finally:
+            if is_sqlite:
+                dbapi_connection.execute("PRAGMA foreign_keys=ON")
 
 
 if context.is_offline_mode():

@@ -3,6 +3,8 @@ Tests for the ModelService — the centralized ML model lifecycle manager.
 Validates initialization, health checks, prediction delegation, and SHAP explainability.
 """
 import os
+import sys
+from types import SimpleNamespace
 
 import numpy as np
 import pytest
@@ -42,6 +44,49 @@ class TestModelServiceInit:
         svc.initialize()
         svc.initialize()  # should not raise
         assert svc.is_available("diabetes")
+
+    def test_hf_download_preserves_existing_models_python_package(self, tmp_path, monkeypatch):
+        models_package = tmp_path / "models"
+        models_package.mkdir()
+        package_init = models_package / "__init__.py"
+        package_init.write_text("# package marker\n", encoding="utf-8")
+        download_kwargs = {}
+
+        class FakeHfApi:
+            def __init__(self, token):
+                self.token = token
+
+            def list_repo_files(self, repo_id, repo_type):
+                return ["models/diabetes_model.pkl"]
+
+            def hf_hub_download(
+                self,
+                repo_id,
+                repo_type,
+                filename,
+                local_dir,
+                **kwargs,
+            ):
+                download_kwargs.update(kwargs)
+                destination = tmp_path / filename
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                destination.write_bytes(b"downloaded-model")
+                return str(destination)
+
+        monkeypatch.setenv("HF_TOKEN", "test-token")
+        monkeypatch.setenv("HF_DATASET_ID", "test/models")
+        monkeypatch.setitem(
+            sys.modules,
+            "huggingface_hub",
+            SimpleNamespace(HfApi=FakeHfApi),
+        )
+
+        svc = ModelService(model_dir=str(tmp_path))
+        svc._download_models_from_hf_if_needed()
+
+        assert package_init.read_text(encoding="utf-8") == "# package marker\n"
+        assert (tmp_path / "diabetes_model.pkl").read_bytes() == b"downloaded-model"
+        assert "local_dir_use_symlinks" not in download_kwargs
 
 
 # ── Health Check ─────────────────────────────────────────────────────

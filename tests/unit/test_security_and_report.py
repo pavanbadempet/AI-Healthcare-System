@@ -69,6 +69,7 @@ def client(db_session):
 
 def test_rate_limiter_allows_requests_under_limit():
     limiter = security.RateLimiter(requests_per_minute=5)
+    limiter.redis_available = False
     mock_req = MagicMock()
     # Should not raise for first 5 requests
     for _ in range(5):
@@ -77,6 +78,7 @@ def test_rate_limiter_allows_requests_under_limit():
 
 def test_rate_limiter_raises_429_when_limit_exceeded():
     limiter = security.RateLimiter(requests_per_minute=3)
+    limiter.redis_available = False
     mock_req = MagicMock()
     for _ in range(3):
         limiter.check(mock_req, "user:test2")
@@ -87,6 +89,7 @@ def test_rate_limiter_raises_429_when_limit_exceeded():
 
 def test_rate_limiter_tracks_separate_identifiers_independently():
     limiter = security.RateLimiter(requests_per_minute=2)
+    limiter.redis_available = False
     mock_req = MagicMock()
     limiter.check(mock_req, "user:a")
     limiter.check(mock_req, "user:a")
@@ -97,6 +100,7 @@ def test_rate_limiter_tracks_separate_identifiers_independently():
 def test_rate_limiter_cleans_up_old_entries():
     import time
     limiter = security.RateLimiter(requests_per_minute=10)
+    limiter.redis_available = False
     mock_req = MagicMock()
     # Fill storage above threshold to trigger cleanup
     for i in range(1010):
@@ -111,6 +115,7 @@ def test_rate_limiter_cleans_up_old_entries():
 def test_rate_limiter_sliding_window_resets_after_60s():
     import time
     limiter = security.RateLimiter(requests_per_minute=2)
+    limiter.redis_available = False
     mock_req = MagicMock()
     # Pre-populate with timestamps older than 60 seconds
     limiter.storage["user:old"] = [time.time() - 61, time.time() - 62]

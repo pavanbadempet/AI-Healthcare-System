@@ -155,18 +155,26 @@ _CONCEPTS: dict[tuple[str, str], TerminologyConcept] = {
 }
 
 
-def _canonical_system(system: str) -> str | None:
-    return SYSTEM_ALIASES.get(system.strip().lower())
+def _canonical_system(system: Any) -> str | None:
+    if system is None:
+        return None
+    return SYSTEM_ALIASES.get(str(system).strip().lower())
 
 
-def _normalize_code(system: str, code: str) -> str:
-    normalized = code.strip()
+def _normalize_code(system: str, code: Any) -> str:
+    if code is None:
+        return ""
+    if isinstance(code, float) and code.is_integer():
+        code = int(code)
+    normalized = str(code).strip()
     if system == ICD10_CM_SYSTEM:
         return normalized.upper()
     return normalized
 
 
-def lookup_code(system: str, code: str) -> dict[str, Any] | None:
+def lookup_code(system: Any, code: Any) -> dict[str, Any] | None:
+    if system is None or code is None:
+        return None
     canonical_system = _canonical_system(system)
     if canonical_system is None:
         return None

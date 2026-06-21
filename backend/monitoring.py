@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -295,6 +295,7 @@ def _signal_to_dict(signal: models.MonitoringSignal) -> dict[str, Any]:
 @router.post("/vitals", response_model=schemas.VitalSubmissionResponse)
 def submit_vitals(
     vital: schemas.VitalObservationCreate,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(auth.get_current_user),
 ):
@@ -345,6 +346,20 @@ def submit_vitals(
     db.refresh(db_vital)
     for signal in signals:
         db.refresh(signal)
+
+    # Publish VITALS_RECORDED event via BackgroundTasks
+    from .event_bus import event_bus
+    payload = {
+        "patient_id": db_vital.patient_id,
+        "heart_rate": db_vital.heart_rate,
+        "systolic_bp": db_vital.systolic_bp,
+        "diastolic_bp": db_vital.diastolic_bp,
+        "spo2": db_vital.spo2,
+        "temperature_c": db_vital.temperature_c,
+        "respiratory_rate": db_vital.respiratory_rate,
+    }
+    background_tasks.add_task(event_bus.publish, "VITALS_RECORDED", payload)
+
     audit.record_audit_event(
         db,
         actor_user_id=current_user.id,
