@@ -414,6 +414,17 @@ async def agent_stream_endpoint(
                                     status="Scheduled"
                                 )
                                 db.add(new_appt)
+
+                                if screen_res:
+                                    import json
+                                    db_record = models.HealthRecord(
+                                        user_id=current_user.id,
+                                        record_type=screen_res["model_name"],
+                                        data=json.dumps(screen_res.get("input_data", {})),
+                                        prediction=f"{screen_res['risk_level']} Risk ({screen_res['confidence']}%)"
+                                    )
+                                    db.add(db_record)
+
                                 db.commit()
                                 db.refresh(new_appt)
 
