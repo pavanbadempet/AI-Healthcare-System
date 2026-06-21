@@ -45,6 +45,8 @@ export default function ProfileDropdown({ user, logout, adminLabel }: ProfileDro
           onClick={() => setProfileOpen(!profileOpen)}
           className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/[0.02] border border-[var(--border)] hover:bg-white/[0.05] hover:border-[var(--border-focus)] transition-all cursor-pointer"
           aria-label={`Profile: ${displayName}`}
+          aria-expanded={profileOpen}
+          aria-haspopup="true"
         >
           <div className="w-5.5 h-5.5 rounded-md bg-[var(--accent-muted)] border border-[var(--accent-border)] flex items-center justify-center text-[var(--accent)] font-bold text-[10px]">
             {initial}

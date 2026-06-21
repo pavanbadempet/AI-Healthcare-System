@@ -40,6 +40,8 @@ export default function LanguageSelector({ language, setLanguage }: LanguageSele
           onClick={() => setLanguageOpen(!languageOpen)}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-white/[0.02] border border-[var(--border)] hover:bg-white/[0.05] hover:border-[var(--border-focus)] transition-all cursor-pointer text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
           aria-label="Select Language"
+          aria-expanded={languageOpen}
+          aria-haspopup="true"
         >
           <Globe size={13} aria-hidden="true" />
           <span className="hidden sm:inline text-[9px] font-bold uppercase tracking-wider">

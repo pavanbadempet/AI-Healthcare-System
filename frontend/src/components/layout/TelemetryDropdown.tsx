@@ -39,6 +39,8 @@ export default function TelemetryDropdown() {
           onClick={() => setTelemetryOpen(!telemetryOpen)}
           className="status-badge status-badge-success flex items-center gap-1 px-2.5 py-1 rounded-full text-[9px] cursor-pointer hover:bg-[var(--success-muted)] border-[var(--success-border)] transition-colors font-bold uppercase"
           aria-label="Toggle system telemetry details"
+          aria-expanded={telemetryOpen}
+          aria-haspopup="true"
         >
           <span className="w-1.5 h-1.5 bg-[var(--success)] rounded-full animate-pulse" />
           <span className="hidden sm:inline">Telemetry</span>
