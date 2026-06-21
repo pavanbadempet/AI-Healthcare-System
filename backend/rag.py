@@ -149,6 +149,56 @@ def _metadata_matches_filter(metadata: Dict[str, Any], filter_meta: Dict[str, An
     return True
 
 
+class LocalitySensitiveHash:
+    """
+    Locality-Sensitive Hashing (LSH) for fast Approximate Nearest Neighbor (ANN) search.
+    Partitions high-dimensional spaces using random projection hyperplanes.
+    """
+    def __init__(self, num_tables: int = 5, hash_size: int = 6):
+        self.num_tables = num_tables
+        self.hash_size = hash_size
+        self.dim: Optional[int] = None
+        self.tables: List[Dict[str, Any]] = []
+
+    def _init_tables(self, dim: int) -> None:
+        self.dim = dim
+        self.tables = []
+        from collections import defaultdict
+        rng = np.random.RandomState(42)
+        for _ in range(self.num_tables):
+            planes = rng.normal(0, 1, (self.hash_size, dim))
+            self.tables.append({
+                "planes": planes,
+                "buckets": defaultdict(list)
+            })
+
+    def _hash(self, planes: np.ndarray, vector: np.ndarray) -> str:
+        projection = np.dot(planes, vector)
+        bits = (projection > 0).astype(int)
+        return "".join(map(str, bits))
+
+    def index(self, record_id: str, vector: np.ndarray) -> None:
+        if self.dim is None:
+            self._init_tables(len(vector))
+        for table in self.tables:
+            hash_val = self._hash(table["planes"], vector)
+            if record_id not in table["buckets"][hash_val]:
+                table["buckets"][hash_val].append(record_id)
+
+    def query(self, query_vector: np.ndarray) -> set[str]:
+        if self.dim is None:
+            return set()
+        candidates = set()
+        for table in self.tables:
+            hash_val = self._hash(table["planes"], query_vector)
+            candidates.update(table["buckets"][hash_val])
+        return candidates
+
+    def clear(self) -> None:
+        self.dim = None
+        self.tables = []
+
+
 class SimpleVectorStore(VectorStoreBackend):
     """
     Persistent vector store using JSON + Scikit-Learn cosine similarity.
@@ -161,6 +211,7 @@ class SimpleVectorStore(VectorStoreBackend):
         self.metadatas: List[Dict[str, Any]] = []
         self.vectors: List[List[float]] = []
         self.ids: List[str] = []
+        self.lsh = LocalitySensitiveHash()
         self.load()
 
     def load(self) -> None:
@@ -173,7 +224,13 @@ class SimpleVectorStore(VectorStoreBackend):
                 self.metadatas = data.get("metadatas", []) or []
                 self.vectors = data.get("vectors", []) or []
                 self.ids = data.get("ids", []) or []
-                logger.info(f"Loaded Vector Store: {len(self.ids)} records.")
+                
+                # Re-index LSH
+                self.lsh.clear()
+                for record_id, vec in zip(self.ids, self.vectors):
+                    self.lsh.index(record_id, np.array(vec))
+                
+                logger.info(f"Loaded Vector Store: {len(self.ids)} records and indexed LSH.")
                 return
             except Exception:
                 logger.error("Failed to load vector store JSON")
@@ -190,6 +247,12 @@ class SimpleVectorStore(VectorStoreBackend):
                 self.vectors = data.get("vectors", []) or []
                 self.ids = data.get("ids", []) or []
                 self.save()
+                
+                # Re-index LSH
+                self.lsh.clear()
+                for record_id, vec in zip(self.ids, self.vectors):
+                    self.lsh.index(record_id, np.array(vec))
+                
                 logger.warning("Migrated legacy pickle vector store to JSON. Disable ALLOW_PICKLE_MIGRATION after first run.")
             except Exception:
                 logger.error("Failed to migrate legacy pickle vector store")
@@ -230,6 +293,8 @@ class SimpleVectorStore(VectorStoreBackend):
             self.vectors.append(vector)
             self.ids.append(record_id)
 
+        # Index in LSH
+        self.lsh.index(record_id, np.array(vector))
         self.save()
 
     def delete(self, record_id: str) -> bool:
@@ -240,6 +305,12 @@ class SimpleVectorStore(VectorStoreBackend):
             self.metadatas.pop(idx)
             self.vectors.pop(idx)
             self.ids.pop(idx)
+            
+            # Re-index LSH
+            self.lsh.clear()
+            for rid, vec in zip(self.ids, self.vectors):
+                self.lsh.index(rid, np.array(vec))
+                
             self.save()
             return True
         return False
@@ -249,12 +320,34 @@ class SimpleVectorStore(VectorStoreBackend):
         if not self.vectors:
             return []
 
-        query_vector = get_query_embedding(query)
+        if len(self.ids) != len(self.vectors):
+            self.ids = [f"auto_id_{i}" for i in range(len(self.vectors))]
+            self.lsh.clear()
+            for record_id, vec in zip(self.ids, self.vectors):
+                self.lsh.index(record_id, np.array(vec))
 
-        vec_matrix = np.array(self.vectors)
+        query_vector = get_query_embedding(query)
         q_vec = np.array([query_vector])
 
-        # Cosine similarity
+        # Hashing and Candidate Pruning (LSH ANN search)
+        use_lsh = len(self.ids) > 10
+        candidates = set()
+        if use_lsh:
+            candidates = self.lsh.query(np.array(query_vector))
+
+        id_to_idx = {rid: i for i, rid in enumerate(self.ids)}
+        if use_lsh and candidates:
+            indices_to_scan = [id_to_idx[cid] for cid in candidates if cid in id_to_idx]
+        else:
+            indices_to_scan = list(range(len(self.ids)))
+
+        if not indices_to_scan:
+            return []
+
+        candidate_vectors = [self.vectors[idx] for idx in indices_to_scan]
+        vec_matrix = np.array(candidate_vectors)
+
+        # Cosine similarity on subset
         sim_scores = cosine_similarity(q_vec, vec_matrix)[0]
         sorted_indices = sim_scores.argsort()[::-1]
 
@@ -262,16 +355,17 @@ class SimpleVectorStore(VectorStoreBackend):
         count = 0
 
         for idx in sorted_indices:
+            original_idx = indices_to_scan[idx]
             if sim_scores[idx] <= 0.0:
                 break
 
             # Apply metadata filter
             match = True
-            if filter_meta and not _metadata_matches_filter(self.metadatas[idx], filter_meta):
+            if filter_meta and not _metadata_matches_filter(self.metadatas[original_idx], filter_meta):
                 match = False
 
             if match:
-                results.append(self.documents[idx])
+                results.append(self.documents[original_idx])
                 count += 1
                 if count >= k:
                     break
@@ -288,9 +382,32 @@ class SimpleVectorStore(VectorStoreBackend):
         if not self.vectors:
             return []
 
+        if len(self.ids) != len(self.vectors):
+            self.ids = [f"auto_id_{i}" for i in range(len(self.vectors))]
+            self.lsh.clear()
+            for record_id, vec in zip(self.ids, self.vectors):
+                self.lsh.index(record_id, np.array(vec))
+
         query_vector = get_query_embedding(query)
-        vec_matrix = np.array(self.vectors)
         q_vec = np.array([query_vector])
+
+        # Hashing and Candidate Pruning (LSH ANN search)
+        use_lsh = len(self.ids) > 10
+        candidates = set()
+        if use_lsh:
+            candidates = self.lsh.query(np.array(query_vector))
+
+        id_to_idx = {rid: i for i, rid in enumerate(self.ids)}
+        if use_lsh and candidates:
+            indices_to_scan = [id_to_idx[cid] for cid in candidates if cid in id_to_idx]
+        else:
+            indices_to_scan = list(range(len(self.ids)))
+
+        if not indices_to_scan:
+            return []
+
+        candidate_vectors = [self.vectors[idx] for idx in indices_to_scan]
+        vec_matrix = np.array(candidate_vectors)
 
         sim_scores = cosine_similarity(q_vec, vec_matrix)[0]
         sorted_indices = sim_scores.argsort()[::-1]
@@ -299,14 +416,15 @@ class SimpleVectorStore(VectorStoreBackend):
         count = 0
 
         for idx in sorted_indices:
+            original_idx = indices_to_scan[idx]
             if sim_scores[idx] <= 0.0:
                 break
-            if filter_meta and not _metadata_matches_filter(self.metadatas[idx], filter_meta):
+            if filter_meta and not _metadata_matches_filter(self.metadatas[original_idx], filter_meta):
                 continue
             results.append({
-                "text": self.documents[idx],
-                "metadata": self.metadatas[idx],
-                "id": self.ids[idx],
+                "text": self.documents[original_idx],
+                "metadata": self.metadatas[original_idx],
+                "id": self.ids[original_idx],
                 "score": float(sim_scores[idx]),
             })
             count += 1
