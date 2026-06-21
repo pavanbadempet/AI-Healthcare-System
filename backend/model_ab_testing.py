@@ -7,11 +7,11 @@ canary releases, and shadow model configurations.
 
 from __future__ import annotations
 
-import logging
 import hashlib
 import json
+import logging
 import threading
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -70,7 +70,7 @@ class ModelABTestManager:
                     if exp_dict.get("end_time"):
                         exp_dict["end_time"] = datetime.fromisoformat(exp_dict["end_time"])
                     self._experiments[exp_id] = ABTestConfig(**exp_dict)
-            
+
             cached_outcomes = cache.get("ab_testing_outcomes")
             if cached_outcomes:
                 outcomes_raw = json.loads(cached_outcomes)
@@ -92,7 +92,7 @@ class ModelABTestManager:
         """Persists current experiment state to Redis/cache."""
         try:
             exp_serialized = {
-                k: {**asdict(v), "start_time": v.start_time.isoformat(), 
+                k: {**asdict(v), "start_time": v.start_time.isoformat(),
                     "end_time": v.end_time.isoformat() if v.end_time else None}
                 for k, v in self._experiments.items()
             }
@@ -135,7 +135,7 @@ class ModelABTestManager:
 
     def route_prediction(self, patient_data: Dict[str, Any], experiment_id: str) -> str:
         """Routes a prediction request for a given patient to either Model A or Model B.
-        
+
         Uses a deterministic hash of user/patient identifier to ensure sticky routing.
         """
         with self._lock:

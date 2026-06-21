@@ -2,13 +2,14 @@ import logging
 import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
-from sqlalchemy.orm import Session
-from sqlalchemy import or_
 
-from .. import core_ai, models, schemas, email_service, auth, fhir, rag
-from ..prompt_registry import get_prompt
+from sqlalchemy import or_
+from sqlalchemy.orm import Session
+
+from .. import core_ai, email_service, fhir, models, rag
 from ..facility_scope import users_share_facility_context
 from ..model_service import model_service
+from ..prompt_registry import get_prompt
 
 logger = logging.getLogger(__name__)
 

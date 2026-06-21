@@ -37,7 +37,7 @@ class UserCreate(BaseModel):
             born = date.fromisoformat(v)
         except ValueError:
             raise ValueError("Date of birth must be in YYYY-MM-DD format")
-        
+
         if born > date.today():
             raise ValueError("Date of birth cannot be in the future")
         if born.year < 1900:
@@ -97,7 +97,7 @@ class UserProfileUpdate(BaseModel):
             born = date.fromisoformat(v)
         except ValueError:
             raise ValueError("Date of birth must be in YYYY-MM-DD format")
-        
+
         if born > date.today():
             raise ValueError("Date of birth cannot be in the future")
         if born.year < 1900:

@@ -1,6 +1,8 @@
 """Data governance domain models: schema contracts, violations, data catalog, and dataset lineage."""
 from datetime import datetime, timezone
-from sqlalchemy import Column, DateTime, Integer, String, Text, ForeignKey, JSON
+
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String, Text
+
 from ..database import Base
 
 

@@ -154,13 +154,13 @@ def get_admin_stats(
     """Get high-level system statistics."""
     facility_id = admin.facility_id or "global"
     cache_key = f"dashboard_statistics:{facility_id}"
-    
+
     from backend.cache_service import cache
     try:
         cached_stats = cache.get(cache_key)
         if cached_stats is not None:
             return cached_stats
-    except Exception as e:
+    except Exception:
         # Import logger at runtime if needed, but admin.py already has a logger defined at module level
         pass
 

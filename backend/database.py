@@ -135,7 +135,8 @@ def fallback_to_memory():
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-from sqlalchemy import Column, Boolean, DateTime
+from sqlalchemy import Boolean, Column, DateTime
+
 
 class SoftDeleteMixin(object):
     is_deleted = Column(Boolean, default=False, nullable=False, index=True)

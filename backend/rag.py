@@ -229,12 +229,12 @@ class SimpleVectorStore(VectorStoreBackend):
                 self.vectors = data.get("vectors", []) or []
                 self.ids = data.get("ids", []) or []
                 self.id_to_idx = {rid: i for i, rid in enumerate(self.ids)}
-                
+
                 # Re-index LSH
                 self.lsh.clear()
                 for record_id, vec in zip(self.ids, self.vectors):
                     self.lsh.index(record_id, np.array(vec))
-                
+
                 logger.info(f"Loaded Vector Store: {len(self.ids)} records and indexed LSH.")
                 return
             except Exception:
@@ -253,12 +253,12 @@ class SimpleVectorStore(VectorStoreBackend):
                 self.ids = data.get("ids", []) or []
                 self.id_to_idx = {rid: i for i, rid in enumerate(self.ids)}
                 self.save()
-                
+
                 # Re-index LSH
                 self.lsh.clear()
                 for record_id, vec in zip(self.ids, self.vectors):
                     self.lsh.index(record_id, np.array(vec))
-                
+
                 logger.warning("Migrated legacy pickle vector store to JSON. Disable ALLOW_PICKLE_MIGRATION after first run.")
             except Exception:
                 logger.error("Failed to migrate legacy pickle vector store")
@@ -313,15 +313,15 @@ class SimpleVectorStore(VectorStoreBackend):
             self.metadatas.pop(idx)
             self.vectors.pop(idx)
             self.ids.pop(idx)
-            
+
             # Rebuild index map because indices shifted
             self.id_to_idx = {rid: i for i, rid in enumerate(self.ids)}
-            
+
             # Re-index LSH
             self.lsh.clear()
             for rid, vec in zip(self.ids, self.vectors):
                 self.lsh.index(rid, np.array(vec))
-                
+
             self.save()
             return True
         return False
@@ -330,7 +330,7 @@ class SimpleVectorStore(VectorStoreBackend):
         """Calculate hybrid relevance score combining vector similarity and exact keyword match."""
         query_words = set(query.lower().split())
         doc_text_lower = document_text.lower()
-        
+
         # Exclude common stop words and short query terms
         stop_words = {"a", "an", "the", "and", "or", "but", "is", "are", "was", "were", "to", "of", "in", "on", "at", "for"}
         filtered_query = {w for w in query_words if w not in stop_words and len(w) > 2}
