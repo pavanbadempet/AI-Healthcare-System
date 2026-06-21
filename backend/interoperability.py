@@ -771,6 +771,14 @@ def record_abdm_consent_callback(
     db.refresh(event)
     if consent is not None:
         db.refresh(consent)
+
+    if normalized.get("status") == "GRANTED" and patient is not None:
+        try:
+            from .agents.scheduling_agent import SchedulingAgent
+            agent = SchedulingAgent(db, patient)
+            agent.prefetch_and_index_history()
+        except Exception as e:
+            logger.error("Failed to automatically prefetch patient history on ABDM consent callback: %s", e)
     audit.record_audit_event(
         db,
         actor_user_id=current_user.id,

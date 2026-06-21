@@ -141,7 +141,11 @@ export {
   getAppointments,
   bookAppointment,
   getDoctors,
+  chatWithCASA,
+  streamCASA,
   type PaymentOrder,
   type PaymentVerification,
   type Appointment,
+  type CASAMessage,
+  type CASAChatResponse,
 } from './apiBilling';
