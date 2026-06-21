@@ -154,13 +154,13 @@ def get_admin_stats(
     """Get high-level system statistics."""
     facility_id = admin.facility_id or "global"
     cache_key = f"dashboard_statistics:{facility_id}"
-    
+
     from backend.cache_service import cache
     try:
         cached_stats = cache.get(cache_key)
         if cached_stats is not None:
             return cached_stats
-    except Exception as e:
+    except Exception:
         # Import logger at runtime if needed, but admin.py already has a logger defined at module level
         pass
 
@@ -228,6 +228,130 @@ def get_model_cards(
 ) -> Dict:
     """Return admin-visible model and dataset evidence cards."""
     return model_cards.registry_response()
+
+
+@router.get("/attribution-drift")
+def get_attribution_drift_report(
+    db: Session = Depends(database.get_db),
+    admin: models.User = Depends(get_current_admin),
+) -> Dict:
+    """Return a model feature attribution drift analysis report compared to baseline profiles."""
+    import numpy as np
+
+    from .models import DbFeatureAttributionLog
+
+    # Define baseline feature importance dictionaries (e.g. key: baseline_shap_weight)
+    # These represent the baseline training SHAP profiles for our models.
+    baselines = {
+        "kidney": {
+            "age": 0.05, "bp": 0.08, "sg": 0.15, "al": 0.20, "su": 0.02,
+            "rbc": 0.05, "pc": 0.05, "pcc": 0.02, "ba": 0.01, "bgr": 0.08,
+            "bu": 0.06, "sc": 0.22, "sod": 0.04, "pot": 0.03, "hemo": 0.12,
+            "pcv": 0.08, "wc": 0.04, "rc": 0.05, "htn": 0.10, "dm": 0.08,
+            "cad": 0.02, "appet": 0.03, "pe": 0.02, "ane": 0.01
+        },
+        "lungs": {
+            "age": 0.08, "gender": 0.02, "smoker": 0.25, "yellow_fingers": 0.05,
+            "anxiety": 0.04, "peer_pressure": 0.03, "chronic_disease": 0.12,
+            "fatigue": 0.08, "allergy": 0.15, "wheezing": 0.18,
+            "alcohol_consuming": 0.05, "coughing": 0.22, "shortness_of_breath": 0.20,
+            "swallowing_difficulty": 0.10, "chest_pain": 0.18
+        },
+        "diabetes": {
+            "pregnancies": 0.05, "glucose": 0.35, "bloodpressure": 0.08,
+            "skinthickness": 0.03, "insulin": 0.10, "bmi": 0.22,
+            "diabetespedigreefunction": 0.15, "age": 0.12
+        },
+        "heart": {
+            "age": 0.10, "sex": 0.05, "cp": 0.22, "trestbps": 0.08, "chol": 0.08,
+            "fbs": 0.02, "restecg": 0.03, "thalach": 0.18, "exang": 0.12,
+            "oldpeak": 0.15, "slope": 0.08, "ca": 0.18, "thal": 0.20
+        },
+        "liver": {
+            "age": 0.08, "gender": 0.02, "total_bilirubin": 0.18, "direct_bilirubin": 0.12,
+            "alkaline_phosphotase": 0.10, "alamine_aminotransferase": 0.22,
+            "aspartate_aminotransferase": 0.20, "total_proteins": 0.05,
+            "albumin": 0.08, "albumin_and_globulin_ratio": 0.10
+        }
+    }
+
+    report = {}
+
+    for model_name, baseline_dict in baselines.items():
+        # Query logs for this model
+        logs = db.query(DbFeatureAttributionLog).filter(
+            DbFeatureAttributionLog.model_name == model_name
+        ).order_by(DbFeatureAttributionLog.timestamp.desc()).limit(100).all()
+
+        if not logs:
+            report[model_name] = {
+                "status": "Insufficient Data",
+                "drift_score": 0.0,
+                "message": "No production predictions logged yet for this model.",
+                "features_logged": 0
+            }
+            continue
+
+        # Compute mean absolute attribution for each feature in logged production data
+        prod_attributions = {}
+        for feature in baseline_dict.keys():
+            vals = []
+            for log in logs:
+                attr_dict = log.attributions or {}
+                val = attr_dict.get(feature)
+                if val is not None:
+                    vals.append(abs(float(val)))
+
+            if vals:
+                prod_attributions[feature] = float(np.mean(vals))
+            else:
+                prod_attributions[feature] = 0.0
+
+        # Convert to vectors for similarity calculation
+        features = list(baseline_dict.keys())
+        base_vec = np.array([baseline_dict[f] for f in features])
+        prod_vec = np.array([prod_attributions[f] for f in features])
+
+        # Normalize baseline to represent relative importances
+        sum_base = np.sum(base_vec)
+        if sum_base > 0:
+            base_vec = base_vec / sum_base
+
+        # Normalize production relative importances
+        sum_prod = np.sum(prod_vec)
+        if sum_prod > 0:
+            prod_vec = prod_vec / sum_prod
+
+        # Compute cosine similarity
+        norm_b = np.linalg.norm(base_vec)
+        norm_p = np.linalg.norm(prod_vec)
+
+        if norm_b > 0 and norm_p > 0:
+            cosine_sim = np.dot(base_vec, prod_vec) / (norm_b * norm_p)
+            drift_score = float(np.round(1.0 - cosine_sim, 4))
+        else:
+            drift_score = 1.0
+
+        # Determine status
+        if drift_score < 0.15:
+            status = "Low Drift"
+        elif drift_score < 0.25:
+            status = "Moderate Drift Warning"
+        else:
+            status = "High Drift Alert"
+
+        report[model_name] = {
+            "status": status,
+            "drift_score": drift_score,
+            "sample_count": len(logs),
+            "production_relative_attributions": {f: float(np.round(prod_attributions[f], 4)) for f in features},
+            "baseline_relative_attributions": {f: float(np.round(baseline_dict[f], 4)) for f in features}
+        }
+
+    return {
+        "status": "success",
+        "models": report
+    }
 
 
 @router.get("/data-quality")
@@ -476,3 +600,58 @@ def delete_user(
         details={"resource_type": "user", "resource_id": deleted_user_id},
     )
     return {"message": "User deleted successfully"}
+
+
+@router.get("/semantic-cache")
+def get_semantic_cache_stats(
+    admin: models.User = Depends(get_current_admin)
+) -> Dict:
+    """Retrieve runtime telemetry and entry auditing metadata from the LLM semantic cache."""
+    from .core_ai import semantic_cache
+    return {
+        "status": "success",
+        "stats": semantic_cache.get_stats()
+    }
+
+
+@router.delete("/semantic-cache")
+def clear_semantic_cache(
+    admin: models.User = Depends(get_current_admin)
+) -> Dict:
+    """Evict all items in the semantic cache to handle stale narratives or policy updates."""
+    from .core_ai import semantic_cache
+    semantic_cache.clear()
+    return {
+        "status": "success",
+        "message": "Semantic cache evicted successfully"
+    }
+
+
+@router.post("/federated-sim")
+def run_federated_simulation(
+    epochs: int = Query(10, ge=1, le=50),
+    epsilon: float = Query(1.5, gt=0.0, le=10.0),
+    admin: models.User = Depends(get_current_admin)
+) -> Dict:
+    """Run the federated learning simulation with custom epochs and privacy budget epsilon."""
+    import os
+    import sys
+
+    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    if root_dir not in sys.path:
+        sys.path.insert(0, root_dir)
+
+    try:
+        from scripts.training.run_federated_sim import run_simulation
+        results = run_simulation(epochs=epochs, epsilon=epsilon)
+        return {
+            "status": "success",
+            "results": results
+        }
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Federated simulation failed: {str(e)}"
+        )
+
+

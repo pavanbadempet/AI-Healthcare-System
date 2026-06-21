@@ -8,6 +8,7 @@ import {
   type Appointment, 
   type CASAMessage 
 } from "@/lib/api";
+import { fetchRecommendedSpecialists, bookSpecialCareAppointment } from "@/lib/apiIntelligence";
 import { useAuthStore } from "@/lib/auth";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -44,6 +45,10 @@ export default function TelemedicinePage() {
   const [timeStr, setTimeStr] = useState("");
   const [notes, setNotes] = useState("");
 
+  // Special care preferences (Itch 6)
+  const [requestFemale, setRequestFemale] = useState(false);
+  const [homeVisitVan, setHomeVisitVan] = useState(false);
+
   // CASA Agent states
   const [messages, setMessages] = useState<CASAMessage[]>([
     {
@@ -64,6 +69,23 @@ export default function TelemedicinePage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const audioIntervalRef = useRef<any>(null);
 
+  // Specialist matching recommendations (Itch 7)
+  const [recommendedSpecialties, setRecommendedSpecialties] = useState<any[]>([]);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+
+  const loadRecommendations = async () => {
+    if (!user?.id) return;
+    setLoadingRecommendations(true);
+    try {
+      const data = await fetchRecommendedSpecialists(user.id);
+      setRecommendedSpecialties(data.recommended_specialties || []);
+    } catch (err) {
+      console.error("Failed to load recommended specialties:", err);
+    } finally {
+      setLoadingRecommendations(false);
+    }
+  };
+
   useEffect(() => {
     Promise.all([getAppointments(), getDoctors()])
       .then(([apps, docs]) => {
@@ -72,10 +94,14 @@ export default function TelemedicinePage() {
       })
       .catch(console.error)
       .finally(() => setLoading(false));
-  }, []);
+
+    if (user?.id) {
+      void loadRecommendations();
+    }
+  }, [user?.id]);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView?.({ behavior: "smooth" });
   }, [messages, isAgentTyping]);
 
   // Simulate audio visualization when audio mode is active
@@ -106,16 +132,32 @@ export default function TelemedicinePage() {
     if (!selectedDoctor || !dateStr || !timeStr) return;
     setBooking(true);
     try {
-      await bookAppointment({
-        doctor_id: parseInt(selectedDoctor),
-        appointment_date: `${dateStr}T${timeStr}:00`,
-        notes
-      });
+      if (requestFemale || homeVisitVan) {
+        const doctor = doctors.find(d => d.id === parseInt(selectedDoctor));
+        const specialist = doctor ? doctor.specialization : "General Medicine";
+        await bookSpecialCareAppointment({
+          patient_id: user?.id || 1,
+          doctor_id: parseInt(selectedDoctor),
+          specialist,
+          date_time: `${dateStr}T${timeStr}:00`,
+          reason: notes || "Manual special care booking",
+          request_female_clinician: requestFemale,
+          home_visit_van: homeVisitVan
+        });
+      } else {
+        await bookAppointment({
+          doctor_id: parseInt(selectedDoctor),
+          appointment_date: `${dateStr}T${timeStr}:00`,
+          notes
+        });
+      }
       await refreshAppointments();
       setSelectedDoctor("");
       setDateStr("");
       setTimeStr("");
       setNotes("");
+      setRequestFemale(false);
+      setHomeVisitVan(false);
     } catch (err) {
       console.error(err);
     } finally {
@@ -299,7 +341,36 @@ export default function TelemedicinePage() {
               </p>
             </motion.div>
           )}
-        </AnimatePresence>
+        </AnimatePresence>        {/* Recommended Specialists Panel (Itch 7) */}
+        {recommendedSpecialties.length > 0 && (
+          <div className="panel p-4 bg-gradient-to-r from-indigo-950/20 via-indigo-900/5 to-black/40 border border-indigo-500/20 rounded-xl space-y-3">
+            <div className="flex items-center gap-2 text-[var(--accent)] font-bold text-xs uppercase tracking-wider">
+              <Sparkles size={14} className="text-yellow-400 animate-pulse" />
+              AI Specialist Matcher Insights
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {recommendedSpecialties.map((spec: any, idx: number) => (
+                <div key={idx} className="p-3 rounded-lg bg-[rgba(255,255,255,0.01)] border border-[var(--border)] flex justify-between items-start">
+                  <div>
+                    <span className="text-xs font-bold text-[var(--text-primary)] uppercase">
+                      {spec.specialty} Specialist
+                    </span>
+                    <span className="text-[10px] text-[var(--text-secondary)] font-mono uppercase block mt-1 leading-normal">
+                      Reason: {spec.reason}
+                    </span>
+                  </div>
+                  <span className={`text-[9px] font-mono border px-1.5 py-0.5 rounded uppercase font-bold shrink-0 ${
+                    spec.priority?.toLowerCase() === 'high' 
+                      ? 'border-rose-500/30 bg-rose-500/10 text-rose-400' 
+                      : 'border-blue-500/30 bg-blue-500/10 text-blue-400'
+                  }`}>
+                    {spec.priority}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main left column: CASA Conversational scheduling & Active Encounters */}
@@ -595,6 +666,31 @@ export default function TelemedicinePage() {
                     className="input-clinical h-20 resize-none uppercase font-mono text-[10px]"
                     aria-label="Clinical notes for appointment"
                   />
+                </div>
+
+                {/* Special care preferences (Itch 6) */}
+                <div className="space-y-2 border-t border-[var(--border)] pt-3">
+                  <span className="section-label block">Special Care Preferences</span>
+                  <div className="flex flex-col gap-2">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-mono uppercase text-[var(--text-secondary)] select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={requestFemale}
+                        onChange={(e) => setRequestFemale(e.target.checked)}
+                        className="cursor-pointer accent-[var(--accent)]"
+                      />
+                      Prefer Female Clinician
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-mono uppercase text-[var(--text-secondary)] select-none">
+                      <input 
+                        type="checkbox" 
+                        checked={homeVisitVan}
+                        onChange={(e) => setHomeVisitVan(e.target.checked)}
+                        className="cursor-pointer accent-[var(--accent)]"
+                      />
+                      Mobile Clinic Van Home Visit
+                    </label>
+                  </div>
                 </div>
 
                 <button 

@@ -16,8 +16,9 @@ if hasattr(os, "add_dll_directory"):
     os.add_dll_directory = patched_add_dll_directory
 
 try:
-    import sklearn.utils._tags
     from unittest.mock import Mock
+
+    import sklearn.utils._tags
     orig_get_tags = sklearn.utils._tags.get_tags
     def patched_get_tags(estimator):
         if isinstance(estimator, Mock) or not hasattr(estimator, "__sklearn_tags__"):

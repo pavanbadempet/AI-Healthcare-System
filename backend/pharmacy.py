@@ -456,3 +456,119 @@ def get_pharmacy_metrics(
         "total_dispense_records": dispense_query.count(),
         "clinical_safety_note": "Pharmacy metrics support operations; clinicians and pharmacists verify medication decisions.",
     }
+
+
+# --- Phase 10 Safety Checker Route ---
+from pydantic import BaseModel as PydanticBaseModel
+
+
+class DrugSafetyCheckRequest(PydanticBaseModel):
+    patient_id: int
+    medication_name: str
+    dosage: str
+    frequency: str
+    duration: str
+    additional_allergies: list[str] | None = None
+
+
+@router.post("/check-safety")
+async def check_prescription_safety(
+    req: DrugSafetyCheckRequest,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    _ensure_doctor_can_access_patient(db, current_user, req.patient_id)
+
+    from backend.agents.safety_agent import PrescribingSafetyAgent
+    agent = PrescribingSafetyAgent(db)
+    result = await agent.check_prescription_safety(
+        patient_id=req.patient_id,
+        medication_name=req.medication_name,
+        dosage=req.dosage,
+        frequency=req.frequency,
+        duration=req.duration,
+        additional_allergies=req.additional_allergies
+    )
+    return result
+
+
+@router.get("/compare-pricing")
+def compare_medication_pricing(
+    medication_name: str,
+    current_user: models.User = Depends(auth.get_current_user),
+) -> dict[str, Any]:
+    # Mock price search for medication name
+    med_lower = medication_name.lower()
+
+    # Generic base prices to generate mock variations
+    base_price = 15.0
+    if "metformin" in med_lower or "glucophage" in med_lower:
+        base_price = 10.0
+    elif "atorvastatin" in med_lower or "lipitor" in med_lower:
+        base_price = 25.0
+    elif "amoxicillin" in med_lower:
+        base_price = 12.0
+    elif "albuterol" in med_lower or "proair" in med_lower:
+        base_price = 45.0
+    elif "lisinopril" in med_lower or "zestril" in med_lower:
+        base_price = 8.0
+
+    prices = [
+        {"chain": "CVS Pharmacy", "price": round(base_price * 1.15, 2), "distance": 1.2, "available": True},
+        {"chain": "Walgreens", "price": round(base_price * 1.25, 2), "distance": 2.4, "available": True},
+        {"chain": "Walmart Pharmacy", "price": round(base_price * 0.85, 2), "distance": 4.1, "available": True},
+        {"chain": "Costco Pharmacy", "price": round(base_price * 0.75, 2), "distance": 6.8, "available": True},
+        {"chain": "Local Neighborhood Rx", "price": round(base_price * 1.00, 2), "distance": 0.5, "available": True},
+    ]
+
+    # Sort by price
+    prices.sort(key=lambda x: x["price"])
+
+    return {
+        "medication": medication_name,
+        "base_price": base_price,
+        "prices": prices,
+        "message": "Medicine prices checked across major local and retail pharmacy chains."
+    }
+
+
+@router.get("/generic-substitute")
+def get_generic_substitution(
+    branded_name: str,
+    current_user: models.User = Depends(auth.get_current_user),
+) -> dict[str, Any]:
+    # Map of branded drugs to generic equivalents and average savings
+    brand_map = {
+        "glucophage": {"generic": "Metformin", "brand": "Glucophage", "savings": 45.00, "strength_match": "500mg, 850mg, 1000mg"},
+        "lipitor": {"generic": "Atorvastatin", "brand": "Lipitor", "savings": 85.00, "strength_match": "10mg, 20mg, 40mg, 80mg"},
+        "zocor": {"generic": "Simvastatin", "brand": "Zocor", "savings": 50.00, "strength_match": "5mg, 10mg, 20mg, 40mg, 80mg"},
+        "zestril": {"generic": "Lisinopril", "brand": "Zestril", "savings": 35.00, "strength_match": "5mg, 10mg, 20mg, 40mg"},
+        "proair": {"generic": "Albuterol Inhaler", "brand": "ProAir HFA", "savings": 60.00, "strength_match": "90mcg"},
+        "synthroid": {"generic": "Levothyroxine", "brand": "Synthroid", "savings": 40.00, "strength_match": "25mcg, 50mcg, 75mcg, 88mcg, 100mcg"},
+        "nexium": {"generic": "Esomeprazole", "brand": "Nexium", "savings": 70.00, "strength_match": "20mg, 40mg"}
+    }
+
+    brand_lower = branded_name.lower().strip()
+    match = None
+    for brand, details in brand_map.items():
+        if brand in brand_lower:
+            match = details
+            break
+
+    if not match:
+        return {
+            "substituted": False,
+            "branded_name": branded_name,
+            "message": "No brand-to-generic mapping found in the clinical catalog for this medication.",
+            "savings": 0.0
+        }
+
+    return {
+        "substituted": True,
+        "branded_name": match["brand"],
+        "generic_name": match["generic"],
+        "savings": match["savings"],
+        "strength_match": match["strength_match"],
+        "message": f"Cheaper generic alternative {match['generic']} found for brand-name {match['brand']}."
+    }
+

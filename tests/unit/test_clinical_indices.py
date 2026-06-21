@@ -1,4 +1,3 @@
-import pytest
 from backend.clinical_indices import (
     calculate_egfr_ckd_epi,
     calculate_fib4_index,

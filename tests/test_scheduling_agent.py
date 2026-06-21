@@ -1,11 +1,12 @@
-import pytest
-from unittest.mock import AsyncMock, patch, MagicMock
-from datetime import datetime, timedelta
-import json
 import uuid
+from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 from backend import models
 from backend.agents.scheduling_agent import SchedulingAgent
+
 
 @pytest.fixture
 def test_users(db_session):
@@ -273,6 +274,15 @@ async def test_agent_prefetch_and_rag_injection(mock_generate, db_session, test_
     patient = test_users["patient"]
     doctor = test_users["doctor"]
     agent = SchedulingAgent(db_session, patient)
+
+    # Add active ABDM consent to allow pre-fetching
+    consent = models.InteroperabilityConsent(
+        facility_id=patient.facility_id,
+        patient_id=patient.id,
+        status="active"
+    )
+    db_session.add(consent)
+    db_session.commit()
 
     # 1. Create past clinical records in the database
     # Encounter

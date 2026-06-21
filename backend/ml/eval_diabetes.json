@@ -1,52 +1,62 @@
 {
   "model_name": "diabetes",
-  "evaluated_at": "2026-06-18T15:59:01.454501+00:00",
-  "test_set_size": 50736,
+  "evaluated_at": "2026-06-21T17:43:50.327491+00:00",
+  "test_set_size": 6,
   "class_distribution": {
-    "0": 43739,
-    "1": 6997
+    "0": 1,
+    "1": 5
   },
-  "accuracy": 0.8674,
-  "auc_roc": 0.8295,
-  "sensitivity": 0.1646,
-  "specificity": 0.9799,
+  "accuracy": 0.1667,
+  "auc_roc": 0.5,
+  "sensitivity": 0.0,
+  "specificity": 1.0,
   "classification_report": {
-    "0.0": {
-      "precision": 0.8799868591257212,
-      "recall": 0.9798577928164796,
-      "f1-score": 0.9272408645420912,
-      "support": 43739.0
+    "0": {
+      "precision": 0.16666666666666666,
+      "recall": 1.0,
+      "f1-score": 0.2857142857142857,
+      "support": 1.0
     },
-    "1.0": {
-      "precision": 0.5666502705361535,
-      "recall": 0.16464198942403888,
-      "f1-score": 0.25514950166112954,
-      "support": 6997.0
+    "1": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 5.0
     },
     "macro avg": {
-      "precision": 0.7233185648309373,
-      "recall": 0.5722498911202593,
-      "f1-score": 0.5911951831016103,
-      "support": 50736.0
+      "precision": 0.08333333333333333,
+      "recall": 0.5,
+      "f1-score": 0.14285714285714285,
+      "support": 6.0
     },
     "weighted avg": {
-      "precision": 0.8367746210627834,
-      "recall": 0.8674314096499527,
-      "f1-score": 0.8345527680016053,
-      "support": 50736.0
+      "precision": 0.027777777777777776,
+      "recall": 0.16666666666666666,
+      "f1-score": 0.047619047619047616,
+      "support": 6.0
     }
   },
   "confusion_matrix": [
     [
-      42858,
-      881
+      1,
+      0
     ],
     [
-      5845,
-      1152
+      5,
+      0
     ]
   ],
-  "feature_importances": {},
+  "feature_importances": {
+    "hypertension": 0.0,
+    "high_chol": 0.0,
+    "bmi": 0.0,
+    "smoking_history": 0.0,
+    "heart_disease": 0.0,
+    "physical_activity": 0.0,
+    "general_health": 0.0,
+    "gender": 0.0,
+    "age_bucket": 0.0
+  },
   "n_features": 9,
   "feature_names": [
     "hypertension",

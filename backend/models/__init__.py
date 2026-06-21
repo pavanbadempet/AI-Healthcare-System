@@ -35,6 +35,7 @@ from .data_governance import (
     DbContractViolation,
     DbDatasetEntry,
     DbDatasetLineage,
+    DbFeatureAttributionLog,
     DbSchemaContract,
 )
 
@@ -117,6 +118,7 @@ __all__ = [
     "DbContractViolation",
     "DbDatasetEntry",
     "DbDatasetLineage",
+    "DbFeatureAttributionLog",
     # SMART on FHIR
     "SmartApp",
     "SmartLaunchContext",

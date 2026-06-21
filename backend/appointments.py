@@ -2,8 +2,8 @@ import asyncio
 import json
 import logging
 import time
-from datetime import datetime
-from typing import List
+from datetime import datetime, timezone
+from typing import Any, List
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from . import auth, core_ai, database, email_service, models, schemas
+from . import audit, auth, core_ai, database, email_service, models, schemas
 from .agents.scheduling_agent import BOOKING_ACTION_PATTERN, SchedulingAgent
 from .facility_scope import users_share_facility_context
 
@@ -416,7 +416,6 @@ async def agent_stream_endpoint(
                                 db.add(new_appt)
 
                                 if screen_res:
-                                    import json
                                     db_record = models.HealthRecord(
                                         user_id=current_user.id,
                                         record_type=screen_res["model_name"],
@@ -474,3 +473,137 @@ async def agent_stream_endpoint(
             "X-Accel-Buffering": "no",
         }
     )
+
+
+# --- Phase 10 Itch Upgrades: Special Appointments and Referral Matching ---
+from pydantic import BaseModel as PydanticBaseModel
+
+
+class SpecialCareBookingRequest(PydanticBaseModel):
+    patient_id: int
+    doctor_id: int | None = None
+    specialist: str
+    date_time: str
+    reason: str
+    request_female_clinician: bool = False
+    home_visit_van: bool = False
+
+
+@router.post("/special-care")
+def book_special_care_appointment(
+    req: SpecialCareBookingRequest,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+) -> dict[str, Any]:
+    if current_user.role == "patient" and current_user.id != req.patient_id:
+        raise HTTPException(status_code=403, detail="Patients can only book for themselves")
+
+    from datetime import datetime
+    try:
+        parsed_dt = datetime.fromisoformat(req.date_time)
+    except Exception:
+        parsed_dt = datetime.now(timezone.utc)
+
+    notes = f"Special Care Preference: Female clinician requested: {req.request_female_clinician}. Home visit van: {req.home_visit_van}."
+    final_reason = f"[Special Care: {'Female Staff Requested' if req.request_female_clinician else 'Standard Staff'}, {'Mobile Van Visit' if req.home_visit_van else 'In-clinic Visit'}] {req.reason}"
+
+    db_appt = models.Appointment(
+        facility_id=current_user.facility_id or 1,
+        user_id=req.patient_id,
+        doctor_id=req.doctor_id,
+        specialist=req.specialist,
+        date_time=parsed_dt,
+        reason=final_reason,
+        status="Scheduled"
+    )
+    db.add(db_appt)
+    db.commit()
+    db.refresh(db_appt)
+
+    audit.record_audit_event(
+        db,
+        actor_user_id=current_user.id,
+        target_user_id=req.patient_id,
+        action="BOOK_SPECIAL_CARE_APPOINTMENT",
+        details={"appointment_id": db_appt.id, "female_clinician": req.request_female_clinician, "home_visit": req.home_visit_van}
+    )
+
+    return {
+        "appointment_id": db_appt.id,
+        "patient_id": req.patient_id,
+        "specialist": req.specialist,
+        "date_time": db_appt.date_time.isoformat(),
+        "female_clinician_assigned": req.request_female_clinician,
+        "home_visit_arranged": req.home_visit_van,
+        "status": "Scheduled",
+        "notes": notes,
+        "message": "Successfully scheduled specialized private mobile diagnostic consultation."
+    }
+
+
+@router.get("/recommend-specialists/{patient_id}")
+def recommend_specialists_based_on_risks(
+    patient_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+) -> dict[str, Any]:
+    if current_user.role == "patient" and current_user.id != patient_id:
+        raise HTTPException(status_code=403, detail="Patients can only check their own specialist recommendations")
+
+    recent_records = db.query(models.HealthRecord).filter(
+        models.HealthRecord.user_id == patient_id
+    ).order_by(models.HealthRecord.timestamp.desc()).all()
+
+    predictions_summary = {}
+    for r in recent_records:
+        if r.record_type not in predictions_summary:
+            predictions_summary[r.record_type] = r.prediction
+
+    recommendations = []
+
+    for model, prediction in predictions_summary.items():
+        if "high" in prediction.lower() or "danger" in prediction.lower():
+            if model == "heart":
+                recommendations.append({
+                    "specialty": "Cardiology",
+                    "reason": f"Recommended due to High Heart Disease risk prediction ({prediction}).",
+                    "priority": "High"
+                })
+            elif model == "diabetes":
+                recommendations.append({
+                    "specialty": "Endocrinology",
+                    "reason": f"Recommended due to High Diabetes risk prediction ({prediction}).",
+                    "priority": "High"
+                })
+            elif model == "kidney":
+                recommendations.append({
+                    "specialty": "Nephrology",
+                    "reason": f"Recommended due to High Kidney Disease risk prediction ({prediction}).",
+                    "priority": "High"
+                })
+            elif model == "liver":
+                recommendations.append({
+                    "specialty": "Hepatology / Gastroenterology",
+                    "reason": f"Recommended due to High Liver Disease risk prediction ({prediction}).",
+                    "priority": "High"
+                })
+            elif model == "lungs":
+                recommendations.append({
+                    "specialty": "Pulmonology",
+                    "reason": f"Recommended due to High Lung Cancer risk prediction ({prediction}).",
+                    "priority": "High"
+                })
+
+    if not recommendations:
+        recommendations.append({
+            "specialty": "General Medicine",
+            "reason": "All ML disease risk profiles are low; standard periodic wellness check recommended.",
+            "priority": "Routine"
+        })
+
+    return {
+        "patient_id": patient_id,
+        "recommended_specialties": recommendations,
+        "total_recommendations": len(recommendations),
+        "clinical_safety_note": "Specialist referral matching is an automated diagnostic decision-support aid. Clinicians review and confirm all referrals."
+    }

@@ -68,6 +68,7 @@ class VitalObservationCreate(BaseModel):
     spo2: Optional[float] = None
     temperature_c: Optional[float] = None
     respiratory_rate: Optional[float] = None
+    blood_glucose: Optional[float] = None
     observed_at: Optional[datetime] = None
 
     @field_validator("heart_rate")
@@ -127,6 +128,7 @@ class VitalObservationResponse(BaseModel):
     spo2: Optional[float] = None
     temperature_c: Optional[float] = None
     respiratory_rate: Optional[float] = None
+    blood_glucose: Optional[float] = None
     observed_at: datetime
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)

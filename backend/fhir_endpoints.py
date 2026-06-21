@@ -310,3 +310,35 @@ def get_fhir_observations(
             })
 
     return fhir_obs_list
+
+
+@router.get("/AuditEvent", response_model=Dict[str, Any])
+def get_fhir_audit_events(
+    db: Session = Depends(database.get_db),
+    context: Dict[str, Any] = Depends(validate_fhir_token),
+) -> Dict[str, Any]:
+    """Retrieve system audit logs mapped to FHIR R4 AuditEvent resource bundles."""
+    user = context.get("user")
+    if context.get("smart") or not user or user.role not in ("doctor", "admin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions to access FHIR AuditEvent records"
+        )
+
+    logs = (
+        db.query(models.AuditLog)
+        .order_by(models.AuditLog.timestamp.desc())
+        .limit(100)
+        .all()
+    )
+
+    from .fhir import audit_event_resource, build_bundle
+    resources = []
+    for log in logs:
+        try:
+            resources.append(audit_event_resource(log))
+        except Exception:
+            continue
+
+    return build_bundle(resources)
+

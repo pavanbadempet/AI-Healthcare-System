@@ -1,6 +1,8 @@
 """Data governance domain models: schema contracts, violations, data catalog, and dataset lineage."""
 from datetime import datetime, timezone
-from sqlalchemy import Column, DateTime, Integer, String, Text, ForeignKey, JSON
+
+from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String, Text
+
 from ..database import Base
 
 
@@ -62,3 +64,15 @@ class DbDatasetLineage(Base):
     downstream = Column(JSON, nullable=False)  # List of downstream dataset_ids
     column_lineage = Column(JSON, nullable=True)  # Dict mapping target_col -> source dict
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+
+class DbFeatureAttributionLog(Base):
+    __tablename__ = "feature_attribution_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    model_name = Column(String, nullable=False, index=True)
+    model_version = Column(String, nullable=False)
+    features = Column(JSON, nullable=False)        # Dict of input features
+    attributions = Column(JSON, nullable=False)    # Dict of SHAP values
+    prediction_value = Column(Integer, nullable=False)
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)

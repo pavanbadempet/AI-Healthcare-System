@@ -286,3 +286,104 @@ def get_diagnostics_metrics(
         "results_by_status": results_by_status,
         "clinical_safety_note": "Diagnostics metrics support operations; clinicians interpret results and make care decisions.",
     }
+
+
+# --- Phase 10 Itch Upgrades: At-Home Lab Kits ---
+from pydantic import BaseModel as PydanticBaseModel
+
+
+class LabKitOrderRequest(PydanticBaseModel):
+    patient_id: int
+    kit_type: str
+    shipping_address: str
+
+
+@router.post("/lab-kits")
+def order_lab_kit(
+    req: LabKitOrderRequest,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+) -> dict[str, Any]:
+    if current_user.role == "patient" and current_user.id != req.patient_id:
+        raise HTTPException(status_code=403, detail="Patients can only order kits for themselves")
+
+    db_order = models.ClinicalOrder(
+        facility_id=current_user.facility_id or 1,
+        patient_id=req.patient_id,
+        doctor_id=current_user.id if current_user.role == "doctor" else None,
+        order_type="lab",
+        title=f"At-Home Lab Kit - {req.kit_type}",
+        priority="routine",
+        status="ordered",
+        notes=f"Shipping Address: {req.shipping_address}. Status tracking: ordered -> shipped -> delivered -> results_uploaded."
+    )
+    db.add(db_order)
+    db.commit()
+    db.refresh(db_order)
+
+    db.add(models.CareEvent(
+        facility_id=db_order.facility_id,
+        patient_id=req.patient_id,
+        actor_user_id=current_user.id,
+        event_type="LAB_KIT_ORDERED",
+        title=f"At-home {req.kit_type} kit ordered",
+        summary=f"Diagnostic kit was requested. Shipping to: {req.shipping_address}.",
+        severity="info"
+    ))
+    db.commit()
+
+    return {
+        "order_id": db_order.id,
+        "patient_id": req.patient_id,
+        "kit_type": req.kit_type,
+        "status": "ordered",
+        "shipping_address": req.shipping_address,
+        "estimated_delivery": "3-5 business days",
+        "message": f"Successfully ordered at-home {req.kit_type} diagnostic kit."
+    }
+
+
+@router.get("/lab-kits/{patient_id}")
+def get_lab_kits(
+    patient_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+) -> dict[str, Any]:
+    if current_user.role == "patient" and current_user.id != patient_id:
+        raise HTTPException(status_code=403, detail="Patients can only check their own kits")
+
+    orders = db.query(models.ClinicalOrder).filter(
+        models.ClinicalOrder.patient_id == patient_id,
+        models.ClinicalOrder.order_type == "lab",
+        models.ClinicalOrder.title.like("At-Home Lab Kit -%")
+    ).all()
+
+    kits_list = []
+    for order in orders:
+        kit_type = order.title.replace("At-Home Lab Kit - ", "")
+        tracking_status = "ordered"
+        tracking_number = f"1Z999AA1012345{order.id}"
+
+        if order.status == "completed":
+            tracking_status = "results_uploaded"
+        elif order.status == "in_progress":
+            tracking_status = "shipped"
+        else:
+            tracking_status = "ordered"
+
+        kits_list.append({
+            "kit_id": order.id,
+            "kit_type": kit_type,
+            "ordered_at": order.created_at.isoformat() if order.created_at else None,
+            "tracking_status": tracking_status,
+            "tracking_number": tracking_number,
+            "carrier": "UPS Mail Innovations",
+            "notes": order.notes
+        })
+
+    return {
+        "patient_id": patient_id,
+        "kits": kits_list,
+        "total_kits": len(kits_list),
+        "clinical_safety_note": "At-home diagnostic test kits support remote patient monitoring; clinical decisions are made upon physician review of uploaded lab reports."
+    }

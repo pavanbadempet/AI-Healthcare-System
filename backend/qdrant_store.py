@@ -12,7 +12,16 @@ from typing import Any, Dict, List, Optional
 
 try:
     from qdrant_client import QdrantClient
-    from qdrant_client.models import Distance, FieldCondition, Filter, MatchValue, PointStruct, VectorParams, ScalarQuantization, ScalarType
+    from qdrant_client.models import (
+        Distance,
+        FieldCondition,
+        Filter,
+        MatchValue,
+        PointStruct,
+        ScalarQuantization,
+        ScalarType,
+        VectorParams,
+    )
 except ImportError:
     QdrantClient = None
 

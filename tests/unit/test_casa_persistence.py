@@ -1,9 +1,9 @@
 import json
-from unittest.mock import MagicMock, patch
 from datetime import datetime, timezone
-import pytest
+from unittest.mock import MagicMock, patch
 
-from backend import models, auth
+from backend import auth, models
+
 
 def _create_user(db_session, username: str, role: str, facility_id: int | None = None) -> models.User:
     user = models.User(
@@ -81,7 +81,7 @@ def test_casa_booking_persists_prediction(mock_predict_heart, mock_generate, cli
     assert hrec.record_type == "heart"
     assert "High Risk" in hrec.prediction
     assert "85.0" in hrec.prediction
-    
+
     # Check data is stored as json
     input_data = json.loads(hrec.data)
     assert input_data["age"] > 0
@@ -94,7 +94,7 @@ def test_abdm_consent_granted_triggers_prefetch(mock_prefetch, client, db_sessio
     fac = _create_facility(db_session, "ABDM Clinic")
     admin = _create_user(db_session, "abdm_admin", "admin", facility_id=fac.id)
     patient = _create_user(db_session, "abdm_patient", "patient", facility_id=fac.id)
-    
+
     # Create interoperability consent record
     consent = models.InteroperabilityConsent(
         facility_id=fac.id,
@@ -119,7 +119,7 @@ def test_abdm_consent_granted_triggers_prefetch(mock_prefetch, client, db_sessio
         "patient_id": patient.id,
         "notification_at": datetime.now(timezone.utc).isoformat()
     }
-    
+
     response = client.post(
         "/interop/abdm/consent-callbacks",
         headers=headers,
@@ -127,6 +127,6 @@ def test_abdm_consent_granted_triggers_prefetch(mock_prefetch, client, db_sessio
     )
 
     assert response.status_code == 201
-    
+
     # Verify prefetch was triggered
     mock_prefetch.assert_called_once()

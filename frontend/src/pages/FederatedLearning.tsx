@@ -5,9 +5,13 @@ import {
   Activity, Database, Loader2, Calendar, Lock, CheckCircle2, AlertTriangle
 } from 'lucide-react';
 import {
-  fetchFederatedStats, fetchFederatedAudits, triggerFederatedSync,
-  type FederatedStats, type SyncAudit
+  fetchFederatedStats,
+  fetchFederatedAudits,
+  triggerFederatedSync,
+  type FederatedStats,
+  type SyncAudit
 } from '@/lib/apiFederated';
+import { runFederatedSimulation } from '@/lib/api';
 
 export default function FederatedLearning() {
   const [stats, setStats] = useState<FederatedStats | null>(null);
@@ -17,6 +21,12 @@ export default function FederatedLearning() {
   const [selectedModel, setSelectedModel] = useState('heart_disease');
   const [epsilon, setEpsilon] = useState(1.0);
   const [error, setError] = useState<string | null>(null);
+
+  // Phase 7 Federated Simulator States
+  const [simEpochs, setSimEpochs] = useState(10);
+  const [simEpsilon, setSimEpsilon] = useState(1.5);
+  const [simulating, setSimulating] = useState(false);
+  const [simResult, setSimResult] = useState<any>(null);
 
   const refreshInterval = useRef<any>(null);
 
@@ -61,6 +71,24 @@ export default function FederatedLearning() {
       alert(err.message || 'Failed to run Federated Sync');
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleSimRun = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSimulating(true);
+    setSimResult(null);
+    try {
+      const res = await runFederatedSimulation(simEpochs, simEpsilon);
+      if (res && res.status === 'success') {
+        setSimResult(res.results);
+      } else {
+        alert('Simulation failed to return results');
+      }
+    } catch (err: any) {
+      alert(err.message || 'Failed to run Federated DP Simulation');
+    } finally {
+      setSimulating(false);
     }
   };
 
@@ -344,6 +372,116 @@ export default function FederatedLearning() {
               </tbody>
             </table>
           </div>
+        </div>
+      </div>
+
+      {/* Grid Zone 3: Federated Simulation Console (Phase 7) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-10">
+        {/* Simulator Form */}
+        <div className="bg-slate-900/40 border border-slate-800/60 rounded-3xl p-6 backdrop-blur-md">
+          <div className="flex items-center gap-2 mb-6">
+            <Activity className="w-5 h-5 text-purple-400" />
+            <h3 className="font-bold text-slate-200">Collab Training Simulator</h3>
+          </div>
+
+          <form onSubmit={handleSimRun} className="space-y-5">
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-semibold text-slate-400 uppercase">Training Epochs</label>
+                <span className="text-xs font-mono font-bold text-purple-400">{simEpochs}</span>
+              </div>
+              <input
+                type="range"
+                min="2"
+                max="30"
+                step="1"
+                value={simEpochs}
+                onChange={(e) => setSimEpochs(parseInt(e.target.value))}
+                className="w-full accent-purple-500 bg-slate-950 rounded-lg appearance-none h-2 border border-slate-800"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-semibold text-slate-400 uppercase">Sim Epsilon (\(\epsilon\))</label>
+                <span className="text-xs font-mono font-bold text-purple-400">{simEpsilon.toFixed(1)}</span>
+              </div>
+              <input
+                type="range"
+                min="0.5"
+                max="5.0"
+                step="0.1"
+                value={simEpsilon}
+                onChange={(e) => setSimEpsilon(parseFloat(e.target.value))}
+                className="w-full accent-purple-500 bg-slate-950 rounded-lg appearance-none h-2 border border-slate-800"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={simulating}
+              className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed font-medium rounded-xl transition-colors shadow-lg shadow-purple-600/10 mt-4"
+            >
+              {simulating ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  <span>Simulating DP-FedAvg...</span>
+                </>
+              ) : (
+                <>
+                  <Play className="w-5 h-5" />
+                  <span>Run DP-FedAvg Sim</span>
+                </>
+              )}
+            </button>
+          </form>
+        </div>
+
+        {/* Simulator Results Chart & Details */}
+        <div className="lg:col-span-2 bg-slate-900/40 border border-slate-800/60 rounded-3xl p-6 backdrop-blur-md flex flex-col justify-between">
+          <div>
+            <h3 className="font-bold text-slate-200 mb-4">DP-FedAvg Accuracy Convergence</h3>
+            {!simResult ? (
+              <div className="flex-1 flex flex-col items-center justify-center py-10 text-slate-500 font-sans border border-dashed border-slate-800 rounded-2xl bg-slate-950/20">
+                <Shield className="w-8 h-8 text-slate-700 mb-2" />
+                <p className="text-xs">No active simulation run. Adjust parameters and trigger above.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-slate-950/40 border border-slate-850 p-4 rounded-2xl">
+                    <span className="text-[10px] text-slate-500 uppercase font-semibold">Centralized Baseline Accuracy</span>
+                    <div className="text-2xl font-extrabold text-emerald-400 font-mono">{(simResult.acc_central * 100).toFixed(2)}%</div>
+                    <div className="w-full h-1.5 bg-slate-900 rounded-full mt-2 overflow-hidden">
+                      <div className="h-full bg-emerald-400" style={{ width: `${simResult.acc_central * 100}%` }}></div>
+                    </div>
+                  </div>
+                  <div className="bg-slate-950/40 border border-slate-850 p-4 rounded-2xl">
+                    <span className="text-[10px] text-slate-500 uppercase font-semibold">Federated DP Accuracy</span>
+                    <div className="text-2xl font-extrabold text-purple-400 font-mono">{(simResult.acc_federated * 100).toFixed(2)}%</div>
+                    <div className="w-full h-1.5 bg-slate-900 rounded-full mt-2 overflow-hidden">
+                      <div className="h-full bg-purple-400" style={{ width: `${simResult.acc_federated * 100}%` }}></div>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-[10px] text-slate-400 uppercase font-semibold block mb-2">Epoch Training History</span>
+                  <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
+                    {simResult.history.map((acc: number, idx: number) => (
+                      <div key={idx} className="bg-slate-950 border border-slate-850 rounded-lg p-1.5 flex flex-col items-center">
+                        <span className="text-[8px] text-slate-500 font-mono">E{idx + 1}</span>
+                        <span className="text-[10px] font-bold font-mono text-purple-400">{(acc * 100).toFixed(0)}%</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+          <p className="text-[10px] text-slate-500 mt-4 leading-relaxed">
+            * The DP-FedAvg simulator distributes synthetic diabetes clinical records across 3 local hospital nodes. It validates how injecting Laplace noise to clipped local weights preserves centralized accuracy baseline while protecting patient privacy.
+          </p>
         </div>
       </div>
     </div>

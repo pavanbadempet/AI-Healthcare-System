@@ -22,6 +22,8 @@ python-jose[cryptography]>=3.5.0
 sqlalchemy
 psycopg2-binary
 python-dotenv
+sqlalchemy-libsql
+libsql-client
 
 # --- Data Science (Lite) ---
 pandas>=3.0.3
