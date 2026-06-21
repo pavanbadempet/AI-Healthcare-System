@@ -1,11 +1,18 @@
+import asyncio
+import json
 import logging
+import time
 from datetime import datetime
+from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from . import auth, database, models, schemas
+from . import auth, core_ai, database, email_service, models, schemas
+from .agents.scheduling_agent import BOOKING_ACTION_PATTERN, SchedulingAgent
 from .facility_scope import users_share_facility_context
 
 ACTIVE_APPOINTMENT_STATUSES = ("Scheduled", "Rescheduled")
@@ -265,3 +272,205 @@ def delete_appointment(
     db.delete(appt)
     db.commit()
     return {"message": "Appointment deleted"}
+
+
+# --- CASA Agentic Scheduling Endpoints ---
+
+class CASAMessage(BaseModel):
+    role: str
+    content: str
+
+class CASAChatRequest(BaseModel):
+    message: str
+    history: List[CASAMessage] = []
+
+@router.post("/agent-chat")
+async def agent_chat_endpoint(
+    req: CASAChatRequest,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    """Conversational appointment scheduling chat endpoint."""
+    agent = SchedulingAgent(db, current_user)
+    history_list = [{"role": h.role, "content": h.content} for h in req.history]
+    result = await agent.chat(req.message, history_list)
+    return result
+
+@router.post("/agent-stream")
+async def agent_stream_endpoint(
+    req: CASAChatRequest,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    """Streaming conversational appointment scheduling chat endpoint."""
+    agent = SchedulingAgent(db, current_user)
+
+    # Pre-check symptoms
+    warning, _ = agent._check_symptoms(req.message)
+    system_prompt = agent.get_system_prompt()
+
+    # Format history for LLM chat stream
+    chat_history = [{"role": h.role, "content": h.content} for h in req.history]
+    chat_history.append({"role": "user", "content": req.message})
+
+    async def stream_generator():
+        last_activity = time.time()
+        streamed_reply_parts = []
+        stream_task = None
+
+        try:
+            # 1. Send warning immediately if exists
+            if warning:
+                yield f"data: {json.dumps({'reply': warning + '\n\n', 'status': 'warning'})}\n\n"
+                streamed_reply_parts.append(warning + "\n\n")
+
+            # 2. Setup AI stream
+            chunk_queue = asyncio.Queue()
+
+            async def ai_stream_consumer():
+                try:
+                    async for chunk in core_ai.chat_stream(
+                        chat_history,
+                        system=system_prompt
+                    ):
+                        if chunk:
+                            await chunk_queue.put(("chunk", chunk))
+                    await chunk_queue.put(("done", None))
+                except Exception as ex:
+                    await chunk_queue.put(("error", str(ex)))
+
+            stream_task = asyncio.create_task(ai_stream_consumer())
+
+            while True:
+                try:
+                    msg_type, data = await asyncio.wait_for(
+                        chunk_queue.get(),
+                        timeout=15.0
+                    )
+
+                    if msg_type == "chunk":
+                        streamed_reply_parts.append(data)
+                        yield f"data: {json.dumps({'reply': data})}\n\n"
+                        last_activity = time.time()
+                    elif msg_type == "error":
+                        yield f"data: {json.dumps({'error': data, 'status': 'error'})}\n\n"
+                        break
+                    elif msg_type == "done":
+                        full_reply = "".join(streamed_reply_parts)
+
+                        # Check booking tag in background
+                        booking_match = BOOKING_ACTION_PATTERN.search(full_reply)
+                        booking_details = None
+                        error_msg = None
+
+                        if booking_match:
+                            doc_id_str, date_str, time_str, reason_str = booking_match.groups()
+                            try:
+                                doc_id = int(doc_id_str)
+                                dt_str = f"{date_str} {time_str}"
+                                appointment_dt = None
+                                for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+                                    try:
+                                        appointment_dt = datetime.strptime(dt_str, fmt)
+                                        break
+                                    except ValueError:
+                                        continue
+                                if not appointment_dt or appointment_dt <= datetime.now():
+                                    raise ValueError("Invalid date/time or time is in the past")
+
+                                doctor = db.query(models.User).filter(
+                                    models.User.id == doc_id,
+                                    models.User.role == "doctor"
+                                ).first()
+                                if not doctor:
+                                    raise ValueError(f"Doctor with ID {doc_id} not found")
+
+                                if not users_share_facility_context(db, current_user.id, doctor.id):
+                                    raise ValueError("Doctor does not belong to facility scope")
+
+                                existing = db.query(models.Appointment).filter(
+                                    models.Appointment.doctor_id == doc_id,
+                                    models.Appointment.date_time == appointment_dt,
+                                    models.Appointment.status.in_(("Scheduled", "Rescheduled"))
+                                ).first()
+                                if existing:
+                                    raise ValueError("Doctor already booked at that slot")
+
+                                # Run pre-screening
+                                spec = doctor.specialization or "General Physician"
+                                screen_res = agent._run_clinical_screening(spec)
+                                final_reason = reason_str.strip()
+                                if screen_res:
+                                    brief = f"[AI Risk Screen: {screen_res['model_name'].title()} {screen_res['risk_level']} Risk ({screen_res['confidence']}%)]"
+                                    final_reason = f"{brief} {final_reason}"
+
+                                new_appt = models.Appointment(
+                                    facility_id=doctor.facility_id or current_user.facility_id,
+                                    user_id=current_user.id,
+                                    doctor_id=doctor.id,
+                                    specialist=spec,
+                                    date_time=appointment_dt,
+                                    reason=final_reason,
+                                    status="Scheduled"
+                                )
+                                db.add(new_appt)
+
+                                if screen_res:
+                                    import json
+                                    db_record = models.HealthRecord(
+                                        user_id=current_user.id,
+                                        record_type=screen_res["model_name"],
+                                        data=json.dumps(screen_res.get("input_data", {})),
+                                        prediction=f"{screen_res['risk_level']} Risk ({screen_res['confidence']}%)"
+                                    )
+                                    db.add(db_record)
+
+                                db.commit()
+                                db.refresh(new_appt)
+
+                                try:
+                                    video_link = f"https://meet.jit.si/ai-health-{new_appt.id}"
+                                    email_service.send_booking_confirmation(
+                                        to_email=current_user.email or "patient@example.com",
+                                        patient_name=current_user.full_name or current_user.username,
+                                        doctor_name=doctor.full_name or doctor.username,
+                                        date_time=dt_str,
+                                        link=video_link
+                                    )
+                                except Exception:
+                                    logger.warning("Failed to send email confirmation")
+
+                                booking_details = {
+                                    "id": new_appt.id,
+                                    "doctor_name": doctor.full_name or doctor.username,
+                                    "specialist": doctor.specialization or "General Physician",
+                                    "date_time": new_appt.date_time.isoformat(),
+                                    "reason": new_appt.reason
+                                }
+                                yield f"data: {json.dumps({'action_triggered': True, 'booking_details': booking_details, 'status': 'complete'})}\n\n"
+                            except Exception as ex:
+                                db.rollback()
+                                error_msg = str(ex)
+                                yield f"data: {json.dumps({'action_triggered': True, 'error': error_msg, 'status': 'complete'})}\n\n"
+                        else:
+                            yield f"data: {json.dumps({'action_triggered': False, 'status': 'complete'})}\n\n"
+                        break
+                except asyncio.TimeoutError:
+                    if time.time() - last_activity >= 15.0:
+                        yield ":heartbeat (keepalive)\n\n"
+                        last_activity = time.time()
+        except Exception as e:
+            yield f"data: {json.dumps({'error': str(e), 'status': 'error'})}\n\n"
+        finally:
+            if stream_task and not stream_task.done():
+                stream_task.cancel()
+
+    return StreamingResponse(
+        stream_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache, no-transform",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        }
+    )

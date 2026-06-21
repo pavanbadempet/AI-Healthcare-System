@@ -78,13 +78,12 @@ class ExpectationRunner:
         if not suite:
             raise ValueError(f"Suite {suite_name} not found.")
 
-        # Convert input data to pandas DataFrame for standardized metrics evaluation
-        df = pd.DataFrame(data) if isinstance(data, list) else data
-        
         report = SuiteValidationReport(suite_name=suite_name, dataset_name=suite.dataset_name)
         results: List[ValidationResult] = []
 
-        if df.empty:
+        is_record_list = isinstance(data, list)
+        total_rows = len(data)
+        if total_rows == 0:
             report.success = False
             report.success_rate = 0.0
             report.results.append({
@@ -96,12 +95,14 @@ class ExpectationRunner:
             return report
 
         # Check if the dataset size warrants chunked validation to be memory-safe
-        use_chunked = len(df) > chunk_size
+        use_chunked = total_rows > chunk_size
+        df = None if use_chunked else pd.DataFrame(data) if is_record_list else data
 
         for expectation in suite.expectations:
             if use_chunked:
-                res = self._run_chunked_expectation(df, expectation, chunk_size=chunk_size)
+                res = self._run_chunked_expectation(data, expectation, chunk_size=chunk_size)
             else:
+                assert df is not None
                 res = self._run_single_expectation(df, expectation)
             results.append(res)
 
@@ -250,30 +251,49 @@ class ExpectationRunner:
             message="Unrecognized expectation type, skipped validation."
         )
 
-    def _run_chunked_expectation(self, df: pd.DataFrame, exp: Expectation, chunk_size: int = 5000) -> ValidationResult:
+    def _run_chunked_expectation(
+        self,
+        data: Union[List[Dict[str, Any]], pd.DataFrame],
+        exp: Expectation,
+        chunk_size: int = 5000,
+    ) -> ValidationResult:
         t = exp.expectation_type
         col = exp.column
         kwargs = exp.kwargs
+        is_record_list = isinstance(data, list)
+        total_rows = len(data)
+        if is_record_list:
+            columns = list(dict.fromkeys(key for record in data for key in record))
+        else:
+            columns = list(data.columns)
 
         if t == "expect_column_to_exist":
-            exists = col in df.columns
+            exists = col in columns
             return ValidationResult(
                 success=exists,
                 expectation=exp,
-                observed_value=list(df.columns),
+                observed_value=columns,
                 message=f"Column '{col}' exists" if exists else f"Column '{col}' is missing"
             )
 
-        if col not in df.columns:
+        if t == "expect_table_row_count_between":
+            min_rows = kwargs.get("min_value", 0)
+            max_rows = kwargs.get("max_value", 100000000)
+            success = min_rows <= total_rows <= max_rows
+            return ValidationResult(
+                success=success,
+                expectation=exp,
+                observed_value=total_rows,
+                message=f"Row count {total_rows} is between {min_rows} and {max_rows}"
+            )
+
+        if col not in columns:
             return ValidationResult(
                 success=False,
                 expectation=exp,
                 observed_value=None,
                 message=f"Evaluation column '{col}' missing from data."
             )
-
-        total_rows = len(df)
-        chunks = [df[i:i + chunk_size] for i in range(0, total_rows, chunk_size)]
 
         null_count = 0
         invalid_values = set()
@@ -285,8 +305,15 @@ class ExpectationRunner:
         unique_values = set()
         regex_violations = 0
 
-        for chunk in chunks:
-            series = chunk[col]
+        for start in range(0, total_rows, chunk_size):
+            if is_record_list:
+                chunk = pd.DataFrame(data[start:start + chunk_size])
+            else:
+                chunk = data.iloc[start:start + chunk_size]
+            if col in chunk.columns:
+                series = chunk[col]
+            else:
+                series = pd.Series([None] * len(chunk), index=chunk.index, dtype=object)
 
             if t == "expect_column_values_not_null":
                 null_count += int(series.isnull().sum())
@@ -370,18 +397,6 @@ class ExpectationRunner:
                 expectation=exp,
                 observed_value=mean_val,
                 message=f"Mean of '{col}' is {mean_val:.2f} (expected [{min_mean}, {max_mean}])"
-            )
-
-        elif t == "expect_table_row_count_between":
-            min_rows = kwargs.get("min_value", 0)
-            max_rows = kwargs.get("max_value", 100000000)
-            row_count = total_rows
-            success = min_rows <= row_count <= max_rows
-            return ValidationResult(
-                success=success,
-                expectation=exp,
-                observed_value=row_count,
-                message=f"Row count {row_count} is between {min_rows} and {max_rows}"
             )
 
         elif t == "expect_column_values_to_match_regex":

@@ -42,11 +42,15 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
+        - VITE_PUBLIC_API_URL=http://127.0.0.1:8000
     container_name: healthcare_frontend
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://backend:8000
+      - NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
+      - VITE_PUBLIC_API_URL=http://127.0.0.1:8000
     depends_on:
       backend:
         condition: service_healthy

@@ -6,7 +6,7 @@ import {
   LayoutDashboard, MessageSquare, Heart, Activity,
   FlaskConical, Stethoscope, Wind, User,
   CreditCard, Video, Info, ShieldCheck,
-  BedDouble, Server, Settings,
+  BedDouble, Server, Settings, Plug, BrainCircuit,
 } from "lucide-react";
 
 /* ───────────────────────────────────────────────────
@@ -252,6 +252,51 @@ export const intelligenceItems: MenuItem[] = [
   },
 ];
 
+export const clinosItems: MenuItem[] = [
+  {
+    id: "smart_app_registry",
+    title: "App Registry",
+    href: "/apps",
+    icon: Plug,
+    desc: "Register and launch SMART apps",
+    longDesc: "Pluggable SMART on FHIR application sandbox allowing clinicians to integrate third-party web apps securely.",
+    color: "text-sky-400",
+    bg: "bg-sky-500/10",
+    borderHover: "hover:border-sky-500/60",
+    glow: "drop-shadow-[0_0_15px_rgba(56,189,248,0.5)]",
+    gradient: "bg-gradient-to-br from-sky-950/80 via-sky-900/20 to-black/60",
+    highlights: ["SMART on FHIR", "Secure Sandbox"],
+  },
+  {
+    id: "federated_learning",
+    title: "Federated Mesh",
+    href: "/federated",
+    icon: ShieldCheck,
+    desc: "Privacy-preserving model retraining",
+    longDesc: "Differential-privacy sync bridge to run distributed ML training across hospital nodes without exposing patient PII.",
+    color: "text-purple-400",
+    bg: "bg-purple-500/10",
+    borderHover: "hover:border-purple-500/60",
+    glow: "drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]",
+    gradient: "bg-gradient-to-br from-purple-950/80 via-purple-900/20 to-black/60",
+    highlights: ["Local DP", "Privacy Budget", "Audits"],
+  },
+  {
+    id: "clinical_intelligence",
+    title: "Clinical Intelligence",
+    href: "/intelligence",
+    icon: BrainCircuit,
+    desc: "Real-time alerts and explainable AI",
+    longDesc: "Command center for real-time vitals alerting, AI clinician insights, and SHAP feature importance explainability reports.",
+    color: "text-indigo-400",
+    bg: "bg-indigo-500/10",
+    borderHover: "hover:border-indigo-500/60",
+    glow: "drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]",
+    gradient: "bg-gradient-to-br from-indigo-950/80 via-indigo-900/20 to-black/60",
+    highlights: ["Alert Engine", "SHAP Explanations", "AI Narrative"],
+  },
+];
+
 /* ───────────────────────────────────────────────────
    COMMAND PALETTE items
    ─────────────────────────────────────────────────── */
@@ -271,6 +316,9 @@ export const COMMAND_ITEMS = [
   { label: "Pricing & API Billing Details", href: "/pricing", category: "Intelligence", desc: "Hospital pricing plans and usage details", icon: CreditCard },
   { label: "User Profile Settings", href: "/profile", category: "Account", desc: "View your user name, email, and preferences", icon: Settings },
   { label: "Administrative Tools Panel", href: "/admin", category: "Admin", desc: "Doctor credentials, audit logs, and security levels", icon: ShieldCheck },
+  { label: "SMART App Registry", href: "/apps", category: "ClinOS", desc: "Register and launch third-party SMART apps", icon: Plug },
+  { label: "Federated Privacy Mesh", href: "/federated", category: "ClinOS", desc: "Privacy-preserving distributed model sync bridge", icon: ShieldCheck },
+  { label: "Clinical Intelligence Command Center", href: "/intelligence", category: "ClinOS", desc: "Real-time vitals alerts and explainable AI SHAP report", icon: BrainCircuit },
 ];
 
 /* ───────────────────────────────────────────────────
@@ -303,6 +351,15 @@ export const MENU_GROUPS: MenuGroup[] = [
     items: intelligenceItems,
     cols: 1,
     routes: ["/chat", "/about", "/pricing"],
+  },
+  {
+    key: "clinos",
+    label: "ClinOS",
+    emoji: "🚀",
+    accentColor: "text-sky-400 data-[state=open]:text-sky-400",
+    items: clinosItems,
+    cols: 2,
+    routes: ["/apps", "/federated", "/intelligence"],
   },
 ];
 

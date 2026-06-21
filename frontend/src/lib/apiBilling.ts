@@ -1,7 +1,7 @@
 /**
  * AI Healthcare System — Billing & Telemedicine API
  */
-import { apiFetch } from './apiCore';
+import { apiFetch, API_BASE, authHeaders } from './apiCore';
 
 // ── Payments ─────────────────────────────────────────────────────
 export interface PaymentOrder {
@@ -111,4 +111,92 @@ export async function getDoctors(): Promise<{ id: number; name: string; speciali
     name: doctor.name || doctor.full_name || 'Doctor',
     specialization: doctor.specialization || 'General Physician',
   }));
+}
+
+// ── CASA Agentic Scheduling ──────────────────────────────────────
+export interface CASAMessage {
+  role: string;
+  content: string;
+}
+
+export interface CASAChatResponse {
+  response: string;
+  action_triggered: boolean;
+  booking_details?: {
+    id: number;
+    doctor_name: string;
+    specialist: string;
+    date_time: string;
+    reason: string;
+  };
+  error?: string;
+}
+
+export async function chatWithCASA(message: string, history: CASAMessage[]): Promise<CASAChatResponse> {
+  return apiFetch('/appointments/agent-chat', {
+    method: 'POST',
+    body: JSON.stringify({ message, history }),
+  });
+}
+
+export function streamCASA(
+  message: string,
+  history: CASAMessage[],
+  onChunk: (data: { reply?: string; status?: string; action_triggered?: boolean; booking_details?: any; error?: string }) => void,
+  onDone: () => void,
+  onError: (err: any) => void
+): () => void {
+  const controller = new AbortController();
+
+  fetch(`${API_BASE}/appointments/agent-stream`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeaders(),
+    },
+    body: JSON.stringify({ message, history }),
+    signal: controller.signal,
+  })
+    .then((response) => {
+      if (!response.body) throw new Error('No readable body');
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      function read() {
+        reader.read().then(({ done, value }) => {
+          if (done) {
+            onDone();
+            return;
+          }
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const parsed = JSON.parse(line.slice(6));
+                onChunk(parsed);
+              } catch (e) {
+                console.error('Failed to parse stream chunk:', e);
+              }
+            }
+          }
+          read();
+        }).catch((err) => {
+          if (err.name !== 'AbortError') {
+            onError(err);
+          }
+        });
+      }
+      read();
+    })
+    .catch((err) => {
+      if (err.name !== 'AbortError') {
+        onError(err);
+      }
+    });
+
+  return () => controller.abort();
 }

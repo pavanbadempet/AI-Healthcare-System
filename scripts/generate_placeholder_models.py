@@ -1,6 +1,8 @@
 
 import os
 import pickle
+import shutil
+import tempfile
 
 import numpy as np
 from sklearn.dummy import DummyClassifier
@@ -34,27 +36,22 @@ def generate_placeholders():
             from huggingface_hub import HfApi
             api = HfApi(token=hf_token)
             files = api.list_repo_files(repo_id=hf_dataset_id, repo_type="dataset")
-            model_files = [f for f in files if f.startswith("models/")]
-            for file in model_files:
-                filename = os.path.basename(file)
-                print(f"Downloading {filename} from HF...")
-                api.hf_hub_download(
-                    repo_id=hf_dataset_id,
-                    repo_type="dataset",
-                    filename=file,
-                    local_dir=BACKEND_DIR,
-                    local_dir_use_symlinks=False
-                )
-
-            # Move files if they downloaded to BACKEND_DIR/models/
-            models_sub_dir = os.path.join(BACKEND_DIR, "models")
-            if os.path.exists(models_sub_dir):
-                import shutil
-                for f in os.listdir(models_sub_dir):
-                    src = os.path.join(models_sub_dir, f)
-                    dst = os.path.join(BACKEND_DIR, f)
-                    shutil.move(src, dst)
-                os.rmdir(models_sub_dir)
+            model_files = [
+                f
+                for f in files
+                if f.startswith("models/") and os.path.basename(f) in MODELS
+            ]
+            with tempfile.TemporaryDirectory(prefix="healthcare-model-download-") as staging_dir:
+                for file in model_files:
+                    filename = os.path.basename(file)
+                    print(f"Downloading {filename} from HF...")
+                    downloaded_path = api.hf_hub_download(
+                        repo_id=hf_dataset_id,
+                        repo_type="dataset",
+                        filename=file,
+                        local_dir=staging_dir,
+                    )
+                    shutil.copy2(downloaded_path, os.path.join(BACKEND_DIR, filename))
             print("Successfully checked/downloaded real models from Hugging Face.")
         except Exception as e:
             print(f"Failed to download real models from Hugging Face: {e}. Falling back to placeholder generation.")

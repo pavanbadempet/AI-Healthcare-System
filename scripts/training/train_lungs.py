@@ -20,9 +20,12 @@ except ImportError:
         from evaluation import evaluate_and_save
 
 try:
-    from .features import LUNG_FEATURES
+    from backend.features import LUNG_FEATURES
 except ImportError:
-    from features import LUNG_FEATURES
+    try:
+        from .features import LUNG_FEATURES
+    except ImportError:
+        from features import LUNG_FEATURES
 
 # --- Configuration ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

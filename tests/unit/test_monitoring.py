@@ -135,8 +135,10 @@ def test_vital_submission_rejects_impossible_spo2(client, db_session):
         },
     )
 
-    assert response.status_code == 400
-    assert response.json()["detail"] == "Vital measurement is outside accepted capture range"
+    assert response.status_code == 422
+    detail = response.json()["detail"][0]
+    assert detail["loc"] == ["body", "spo2"]
+    assert "between 0 and 100" in detail["msg"]
     assert db_session.query(models.VitalObservation).count() == 0
     assert db_session.query(models.CareEvent).count() == 0
 

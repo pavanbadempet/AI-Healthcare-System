@@ -59,6 +59,15 @@ from .discharge import (  # noqa: F401
     DischargeSummaryResponse,
 )
 
+# Federated Learning domain
+from .federated import (  # noqa: F401
+    FederatedSyncAuditResponse,
+    FederatedSyncRequest,
+    FederatedSyncResponse,
+    ModelFeedbackCreate,
+    ModelFeedbackResponse,
+)
+
 # Hospital domain
 from .hospital import (  # noqa: F401
     AdmissionCreate,
@@ -71,6 +80,14 @@ from .hospital import (  # noqa: F401
     EncounterResponse,
     FacilityCreate,
     FacilityResponse,
+)
+
+# Clinical Intelligence domain
+from .intelligence import (  # noqa: F401
+    AlertAcknowledgeRequest,
+    ClinicalAlertResponse,
+    ExplainabilityResponse,
+    PatientInsightResponse,
 )
 
 # Interoperability domain
@@ -120,4 +137,12 @@ from .records import (  # noqa: F401
     AuditLogResponse,
     ChatLogResponse,
     HealthRecordResponse,
+)
+
+# SMART on FHIR domain
+from .smart_app import (  # noqa: F401
+    SmartAppCreate,
+    SmartAppResponse,
+    SmartLaunchRequest,
+    SmartLaunchResponse,
 )

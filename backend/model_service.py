@@ -17,6 +17,8 @@ Usage:
 import json
 import logging
 import os
+import shutil
+import tempfile
 import threading
 from dataclasses import dataclass, field
 from enum import Enum
@@ -277,32 +279,27 @@ class ModelService:
                 from huggingface_hub import HfApi
                 api = HfApi(token=hf_token)
                 files = api.list_repo_files(repo_id=hf_dataset_id, repo_type="dataset")
-                model_files = [f for f in files if f.startswith("models/")]
+                model_files = [
+                    f
+                    for f in files
+                    if f.startswith("models/") and os.path.basename(f) in models_to_check
+                ]
 
                 if not model_files:
                     logger.warning("No files found in 'models/' folder of HF dataset %s", hf_dataset_id)
                     return
 
-                for file in model_files:
-                    filename = os.path.basename(file)
-                    logger.info("Downloading %s from HF...", filename)
-                    api.hf_hub_download(
-                        repo_id=hf_dataset_id,
-                        repo_type="dataset",
-                        filename=file,
-                        local_dir=self._model_dir,
-                        local_dir_use_symlinks=False
-                    )
-
-                # If files downloaded to self._model_dir/models/, move them up
-                models_sub_dir = os.path.join(self._model_dir, "models")
-                if os.path.exists(models_sub_dir):
-                    import shutil
-                    for f in os.listdir(models_sub_dir):
-                        src = os.path.join(models_sub_dir, f)
-                        dst = os.path.join(self._model_dir, f)
-                        shutil.move(src, dst)
-                    os.rmdir(models_sub_dir)
+                with tempfile.TemporaryDirectory(prefix="healthcare-model-download-") as staging_dir:
+                    for file in model_files:
+                        filename = os.path.basename(file)
+                        logger.info("Downloading %s from HF...", filename)
+                        downloaded_path = api.hf_hub_download(
+                            repo_id=hf_dataset_id,
+                            repo_type="dataset",
+                            filename=file,
+                            local_dir=staging_dir,
+                        )
+                        shutil.copy2(downloaded_path, os.path.join(self._model_dir, filename))
                 logger.info("Successfully downloaded all models from Hugging Face.")
             except Exception as e:
                 logger.error("Failed to download models from Hugging Face: %s", e)

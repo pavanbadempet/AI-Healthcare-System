@@ -1,34 +1,43 @@
 import datetime
+from typing import Optional
 
 from fpdf import FPDF
+from fpdf.enums import XPos, YPos
 
 
 class PDFReport(FPDF):
     def header(self):
         # Logo or Title
-        self.set_font('Arial', 'B', 15)
+        self.set_font("Helvetica", "B", 15)
         self.cell(80)
-        self.cell(30, 10, 'AI Healthcare System', 0, 0, 'C')
+        self.cell(30, 10, "AI Healthcare System", align="C")
         self.ln(20)
 
         # Line break
-        self.set_draw_color(0, 210, 255) # AIO Blue
+        self.set_draw_color(0, 210, 255)  # AIO Blue
         self.set_line_width(1)
         self.line(10, 25, 200, 25)
         self.ln(10)
 
-        self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
-        self.cell(0, 10, 'Not a Diagnosis', 0, 0, 'R')
+        self.cell(0, 10, f"Page {self.page_no()}", align="C")
+        self.cell(0, 10, "Not a Diagnosis", align="R")
 
     def footer(self):
         self.set_y(-15)
-        self.set_font('Arial', 'I', 8)
+        self.set_font("Helvetica", "I", 8)
         self.set_text_color(128)
-        self.cell(0, 10, f'Page {self.page_no()}', 0, 0, 'C')
+        self.cell(0, 10, f"Page {self.page_no()}", align="C")
         # Fix: valid width for right alignment
-        self.cell(0, 10, 'Not a Diagnosis', 0, 0, 'R')
+        self.cell(0, 10, "Not a Diagnosis", align="R")
 
-def generate_medical_report(user_name: str, report_type: str, prediction: str, data: dict, advice: list = []):
+
+def generate_medical_report(
+    user_name: str,
+    report_type: str,
+    prediction: str,
+    data: dict,
+    advice: Optional[list] = None,
+):
     """
     Generates a professional PDF medical report.
     """
@@ -36,54 +45,96 @@ def generate_medical_report(user_name: str, report_type: str, prediction: str, d
     pdf.add_page()
 
     # Title
-    pdf.set_font('Arial', 'B', 16)
+    pdf.set_font("Helvetica", "B", 16)
     pdf.set_text_color(0, 0, 0)
-    pdf.cell(0, 10, f'Medical Analysis Report: {report_type}', 0, 1, 'L')
+    pdf.cell(
+        0,
+        10,
+        f"Medical Analysis Report: {report_type}",
+        new_x=XPos.LMARGIN,
+        new_y=YPos.NEXT,
+        align="L",
+    )
 
     # Metadata
-    pdf.set_font('Arial', '', 10)
-    pdf.cell(0, 6, f'Patient Name: {user_name}', 0, 1)
-    pdf.cell(0, 6, f'Date: {datetime.datetime.now().strftime("%Y-%m-%d %H:%M")}', 0, 1)
-    pdf.cell(0, 6, f'Report ID: AIO-{datetime.datetime.now().strftime("%H%M%S")}', 0, 1)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.cell(0, 6, f"Patient Name: {user_name}", new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+    pdf.cell(
+        0,
+        6,
+        f"Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}",
+        new_x=XPos.LMARGIN,
+        new_y=YPos.NEXT,
+    )
+    pdf.cell(
+        0,
+        6,
+        f"Report ID: AIO-{datetime.datetime.now().strftime('%H%M%S')}",
+        new_x=XPos.LMARGIN,
+        new_y=YPos.NEXT,
+    )
     pdf.ln(10)
 
     # Result Section
     pdf.set_fill_color(240, 240, 240)
-    pdf.rect(10, pdf.get_y(), 190, 20, 'F')
-    pdf.set_font('Arial', 'B', 12)
+    pdf.rect(10, pdf.get_y(), 190, 20, "F")
+    pdf.set_font("Helvetica", "B", 12)
     color = (200, 0, 0) if "High" in prediction else (0, 128, 0)
     pdf.set_text_color(*color)
-    pdf.cell(0, 20, f'   Analysis Result: {prediction}', 0, 1, 'L')
+    pdf.cell(
+        0,
+        20,
+        f"   Analysis Result: {prediction}",
+        new_x=XPos.LMARGIN,
+        new_y=YPos.NEXT,
+        align="L",
+    )
     pdf.set_text_color(0)
     pdf.ln(10)
 
     # Clinical Data
-    pdf.set_font('Arial', 'B', 12)
-    pdf.cell(0, 10, 'Clinical Parameters Analyzed', 0, 1)
-    pdf.set_font('Arial', '', 10)
+    pdf.set_font("Helvetica", "B", 12)
+    pdf.cell(
+        0,
+        10,
+        "Clinical Parameters Analyzed",
+        new_x=XPos.LMARGIN,
+        new_y=YPos.NEXT,
+    )
+    pdf.set_font("Helvetica", "", 10)
 
     for key, val in data.items():
         # Format key nicely
         key_fmt = key.replace("_", " ").title()
-        pdf.cell(90, 8, f'{key_fmt}', 1)
-        pdf.cell(90, 8, f'{val}', 1, 1)
+        pdf.cell(90, 8, f"{key_fmt}", border=1, new_x=XPos.RIGHT, new_y=YPos.TOP)
+        pdf.cell(90, 8, f"{val}", border=1, new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
     pdf.ln(10)
 
     # AI Advice
     if advice:
-        pdf.set_font('Arial', 'B', 12)
-        pdf.cell(0, 10, 'Wellness Recommendations', 0, 1)
-        pdf.set_font('Arial', '', 10)
+        pdf.set_font("Helvetica", "B", 12)
+        pdf.cell(
+            0,
+            10,
+            "Wellness Recommendations",
+            new_x=XPos.LMARGIN,
+            new_y=YPos.NEXT,
+        )
+        pdf.set_font("Helvetica", "", 10)
         for tip in advice:
-            pdf.multi_cell(180, 8, f'- {tip}')
+            pdf.multi_cell(180, 8, f"- {tip}")
 
     # Disclaimer
     pdf.ln(20)
-    pdf.set_font('Arial', 'I', 9)
+    pdf.set_font("Helvetica", "I", 9)
     pdf.set_text_color(100)
-    pdf.multi_cell(180, 5, "DISCLAIMER: This report is generated by an automated analysis system for informational purposes only. It is NOT a substitute for a diagnosis by a Registered Medical Practitioner (RMP). Please consult a doctor for official medical advice.")
+    pdf.multi_cell(
+        180,
+        5,
+        "DISCLAIMER: This report is generated by an automated analysis system for informational purposes only. It is NOT a substitute for a diagnosis by a Registered Medical Practitioner (RMP). Please consult a doctor for official medical advice.",
+    )
 
     # Return bytes directly — fpdf2 returns bytearray, legacy fpdf returns str
-    raw = pdf.output(dest='S')
-    return raw.encode('latin-1') if isinstance(raw, str) else bytes(raw)
+    raw = pdf.output()
+    return raw.encode("latin-1") if isinstance(raw, str) else bytes(raw)

@@ -30,11 +30,25 @@ from .clinical import (
     VitalObservation,
 )
 
+# Data Governance domain
+from .data_governance import (
+    DbContractViolation,
+    DbDatasetEntry,
+    DbDatasetLineage,
+    DbSchemaContract,
+)
+
 # Discharge domain
 from .discharge import DischargeSummary
 
+# Federated Learning domain
+from .federated import FederatedSyncAudit, ModelFeedback
+
 # Hospital domain
 from .hospital import Admission, Bed, Department, Encounter, HospitalFacility
+
+# Clinical Intelligence domain
+from .intelligence import ClinicalAlert, PatientInsight
 
 # Interoperability domain
 from .interoperability import (
@@ -53,13 +67,8 @@ from .pharmacy import DispenseRecord, MedicationInventory, Prescription, Prescri
 # Records domain
 from .records import AuditLog, ChatLog, HealthRecord
 
-# Data Governance domain
-from .data_governance import (
-    DbSchemaContract,
-    DbContractViolation,
-    DbDatasetEntry,
-    DbDatasetLineage,
-)
+# SMART on FHIR domain
+from .smart_app import SmartApp, SmartLaunchContext
 
 __all__ = [
     "Base",
@@ -108,5 +117,14 @@ __all__ = [
     "DbContractViolation",
     "DbDatasetEntry",
     "DbDatasetLineage",
+    # SMART on FHIR
+    "SmartApp",
+    "SmartLaunchContext",
+    # Federated Learning
+    "ModelFeedback",
+    "FederatedSyncAudit",
+    # Clinical Intelligence
+    "ClinicalAlert",
+    "PatientInsight",
 ]
 
