@@ -62,3 +62,45 @@ def test_run_migrations_hides_column_error_details(caplog):
     assert sensitive_error not in caplog.text
     assert "secret-db" not in caplog.text
     assert "Sensitive User" not in caplog.text
+
+
+def test_postgres_startup_does_not_restore_sqlite_backup(monkeypatch):
+    monkeypatch.setattr(
+        main.database,
+        "SQLALCHEMY_DATABASE_URL",
+        "postgresql://user:password@example.invalid/database",
+    )
+
+    with patch("backend.supabase_backup.restore_database") as restore_database:
+        restored = main.restore_sqlite_backup()
+
+    assert restored is False
+    restore_database.assert_not_called()
+
+
+def test_sqlite_startup_restores_configured_backup(monkeypatch):
+    monkeypatch.setattr(
+        main.database,
+        "SQLALCHEMY_DATABASE_URL",
+        "sqlite:///./healthcare.db",
+    )
+
+    with patch("backend.supabase_backup.restore_database", return_value=True) as restore_database:
+        restored = main.restore_sqlite_backup()
+
+    assert restored is True
+    restore_database.assert_called_once_with()
+
+
+def test_postgres_shutdown_does_not_backup_sqlite_database(monkeypatch):
+    monkeypatch.setattr(
+        main.database,
+        "SQLALCHEMY_DATABASE_URL",
+        "postgresql://user:password@example.invalid/database",
+    )
+
+    with patch("backend.supabase_backup.backup_database") as backup_database:
+        backed_up = main.backup_sqlite_database()
+
+    assert backed_up is False
+    backup_database.assert_not_called()

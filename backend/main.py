@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,6 +27,9 @@ GENERATE_REPORT_FAILURE_DETAIL = "Failed to generate report"
 
 
 def _load_allowed_hosts() -> list[str]:
+    if os.getenv("TESTING", "").strip().lower() in {"1", "true", "yes", "on"}:
+        return ["127.0.0.1", "testserver"]
+
     # If running in Hugging Face Spaces, allow all hosts to prevent header routing blocks
     if os.getenv("SPACE_ID") or os.getenv("SPACE_NAME") or os.getenv("HF_SPACE") or os.getenv("RUNNING_IN_HF_SPACE"):
         return ["*"]
@@ -37,8 +41,6 @@ def _load_allowed_hosts() -> list[str]:
     ]
     if configured_hosts:
         return configured_hosts
-    if os.getenv("TESTING", "").strip().lower() in {"1", "true", "yes", "on"}:
-        return ["127.0.0.1", "testserver"]
     return ["127.0.0.1"]
 
 
@@ -59,11 +61,14 @@ from . import (
     billing,
     care_events,
     chat,
+    clinical_intelligence,
     database,
     demo_readiness,
     diagnostics,
     discharge,
     explanation,
+    federated_sync,
+    fhir_endpoints,
     hospital_operations,
     interoperability,
     longitudinal_prediction,
@@ -76,6 +81,7 @@ from . import (
     prediction,
     report,
     sales_readiness,
+    smart_fhir_endpoints,
     streaming_chat,
     telemetry,
 )
@@ -101,6 +107,23 @@ def run_migrations():
 
         alembic_cfg = Config(ini_path)
         alembic_cfg.set_main_option("script_location", os.path.join(base_dir, "backend", "migrations"))
+        from sqlalchemy import inspect, text
+
+        inspector = inspect(database.engine)
+        table_names = set(inspector.get_table_names())
+        application_tables = table_names - {"alembic_version"}
+        current_revision = None
+        if "alembic_version" in table_names:
+            with database.engine.connect() as connection:
+                current_revision = connection.scalar(
+                    text("SELECT version_num FROM alembic_version LIMIT 1")
+                )
+
+        if application_tables and current_revision is None:
+            logger.info("Adopting existing unversioned database at baseline revision.")
+            models.Base.metadata.create_all(bind=database.engine)
+            command.stamp(alembic_cfg, "0001_baseline")
+
         command.upgrade(alembic_cfg, "head")
         logger.info("Migrations completed successfully.")
     except Exception:
@@ -145,6 +168,28 @@ def create_default_admin():
 startup_diagnostics = {}
 
 
+def _uses_sqlite_database() -> bool:
+    return str(database.SQLALCHEMY_DATABASE_URL).startswith("sqlite")
+
+
+def restore_sqlite_backup() -> bool:
+    if not _uses_sqlite_database():
+        return False
+
+    from .supabase_backup import restore_database
+
+    return restore_database()
+
+
+def backup_sqlite_database() -> bool:
+    if not _uses_sqlite_database():
+        return False
+
+    from .supabase_backup import backup_database
+
+    return backup_database()
+
+
 # --- App ---
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -157,8 +202,7 @@ async def lifespan(app: FastAPI):
 
     # Restore SQLite database from Supabase Storage backup if configured
     try:
-        from .supabase_backup import restore_database
-        restore_database()
+        restore_sqlite_backup()
     except Exception as e:
         logger.warning("Failed to restore database from Supabase: %s", e)
     # Mask any sensitive database passwords in URL for logging/diagnostics
@@ -185,11 +229,12 @@ async def lifespan(app: FastAPI):
         logger.warning("Primary database connection failed: %s. Falling back to SQLite.", e)
         startup_diagnostics["primary_conn"] = f"failed: {str(e)}"
         database.fallback_to_sqlite()
+        restore_sqlite_backup()
         startup_diagnostics["fallback_engine"] = str(database.engine)
 
     try:
-        models.Base.metadata.create_all(bind=database.engine)
         run_migrations()
+        models.Base.metadata.create_all(bind=database.engine)
         startup_diagnostics["schema_creation"] = "success"
     except Exception as err:
         logger.warning("File-based SQLite creation/migration failed: %s. Falling back to in-memory SQLite.", err)
@@ -197,8 +242,8 @@ async def lifespan(app: FastAPI):
         database.fallback_to_memory()
         startup_diagnostics["fallback_memory_engine"] = str(database.engine)
         try:
-            models.Base.metadata.create_all(bind=database.engine)
             run_migrations()
+            models.Base.metadata.create_all(bind=database.engine)
             startup_diagnostics["schema_creation_fallback"] = "success"
         except Exception as err2:
             startup_diagnostics["schema_creation_fallback"] = f"failed: {str(err2)}"
@@ -217,12 +262,33 @@ async def lifespan(app: FastAPI):
     except Exception as model_err:
         startup_diagnostics["models_loaded"] = f"failed: {str(model_err)}"
 
+    logger.info("Starting Clinical Event Bus...")
+    try:
+        from .clinical_intelligence import register_intelligence_event_handlers
+        from .event_bus import event_bus
+        from .prediction import register_prediction_event_handlers
+
+        await event_bus.start()
+        register_intelligence_event_handlers()
+        register_prediction_event_handlers()
+        startup_diagnostics["event_bus"] = "success"
+    except Exception as eb_err:
+        startup_diagnostics["event_bus"] = f"failed: {str(eb_err)}"
+
     yield
     logger.info("Shutting down...")
+
+    # Stop Clinical Event Bus
+    try:
+        from .event_bus import event_bus
+        await event_bus.stop()
+        logger.info("Clinical Event Bus stopped.")
+    except Exception as eb_stop_err:
+        logger.warning("Failed to stop Event Bus: %s", eb_stop_err)
+
     # Backup SQLite database to Supabase Storage backup if configured
     try:
-        from .supabase_backup import backup_database
-        backup_database()
+        backup_sqlite_database()
     except Exception as e:
         logger.warning("Failed to backup database to Supabase: %s", e)
 
@@ -276,6 +342,10 @@ from . import appointments, ollama_routes
 app.include_router(appointments.router, prefix=API_V1_PREFIX, tags=["Appointments"])
 app.include_router(ollama_routes.router, prefix=API_V1_PREFIX)
 app.include_router(longitudinal_prediction.router, prefix=API_V1_PREFIX)
+app.include_router(smart_fhir_endpoints.router, prefix=API_V1_PREFIX)
+app.include_router(fhir_endpoints.router, prefix=API_V1_PREFIX)
+app.include_router(federated_sync.router, prefix=API_V1_PREFIX)
+app.include_router(clinical_intelligence.router, prefix=API_V1_PREFIX)
 
 @app.get("/")
 def root():
@@ -342,10 +412,16 @@ if os.path.isdir(_frontend_dist):
     # Catch-all route to serve the React SPA and let React Router handle routing
     @app.get("/{catchall:path}")
     async def serve_frontend(catchall: str, request: Request):
-        # Serve specific file if it exists directly in the dist directory (e.g., favicon.ico)
-        file_path = os.path.join(_frontend_dist, catchall)
-        if os.path.isfile(file_path):
-            return FileResponse(file_path)
+        frontend_root = Path(_frontend_dist).resolve()
+        requested_path = (frontend_root / catchall).resolve()
+        try:
+            requested_path.relative_to(frontend_root)
+        except ValueError:
+            raise HTTPException(status_code=404)
+
+        # Serve specific file if it exists inside the dist directory (e.g., favicon.ico)
+        if requested_path.is_file():
+            return FileResponse(str(requested_path))
 
         # If requesting a file (with extension) that does not exist, return 404
         if "." in os.path.basename(catchall):

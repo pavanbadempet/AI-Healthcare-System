@@ -1,7 +1,7 @@
 /**
  * AI Healthcare System — Chat & Records API
  */
-import { apiFetch, API_BASE, authHeaders } from './apiCore';
+import { apiFetch, API_BASE, authHeaders, redirectToLogin } from './apiCore';
 
 // ── Chat ─────────────────────────────────────────────────────────
 export interface ChatMessage {
@@ -64,7 +64,7 @@ export function streamChat(
       if (res.status === 401) {
         if (typeof window !== 'undefined') {
           localStorage.removeItem('healthcare-auth');
-          window.location.href = '/login';
+          redirectToLogin();
         }
         throw new Error('Unauthorized');
       }
@@ -106,7 +106,7 @@ export function streamChat(
           if (syncRes.status === 401) {
             if (typeof window !== 'undefined') {
               localStorage.removeItem('healthcare-auth');
-              window.location.href = '/login';
+              redirectToLogin();
             }
             throw new Error('Unauthorized');
           }

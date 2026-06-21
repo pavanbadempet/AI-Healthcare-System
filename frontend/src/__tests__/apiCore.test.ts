@@ -51,5 +51,19 @@ describe('core API fetch wrapper', () => {
     await expect(apiFetch('/profile')).rejects.toThrow('Could not validate credentials');
 
     expect(localStorage.getItem('healthcare-auth')).toBeNull();
+    expect(window.location.pathname).toBe('/login');
+  });
+
+  it('uses the backend dev server when no API URL is configured', async () => {
+    vi.stubEnv('VITE_PUBLIC_API_URL', '');
+    vi.stubEnv('NEXT_PUBLIC_API_URL', '');
+    vi.resetModules();
+
+    try {
+      const { API_BASE } = await import('@/lib/apiCore');
+      expect(API_BASE).toBe('http://127.0.0.1:8000/v1');
+    } finally {
+      vi.stubEnv('VITE_PUBLIC_API_URL', 'http://127.0.0.1:8000');
+    }
   });
 });

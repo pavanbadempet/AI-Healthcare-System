@@ -35,13 +35,14 @@ def test_vitals_generation():
     assert vitals_anomaly["patient_id"] == 99
     # Verify that at least one vital sign went out of normal range
     out_of_range = (
-        vitals_anomaly["heart_rate"] > 100 or
-        vitals_anomaly["heart_rate"] < 60 or
-        vitals_anomaly["spo2"] < 95 or
-        vitals_anomaly["systolic_bp"] > 135 or
-        vitals_anomaly["temperature_c"] > 38.0
+        vitals_anomaly["heart_rate"] > 100
+        or vitals_anomaly["heart_rate"] < 60
+        or vitals_anomaly["spo2"] < 95
+        or vitals_anomaly["systolic_bp"] > 135
+        or vitals_anomaly["temperature_c"] > 38.0
     )
     assert out_of_range
+
 
 def test_predict_heart_disease_risk():
     """Verify heart risk prediction returns higher probability for extreme vitals."""
@@ -54,6 +55,7 @@ def test_predict_heart_disease_risk():
     assert high_risk > 0.60
     assert high_risk > low_risk
 
+
 def test_predict_lung_risk():
     """Verify lung risk prediction returns higher probability for extreme vitals."""
     # Stable vitals -> low risk
@@ -64,6 +66,7 @@ def test_predict_lung_risk():
     high_risk = predict_lung_risk(avg_spo2=87.0, avg_resp_rate=28.0)
     assert high_risk > 0.70
     assert high_risk > low_risk
+
 
 def test_process_conformed_record_db_inserts():
     """Test process_conformed_record creates and saves vital observations and alerts to the database."""
@@ -76,16 +79,16 @@ def test_process_conformed_record_db_inserts():
     # Create a dummy conformed vital stream record
     record = {
         "patient_id": 42,
-        "heart_rate": 145.0,          # Cardiac anomaly
-        "systolic_bp": 175.0,          # Severe hypertension
+        "heart_rate": 145.0,  # Cardiac anomaly
+        "systolic_bp": 175.0,  # Severe hypertension
         "diastolic_bp": 105.0,
-        "spo2": 89.0,                  # Hypoxia anomaly
+        "spo2": 89.0,  # Hypoxia anomaly
         "temperature_c": 37.1,
         "respiratory_rate": 25.0,
         "facility_id": 1,
         "encounter_id": 12,
         "department_id": 3,
-        "timestamp": datetime.now(timezone.utc).isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
     # Run the record processing
@@ -108,7 +111,11 @@ def test_process_conformed_record_db_inserts():
     assert len(monitoring_signals) == 1
     assert monitoring_signals[0].patient_id == 42
     assert monitoring_signals[0].severity == "critical"
-    assert "Hypoxia" in monitoring_signals[0].title or "Arrhythmia" in monitoring_signals[0].title or "Risk" in monitoring_signals[0].title
+    assert (
+        "Hypoxia" in monitoring_signals[0].title
+        or "Arrhythmia" in monitoring_signals[0].title
+        or "Risk" in monitoring_signals[0].title
+    )
 
 
 def test_spark_streaming_metrics_logging():
@@ -127,16 +134,19 @@ def test_spark_streaming_metrics_logging():
         "facility_id": 1,
         "encounter_id": 12,
         "department_id": 3,
-        "timestamp": datetime.now(timezone.utc).isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
     mock_df = MagicMock()
     mock_df.collect.return_value = [mock_row]
 
-    with patch("scripts.runners.run_telemetry_streaming.SessionLocal", return_value=mock_db), \
-         patch("scripts.runners.run_telemetry_streaming.process_conformed_record", return_value=1.5) as mock_process_rec:
-
+    with (
+        patch("scripts.runners.run_telemetry_streaming.SessionLocal", return_value=mock_db),
+        patch("scripts.runners.run_telemetry_streaming.load_ml_models"),
+        patch("scripts.runners.run_telemetry_streaming.process_conformed_record", return_value=1.5) as mock_process_rec,
+    ):
         from scripts.runners.run_telemetry_streaming import process_batch
+
         process_batch(mock_df, batch_id=123)
 
         mock_process_rec.assert_called_once()
@@ -151,4 +161,3 @@ def test_spark_streaming_metrics_logging():
         assert metrics[0].processing_time_ms >= 0
         assert metrics[0].ml_latency_ms == 1.5
         mock_db.commit.assert_called_once()
-

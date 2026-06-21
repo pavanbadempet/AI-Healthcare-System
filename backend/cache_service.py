@@ -20,12 +20,14 @@ REDIS_PORT = int(os.environ.get("REDIS_PORT", "6379"))
 REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", None)
 REDIS_DB = int(os.environ.get("REDIS_DB", "0"))
 
+
 class SystemCache:
     """Thread-safe dual-backend cache (Redis with silent In-Memory fallback)."""
-    _instance: Optional['SystemCache'] = None
+
+    _instance: Optional["SystemCache"] = None
     _lock = threading.Lock()
 
-    def __new__(cls) -> 'SystemCache':
+    def __new__(cls) -> "SystemCache":
         with cls._lock:
             if cls._instance is None:
                 cls._instance = super().__new__(cls)
@@ -40,14 +42,11 @@ class SystemCache:
         if REDIS_URL or REDIS_HOST:
             try:
                 import redis
+
                 if REDIS_URL:
                     # Strip quotes if present (common in .env files)
                     url = REDIS_URL.strip('"').strip("'")
-                    self.redis_client = redis.Redis.from_url(
-                        url,
-                        socket_timeout=2.0,
-                        decode_responses=False
-                    )
+                    self.redis_client = redis.Redis.from_url(url, socket_timeout=2.0, decode_responses=False)
                 else:
                     self.redis_client = redis.Redis(
                         host=REDIS_HOST,
@@ -55,7 +54,7 @@ class SystemCache:
                         password=REDIS_PASSWORD,
                         db=REDIS_DB,
                         socket_timeout=2.0,
-                        decode_responses=False # Keep binary/pickle serialization flexible
+                        decode_responses=False,  # Keep binary/pickle serialization flexible
                     )
                 # Test connection
                 self.redis_client.ping()
@@ -67,13 +66,16 @@ class SystemCache:
                 logger.warning("Redis configured but failed to connect (falling back to in-memory): %s", e)
                 self.redis_client = None
         else:
-            logger.info("No Redis configuration found (neither REDIS_URL nor REDIS_HOST). Initialized in-memory TTL cache.")
+            logger.info(
+                "No Redis configuration found (neither REDIS_URL nor REDIS_HOST). Initialized in-memory TTL cache."
+            )
 
     def get(self, key: str) -> Optional[Any]:
         """Retrieve a value from the cache. Returns None on cache miss or expiration."""
         if self.redis_client:
             try:
                 import pickle
+
                 val = self.redis_client.get(key)
                 if val is not None:
                     return pickle.loads(val)
@@ -97,9 +99,10 @@ class SystemCache:
         if self.redis_client:
             try:
                 import pickle
+
                 serialized = pickle.dumps(value)
                 if ttl:
-                    self.redis_client.setex(key, ttl, serialized)
+                    self.redis_client.set(key, serialized, ex=ttl)
                 else:
                     self.redis_client.set(key, serialized)
                 return
@@ -183,9 +186,11 @@ class SystemCache:
         """Serialize a value using msgpack if available, otherwise pickle."""
         try:
             import msgpack
+
             return msgpack.packb(value, use_bin_type=True, default=str)
         except (ImportError, TypeError):
             import pickle
+
             return pickle.dumps(value)
 
     @staticmethod
@@ -193,9 +198,11 @@ class SystemCache:
         """Deserialize bytes using msgpack if available, otherwise pickle."""
         try:
             import msgpack
+
             return msgpack.unpackb(data, raw=False)
         except (ImportError, Exception):
             import pickle
+
             return pickle.loads(data)
 
     def safe_set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
@@ -204,7 +211,7 @@ class SystemCache:
             try:
                 serialized = self._serialize(value)
                 if ttl:
-                    self.redis_client.setex(key, ttl, serialized)
+                    self.redis_client.set(key, serialized, ex=ttl)
                 else:
                     self.redis_client.set(key, serialized)
                 return
@@ -242,7 +249,6 @@ class SystemCache:
 # ── API Response Caching Decorator ─────────────────────────────────────
 import functools
 import hashlib
-import json
 
 
 def cached_response(ttl: int = 300, key_prefix: str = "api"):
@@ -259,6 +265,7 @@ def cached_response(ttl: int = 300, key_prefix: str = "api"):
         async def get_dashboard_stats(db: Session = Depends(get_db)):
             ...
     """
+
     def decorator(func):
         @functools.wraps(func)
         async def async_wrapper(*args, **kwargs):
@@ -308,9 +315,11 @@ def cached_response(ttl: int = 300, key_prefix: str = "api"):
             return result
 
         import asyncio
+
         if asyncio.iscoroutinefunction(func):
             return async_wrapper
         return sync_wrapper
+
     return decorator
 
 

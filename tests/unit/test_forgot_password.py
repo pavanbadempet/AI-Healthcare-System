@@ -1,8 +1,7 @@
-import re
+import logging
 from unittest.mock import patch
-import pytest
-from jose import jwt
-from backend import auth, models
+
+from backend import auth
 
 
 def test_forgot_password_generic_response(client):
@@ -26,6 +25,35 @@ def test_forgot_password_generic_response(client):
     assert response_non_exist.status_code == 200
     assert response_non_exist.json()["status"] == "success"
     assert "reset link has been sent" in response_non_exist.json()["message"]
+
+
+def test_forgot_password_delivers_reset_link_without_logging_credentials(client, caplog):
+    client.post("/v1/signup", json={
+        "username": "private_reset_user",
+        "password": "Password123!",
+        "email": "private-reset@example.com",
+        "full_name": "Private Reset User",
+        "dob": "1990-01-01"
+    })
+    caplog.clear()
+
+    with patch("backend.email_service.send_password_reset", return_value=True) as send_reset:
+        with caplog.at_level(logging.INFO):
+            response = client.post(
+                "/v1/forgot-password",
+                json={"email": "private-reset@example.com"},
+            )
+
+    assert response.status_code == 200
+    delivery = send_reset.call_args.kwargs
+    assert delivery["to_email"] == "private-reset@example.com"
+    assert delivery["username"] == "private_reset_user"
+    assert "reset-password?token=" in delivery["reset_link"]
+
+    log_text = caplog.text
+    assert delivery["reset_link"] not in log_text
+    assert "private-reset@example.com" not in log_text
+    assert "private_reset_user" not in log_text
 
 
 def test_forgot_password_redirect(client):

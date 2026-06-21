@@ -215,28 +215,16 @@ def test_predict_lungs_exception(caplog):
         _assert_generic_prediction_failure(resp, caplog)
 
 
-# --- Import Error Test ---
-# This is tricky because it runs at import time. We use reload.
-import importlib
+def test_model_loading_failure(tmp_path):
+    from backend.model_service import ModelService, ModelStatus
 
+    service = ModelService(model_dir=str(tmp_path))
+    with patch.dict(
+        "os.environ",
+        {"TESTING": "", "HF_TOKEN": "", "HF_DATASET_ID": ""},
+    ):
+        service.initialize()
 
-def test_model_loading_failure():
-    # Patch open to fail, forcing exception block
-    with patch("builtins.open", side_effect=FileNotFoundError("Mock File Missing")), \
-         patch.dict("os.environ", {"TESTING": ""}):
-        # Reload module
-        importlib.reload(backend.prediction)
-        # Initialize models manually
-        backend.prediction.initialize_models()
-
-        # Check globals are None (since we unset TESTING)
-        assert backend.prediction.diabetes_model is None
-        assert backend.prediction.heart_model is None
-
-    # Restore module (reload again without patch) to fix state for other tests?
-    try:
-        importlib.reload(backend.prediction)
-        backend.prediction.initialize_models()
-    except Exception:
-        pass # If local files are missing, it stays None, which is fine.
+    assert service._entries["diabetes"].status == ModelStatus.NOT_LOADED
+    assert service._entries["heart"].status == ModelStatus.NOT_LOADED
 

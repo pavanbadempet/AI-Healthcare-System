@@ -15,8 +15,9 @@ from typing import Any, Dict, List, Tuple
 
 import joblib
 import numpy as np
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
+from . import auth, models
 from .model_service import MEDICAL_DISCLAIMER
 from .schemas.longitudinal import (
     LongitudinalDiabetesRequest,
@@ -281,8 +282,20 @@ def _predict_longitudinal(
 # API Endpoints
 # ---------------------------------------------------------------------------
 
+
+def _validate_patient_context(patient_id: int | None, current_user: models.User) -> None:
+    if patient_id is not None and patient_id != current_user.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Patient context does not match the authenticated user",
+        )
+
+
 @router.post("/diabetes", response_model=LongitudinalPredictionResponse)
-async def predict_longitudinal_diabetes(request: LongitudinalDiabetesRequest):
+async def predict_longitudinal_diabetes(
+    request: LongitudinalDiabetesRequest,
+    current_user: models.User = Depends(auth.get_current_user),
+):
     """
     Predict diabetes risk from a chronological sequence of patient visits.
 
@@ -293,37 +306,50 @@ async def predict_longitudinal_diabetes(request: LongitudinalDiabetesRequest):
     **Note**: This is an AI-generated health assessment. Please consult a
     qualified healthcare professional for diagnosis and treatment decisions.
     """
+    _validate_patient_context(request.patient_id, current_user)
     return _predict_longitudinal("diabetes", request.visits, DIABETES_FEATURES)
 
 
 @router.post("/heart", response_model=LongitudinalPredictionResponse)
-async def predict_longitudinal_heart(request: LongitudinalHeartRequest):
+async def predict_longitudinal_heart(
+    request: LongitudinalHeartRequest,
+    current_user: models.User = Depends(auth.get_current_user),
+):
     """
     Predict heart disease risk from a chronological sequence of patient visits.
 
     Accepts 2+ visit records ordered oldest → newest.  Returns risk probability,
     clinical risk label, trend assessment, and per-visit attention weights.
     """
+    _validate_patient_context(request.patient_id, current_user)
     return _predict_longitudinal("heart", request.visits, HEART_FEATURES)
 
 
 @router.post("/liver", response_model=LongitudinalPredictionResponse)
-async def predict_longitudinal_liver(request: LongitudinalLiverRequest):
+async def predict_longitudinal_liver(
+    request: LongitudinalLiverRequest,
+    current_user: models.User = Depends(auth.get_current_user),
+):
     """
     Predict liver disease risk from a chronological sequence of patient visits.
 
     Accepts 2+ visit records ordered oldest → newest.  Returns risk probability,
     clinical risk label, trend assessment, and per-visit attention weights.
     """
+    _validate_patient_context(request.patient_id, current_user)
     return _predict_longitudinal("liver", request.visits, LIVER_FEATURES)
 
 
 @router.post("/kidney", response_model=LongitudinalPredictionResponse)
-async def predict_longitudinal_kidney(request: LongitudinalKidneyRequest):
+async def predict_longitudinal_kidney(
+    request: LongitudinalKidneyRequest,
+    current_user: models.User = Depends(auth.get_current_user),
+):
     """
     Predict kidney disease risk from a chronological sequence of patient visits.
 
     Accepts 2+ visit records ordered oldest → newest.  Returns risk probability,
     clinical risk label, trend assessment, and per-visit attention weights.
     """
+    _validate_patient_context(request.patient_id, current_user)
     return _predict_longitudinal("kidney", request.visits, KIDNEY_FEATURES)

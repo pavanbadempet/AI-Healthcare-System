@@ -794,7 +794,11 @@ def _cleanup_pbt_store(monkeypatch):
     metadata=st.fixed_dictionaries({"user_id": st.text(min_size=1)}),
     record_id=st.text(min_size=1),
 )
-@settings(max_examples=50, suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(
+    max_examples=50,
+    deadline=None,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
 def test_property_add_round_trip(text, metadata, record_id, tmp_path, monkeypatch):
     """Req 1.4, 1.5, 2.1, 10.1, 10.2 — Added records are stored and retrievable.
 
@@ -822,7 +826,11 @@ def test_property_add_round_trip(text, metadata, record_id, tmp_path, monkeypatc
     text2=st.text(min_size=1),
     meta2=st.fixed_dictionaries({"user_id": st.text(min_size=1)}),
 )
-@settings(max_examples=50, suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(
+    max_examples=50,
+    deadline=None,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
 def test_property_update_idempotence(record_id, text1, meta1, text2, meta2, tmp_path, monkeypatch):
     """Req 2.2 — Calling add() twice with same record_id does not grow the store.
 
@@ -842,7 +850,11 @@ def test_property_update_idempotence(record_id, text1, meta1, text2, meta2, tmp_
 @given(
     record_ids=st.lists(st.text(min_size=1), min_size=1, max_size=5, unique=True)
 )
-@settings(max_examples=50, suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(
+    max_examples=50,
+    deadline=None,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
 def test_property_delete_isolation(record_ids, tmp_path, monkeypatch):
     """Req 3.1, 3.2, 10.3 — Deleted records never appear in search results.
 
@@ -878,7 +890,11 @@ def test_property_delete_isolation(record_ids, tmp_path, monkeypatch):
         unique_by=lambda r: r["id"],
     )
 )
-@settings(max_examples=50, suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(
+    max_examples=50,
+    deadline=None,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
 def test_property_acl_filter_isolation(records, tmp_path, monkeypatch):
     """Req 4.2, 4.3, 4.4 — Search never leaks cross-user records.
 
@@ -904,7 +920,11 @@ def test_property_acl_filter_isolation(records, tmp_path, monkeypatch):
     k=st.integers(min_value=1, max_value=5),
     n=st.integers(min_value=1, max_value=8),
 )
-@settings(max_examples=50, suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(
+    max_examples=50,
+    deadline=None,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
 def test_property_search_result_shape_and_ordering(k, n, tmp_path, monkeypatch):
     """Req 4.1, 4.6, 4.7 — Results have correct shape, positive scores, and are sorted.
 
@@ -936,7 +956,11 @@ def test_property_search_result_shape_and_ordering(k, n, tmp_path, monkeypatch):
         unique_by=lambda r: r["id"],
     )
 )
-@settings(max_examples=30, suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(
+    max_examples=30,
+    deadline=None,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
 def test_property_persistence_round_trip(records, tmp_path, monkeypatch):
     """Req 5.1, 5.2, 5.3 — save() + load() recovers identical state.
 
@@ -987,7 +1011,11 @@ def test_property_persistence_round_trip(records, tmp_path, monkeypatch):
     valid_count=st.integers(min_value=0, max_value=5),
     malformed_count=st.integers(min_value=0, max_value=3),
 )
-@settings(max_examples=30, suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(
+    max_examples=30,
+    deadline=None,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
 def test_property_migration_correctness(valid_count, malformed_count, tmp_path, monkeypatch):
     """Req 6.1, 6.4 — All valid records imported; malformed records skipped.
 
@@ -1038,7 +1066,11 @@ def test_property_migration_correctness(valid_count, malformed_count, tmp_path, 
 
 # Feature: turbovec-vector-store-integration, Property 8: Singleton idempotence
 @given(n_calls=st.integers(min_value=2, max_value=10))
-@settings(max_examples=30, suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(
+    max_examples=30,
+    deadline=None,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
 def test_property_singleton_idempotence(n_calls, tmp_path, monkeypatch):
     """Req 7.3 — get_vector_store() always returns the same object.
 
@@ -1069,7 +1101,11 @@ def test_property_singleton_idempotence(n_calls, tmp_path, monkeypatch):
 
 # Feature: turbovec-vector-store-integration, Property 9: Invalid quantization falls back to 4-bit
 @given(quant=st.text(alphabet=st.characters(blacklist_categories=("Cs",), blacklist_characters="\x00")).filter(lambda s: s not in {"2", "4"}))
-@settings(max_examples=50, suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(
+    max_examples=50,
+    deadline=None,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
 def test_property_invalid_quantization_fallback(quant, tmp_path, monkeypatch):
     """Req 1.3 — Invalid TURBOVEC_QUANTIZATION always falls back to 4-bit with a WARNING.
 

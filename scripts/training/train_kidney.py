@@ -17,9 +17,12 @@ except ImportError:
         from evaluation import evaluate_and_save
 
 try:
-    from .features import KIDNEY_FEATURES
+    from backend.features import KIDNEY_FEATURES
 except ImportError:
-    from features import KIDNEY_FEATURES
+    try:
+        from .features import KIDNEY_FEATURES
+    except ImportError:
+        from features import KIDNEY_FEATURES
 
 # --- Configuration ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

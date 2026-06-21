@@ -15,6 +15,7 @@ from backend import core_ai
 
 # ── helpers ──────────────────────────────────────────────────────────────────
 
+
 def _make_ollama_response(content: str, status: int = 200):
     """Return a fake httpx Response-like object for Ollama chat/generate."""
     mock = MagicMock()
@@ -33,6 +34,7 @@ def _make_generate_response(text: str, status: int = 200):
 
 
 # ── Model list cache ──────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_get_ollama_models_returns_list():
@@ -59,10 +61,10 @@ async def test_get_ollama_models_returns_list():
 async def test_get_ollama_models_returns_empty_on_failure():
     core_ai._model_cache.clear()
 
-    async def failing_client(*args, **kwargs):
-        raise Exception("connection refused")
-
-    with patch("backend.core_ai.httpx.AsyncClient", side_effect=failing_client):
+    with patch(
+        "backend.core_ai.httpx.AsyncClient",
+        side_effect=Exception("connection refused"),
+    ):
         models = await core_ai.get_ollama_models()
 
     assert models == []
@@ -100,6 +102,7 @@ async def test_get_ollama_models_uses_cache():
 
 # ── Model resolution ──────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_resolve_ollama_model_exact_match():
     with patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=["llama3.2", "mistral"])):
@@ -130,6 +133,7 @@ async def test_resolve_ollama_model_no_models():
 
 # ── is_available ──────────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_is_available_true_when_ollama_has_models():
     with patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=["llama3.2"])):
@@ -138,19 +142,24 @@ async def test_is_available_true_when_ollama_has_models():
 
 @pytest.mark.asyncio
 async def test_is_available_true_when_gemini_key_set():
-    with patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=[])), \
-         patch("backend.core_ai.has_gemini_api_key", return_value=True):
+    with (
+        patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=[])),
+        patch("backend.core_ai.has_gemini_api_key", return_value=True),
+    ):
         assert await core_ai.is_available() is True
 
 
 @pytest.mark.asyncio
 async def test_is_available_false_when_neither():
-    with patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=[])), \
-         patch("backend.core_ai.has_gemini_api_key", return_value=False):
+    with (
+        patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=[])),
+        patch("backend.core_ai.has_gemini_api_key", return_value=False),
+    ):
         assert await core_ai.is_available() is False
 
 
 # ── has_gemini_api_key guard ──────────────────────────────────────────────────
+
 
 def test_has_gemini_api_key_rejects_placeholder_values():
     for bad in ("", "dummy", "your_gemini_api_key_here", "placeholder", "your_key"):
@@ -165,6 +174,7 @@ def test_has_gemini_api_key_accepts_real_key():
 
 # ── Ollama generate ───────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_generate_ollama_returns_text():
     mock_client = AsyncMock()
@@ -172,8 +182,10 @@ async def test_generate_ollama_returns_text():
     mock_client.__aexit__ = AsyncMock(return_value=False)
     mock_client.post = AsyncMock(return_value=_make_generate_response("Diabetes info"))
 
-    with patch("backend.core_ai._resolve_ollama_model", AsyncMock(return_value="llama3.2")), \
-         patch("backend.core_ai.httpx.AsyncClient", return_value=mock_client):
+    with (
+        patch("backend.core_ai._resolve_ollama_model", AsyncMock(return_value="llama3.2")),
+        patch("backend.core_ai.httpx.AsyncClient", return_value=mock_client),
+    ):
         result = await core_ai._generate_ollama("What is diabetes?", system="You are a doctor.")
 
     assert result == "Diabetes info"
@@ -195,14 +207,17 @@ async def test_generate_ollama_falls_back_to_chat_api_when_response_empty():
     # First call is /api/generate (empty), second is /api/chat (content)
     mock_client.post = AsyncMock(side_effect=[empty_resp, chat_resp])
 
-    with patch("backend.core_ai._resolve_ollama_model", AsyncMock(return_value="llama3.2")), \
-         patch("backend.core_ai.httpx.AsyncClient", return_value=mock_client):
+    with (
+        patch("backend.core_ai._resolve_ollama_model", AsyncMock(return_value="llama3.2")),
+        patch("backend.core_ai.httpx.AsyncClient", return_value=mock_client),
+    ):
         result = await core_ai._generate_ollama("prompt")
 
     assert result == "Chat fallback response"
 
 
 # ── Ollama chat ───────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_chat_ollama_returns_text():
@@ -211,8 +226,10 @@ async def test_chat_ollama_returns_text():
     mock_client.__aexit__ = AsyncMock(return_value=False)
     mock_client.post = AsyncMock(return_value=_make_ollama_response("I am fine, thank you."))
 
-    with patch("backend.core_ai._resolve_ollama_model", AsyncMock(return_value="llama3.2")), \
-         patch("backend.core_ai.httpx.AsyncClient", return_value=mock_client):
+    with (
+        patch("backend.core_ai._resolve_ollama_model", AsyncMock(return_value="llama3.2")),
+        patch("backend.core_ai.httpx.AsyncClient", return_value=mock_client),
+    ):
         result = await core_ai._chat_ollama([{"role": "user", "content": "How are you?"}])
 
     assert result == "I am fine, thank you."
@@ -226,6 +243,7 @@ async def test_chat_ollama_raises_when_no_models():
 
 
 # ── Ollama stream ─────────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_stream_ollama_yields_chunks():
@@ -251,8 +269,10 @@ async def test_stream_ollama_yields_chunks():
     mock_client.__aexit__ = AsyncMock(return_value=False)
     mock_client.stream = MagicMock(return_value=mock_stream)
 
-    with patch("backend.core_ai._resolve_ollama_model", AsyncMock(return_value="llama3.2")), \
-         patch("backend.core_ai.httpx.AsyncClient", return_value=mock_client):
+    with (
+        patch("backend.core_ai._resolve_ollama_model", AsyncMock(return_value="llama3.2")),
+        patch("backend.core_ai.httpx.AsyncClient", return_value=mock_client),
+    ):
         chunks = [c async for c in core_ai._stream_ollama([{"role": "user", "content": "hi"}])]
 
     assert chunks == ["Hello", " world"]
@@ -268,6 +288,7 @@ async def test_stream_ollama_yields_error_when_no_model():
 
 # ── Gemini chat (multi-turn) ──────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_chat_gemini_uses_start_chat_and_returns_text():
     mock_response = MagicMock()
@@ -279,8 +300,10 @@ async def test_chat_gemini_uses_start_chat_and_returns_text():
     mock_model = MagicMock()
     mock_model.start_chat = MagicMock(return_value=mock_session)
 
-    with patch("backend.core_ai._get_gemini_model", return_value=mock_model), \
-         patch("asyncio.to_thread", new=lambda fn, *args, **kwargs: asyncio.coroutine(lambda: fn(*args, **kwargs))()):
+    with (
+        patch("backend.core_ai._get_gemini_model", return_value=mock_model),
+        patch("asyncio.to_thread", new=lambda fn, *args, **kwargs: asyncio.coroutine(lambda: fn(*args, **kwargs))()),
+    ):
         # Use side_effect to properly await
         pass
 
@@ -288,11 +311,12 @@ async def test_chat_gemini_uses_start_chat_and_returns_text():
     async def fake_to_thread(fn, *args, **kwargs):
         return fn(*args, **kwargs)
 
-    with patch("backend.core_ai._get_gemini_model", return_value=mock_model), \
-         patch("backend.core_ai.asyncio.to_thread", new=fake_to_thread):
+    with (
+        patch("backend.core_ai._get_gemini_model", return_value=mock_model),
+        patch("backend.core_ai.asyncio.to_thread", new=fake_to_thread),
+    ):
         result = await core_ai._chat_gemini(
-            [{"role": "user", "content": "What is hypertension?"}],
-            system="You are a medical assistant."
+            [{"role": "user", "content": "What is hypertension?"}], system="You are a medical assistant."
         )
 
     assert result == "Gemini multi-turn reply"
@@ -321,12 +345,11 @@ async def test_chat_gemini_injects_system_as_history():
     async def fake_to_thread(fn, *args, **kwargs):
         return fn(*args, **kwargs)
 
-    with patch("backend.core_ai._get_gemini_model", return_value=mock_model), \
-         patch("backend.core_ai.asyncio.to_thread", new=fake_to_thread):
-        await core_ai._chat_gemini(
-            [{"role": "user", "content": "hello"}],
-            system="You are a doctor."
-        )
+    with (
+        patch("backend.core_ai._get_gemini_model", return_value=mock_model),
+        patch("backend.core_ai.asyncio.to_thread", new=fake_to_thread),
+    ):
+        await core_ai._chat_gemini([{"role": "user", "content": "hello"}], system="You are a doctor.")
 
     # System should be first history entry as user role
     assert captured_history[0]["role"] == "user"
@@ -360,8 +383,10 @@ async def test_chat_gemini_maps_assistant_role_to_model():
         {"role": "user", "content": "How can I improve?"},
     ]
 
-    with patch("backend.core_ai._get_gemini_model", return_value=mock_model), \
-         patch("backend.core_ai.asyncio.to_thread", new=fake_to_thread):
+    with (
+        patch("backend.core_ai._get_gemini_model", return_value=mock_model),
+        patch("backend.core_ai.asyncio.to_thread", new=fake_to_thread),
+    ):
         await core_ai._chat_gemini(messages)
 
     # The second message (assistant) should map to "model"
@@ -378,19 +403,24 @@ async def test_chat_gemini_returns_empty_when_no_model():
 
 # ── Public API: generate() ────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_generate_uses_ollama_when_available():
-    with patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=["llama3.2"])), \
-         patch("backend.core_ai._generate_ollama", AsyncMock(return_value="Ollama says: glucose is sugar")):
+    with (
+        patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=["llama3.2"])),
+        patch("backend.core_ai._generate_ollama", AsyncMock(return_value="Ollama says: glucose is sugar")),
+    ):
         result = await core_ai.generate("What is glucose?")
     assert result == "Ollama says: glucose is sugar"
 
 
 @pytest.mark.asyncio
 async def test_generate_falls_back_to_gemini_when_ollama_empty():
-    with patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=[])), \
-         patch("backend.core_ai.has_gemini_api_key", return_value=True), \
-         patch("backend.core_ai._generate_gemini", AsyncMock(return_value="Gemini says: glucose is sugar")):
+    with (
+        patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=[])),
+        patch("backend.core_ai.has_gemini_api_key", return_value=True),
+        patch("backend.core_ai._generate_gemini", AsyncMock(return_value="Gemini says: glucose is sugar")),
+    ):
         result = await core_ai.generate("What is glucose?")
     assert result == "Gemini says: glucose is sugar"
 
@@ -398,44 +428,51 @@ async def test_generate_falls_back_to_gemini_when_ollama_empty():
 @pytest.mark.asyncio
 async def test_generate_uses_explicit_cloud_provider():
     with patch("backend.core_ai._generate_cloud", AsyncMock(return_value="OpenAI answer")):
-        result = await core_ai.generate(
-            "prompt", api_provider="openai", api_key="sk-test"
-        )
+        result = await core_ai.generate("prompt", api_provider="openai", api_key="sk-test")
     assert result == "OpenAI answer"
 
 
 @pytest.mark.asyncio
 async def test_generate_returns_mock_fallback_when_all_unavailable():
-    with patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=[])), \
-         patch("backend.core_ai.has_gemini_api_key", return_value=False):
+    with (
+        patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=[])),
+        patch("backend.core_ai.has_gemini_api_key", return_value=False),
+    ):
         result = await core_ai.generate("prompt")
     assert "offline mode" in result.lower() or "mock" in result.lower()
 
 
 # ── Public API: chat() ────────────────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_chat_uses_ollama_when_available():
-    with patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=["llama3.2"])), \
-         patch("backend.core_ai._chat_ollama", AsyncMock(return_value="Ollama chat reply")):
+    with (
+        patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=["llama3.2"])),
+        patch("backend.core_ai._chat_ollama", AsyncMock(return_value="Ollama chat reply")),
+    ):
         result = await core_ai.chat([{"role": "user", "content": "hi"}])
     assert result == "Ollama chat reply"
 
 
 @pytest.mark.asyncio
 async def test_chat_falls_back_to_gemini_on_ollama_failure():
-    with patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=["llama3.2"])), \
-         patch("backend.core_ai._chat_ollama", AsyncMock(side_effect=Exception("timeout"))), \
-         patch("backend.core_ai.has_gemini_api_key", return_value=True), \
-         patch("backend.core_ai._chat_gemini", AsyncMock(return_value="Gemini fallback")):
+    with (
+        patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=["llama3.2"])),
+        patch("backend.core_ai._chat_ollama", AsyncMock(side_effect=Exception("timeout"))),
+        patch("backend.core_ai.has_gemini_api_key", return_value=True),
+        patch("backend.core_ai._chat_gemini", AsyncMock(return_value="Gemini fallback")),
+    ):
         result = await core_ai.chat([{"role": "user", "content": "hi"}])
     assert result == "Gemini fallback"
 
 
 @pytest.mark.asyncio
 async def test_chat_returns_mock_when_all_unavailable():
-    with patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=[])), \
-         patch("backend.core_ai.has_gemini_api_key", return_value=False):
+    with (
+        patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=[])),
+        patch("backend.core_ai.has_gemini_api_key", return_value=False),
+    ):
         result = await core_ai.chat([{"role": "user", "content": "hi"}])
     assert "offline mode" in result.lower()
 
@@ -444,14 +481,13 @@ async def test_chat_returns_mock_when_all_unavailable():
 async def test_chat_explicit_cloud_provider():
     with patch("backend.core_ai._chat_cloud", AsyncMock(return_value="Anthropic reply")):
         result = await core_ai.chat(
-            [{"role": "user", "content": "hi"}],
-            api_provider="anthropic",
-            api_key="sk-ant-test"
+            [{"role": "user", "content": "hi"}], api_provider="anthropic", api_key="sk-ant-test"
         )
     assert result == "Anthropic reply"
 
 
 # ── Public API: chat_stream() ─────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_chat_stream_yields_ollama_chunks():
@@ -459,8 +495,10 @@ async def test_chat_stream_yields_ollama_chunks():
         yield "chunk1"
         yield "chunk2"
 
-    with patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=["llama3.2"])), \
-         patch("backend.core_ai._stream_ollama", fake_stream):
+    with (
+        patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=["llama3.2"])),
+        patch("backend.core_ai._stream_ollama", fake_stream),
+    ):
         chunks = [c async for c in core_ai.chat_stream([{"role": "user", "content": "hi"}])]
 
     assert chunks == ["chunk1", "chunk2"]
@@ -471,9 +509,11 @@ async def test_chat_stream_falls_back_to_gemini():
     async def fake_gemini_stream(*args, **kwargs):
         yield "Gemini chunk"
 
-    with patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=[])), \
-         patch("backend.core_ai.has_gemini_api_key", return_value=True), \
-         patch("backend.core_ai._stream_gemini", fake_gemini_stream):
+    with (
+        patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=[])),
+        patch("backend.core_ai.has_gemini_api_key", return_value=True),
+        patch("backend.core_ai._stream_gemini", fake_gemini_stream),
+    ):
         chunks = [c async for c in core_ai.chat_stream([{"role": "user", "content": "hi"}])]
 
     assert "Gemini chunk" in chunks
@@ -481,8 +521,10 @@ async def test_chat_stream_falls_back_to_gemini():
 
 @pytest.mark.asyncio
 async def test_chat_stream_yields_mock_when_all_unavailable():
-    with patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=[])), \
-         patch("backend.core_ai.has_gemini_api_key", return_value=False):
+    with (
+        patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=[])),
+        patch("backend.core_ai.has_gemini_api_key", return_value=False),
+    ):
         chunks = [c async for c in core_ai.chat_stream([{"role": "user", "content": "hi"}])]
 
     combined = "".join(chunks)
@@ -490,6 +532,7 @@ async def test_chat_stream_yields_mock_when_all_unavailable():
 
 
 # ── embed_text_async ──────────────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_embed_text_async_returns_vector():
@@ -509,6 +552,7 @@ async def test_embed_text_async_returns_zero_vector_when_no_key():
 
 # ── generate_vision_content_async ────────────────────────────────────────────
 
+
 @pytest.mark.asyncio
 async def test_generate_vision_content_async_returns_text():
     with patch("backend.core_ai.generate_vision_content", return_value="X-ray shows clear lungs"):
@@ -524,6 +568,7 @@ async def test_generate_vision_content_async_returns_empty_when_no_key():
 
 
 # ── Ollama management helpers ─────────────────────────────────────────────────
+
 
 @pytest.mark.asyncio
 async def test_is_ollama_running_true():

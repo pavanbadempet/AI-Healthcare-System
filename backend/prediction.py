@@ -1448,3 +1448,112 @@ Write a highly concise clinical summary (exactly 2 sentences) explaining key sys
         "ai_clinical_synthesis": ai_synthesis,
         "disclaimer": MEDICAL_DISCLAIMER
     }
+
+
+async def handle_vitals_recorded(payload: dict) -> None:
+    """Auto-run heart/diabetes classifiers when new vitals arrive.
+    If risk probability > 0.6, commit a DIAGNOSTIC_ALERT CareEvent to the DB.
+    """
+    patient_id = payload.get("patient_id")
+    if not patient_id:
+        return
+
+    # Extract vitals from payload
+    sys_bp = payload.get("systolic_bp")
+    hr = payload.get("heart_rate")
+
+    import backend.models as db_models
+    import backend.prediction as _pred
+    from backend.database import get_db_context
+
+    with get_db_context() as db:
+        # Fetch patient
+        patient = db.query(db_models.User).filter(db_models.User.id == patient_id, db_models.User.role == "patient").first()
+        if not patient:
+            return
+
+        # 1. Check Diabetes Model
+        if _pred.diabetes_model is not None:
+            hypertension = 1.0 if (sys_bp is not None and sys_bp > 140.0) else 0.0
+            high_chol = 0.0
+            bmi = 25.0
+            smoking_history = 0.0
+            heart_disease = 0.0
+            physical_activity = 1.0
+            general_health = 3.0
+            gender_val = 1.0
+            age_bucket = 7.0  # age 50-54
+
+            input_list_db = [hypertension, high_chol, bmi, smoking_history, heart_disease, physical_activity, general_health, gender_val, age_bucket]
+
+            imputer, conformal_q = _pred._get_imputer_and_conformal("diabetes", _pred.diabetes_model)
+            if imputer is not None:
+                imputed_arr = imputer.transform([input_list_db])
+                imputed_list = imputed_arr[0].tolist()
+            else:
+                imputed_list = [0.0 if x is None else x for x in input_list_db]
+
+            try:
+                proba = _pred.diabetes_model.predict_proba([imputed_list])[0]
+                diabetes_risk = float(proba[1]) if len(proba) > 1 else float(proba[0])
+            except Exception:
+                diabetes_risk = 0.0
+
+            if diabetes_risk > 0.6:
+                db.add(db_models.CareEvent(
+                    facility_id=patient.facility_id,
+                    patient_id=patient_id,
+                    event_type="DIAGNOSTIC_ALERT",
+                    title="Diabetes Risk Flagged",
+                    summary=f"Automated ClinOS intelligence flagged high diabetes risk ({round(diabetes_risk * 100, 1)}%) based on recent vital logs.",
+                    severity="warning",
+                ))
+                db.commit()
+
+        # 2. Check Heart Model
+        if _pred.heart_model is not None:
+            trestbps = sys_bp if sys_bp is not None else 120.0
+            thalach = hr if hr is not None else 72.0
+            age_val = 50.0
+            sex = 1.0
+            cp = 0.0
+            chol = 200.0
+            fbs = 0.0
+            restecg = 0.0
+            exang = 0.0
+            oldpeak = 0.0
+            slope = 1.0
+            ca = 0.0
+            thal = 2.0
+
+            input_list_hr = [age_val, sex, cp, trestbps, chol, fbs, restecg, thalach, exang, oldpeak, slope, ca, thal]
+
+            imputer, conformal_q = _pred._get_imputer_and_conformal("heart", _pred.heart_model)
+            if imputer is not None:
+                imputed_arr = imputer.transform([input_list_hr])
+                imputed_list = imputed_arr[0].tolist()
+            else:
+                imputed_list = [0.0 if x is None else x for x in input_list_hr]
+
+            try:
+                proba = _pred.heart_model.predict_proba([imputed_list])[0]
+                heart_risk = float(proba[1]) if len(proba) > 1 else float(proba[0])
+            except Exception:
+                heart_risk = 0.0
+
+            if heart_risk > 0.6:
+                db.add(db_models.CareEvent(
+                    facility_id=patient.facility_id,
+                    patient_id=patient_id,
+                    event_type="DIAGNOSTIC_ALERT",
+                    title="Cardiovascular Risk Flagged",
+                    summary=f"Automated ClinOS intelligence flagged high cardiovascular risk ({round(heart_risk * 100, 1)}%) based on recent vital logs.",
+                    severity="critical",
+                ))
+                db.commit()
+
+
+def register_prediction_event_handlers() -> None:
+    """Subscribe prediction event handlers to the event bus."""
+    from backend.event_bus import event_bus
+    event_bus.subscribe("VITALS_RECORDED", handle_vitals_recorded)

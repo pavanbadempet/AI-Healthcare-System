@@ -1,6 +1,7 @@
 # ============================================================
-# AI Healthcare System - Frontend Dockerfile (Next.js)
+# AI Healthcare System — Frontend Dockerfile (Multi-Stage Vite)
 # ============================================================
+# Stage 1: Build static assets
 FROM node:20-alpine AS builder
 
 WORKDIR /app
@@ -12,23 +13,21 @@ RUN npm ci
 # Copy source and build
 COPY . .
 ARG NEXT_PUBLIC_API_URL
+ARG VITE_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV VITE_PUBLIC_API_URL=$VITE_PUBLIC_API_URL
+
 RUN npm run build
 
-# --- Production stage ---
-FROM node:20-alpine AS runner
-WORKDIR /app
+# --- Stage 2: Production Nginx Server ---
+FROM nginx:stable-alpine AS runner
 
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-ARG NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+# Copy built static files to Nginx web directory
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy built artifacts
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
+# Copy custom Nginx configuration to support SPA routing
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 EXPOSE 3000
 
-CMD ["node", "server.js"]
+CMD ["nginx", "-g", "daemon off;"]

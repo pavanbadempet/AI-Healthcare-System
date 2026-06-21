@@ -131,6 +131,10 @@ def upgrade() -> None:
         sa.Column("reason", sa.Text(), nullable=True),
         sa.Column("status", sa.String(), nullable=False, server_default="Scheduled"),
         sa.Column("created_at", sa.DateTime(), nullable=True),
+        sa.CheckConstraint(
+            "status IN ('Scheduled', 'Rescheduled', 'Completed', 'Cancelled')",
+            name="check_appt_status",
+        ),
     )
 
     # ── beds ───────────────────────────────────────────────────────────
@@ -247,6 +251,11 @@ def upgrade() -> None:
         sa.Column("summary", sa.Text(), nullable=False),
         sa.Column("status", sa.String(), nullable=False, server_default="open"),
         sa.Column("created_at", sa.DateTime(), nullable=True),
+        sa.UniqueConstraint(
+            "vital_observation_id",
+            "signal_type",
+            name="uq_monitoring_signal_vital_type",
+        ),
     )
 
     # ── diagnostic_results ─────────────────────────────────────────────
