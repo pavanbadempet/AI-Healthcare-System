@@ -326,8 +326,29 @@ class SimpleVectorStore(VectorStoreBackend):
             return True
         return False
 
+    def _hybrid_score(self, query: str, document_text: str, similarity_score: float) -> float:
+        """Calculate hybrid relevance score combining vector similarity and exact keyword match."""
+        query_words = set(query.lower().split())
+        doc_text_lower = document_text.lower()
+        
+        # Exclude common stop words and short query terms
+        stop_words = {"a", "an", "the", "and", "or", "but", "is", "are", "was", "were", "to", "of", "in", "on", "at", "for"}
+        filtered_query = {w for w in query_words if w not in stop_words and len(w) > 2}
+        if not filtered_query:
+            return similarity_score
+
+        # Exact substring or word match check
+        matches = 0
+        for word in filtered_query:
+            if f" {word} " in f" {doc_text_lower} " or doc_text_lower.startswith(f"{word} ") or doc_text_lower.endswith(f" {word}"):
+                matches += 1
+
+        # Boost score by 0.05 per keyword match, up to a maximum boost of 0.20
+        boost = min(0.05 * matches, 0.20)
+        return similarity_score + boost
+
     def search(self, query: str, filter_meta: Optional[Dict[str, Any]] = None, k: int = 3) -> List[str]:
-        """Semantic search with user filtering."""
+        """Semantic search with user filtering and hybrid keyword boosting."""
         if not self.vectors:
             return []
 
@@ -361,14 +382,23 @@ class SimpleVectorStore(VectorStoreBackend):
 
         # Cosine similarity on subset
         sim_scores = cosine_similarity(q_vec, vec_matrix)[0]
-        sorted_indices = sim_scores.argsort()[::-1]
+
+        # Apply hybrid keyword boost
+        hybrid_scores = []
+        for idx, score in enumerate(sim_scores):
+            orig_idx = indices_to_scan[idx]
+            h_score = self._hybrid_score(query, self.documents[orig_idx], score)
+            hybrid_scores.append(h_score)
+        hybrid_scores = np.array(hybrid_scores)
+
+        sorted_indices = hybrid_scores.argsort()[::-1]
 
         results = []
         count = 0
 
         for idx in sorted_indices:
             original_idx = indices_to_scan[idx]
-            if sim_scores[idx] <= 0.0:
+            if hybrid_scores[idx] <= 0.0:
                 break
 
             # Apply metadata filter
@@ -390,7 +420,7 @@ class SimpleVectorStore(VectorStoreBackend):
         filter_meta: Optional[Dict[str, Any]] = None,
         k: int = 3,
     ) -> List[Dict[str, Any]]:
-        """Semantic search returning documents with similarity scores and metadata."""
+        """Semantic search returning documents with hybrid similarity scores and metadata."""
         if not self.vectors:
             return []
 
@@ -423,14 +453,23 @@ class SimpleVectorStore(VectorStoreBackend):
         vec_matrix = np.array(candidate_vectors)
 
         sim_scores = cosine_similarity(q_vec, vec_matrix)[0]
-        sorted_indices = sim_scores.argsort()[::-1]
+
+        # Apply hybrid keyword boost
+        hybrid_scores = []
+        for idx, score in enumerate(sim_scores):
+            orig_idx = indices_to_scan[idx]
+            h_score = self._hybrid_score(query, self.documents[orig_idx], score)
+            hybrid_scores.append(h_score)
+        hybrid_scores = np.array(hybrid_scores)
+
+        sorted_indices = hybrid_scores.argsort()[::-1]
 
         results = []
         count = 0
 
         for idx in sorted_indices:
             original_idx = indices_to_scan[idx]
-            if sim_scores[idx] <= 0.0:
+            if hybrid_scores[idx] <= 0.0:
                 break
             if filter_meta and not _metadata_matches_filter(self.metadatas[original_idx], filter_meta):
                 continue
@@ -438,7 +477,7 @@ class SimpleVectorStore(VectorStoreBackend):
                 "text": self.documents[original_idx],
                 "metadata": self.metadatas[original_idx],
                 "id": self.ids[original_idx],
-                "score": float(sim_scores[idx]),
+                "score": float(hybrid_scores[idx]),
             })
             count += 1
             if count >= k:
@@ -467,6 +506,13 @@ def get_vector_store() -> VectorStoreBackend:
     """
     global _store
     if _store is None:
+        # Check local-first compliance mode (EU AI Act 2026 requirement)
+        local_safety = os.environ.get("LOCAL_FIRST_SAFETY", "").strip().lower() in {"1", "true", "yes", "on"}
+        if local_safety:
+            logger.info("LOCAL_FIRST_SAFETY mode enabled. Forcing SimpleVectorStore local backend.")
+            _store = SimpleVectorStore()
+            return _store
+
         # 1. Try Qdrant if host is set or library is present
         qdrant_enabled = os.environ.get("QDRANT_HOST") is not None
         if qdrant_enabled:
