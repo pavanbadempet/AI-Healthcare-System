@@ -211,6 +211,7 @@ class SimpleVectorStore(VectorStoreBackend):
         self.metadatas: List[Dict[str, Any]] = []
         self.vectors: List[List[float]] = []
         self.ids: List[str] = []
+        self.id_to_idx: Dict[str, int] = {}
         self.lsh = LocalitySensitiveHash()
         self.load()
 
@@ -224,6 +225,7 @@ class SimpleVectorStore(VectorStoreBackend):
                 self.metadatas = data.get("metadatas", []) or []
                 self.vectors = data.get("vectors", []) or []
                 self.ids = data.get("ids", []) or []
+                self.id_to_idx = {rid: i for i, rid in enumerate(self.ids)}
                 
                 # Re-index LSH
                 self.lsh.clear()
@@ -246,6 +248,7 @@ class SimpleVectorStore(VectorStoreBackend):
                 self.metadatas = data.get("metadatas", []) or []
                 self.vectors = data.get("vectors", []) or []
                 self.ids = data.get("ids", []) or []
+                self.id_to_idx = {rid: i for i, rid in enumerate(self.ids)}
                 self.save()
                 
                 # Re-index LSH
@@ -282,16 +285,18 @@ class SimpleVectorStore(VectorStoreBackend):
         """Add or update a document."""
         vector = get_embedding(text)
 
-        if record_id in self.ids:
-            idx = self.ids.index(record_id)
+        if record_id in self.id_to_idx:
+            idx = self.id_to_idx[record_id]
             self.documents[idx] = text
             self.metadatas[idx] = metadata
             self.vectors[idx] = vector
         else:
+            idx = len(self.ids)
             self.documents.append(text)
             self.metadatas.append(metadata)
             self.vectors.append(vector)
             self.ids.append(record_id)
+            self.id_to_idx[record_id] = idx
 
         # Index in LSH
         self.lsh.index(record_id, np.array(vector))
@@ -299,12 +304,15 @@ class SimpleVectorStore(VectorStoreBackend):
 
     def delete(self, record_id: str) -> bool:
         """Delete by ID."""
-        if record_id in self.ids:
-            idx = self.ids.index(record_id)
+        if record_id in self.id_to_idx:
+            idx = self.id_to_idx[record_id]
             self.documents.pop(idx)
             self.metadatas.pop(idx)
             self.vectors.pop(idx)
             self.ids.pop(idx)
+            
+            # Rebuild index map because indices shifted
+            self.id_to_idx = {rid: i for i, rid in enumerate(self.ids)}
             
             # Re-index LSH
             self.lsh.clear()
@@ -322,6 +330,7 @@ class SimpleVectorStore(VectorStoreBackend):
 
         if len(self.ids) != len(self.vectors):
             self.ids = [f"auto_id_{i}" for i in range(len(self.vectors))]
+            self.id_to_idx = {rid: i for i, rid in enumerate(self.ids)}
             self.lsh.clear()
             for record_id, vec in zip(self.ids, self.vectors):
                 self.lsh.index(record_id, np.array(vec))
@@ -335,7 +344,7 @@ class SimpleVectorStore(VectorStoreBackend):
         if use_lsh:
             candidates = self.lsh.query(np.array(query_vector))
 
-        id_to_idx = {rid: i for i, rid in enumerate(self.ids)}
+        id_to_idx = self.id_to_idx
         if use_lsh and candidates:
             indices_to_scan = [id_to_idx[cid] for cid in candidates if cid in id_to_idx]
         else:
@@ -384,6 +393,7 @@ class SimpleVectorStore(VectorStoreBackend):
 
         if len(self.ids) != len(self.vectors):
             self.ids = [f"auto_id_{i}" for i in range(len(self.vectors))]
+            self.id_to_idx = {rid: i for i, rid in enumerate(self.ids)}
             self.lsh.clear()
             for record_id, vec in zip(self.ids, self.vectors):
                 self.lsh.index(record_id, np.array(vec))
@@ -397,7 +407,7 @@ class SimpleVectorStore(VectorStoreBackend):
         if use_lsh:
             candidates = self.lsh.query(np.array(query_vector))
 
-        id_to_idx = {rid: i for i, rid in enumerate(self.ids)}
+        id_to_idx = self.id_to_idx
         if use_lsh and candidates:
             indices_to_scan = [id_to_idx[cid] for cid in candidates if cid in id_to_idx]
         else:
@@ -432,6 +442,7 @@ class SimpleVectorStore(VectorStoreBackend):
                 break
 
         return results
+
 
     def count(self) -> int:
         """Return the total number of documents in the store."""
