@@ -12,7 +12,7 @@ from typing import Any, Dict, List, Optional
 
 try:
     from qdrant_client import QdrantClient
-    from qdrant_client.models import Distance, FieldCondition, Filter, MatchValue, PointStruct, VectorParams
+    from qdrant_client.models import Distance, FieldCondition, Filter, MatchValue, PointStruct, VectorParams, ScalarQuantization, ScalarType
 except ImportError:
     QdrantClient = None
 
@@ -53,7 +53,12 @@ class QdrantVectorStore(VectorStoreBackend):
             if self.collection_name not in collections:
                 self.client.create_collection(
                     collection_name=self.collection_name,
-                    vectors_config=VectorParams(size=self.dimension, distance=Distance.COSINE)
+                    vectors_config=VectorParams(size=self.dimension, distance=Distance.COSINE),
+                    quantization_config=ScalarQuantization(
+                        scalar=ScalarType.INT8,
+                        always_ram=True,
+                        quantile=0.99
+                    )
                 )
                 logger.info("Created Qdrant collection: %s", self.collection_name)
             else:

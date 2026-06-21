@@ -172,10 +172,13 @@ class LocalitySensitiveHash:
                 "buckets": defaultdict(list)
             })
 
-    def _hash(self, planes: np.ndarray, vector: np.ndarray) -> str:
+    def _hash(self, planes: np.ndarray, vector: np.ndarray) -> int:
         projection = np.dot(planes, vector)
-        bits = (projection > 0).astype(int)
-        return "".join(map(str, bits))
+        bits = projection > 0
+        val = 0
+        for b in bits:
+            val = (val << 1) | int(b)
+        return val
 
     def index(self, record_id: str, vector: np.ndarray) -> None:
         if self.dim is None:
