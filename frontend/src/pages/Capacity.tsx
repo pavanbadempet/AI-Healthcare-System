@@ -1,8 +1,7 @@
-
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTelemetry } from "@/lib/useTelemetry";
-import { BedDouble, Users, ArrowRight, TrendingUp, Building2, MapPin, Wifi, WifiOff, X } from "lucide-react";
+import { BedDouble, Users, ArrowRight, TrendingUp, Building2, MapPin, Wifi, WifiOff, X, Activity, AlertTriangle, RefreshCw, Heart } from "lucide-react";
 import { 
   getDoctorPatients, 
   getBeds, 
@@ -13,6 +12,7 @@ import {
   type Bed,
   type Department
 } from "@/lib/api";
+import { fetchTriageQueue } from "@/lib/apiIntelligence";
 
 export default function CapacityPage() {
   const [mounted, setMounted] = useState(false);
@@ -31,8 +31,27 @@ export default function CapacityPage() {
   const [modalError, setModalError] = useState<string | null>(null);
   const [modalSuccess, setModalSuccess] = useState<string | null>(null);
 
+  const [triageQueue, setTriageQueue] = useState<any[]>([]);
+  const [loadingTriage, setLoadingTriage] = useState(false);
+
+  const loadTriageQueue = async () => {
+    setLoadingTriage(true);
+    try {
+      const data = await fetchTriageQueue();
+      setTriageQueue(data.queue || []);
+    } catch (err) {
+      console.error("Failed to load triage queue:", err);
+    } finally {
+      setLoadingTriage(false);
+    }
+  };
+
   useEffect(() => {
     setMounted(true);
+    loadTriageQueue();
+    // Refresh triage queue every 15 seconds
+    const interval = setInterval(loadTriageQueue, 15000);
+    return () => clearInterval(interval);
   }, []);
 
   const openAssignmentModal = async () => {
@@ -287,12 +306,12 @@ export default function CapacityPage() {
             </div>
           </div>
 
-          <div className="lg:col-span-1">
-            <div className="panel h-full flex flex-col overflow-hidden">
+          <div className="lg:col-span-1 space-y-6">
+            <div className="panel flex flex-col overflow-hidden max-h-72">
               <div className="panel-header bg-[rgba(15,15,17,0.5)]">
                 <h3 className="section-title">Critical Transfers</h3>
               </div>
-              <div className="flex-1 divide-y divide-[var(--border)] overflow-y-auto max-h-96 lg:max-h-none">
+              <div className="flex-1 divide-y divide-[var(--border)] overflow-y-auto max-h-96">
                 {[1, 2, 3, 4, 5].map((item) => (
                   <div key={item} className="p-3 hover:bg-[rgba(255,255,255,0.01)] transition-colors cursor-pointer group">
                     <div className="flex justify-between items-start mb-1">
@@ -314,7 +333,64 @@ export default function CapacityPage() {
                 ))}
               </div>
             </div>
-        </div>
+
+            {/* ESI Triage Queue (Itch 3) */}
+            <div className="panel flex flex-col overflow-hidden">
+              <div className="panel-header bg-[rgba(15,15,17,0.5)] flex justify-between items-center">
+                <h3 className="section-title flex items-center gap-1.5">
+                  <Activity size={13} className="text-rose-400" /> ER ESI Triage Queue
+                </h3>
+                <button
+                  onClick={loadTriageQueue}
+                  disabled={loadingTriage}
+                  className="p-1 rounded hover:bg-slate-800 disabled:opacity-50 text-[var(--text-secondary)] transition-colors cursor-pointer"
+                  title="Refresh triage queue"
+                >
+                  <RefreshCw size={11} className={loadingTriage ? "animate-spin" : ""} />
+                </button>
+              </div>
+              <div className="flex-1 divide-y divide-[var(--border)] overflow-y-auto max-h-96">
+                {loadingTriage && triageQueue.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-[var(--text-dim)] uppercase">
+                    Loading triage queue...
+                  </div>
+                ) : triageQueue.length === 0 ? (
+                  <div className="p-8 text-center text-xs text-[var(--text-dim)] uppercase font-mono border-t border-[var(--border)]">
+                    No patients in ER waitlist.
+                  </div>
+                ) : (
+                  triageQueue.map((item: any, idx: number) => {
+                    const esiColors: Record<number, string> = {
+                      1: "bg-red-500/10 border-red-500/30 text-red-500",
+                      2: "bg-orange-500/10 border-orange-500/30 text-orange-500",
+                      3: "bg-yellow-500/10 border-yellow-500/30 text-yellow-500",
+                      4: "bg-blue-500/10 border-blue-500/30 text-blue-500",
+                      5: "bg-emerald-500/10 border-emerald-500/30 text-emerald-500"
+                    };
+                    return (
+                      <div key={idx} className="p-3 hover:bg-[rgba(255,255,255,0.01)] transition-colors">
+                        <div className="flex justify-between items-start mb-1">
+                          <div>
+                            <span className="text-xs font-bold text-[var(--text-primary)]">{item.full_name}</span>
+                            <span className="text-[9px] font-mono text-[var(--text-dim)] block">ID: #{item.patient_id}</span>
+                          </div>
+                          <span className={`text-[9px] font-mono border px-1.5 py-0.5 rounded-sm font-bold uppercase ${esiColors[item.esi_level] || "bg-slate-500/10 text-slate-400 border-slate-500/20"}`}>
+                            ESI {item.esi_level}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-[var(--text-secondary)] font-mono uppercase">
+                          Vitals: {item.vital_summary}
+                        </p>
+                        <div className="text-[9px] font-mono text-[var(--warning)] uppercase mt-1 leading-normal">
+                          Reason: {item.triage_reason}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+          </div>
       </div>
     </div>
 

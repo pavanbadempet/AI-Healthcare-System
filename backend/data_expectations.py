@@ -7,11 +7,10 @@ for cleaning, preprocessing, and model ingestion boundary checks.
 
 from __future__ import annotations
 
-import logging
 import json
+import logging
 import re
-import os
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -174,7 +173,7 @@ class ExpectationRunner:
         elif t == "expect_column_values_between":
             min_val = kwargs.get("min_value")
             max_val = kwargs.get("max_value")
-            
+
             # Filter non-null to avoid null issues in range comparisons
             non_null = series.dropna()
             out_of_bounds = pd.Series()
@@ -182,7 +181,7 @@ class ExpectationRunner:
                 out_of_bounds = non_null[non_null < min_val]
             if max_val is not None:
                 out_of_bounds = pd.concat([out_of_bounds, non_null[non_null > max_val]])
-                
+
             success = out_of_bounds.empty
             observed = f"Range: [{non_null.min()}, {non_null.max()}]" if not non_null.empty else "N/A"
             return ValidationResult(
@@ -452,18 +451,18 @@ class ExpectationRunner:
     def _setup_default_suites(self) -> None:
         """Seeds standard expectations for demographics, labs, and vitals datasets."""
         # 1. Patient Demographics
-        demo = self.create_suite("patient_demographics", "patient_accounts")
+        self.create_suite("patient_demographics", "patient_accounts")
         self.add_expectation("patient_demographics", Expectation("expect_column_to_exist", "username", severity="CRITICAL"))
         self.add_expectation("patient_demographics", Expectation("expect_column_values_not_null", "username", severity="CRITICAL"))
         self.add_expectation("patient_demographics", Expectation("expect_column_values_to_match_regex", "email", {"regex": r"^[^@]+@[^@]+\.[^@]+$"}))
-        
+
         # 2. Lab Results
-        labs = self.create_suite("lab_results", "diagnostic_results")
+        self.create_suite("lab_results", "diagnostic_results")
         self.add_expectation("lab_results", Expectation("expect_column_to_exist", "result_value", severity="CRITICAL"))
         self.add_expectation("lab_results", Expectation("expect_column_values_not_null", "result_value", severity="CRITICAL"))
 
         # 3. Vitals
-        vitals = self.create_suite("vitals", "vital_observations")
+        self.create_suite("vitals", "vital_observations")
         self.add_expectation("vitals", Expectation("expect_column_to_exist", "heart_rate"))
         self.add_expectation("vitals", Expectation("expect_column_values_between", "heart_rate", {"min_value": 20, "max_value": 250}))
         self.add_expectation("vitals", Expectation("expect_column_values_between", "temperature", {"min_value": 30.0, "max_value": 45.0}))

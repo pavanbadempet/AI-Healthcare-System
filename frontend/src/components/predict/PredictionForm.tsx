@@ -17,15 +17,94 @@ interface Field {
   tooltip?: string;
 }
 
+const FRIENDLY_FEATURE_LABELS: Record<string, string> = {
+  // Diabetes (BRFSS)
+  bmi: "Body Mass Index (BMI)",
+  hypertension: "High Blood Pressure",
+  high_chol: "High Cholesterol",
+  smoking_history: "Smoking History",
+  heart_disease: "Heart Disease History",
+  physical_activity: "Physical Activity",
+  general_health: "General Health Rating",
+  gender: "Biological Gender",
+  age: "Age",
+  age_bucket: "Age Group",
+  // Heart (Cleveland)
+  sex: "Gender",
+  cp: "Chest Pain Type",
+  trestbps: "Resting Blood Pressure",
+  chol: "Serum Cholesterol",
+  fbs: "Fasting Blood Sugar",
+  restecg: "Resting ECG Results",
+  thalach: "Max Heart Rate",
+  exang: "Exercise Induced Angina",
+  oldpeak: "ST Depression",
+  slope: "ST Slope",
+  ca: "Major Vessels Count",
+  thal: "Thalassemia Type",
+  // Kidney (Renal)
+  bp: "Blood Pressure",
+  sg: "Specific Gravity",
+  al: "Albumin",
+  su: "Sugar",
+  rbc: "Red Blood Cells",
+  pc: "Pus Cell",
+  pcc: "Pus Cell Clumps",
+  ba: "Bacteria",
+  bgr: "Blood Glucose Random",
+  bu: "Blood Urea",
+  sc: "Serum Creatinine",
+  sod: "Sodium",
+  pot: "Potassium",
+  hemo: "Hemoglobin",
+  pcv: "Packed Cell Volume",
+  wc: "White Blood Cell Count",
+  rc: "Red Blood Cell Count",
+  htn: "Hypertension",
+  dm: "Diabetes Mellitus",
+  cad: "Coronary Artery Disease",
+  appet: "Appetite",
+  pe: "Pedal Edema",
+  ane: "Anemia",
+  // Liver (ILPD)
+  Age: "Age",
+  Gender: "Biological Gender",
+  Total_Bilirubin: "Total Bilirubin",
+  Direct_Bilirubin: "Direct Bilirubin",
+  Total_Proteins: "Total Proteins",
+  Albumin: "Albumin",
+  Albumin_and_Globulin_Ratio: "Albumin/Globulin Ratio",
+  Alamine_Aminotransferase: "ALT Enzyme Level",
+  Aspartate_Aminotransferase: "AST Enzyme Level",
+  Alkaline_Phosphotase: "Alkaline Phosphatase",
+  // Lungs (Pulmonary)
+  GENDER: "Biological Gender",
+  AGE: "Age",
+  SMOKING: "Smoking History",
+  YELLOW_FINGERS: "Yellow Fingers",
+  ANXIETY: "Anxiety",
+  PEER_PRESSURE: "Peer Pressure",
+  CHRONIC_DISEASE: "Chronic Disease",
+  FATIGUE: "Fatigue Level",
+  ALLERGY: "Allergy History",
+  WHEEZING: "Wheezing Symptoms",
+  ALCOHOL_CONSUMING: "Alcohol Consumption",
+  COUGHING: "Coughing Symptoms",
+  SHORTNESS_OF_BREATH: "Shortness of Breath",
+  SWALLOWING_DIFFICULTY: "Difficulty Swallowing",
+  CHEST_PAIN: "Chest Pain"
+};
+
 interface PredictionFormProps {
   title: string;
   description: string;
   fields: Field[];
-  onSubmit: (data: Record<string, number>) => Promise<PredictionResult>;
+  onSubmit: (data: Record<string, number>, computeMode?: 'local' | 'remote') => Promise<PredictionResult>;
 }
 
 export default function PredictionForm({ title, description, fields, onSubmit }: PredictionFormProps) {
   const [formData, setFormData] = useState<Record<string, number>>({});
+  const [computeMode, setComputeMode] = useState<'local' | 'remote'>('remote');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<PredictionResult | null>(null);
@@ -33,7 +112,7 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
 
   useEffect(() => {
     if (result && window.innerWidth < 1024) {
-      resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      resultRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
     }
   }, [result]);
 
@@ -55,7 +134,7 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
     }
 
     try {
-      const res = await onSubmit(parsedData);
+      const res = await onSubmit(parsedData, computeMode);
       setResult(res);
     } catch (err: any) {
       setError(err.message || "Failed to generate prediction");
@@ -181,6 +260,38 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
           </AnimatePresence>
 
           <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
+            {/* Compute Enclave Selector Switch */}
+            <div className="mb-5 p-3 bg-zinc-950/60 border border-[var(--border)] rounded flex flex-col sm:flex-row justify-between sm:items-center gap-3 text-xs font-mono">
+              <div>
+                <span className="text-white font-bold block uppercase tracking-wider">Compute Enclave Mode</span>
+                <span className="text-[9px] text-[var(--text-dim)] uppercase">Select execution environment target</span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setComputeMode("local")}
+                  className={`px-3 py-1.5 border text-[10px] font-bold uppercase tracking-wider rounded transition-all cursor-pointer ${
+                    computeMode === "local"
+                      ? "text-[var(--accent)] border-[var(--accent)] bg-[var(--accent-muted)]"
+                      : "text-[var(--text-dim)] border-[var(--border)] hover:text-white hover:bg-zinc-900"
+                  }`}
+                >
+                  Local Edge (WASM)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setComputeMode("remote")}
+                  className={`px-3 py-1.5 border text-[10px] font-bold uppercase tracking-wider rounded transition-all cursor-pointer ${
+                    computeMode === "remote"
+                      ? "text-[var(--accent)] border-[var(--accent)] bg-[var(--accent-muted)]"
+                      : "text-[var(--text-dim)] border-[var(--border)] hover:text-white hover:bg-zinc-900"
+                  }`}
+                >
+                  Remote AI (SHAP)
+                </button>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {fields.map((field) => (
                 <div key={field.name} className="space-y-1.5">
@@ -350,6 +461,114 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
                         }`}>
                           {result.risk_level}
                         </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {result.clinical_indices && (
+                  <div className="space-y-4 border border-[var(--border)] rounded p-4 bg-zinc-950/40">
+                    <h4 className="text-[11px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5 border-b border-[var(--border)] pb-2">
+                      <Sparkles size={12} className="text-[var(--accent)]" aria-hidden="true" /> Advanced Conformal & Recourse Analytics
+                    </h4>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[10px] font-mono uppercase">
+                      <div>
+                        <span className="text-[var(--text-dim)] font-bold block mb-0.5">Prediction Set</span>
+                        <span className="text-white bg-zinc-900 border border-white/[0.05] px-1.5 py-0.5 rounded">
+                          {`[${(result.clinical_indices.conformal_prediction_set || []).join(", ")}]`}
+                        </span>
+                      </div>
+                      <div>
+                        <span className="text-[var(--text-dim)] font-bold block mb-0.5">Uncertainty Status</span>
+                        <span className={`font-bold ${
+                          (result.clinical_indices.uncertainty_status || "").includes("Low") 
+                            ? "text-[var(--success)]" 
+                            : "text-[var(--danger)]"
+                        }`}>
+                          {result.clinical_indices.uncertainty_status || "N/A"}
+                        </span>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <span className="text-[var(--text-dim)] font-bold block mb-0.5">Significance Level (Adaptive α)</span>
+                        <span className="text-white">
+                          {result.clinical_indices.significance_level !== undefined 
+                            ? `${(result.clinical_indices.significance_level * 100).toFixed(2)}%` 
+                            : "N/A"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {result.clinical_indices.clinical_recourse && (
+                      <div className="space-y-1.5 pt-2 border-t border-[var(--border)]/40 text-[10px] font-mono uppercase">
+                        <span className="text-[var(--text-dim)] font-bold block animate-pulse">Lifestyle Action Recourse</span>
+                        <p className="text-amber-500 leading-normal bg-amber-500/5 border border-amber-500/10 p-2.5 rounded">
+                          {result.clinical_indices.clinical_recourse}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Patient Explainable AI (XAI) Panel */}
+                {((result.attributions && Object.keys(result.attributions).length > 0) || result.patient_explanation) && (
+                  <div className="space-y-4 border border-[var(--border)] rounded p-4 bg-zinc-950/40">
+                    <h4 className="text-[11px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5 border-b border-[var(--border)] pb-2">
+                      <Sparkles size={12} className="text-[var(--accent)]" aria-hidden="true" /> Patient-Friendly Explainable AI (XAI)
+                    </h4>
+
+                    {result.attributions && Object.keys(result.attributions).length > 0 && (
+                      <div className="space-y-2.5">
+                        <span className="section-label block">Key Health Drivers Impact</span>
+                        <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                          {Object.entries(result.attributions)
+                            .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+                            .filter(([_, val]) => Math.abs(val) > 0.0001)
+                            .map(([feat, val]) => {
+                              const friendlyName = FRIENDLY_FEATURE_LABELS[feat] || feat;
+                              const isPositive = val > 0;
+                              const absPercent = Math.min(100, Math.round(Math.abs(val) * 100));
+                              return (
+                                <div key={feat} className="text-[10px] font-mono uppercase space-y-1">
+                                  <div className="flex justify-between text-[9px]">
+                                    <span className="text-[var(--text-primary)] font-bold">{friendlyName}</span>
+                                    <span className={isPositive ? "text-[var(--danger)]" : "text-[var(--success)]"}>
+                                      {isPositive ? `+${absPercent}% Risk Amplifier` : `-${absPercent}% Risk Mitigator`}
+                                    </span>
+                                  </div>
+                                  <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden flex">
+                                    {isPositive ? (
+                                      <>
+                                        <div className="w-1/2 bg-zinc-900" />
+                                        <div 
+                                          className="bg-[var(--danger)] rounded-r-full" 
+                                          style={{ width: `${absPercent / 2}%` }}
+                                        />
+                                      </>
+                                    ) : (
+                                      <>
+                                        <div className="flex-1 flex justify-end">
+                                          <div 
+                                            className="bg-[var(--success)] rounded-l-full" 
+                                            style={{ width: `${absPercent / 2}%` }}
+                                          />
+                                        </div>
+                                        <div className="w-1/2 bg-zinc-900" />
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
+
+                    {result.patient_explanation && (
+                      <div className="space-y-1.5 pt-2 border-t border-[var(--border)]/40 text-[10px] font-mono uppercase">
+                        <span className="text-[var(--text-dim)] font-bold block">Empathetic Layperson Narrative</span>
+                        <p className="text-[var(--text-primary)] leading-relaxed bg-[rgba(255,255,255,0.01)] border border-[var(--border)] p-3 rounded text-[10px] font-mono normal-case">
+                          {result.patient_explanation}
+                        </p>
                       </div>
                     )}
                   </div>

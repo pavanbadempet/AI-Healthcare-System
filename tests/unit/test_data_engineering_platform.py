@@ -275,13 +275,13 @@ async def test_enrichment_lookup_pandas(monkeypatch):
         redis_client=object(),
         db_session=object(),
     )
-    
+
     import pandas as pd
     df = pd.DataFrame([
         {"system": "http://loinc.org", "code": "8867-4"},
         {"system": "http://loinc.org", "code": "invalid_code"}
     ])
-    
+
     transformation = {
         "type": "enrich",
         "enrichments": [
@@ -292,7 +292,7 @@ async def test_enrichment_lookup_pandas(monkeypatch):
             }
         ]
     }
-    
+
     res_df = await pipeline._apply_transformation(df, transformation)
     assert isinstance(res_df, pd.DataFrame)
     assert res_df["display_name"].iloc[0] == "Heart rate"

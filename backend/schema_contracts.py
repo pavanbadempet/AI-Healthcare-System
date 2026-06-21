@@ -7,14 +7,13 @@ downstream consumers. Tracks schema version evolution and validation violations.
 
 from __future__ import annotations
 
-import logging
 import json
-import os
+import logging
 import threading
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 logger = logging.getLogger(__name__)
 
@@ -100,7 +99,7 @@ class ContractRegistry:
             self._contracts[contract.contract_id] = contract
             if contract.contract_id not in self._violations:
                 self._violations[contract.contract_id] = []
-            
+
             self._db_save_contract(contract)
             self._save_to_disk()
             logger.info("Registered contract %s (version: %d)", contract.contract_id, contract.version)
@@ -127,13 +126,13 @@ class ContractRegistry:
                 if field_name not in record:
                     errors.append(f"Record {idx}: Missing required field '{field_name}'")
                     continue
-            
+
             # Check type alignment
             for field_name, expected_type in contract.schema_definition.items():
                 if field_name in record and record[field_name] is not None:
                     val = record[field_name]
                     actual_type = type(val).__name__
-                    
+
                     # Basic type mapping verification
                     type_align = False
                     if expected_type == "int" and isinstance(val, int) and not isinstance(val, bool):
@@ -177,7 +176,7 @@ class ContractRegistry:
         new_fields = new_contract.schema_definition
 
         if mode in ("BACKWARD", "FULL"):
-            # Backward: New schema can read old data. 
+            # Backward: New schema can read old data.
             # Implies fields present in old schema must be present in new schema, or be nullable/optional.
             for field_name in old_contract.required_fields:
                 if field_name not in new_fields:
@@ -205,7 +204,7 @@ class ContractRegistry:
             current = self._contracts.get(contract_id)
             if not current:
                 raise ValueError(f"Contract {contract_id} does not exist to evolve.")
-            
+
             evolved = SchemaContract(
                 contract_id=contract_id,
                 name=changes.get("name", current.name),
@@ -252,19 +251,19 @@ class ContractRegistry:
                 required_fields=["glucose", "bmi"]
             )
         ]
-        
+
         for contract in defaults:
             if contract.contract_id not in self._contracts:
                 self._contracts[contract.contract_id] = contract
                 self._db_save_contract(contract)
-        
+
         self._save_to_disk()
 
     def _db_load(self) -> bool:
         """Attempts to load contracts and violations from the database. Returns True on success."""
         try:
             from backend.database import get_db_context
-            from backend.models.data_governance import DbSchemaContract, DbContractViolation
+            from backend.models.data_governance import DbContractViolation, DbSchemaContract
         except ImportError:
             return False
 
@@ -287,7 +286,7 @@ class ContractRegistry:
                         updated_at=dbc.updated_at.isoformat() if dbc.updated_at else None
                     )
                     self._contracts[contract.contract_id] = contract
-                
+
                 db_violations = db.query(DbContractViolation).all()
                 self._violations = {}
                 for dbv in db_violations:

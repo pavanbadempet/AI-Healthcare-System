@@ -74,6 +74,7 @@ class VitalObservation(Base, SoftDeleteMixin):
     spo2 = Column(Float, nullable=True)
     temperature_c = Column(Float, nullable=True)
     respiratory_rate = Column(Float, nullable=True)
+    blood_glucose = Column(Float, nullable=True)
     observed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 

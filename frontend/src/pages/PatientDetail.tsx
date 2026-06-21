@@ -11,8 +11,9 @@ import {
   type OrganHealthResult,
   type RecommendedOrder
 } from "@/lib/api";
+import { fetchClinicalTrials, fetchExternalRecords, fetchHealthPassport, orderLabKit, fetchLabKits } from "@/lib/apiIntelligence";
 import { notifyPatientCareEventsUpdated } from "@/lib/patientCareEvents";
-import { ChevronLeft, FileDigit, BrainCircuit, Loader2, ShieldAlert, RefreshCw, HeartPulse, Info, Check, Plus } from "lucide-react";
+import { ChevronLeft, FileDigit, BrainCircuit, Loader2, ShieldAlert, RefreshCw, HeartPulse, Info, Check, Plus, Sparkles, QrCode, Globe } from "lucide-react";
 import {
   Radar,
   RadarChart,
@@ -125,6 +126,114 @@ export default function PatientEMRView({
   const [submittingOrders, setSubmittingOrders] = useState<Record<string, boolean>>({});
   const [submittedOrders, setSubmittedOrders] = useState<Record<string, boolean>>({});
   const [orderError, setOrderError] = useState<string | null>(null);
+
+  const [midTab, setMidTab] = useState<'CLINICAL' | 'TRIALS'>('CLINICAL');
+  const [trialsData, setTrialsData] = useState<any>(null);
+  const [trialsLoading, setTrialsLoading] = useState(false);
+  const [trialsError, setTrialsError] = useState("");
+  const [selectedTrialId, setSelectedTrialId] = useState<string | null>(null);
+
+  // Phase 10 Interoperability & Diagnostics State (Itches 4, 5, 10)
+  const [interopTab, setInteropTab] = useState<'ABDM' | 'LAB_KITS' | 'PASSPORT'>('ABDM');
+  const [externalRecords, setExternalRecords] = useState<any[]>([]);
+  const [loadingExternal, setLoadingExternal] = useState(false);
+  const [labKits, setLabKits] = useState<any[]>([]);
+  const [loadingKits, setLoadingKits] = useState(false);
+  const [orderingKit, setOrderingKit] = useState(false);
+  const [kitType, setKitType] = useState('HbA1c test');
+  const [shippingAddress, setShippingAddress] = useState('123 Main Street');
+  const [healthPass, setHealthPass] = useState<any>(null);
+  const [loadingPassport, setLoadingPassport] = useState(false);
+
+  const loadExternalRecords = async () => {
+    setLoadingExternal(true);
+    try {
+      const data = await fetchExternalRecords(patientId);
+      setExternalRecords(data.external_records || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingExternal(false);
+    }
+  };
+
+  const loadLabKits = async () => {
+    setLoadingKits(true);
+    try {
+      const data = await fetchLabKits(patientId);
+      setLabKits(data.kits || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingKits(false);
+    }
+  };
+
+  const loadHealthPassport = async () => {
+    setLoadingPassport(true);
+    try {
+      const data = await fetchHealthPassport(patientId);
+      setHealthPass(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingPassport(false);
+    }
+  };
+
+  const handleOrderKit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setOrderingKit(true);
+    try {
+      await orderLabKit({
+        patient_id: patientId,
+        kit_type: kitType,
+        shipping_address: shippingAddress
+      });
+      await loadLabKits();
+      alert("Home diagnostic kit ordered successfully!");
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setOrderingKit(false);
+    }
+  };
+
+  useEffect(() => {
+    if (patientId) {
+      if (interopTab === 'ABDM') {
+        void loadExternalRecords();
+      } else if (interopTab === 'LAB_KITS') {
+        void loadLabKits();
+      } else if (interopTab === 'PASSPORT') {
+        void loadHealthPassport();
+      }
+    }
+  }, [interopTab, patientId]);
+
+  useEffect(() => {
+    if (midTab === 'TRIALS' && !trialsData && patientId) {
+      setTrialsLoading(true);
+      setTrialsError("");
+      fetchClinicalTrials(patientId)
+        .then(setTrialsData)
+        .catch(err => {
+          console.error(err);
+          setTrialsError("Failed to fetch clinical trial matches.");
+        })
+        .finally(() => setTrialsLoading(false));
+    }
+  }, [midTab, patientId, trialsData]);
+
+  const downloadReferralLetter = (trialTitle: string, letterText: string) => {
+    const element = document.createElement("a");
+    const file = new Blob([letterText], { type: 'text/plain' });
+    element.href = URL.createObjectURL(file);
+    element.download = `Referral_Letter_${trialTitle.replace(/\s+/g, '_')}.txt`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
+  };
 
   const handleSubmitRecommendedOrder = async (order: RecommendedOrder) => {
     const key = `${order.order_type}-${order.title}`;
@@ -415,6 +524,253 @@ export default function PatientEMRView({
         <PatientMonitoringSignals patientId={patientId} />
         <PatientDiagnosticsReview patientId={patientId} />
         <PatientDiagnosticResults patientId={patientId} />
+
+        {/* Interoperability & Remote Diagnostics Portal (Itches 4, 5, 10) */}
+        <div className="panel bg-gradient-to-br from-slate-900/40 via-slate-900/10 to-black/30 border border-slate-900 rounded-2xl overflow-hidden">
+          <div className="px-5 py-4 border-b border-slate-900 bg-slate-950/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <div className="section-label mb-1 flex items-center gap-1.5 text-indigo-400">
+                <Globe size={13} /> Interoperability & Remote Care Subsystem
+              </div>
+              <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wide">Patient Consent & At-Home Diagnostics</h3>
+            </div>
+            
+            {/* Tabs */}
+            <div className="flex gap-1.5">
+              <button
+                onClick={() => setInteropTab('ABDM')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
+                  interopTab === 'ABDM'
+                    ? 'bg-indigo-600 border-indigo-500 text-white font-extrabold'
+                    : 'bg-slate-950/60 border-slate-850 text-slate-400 hover:text-slate-300'
+                }`}
+              >
+                ABDM Records (Itch 4)
+              </button>
+              <button
+                onClick={() => setInteropTab('LAB_KITS')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
+                  interopTab === 'LAB_KITS'
+                    ? 'bg-indigo-600 border-indigo-500 text-white font-extrabold'
+                    : 'bg-slate-950/60 border-slate-850 text-slate-400 hover:text-slate-300'
+                }`}
+              >
+                Home Diagnostics (Itch 5)
+              </button>
+              <button
+                onClick={() => setInteropTab('PASSPORT')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors cursor-pointer ${
+                  interopTab === 'PASSPORT'
+                    ? 'bg-indigo-600 border-indigo-500 text-white font-extrabold'
+                    : 'bg-slate-950/60 border-slate-850 text-slate-400 hover:text-slate-300'
+                }`}
+              >
+                Health Passport (Itch 10)
+              </button>
+            </div>
+          </div>
+
+          <div className="p-5">
+            {/* Tab content: ABDM Explorer */}
+            {interopTab === 'ABDM' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Cross-Hospital Records (Consent-Based Ayushman Bharat Digital Mission)</span>
+                  <button
+                    onClick={loadExternalRecords}
+                    disabled={loadingExternal}
+                    className="btn btn-secondary text-[10px] py-1 px-2.5 cursor-pointer flex items-center gap-1 uppercase"
+                  >
+                    {loadingExternal ? <Loader2 size={11} className="animate-spin" /> : <RefreshCw size={11} />}
+                    Sync External Registry
+                  </button>
+                </div>
+
+                {loadingExternal ? (
+                  <div className="py-8 text-center text-xs text-slate-500 uppercase">
+                    <Loader2 size={16} className="animate-spin inline mr-2 text-indigo-400" />
+                    Querying national ABDM registry logs...
+                  </div>
+                ) : externalRecords.length === 0 ? (
+                  <div className="p-4 bg-slate-950/40 border border-slate-850 rounded-xl text-center text-xs text-slate-400 uppercase font-mono">
+                    No cross-hospital records linked. Try syncing.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {externalRecords.map((rec: any, idx: number) => (
+                      <div key={idx} className="p-4 bg-slate-950/60 border border-slate-900 rounded-xl space-y-2 flex flex-col justify-between">
+                        <div>
+                          <div className="flex justify-between items-start">
+                            <span className="text-xs font-bold text-slate-200">{rec.title}</span>
+                            <span className={`text-[8px] font-mono border px-1 py-0.5 rounded font-bold uppercase ${
+                              rec.severity === 'high' ? 'bg-red-500/10 text-red-400 border-red-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'
+                            }`}>
+                              {rec.severity}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 leading-relaxed mt-1">{rec.summary}</p>
+                        </div>
+                        <div className="border-t border-slate-900/60 pt-2 flex justify-between items-center text-[9px] font-mono text-slate-500 uppercase">
+                          <span>{rec.source_facility}</span>
+                          <span>{new Date(rec.date).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Tab content: Home Lab Kits */}
+            {interopTab === 'LAB_KITS' && (
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                {/* Left side: Order form (5 cols) */}
+                <form onSubmit={handleOrderKit} className="lg:col-span-5 space-y-4">
+                  <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider block">Order Diagnostics Home kit</span>
+                  
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-mono uppercase text-slate-400">Kit Type</label>
+                    <select
+                      value={kitType}
+                      onChange={(e) => setKitType(e.target.value)}
+                      className="select-clinical w-full"
+                    >
+                      <option value="HbA1c test">HbA1c Diabetes Kit</option>
+                      <option value="Lipid Panel">Lipid Cholesterol Kit</option>
+                      <option value="Kidney function test">Renal Panel Kit</option>
+                      <option value="Liver Panel">Hepatic Panel Kit</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="block text-[10px] font-mono uppercase text-slate-400">Shipping Address</label>
+                    <textarea
+                      value={shippingAddress}
+                      onChange={(e) => setShippingAddress(e.target.value)}
+                      rows={2}
+                      className="textarea-clinical w-full"
+                      placeholder="Enter full delivery address"
+                      required
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={orderingKit}
+                    className="btn btn-primary w-full text-xs py-2 flex items-center justify-center gap-1.5 cursor-pointer uppercase font-extrabold tracking-wider"
+                  >
+                    {orderingKit ? <Loader2 size={13} className="animate-spin" /> : <Plus size={13} />}
+                    Dispatch Home Kit
+                  </button>
+                </form>
+
+                {/* Right side: History (7 cols) */}
+                <div className="lg:col-span-7 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Dispatched Kit Statuses</span>
+                    <button
+                      type="button"
+                      onClick={loadLabKits}
+                      disabled={loadingKits}
+                      className="p-1 rounded hover:bg-slate-800 disabled:opacity-50 text-slate-400 cursor-pointer"
+                    >
+                      <RefreshCw size={11} className={loadingKits ? "animate-spin" : ""} />
+                    </button>
+                  </div>
+
+                  {loadingKits && labKits.length === 0 ? (
+                    <div className="py-8 text-center text-xs text-slate-500 uppercase">
+                      Loading diagnostics orders...
+                    </div>
+                  ) : labKits.length === 0 ? (
+                    <div className="p-8 text-center text-xs text-slate-400 uppercase font-mono bg-slate-950/40 border border-slate-850 rounded-xl">
+                      No diagnostic kits dispatched for this patient.
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                      {labKits.map((kit: any, idx: number) => {
+                        const statusColors: Record<string, string> = {
+                          ordered: "bg-indigo-500/10 border-indigo-500/30 text-indigo-400",
+                          shipped: "bg-yellow-500/10 border-yellow-500/30 text-yellow-400",
+                          results_uploaded: "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                        };
+                        return (
+                          <div key={idx} className="p-3 bg-slate-950/60 border border-slate-900 rounded-xl flex justify-between items-center text-xs">
+                            <div>
+                              <div className="font-bold text-slate-200">{kit.kit_type}</div>
+                              <div className="text-[10px] text-slate-500 font-mono mt-0.5">Address: {kit.shipping_address}</div>
+                            </div>
+                            <span className={`text-[9px] font-mono border px-2 py-0.5 rounded-full font-bold uppercase ${statusColors[kit.status] || "bg-slate-500/10 text-slate-400 border-slate-500/20"}`}>
+                              {kit.status.replace('_', ' ')}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Tab content: Health Passport */}
+            {interopTab === 'PASSPORT' && (
+              <div className="space-y-4 max-w-xl mx-auto">
+                <div className="text-center space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-indigo-400 tracking-wider">Emergency Digital Health Pass</span>
+                  <p className="text-[11px] text-slate-400">Export this QR code to scan at external clinic points for instant allergy and vitals transmission.</p>
+                </div>
+
+                {loadingPassport ? (
+                  <div className="py-12 text-center text-xs text-slate-500 uppercase">
+                    <Loader2 size={16} className="animate-spin inline mr-2 text-indigo-400" />
+                    Generating emergency health pass...
+                  </div>
+                ) : healthPass ? (
+                  <div className="p-5 bg-slate-950/80 border border-slate-900 rounded-2xl flex flex-col sm:flex-row items-center gap-6">
+                    {/* QR mock-code */}
+                    <div className="w-32 h-32 bg-white p-2 rounded-xl flex-shrink-0 flex items-center justify-center">
+                      <QrCode className="w-full h-full text-black" strokeWidth={1.5} />
+                    </div>
+                    
+                    {/* Passport detail checklist */}
+                    <div className="flex-1 space-y-3 w-full">
+                      <div className="flex justify-between items-center border-b border-slate-900 pb-2">
+                        <span className="text-xs font-bold text-slate-200">Patient Wallet Card</span>
+                        <span className="text-[8px] font-mono bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded text-emerald-400 font-bold uppercase">Active Pass</span>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 text-[10px] font-mono text-slate-400">
+                        <div>
+                          <span className="text-slate-500 block uppercase text-[8px]">Primary Allergies</span>
+                          <span className="text-slate-300 font-bold">{healthPass.emergency_details?.allergies?.join(", ") || "None recorded"}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 block uppercase text-[8px]">Active Conditions</span>
+                          <span className="text-slate-300 font-bold">{healthPass.emergency_details?.conditions?.join(", ") || "None"}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-300 font-bold block uppercase text-[8px]">Blood Group</span>
+                          <span className="text-slate-300 font-bold">{healthPass.emergency_details?.blood_group || "O Positive"}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-300 font-bold block uppercase text-[8px]">QR Validation Link</span>
+                          <a href={healthPass.qr_code_url} target="_blank" rel="noopener noreferrer" className="text-indigo-400 underline truncate block max-w-[150px]">
+                            {healthPass.qr_code_url}
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-6 text-center text-xs text-slate-500 uppercase">
+                    Failed to load health passport card.
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
         <PatientCareTimeline patientId={patientId} />
 
         {/* Organ Health & Risk Intelligence panel */}
@@ -776,51 +1132,178 @@ export default function PatientEMRView({
             </div>
           </div>
 
-          {/* Middle Column: Active Problems & Notes */}
+          {/* Middle Column: Active Problems & Clinical Trials */}
           <div className="lg:col-span-2 space-y-6">
-            <div className="panel p-4" role="region" aria-label="Active problem list">
-              <h3 className="section-label mb-3 text-[10px] tracking-wider uppercase text-[var(--text-dim)]">Encounter Problem List</h3>
-              <div className="space-y-2">
-                {[
-                  { code: "ICD-10 I10", name: "Essential Hypertension", onset: "2025-04", status: "Active" },
-                  { code: "ICD-10 E11.9", name: "Type 2 Diabetes Mellitus", onset: "2025-08", status: "Active" },
-                  { code: "ICD-10 E78.5", name: "Hyperlipidemia", onset: "2026-01", status: "Active" }
-                ].map((prob) => (
-                  <div key={prob.code} className="p-2 border border-[var(--border)] bg-[rgba(255,255,255,0.01)] hover:bg-[rgba(255,255,255,0.02)] transition-colors rounded flex justify-between items-center">
-                    <div>
-                      <div className="text-[11px] font-bold text-[var(--text-primary)] uppercase">{prob.name}</div>
-                      <div className="text-[9px] font-mono text-[var(--text-dim)] uppercase mt-0.5">{prob.code} • Onset {prob.onset}</div>
-                    </div>
-                    <span className="text-[9px] font-mono font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-1.5 py-0.5 rounded uppercase">
-                      {prob.status}
-                    </span>
-                  </div>
-                ))}
-              </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setMidTab('CLINICAL')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold font-mono uppercase tracking-wider border transition-all cursor-pointer ${
+                  midTab === 'CLINICAL'
+                    ? "bg-[var(--accent)] text-white border-[var(--accent)]"
+                    : "bg-[rgba(255,255,255,0.02)] text-[var(--text-secondary)] border-[var(--border)] hover:bg-[rgba(255,255,255,0.05)]"
+                }`}
+              >
+                EMR Overview
+              </button>
+              <button
+                type="button"
+                onClick={() => setMidTab('TRIALS')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold font-mono uppercase tracking-wider border transition-all cursor-pointer ${
+                  midTab === 'TRIALS'
+                    ? "bg-[var(--accent)] text-white border-[var(--accent)]"
+                    : "bg-[rgba(255,255,255,0.02)] text-[var(--text-secondary)] border-[var(--border)] hover:bg-[rgba(255,255,255,0.05)]"
+                }`}
+              >
+                Clinical Trials
+              </button>
             </div>
 
-            <div id="clinical-ai-synthesis" className="panel p-4 h-full min-h-[260px]" role="region" aria-label="Clinical AI synthesis">
-              <h3 className="section-label mb-3">Clinical AI Synthesis</h3>
-              {aiReviewMessage && (
-                <div className="mb-3 rounded border border-[var(--warning-border)] bg-[var(--warning-muted)] px-3 py-1.5 text-[11px] font-mono text-[var(--warning)]" role="alert">
-                  {aiReviewMessage}
+            {midTab === 'CLINICAL' ? (
+              <>
+                <div className="panel p-4" role="region" aria-label="Active problem list">
+                  <h3 className="section-label mb-3 text-[10px] tracking-wider uppercase text-[var(--text-dim)]">Encounter Problem List</h3>
+                  <div className="space-y-2">
+                    {[
+                      { code: "ICD-10 I10", name: "Essential Hypertension", onset: "2025-04", status: "Active" },
+                      { code: "ICD-10 E11.9", name: "Type 2 Diabetes Mellitus", onset: "2025-08", status: "Active" },
+                      { code: "ICD-10 E78.5", name: "Hyperlipidemia", onset: "2026-01", status: "Active" }
+                    ].map((prob) => (
+                      <div key={prob.code} className="p-2 border border-[var(--border)] bg-[rgba(255,255,255,0.01)] hover:bg-[rgba(255,255,255,0.02)] transition-colors rounded flex justify-between items-center">
+                        <div>
+                          <div className="text-[11px] font-bold text-[var(--text-primary)] uppercase">{prob.name}</div>
+                          <div className="text-[9px] font-mono text-[var(--text-dim)] uppercase mt-0.5">{prob.code} • Onset {prob.onset}</div>
+                        </div>
+                        <span className="text-[9px] font-mono font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 px-1.5 py-0.5 rounded uppercase">
+                          {prob.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              )}
-              <div className="text-xs font-mono text-[var(--text-secondary)] space-y-3 leading-relaxed uppercase">
-                <p>
-                  <strong>AI DRAFT STATUS:</strong> Awaiting clinicial review.
-                </p>
-                <p>
-                  <strong>PROTOCOL CHECKLIST:</strong><br />
-                  1. Load verified diagnostics from HL7 feed.<br />
-                  2. Review RAG embeddings reference databases.<br />
-                  3. Sign off independent assessment record.
-                </p>
-                <p className="text-[var(--warning)] leading-relaxed">
-                  Decision support only: this AI draft is not a diagnosis or treatment plan. Patients should consult a qualified clinician for diagnosis or treatment, and emergencies require immediate hospital emergency workflow escalation.
-                </p>
+
+                <div id="clinical-ai-synthesis" className="panel p-4 h-full min-h-[260px]" role="region" aria-label="Clinical AI synthesis">
+                  <h3 className="section-label mb-3">Clinical AI Synthesis</h3>
+                  {aiReviewMessage && (
+                    <div className="mb-3 rounded border border-[var(--warning-border)] bg-[var(--warning-muted)] px-3 py-1.5 text-[11px] font-mono text-[var(--warning)]" role="alert">
+                      {aiReviewMessage}
+                    </div>
+                  )}
+                  <div className="text-xs font-mono text-[var(--text-secondary)] space-y-3 leading-relaxed uppercase">
+                    <p>
+                      <strong>AI DRAFT STATUS:</strong> Awaiting clinicial review.
+                    </p>
+                    <p>
+                      <strong>PROTOCOL CHECKLIST:</strong><br />
+                      1. Load verified diagnostics from HL7 feed.<br />
+                      2. Review RAG embeddings reference databases.<br />
+                      3. Sign off independent assessment record.
+                    </p>
+                    <p className="text-[var(--warning)] leading-relaxed">
+                      Decision support only: this AI draft is not a diagnosis or treatment plan. Patients should consult a qualified clinician for diagnosis or treatment, and emergencies require immediate hospital emergency workflow escalation.
+                    </p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="space-y-4">
+                <div className="panel p-4">
+                  <h3 className="section-label mb-2 flex items-center gap-1.5 text-[var(--accent)]">
+                    <Sparkles size={12} className="text-[var(--accent)]" /> Clinical Trial Screening & Matching
+                  </h3>
+                  <p className="text-[10px] font-mono text-[var(--text-secondary)] uppercase mb-4">
+                    Automated eligibility screening using LLM parsing of EMR parameters against active trial registries.
+                  </p>
+
+                  <div className="mb-4 p-2.5 rounded border border-[var(--warning-border)] bg-[rgba(245,158,11,0.03)] text-[10px] font-mono text-[var(--warning)] uppercase leading-normal">
+                    Medical Disclaimer: Clinical trial matches and eligibility criteria are AI-generated decision support. They do not replace professional clinical judgment. Consult a qualified clinician for enrollment or emergencies.
+                  </div>
+
+                  {trialsLoading ? (
+                    <div className="py-8 flex flex-col items-center justify-center gap-2">
+                      <Loader2 className="animate-spin text-[var(--accent)]" size={24} />
+                      <span className="text-[10px] font-mono text-[var(--text-dim)] uppercase">Scanning trial eligibility criteria...</span>
+                    </div>
+                  ) : trialsError ? (
+                    <div className="p-3 text-xs font-mono text-[var(--danger)] border border-[var(--danger-border)] bg-[rgba(239,68,68,0.05)] rounded uppercase">
+                      {trialsError}
+                    </div>
+                  ) : !trialsData || !trialsData.matches || trialsData.matches.length === 0 ? (
+                    <div className="p-3 text-xs font-mono text-[var(--text-dim)] uppercase">
+                      No trial matches found for this patient profile.
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      {trialsData.matches.map((trial: any) => {
+                        const isSelected = selectedTrialId === trial.trial_id;
+                        return (
+                          <div key={trial.trial_id} className="p-3 rounded border border-[var(--border)] bg-[rgba(255,255,255,0.015)] space-y-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <span className="text-[9px] font-mono text-[var(--text-dim)] uppercase">{trial.trial_id}</span>
+                                <h4 className="text-xs font-bold text-[var(--text-primary)] uppercase leading-snug mt-0.5">{trial.title}</h4>
+                              </div>
+                              <div className="flex flex-col items-end gap-1.5 shrink-0">
+                                <span className={`text-[10px] font-bold font-mono px-2 py-0.5 rounded border uppercase ${
+                                  trial.eligible 
+                                    ? "bg-[rgba(16,185,129,0.1)] text-emerald-400 border-emerald-500/20" 
+                                    : "bg-[rgba(239,68,68,0.1)] text-[var(--danger)] border-[var(--danger-border)]"
+                                }`}>
+                                  {trial.eligible ? "Eligible" : "Ineligible"}
+                                </span>
+                                <span className="text-[10px] font-mono text-[var(--text-secondary)]">{trial.match_percentage}% MATCH</span>
+                              </div>
+                            </div>
+
+                            {/* Eligibility Reasons */}
+                            <div className="space-y-1">
+                              <span className="text-[9px] font-mono text-[var(--text-dim)] uppercase">Screening Details:</span>
+                              <ul className="list-disc pl-4 text-[10px] font-mono text-[var(--text-secondary)] uppercase space-y-0.5">
+                                {trial.reasons.map((reason: string, idx: number) => (
+                                  <li key={idx}>{reason}</li>
+                                ))}
+                              </ul>
+                            </div>
+
+                            {trial.eligible && (
+                              <div className="flex gap-2 justify-end pt-2 border-t border-[var(--border-subtle)]">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedTrialId(isSelected ? null : trial.trial_id)}
+                                  className="btn btn-secondary text-[10px] px-2.5 py-1 flex items-center gap-1 cursor-pointer"
+                                >
+                                  {isSelected ? "Hide Referral Letter" : "Review Referral"}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => downloadReferralLetter(trial.title, trial.referral_letter)}
+                                  className="btn btn-primary text-[10px] px-2.5 py-1 flex items-center gap-1 cursor-pointer"
+                                >
+                                  Download Letter
+                                </button>
+                              </div>
+                            )}
+
+                            {isSelected && trial.eligible && (
+                              <div className="mt-3 p-3 bg-black/40 rounded border border-indigo-500/20 space-y-2">
+                                <span className="text-[9px] font-mono text-indigo-400 font-bold uppercase">Pre-Drafted Referral Letter:</span>
+                                <pre className="text-[10px] font-mono text-[var(--text-secondary)] whitespace-pre-wrap leading-relaxed max-h-[200px] overflow-y-auto bg-black/20 p-2 rounded border border-white/[0.03]">
+                                  {trial.referral_letter}
+                                </pre>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div className="text-[9px] text-[var(--text-dim)] uppercase tracking-wide border-t border-[var(--border)] pt-2 mt-4">
+                    ⚠️ Medical Disclaimer: Eligibility checks are preliminary AI suggestions. Final qualification remains subject to clinical investigator screening and formal trial intake protocols.
+                  </div>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Right Column: Imaging and Medications */}

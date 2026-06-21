@@ -104,8 +104,15 @@ export {
   getAdminDataQuality,
   getAdminOperationalHealth,
   getAnalyticsReport,
+  getAttributionDriftReport,
+  getSemanticCacheStats,
+  clearSemanticCache,
   exportDoctorPatientFhirBundle,
   getDemoReadiness,
+  getAIFunctionRegistry,
+  getModelCards,
+  runFederatedSimulation,
+  fetchFhirAuditEvents,
   type AuditLogEntry,
   type DoctorPatientSummary,
   type HospitalAdminMetrics,
@@ -132,7 +139,15 @@ export {
   type DataQualityReport,
   type OperationalHealthReport,
   type AnalyticsReport,
+  type AttributionDriftReport,
+  type SemanticCacheStats,
+  type AIFunctionDetails,
+  type AIFunctionRegistryResponse,
+  type DatasetCardDetails,
+  type ModelCardDetails,
+  type ModelCardsResponse,
 } from './apiAdmin';
+
 
 // ── Billing & Telemedicine ──────────────────────────────────────
 export {
