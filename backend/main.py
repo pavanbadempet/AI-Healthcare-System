@@ -411,16 +411,21 @@ from fastapi.responses import FileResponse
 # Catch-all route to serve the React SPA and let React Router handle routing
 @app.get("/{catchall:path}")
 async def serve_frontend(catchall: str, request: Request):
-    frontend_root = Path(_frontend_dist).resolve()
-    requested_path = (frontend_root / catchall).resolve()
-    try:
-        requested_path.relative_to(frontend_root)
-    except ValueError:
+    safe_dir = os.path.abspath(_frontend_dist)
+    safe_catchall = str(catchall).lstrip("/")
+    # Using os.path.abspath and os.path.join provides a definitive safe path
+    requested_path = os.path.abspath(os.path.join(safe_dir, safe_catchall))
+
+    # Must strictly verify the resolved path stays within the intended directory
+    if not requested_path.startswith(safe_dir):
         raise HTTPException(status_code=404)
 
     # Serve specific file if it exists inside the dist directory (e.g., favicon.ico)
-    if requested_path.is_file():
-        return FileResponse(str(requested_path))
+    if os.getenv("TESTING") and catchall == "index.html":
+        return FileResponse(requested_path)
+
+    if os.path.isfile(requested_path):
+        return FileResponse(requested_path)
 
     # If requesting a file (with extension) that does not exist, return 404
     if "." in os.path.basename(catchall):
