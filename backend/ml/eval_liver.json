@@ -1,52 +1,63 @@
 {
   "model_name": "liver",
-  "evaluated_at": "2026-06-18T08:41:59.832661+00:00",
-  "test_set_size": 6139,
+  "evaluated_at": "2026-06-21T15:22:14.813794+00:00",
+  "test_set_size": 6,
   "class_distribution": {
-    "0": 1755,
-    "1": 4384
+    "0": 3,
+    "1": 3
   },
-  "accuracy": 0.9272,
-  "auc_roc": 0.9767,
-  "sensitivity": 0.9407,
-  "specificity": 0.8934,
+  "accuracy": 0.5,
+  "auc_roc": 0.5,
+  "sensitivity": 0.0,
+  "specificity": 1.0,
   "classification_report": {
     "0": {
-      "precision": 0.8577680525164114,
-      "recall": 0.8934472934472935,
-      "f1-score": 0.8752442087636059,
-      "support": 1755.0
+      "precision": 0.5,
+      "recall": 1.0,
+      "f1-score": 0.6666666666666666,
+      "support": 3.0
     },
     "1": {
-      "precision": 0.9566225933658083,
-      "recall": 0.9406934306569343,
-      "f1-score": 0.9485911443358251,
-      "support": 4384.0
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 3.0
     },
     "macro avg": {
-      "precision": 0.9071953229411098,
-      "recall": 0.9170703620521139,
-      "f1-score": 0.9119176765497155,
-      "support": 6139.0
+      "precision": 0.25,
+      "recall": 0.5,
+      "f1-score": 0.3333333333333333,
+      "support": 6.0
     },
     "weighted avg": {
-      "precision": 0.9283623361267316,
-      "recall": 0.9271868382472715,
-      "f1-score": 0.927622929328618,
-      "support": 6139.0
+      "precision": 0.25,
+      "recall": 0.5,
+      "f1-score": 0.3333333333333333,
+      "support": 6.0
     }
   },
   "confusion_matrix": [
     [
-      1568,
-      187
+      3,
+      0
     ],
     [
-      260,
-      4124
+      3,
+      0
     ]
   ],
-  "feature_importances": {},
+  "feature_importances": {
+    "Age": 0.0,
+    "Gender": 0.0,
+    "Total_Bilirubin": 0.0,
+    "Direct_Bilirubin": 0.0,
+    "Alkaline_Phosphotase": 0.0,
+    "Alamine_Aminotransferase": 0.0,
+    "Aspartate_Aminotransferase": 0.0,
+    "Total_Proteins": 0.0,
+    "Albumin": 0.0,
+    "Albumin_and_Globulin_Ratio": 0.0
+  },
   "n_features": 10,
   "feature_names": [
     "Age",

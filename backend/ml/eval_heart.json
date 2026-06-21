@@ -1,52 +1,66 @@
 {
   "model_name": "heart",
-  "evaluated_at": "2026-06-18T08:46:11.309823+00:00",
-  "test_set_size": 50736,
+  "evaluated_at": "2026-06-21T15:22:13.866445+00:00",
+  "test_set_size": 6,
   "class_distribution": {
-    "0": 45968,
-    "1": 4768
+    "0": 1,
+    "1": 5
   },
-  "accuracy": 0.9079,
-  "auc_roc": 0.8475,
-  "sensitivity": 0.1355,
-  "specificity": 0.9881,
+  "accuracy": 0.1667,
+  "auc_roc": 0.5,
+  "sensitivity": 0.0,
+  "specificity": 1.0,
   "classification_report": {
-    "0.0": {
-      "precision": 0.9167961890151591,
-      "recall": 0.9880569091541942,
-      "f1-score": 0.9510936142143672,
-      "support": 45968.0
+    "0": {
+      "precision": 0.16666666666666666,
+      "recall": 1.0,
+      "f1-score": 0.2857142857142857,
+      "support": 1.0
     },
-    "1.0": {
-      "precision": 0.5405857740585774,
-      "recall": 0.13548657718120805,
-      "f1-score": 0.21666946168036225,
-      "support": 4768.0
+    "1": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 5.0
     },
     "macro avg": {
-      "precision": 0.7286909815368683,
-      "recall": 0.5617717431677012,
-      "f1-score": 0.5838815379473647,
-      "support": 50736.0
+      "precision": 0.08333333333333333,
+      "recall": 0.5,
+      "f1-score": 0.14285714285714285,
+      "support": 6.0
     },
     "weighted avg": {
-      "precision": 0.8814411894386655,
-      "recall": 0.9079351939451277,
-      "f1-score": 0.8820748827557947,
-      "support": 50736.0
+      "precision": 0.027777777777777776,
+      "recall": 0.16666666666666666,
+      "f1-score": 0.047619047619047616,
+      "support": 6.0
     }
   },
   "confusion_matrix": [
     [
-      45419,
-      549
+      1,
+      0
     ],
     [
-      4122,
-      646
+      5,
+      0
     ]
   ],
-  "feature_importances": {},
+  "feature_importances": {
+    "age": 0.0,
+    "sex": 0.0,
+    "cp": 0.0,
+    "trestbps": 0.0,
+    "chol": 0.0,
+    "fbs": 0.0,
+    "restecg": 0.0,
+    "thalach": 0.0,
+    "exang": 0.0,
+    "oldpeak": 0.0,
+    "slope": 0.0,
+    "ca": 0.0,
+    "thal": 0.0
+  },
   "n_features": 13,
   "feature_names": [
     "age",
