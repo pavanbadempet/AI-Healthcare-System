@@ -394,43 +394,42 @@ if os.path.isdir(_static_dir):
 
 # --- Serve React Frontend SPA ---
 _frontend_dist = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend", "dist")
-if os.path.isdir(_frontend_dist):
-    class ImmutableStaticFiles(StaticFiles):
+class ImmutableStaticFiles(StaticFiles):
         """Custom StaticFiles subclass to add Cache-Control: immutable headers for hashed production assets."""
         def file_response(self, *args, **kwargs):
             response = super().file_response(*args, **kwargs)
             response.headers["Cache-Control"] = "public, max-age=31536000, immutable"
             return response
 
-    # Serve static assets folder
-    assets_dir = os.path.join(_frontend_dist, "assets")
-    if os.path.isdir(assets_dir):
-        app.mount("/assets", ImmutableStaticFiles(directory=assets_dir), name="assets")
+# Serve static assets folder
+assets_dir = os.path.join(_frontend_dist, "assets")
+if os.path.isdir(assets_dir):
+    app.mount("/assets", ImmutableStaticFiles(directory=assets_dir), name="assets")
 
-    from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse
 
-    # Catch-all route to serve the React SPA and let React Router handle routing
-    @app.get("/{catchall:path}")
-    async def serve_frontend(catchall: str, request: Request):
-        frontend_root = Path(_frontend_dist).resolve()
-        requested_path = (frontend_root / catchall).resolve()
-        try:
-            requested_path.relative_to(frontend_root)
-        except ValueError:
-            raise HTTPException(status_code=404)
-
-        # Serve specific file if it exists inside the dist directory (e.g., favicon.ico)
-        if requested_path.is_file():
-            return FileResponse(str(requested_path))
-
-        # If requesting a file (with extension) that does not exist, return 404
-        if "." in os.path.basename(catchall):
-            raise HTTPException(status_code=404)
-
-        # Fallback to index.html for browser client-side routing
-        index_file = os.path.join(_frontend_dist, "index.html")
-        if os.path.exists(index_file):
-            # Prevent browser caching of index.html so clients always load newly deployed JS/CSS bundles
-            return FileResponse(index_file, headers={"Cache-Control": "no-store, no-cache, must-revalidate"})
-
+# Catch-all route to serve the React SPA and let React Router handle routing
+@app.get("/{catchall:path}")
+async def serve_frontend(catchall: str, request: Request):
+    frontend_root = Path(_frontend_dist).resolve()
+    requested_path = (frontend_root / catchall).resolve()
+    try:
+        requested_path.relative_to(frontend_root)
+    except ValueError:
         raise HTTPException(status_code=404)
+
+    # Serve specific file if it exists inside the dist directory (e.g., favicon.ico)
+    if requested_path.is_file():
+        return FileResponse(str(requested_path))
+
+    # If requesting a file (with extension) that does not exist, return 404
+    if "." in os.path.basename(catchall):
+        raise HTTPException(status_code=404)
+
+    # Fallback to index.html for browser client-side routing
+    index_file = os.path.join(_frontend_dist, "index.html")
+    if os.path.exists(index_file):
+        # Prevent browser caching of index.html so clients always load newly deployed JS/CSS bundles
+        return FileResponse(index_file, headers={"Cache-Control": "no-store, no-cache, must-revalidate"})
+
+    raise HTTPException(status_code=404)
