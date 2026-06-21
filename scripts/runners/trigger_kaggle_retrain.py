@@ -53,16 +53,15 @@ def build_kaggle_kernel(username):
     """Create a folder with the notebook and metadata file for the Kaggle API."""
     base_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
     build_dir = os.path.join(base_dir, "kaggle_build")
+    if os.path.isdir(build_dir):
+        shutil.rmtree(build_dir)
     os.makedirs(build_dir, exist_ok=True)
 
-    # Read environment variables to inject
-    database_url = os.getenv("DATABASE_URL")
+    # Non-secret runtime configuration may be embedded in the private notebook.
     backend_url = os.getenv("BACKEND_URL", "https://pavanbadempet-ai-healthcare-system.hf.space")
-    admin_jwt_token = os.getenv("ADMIN_JWT_TOKEN")
-    hf_token = os.getenv("HF_TOKEN")
     hf_dataset_id = os.getenv("HF_DATASET_ID")
 
-    # Fallback to reading from .env if not set in environment
+    # Fallback to reading non-secret configuration from .env.
     dot_env_path = os.path.join(base_dir, ".env")
     if os.path.exists(dot_env_path):
         with open(dot_env_path, "r") as f:
@@ -71,14 +70,8 @@ def build_kaggle_kernel(username):
                     parts = line.strip().split("=", 1)
                     k = parts[0].strip()
                     v = parts[1].strip().strip('"').strip("'")
-                    if k == "DATABASE_URL" and not database_url:
-                        database_url = v
-                    elif k == "BACKEND_URL" and not backend_url:
+                    if k == "BACKEND_URL" and not backend_url:
                         backend_url = v
-                    elif k == "ADMIN_JWT_TOKEN" and not admin_jwt_token:
-                        admin_jwt_token = v
-                    elif k == "HF_TOKEN" and not hf_token:
-                        hf_token = v
                     elif k == "HF_DATASET_ID" and not hf_dataset_id:
                         hf_dataset_id = v
 
@@ -112,11 +105,14 @@ def build_kaggle_kernel(username):
           "outputs": [],
           "source": [
             "import os\n",
-            "# Run the Spark ETL script (database and HF reload credentials)\n",
-            f"os.environ[\"DATABASE_URL\"] = {repr(database_url or '')}\n",
+            "from kaggle_secrets import UserSecretsClient\n",
+            "\n",
+            "# Deployment credentials are resolved from private Kaggle Secrets at runtime.\n",
+            "user_secrets = UserSecretsClient()\n",
+            "os.environ[\"DATABASE_URL\"] = user_secrets.get_secret(\"DATABASE_URL\")\n",
+            "os.environ[\"ADMIN_JWT_TOKEN\"] = user_secrets.get_secret(\"ADMIN_JWT_TOKEN\")\n",
+            "os.environ[\"HF_TOKEN\"] = user_secrets.get_secret(\"HF_TOKEN\")\n",
             f"os.environ[\"BACKEND_URL\"] = {repr(backend_url or '')}\n",
-            f"os.environ[\"ADMIN_JWT_TOKEN\"] = {repr(admin_jwt_token or '')}\n",
-            f"os.environ[\"HF_TOKEN\"] = {repr(hf_token or '')}\n",
             f"os.environ[\"HF_DATASET_ID\"] = {repr(hf_dataset_id or '')}\n",
             "\n",
             "!python scripts/runners/run_spark_etl.py"
@@ -199,16 +195,24 @@ def push_to_kaggle(build_dir, username, key):
         # Clean up config files
         raise
 
-if __name__ == "__main__":
-    logger.info("--- Programmatic Kaggle Cloud Retrain Trigger ---")
+
+def run_retrain():
+    """Build and push the Kaggle kernel, always removing local build artifacts."""
+    build_dir = None
     try:
         username, key = setup_kaggle_credentials()
         build_dir = build_kaggle_kernel(username)
         push_to_kaggle(build_dir, username, key)
+    finally:
+        if build_dir and os.path.isdir(build_dir):
+            shutil.rmtree(build_dir)
+            logger.info("Cleaned up local build directory.")
 
-        # Clean up local temporary build directory
-        shutil.rmtree(build_dir)
-        logger.info("Cleaned up local build directory.")
+
+if __name__ == "__main__":
+    logger.info("--- Programmatic Kaggle Cloud Retrain Trigger ---")
+    try:
+        run_retrain()
         logger.info("--- Launch Sequence Finished ---")
     except Exception as e:
         logger.error(f"Error: {e}")

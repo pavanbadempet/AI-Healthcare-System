@@ -39,7 +39,7 @@ def test_login(client):
 
 def test_get_profile(client):
     # 1. Signup
-    client.post("/signup", json={"username": "prof", "password": "Password1", "email": "p@e.com", "full_name": "P", "dob": "2000-01-01"})
+    client.post("/signup", json={"username": "prof", "password": "Password1", "email": "p@e.com", "full_name": "Profile User", "dob": "2000-01-01"})
     # 2. Login
     login_res = client.post("/token", data={"username": "prof", "password": "Password1"})
     token = login_res.json()["access_token"]

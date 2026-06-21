@@ -10,6 +10,7 @@ from unittest.mock import MagicMock
 import pytest
 from fastapi import HTTPException
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
@@ -451,13 +452,12 @@ def test_validate_vital_measurements_raises_when_all_none():
 
 def test_validate_vital_measurements_raises_for_out_of_range():
     from backend import schemas
-    vital = schemas.VitalObservationCreate(
-        patient_id=1,
-        heart_rate=300.0,  # max is 250
-    )
-    with pytest.raises(HTTPException) as exc:
-        _validate_vital_measurements(vital)
-    assert exc.value.status_code == 400
+
+    with pytest.raises(ValidationError, match="Heart rate must be between 20 and 250 bpm"):
+        schemas.VitalObservationCreate(
+            patient_id=1,
+            heart_rate=300.0,
+        )
 
 
 def test_validate_vital_measurements_passes_for_valid():

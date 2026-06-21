@@ -43,6 +43,7 @@
 - Prompts are owned by `prompt_registry.py` - never inline system prompts in route handlers.
 - Add backend runtime dependencies to `backend/requirements.txt`. Keep root `requirements.txt` as the thin include file, and update `requirements-full.txt` only when the dependency is needed for full local/ML/data-pipeline development.
 - Tests must not depend on external API keys; mock all AI/embedding calls.
+- Always run pytest using `pytest-xdist` parallelization (i.e. `-n auto` flag) to optimize test run times.
 - Before claiming completion, run the narrowest relevant tests or checks and report any that were skipped.
 
 ## Scoped Instructions
@@ -59,7 +60,7 @@
 ```bash
 # Backend
 uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
-python -m pytest tests/ -v
+python -m pytest tests/ -n auto -v
 
 # Frontend (Vite SPA)
 npm --prefix frontend run dev

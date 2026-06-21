@@ -354,7 +354,7 @@ def forgot_password(
     db: Session = Depends(database.get_db)
 ) -> dict[str, str]:
     """
-    Generate a password reset link and log/simulate sending it.
+    Generate a password reset link and deliver it through the email service.
     Always returns a generic success message to prevent user/email enumeration.
     """
     generic_success = {
@@ -377,13 +377,6 @@ def forgot_password(
     # Send email (which will simulate or send real SMTP)
     from .email_service import send_password_reset
     send_password_reset(to_email=user.email, username=user.username, reset_link=reset_link)
-
-    # Print to logs for testing/simulation
-    logger.info("=============================================")
-    logger.info("   SIMULATED PASSWORD RESET LINK")
-    logger.info(f"   User: {user.username} ({user.email})")
-    logger.info(f"   Link: {reset_link}")
-    logger.info("=============================================")
 
     return generic_success
 

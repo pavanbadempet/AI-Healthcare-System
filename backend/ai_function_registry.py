@@ -172,6 +172,22 @@ AI_FUNCTIONS: tuple[AIFunction, ...] = (
         prompt_keys=(),
         notes="Embeddings must be delegated through core_ai and scoped to authorized user context.",
     ),
+    AIFunction(
+        id="agentic_scheduling",
+        name="Agentic scheduling assistant",
+        module="backend.appointments",
+        endpoints=("/appointments/agent-chat", "/appointments/agent-stream"),
+        audience=("patient", "doctor", "admin"),
+        risk_category="clinical_triage_scheduling",
+        clinical_safety_required=True,
+        medical_disclaimer_required=True,
+        human_review_required=True,
+        basis_transparency_required=True,
+        uses_ai_provider=True,
+        provider_boundary="backend.core_ai",
+        prompt_keys=("scheduling_system",),
+        notes="Conversational assistant with symptom pre-screening warnings and SQLite booking write-back.",
+    ),
 )
 
 

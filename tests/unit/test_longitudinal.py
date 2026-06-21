@@ -3,6 +3,24 @@
 import numpy as np
 import pytest
 
+
+def _auth_headers(client, username="longitudinal_user"):
+    signup = client.post("/v1/signup", json={
+        "username": username,
+        "password": "Password123!",
+        "email": f"{username}@example.com",
+        "full_name": "Longitudinal Test User",
+        "dob": "1990-01-01",
+    })
+    assert signup.status_code == 200
+    token = client.post(
+        "/v1/token",
+        data={"username": username, "password": "Password123!"},
+    )
+    assert token.status_code == 200
+    return {"Authorization": f"Bearer {token.json()['access_token']}"}
+
+
 # ---------------------------------------------------------------------------
 # Unit: ClinicalTemporalLSTM model
 # ---------------------------------------------------------------------------
@@ -70,6 +88,7 @@ class TestClinicalTemporalLSTM:
     def test_pickle_roundtrip(self):
         """Verify model survives pickle serialisation."""
         import pickle
+
         from backend.ml.longitudinal_models import ClinicalTemporalLSTM
 
         rng = np.random.RandomState(1)
@@ -96,17 +115,17 @@ class TestClinicalTemporalLSTM:
 class TestLongitudinalEndpoints:
     """Test the FastAPI longitudinal prediction endpoints."""
 
-    @pytest.fixture
-    def client(self):
-        import os
-        os.environ["TESTING"] = "1"
-        os.environ["DATABASE_URL"] = "sqlite://"
-        from fastapi.testclient import TestClient
-        from backend.main import app
-        with TestClient(app, base_url="http://127.0.0.1") as c:
-            yield c
+    @pytest.mark.parametrize("condition", ["diabetes", "heart", "liver", "kidney"])
+    def test_longitudinal_prediction_requires_authentication(self, client, condition):
+        response = client.post(
+            f"/v1/predict/longitudinal/{condition}",
+            json={"visits": [{}, {}]},
+        )
+
+        assert response.status_code == 401
 
     def test_diabetes_longitudinal(self, client):
+        headers = _auth_headers(client, "longitudinal_diabetes")
         payload = {
             "visits": [
                 {"gender": 1, "age": 45, "bmi": 28.0, "hypertension": 0,
@@ -120,7 +139,11 @@ class TestLongitudinalEndpoints:
                  "physical_activity": 0, "general_health": 4},
             ],
         }
-        resp = client.post("/v1/predict/longitudinal/diabetes", json=payload)
+        resp = client.post(
+            "/v1/predict/longitudinal/diabetes",
+            json=payload,
+            headers=headers,
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["condition"] == "diabetes"
@@ -132,6 +155,7 @@ class TestLongitudinalEndpoints:
         assert "medical_disclaimer" in data
 
     def test_heart_longitudinal(self, client):
+        headers = _auth_headers(client, "longitudinal_heart")
         payload = {
             "visits": [
                 {"age": 55, "sex": 1, "cp": 1, "trestbps": 130, "chol": 220,
@@ -142,22 +166,32 @@ class TestLongitudinalEndpoints:
                  "oldpeak": 2.0, "slope": 2, "ca": 1, "thal": 3},
             ],
         }
-        resp = client.post("/v1/predict/longitudinal/heart", json=payload)
+        resp = client.post(
+            "/v1/predict/longitudinal/heart",
+            json=payload,
+            headers=headers,
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["condition"] == "heart"
         assert data["num_visits"] == 2
 
     def test_too_few_visits_rejected(self, client):
+        headers = _auth_headers(client, "longitudinal_validation")
         payload = {
             "visits": [
                 {"gender": 1, "age": 50, "bmi": 25.0},
             ],
         }
-        resp = client.post("/v1/predict/longitudinal/diabetes", json=payload)
+        resp = client.post(
+            "/v1/predict/longitudinal/diabetes",
+            json=payload,
+            headers=headers,
+        )
         assert resp.status_code == 422  # Validation error: min_length=2
 
     def test_kidney_longitudinal(self, client):
+        headers = _auth_headers(client, "longitudinal_kidney")
         payload = {
             "visits": [
                 {"age": 60, "blood_pressure": 80, "serum_creatinine": 1.2,
@@ -166,7 +200,11 @@ class TestLongitudinalEndpoints:
                  "hemoglobin": 11.0, "albumin": 3.0},
             ],
         }
-        resp = client.post("/v1/predict/longitudinal/kidney", json=payload)
+        resp = client.post(
+            "/v1/predict/longitudinal/kidney",
+            json=payload,
+            headers=headers,
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["condition"] == "kidney"
@@ -176,6 +214,7 @@ class TestLongitudinalEndpoints:
         assert abs(total_attn - 1.0) < 0.01
 
     def test_liver_longitudinal(self, client):
+        headers = _auth_headers(client, "longitudinal_liver")
         payload = {
             "visits": [
                 {"age": 45, "gender": 1, "total_bilirubin": 0.8,
@@ -184,7 +223,29 @@ class TestLongitudinalEndpoints:
                  "direct_bilirubin": 1.1, "albumin": 3.2},
             ],
         }
-        resp = client.post("/v1/predict/longitudinal/liver", json=payload)
+        resp = client.post(
+            "/v1/predict/longitudinal/liver",
+            json=payload,
+            headers=headers,
+        )
         assert resp.status_code == 200
         data = resp.json()
         assert data["condition"] == "liver"
+
+    def test_longitudinal_prediction_rejects_other_patient_context(self, client):
+        headers = _auth_headers(client, "longitudinal_context")
+        payload = {
+            "patient_id": 999999,
+            "visits": [
+                {"gender": 1, "age": 45, "bmi": 28.0},
+                {"gender": 1, "age": 46, "bmi": 29.0},
+            ],
+        }
+
+        response = client.post(
+            "/v1/predict/longitudinal/diabetes",
+            json=payload,
+            headers=headers,
+        )
+
+        assert response.status_code == 403
