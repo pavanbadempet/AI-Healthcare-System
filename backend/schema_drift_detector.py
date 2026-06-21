@@ -8,7 +8,7 @@ metadata models, and active database tables in SQL Server/Postgres/SQLite.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Type
 
@@ -55,11 +55,11 @@ class SchemaDriftDetector:
     def compare_orm_to_database(self, engine: Engine, base: Type[DeclarativeBase]) -> DriftReport:
         """Inspects current DB connection and compares it against ORM class metadata."""
         report = DriftReport(source_a="ORM Metadata", source_b="Relational Database")
-        
+
         try:
             inspector = inspect(engine)
             db_tables = inspector.get_table_names()
-            
+
             # Map ORM metadata tables
             for table_name, table_obj in base.metadata.tables.items():
                 if table_name not in db_tables:
@@ -94,10 +94,10 @@ class SchemaDriftDetector:
                     # Basic type validation using normalizer
                     orm_type_raw = str(col_obj.type)
                     db_type_raw = str(db_cols[col_name]["type"])
-                    
+
                     orm_norm = self._normalize_type(orm_type_raw)
                     db_norm = self._normalize_type(db_type_raw)
-                    
+
                     type_compat = (orm_norm == db_norm)
 
                     if not type_compat:

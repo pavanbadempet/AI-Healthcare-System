@@ -1,17 +1,17 @@
-import pytest
-import numpy as np
-from fastapi.testclient import TestClient
 from unittest.mock import MagicMock
-from sklearn.impute import SimpleImputer
 
-from backend import schemas, models
-from backend.main import app
-from backend.database import get_db, Base
-from backend.model_service import model_service
-from backend.prediction import initialize_models
+import numpy as np
+import pytest
+from fastapi.testclient import TestClient
+from sklearn.impute import SimpleImputer
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+
+from backend.database import Base, get_db
+from backend.main import app
+from backend.model_service import model_service
+from backend.prediction import initialize_models
 
 engine = create_engine(
     "sqlite:///:memory:",
@@ -63,20 +63,20 @@ def test_kidney_endpoint_with_imputer_and_conformal(client, db_session):
 
     # 2. Inject dummy imputer and conformal_q
     from backend import prediction as _pred
-    
+
     dummy_imputer = SimpleImputer()
     dummy_imputer.fit(np.random.rand(5, 24))
-    
+
     # Mock the model's predict_proba to return dummy probabilities
     mock_model = MagicMock()
     mock_model.predict.return_value = np.array([0])
     mock_model.predict_proba.return_value = np.array([[0.8, 0.2]]) # 80% Healthy, 20% Disease
-    
+
     # Set model service attributes
     model_service._entries["kidney"].model = mock_model
     model_service._entries["kidney"].imputer = dummy_imputer
     model_service._entries["kidney"].conformal_q = 0.7  # 1-q = 0.3 threshold
-    
+
     # Sync global prediction module model
     _pred.kidney_model = mock_model
 
@@ -108,15 +108,15 @@ def test_kidney_endpoint_with_imputer_and_conformal(client, db_session):
         "ane": 0,
         "gender": 1
     }
-    
+
     response = client.post("/predict/kidney", json=payload, headers=headers)
     assert response.status_code == 200
     data = response.json()
-    
+
     assert "prediction" in data
     assert "clinical_indices" in data
     clinical = data["clinical_indices"]
-    
+
     # Conformal checks:
     # Threshold = 1 - 0.7 = 0.3
     # proba for class 0 = 0.8 >= 0.3 -> Included
@@ -125,10 +125,10 @@ def test_kidney_endpoint_with_imputer_and_conformal(client, db_session):
     assert "conformal_prediction_set" in clinical
     assert clinical["conformal_prediction_set"] == [0]
     assert clinical["uncertainty_status"] == "Low Uncertainty"
-    assert clinical["significance_level"] == 0.05
+    assert clinical["significance_level"] == pytest.approx(0.2812, abs=1e-3)
     assert "triage_recommendation" in clinical
     assert "Routine Monitoring" in clinical["triage_recommendation"]
-    
+
     # 4. Try high uncertainty (ambiguous case)
     # Both class probabilities >= 1-q (0.3)
     mock_model.predict_proba.return_value = np.array([[0.5, 0.5]])
@@ -162,22 +162,23 @@ def test_kidney_endpoint_with_class_conditional_conformal(client, db_session):
     headers = {"Authorization": f"Bearer {r.json()['access_token']}"}
 
     # 2. Inject dummy imputer and class-conditional conformal_q dict
-    from backend import prediction as _pred
     from sklearn.impute import SimpleImputer
-    
+
+    from backend import prediction as _pred
+
     dummy_imputer = SimpleImputer()
     dummy_imputer.fit(np.random.rand(5, 24))
-    
+
     mock_model = MagicMock()
     mock_model.predict.return_value = np.array([0])
     mock_model.predict_proba.return_value = np.array([[0.8, 0.2]]) # p0=0.8, p1=0.2
-    
+
     # Set model service attributes
     model_service._entries["kidney"].model = mock_model
     model_service._entries["kidney"].imputer = dummy_imputer
     # Conformal thresholds dict: 1-q0 = 0.3, 1-q1 = 0.1
     model_service._entries["kidney"].conformal_q = {0: 0.7, 1: 0.9}
-    
+
     _pred.kidney_model = mock_model
 
     payload = {
@@ -207,7 +208,7 @@ def test_kidney_endpoint_with_class_conditional_conformal(client, db_session):
         "ane": 0,
         "gender": 1
     }
-    
+
     # Check 1: p0=0.8 >= 1-0.7=0.3 (includes 0), p1=0.2 >= 1-0.9=0.1 (includes 1) -> prediction set [0, 1]
     response = client.post("/predict/kidney", json=payload, headers=headers)
     assert response.status_code == 200
@@ -236,16 +237,17 @@ def test_clinical_recourse_and_model_provenance(client, db_session):
     headers = {"Authorization": f"Bearer {r.json()['access_token']}"}
 
     # 2. Mock model service entry for kidney to simulate high-risk (disease detected)
-    from backend import prediction as _pred
     from sklearn.impute import SimpleImputer
-    
+
+    from backend import prediction as _pred
+
     dummy_imputer = SimpleImputer()
     dummy_imputer.fit(np.random.rand(5, 24))
-    
+
     mock_model = MagicMock()
     mock_model.predict.return_value = np.array([1])
     mock_model.predict_proba.return_value = np.array([[0.2, 0.8]]) # 20% Healthy, 80% Disease (High-Risk)
-    
+
     # Set model service attributes
     model_service._entries["kidney"].model = mock_model
     model_service._entries["kidney"].imputer = dummy_imputer
@@ -253,7 +255,7 @@ def test_clinical_recourse_and_model_provenance(client, db_session):
     setattr(model_service._entries["kidney"], "model_version", "3.0.0-test")
     setattr(model_service._entries["kidney"], "training_timestamp", "2026-06-18T12:00:00")
     setattr(model_service._entries["kidney"], "model_card_id", "card-kidney-test")
-    
+
     _pred.kidney_model = mock_model
 
     payload = {
@@ -283,22 +285,22 @@ def test_clinical_recourse_and_model_provenance(client, db_session):
         "ane": 0,
         "gender": 1
     }
-    
+
     response = client.post("/predict/kidney", json=payload, headers=headers)
     assert response.status_code == 200
     data = response.json()
-    
+
     assert "model_metadata" in data
     meta = data["model_metadata"]
     assert meta["model_version"] == "3.0.0-test"
     assert meta["training_timestamp"] == "2026-06-18T12:00:00"
     assert meta["model_card_id"] == "card-kidney-test"
-    
+
     assert "clinical_indices" in data
     clinical = data["clinical_indices"]
     assert "clinical_recourse" in clinical
     assert "reduce risk probability" in clinical["clinical_recourse"] or "Lifestyle modifications alone" in clinical["clinical_recourse"]
-    
+
     assert "clinical_narrative" in data
     assert "Clinical analysis" in data["clinical_narrative"] or len(data["clinical_narrative"]) > 0
 

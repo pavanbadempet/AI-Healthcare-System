@@ -6,7 +6,7 @@ import {
   LayoutDashboard, MessageSquare, Heart, Activity,
   FlaskConical, Stethoscope, Wind, User,
   CreditCard, Video, Info, ShieldCheck,
-  BedDouble, Server, Settings, Plug, BrainCircuit,
+  BedDouble, Server, Settings, Plug, BrainCircuit, Smile,
 } from "lucide-react";
 
 /* ───────────────────────────────────────────────────
@@ -295,6 +295,20 @@ export const clinosItems: MenuItem[] = [
     gradient: "bg-gradient-to-br from-indigo-950/80 via-indigo-900/20 to-black/60",
     highlights: ["Alert Engine", "SHAP Explanations", "AI Narrative"],
   },
+  {
+    id: "cara_companion",
+    title: "Cara Companion",
+    href: "/companion",
+    icon: Smile,
+    desc: "Empathetic patient health companion",
+    longDesc: "Warm, friendly patient companion for daily symptom check-ins, flare tracking, biometrics logging, and supportive AI health conversations.",
+    color: "text-orange-400",
+    bg: "bg-orange-500/10",
+    borderHover: "hover:border-orange-500/60",
+    glow: "drop-shadow-[0_0_15px_rgba(251,146,60,0.5)]",
+    gradient: "bg-gradient-to-br from-orange-950/80 via-rose-900/20 to-black/60",
+    highlights: ["Symptom Diary", "Flare Tracker", "Companion Chat"],
+  },
 ];
 
 /* ───────────────────────────────────────────────────
@@ -319,6 +333,7 @@ export const COMMAND_ITEMS = [
   { label: "SMART App Registry", href: "/apps", category: "ClinOS", desc: "Register and launch third-party SMART apps", icon: Plug },
   { label: "Federated Privacy Mesh", href: "/federated", category: "ClinOS", desc: "Privacy-preserving distributed model sync bridge", icon: ShieldCheck },
   { label: "Clinical Intelligence Command Center", href: "/intelligence", category: "ClinOS", desc: "Real-time vitals alerts and explainable AI SHAP report", icon: BrainCircuit },
+  { label: "Cara Health Companion", href: "/companion", category: "ClinOS", desc: "Warm symptom tracker, flare diary, and empathetic AI companion", icon: Smile },
 ];
 
 /* ───────────────────────────────────────────────────
@@ -359,7 +374,7 @@ export const MENU_GROUPS: MenuGroup[] = [
     accentColor: "text-sky-400 data-[state=open]:text-sky-400",
     items: clinosItems,
     cols: 2,
-    routes: ["/apps", "/federated", "/intelligence"],
+    routes: ["/apps", "/federated", "/intelligence", "/companion"],
   },
 ];
 

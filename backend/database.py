@@ -8,15 +8,39 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 load_dotenv()
 
 
+def _get_sqlite_db_path() -> str:
+    """Helper to detect local SQLite database file path based on environment."""
+    db_path = "healthcare.db"
+    # Detect Hugging Face Space persistent storage (/data)
+    if os.path.exists("/data") and os.access("/data", os.W_OK):
+        db_path = "/data/healthcare.db"
+    elif os.getenv("SPACE_ID") or os.getenv("SPACES_ID"):
+        try:
+            os.makedirs("/data", exist_ok=True)
+            if os.access("/data", os.W_OK):
+                db_path = "/data/healthcare.db"
+        except Exception:
+            pass
+    return db_path
+
+
 def _load_database_url() -> str:
+    # 1. TESTING environment variable takes priority
+    if os.getenv("TESTING", "").strip().lower() in {"1", "true", "yes", "on"}:
+        return "sqlite:///:memory:"
+
+    # 2. Check if Turso replication is configured via env
+    if os.getenv("TURSO_DATABASE_URL") and os.getenv("TURSO_AUTH_TOKEN"):
+        return f"sqlite+libsql:///{_get_sqlite_db_path()}"
+
+    # 3. Use DATABASE_URL environment variable
     database_url = os.getenv("DATABASE_URL")
     if database_url:
         if database_url.startswith("postgres://"):
             return database_url.replace("postgres://", "postgresql://", 1)
+        if database_url.startswith("libsql://"):
+            return database_url.replace("libsql://", "sqlite+libsql://", 1)
         return database_url
-
-    if os.getenv("TESTING", "").strip().lower() in {"1", "true", "yes", "on"}:
-        return "sqlite:///:memory:"
 
     raise RuntimeError("DATABASE_URL environment variable is not set. Cannot start database engine.")
 
@@ -44,7 +68,25 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
 SQLALCHEMY_DATABASE_URL = _load_database_url()
 
 connect_args = {}
-if "sqlite" in SQLALCHEMY_DATABASE_URL:
+if "libsql" in SQLALCHEMY_DATABASE_URL:
+    # Load and verify LibSQL dependencies dynamically to avoid failing on startup
+    # when LibSQL is not actually used but package is missing.
+    try:
+        import libsql_client  # noqa: F401
+        import sqlalchemy_libsql  # noqa: F401
+    except ImportError as e:
+        raise ImportError(
+            "libsql-client and sqlalchemy-libsql packages are required to use LibSQL/Turso database. "
+            "Please install them via: pip install libsql-client sqlalchemy-libsql"
+        ) from e
+
+    sync_url = os.getenv("TURSO_DATABASE_URL")
+    auth_token = os.getenv("TURSO_AUTH_TOKEN")
+    if sync_url:
+        connect_args["sync_url"] = sync_url
+    if auth_token:
+        connect_args["auth_token"] = auth_token
+elif "sqlite" in SQLALCHEMY_DATABASE_URL:
     connect_args = {"check_same_thread": False}
 else:
     connect_args = {"connect_timeout": 5}
@@ -135,7 +177,8 @@ def fallback_to_memory():
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-from sqlalchemy import Column, Boolean, DateTime
+from sqlalchemy import Boolean, Column, DateTime
+
 
 class SoftDeleteMixin(object):
     is_deleted = Column(Boolean, default=False, nullable=False, index=True)

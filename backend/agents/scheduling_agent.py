@@ -2,13 +2,14 @@ import logging
 import re
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
-from sqlalchemy.orm import Session
-from sqlalchemy import or_
 
-from .. import core_ai, models, schemas, email_service, auth, fhir, rag
-from ..prompt_registry import get_prompt
+from sqlalchemy import or_
+from sqlalchemy.orm import Session
+
+from .. import core_ai, email_service, fhir, models, rag
 from ..facility_scope import users_share_facility_context
 from ..model_service import model_service
+from ..prompt_registry import get_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -98,6 +99,42 @@ class SchedulingAgent:
             )
 
         return None, []
+
+    def _get_contributing_factors(self, model_name: str, data: Any) -> List[str]:
+        """Identify top contributing risk factors based on inputs."""
+        factors = []
+        if model_name == "diabetes":
+            if getattr(data, "hypertension", 0) == 1:
+                factors.append("Hypertension")
+            if getattr(data, "high_chol", 0) == 1:
+                factors.append("High Cholesterol")
+            if getattr(data, "bmi", 25.0) >= 30.0:
+                factors.append(f"Obesity (BMI: {data.bmi:.1f})")
+            if getattr(data, "smoking_history", 0) == 1:
+                factors.append("Smoking History")
+        elif model_name == "heart":
+            if getattr(data, "trestbps", 120.0) >= 140.0:
+                factors.append(f"Elevated Rest BP ({data.trestbps} mmHg)")
+            if getattr(data, "chol", 200.0) >= 240.0:
+                factors.append(f"High Cholesterol ({data.chol} mg/dl)")
+            if getattr(data, "thalach", 80.0) > 100.0 or getattr(data, "thalach", 80.0) < 60.0:
+                factors.append(f"Abnormal Max Heart Rate ({data.thalach} bpm)")
+            if getattr(data, "exang", 0) == 1:
+                factors.append("Exercise Induced Angina")
+        elif model_name == "lungs":
+            if getattr(data, "shortness_of_breath", 0) == 1:
+                factors.append("Shortness of Breath")
+            if getattr(data, "smoking", 0) == 1:
+                factors.append("Smoking")
+            if getattr(data, "coughing", 0) == 1:
+                factors.append("Chronic Coughing")
+        elif model_name == "kidney":
+            if getattr(data, "bp", 120.0) >= 140.0:
+                factors.append(f"Elevated BP ({data.bp} mmHg)")
+        elif model_name == "liver":
+            if getattr(data, "age", 35.0) >= 60.0:
+                factors.append(f"Senior Age ({data.age:.1f})")
+        return factors
 
     def _run_clinical_screening(self, specialty: str) -> Optional[Dict[str, Any]]:
         """
@@ -218,12 +255,14 @@ class SchedulingAgent:
             else:
                 return None
 
+            factors = self._get_contributing_factors(model_name, data)
             return {
                 "model_name": model_name,
                 "prediction": res.prediction,
                 "confidence": res.confidence,
                 "risk_level": res.risk_level,
-                "input_data": data.model_dump()
+                "input_data": data.model_dump(),
+                "contributing_factors": factors
             }
         except Exception as e:
             logger.warning("Clinical pre-screening model prediction failed: %s", e)
@@ -234,6 +273,29 @@ class SchedulingAgent:
         Processes a multi-turn chat message, generates the agent response,
         and triggers a booking action if finalized.
         """
+        # 0. Check if patient is authorizing ABDM consent
+        from datetime import timedelta
+        msg_lower = message.lower()
+        if any(kw in msg_lower for kw in ("authorize consent", "yes, request consent", "yes, please request consent", "approve consent")):
+            existing_consent = self.db.query(models.InteroperabilityConsent).filter(
+                models.InteroperabilityConsent.patient_id == self.user.id,
+                models.InteroperabilityConsent.status == "active"
+            ).first()
+            if not existing_consent:
+                new_consent = models.InteroperabilityConsent(
+                    facility_id=self.user.facility_id,
+                    patient_id=self.user.id,
+                    scope="fhir_bundle_export",
+                    purpose="Clinical RAG Context retrieval during appointment booking",
+                    recipient_type="care_team",
+                    status="active",
+                    expires_at=datetime.utcnow() + timedelta(days=365)
+                )
+                self.db.add(new_consent)
+                self.db.commit()
+                # Run pre-fetch immediately to warm cache
+                self.prefetch_and_index_history()
+
         # Pre-check symptoms for warnings
         warning, _ = self._check_symptoms(message)
 
@@ -310,8 +372,19 @@ class SchedulingAgent:
                 spec = doctor.specialization or "General Physician"
                 screen_res = self._run_clinical_screening(spec)
                 final_reason = reason_str.strip()
+                is_high_risk = False
+
                 if screen_res:
-                    brief = f"[AI Risk Screen: {screen_res['model_name'].title()} {screen_res['risk_level']} Risk ({screen_res['confidence']}%)]"
+                    risk_level = screen_res.get("risk_level", "Low")
+                    risk_desc = f"{screen_res['model_name'].title()} {risk_level} Risk ({screen_res['confidence']}%)"
+                    factors = screen_res.get("contributing_factors", [])
+                    factors_str = f" | Risk Factors: {', '.join(factors)}" if factors else ""
+
+                    if risk_level.strip().lower() in ("high", "high risk"):
+                        is_high_risk = True
+                        brief = f"🚨 [URGENT CLINICAL TRIAGE] [AI Risk Screen: {risk_desc}{factors_str}]"
+                    else:
+                        brief = f"[AI Risk Screen: {risk_desc}{factors_str}]"
                     final_reason = f"{brief} {final_reason}"
 
                 # Create appointment
@@ -332,9 +405,21 @@ class SchedulingAgent:
                         user_id=self.user.id,
                         record_type=screen_res["model_name"],
                         data=json.dumps(screen_res.get("input_data", {})),
-                        prediction=f"{screen_res['risk_level']} Risk ({screen_res['confidence']}%)"
+                        prediction=f"{screen_res['risk_level']} Risk ({screen_res['confidence']}"
                     )
                     self.db.add(db_record)
+
+                    if is_high_risk:
+                        # Log high-priority CareEvent for clinical nurse alert
+                        new_event = models.CareEvent(
+                            facility_id=doctor.facility_id or self.user.facility_id,
+                            patient_id=self.user.id,
+                            event_type="triage_escalation",
+                            title=f"🚨 High Risk Triage Escalation ({screen_res['model_name'].title()})",
+                            summary=f"Scheduling screening flagged patient as High Risk. Contributing factors: {', '.join(factors)}.",
+                            severity="high"
+                        )
+                        self.db.add(new_event)
 
                 self.db.commit()
                 self.db.refresh(new_appt)
@@ -550,11 +635,24 @@ class SchedulingAgent:
 
         return "\n\n".join(summary_parts)
 
+    def has_active_abdm_consent(self) -> bool:
+        """Check if patient has an active interoperability consent."""
+        consent = self.db.query(models.InteroperabilityConsent).filter(
+            models.InteroperabilityConsent.patient_id == self.user.id,
+            models.InteroperabilityConsent.status == "active"
+        ).first()
+        return consent is not None
+
     def prefetch_and_index_history(self) -> None:
         """
         Pre-fetches clinical records, builds the FHIR bundle, and indexes the
         serialized summary in the RAG vector store using patient-scoped metadata.
+        Only runs if active ABDM consent exists.
         """
+        if not self.has_active_abdm_consent():
+            logger.warning("ABDM Consent is missing or inactive for user ID %s. Bypassing history pre-fetching.", self.user.id)
+            return
+
         try:
             bundle = self._prefetch_patient_history_bundle()
             summary_text = self._serialize_bundle_to_summary(bundle)
@@ -583,21 +681,36 @@ class SchedulingAgent:
         self.prefetch_and_index_history()
 
         # 2. Retrieve context from RAG
-        history_chunks = rag.search_similar_records(
-            user_id=str(self.user.id),
-            query="FHIR Bundle Patient History Summary",
-            n_results=3,
-            facility_id=str(self.user.facility_id) if self.user.facility_id is not None else None
-        )
+        history_chunks = []
+        if self.has_active_abdm_consent():
+            try:
+                history_chunks = rag.search_similar_records(
+                    user_id=str(self.user.id),
+                    query="FHIR Bundle Patient History Summary",
+                    n_results=3,
+                    facility_id=str(self.user.facility_id) if self.user.facility_id is not None else None
+                )
+            except Exception as e:
+                logger.warning("Failed to retrieve patient history from RAG: %s", e)
 
         patient_history = "\n\n".join(history_chunks) if history_chunks else "No patient historical clinical records found."
+
+        # If consent is missing, append instructions to prompt the user
+        consent_instruction = ""
+        if not self.has_active_abdm_consent():
+            consent_instruction = (
+                "\n\nIMPORTANT: The patient's ABDM Interoperability Consent is currently INACTIVE/MISSING. "
+                "You MUST ask the patient to authorize/grant consent before continuing with booking or pre-fetching. "
+                "Explicitly output this question to the patient: 'I see you do not have an active ABDM Consent. Shall I request consent to access your medical records?'"
+            )
 
         # 3. Format the prompt
         doc_dir = self._get_doctor_directory_string()
         current_time_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        return get_prompt("scheduling_system").format(
+        base_prompt = get_prompt("scheduling_system").format(
             doctor_directory=doc_dir,
             patient_history=patient_history,
             current_time=current_time_str
         )
+        return base_prompt + consent_instruction

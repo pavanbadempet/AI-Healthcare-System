@@ -650,3 +650,70 @@ def get_admin_operations(
         "orders_by_type": orders_by_type,
         "clinical_safety_note": "Operational insights support clinicians and administrators; doctors make final clinical decisions.",
     }
+
+
+@router.get("/triage-queue")
+def get_triage_queue(
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+) -> dict[str, Any]:
+    # Require doctor, nurse or admin
+    if not (auth.is_admin(current_user) or (current_user.role or "").lower() in ["doctor", "nurse"]):
+        raise HTTPException(status_code=403, detail="Clinical staff privileges required")
+
+    # Fetch patients in the system
+    patients = db.query(models.User).filter(
+        models.User.role == "patient"
+    ).all()
+
+    triage_queue = []
+    for patient in patients:
+        latest_vital = db.query(models.VitalObservation).filter(
+            models.VitalObservation.patient_id == patient.id
+        ).order_by(models.VitalObservation.observed_at.desc()).first()
+
+        esi_score = 5
+        reason = "Normal vital signs."
+
+        if latest_vital:
+            hr = latest_vital.heart_rate or 72.0
+            sbp = latest_vital.systolic_bp or 120.0
+            spo2 = latest_vital.spo2 or 98.0
+            temp = latest_vital.temperature_c or 37.0
+
+            # ESI 1: Immediate resuscitation
+            if spo2 < 85.0 or hr < 40 or hr > 160:
+                esi_score = 1
+                reason = f"Immediate resuscitation needed: critical SpO2 ({spo2}%) or HR ({hr} bpm)."
+            # ESI 2: High risk
+            elif sbp > 180.0 or sbp < 90.0 or hr > 120 or temp > 39.5 or temp < 35.0 or spo2 < 90.0:
+                esi_score = 2
+                reason = f"High-risk situation: abnormal vitals (BP {sbp} mmHg, HR {hr} bpm, SpO2 {spo2}%)."
+            # ESI 3: Urgent
+            elif spo2 < 95.0 or sbp > 140.0 or sbp < 100.0 or hr > 100 or temp > 38.0 or temp < 36.0:
+                esi_score = 3
+                reason = "Urgent: moderate vital sign alterations."
+            # ESI 4: Semi-urgent
+            elif sbp > 130.0 or hr > 90:
+                esi_score = 4
+                reason = "Semi-urgent: minor vital sign alterations."
+
+        if latest_vital:
+            triage_queue.append({
+                "patient_id": patient.id,
+                "full_name": patient.full_name or patient.username,
+                "esi_level": esi_score,
+                "vital_summary": f"HR: {latest_vital.heart_rate} bpm, BP: {latest_vital.systolic_bp}/{latest_vital.diastolic_bp} mmHg, SpO2: {latest_vital.spo2}%, Temp: {latest_vital.temperature_c}°C",
+                "triage_reason": reason,
+                "observed_at": latest_vital.observed_at.isoformat() if latest_vital.observed_at else None
+            })
+
+    # Sort queue: ESI level ascending, then patient ID
+    triage_queue.sort(key=lambda x: (x["esi_level"], x["patient_id"]))
+
+    return {
+        "queue": triage_queue,
+        "total_waiting": len(triage_queue),
+        "critical_count": sum(1 for p in triage_queue if p["esi_level"] <= 2),
+        "clinical_safety_note": "ESI triage scores are automated clinical decision-support aids; clinicians perform final physical triage evaluations."
+    }

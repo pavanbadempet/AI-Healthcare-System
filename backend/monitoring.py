@@ -200,6 +200,53 @@ def _add_signal(
 
 def _generate_signals(db: Session, vital: models.VitalObservation) -> list[models.MonitoringSignal]:
     signals: list[models.MonitoringSignal] = []
+    import math
+
+    from sqlalchemy import desc
+
+    # 1. Rolling Z-Score Anomaly Detection
+    past_vitals = (
+        db.query(models.VitalObservation)
+        .filter(
+            models.VitalObservation.patient_id == vital.patient_id,
+            models.VitalObservation.id != vital.id
+        )
+        .order_by(desc(models.VitalObservation.observed_at))
+        .limit(10)
+        .all()
+    )
+
+    if len(past_vitals) >= 3:
+        for metric in ["heart_rate", "systolic_bp", "spo2"]:
+            current_val = getattr(vital, metric, None)
+            if current_val is None:
+                continue
+
+            past_vals = [getattr(pv, metric) for pv in past_vitals if getattr(pv, metric, None) is not None]
+            if len(past_vals) >= 3:
+                mean = sum(past_vals) / len(past_vals)
+                variance = sum((x - mean) ** 2 for x in past_vals) / len(past_vals)
+                std_dev = math.sqrt(variance)
+
+                min_std = 2.0 if metric != "spo2" else 0.5
+                effective_std = max(std_dev, min_std)
+
+                z_score = abs(current_val - mean) / effective_std
+                if z_score > 2.5:
+                    _add_signal(
+                        db,
+                        signals,
+                        vital=vital,
+                        signal_type=f"anomaly_{metric}",
+                        severity="warning",
+                        title=f"Anomaly detected in {metric.replace('_', ' ').title()}",
+                        summary=(
+                            f"Recent {metric.replace('_', ' ')} value ({current_val:.1f}) is statistically anomalous "
+                            f"relative to the patient's rolling baseline (Mean: {mean:.1f}, Z-Score: {z_score:.2f})."
+                        )
+                    )
+
+    # 2. Deterministic alerts
     if vital.spo2 is not None and vital.spo2 < 94:
         _add_signal(
             db,

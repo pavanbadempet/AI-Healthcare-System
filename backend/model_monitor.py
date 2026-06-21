@@ -48,7 +48,7 @@ class ModelMonitor:
         with self._lock:
             if model_name not in self._history:
                 self._history[model_name] = []
-            
+
             self._history[model_name].append(
                 PredictionRecord(
                     model_name=model_name,
@@ -133,7 +133,7 @@ class ModelMonitor:
                 # Normalize frequencies to probabilities, then scale current frequencies to match total reference samples
                 total_ref = sum(ref_freq)
                 total_curr = sum(curr_freq)
-                
+
                 if total_ref == 0 or total_curr == 0:
                     return {"drift_detected": False, "p_value": 1.0, "test_name": "Chi-Square"}
 
@@ -168,7 +168,7 @@ class ModelMonitor:
         """Calculates model accuracy over the last N actual outcomes."""
         if not actuals:
             return 1.0
-        
+
         recent = actuals[-window_size:]
         correct = sum(1 for pred, actual in recent if str(pred).lower() == str(actual).lower())
         return correct / len(recent)
