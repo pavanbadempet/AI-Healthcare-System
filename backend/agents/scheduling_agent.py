@@ -222,7 +222,8 @@ class SchedulingAgent:
                 "model_name": model_name,
                 "prediction": res.prediction,
                 "confidence": res.confidence,
-                "risk_level": res.risk_level
+                "risk_level": res.risk_level,
+                "input_data": data.model_dump()
             }
         except Exception as e:
             logger.warning("Clinical pre-screening model prediction failed: %s", e)
@@ -324,6 +325,17 @@ class SchedulingAgent:
                     status="Scheduled"
                 )
                 self.db.add(new_appt)
+
+                if screen_res:
+                    import json
+                    db_record = models.HealthRecord(
+                        user_id=self.user.id,
+                        record_type=screen_res["model_name"],
+                        data=json.dumps(screen_res.get("input_data", {})),
+                        prediction=f"{screen_res['risk_level']} Risk ({screen_res['confidence']}%)"
+                    )
+                    self.db.add(db_record)
+
                 self.db.commit()
                 self.db.refresh(new_appt)
 
