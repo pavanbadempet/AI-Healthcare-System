@@ -27,7 +27,7 @@ class CacheWarmer:
 
     def register_warmable(self, key: str, loader_fn: Callable[[], Any], ttl: int, refresh_interval: int) -> None:
         """Registers a data source to be kept warm.
-        
+
         Args:
             key: Cache key.
             loader_fn: Thread-safe function that fetches and returns the fresh value.
@@ -103,7 +103,7 @@ class CacheWarmer:
 
                 with self._lock:
                     config = self._warmables.get(key)
-                
+
                 if not config:
                     continue
 
@@ -117,16 +117,15 @@ cache_warmer = CacheWarmer()
 
 # Actual database counts loader for the dashboard statistics cache key
 def _load_actual_stats() -> Dict[str, Any]:
+    from backend import database, models
     from backend.database import get_db_context
-    from backend import models
-    from backend import database
-    
+
     with get_db_context() as db:
         try:
             total_users = db.query(models.User).filter(models.User.is_deleted == False).count()
             total_predictions = db.query(models.HealthRecord).count()
             total_messages = db.query(models.ChatLog).count()
-            
+
             return {
                 "total_users": total_users,
                 "total_predictions": total_predictions,

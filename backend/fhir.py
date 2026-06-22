@@ -292,3 +292,75 @@ def build_bundle(resources: Iterable[dict[str, Any]], timestamp: datetime | str 
         "timestamp": fhir_datetime(timestamp or datetime.now(timezone.utc)),
         "entry": entries,
     }
+
+
+def audit_event_resource(audit_log: object) -> dict[str, Any]:
+    """Map a database audit log / security event to a FHIR R4 AuditEvent resource."""
+    import json
+    log_id = str(_value(audit_log, "id", "unknown"))
+    action_code = _value(audit_log, "action", "EXECUTE")
+
+    fhir_action = "E"
+    if "CREATE" in action_code or "SIGNUP" in action_code or "BOOK" in action_code:
+        fhir_action = "C"
+    elif "READ" in action_code or "GET" in action_code or "VIEW" in action_code:
+        fhir_action = "R"
+    elif "UPDATE" in action_code or "EDIT" in action_code:
+        fhir_action = "U"
+    elif "DELETE" in action_code:
+        fhir_action = "D"
+
+    created_at = _value(audit_log, "timestamp") or _value(audit_log, "created_at") or datetime.now(timezone.utc)
+    actor_id = _value(audit_log, "admin_id") or _value(audit_log, "actor_user_id")
+    target_id = _value(audit_log, "target_user_id")
+    details = _value(audit_log, "details")
+
+    if isinstance(details, str):
+        try:
+            details = json.loads(details)
+        except Exception:
+            details = {"raw": details}
+    elif not isinstance(details, dict):
+        details = {}
+
+    outcome = "0"
+    if "BLOCKED" in action_code or "FAILED" in action_code or "DENIED" in action_code:
+        outcome = "4"
+
+    resource = {
+        "resourceType": "AuditEvent",
+        "id": f"audit-{log_id}",
+        "type": {
+            "system": "http://terminology.hl7.org/CodeSystem/audit-event-type",
+            "code": action_code.lower().replace("_", "-"),
+            "display": action_code
+        },
+        "action": fhir_action,
+        "recorded": fhir_datetime(created_at),
+        "outcome": outcome,
+        "agent": [
+            {
+                "requestor": True,
+                "who": {
+                    "reference": f"Practitioner/{actor_id}" if actor_id else "Device/system"
+                }
+            }
+        ],
+        "source": {
+            "observer": {
+                "display": "AI Healthcare System Triage Portal"
+            }
+        }
+    }
+
+    if target_id:
+        resource["entity"] = [
+            {
+                "what": {
+                    "reference": f"Patient/{target_id}"
+                }
+            }
+        ]
+
+    return resource
+

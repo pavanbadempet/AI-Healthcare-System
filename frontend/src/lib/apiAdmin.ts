@@ -409,3 +409,137 @@ export interface AnalyticsReport {
 export async function getAnalyticsReport(): Promise<AnalyticsReport> {
   return apiFetch<AnalyticsReport>('/admin/analytics/report');
 }
+
+export interface AttributionDriftModelReport {
+  status: string;
+  drift_score: number;
+  sample_count: number;
+  production_relative_attributions: Record<string, number>;
+  baseline_relative_attributions: Record<string, number>;
+  message?: string;
+  features_logged?: number;
+}
+
+export type AttributionDriftReport = Record<string, AttributionDriftModelReport>;
+
+export async function getAttributionDriftReport(): Promise<AttributionDriftReport> {
+  return apiFetch<AttributionDriftReport>('/admin/attribution-drift');
+}
+
+export interface SemanticCacheStats {
+  hits: number;
+  misses: number;
+  size: number;
+  entries: { query: string; response_length: number }[];
+}
+
+export interface SemanticCacheResponse {
+  status: string;
+  stats: SemanticCacheStats;
+}
+
+export async function getSemanticCacheStats(): Promise<SemanticCacheResponse> {
+  return apiFetch<SemanticCacheResponse>('/admin/semantic-cache');
+}
+
+export async function clearSemanticCache(): Promise<{ status: string; message: string }> {
+  return apiFetch<{ status: string; message: string }>('/admin/semantic-cache', { method: 'DELETE' });
+}
+
+// --- AI Registry & Model Cards ---
+export interface AIFunctionDetails {
+  id: string;
+  name: string;
+  module: string;
+  endpoints: string[];
+  audience: string[];
+  risk_category: string;
+  clinical_safety_required: boolean;
+  medical_disclaimer_required: boolean;
+  human_review_required: boolean;
+  basis_transparency_required: boolean;
+  uses_ai_provider: boolean;
+  provider_boundary: string;
+  prompt_keys: string[];
+  notes: string;
+}
+
+export interface AIFunctionRegistryResponse {
+  source: string;
+  functions: AIFunctionDetails[];
+}
+
+
+export interface DatasetCardDetails {
+  id: string;
+  name: string;
+  source: string;
+  local_artifact: string;
+  local_artifact_exists: boolean;
+  artifact_size_bytes: number;
+  task: string;
+  intended_use: string;
+  known_limitations: string[];
+  contains_production_patient_data: boolean;
+}
+
+export interface ModelCardDetails {
+  id: string;
+  name: string;
+  endpoint: string;
+  artifact: string;
+  artifact_exists: boolean;
+  artifact_size_bytes: number;
+  model_family: string;
+  dataset_card_id: string;
+  clinical_use_category: string;
+  intended_use: string;
+  target_users: string[];
+  feature_count: number;
+  output: string;
+  limitations: string[];
+  human_review_required: boolean;
+  medical_disclaimer_required: boolean;
+  post_deployment_monitoring_required: boolean;
+}
+
+export interface ModelCardsResponse {
+  source: string;
+  model_cards: ModelCardDetails[];
+  dataset_cards: DatasetCardDetails[];
+  privacy_note: string;
+}
+
+export async function getAIFunctionRegistry(): Promise<AIFunctionRegistryResponse> {
+  return apiFetch<AIFunctionRegistryResponse>('/admin/ai-functions');
+}
+
+export async function getModelCards(): Promise<ModelCardsResponse> {
+  return apiFetch<ModelCardsResponse>('/admin/model-cards');
+}
+
+
+export interface FederatedSimResults {
+  acc_central: number;
+  acc_federated: number;
+  history: number[];
+}
+
+export interface FederatedSimResponse {
+  status: string;
+  results: FederatedSimResults;
+}
+
+export async function runFederatedSimulation(epochs: number, epsilon: number): Promise<FederatedSimResponse> {
+  return apiFetch<FederatedSimResponse>(`/admin/federated-sim?epochs=${epochs}&epsilon=${epsilon}`, {
+    method: 'POST',
+  });
+}
+
+export async function fetchFhirAuditEvents(): Promise<any> {
+  return apiFetch<any>('/fhir/AuditEvent');
+}
+
+
+
+

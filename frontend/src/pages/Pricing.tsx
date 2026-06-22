@@ -1,6 +1,7 @@
 
 import { useState } from "react";
 import { createPaymentOrder, verifyPayment } from "@/lib/api";
+import { fetchProcedureCostEstimate } from "@/lib/apiIntelligence";
 import { motion } from "framer-motion";
 import { Check, Star, Shield, Zap, AlertCircle } from "lucide-react";
 import { useAuthStore } from "@/lib/auth";
@@ -42,6 +43,28 @@ export default function PricingPage() {
   const [loading, setLoading] = useState<string | null>(null);
   const [error, setError] = useState("");
   const { user } = useAuthStore();
+
+  const [calcProcedure, setCalcProcedure] = useState("mri");
+  const [calcInsurance, setCalcInsurance] = useState("");
+  const [calcRegion, setCalcRegion] = useState("US");
+  const [loadingEstimate, setLoadingEstimate] = useState(false);
+  const [estimateResult, setEstimateResult] = useState<any>(null);
+  const [estimateError, setEstimateError] = useState("");
+
+  const handleEstimateCost = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoadingEstimate(true);
+    setEstimateError("");
+    setEstimateResult(null);
+    try {
+      const data = await fetchProcedureCostEstimate(calcProcedure, calcInsurance || undefined, calcRegion);
+      setEstimateResult(data);
+    } catch (err: any) {
+      setEstimateError(err.message || "Failed to fetch cost estimate");
+    } finally {
+      setLoadingEstimate(false);
+    }
+  };
 
   const handleUpgrade = async (plan: typeof PLANS[0]) => {
     if (plan.amount === 0) return;
@@ -159,6 +182,124 @@ export default function PricingPage() {
             </button>
           </motion.div>
         ))}
+      </div>
+
+      {/* Procedure Cost Estimator Section (Itch 9) */}
+      <div className="mt-12 max-w-2xl mx-auto">
+        <div className="panel p-6 space-y-6 bg-[rgba(24,24,27,0.4)] border border-[var(--border)]">
+          <div className="flex items-center gap-2 pb-3 border-b border-[var(--border)]">
+            <Star size={16} className="text-[var(--accent)] animate-pulse" />
+            <h2 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wide">Procedure Cost Estimator</h2>
+          </div>
+          <p className="text-xs text-[var(--text-secondary)] font-mono uppercase">
+            Avoid surprise billing. Select a clinical procedure and insurance coverage to query real-time cost-sharing breakdowns.
+          </p>
+
+          <form onSubmit={handleEstimateCost} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="section-label mb-1 block" htmlFor="calc-procedure">Procedure Type</label>
+                <select
+                  id="calc-procedure"
+                  value={calcProcedure}
+                  onChange={(e) => setCalcProcedure(e.target.value)}
+                  className="input-clinical"
+                  required
+                >
+                  <option value="mri" className="bg-[var(--bg-card)]">MAGNETIC RESONANCE IMAGING (MRI)</option>
+                  <option value="blood" className="bg-[var(--bg-card)]">COMPREHENSIVE BLOOD PANEL</option>
+                  <option value="cardiac" className="bg-[var(--bg-card)]">CARDIAC EKG / ECG</option>
+                  <option value="consult" className="bg-[var(--bg-card)]">ATTENDING CLINIC CONSULT</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="section-label mb-1 block" htmlFor="calc-insurance">Insurance Provider</label>
+                <select
+                  id="calc-insurance"
+                  value={calcInsurance}
+                  onChange={(e) => setCalcInsurance(e.target.value)}
+                  className="input-clinical"
+                >
+                  <option value="" className="bg-[var(--bg-card)]">SELF-PAY / CASH</option>
+                  <option value="blue" className="bg-[var(--bg-card)]">BLUE CROSS BLUE SHIELD</option>
+                  <option value="medicare" className="bg-[var(--bg-card)]">MEDICARE</option>
+                  <option value="aetna" className="bg-[var(--bg-card)]">AETNA</option>
+                  <option value="other" className="bg-[var(--bg-card)]">OTHER PROVIDER</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="section-label mb-1 block" htmlFor="calc-region">Billing Region</label>
+                <select
+                  id="calc-region"
+                  value={calcRegion}
+                  onChange={(e) => setCalcRegion(e.target.value)}
+                  className="input-clinical"
+                  required
+                >
+                  <option value="US" className="bg-[var(--bg-card)]">UNITED STATES (USD)</option>
+                  <option value="IN" className="bg-[var(--bg-card)]">INDIA (INR)</option>
+                  <option value="UK" className="bg-[var(--bg-card)]">UNITED KINGDOM (GBP)</option>
+                  <option value="EU" className="bg-[var(--bg-card)]">EUROPEAN UNION (EUR)</option>
+                </select>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={loadingEstimate}
+              className="w-full btn btn-primary py-2.5 cursor-pointer flex items-center justify-center gap-1.5 text-xs uppercase"
+            >
+              {loadingEstimate ? "Calculating..." : "Query Out-Of-Pocket Breakdown"}
+            </button>
+          </form>
+
+          {estimateError && (
+            <div className="p-3 text-xs font-mono uppercase bg-[var(--danger-muted)] text-[var(--danger)] border border-[var(--danger-border)] rounded" role="alert">
+              {estimateError}
+            </div>
+          )}
+
+          {estimateResult && (
+            <div className="mt-4 p-4 rounded-xl bg-slate-950/60 border border-[var(--border)] space-y-4">
+              <div className="flex justify-between items-center text-xs font-mono uppercase">
+                <span className="text-[var(--text-dim)]">Pricing Standard</span>
+                <span className="text-[var(--text-secondary)] font-bold">{estimateResult.pricing_model}</span>
+              </div>
+
+              <div className="divide-y divide-[var(--border)] text-xs font-mono uppercase">
+                <div className="flex justify-between py-2">
+                  <span className="text-[var(--text-dim)]">Doctor Fee</span>
+                  <span className="text-[var(--text-primary)]">{estimateResult.currency_symbol || "₹"}{estimateResult.breakdown.doctor_fee}</span>
+                </div>
+                <div className="flex justify-between py-2">
+                  <span className="text-[var(--text-dim)]">Facility Fee</span>
+                  <span className="text-[var(--text-primary)]">{estimateResult.currency_symbol || "₹"}{estimateResult.breakdown.facility_fee}</span>
+                </div>
+                <div className="flex justify-between py-2">
+                  <span className="text-[var(--text-dim)]">Laboratory Fee</span>
+                  <span className="text-[var(--text-primary)]">{estimateResult.currency_symbol || "₹"}{estimateResult.breakdown.lab_fee}</span>
+                </div>
+                <div className="flex justify-between py-2 font-bold text-[var(--accent)]">
+                  <span>Gross Total Cost</span>
+                  <span>{estimateResult.currency_symbol || "₹"}{estimateResult.gross_total}</span>
+                </div>
+                <div className="flex justify-between py-2">
+                  <span className="text-[var(--text-dim)]">Insurance Covered ({estimateResult.coverage_percentage}%)</span>
+                  <span className="text-[var(--accent-emerald)]">-{estimateResult.currency_symbol || "₹"}{estimateResult.insurance_covered}</span>
+                </div>
+                <div className="flex justify-between py-2 font-bold text-base text-[var(--danger)] pt-3 border-t border-[var(--border)]">
+                  <span>Patient Responsibility</span>
+                  <span>{estimateResult.currency_symbol || "₹"}{estimateResult.patient_responsibility}</span>
+                </div>
+              </div>
+              <p className="text-[10px] text-[var(--text-dim)] font-mono uppercase text-center mt-2 leading-relaxed">
+                * Note: Estimates are based on standard hospital chargemasters. Co-pays may vary depending on individual deductible limits.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
       
       <script src="https://checkout.razorpay.com/v1/checkout.js" async></script>

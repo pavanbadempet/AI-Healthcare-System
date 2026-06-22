@@ -1,15 +1,17 @@
-import os
+from unittest.mock import patch
+
 import numpy as np
 import pytest
-from unittest.mock import patch
+
 from backend import rag
+
 
 @pytest.fixture
 def temp_vector_db(monkeypatch, tmp_path):
     # Redirect DB file to a temporary directory
     d = tmp_path / "test_lsh_store.json"
     monkeypatch.setattr(rag, "DB_FILE", str(d))
-    
+
     # Initialize store
     store = rag.SimpleVectorStore()
     store.documents = []
@@ -23,22 +25,22 @@ def temp_vector_db(monkeypatch, tmp_path):
 def test_lsh_direct_projection_and_indexing():
     # Test LSH with a small dimensional space (10-D)
     lsh = rag.LocalitySensitiveHash(num_tables=3, hash_size=4)
-    
+
     # 10-D vectors
     v1 = np.array([1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
     v2 = np.array([0.9, 0.1, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]) # v2 is close to v1
     v3 = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]) # v3 is orthogonal/far
-    
+
     lsh.index("doc_1", v1)
     lsh.index("doc_2", v2)
     lsh.index("doc_3", v3)
-    
+
     # Query with v1
     candidates = lsh.query(v1)
-    
+
     # doc_1 must be a candidate
     assert "doc_1" in candidates
-    
+
     # Clear index
     lsh.clear()
     assert lsh.dim is None

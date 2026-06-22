@@ -99,7 +99,7 @@ class RateLimiter:
             try:
                 key = f"rate_limit:{identifier}"
                 pipe = self.redis_client.pipeline()
-                
+
                 # Remove timestamps older than 60 seconds
                 pipe.zremrangebyscore(key, 0, now - 60)
                 # Count elements in sliding window
@@ -108,10 +108,10 @@ class RateLimiter:
                 pipe.zadd(key, {str(now): now})
                 # Set TTL of 65s on key to clean up idle rate limit sets
                 pipe.expire(key, 65)
-                
+
                 results = pipe.execute()
                 current_count = results[1]
-                
+
                 if current_count >= self.requests_per_minute:
                     raise HTTPException(
                         status_code=429,

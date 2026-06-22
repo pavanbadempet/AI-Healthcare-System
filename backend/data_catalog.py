@@ -7,11 +7,10 @@ lineage, and freshness tracking (SLA). Persists metadata to a local JSON databas
 
 from __future__ import annotations
 
-import logging
 import json
-import os
+import logging
 import threading
-from dataclasses import dataclass, field, asdict
+from dataclasses import asdict, dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -55,7 +54,7 @@ class DataCatalog:
         self._lock = threading.Lock()
         self._catalog: Dict[str, DatasetEntry] = {}
         self._lineage: Dict[str, Dict[str, List[str]]] = {}  # dataset_id -> {"upstream": [...], "downstream": [...]}
-        
+
         # Ensure parent directories exist
         CATALOG_FILE_PATH.parent.mkdir(parents=True, exist_ok=True)
         if not self._db_load():
@@ -96,7 +95,7 @@ class DataCatalog:
             self._catalog[entry.dataset_id] = entry
             if entry.dataset_id not in self._lineage:
                 self._lineage[entry.dataset_id] = {"upstream": [], "downstream": [], "column_lineage": {}}
-            
+
             self._db_save_dataset(entry)
             self._db_save_lineage(
                 entry.dataset_id,
@@ -136,10 +135,10 @@ class DataCatalog:
                     query_lc in entry.name.lower() or
                     query_lc in entry.description.lower()
                 ) if query else True
-                
+
                 # Tag check
                 tag_match = all(t in entry.tags for t in tags) if tags else True
-                
+
                 # Owner check
                 owner_match = entry.owner.lower() == owner.lower() if owner else True
 
@@ -159,7 +158,7 @@ class DataCatalog:
                 self._lineage[upstream_id]["downstream"].append(downstream_id)
             if upstream_id not in self._lineage[downstream_id]["upstream"]:
                 self._lineage[downstream_id]["upstream"].append(upstream_id)
-            
+
             self._db_save_lineage(
                 upstream_id,
                 self._lineage[upstream_id]["upstream"],
@@ -187,14 +186,14 @@ class DataCatalog:
                 "source_column": source_col,
                 "transform": transform
             }
-            
+
             if source_dataset not in self._lineage[dataset_id]["upstream"]:
                 self._lineage[dataset_id]["upstream"].append(source_dataset)
             if source_dataset not in self._lineage:
                 self._lineage[source_dataset] = {"upstream": [], "downstream": [], "column_lineage": {}}
             if dataset_id not in self._lineage[source_dataset]["downstream"]:
                 self._lineage[source_dataset]["downstream"].append(dataset_id)
-                
+
             self._db_save_lineage(dataset_id, self._lineage[dataset_id]["upstream"], self._lineage[dataset_id]["downstream"], self._lineage[dataset_id]["column_lineage"])
             self._db_save_lineage(source_dataset, self._lineage[source_dataset]["upstream"], self._lineage[source_dataset]["downstream"], self._lineage[source_dataset].get("column_lineage", {}))
             self._save_to_disk()
@@ -308,7 +307,7 @@ class DataCatalog:
                 sla_hours=6.0
             )
         ]
-        
+
         for dataset in defaults:
             if dataset.dataset_id not in self._catalog:
                 self._catalog[dataset.dataset_id] = dataset
@@ -330,7 +329,7 @@ class DataCatalog:
             "facility_id": {"source_dataset": "patient_accounts", "source_column": "facility_id", "transform": "direct"},
             "avg_diabetes_risk": {"source_dataset": "silver_diabetes", "source_column": "diabetes_risk", "transform": "aggregated"}
         }
-        
+
         for dataset_id, lin in self._lineage.items():
             self._db_save_lineage(dataset_id, lin["upstream"], lin["downstream"], lin.get("column_lineage", {}))
 
@@ -367,7 +366,7 @@ class DataCatalog:
                         format=dbd.format
                     )
                     self._catalog[entry.dataset_id] = entry
-                
+
                 db_lineages = db.query(DbDatasetLineage).all()
                 self._lineage = {}
                 for dbl in db_lineages:

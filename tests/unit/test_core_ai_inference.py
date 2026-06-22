@@ -501,7 +501,7 @@ async def test_chat_stream_yields_ollama_chunks():
     ):
         chunks = [c async for c in core_ai.chat_stream([{"role": "user", "content": "hi"}])]
 
-    assert chunks == ["chunk1", "chunk2"]
+    assert "".join(chunks) == "chunk1chunk2"
 
 
 @pytest.mark.asyncio
@@ -516,7 +516,7 @@ async def test_chat_stream_falls_back_to_gemini():
     ):
         chunks = [c async for c in core_ai.chat_stream([{"role": "user", "content": "hi"}])]
 
-    assert "Gemini chunk" in chunks
+    assert "Gemini chunk" in "".join(chunks)
 
 
 @pytest.mark.asyncio

@@ -439,25 +439,27 @@ class HealthcareDataPipeline:
                 system_col = enrichment.get('system_column')
                 code_col = enrichment.get('code_column')
                 target_col = enrichment.get('target_column')
-                
+
                 if system_col and code_col and target_col:
                     if hasattr(df, "withColumn"):
                         # PySpark DataFrame
                         from pyspark.sql.functions import udf
                         from pyspark.sql.types import StringType
+
                         from backend.terminology import lookup_code
-                        
+
                         def lookup_display_fn(sys_val, code_val):
                             if not sys_val or not code_val:
                                 return ""
                             res = lookup_code(str(sys_val), str(code_val))
                             return res.get("display", "") if res else ""
-                            
+
                         lookup_udf = udf(lookup_display_fn, StringType())
                         df = df.withColumn(target_col, lookup_udf(col(system_col), col(code_col)))
                     else:
                         # Pandas or Polars DataFrame
                         import pandas as pd
+
                         from backend.terminology import lookup_code
                         if isinstance(df, pd.DataFrame):
                             df[target_col] = df.apply(

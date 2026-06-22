@@ -119,6 +119,180 @@ def _calculate_conformal_prediction(proba_positive: float, conformal_q: Any):
     }
 
 
+def _calculate_adaptive_conformal_prediction(
+    proba_positive: float,
+    conformal_q: Any,
+    input_list: list,
+    raw_pred: int,
+    risk_level: str = None
+) -> dict:
+    """
+    Calculates the conformal prediction set and dynamically adjusts the threshold (q)
+    based on feature missingness (imputation rate) and patient clinical severity.
+    """
+    missing_count = sum(1 for x in input_list if x is None)
+    total_features = len(input_list) if input_list else 1
+    missingness_ratio = missing_count / total_features
+
+    # Adjust significance level: more missingness -> higher q (smaller 1-q threshold) -> wider prediction sets
+    # We also increase q slightly if the patient is high risk to be more cautious.
+    cautious_boost = 0.1 if (raw_pred == 1 and risk_level == "High Risk") else 0.0
+    adjustment_factor = min(1.0, missingness_ratio * 0.5 + cautious_boost)
+
+    def adjust_q_val(q: float) -> float:
+        return q + (1.0 - q) * adjustment_factor
+
+    adjusted_q = None
+    if isinstance(conformal_q, dict):
+        adjusted_q = {}
+        for k, v in conformal_q.items():
+            adjusted_q[int(k)] = adjust_q_val(float(v))
+    elif conformal_q is not None:
+        adjusted_q = adjust_q_val(float(conformal_q))
+
+    # Calculate standard conformal prediction using adjusted_q
+    p0 = 1.0 - proba_positive
+    p1 = proba_positive
+
+    prediction_set = []
+    if isinstance(adjusted_q, dict):
+        q0 = adjusted_q.get(0, 0.0)
+        q1 = adjusted_q.get(1, 0.0)
+        if p0 >= 1.0 - q0:
+            prediction_set.append(0)
+        if p1 >= 1.0 - q1:
+            prediction_set.append(1)
+        significance_level = float(np.round(1.0 - (q0 + q1)/2.0, 4))
+    else:
+        q = adjusted_q or 0.0
+        threshold = 1.0 - q
+        if p0 >= threshold:
+            prediction_set.append(0)
+        if p1 >= threshold:
+            prediction_set.append(1)
+        significance_level = float(np.round(1.0 - q, 4))
+
+    if len(prediction_set) == 1:
+        uncertainty_status = "Low Uncertainty"
+    elif len(prediction_set) > 1:
+        uncertainty_status = "High Uncertainty (Ambiguous Case)"
+    else:
+        uncertainty_status = "High Uncertainty (Out-of-Distribution Case)"
+
+    return {
+        "conformal_prediction_set": prediction_set,
+        "significance_level": significance_level,
+        "uncertainty_status": uncertainty_status,
+        "missingness_ratio": float(np.round(missingness_ratio, 4)),
+        "adjusted_thresholds": adjusted_q
+    }
+
+
+def _log_feature_attributions(
+    db: Session,
+    model_name: str,
+    model_version: str,
+    imputed_list: list,
+    feature_names: list,
+    raw_pred: int,
+    model: Any
+) -> Optional[dict]:
+    """
+    Calculates SHAP values for the prediction and logs them to the feature_attribution_logs table
+    for population-level drift monitoring. Returns the calculated attributions_dict.
+    """
+    try:
+        import shap
+    except ImportError:
+        return None
+
+    try:
+        # Unwrap model to get tree estimator
+        target_estimator = model
+        if hasattr(model, 'estimators_'):
+            target_estimator = model.estimators_[0]
+        if hasattr(target_estimator, 'calibrated_classifiers_') and len(target_estimator.calibrated_classifiers_) > 0:
+            target_estimator = target_estimator.calibrated_classifiers_[0].estimator
+        elif hasattr(target_estimator, 'estimator'):
+            target_estimator = target_estimator.estimator
+
+        if "TabPFNClassifier" in str(type(target_estimator)):
+            return None
+
+        input_vector = np.array([imputed_list])
+        explainer = shap.TreeExplainer(target_estimator)
+        shap_values = explainer.shap_values(input_vector)
+
+        # Handle different SHAP shapes
+        if isinstance(shap_values, list):
+            sv = shap_values[1][0] if len(shap_values) > 1 else shap_values[0][0]
+        elif len(shap_values.shape) == 3:
+            sv = shap_values[0, :, 1]
+        elif len(shap_values.shape) == 2:
+            sv = shap_values[0]
+        else:
+            sv = shap_values
+
+        features_dict = {feat: float(val) for feat, val in zip(feature_names, imputed_list)}
+        attributions_dict = {feat: float(val) for feat, val in zip(feature_names, sv)}
+
+        from .models import DbFeatureAttributionLog
+        log_entry = DbFeatureAttributionLog(
+            model_name=model_name,
+            model_version=model_version,
+            features=features_dict,
+            attributions=attributions_dict,
+            prediction_value=int(raw_pred)
+        )
+        db.add(log_entry)
+        db.commit()
+        return attributions_dict
+    except Exception as e:
+        logger.warning("Failed to log feature attributions for %s: %s", model_name, e)
+        return None
+
+
+async def _generate_patient_explanation(
+    model_name: str,
+    prediction: str,
+    confidence: float,
+    risk_level: str,
+    attributions: dict
+) -> str:
+    """
+    Generates an empathetic, patient-friendly explanation translating the prediction
+    result and SHAP feature attributions into layperson language.
+    """
+    if not attributions:
+        return "Patient-friendly explanation is currently unavailable as feature attributions could not be calculated."
+    try:
+        from .core_ai import generate
+        from .prompt_registry import get_prompt
+
+        # Clean/format the attributions for the prompt
+        formatted_attributions = []
+        for feat, val in attributions.items():
+            formatted_attributions.append(f"- {feat}: SHAP Impact = {val:+.4f}")
+        attributions_str = "\n".join(formatted_attributions)
+
+        template = get_prompt("patient_xai_explanation")
+        prompt = template.format(
+            disease=model_name.upper(),
+            prediction=prediction,
+            confidence=f"{confidence:.1f}" if isinstance(confidence, (int, float)) else str(confidence),
+            risk_level=risk_level,
+            feature_attributions=attributions_str
+        )
+        explanation = await generate(
+            prompt=prompt,
+            system="You are an empathetic, patient-friendly medical AI assistant. Output only the layperson explanation."
+        )
+        return explanation.strip()
+    except Exception as e:
+        logger.warning("Failed to generate patient explanation for %s: %s", model_name, e)
+        return "Patient explanation could not be generated due to an internal system error."
+
+
 def _get_triage_recommendation(prediction_val: int, conformal_set: list) -> str:
     """
     Translates conformal prediction sets and raw predictions into actionable clinician guidance.
@@ -222,8 +396,8 @@ def _calculate_clinical_recourse(
     scaler: Any = None
 ) -> Optional[str]:
     """
-    Simulates a counterfactual 'what-if' patient profile by searching combinations of
-    controllable lifestyle features to find the optimal risk reduction path.
+    Simulates a counterfactual 'what-if' patient profile by performing step-wise boundary
+    searches on controllable lifestyle features to find the optimal risk reduction path.
     """
     try:
         if current_prob < 0.5:
@@ -232,39 +406,59 @@ def _calculate_clinical_recourse(
 
         import itertools
 
+        import numpy as np
         import pandas as pd
 
-        # Define candidate modifications per model: (index, check_fn, target_value, description)
+        # Schema: (index, check_fn, target_val, description, is_continuous)
         candidates = {
             "diabetes": [
-                (0, lambda val: val == 1.0, 0.0, "managing hypertension"),
-                (3, lambda val: val == 1.0, 0.0, "smoking cessation"),
-                (5, lambda val: val == 0.0, 1.0, "increasing physical activity"),
+                (0, lambda val: val == 1.0, 0.0, "managing hypertension", False),
+                (3, lambda val: val == 1.0, 0.0, "smoking cessation", False),
+                (5, lambda val: val == 0.0, 1.0, "increasing physical activity", False),
+                (2, lambda val: val is not None and val > 25.0, 25.0, "reducing BMI", True),
             ],
             "heart": [
-                (5, lambda val: val == 1.0, 0.0, "managing blood sugar"),
-                (10, lambda val: val == 1.0, 0.0, "abstaining from heavy alcohol"),
-                (7, lambda val: val is not None and val < 120.0, 150.0, "increasing physical activity"),
+                (5, lambda val: val == 1.0, 0.0, "managing blood sugar", False),
+                (10, lambda val: val == 1.0, 0.0, "abstaining from heavy alcohol", False),
+                (3, lambda val: val is not None and val > 120.0, 120.0, "reducing resting blood pressure", True),
             ],
             "kidney": [
-                (1, lambda val: val is not None and val > 120.0, 120.0, "controlling blood pressure to 120 mmHg"),
-                (18, lambda val: val == 1, 0, "managing hypertension"),
-                (19, lambda val: val == 1, 0, "managing diabetes"),
+                (1, lambda val: val is not None and val > 120.0, 120.0, "controlling blood pressure", True),
+                (18, lambda val: val == 1, 0, "managing hypertension", False),
+                (19, lambda val: val == 1, 0, "managing diabetes", False),
             ],
             "lungs": [
-                (2, lambda val: val == 2.0, 1.0, "smoking cessation"),
-                (10, lambda val: val == 2.0, 1.0, "abstaining from alcohol"),
+                (2, lambda val: val == 2.0, 1.0, "smoking cessation", False),
+                (10, lambda val: val == 2.0, 1.0, "abstaining from alcohol", False),
             ],
-            "liver": []  # Lab values are not lifestyle controllable
+            "liver": []
         }.get(model_name, [])
 
         applicable = []
-        for index, check_fn, target_val, desc in candidates:
+        for index, check_fn, target_val, desc, is_cont in candidates:
             if index < len(imputed_list) and check_fn(imputed_list[index]):
-                applicable.append((index, target_val, desc))
+                applicable.append((index, target_val, desc, is_cont))
 
         if not applicable:
             return "Patient has no standard controllable lifestyle risk factors to modify."
+
+        def _predict_profile(profile):
+            if model_name in ("kidney", "liver", "lungs"):
+                from . import features as _feat
+                feat_names = {
+                    "kidney": _feat.KIDNEY_FEATURES,
+                    "liver": _feat.LIVER_FEATURES,
+                    "lungs": _feat.LUNG_FEATURES
+                }[model_name]
+                df_rec = pd.DataFrame([profile], columns=feat_names)
+                if scaler is not None:
+                    X_rec = scaler.transform(df_rec)
+                else:
+                    X_rec = df_rec.values
+            else:
+                X_rec = [profile]
+            proba_rec = model_obj.predict_proba(X_rec)[0]
+            return float(proba_rec[1]) if len(proba_rec) > 1 else float(proba_rec[0])
 
         best_combination = None
         best_proba = current_prob
@@ -275,51 +469,52 @@ def _calculate_clinical_recourse(
         for r in range(1, len(applicable) + 1):
             for comb in itertools.combinations(applicable, r):
                 test_profile = list(imputed_list)
-                for index, target_val, desc in comb:
-                    test_profile[index] = target_val
-
-                if model_name in ("kidney", "liver", "lungs"):
-                    from . import features as _feat
-                    feat_names = {
-                        "kidney": _feat.KIDNEY_FEATURES,
-                        "liver": _feat.LIVER_FEATURES,
-                        "lungs": _feat.LUNG_FEATURES
-                    }[model_name]
-                    df_rec = pd.DataFrame([test_profile], columns=feat_names)
-                    if scaler is not None:
-                        X_rec = scaler.transform(df_rec)
+                comb_descs = []
+                for index, target_val, desc, is_cont in comb:
+                    if is_cont:
+                        current_val = test_profile[index]
+                        best_val = target_val
+                        best_val_proba = current_prob
+                        # Step-wise boundary search (binary/grid search)
+                        for step_val in np.linspace(current_val, target_val, 6):
+                            temp_profile = list(test_profile)
+                            temp_profile[index] = step_val
+                            prob_pos_step = _predict_profile(temp_profile)
+                            if prob_pos_step < 0.5:
+                                best_val = step_val
+                                best_val_proba = prob_pos_step
+                                break
+                            if prob_pos_step < best_val_proba:
+                                best_val = step_val
+                                best_val_proba = prob_pos_step
+                        test_profile[index] = best_val
+                        comb_descs.append(f"{desc} to {float(best_val):.1f}")
                     else:
-                        X_rec = df_rec.values
-                else:
-                    X_rec = [test_profile]
+                        test_profile[index] = target_val
+                        comb_descs.append(desc)
 
-                proba_rec = model_obj.predict_proba(X_rec)[0]
-                prob_pos_rec = float(proba_rec[1]) if len(proba_rec) > 1 else float(proba_rec[0])
+                prob_pos_rec = _predict_profile(test_profile)
                 reduction = current_prob - prob_pos_rec
 
                 if reduction > best_reduction:
                     best_reduction = reduction
                     best_proba = prob_pos_rec
-                    best_combination = comb
+                    best_combination = (comb, comb_descs)
 
                 if prob_pos_rec < 0.5:
-                    successful_combinations.append((comb, prob_pos_rec, reduction))
+                    successful_combinations.append((comb, comb_descs, prob_pos_rec, reduction))
 
         if best_reduction <= 0.01:
             return "Lifestyle modifications alone show minimal expected risk reduction for this patient's profile."
 
-        # If some combinations successfully bring predicted risk below 50%:
-        # Pick the smallest combination (fewest lifestyle changes required).
-        # In case of ties, pick the one with the highest risk reduction.
         if successful_combinations:
-            successful_combinations.sort(key=lambda x: (len(x[0]), -x[2]))
-            optimal_comb, optimal_proba, optimal_reduction = successful_combinations[0]
-            descs = [item[2] for item in optimal_comb]
-            actions = ", ".join(descs[:-1]) + " and " + descs[-1] if len(descs) > 1 else descs[0]
+            successful_combinations.sort(key=lambda x: (len(x[0]), -x[3]))
+            optimal_comb, optimal_descs, optimal_proba, optimal_reduction = successful_combinations[0]
+            actions = ", ".join(optimal_descs[:-1]) + " and " + optimal_descs[-1] if len(optimal_descs) > 1 else optimal_descs[0]
             return f"Managing risk through {actions} could potentially reduce risk probability by {optimal_reduction * 100:.1f}%, bringing predicted risk below the threshold to {optimal_proba * 100:.1f}%."
         else:
-            descs = [item[2] for item in best_combination]
-            actions = ", ".join(descs[:-1]) + " and " + descs[-1] if len(descs) > 1 else descs[0]
+            best_comb, best_descs = best_combination
+            actions = ", ".join(best_descs[:-1]) + " and " + best_descs[-1] if len(best_descs) > 1 else best_descs[0]
             return f"Although additional clinical intervention may be required, adopting {actions} could potentially reduce risk probability by {best_reduction * 100:.1f}% (predicted risk: {best_proba * 100:.1f}%)."
     except Exception as e:
         logger.warning("Recourse calculation failed: %s", e)
@@ -510,6 +705,7 @@ def _raise_prediction_failure(model_name: str) -> None:
 async def predict_kidney(
     data: schemas.KidneyInput,
     _current_user: db_models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db),
 ) -> Dict[str, Any]:
     import backend.prediction as _pred
     if _pred.kidney_model is None:
@@ -564,7 +760,9 @@ async def predict_kidney(
         if proba_pos is not None:
             if conformal_q is not None:
                 try:
-                    conformal_metrics = _calculate_conformal_prediction(proba_pos, conformal_q)
+                    conformal_metrics = _calculate_adaptive_conformal_prediction(
+                        proba_pos, conformal_q, input_list, raw, risk_level
+                    )
 
                     # Add Triage recommendation
                     triage = _get_triage_recommendation(raw, conformal_metrics["conformal_prediction_set"])
@@ -589,9 +787,18 @@ async def predict_kidney(
             if recourse:
                 clinical_indices["clinical_recourse"] = recourse
 
+        # Log feature attributions for drift monitoring
+        attributions = _log_feature_attributions(
+            db, "kidney", getattr(model_service._entries["kidney"], "model_version", "1.0.0"),
+            imputed_list, feature_names, raw, _pred.kidney_model
+        )
+
         model_metadata = _get_model_metadata("kidney", _pred.kidney_model)
         narrative = await _generate_clinical_narrative(
             "kidney", prediction, confidence, risk_level, clinical_indices
+        )
+        patient_explanation = await _generate_patient_explanation(
+            "kidney", prediction, confidence, risk_level, attributions or {}
         )
         return {
             "prediction": prediction,
@@ -601,7 +808,9 @@ async def predict_kidney(
             "disclaimer": MEDICAL_DISCLAIMER,
             "clinical_indices": clinical_indices,
             "model_metadata": model_metadata,
-            "clinical_narrative": narrative
+            "clinical_narrative": narrative,
+            "attributions": attributions or {},
+            "patient_explanation": patient_explanation
         }
     except Exception:
         logger.error("Kidney prediction error")
@@ -611,6 +820,7 @@ async def predict_kidney(
 async def predict_lungs(
     data: schemas.LungInput,
     _current_user: db_models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db),
 ) -> Dict[str, Any]:
     import backend.prediction as _pred
     if _pred.lungs_model is None:
@@ -656,7 +866,9 @@ async def predict_lungs(
         if proba_pos is not None:
             if conformal_q is not None:
                 try:
-                    conformal_metrics = _calculate_conformal_prediction(proba_pos, conformal_q)
+                    conformal_metrics = _calculate_adaptive_conformal_prediction(
+                        proba_pos, conformal_q, input_list, raw, risk_level
+                    )
 
                     # Add Triage recommendation
                     triage = _get_triage_recommendation(raw, conformal_metrics["conformal_prediction_set"])
@@ -681,9 +893,18 @@ async def predict_lungs(
             if recourse:
                 clinical_indices["clinical_recourse"] = recourse
 
+        # Log feature attributions for drift monitoring
+        attributions = _log_feature_attributions(
+            db, "lungs", getattr(model_service._entries["lungs"], "model_version", "1.0.0"),
+            imputed_list, feature_names, raw, _pred.lungs_model
+        )
+
         model_metadata = _get_model_metadata("lungs", _pred.lungs_model)
         narrative = await _generate_clinical_narrative(
             "lungs", prediction, confidence, risk_level, clinical_indices
+        )
+        patient_explanation = await _generate_patient_explanation(
+            "lungs", prediction, confidence, risk_level, attributions or {}
         )
         res = {
             "prediction": prediction,
@@ -693,7 +914,9 @@ async def predict_lungs(
             "disclaimer": MEDICAL_DISCLAIMER,
             "clinical_indices": clinical_indices,
             "model_metadata": model_metadata,
-            "clinical_narrative": narrative
+            "clinical_narrative": narrative,
+            "attributions": attributions or {},
+            "patient_explanation": patient_explanation
         }
         return res
     except Exception:
@@ -704,6 +927,7 @@ async def predict_lungs(
 async def predict_diabetes(
     data: schemas.DiabetesInput,
     _current_user: db_models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db),
 ) -> Dict[str, Any]:
     import backend.prediction as _pred
     if _pred.diabetes_model is None:
@@ -741,7 +965,9 @@ async def predict_diabetes(
         if proba_pos is not None:
             if conformal_q is not None:
                 try:
-                    conformal_metrics = _calculate_conformal_prediction(proba_pos, conformal_q)
+                    conformal_metrics = _calculate_adaptive_conformal_prediction(
+                        proba_pos, conformal_q, imputed_list, raw, risk_level
+                    )
 
                     # Add Triage recommendation
                     triage = _get_triage_recommendation(raw, conformal_metrics["conformal_prediction_set"])
@@ -766,9 +992,18 @@ async def predict_diabetes(
             if recourse:
                 clinical_indices["clinical_recourse"] = recourse
 
+        # Log feature attributions for drift monitoring
+        attributions = _log_feature_attributions(
+            db, "diabetes", getattr(model_service._entries["diabetes"], "model_version", "1.0.0"),
+            imputed_list, _features.DIABETES_FEATURES, raw, _pred.diabetes_model
+        )
+
         model_metadata = _get_model_metadata("diabetes", _pred.diabetes_model)
         narrative = await _generate_clinical_narrative(
             "diabetes", prediction, confidence, risk_level, clinical_indices
+        )
+        patient_explanation = await _generate_patient_explanation(
+            "diabetes", prediction, confidence, risk_level, attributions or {}
         )
         res = {
             "prediction": prediction,
@@ -778,7 +1013,9 @@ async def predict_diabetes(
             "disclaimer": MEDICAL_DISCLAIMER,
             "clinical_indices": clinical_indices,
             "model_metadata": model_metadata,
-            "clinical_narrative": narrative
+            "clinical_narrative": narrative,
+            "attributions": attributions or {},
+            "patient_explanation": patient_explanation
         }
         return res
     except Exception:
@@ -789,6 +1026,7 @@ async def predict_diabetes(
 async def predict_heart(
     data: schemas.HeartInput,
     _current_user: db_models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db),
 ) -> Dict[str, Any]:
     import backend.prediction as _pred
     if _pred.heart_model is None:
@@ -843,7 +1081,9 @@ async def predict_heart(
         if proba_pos is not None:
             if conformal_q is not None:
                 try:
-                    conformal_metrics = _calculate_conformal_prediction(proba_pos, conformal_q)
+                    conformal_metrics = _calculate_adaptive_conformal_prediction(
+                        proba_pos, conformal_q, imputed_list, raw, risk_level
+                    )
 
                     # Add Triage recommendation
                     triage = _get_triage_recommendation(raw, conformal_metrics["conformal_prediction_set"])
@@ -868,9 +1108,18 @@ async def predict_heart(
             if recourse:
                 clinical_indices["clinical_recourse"] = recourse
 
+        # Log feature attributions for drift monitoring
+        attributions = _log_feature_attributions(
+            db, "heart", getattr(model_service._entries["heart"], "model_version", "1.0.0"),
+            imputed_list, _features.HEART_FEATURES, raw, _pred.heart_model
+        )
+
         model_metadata = _get_model_metadata("heart", _pred.heart_model)
         narrative = await _generate_clinical_narrative(
             "heart", prediction, confidence, risk_level, clinical_indices
+        )
+        patient_explanation = await _generate_patient_explanation(
+            "heart", prediction, confidence, risk_level, attributions or {}
         )
         return {
             "prediction": prediction,
@@ -880,7 +1129,9 @@ async def predict_heart(
             "disclaimer": MEDICAL_DISCLAIMER,
             "clinical_indices": clinical_indices,
             "model_metadata": model_metadata,
-            "clinical_narrative": narrative
+            "clinical_narrative": narrative,
+            "attributions": attributions or {},
+            "patient_explanation": patient_explanation
         }
     except Exception:
         logger.error("Heart prediction error")
@@ -890,6 +1141,7 @@ async def predict_heart(
 async def predict_liver(
     data: schemas.LiverInput,
     _current_user: db_models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db),
 ) -> Dict[str, Any]:
     import backend.prediction as _pred
     if _pred.liver_model is None:
@@ -951,7 +1203,9 @@ async def predict_liver(
         if proba_pos is not None:
             if conformal_q is not None:
                 try:
-                    conformal_metrics = _calculate_conformal_prediction(proba_pos, conformal_q)
+                    conformal_metrics = _calculate_adaptive_conformal_prediction(
+                        proba_pos, conformal_q, input_list, raw, risk_level
+                    )
 
                     # Add Triage recommendation
                     triage = _get_triage_recommendation(raw, conformal_metrics["conformal_prediction_set"])
@@ -976,9 +1230,18 @@ async def predict_liver(
             if recourse:
                 clinical_indices["clinical_recourse"] = recourse
 
+        # Log feature attributions for drift monitoring
+        attributions = _log_feature_attributions(
+            db, "liver", getattr(model_service._entries["liver"], "model_version", "1.0.0"),
+            imputed_list, feature_names, raw, _pred.liver_model
+        )
+
         model_metadata = _get_model_metadata("liver", _pred.liver_model)
         narrative = await _generate_clinical_narrative(
             "liver", prediction, confidence, risk_level, clinical_indices
+        )
+        patient_explanation = await _generate_patient_explanation(
+            "liver", prediction, confidence, risk_level, attributions or {}
         )
         return {
             "prediction": prediction,
@@ -988,7 +1251,9 @@ async def predict_liver(
             "disclaimer": MEDICAL_DISCLAIMER,
             "clinical_indices": clinical_indices,
             "model_metadata": model_metadata,
-            "clinical_narrative": narrative
+            "clinical_narrative": narrative,
+            "attributions": attributions or {},
+            "patient_explanation": patient_explanation
         }
     except Exception:
         logger.error("Liver prediction error")
@@ -1450,6 +1715,28 @@ Write a highly concise clinical summary (exactly 2 sentences) explaining key sys
     }
 
 
+@router.get("/predict/advisory-board/{patient_id}", response_model=Dict[str, Any])
+async def get_advisory_board(
+    patient_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: db_models.User = Depends(auth.get_current_user),
+) -> Dict[str, Any]:
+    """Execute the multi-agent clinical advisory board sequential consultation debate."""
+    from backend.agents.advisory_board import ClinicalAdvisoryBoard
+
+    # 1. Enforce access control
+    _ensure_prediction_review_access(db, current_user, patient_id)
+
+    # 2. Instantiate and run
+    board = ClinicalAdvisoryBoard(db)
+    result = await board.execute_board(patient_id)
+
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+
+    return result
+
+
 async def handle_vitals_recorded(payload: dict) -> None:
     """Auto-run heart/diabetes classifiers when new vitals arrive.
     If risk probability > 0.6, commit a DIAGNOSTIC_ALERT CareEvent to the DB.
@@ -1553,7 +1840,521 @@ async def handle_vitals_recorded(payload: dict) -> None:
                 db.commit()
 
 
+# --- Phase 10 API Routes & Schemas ---
+from pydantic import BaseModel as PydanticBaseModel
+
+
+class ScribeRequest(PydanticBaseModel):
+    transcript: str
+
+class ScribeCommitItem(PydanticBaseModel):
+    medication_name: str
+    dosage: str
+    frequency: str
+    duration: str
+    quantity_prescribed: float
+
+class ScribeCommitRequest(PydanticBaseModel):
+    patient_id: int
+    subjective: str
+    objective: str
+    assessment: str
+    plan: str
+    icd10_codes: list[str]
+    billing_codes: list[str]
+    prescriptions: list[ScribeCommitItem]
+    billing_items: list[dict]
+
+class CounterfactualRequest(PydanticBaseModel):
+    target_model: str  # "diabetes" or "heart"
+    features: dict[str, float]
+
+
+@router.post("/predict/scribe/commit")
+async def commit_scribe_soap(
+    req: ScribeCommitRequest,
+    current_user: db_models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    import json
+    patient = db.query(db_models.User).filter(db_models.User.id == req.patient_id, db_models.User.role == "patient").first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    facility_id = patient.facility_id
+
+    # 1. Log CareEvent
+    summary_data = {
+        "subjective": req.subjective,
+        "objective": req.objective,
+        "assessment": req.assessment,
+        "plan": req.plan,
+        "icd10_codes": req.icd10_codes,
+        "billing_codes": req.billing_codes,
+    }
+    care_event = db_models.CareEvent(
+        facility_id=facility_id,
+        patient_id=req.patient_id,
+        actor_user_id=current_user.id,
+        event_type="ambient_scribe_note",
+        title="Ambient Clinical SOAP Note",
+        summary=json.dumps(summary_data),
+        severity="info",
+    )
+    db.add(care_event)
+
+    # 2. Add prescriptions if present
+    if req.prescriptions:
+        prescription = db_models.Prescription(
+            facility_id=facility_id,
+            patient_id=req.patient_id,
+            doctor_id=current_user.id if current_user.role == "doctor" else None,
+            diagnosis_context=", ".join(req.icd10_codes),
+            status="active",
+        )
+        db.add(prescription)
+        db.flush()
+
+        for item in req.prescriptions:
+            db.add(db_models.PrescriptionItem(
+                prescription_id=prescription.id,
+                medication_name=item.medication_name,
+                dosage=item.dosage,
+                frequency=item.frequency,
+                duration=item.duration,
+                quantity_prescribed=item.quantity_prescribed,
+                quantity_dispensed=0.0,
+                status="pending",
+            ))
+
+    # 3. Add billing Invoice if items present
+    if req.billing_items:
+        subtotal = sum(float(item.get("amount", 0)) for item in req.billing_items)
+        invoice = db_models.Invoice(
+            facility_id=facility_id,
+            patient_id=req.patient_id,
+            created_by_id=current_user.id,
+            status="issued",
+            subtotal=subtotal,
+            total_amount=subtotal,
+            balance_amount=subtotal,
+            currency="INR",
+        )
+        db.add(invoice)
+        db.flush()
+
+        for item in req.billing_items:
+            db.add(db_models.InvoiceLineItem(
+                invoice_id=invoice.id,
+                description=item.get("description", "Service"),
+                quantity=1.0,
+                unit_price=float(item.get("amount", 0)),
+                line_total=float(item.get("amount", 0)),
+            ))
+
+    db.commit()
+    return {"status": "success", "message": "Clinical SOAP note, prescriptions, and invoice committed to EHR successfully."}
+
+
+@router.post("/predict/scribe/{patient_id}")
+async def generate_scribe_soap(
+    patient_id: int,
+    req: ScribeRequest,
+    current_user: db_models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _ensure_prediction_review_access(db, current_user, patient_id)
+    from backend.agents.scribe_agent import ClinicalScribeAgent
+    agent = ClinicalScribeAgent(db)
+    result = await agent.generate_soap_note(patient_id, req.transcript)
+    if "error" in result:
+        raise HTTPException(status_code=400, detail=result["error"])
+    return result
+
+
+@router.get("/predict/clinical-trials/{patient_id}")
+async def match_clinical_trials(
+    patient_id: int,
+    current_user: db_models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    import json
+    from datetime import datetime
+
+    from .prompt_registry import get_prompt
+    _ensure_prediction_review_access(db, current_user, patient_id)
+
+    patient = db.query(db_models.User).filter(db_models.User.id == patient_id, db_models.User.role == "patient").first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    recent_records = db.query(db_models.HealthRecord).filter(
+        db_models.HealthRecord.user_id == patient_id
+    ).order_by(db_models.HealthRecord.timestamp.desc()).all()
+
+    predictions_summary = []
+    for r in recent_records:
+        predictions_summary.append(f"{r.record_type.title()}: {r.prediction}")
+    ml_risks_str = ", ".join(predictions_summary) if predictions_summary else "No recent ML predictions"
+
+    latest_vital = db.query(db_models.VitalObservation).filter(
+        db_models.VitalObservation.patient_id == patient_id
+    ).order_by(db_models.VitalObservation.observed_at.desc()).first()
+
+    age = "N/A"
+    if patient.dob:
+        try:
+            dob_dt = datetime.strptime(patient.dob, "%Y-%m-%d") if isinstance(patient.dob, str) else patient.dob
+            age = datetime.now().year - dob_dt.year
+        except Exception:
+            pass
+
+    patient_context = (
+        f"Patient: {patient.full_name or patient.username}\n"
+        f"Age: {age}\n"
+        f"Gender: {'Male' if patient.gender == 1 else 'Female' if patient.gender == 0 else 'Other'}\n"
+        f"Ailments/Diagnoses: {patient.existing_ailments or 'None'}\n"
+        f"Latest Vitals: HR: {latest_vital.heart_rate if latest_vital else 72.0} bpm, "
+        f"BP: {latest_vital.systolic_bp if latest_vital else 120.0}/{latest_vital.diastolic_bp if latest_vital else 80.0} mmHg, "
+        f"SpO2: {latest_vital.spo2 if latest_vital else 98.0}%\n"
+        f"ML Risk Scores: {ml_risks_str}"
+    )
+
+    trials_context = (
+        "1. Trial ID: NCT04510001\n"
+        "   Title: Phase III Trial of Novel SGLT2 Inhibitor in Cardiovascular Outcomes\n"
+        "   Focus: Cardiovascular disease and heart health outcomes\n"
+        "   Inclusion: Age >= 18, Hypertension, High Risk of cardiovascular events.\n"
+        "   Exclusion: Pregnancy, Stage 5 Chronic Kidney Disease.\n\n"
+        "2. Trial ID: NCT03920188\n"
+        "   Title: Efficacy of Digital Health Coaching vs. Pharmacological Therapy in Pre-Diabetic Patients\n"
+        "   Focus: Diabetes prevention and management\n"
+        "   Inclusion: Age >= 18, Pre-diabetes or High Risk Diabetes prediction, BMI >= 25.\n"
+        "   Exclusion: Type 1 Diabetes, Active insulin treatment.\n\n"
+        "3. Trial ID: NCT04983210\n"
+        "   Title: A Study of Endothelin Receptor Antagonist in Retarding Diabetic Nephropathy\n"
+        "   Focus: Kidney disease and diabetic nephropathy\n"
+        "   Inclusion: Estimated GFR between 30 and 75 mL/min/1.73m2, Type 2 Diabetes.\n"
+        "   Exclusion: Severe Heart Failure, Active liver failure.\n"
+    )
+
+    prompt = get_prompt("clinical_trials_match").format(
+        patient_context=patient_context,
+        trials_context=trials_context
+    )
+
+    from backend.core_ai import generate
+    raw_output = await generate(
+        prompt=prompt,
+        system="You are a clinical trials matching coordinator."
+    )
+
+    try:
+        clean_str = raw_output.strip()
+        if clean_str.startswith("```json"):
+            clean_str = clean_str[7:]
+        if clean_str.endswith("```"):
+            clean_str = clean_str[:-3]
+        clean_str = clean_str.strip()
+
+        parsed = json.loads(clean_str)
+        return parsed
+    except Exception as e:
+        logger.warning("Failed to parse trials output: %s", e)
+        return {
+            "matches": [
+                {
+                    "trial_id": "NCT04510001",
+                    "title": "Phase III Trial of Novel SGLT2 Inhibitor in Cardiovascular Outcomes",
+                    "match_percentage": 50.0,
+                    "eligible": False,
+                    "reasons": ["Could not parse LLM screening details"],
+                    "referral_letter": f"Raw output: {raw_output}"
+                }
+            ]
+        }
+
+
+def _run_diabetes_proba(features: dict) -> float:
+    import backend.prediction as _pred
+
+    from .model_service import get_age_bucket
+
+    age_bucket = get_age_bucket(features.get("age", 45))
+    input_list = [
+        features.get("hypertension", 0.0),
+        features.get("high_chol", 0.0),
+        features.get("bmi", 25.0),
+        features.get("smoking_history", 0.0),
+        features.get("heart_disease", 0.0),
+        features.get("physical_activity", 1.0),
+        features.get("general_health", 3.0),
+        features.get("gender", 1.0),
+        age_bucket
+    ]
+    imputer, _ = _pred._get_imputer_and_conformal("diabetes", _pred.diabetes_model)
+    if imputer is not None:
+        imputed_arr = imputer.transform([input_list])
+        imputed_list = imputed_arr[0].tolist()
+    else:
+        imputed_list = [0.0 if x is None else x for x in input_list]
+
+    try:
+        proba = _pred.diabetes_model.predict_proba([imputed_list])[0]
+        return float(proba[1]) if len(proba) > 1 else float(proba[0])
+    except Exception:
+        return 0.0
+
+
+def _run_heart_proba(features: dict) -> float:
+    import backend.prediction as _pred
+
+    input_list = [
+        features.get("age", 50.0),
+        features.get("sex", 1.0),
+        features.get("cp", 0.0),
+        features.get("trestbps", 120.0),
+        features.get("chol", 200.0),
+        features.get("fbs", 0.0),
+        features.get("restecg", 0.0),
+        features.get("thalach", 150.0),
+        features.get("exang", 0.0),
+        features.get("oldpeak", 0.0),
+        features.get("slope", 1.0),
+        features.get("ca", 0.0),
+        features.get("thal", 2.0)
+    ]
+    imputer, _ = _pred._get_imputer_and_conformal("heart", _pred.heart_model)
+    if imputer is not None:
+        imputed_arr = imputer.transform([input_list])
+        imputed_list = imputed_arr[0].tolist()
+    else:
+        imputed_list = [0.0 if x is None else x for x in input_list]
+
+    try:
+        proba = _pred.heart_model.predict_proba([imputed_list])[0]
+        return float(proba[1]) if len(proba) > 1 else float(proba[0])
+    except Exception:
+        return 0.0
+
+
+@router.post("/predict/counterfactual/{patient_id}")
+async def counterfactual_recourse(
+    patient_id: int,
+    req: CounterfactualRequest,
+    current_user: db_models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    _ensure_prediction_review_access(db, current_user, patient_id)
+
+    target = req.target_model.lower()
+    features = req.features.copy()
+
+    if target == "diabetes":
+        baseline = _run_diabetes_proba(features)
+        recourse = features.copy()
+
+        # If risk is already low, return
+        if baseline < 0.5:
+            return {
+                "baseline_risk": baseline,
+                "optimized_risk": baseline,
+                "recourse_recommendation": recourse,
+                "changes_applied": {}
+            }
+
+        # Step-wise optimization logic
+        # Optimize: BMI, High Chol, Hypertension, Physical Activity, Smoking, Gen Health
+        changes = {}
+
+        # 1. Smoking history to 0
+        if recourse.get("smoking_history", 0.0) == 1.0:
+            recourse["smoking_history"] = 0.0
+            changes["smoking_history"] = "Quit smoking"
+
+        # 2. High Chol to 0
+        if _run_diabetes_proba(recourse) >= 0.5 and recourse.get("high_chol", 0.0) == 1.0:
+            recourse["high_chol"] = 0.0
+            changes["high_chol"] = "Control cholesterol (target High Chol to No)"
+
+        # 3. Hypertension to 0
+        if _run_diabetes_proba(recourse) >= 0.5 and recourse.get("hypertension", 0.0) == 1.0:
+            recourse["hypertension"] = 0.0
+            changes["hypertension"] = "Manage hypertension (target Hypertension to No)"
+
+        # 4. Physical Activity to 1
+        if _run_diabetes_proba(recourse) >= 0.5 and recourse.get("physical_activity", 1.0) == 0.0:
+            recourse["physical_activity"] = 1.0
+            changes["physical_activity"] = "Increase physical activity (target to Yes)"
+
+        # 5. General Health to 2 (Good) or 1 (Excellent)
+        current_gen_health = recourse.get("general_health", 3.0)
+        if _run_diabetes_proba(recourse) >= 0.5 and current_gen_health > 2.0:
+            recourse["general_health"] = 2.0
+            changes["general_health"] = f"Improve general self-reported health from {int(current_gen_health)} to 2"
+
+        # 6. Reduce BMI progressively
+        current_bmi = recourse.get("bmi", 25.0)
+        if _run_diabetes_proba(recourse) >= 0.5 and current_bmi > 24.0:
+            target_bmi = max(18.5, min(24.0, current_bmi - 5.0))
+            recourse["bmi"] = target_bmi
+            changes["bmi"] = f"Reduce BMI from {current_bmi:.1f} to {target_bmi:.1f}"
+
+        optimized_risk = _run_diabetes_proba(recourse)
+        return {
+            "baseline_risk": baseline,
+            "optimized_risk": optimized_risk,
+            "recourse_recommendation": recourse,
+            "changes_applied": changes
+        }
+
+    elif target == "heart":
+        baseline = _run_heart_proba(features)
+        recourse = features.copy()
+
+        if baseline < 0.5:
+            return {
+                "baseline_risk": baseline,
+                "optimized_risk": baseline,
+                "recourse_recommendation": recourse,
+                "changes_applied": {}
+            }
+
+        # Optimize: trestbps (BP), chol (Cholesterol), smoker, thalach (max HR), hyp_treatment
+        changes = {}
+
+        # 1. If smoker, stop smoking
+        if recourse.get("smoker", 0) == 1:
+            recourse["smoker"] = 0
+            changes["smoker"] = "Stop smoking"
+
+        # 2. Control Resting Blood Pressure (trestbps)
+        current_bp = recourse.get("trestbps", 120.0)
+        if _run_heart_proba(recourse) >= 0.5 and current_bp > 120.0:
+            recourse["trestbps"] = 120.0
+            changes["trestbps"] = f"Reduce resting blood pressure from {int(current_bp)} mmHg to 120 mmHg"
+
+        # 3. Control Cholesterol (chol)
+        current_chol = recourse.get("chol", 200.0)
+        if _run_heart_proba(recourse) >= 0.5 and current_chol > 200.0:
+            recourse["chol"] = 200.0
+            changes["chol"] = f"Reduce serum cholesterol from {int(current_chol)} mg/dL to 200 mg/dL"
+
+        # 4. Improve max heart rate achieved (thalach)
+        current_hr = recourse.get("thalach", 150.0)
+        if _run_heart_proba(recourse) >= 0.5 and current_hr < 160.0:
+            recourse["thalach"] = 160.0
+            changes["thalach"] = "Improve max heart rate achieved (aerobic capacity) to 160 bpm"
+
+        optimized_risk = _run_heart_proba(recourse)
+        return {
+            "baseline_risk": baseline,
+            "optimized_risk": optimized_risk,
+            "recourse_recommendation": recourse,
+            "changes_applied": changes
+        }
+
+    else:
+        raise HTTPException(status_code=400, detail=f"Counterfactual recourse not supported for model: {req.target_model}")
+
+
+@router.get("/predict/consensus/{patient_id}")
+async def get_clinical_consensus(
+    patient_id: int,
+    current_user: db_models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    import json
+    _ensure_prediction_review_access(db, current_user, patient_id)
+
+    patient = db.query(db_models.User).filter(db_models.User.id == patient_id, db_models.User.role == "patient").first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+
+    # Fetch recent predictions and vitals
+    recent_records = db.query(db_models.HealthRecord).filter(
+        db_models.HealthRecord.user_id == patient_id
+    ).order_by(db_models.HealthRecord.timestamp.desc()).all()
+
+    predictions_summary = {}
+    for r in recent_records:
+        if r.record_type not in predictions_summary:
+            predictions_summary[r.record_type] = r.prediction
+
+    latest_vital = db.query(db_models.VitalObservation).filter(
+        db_models.VitalObservation.patient_id == patient_id
+    ).order_by(db_models.VitalObservation.observed_at.desc()).first()
+
+    # Identify consensus conflicts
+    conflicts = []
+
+    # 1. Diabetes Conflict: High vitals/glucose but low predicted risk
+    diabetes_pred = predictions_summary.get("diabetes", "low")
+    if latest_vital and latest_vital.blood_glucose is not None and latest_vital.blood_glucose > 140.0 and diabetes_pred == "low":
+        conflicts.append("Patient has elevated blood glucose (>140 mg/dL) but the ML classifier predicted Low Diabetes Risk. This warrants closer inspection of HbA1c.")
+
+    # 2. Heart Conflict: High BP or Heart Rate but low predicted risk
+    heart_pred = predictions_summary.get("heart", "low")
+    if latest_vital and (
+        (latest_vital.heart_rate is not None and latest_vital.heart_rate > 100.0) or
+        (latest_vital.systolic_bp is not None and latest_vital.systolic_bp > 140.0)
+    ) and heart_pred == "low":
+        conflicts.append("Patient has resting tachycardia (>100 bpm) or Stage 2 Hypertension (>140 mmHg systolic) but the ML classifier predicted Low Heart Disease Risk.")
+
+    # Build AI prompt for consensus report
+    vitals_str = (
+        f"HR: {latest_vital.heart_rate if latest_vital else 72.0} bpm, "
+        f"BP: {latest_vital.systolic_bp if latest_vital else 120.0}/{latest_vital.diastolic_bp if latest_vital else 80.0} mmHg, "
+        f"Blood Glucose: {latest_vital.blood_glucose if latest_vital else 90.0} mg/dL"
+    )
+
+    conflict_notes = "\n".join(f"- {c}" for c in conflicts) if conflicts else "None identified."
+
+    prompt = (
+        "You are an expert clinical second-opinion consensus agent.\n\n"
+        f"Patient Vitals:\n{vitals_str}\n\n"
+        f"ML Risk Assessments:\n"
+        f"- Diabetes: {diabetes_pred}\n"
+        f"- Heart Disease: {heart_pred}\n\n"
+        f"Identified Discrepancies/Conflicts:\n{conflict_notes}\n\n"
+        "Generate a second opinion diagnostic consensus report. Output your response as a JSON object in this exact format:\n"
+        "{\n"
+        '  "consensus_level": "agreement | minor_discrepancy | major_conflict",\n'
+        '  "summary": "Short 1-sentence consensus summary.",\n'
+        '  "detailed_audit": "Detailed clinical reasoning resolving any conflicts.",\n'
+        '  "recommended_tests": ["List of recommended labs to resolve discrepancies"]\n'
+        "}\n\n"
+        "Do not include markdown formatting like ```json."
+    )
+
+    from backend.core_ai import generate
+    raw_output = await generate(
+        prompt=prompt,
+        system="You are a clinical diagnostics consensus auditor."
+    )
+
+    try:
+        clean_str = raw_output.strip()
+        if clean_str.startswith("```json"):
+            clean_str = clean_str[7:]
+        if clean_str.endswith("```"):
+            clean_str = clean_str[:-3]
+        clean_str = clean_str.strip()
+
+        parsed = json.loads(clean_str)
+        return parsed
+    except Exception as e:
+        logger.warning("Failed to parse consensus output: %s", e)
+        return {
+            "consensus_level": "minor_discrepancy" if conflicts else "agreement",
+            "summary": "AI Clinician Consensus: Vitals and risk predictions are aligned.",
+            "detailed_audit": f"Vitals check: {vitals_str}. Discrepancies found: {len(conflicts)}. Review recommended tests to resolve.",
+            "recommended_tests": ["HbA1c test" if "glucose" in conflict_notes else "12-Lead ECG"]
+        }
+
+
 def register_prediction_event_handlers() -> None:
     """Subscribe prediction event handlers to the event bus."""
     from backend.event_bus import event_bus
     event_bus.subscribe("VITALS_RECORDED", handle_vitals_recorded)
+

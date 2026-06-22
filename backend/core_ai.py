@@ -31,6 +31,10 @@ from dotenv import load_dotenv
 logger = logging.getLogger(__name__)
 load_dotenv()
 
+from .semantic_cache import SemanticCache
+
+semantic_cache = SemanticCache()
+
 OLLAMA_PULL_FAILURE_DETAIL = "Failed to pull model"
 OLLAMA_DELETE_FAILURE_DETAIL = "Failed to delete model"
 AI_STREAM_FAILURE_CHUNK = "**SYSTEM ERROR:** AI stream failed. Please try again later."
@@ -656,27 +660,72 @@ async def generate(
 
     Fallback chain: explicit cloud provider → Ollama → Gemini → mock response.
     """
+    # 0. Prompt injection check
+    from .guardrails import is_prompt_injection, redact_pii_from_text
+    if is_prompt_injection(prompt):
+        from .database import SessionLocal
+        from .security import log_audit_event
+        db = SessionLocal()
+        try:
+            log_audit_event(
+                db,
+                action="SECURITY_PROMPT_INJECTION_BLOCKED",
+                target_user_id=0,
+                details=f"Prompt flagged for injection. Snippet: {prompt[:100]}"
+            )
+        except Exception as e:
+            logger.warning("Failed to log prompt injection event: %s", e)
+        finally:
+            db.close()
+
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=400,
+            detail="Clinical safety guardrail: Input prompt flagged for potential instruction override."
+        )
+
+    # 1. Semantic Cache check
+    if os.getenv("SEMANTIC_CACHE_ENABLED", "true").lower() in ("true", "1", "yes", "on"):
+        try:
+            embedding = await asyncio.to_thread(embed_text, prompt)
+            cached_response = semantic_cache.lookup(prompt, embedding)
+            if cached_response:
+                return redact_pii_from_text(cached_response)
+        except Exception as e:
+            logger.debug("Semantic cache lookup error: %s", e)
+
     # Explicit cloud provider override
+    result = None
     if api_provider and api_key and api_provider.lower() not in ("ollama", "gemini"):
         result = await _generate_cloud(prompt, system, model, api_provider, api_key)
-        if result:
-            return result
 
     # Tier A: Ollama
-    ollama_models = await get_ollama_models()
-    if ollama_models:
-        result = await _generate_ollama(prompt, system, model)
-        if result:
-            return result
+    if not result:
+        ollama_models = await get_ollama_models()
+        if ollama_models:
+            result = await _generate_ollama(prompt, system, model)
 
     # Tier B: Gemini
-    if has_gemini_api_key():
-        result = await _generate_gemini(prompt, system)
-        if result:
-            return result
+    if not result:
+        if has_gemini_api_key():
+            result = await _generate_gemini(prompt, system)
+
+    if result:
+        # Redact PII from the output
+        result = redact_pii_from_text(result)
+        # Save to semantic cache
+        if os.getenv("SEMANTIC_CACHE_ENABLED", "true").lower() in ("true", "1", "yes", "on"):
+            try:
+                embedding = await asyncio.to_thread(embed_text, prompt)
+                semantic_cache.add(prompt, embedding, result)
+            except Exception as e:
+                logger.debug("Semantic cache save error: %s", e)
+        return result
 
     logger.warning("All AI backends unavailable for generate(), using mock fallback")
-    return "Clinical analysis mock response: The system is running in offline mode. For full functionality, please run Ollama or configure a valid GOOGLE_API_KEY."
+    mock_res = "Clinical analysis mock response: The system is running in offline mode. For full functionality, please run Ollama or configure a valid GOOGLE_API_KEY."
+    return redact_pii_from_text(mock_res)
+
 
 
 async def chat(
@@ -691,26 +740,87 @@ async def chat(
 
     Fallback chain: explicit cloud provider → Ollama → Gemini → mock response.
     """
+    # 0. Prompt injection check
+    from .guardrails import is_prompt_injection, redact_pii_from_text
+
+    last_user_content = ""
+    if messages:
+        for msg in reversed(messages):
+            if msg.get("role") == "user":
+                last_user_content = msg.get("content", "")
+                break
+        if not last_user_content:
+            last_user_content = messages[-1].get("content", "")
+
+    if last_user_content and is_prompt_injection(last_user_content):
+        from .database import SessionLocal
+        from .security import log_audit_event
+        db = SessionLocal()
+        try:
+            log_audit_event(
+                db,
+                action="SECURITY_PROMPT_INJECTION_BLOCKED",
+                target_user_id=0,
+                details=f"Prompt flagged for injection in chat. Snippet: {last_user_content[:100]}"
+            )
+        except Exception as e:
+            logger.warning("Failed to log prompt injection event in chat: %s", e)
+        finally:
+            db.close()
+
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=400,
+            detail="Clinical safety guardrail: Input prompt flagged for potential instruction override."
+        )
+
+    # Serialize message history for cache key mapping
+    history_str = json.dumps(messages)
+
+    if os.getenv("SEMANTIC_CACHE_ENABLED", "true").lower() in ("true", "1", "yes", "on"):
+        try:
+            repr_text = messages[-1]["content"] if messages else ""
+            embedding = await asyncio.to_thread(embed_text, repr_text)
+            cached_response = semantic_cache.lookup(history_str, embedding)
+            if cached_response:
+                return redact_pii_from_text(cached_response)
+        except Exception as e:
+            logger.debug("Semantic cache lookup error for chat: %s", e)
+
+    result = None
     # Explicit cloud provider override
     if api_provider and api_key and api_provider.lower() not in ("ollama", "gemini"):
-        return await _chat_cloud(messages, system, model, api_provider, api_key)
+        result = await _chat_cloud(messages, system, model, api_provider, api_key)
 
     # Tier A: Ollama
-    ollama_models = await get_ollama_models()
-    if ollama_models:
-        try:
-            return await _chat_ollama(messages, system, model)
-        except Exception:
-            logger.warning("Ollama chat failed, trying Gemini")
+    if not result:
+        ollama_models = await get_ollama_models()
+        if ollama_models:
+            try:
+                result = await _chat_ollama(messages, system, model)
+            except Exception:
+                logger.warning("Ollama chat failed, trying Gemini")
 
     # Tier B: Gemini
-    if has_gemini_api_key():
-        result = await _chat_gemini(messages, system)
-        if result:
-            return result
+    if not result:
+        if has_gemini_api_key():
+            result = await _chat_gemini(messages, system)
+
+    if result:
+        # Redact PII from the output
+        result = redact_pii_from_text(result)
+        if os.getenv("SEMANTIC_CACHE_ENABLED", "true").lower() in ("true", "1", "yes", "on"):
+            try:
+                repr_text = messages[-1]["content"] if messages else ""
+                embedding = await asyncio.to_thread(embed_text, repr_text)
+                semantic_cache.add(history_str, embedding, result)
+            except Exception as e:
+                logger.debug("Semantic cache save error for chat: %s", e)
+        return result
 
     logger.warning("All AI backends unavailable for chat(), using mock response")
-    return "Hello! I am your AI Copilot. Currently, the system is running in offline mode (Ollama and Gemini API are unavailable). I can answer simple queries or show patient data mockups."
+    mock_res = "Hello! I am your AI Copilot. Currently, the system is running in offline mode (Ollama and Gemini API are unavailable). I can answer simple queries or show patient data mockups."
+    return redact_pii_from_text(mock_res)
 
 
 async def chat_stream(
@@ -725,32 +835,101 @@ async def chat_stream(
 
     Fallback: explicit cloud → Ollama → Gemini → mock stream response.
     """
-    # Explicit cloud provider override
-    if api_provider and api_key and api_provider.lower() not in ("ollama", "gemini"):
-        async for chunk in _stream_cloud(messages, system, model, api_provider, api_key):
-            yield chunk
-        return
+    # 0. Prompt injection check
+    from .guardrails import is_prompt_injection, redact_pii_from_text
 
-    # Tier A: Ollama
-    ollama_models = await get_ollama_models()
-    if ollama_models:
-        async for chunk in _stream_ollama(messages, system, model):
-            yield chunk
-        return
+    last_user_content = ""
+    if messages:
+        for msg in reversed(messages):
+            if msg.get("role") == "user":
+                last_user_content = msg.get("content", "")
+                break
+        if not last_user_content:
+            last_user_content = messages[-1].get("content", "")
 
-    # Tier B: Gemini (pseudo-stream)
-    if has_gemini_api_key():
+    if last_user_content and is_prompt_injection(last_user_content):
+        from .database import SessionLocal
+        from .security import log_audit_event
+        db = SessionLocal()
         try:
-            has_yielded = False
-            async for chunk in _stream_gemini(messages, system):
-                if chunk:
-                    has_yielded = True
-                    yield chunk
-            if has_yielded:
-                return
+            log_audit_event(
+                db,
+                action="SECURITY_PROMPT_INJECTION_BLOCKED",
+                target_user_id=0,
+                details=f"Prompt flagged for injection in chat_stream. Snippet: {last_user_content[:100]}"
+            )
         except Exception as e:
-            logger.warning(f"Gemini stream error: {e}")
+            logger.warning("Failed to log prompt injection event in chat_stream: %s", e)
+        finally:
+            db.close()
 
-    # Fallback to mock response to prevent the UI from hanging
-    yield "Hello! I am your AI Copilot. Currently, the system is running in offline mode because local Ollama models are not active and a valid Google Gemini API key is not configured.\n\n"
-    yield "I can assist you with simulated clinical summaries, guide you through the EHR interface, or answer general workflow questions. How can I help you today?"
+        from fastapi import HTTPException
+        raise HTTPException(
+            status_code=400,
+            detail="Clinical safety guardrail: Input prompt flagged for potential instruction override."
+        )
+
+    # 1. Define stream generator that yields unredacted chunks
+    async def source_generator():
+        # Explicit cloud provider override
+        if api_provider and api_key and api_provider.lower() not in ("ollama", "gemini"):
+            async for chunk in _stream_cloud(messages, system, model, api_provider, api_key):
+                yield chunk
+            return
+
+        # Tier A: Ollama
+        ollama_models = await get_ollama_models()
+        if ollama_models:
+            async for chunk in _stream_ollama(messages, system, model):
+                yield chunk
+            return
+
+        # Tier B: Gemini (pseudo-stream)
+        if has_gemini_api_key():
+            try:
+                has_yielded = False
+                async for chunk in _stream_gemini(messages, system):
+                    if chunk:
+                        has_yielded = True
+                        yield chunk
+                if has_yielded:
+                    return
+            except Exception as e:
+                logger.warning(f"Gemini stream error: {e}")
+
+        # Fallback to mock response to prevent the UI from hanging
+        yield "Hello! I am your AI Copilot. Currently, the system is running in offline mode because local Ollama models are not active and a valid Google Gemini API key is not configured.\n\n"
+        yield "I can assist you with simulated clinical summaries, guide you through the EHR interface, or answer general workflow questions. How can I help you today?"
+
+    # 2. Define stream wrapper to redact PII from chunks
+    async def redact_stream_generator(generator):
+        buffer = ""
+        async for chunk in generator:
+            if not chunk:
+                continue
+            buffer += chunk
+            # Redact the buffer
+            redacted_buffer = redact_pii_from_text(buffer)
+
+            # Find the last boundary character that is safe to split
+            split_idx = 0
+            for i in range(len(redacted_buffer) - 1, -1, -1):
+                char = redacted_buffer[i]
+                if char in " \t\n\r.,;:!?()[]{}":
+                    suffix = redacted_buffer[i + 1:]
+                    if not any(c.isdigit() or c in "@-" for c in suffix):
+                        split_idx = i + 1
+                        break
+
+            if split_idx > 0:
+                yield redacted_buffer[:split_idx]
+                buffer = redacted_buffer[split_idx:]
+            else:
+                pass
+
+        if buffer:
+            yield redact_pii_from_text(buffer)
+
+    # 3. Stream redacted response
+    async for redacted_chunk in redact_stream_generator(source_generator()):
+        yield redacted_chunk

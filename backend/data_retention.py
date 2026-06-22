@@ -8,11 +8,12 @@ and legal hold freezing/thawing mechanisms.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field, asdict
-from datetime import datetime, timezone, timedelta
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
 from sqlalchemy.orm import Session
+
 from .audit import record_audit_event
 
 logger = logging.getLogger(__name__)
@@ -37,7 +38,7 @@ class DataRetentionManager:
         self._setup_default_policies()
 
     def _setup_default_policies(self) -> None:
-        """Sets up default retention periods. 
+        """Sets up default retention periods.
         Note that HIPAA demands audit trails be kept 6-7 years.
         """
         self.register_policy(
@@ -139,9 +140,9 @@ class DataRetentionManager:
         try:
             for record in records:
                 db.delete(record)
-            
+
             db.commit()
-            
+
             # HIPAA Audit Log entry for the archival process
             record_audit_event(
                 db=db,

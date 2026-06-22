@@ -391,6 +391,209 @@ class PromptRegistry:
             description="System prompt for the conversational scheduling assistant (CASA)",
         )
 
+        self.register(
+            "patient_xai_explanation",
+            version="1.0",
+            template=(
+                "You are an empathetic, patient-friendly AI medical explainer.\n"
+                "Your goal is to translate complex machine learning model predictions and SHAP feature attributions "
+                "into clear, compassionate, and understandable language for a patient.\n\n"
+                "Patient Prediction Results:\n"
+                "- Disease: {disease}\n"
+                "- Assessment: {prediction} ({risk_level} risk level, with {confidence}% confidence)\n"
+                "- Feature Inputs & SHAP Attributions:\n{feature_attributions}\n\n"
+                "Instructions:\n"
+                "1. Explain the prediction result in a warm, patient-friendly way.\n"
+                "2. Group the features into positive drivers (Risk Amplifiers - what increased their risk score) "
+                "and negative drivers (Risk Mitigators - what lowered their risk score, e.g. active lifestyle).\n"
+                "3. Use plain English and avoid dry mathematical formulas or statistical jargon (e.g. explain that a positive attribution means it increased risk, negative means it decreased risk).\n"
+                "4. Make the tone supportive and constructive. Offer clear context on which risk amplifiers are actionable (lifestyle-related vs. demographic/genetic).\n"
+                "5. End with a friendly disclaimer that this is an AI interpretation and they should consult a physician for official medical diagnoses.\n\n"
+                "Explanation:"
+            ),
+            description="Empathetic patient-facing translation of SHAP feature attributions",
+        )
+
+        self.register(
+            "advisory_cardiologist_opinion",
+            version="1.0",
+            template=(
+                "You are an expert Cardiologist consulting on a patient's case.\n\n"
+                "Patient Demographic & Vitals Context:\n{patient_context}\n\n"
+                "Review the patient's cardiovascular profile. Summarize their cardiac risk factors and vital statistics, "
+                "specifically focusing on heart rate, blood pressure, and related cardiac predictions.\n"
+                "Explain your diagnostic observations and recommend cardiac-specific next steps. Keep your tone professional, clinical, and precise.\n"
+                "Opinion:"
+            ),
+            description="Cardiologist initial assessment opinion template for the advisory board",
+        )
+
+        self.register(
+            "advisory_endocrinologist_opinion",
+            version="1.0",
+            template=(
+                "You are an expert Endocrinologist consulting on a patient's case.\n\n"
+                "Patient Demographic & Vitals Context:\n{patient_context}\n\n"
+                "Review the patient's metabolic and endocrine profile. Summarize their metabolic risk factors, "
+                "specifically focusing on BMI, glucose levels, HbA1c, and related metabolic predictions.\n"
+                "Explain your diagnostic observations and recommend endocrine-specific next steps. Keep your tone professional, clinical, and precise.\n"
+                "Opinion:"
+            ),
+            description="Endocrinologist initial assessment opinion template for the advisory board",
+        )
+
+        self.register(
+            "advisory_cardiologist_rebuttal",
+            version="1.0",
+            template=(
+                "You are an expert Cardiologist reviewing a colleague's Endocrinology assessment.\n\n"
+                "Patient Demographic & Vitals Context:\n{patient_context}\n\n"
+                "Your Initial Opinion:\n{own_opinion}\n\n"
+                "Endocrinologist's Opinion:\n{colleague_opinion}\n\n"
+                "Evaluate the Endocrinologist's assessment. Comment on any cross-system interactions (e.g., how metabolic/diabetes status impacts cardiovascular risk, blood pressure, or nephropathy).\n"
+                "Provide your refined cardiac recommendations incorporating these metabolic insights.\n"
+                "Comments:"
+            ),
+            description="Cardiologist cross-consultation comment template for the advisory board",
+        )
+
+        self.register(
+            "advisory_endocrinologist_rebuttal",
+            version="1.0",
+            template=(
+                "You are an expert Endocrinologist reviewing a colleague's Cardiology assessment.\n\n"
+                "Patient Demographic & Vitals Context:\n{patient_context}\n\n"
+                "Your Initial Opinion:\n{own_opinion}\n\n"
+                "Cardiologist's Opinion:\n{colleague_opinion}\n\n"
+                "Evaluate the Cardiologist's assessment. Comment on any cross-system interactions (e.g., how cardiovascular hypertension or vital instability impacts metabolic/diabetic control).\n"
+                "Provide your refined endocrine recommendations incorporating these cardiovascular insights.\n"
+                "Comments:"
+            ),
+            description="Endocrinologist cross-consultation comment template for the advisory board",
+        )
+
+        self.register(
+            "advisory_gp_coordinator_synthesis",
+            version="1.0",
+            template=(
+                "You are the General Practitioner Coordinator synthesizing a specialist advisory board debate.\n\n"
+                "Patient Demographic & Vitals Context:\n{patient_context}\n\n"
+                "Cardiologist Discussion:\n- Initial Opinion: {cardiologist_opinion}\n- Cross-Consultation: {cardiologist_rebuttal}\n\n"
+                "Endocrinologist Discussion:\n- Initial Opinion: {endocrinologist_opinion}\n- Cross-Consultation: {endocrinologist_rebuttal}\n\n"
+                "Synthesize this debate into a structured Clinical Consensus Report.\n"
+                "Identify primary diagnoses, cross-system clinical correlations, and a unified plan of action.\n\n"
+                "You MUST output your response in this exact JSON format:\n"
+                "{{\n"
+                '  "consensus_note": "A concise paragraph summarizing the clinical consensus, primary findings, and cross-system correlations.",\n'
+                '  "icd10_codes": ["ICD-10 Code 1", "ICD-10 Code 2"],\n'
+                '  "lifestyle_plan": ["Actionable lifestyle/diet recommendation 1", "Recommendation 2"],\n'
+                '  "treatment_plan": ["Specific priority treatment/medication recommendation 1", "Recommendation 2"]\n'
+                "}}\n\n"
+                "Ensure you output ONLY a valid JSON object. Do not include markdown formatting like ```json."
+            ),
+            description="GP Coordinator synthesis template for the advisory board",
+        )
+
+        self.register(
+            "ambient_scribe_soap",
+            version="1.0",
+            template=(
+                "You are an expert clinical scribe. Review the following doctor-patient consultation transcript.\n\n"
+                "Patient Context:\n{patient_context}\n\n"
+                "Consultation Transcript:\n{transcript}\n\n"
+                "Synthesize this consultation into a structured clinical SOAP note and identify diagnostic (ICD-10) codes, billing codes, and recommended follow-up actions (medications to prescribe, billing invoice items, next vitals observations).\n\n"
+                "You MUST output your response in this exact JSON format:\n"
+                "{{\n"
+                '  "subjective": "Detailed subjective summary of patient complaints, history, symptoms, lifestyle factors.",\n'
+                '  "objective": "Detailed objective findings from vitals and physical exams mentioned.",\n'
+                '  "assessment": "Clinical assessment, primary diagnoses, and medical reasoning.",\n'
+                '  "plan": "Complete plan of care, including medication adjustments, lifestyle advice, and follow-ups.",\n'
+                '  "icd10_codes": ["ICD-10 Code 1", "ICD-10 Code 2"],\n'
+                '  "billing_codes": ["Billing Code 1", "Billing Code 2"],\n'
+                '  "prescriptions": [\n'
+                '    {{\n'
+                '      "medication_name": "Medication Name",\n'
+                '      "dosage": "e.g. 500mg",\n'
+                '      "frequency": "e.g. Once daily",\n'
+                '      "duration": "e.g. 30 days",\n'
+                '      "quantity_prescribed": 30.0\n'
+                '    }}\n'
+                '  ],\n'
+                '  "billing_items": [\n'
+                '    {{\n'
+                '      "description": "Standard Outpatient Consultation",\n'
+                '      "amount": 150.0\n'
+                '    }}\n'
+                '  ]\n'
+                "}}\n\n"
+                "Ensure you output ONLY a valid JSON object. Do not include markdown formatting like ```json."
+            ),
+            description="Ambient scribe SOAP note generator template",
+        )
+
+        self.register(
+            "drug_safety_check",
+            version="1.0",
+            template=(
+                "You are an expert clinical pharmacist safety auditor.\n\n"
+                "Patient Profile:\n"
+                "- Active Medications: {active_medications}\n"
+                "- Active Diagnoses/Conditions: {active_conditions}\n"
+                "- Allergies: {allergies}\n"
+                "- Recent ML Health Risks: {ml_risks}\n\n"
+                "Proposed Prescription:\n"
+                "- Medication Name: {medication_name}\n"
+                "- Dosage: {dosage}\n"
+                "- Frequency: {frequency}\n"
+                "- Duration: {duration}\n\n"
+                "Analyze the proposed prescription for safety issues:\n"
+                "1. Drug-Drug Interactions: Check against active medications.\n"
+                "2. Drug-Condition Contraindications: Check against active diagnoses and ML risks (e.g. if kidney disease is high risk, warn about metformin or NSAIDs).\n"
+                "3. Drug-Allergy Contraindications: Check against allergies.\n\n"
+                "You MUST output your response in this exact JSON format:\n"
+                "{{\n"
+                '  "alerts": [\n'
+                '    {{\n'
+                '      "type": "drug_drug | drug_condition | drug_allergy",\n'
+                '      "severity": "critical | warning | info",\n'
+                '      "message": "Concise summary of the interaction or risk.",\n'
+                '      "evidence": "Detailed explanation of the pharmacological mechanism and clinical recommendations."\n'
+                '    }}\n'
+                '  ]\n'
+                "}}\n\n"
+                "Ensure you output ONLY a valid JSON object. Do not include markdown formatting like ```json."
+            ),
+            description="Prescribing safety checker template",
+        )
+
+        self.register(
+            "clinical_trials_match",
+            version="1.0",
+            template=(
+                "You are a clinical trials matching coordinator.\n\n"
+                "Patient Demographic & Medical Profile:\n{patient_context}\n\n"
+                "Available Open Clinical Trials:\n{trials_context}\n\n"
+                "Screen the patient against the inclusion and exclusion criteria of each trial.\n"
+                "Provide the match percentage, key reasons for matching or exclusion, and compose a professional doctor-to-coordinator referral letter for the highest matching trial.\n\n"
+                "You MUST output your response in this exact JSON format:\n"
+                "{{\n"
+                '  "matches": [\n'
+                '    {{\n'
+                '      "trial_id": "Trial Identifier (NCT ID)",\n'
+                '      "title": "Brief Trial Title",\n'
+                '      "match_percentage": 85.0,\n'
+                '      "eligible": true,\n'
+                '      "reasons": ["Inclusion criteria X matched", "No exclusion criteria met"],\n'
+                '      "referral_letter": "Pre-drafted referral letter text..."\n'
+                '    }}\n'
+                '  ]\n'
+                "}}\n\n"
+                "Ensure you output ONLY a valid JSON object. Do not include markdown formatting like ```json."
+            ),
+            description="Clinical trials screening and matching template",
+        )
+
+
 
 
 # ── Global Singleton ──────────────────────────────────────────────────

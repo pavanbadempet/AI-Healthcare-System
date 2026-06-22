@@ -38,7 +38,7 @@ def test_fresh_sqlite_database_upgrades_to_alembic_head(tmp_path):
     with engine.connect() as connection:
         revision = connection.scalar(sa.text("SELECT version_num FROM alembic_version"))
 
-    assert revision == "b9182d60f4a1"
+    assert revision == "c1234567890a"
     assert "doctor_id" not in {column["name"] for column in inspector.get_columns("users")}
     assert {constraint["name"] for constraint in inspector.get_unique_constraints("monitoring_signals")} == {
         "uq_monitoring_signal_vital_type"
@@ -84,6 +84,7 @@ def test_startup_migrations_adopt_unversioned_legacy_sqlite_database(tmp_path):
             "SUPABASE_URL": "",
             "SUPABASE_KEY": "",
             "AXIOM_TOKEN": "",
+            "SECRET_KEY": "test_secret_key",
         }
     )
     result = subprocess.run(
@@ -109,7 +110,7 @@ def test_startup_migrations_adopt_unversioned_legacy_sqlite_database(tmp_path):
             sa.text("PRAGMA foreign_key_check")
         ).fetchall()
 
-    assert revision == "b9182d60f4a1"
+    assert revision == "c1234567890a"
     assert user_count == 1
     assert chat_count == 1
     assert foreign_key_violations == []
@@ -151,7 +152,7 @@ def test_deployed_legacy_revision_upgrades_to_head(tmp_path):
     with engine.connect() as connection:
         revision = connection.scalar(sa.text("SELECT version_num FROM alembic_version"))
 
-    assert revision == "b9182d60f4a1"
+    assert revision == "c1234567890a"
     assert {"is_deleted", "deleted_at"} <= {
         column["name"] for column in inspector.get_columns("users")
     }
