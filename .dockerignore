@@ -3,6 +3,7 @@ node_modules
 playwright-report
 test-results
 venv
+.venv
 .git
 .gitignore
 __pycache__
