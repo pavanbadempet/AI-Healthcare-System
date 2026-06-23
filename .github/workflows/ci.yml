@@ -71,8 +71,10 @@ jobs:
         pytest tests/ --ignore=tests/e2e --cov=backend --cov-report=term-missing
 
     - name: Run Frontend Unit Tests with Coverage
-      run: npm --prefix frontend run test -- --coverage
+      working-directory: frontend
+      run: npm run test -- --coverage
 
     - name: Run Frontend E2E Playwright Tests
-      run: npm --prefix frontend run test:e2e
+      working-directory: frontend
+      run: npm run test:e2e
 
