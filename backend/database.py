@@ -25,8 +25,17 @@ def _get_sqlite_db_path() -> str:
 
 
 def _load_database_url() -> str:
-    # 1. TESTING environment variable takes priority
+    # 1. TESTING environment variable takes priority, but respect DATABASE_URL override if not running pytest
     if os.getenv("TESTING", "").strip().lower() in {"1", "true", "yes", "on"}:
+        import sys
+        if not (os.getenv("PYTEST_CURRENT_TEST") or "pytest" in sys.modules):
+            database_url = os.getenv("DATABASE_URL")
+            if database_url:
+                if database_url.startswith("postgres://"):
+                    return database_url.replace("postgres://", "postgresql://", 1)
+                if database_url.startswith("libsql://"):
+                    return database_url.replace("libsql://", "sqlite+libsql://", 1)
+                return database_url
         return "sqlite:///:memory:"
 
     # 2. Check if Turso replication is configured via env
