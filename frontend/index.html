@@ -1,13 +1,85 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/file.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="AI-assisted clinical dashboard and patient care management system." />
-    <title>AI Healthcare System</title>
+    
+    <!-- Primary SEO Metadata -->
+    <title>AI Healthcare System — Privacy-First Clinical Intelligence & EHR Platform</title>
+    <meta name="title" content="AI Healthcare System — Privacy-First Clinical Intelligence & EHR Platform" />
+    <meta name="description" content="A production-grade, HIPAA-oriented clinical intelligence platform combining XGBoost diagnostic models, LangGraph multi-agent RAG, and HL7 FHIR R4 interoperability." />
+    <meta name="keywords" content="clinical decision support, health intelligence, medical AI assistant, HIPAA compliance, FHIR R4, LangGraph RAG, medical chatbot, EHR integration, hospital operations, medical imaging PACS, Ollama local inference" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
+    <meta name="author" content="AI Healthcare System Contributors" />
+    <meta name="theme-color" content="#090a0f" />
+
+    <!-- Open Graph / Facebook / LinkedIn -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://github.com/pavanbadempet/AI-Healthcare-System" />
+    <meta property="og:title" content="AI Healthcare System — Privacy-First Clinical Intelligence & EHR Platform" />
+    <meta property="og:description" content="Deploy a HIPAA-oriented, local-first clinical decision support system. Features 5 XGBoost diagnostic classifiers, multi-agent LangGraph RAG, and native HL7 FHIR R4 exports." />
+    <meta property="og:image" content="https://raw.githubusercontent.com/pavanbadempet/AI-Healthcare-System/main/docs/assets/hero-banner.svg" />
+    <meta property="og:image:alt" content="AI Healthcare System Clinical Intelligence Dashboard Banner" />
+    <meta property="og:site_name" content="AI Healthcare System" />
+    <meta property="og:locale" content="en_US" />
+
+    <!-- Twitter / X -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://github.com/pavanbadempet/AI-Healthcare-System" />
+    <meta name="twitter:title" content="AI Healthcare System — Privacy-First Clinical Intelligence & EHR Platform" />
+    <meta name="twitter:description" content="Deploy a HIPAA-oriented, local-first clinical decision support system. Features 5 XGBoost diagnostic classifiers, multi-agent LangGraph RAG, and native HL7 FHIR R4 exports." />
+    <meta name="twitter:image" content="https://raw.githubusercontent.com/pavanbadempet/AI-Healthcare-System/main/docs/assets/hero-banner.svg" />
+
+    <!-- Mobile Web App Capability -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Clinical AI" />
+    <meta name="mobile-web-app-capable" content="yes" />
+
+    <!-- Favicon & Branding -->
+    <link rel="icon" type="image/svg+xml" href="/file.svg" />
+    <link rel="apple-touch-icon" href="/file.svg" />
+    <link rel="manifest" href="/manifest.json" crossorigin="use-credentials" />
+
+    <!-- Preconnect to speed up font delivery -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+
+    <!-- Structured Data: JSON-LD for rich search engine snippets -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "AI Healthcare System",
+        "applicationCategory": "MedicalSoftware",
+        "operatingSystem": "Windows, macOS, Linux, Docker",
+        "downloadUrl": "https://github.com/pavanbadempet/AI-Healthcare-System",
+        "softwareVersion": "1.0.0",
+        "offers": {
+          "@type": "Offer",
+          "price": "0.00",
+          "priceCurrency": "USD"
+        },
+        "author": {
+          "@type": "Organization",
+          "name": "AI Healthcare System Open Source Contributors",
+          "url": "https://github.com/pavanbadempet/AI-Healthcare-System"
+        },
+        "description": "A production-grade, privacy-first clinical decision support system (CDSS) featuring gradient-boosted diagnostic classifiers, LangGraph multi-agent RAG, and native HL7 FHIR R4 EHR data structures.",
+        "featureList": [
+          "XGBoost Diagnostic Classifiers (Diabetes, Heart, Liver, Kidney, Lungs)",
+          "Multi-Agent LangGraph RAG Chatbot",
+          "Local Private Inference Support (Ollama)",
+          "HL7 FHIR R4 Data Bundle Serialization & Export",
+          "Real-Time Telemetry Broadcasting (WebSockets)",
+          "HIPAA-Oriented Exception Masking and RBAC Security"
+        ],
+        "releaseNotes": "https://github.com/pavanbadempet/AI-Healthcare-System/releases"
+      }
+    </script>
   </head>
-  <body>
+  <body class="bg-[#090a0f] text-slate-100 antialiased">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
