@@ -631,6 +631,61 @@ Yes. Define the `DATABASE_URL=postgresql://user:password@host:5432/dbname` envir
 
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
+## 🌐 AWS Enterprise Production Deployment
+
+For production deployments, the platform utilizes **Terraform** for Infrastructure as Code (IaC) to provision a secure, scalable, and highly available AWS environment. Applications are containerized and orchestrated inside an **Amazon EKS (Elastic Kubernetes Service)** cluster.
+
+### 1. Infrastructure Provisioning (Terraform)
+Located under the [terraform/](terraform/) directory, the configuration automates:
+* **VPC & Subnets**: Enforces multi-AZ subnets (3 public, 3 private) isolated behind NAT Gateways for secure private resource routing.
+* **Amazon EKS Cluster**: Provisions a managed Kubernetes cluster running on dedicated Auto Scaling node groups.
+* **Amazon RDS PostgreSQL**: Deploys a Multi-AZ Postgres database with automated backups, encryption, and secure network access control.
+* **Amazon ElastiCache Redis**: Provisions a Redis cluster for low-latency session caching and telemetry data streaming.
+* **Ingress & TLS Management**: Configures Helm charts to install `ingress-nginx` for API routing and `cert-manager` for automatic SSL renewals using Let's Encrypt.
+
+#### Deploy Infrastructure:
+```bash
+cd terraform
+
+# Initialize providers and remote state bucket
+terraform init
+
+# Plan and preview resources
+terraform plan
+
+# Deploy to AWS (takes ~15 minutes to spin up EKS, RDS, and ElastiCache)
+terraform apply -auto-approve
+```
+
+### 2. EKS Application Deployment (Kubernetes)
+Located under the [k8s/](k8s/) directory, the manifests declare:
+* **`healthcare-backend`**: A 3-replica High-Availability deployment of the FastAPI server, drawing secrets from `healthcare-secrets`.
+* **`healthcare-frontend`**: A 2-replica deployment of the React SPA served via Nginx.
+* **Horizontal Pod Autoscaling**: Automatically scales pods between 3 and 10 replicas based on real-time CPU and memory usage (defined in `autoscaling.yaml`).
+* **Ingress Routing**: Standardizes path routing (`/` to frontend, `/v1` to backend) with automated TLS handshakes.
+
+#### Deploy App to EKS:
+```bash
+# 1. Update your local kubeconfig to point to the new EKS cluster
+aws eks update-kubeconfig --name healthcare-prod-cluster --region us-east-1
+
+# 2. Create the healthcare namespace
+kubectl create namespace healthcare
+
+# 3. Apply secure credential secrets
+kubectl create secret generic healthcare-secrets \
+  --from-literal=database-url="postgresql://user:password@rds-endpoint:5432/dbname" \
+  --from-literal=redis-url="redis://elasticache-endpoint:6379" \
+  --from-literal=google-api-key="your_google_api_key" \
+  --from-literal=secret-key="your_jwt_secret" \
+  --namespace healthcare
+
+# 4. Deploy all resources
+kubectl apply -f k8s/ --namespace healthcare
+```
+
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+
 ## 🔄 MLOps & Data Platform Architecture
 
 The platform integrates an automated Big Data and Machine Learning Operations (MLOps) pipeline designed to process real-time streams and orchestrate model lifecycles at scale.
