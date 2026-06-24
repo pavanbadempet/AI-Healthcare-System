@@ -18,7 +18,7 @@ test.describe('Clinical Platform Core Flows', () => {
     await page.getByLabel(/password/i).fill('SecurePass123!');
     
     // Submit registration
-    await page.locator('button', { hasText: /sign up|register|create account/i }).click();
+    await page.locator('button', { hasText: /sign up|register|create account|initialize node/i }).click();
 
     // 3. Wait for redirect to login or dashboard
     await page.waitForURL(/\/(login|dashboard)/, { timeout: 15000 });
@@ -40,9 +40,9 @@ test.describe('Clinical Platform Core Flows', () => {
     await expect(dashboardHeader.first()).toBeVisible({ timeout: 10000 });
 
     // 6. Navigate to CASA scheduling agent
-    // Since we added CASA scheduling page, let's navigate to /scheduling-agent
-    await page.goto('/scheduling-agent');
-    await page.waitForURL(/\/scheduling-agent/);
+    // Since we added CASA scheduling page, let's navigate to /telemedicine
+    await page.goto('/telemedicine');
+    await page.waitForURL(/\/telemedicine/);
 
     // Verify Scheduling Agent Chat components are visible
     const chatInput = page.locator('textarea, input[placeholder*="type a message"], input[placeholder*="ask"], input[placeholder*="symptoms"]');
