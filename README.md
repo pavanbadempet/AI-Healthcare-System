@@ -783,14 +783,26 @@ MIT License — Copyright © 2026 **Pavan Badempet**, Shiva Prasad Anagondi, Pra
 <details>
 <summary><strong>🔍 SEO Metadata, Search Keywords & Indexing Terms</strong></summary>
 
-### Primary Keywords
-- **AI Healthcare Platform**: HIPAA-oriented, FHIR R4 interoperability, ABDM India health consent management system, Epic EHR, Cerner EHR, medical API backend.
-- **Machine Learning Diagnostics**: Calibrated XGBoost models, SHAP explainability, diabetes risk, heart disease detection, liver disease panel, chronic kidney disease classifier, lung cancer risk screening, ROC-AUC metrics.
-- **Generative AI & LLM Orchestration**: Multi-agent LangGraph supervisor graph, token-budgeted RAG (Retrieval-Augmented Generation), Ollama local private inference, Gemini API cloud fallback, citation tracking.
-- **Hospital Operations**: OPD/IPD encounter manager, bed ward allocation, pharmacy inventory tracking, nursing task worklist scheduler, WebSockets telemetry census broadcast.
+### 1. Primary Targeted Keywords
+* **Healthcare AI & Clinical Decision Support**: Privacy-first clinical AI, HIPAA-compliant medical API backend, Open-Source EHR platform, Epic Systems integration, Cerner integration, medical AI assistant, diagnostic classification, clinical data pipeline.
+* **Explainable Machine Learning**: Gradient-boosted XGBoost classifiers, SHAP values explainability, AUC-ROC calibration, diabetes risk screening, coronary heart disease detection, liver disease panel diagnostics, chronic kidney disease (CKD) risk scoring, lung cancer survey classifiers.
+* **Large Language Models (LLM) & Agentic Workflows**: Multi-agent LangGraph supervisor routing, token-budgeted RAG (Retrieval-Augmented Generation), local private LLM offline inference, Ollama Llama 3.2 deployment, Google Gemini API fallback, citation tracking, clinical safety guardrails.
+* **EHR Interoperability Standards**: HL7 FHIR R4 JSON schemas, FHIR Bundle exports, ABDM (Ayushman Bharat Digital Mission) consent manager sandboxing, India National Health Stack APIs, DICOM PACS medical imaging viewer helper.
+* **Hospital Operations & Telemetry**: Bed ward allocation algorithms, OPD/IPD outpatient encounter coordinator, pharmacy inventory tracking system, nursing shift worklist scheduler, WebSockets real-time clinic occupancy telemetry census broadcaster.
 
-### Search Phrases
-`open source clinical decision support system`, `private-first hospital management software`, `HIPAA compliant python api backend`, `epic cerner fhir integration python`, `local medical chatbot langchain`, `explainable ai healthcare xgboost shap`, `react 19 clinical portal dashboard`, `docker compose nextjs fastapi postgres redis`, `eks terraform kubernetes manifest clinical`.
+### 2. Comprehensive Search Tag Glossary (A-Z Index)
+`abdm-consent-callback`, `active-occupancy-websocket`, `alembic-migrations-sqlite`, `amazon-eks-kubernetes-deployment`, `amazon-rds-postgresql-multi-az`, `apache-airflow-dag-retraining`, `apache-spark-delta-lake-compaction`, `app-router-react-19`, `aria-label-a11y-screen-readers`, `ast-alt-liver-ratio`, `auc-roc-model-metrics`, `auth-bcrypt-jwt-rbac`, `aws-alb-ingress-controller`, `bed-allocation-algorithm`, `cardiology-appointment-scheduler`, `cert-manager-letsencrypt-tls`, `change-data-capture-cdc-delta`, `clinical-event-bus-in-memory`, `clinical-tabular-pypi-package`, `conformal-prediction-uncertainty-sets`, `coronary-heart-disease-xgboost`, `cosine-similarity-turbovec-simd`, `creatinine-egfr-calculator-ckd-epi`, `delta-lakehouse-medallion-architecture`, `diabetes-risk-screening-cdc-brfss`, `dicom-web-pacs-viewer-integration`, `docker-compose-production-stack`, `egfr-calculator-race-free-2021`, `electronic-health-record-ehr-export`, `epic-cerner-fhir-r4-compatibility`, `exception-masking-pii-protection`, `fastapi-backend-uvicorn-reload`, `federated-clinical-gradient-sharing`, `fhir-patient-encounter-observation-schemas`, `fib-4-liver-fibrosis-index`, `framingham-10-year-cardiovascular-risk`, `ft-transformer-attention-tabular-classification`, `gemini-text-embedding-004`, `google-gemini-cloud-fallback`, `huggingface-dataset-model-weights-sync`, `in-memory-semantic-search-vector-store`, `india-unified-health-interface-uhi`, `liquid-clustering-z-order-delta-lake`, `liver-disease-panel-classifier-ilpd`, `local-first-private-inference-ollama`, `long-tail-medical-rag-citation`, `longitudinal-patient-encounter-bilstm`, `lung-cancer-survey-xgboost-classifier`, `model-cards-dataset-lineage-registry`, `model-hot-reloading-zero-downtime`, `multi-agent-langgraph-supervisor-orchestration`, `multi-level-partitioning-time-geo`, `nursing-task-worklist-scheduler`, `ollama-local-inference-llama3`, `opd-ipd-outpatient-encounter-coordinator`, `openlineage-metadata-compliance-client`, `pacs-dicom-imaging-server-shim`, `patient-demographics-scd-type-2`, `pharmacy-inventory-tracking-reorder`, `pii-redaction-hipaa-logs`, `playwright-e2e-browser-testing`, `pyspark-structured-streaming-vitals`, `pytest-asyncio-mock-ai-inference`, `pytest-xdist-parallel-runner`, `razorpay-payments-gateway-integration`, `react-19-clinical-portal-ui`, `redis-multi-level-caching`, `scikit-learn-conformal-prediction`, `security-headers-middleware-stack`, `shap-explainability-xai-plots`, `slowly-changing-dimensions-scd-type-2`, `smart-on-fhir-auth-client`, `soft-delete-mixin-sqlalchemy`, `tavily-search-api-rag-research`, `telemedicine-scheduling-casa-chat`, `terraform-aws-eks-rds-elasticache-iac`, `time-travel-queries-delta-lake`, `turbovec-rust-simd-cosine-similarity`, `unity-catalog-databricks-delta-pyspark`, `uvicorn-asgi-server-fastapi`, `vector-store-base-class-python`, `vite-8-react-spa-bundler`, `vitest-coverage-threshold-gate`, `vitals-telemetry-streaming-simulator`, `websockets-occupancy-census-broadcaster`, `xgboost-gradient-boosting-classifier`.
+
+### 3. Core Developer & Enterprise Search Queries
+* *How to build a HIPAA compliant backend in Python using FastAPI?*
+* *Open source medical decision support system with explainable AI (SHAP/XGBoost).*
+* *Integrating React 19 web portals with Epic Systems and Cerner EHR APIs.*
+* *Setting up a local-first medical RAG chatbot using LangGraph and Ollama.*
+* *Orchestrating PySpark clinical streaming data pipelines inside Apache Airflow DAGs.*
+* *AWS EKS and PostgreSQL RDS Terraform infrastructure as code for digital health.*
+* *HL7 FHIR R4 standard JSON serializers and bundle exports in Python.*
+* *Conformal prediction and uncertainty calibration for clinical machine learning.*
+* *India ABDM Ayushman Bharat Digital Mission software developer sandbox integration.*
 </details>
 
 <div align="center">
