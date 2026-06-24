@@ -482,7 +482,7 @@ def test_save_creates_missing_directory(tmp_path, monkeypatch):
     rag_module._store = None
 
 
-def test_migration_calls_save_and_logs_info(tmp_path, monkeypatch, caplog):
+def test_migration_calls_save_and_logs_info(tmp_path, monkeypatch):
     """Req 6.2, 6.3 — Loading with only vector_store.json triggers migration,
     persists the result, and logs an INFO message with migrated count.
     """
@@ -517,7 +517,7 @@ def test_migration_calls_save_and_logs_info(tmp_path, monkeypatch, caplog):
 
     from backend.turbovec_store import TurboVecVectorStore
 
-    with caplog.at_level(logging.INFO, logger="backend.turbovec_store"):
+    with patch("backend.turbovec_store.logger.info") as mock_info:
         s = TurboVecVectorStore()
         s.load()
 
@@ -529,13 +529,10 @@ def test_migration_calls_save_and_logs_info(tmp_path, monkeypatch, caplog):
     assert os.path.exists(index_path + ".meta.json"), ".meta.json must exist after migration save"
 
     # INFO log with migrated count must have been emitted
-    migration_logs = [
-        r for r in caplog.records
-        if r.levelno == logging.INFO and "igrat" in r.message.lower()
-    ]
-    assert migration_logs, (
-        f"Expected INFO log about migration, got: {[r.message for r in caplog.records]}"
-    )
+    assert mock_info.called, "Expected INFO log about migration to be called"
+    called_args = mock_info.call_args[0]
+    assert "Migrated" in called_args[0]
+    assert called_args[1] == 1  # migrated count
 
     rag_module._store = None
 
