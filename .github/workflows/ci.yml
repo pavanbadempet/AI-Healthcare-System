@@ -59,6 +59,8 @@ jobs:
       run: python scripts/generate_placeholder_models.py
         
     - name: Start Backend in Background
+      env:
+        DATABASE_URL: "sqlite:///healthcare_test.db"
       run: |
         nohup uvicorn backend.main:app --host 127.0.0.1 --port 8000 > /tmp/uvicorn.log 2>&1 &
 
