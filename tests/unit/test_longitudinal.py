@@ -1,7 +1,10 @@
 """Tests for the longitudinal (time-series) prediction endpoints and models."""
 
+import importlib.util
 import numpy as np
 import pytest
+
+has_torch = importlib.util.find_spec("torch") is not None
 
 
 def _auth_headers(client, username="longitudinal_user"):
@@ -25,6 +28,7 @@ def _auth_headers(client, username="longitudinal_user"):
 # Unit: ClinicalTemporalLSTM model
 # ---------------------------------------------------------------------------
 
+@pytest.mark.skipif(not has_torch, reason="PyTorch is required for LSTM models")
 class TestClinicalTemporalLSTM:
     """Test the sklearn-compliant LSTM wrapper."""
 

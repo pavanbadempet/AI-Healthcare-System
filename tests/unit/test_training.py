@@ -1,15 +1,17 @@
+import importlib.util
 from unittest.mock import MagicMock, mock_open, patch
 
 import numpy as np
 import pandas as pd
+import pytest
 
-# Import the training functions
-from scripts.training.train_diabetes import train_diabetes_model
-from scripts.training.train_heart import train_heart_model
-from scripts.training.train_liver import train_liver_model
+has_catboost = importlib.util.find_spec("catboost") is not None
+has_lightgbm = importlib.util.find_spec("lightgbm") is not None
 
 
+@pytest.mark.skipif(not has_catboost, reason="CatBoost is not installed")
 def test_train_diabetes():
+    from scripts.training.train_diabetes import train_diabetes_model
     with (
         patch("pandas.read_parquet") as mock_read,
         patch("scripts.training.train_diabetes.os.path.exists", return_value=True),
@@ -48,7 +50,9 @@ def test_train_diabetes():
         assert mock_pickle.called
 
 
+@pytest.mark.skipif(not has_catboost, reason="CatBoost is not installed")
 def test_train_heart():
+    from scripts.training.train_heart import train_heart_model
     with (
         patch("pandas.read_parquet") as mock_read,
         patch("scripts.training.train_heart.os.path.exists", return_value=True),
@@ -88,7 +92,9 @@ def test_train_heart():
         assert mock_pickle.called
 
 
+@pytest.mark.skipif(not has_lightgbm, reason="LightGBM is not installed")
 def test_train_liver():
+    from scripts.training.train_liver import train_liver_model
     with (
         patch("pandas.read_parquet") as mock_read,
         patch("scripts.training.train_liver.os.path.exists", return_value=True),
