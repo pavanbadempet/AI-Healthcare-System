@@ -1,83 +1,91 @@
-# Airflow Model Retraining Pipeline
+# 🌀 AI Healthcare System — PySpark & Apache Airflow Data Platform
 
-This directory contains the Airflow DAG for automated ML model retraining using **PySpark** for distributed data processing.
+> A production-grade clinical MLOps & Big Data platform orchestrating ingestion pipelines, Medallion Lakehouse structures, schema evolution, slowly changing dimensions (SCD Type 2), and data lineage.
 
-## Pipeline Overview
+---
 
-```
-┌─────────────────┐    ┌────────────────────┐    ┌──────────────┐
-│   Extract       │───►│   Transform        │───►│    Train     │
-│ (PySpark JDBC)  │    │ (Spark DataFrame)  │    │  (Retrain)   │
-└─────────────────┘    └────────────────────┘    └──────────────┘
-                                                       │
-                                                       ▼
-┌─────────────┐    ┌────────────────┐    ┌──────────────┐
-│   Notify    │◄───│    Deploy      │◄───│   Validate   │
-│ (Complete)  │    │ (Reload API)   │    │  (Compare)   │
-└─────────────┘    └────────────────┘    └──────────────┘
-```
+## 🚀 Overview
 
-## Key Features (DE Best Practices)
+The data platform manages high-throughput ETL pipelines, patient health record consolidation, model retraining loops, and compliance-driven audit trails. Using **Apache Airflow** for orchestration and **Apache PySpark** for distributed compute, the system handles data processing at scale.
 
-| Feature | Why It Matters |
-|---------|----------------|
-| **PySpark JDBC** | Distributed DB reads with partitioning |
-| **Spark SQL** | `get_json_object`, `when`, column transforms |
-| **Parquet** | Columnar storage for analytics workloads |
-| **Caching** | `df.cache()` for multi-pass operations |
-| **Repartitioning** | Optimal parallelism for writes |
-| **Adaptive Query** | `spark.sql.adaptive.enabled=true` |
+---
 
-## Schedule
-- **Frequency**: Weekly (Every Sunday at 2 AM)
-- **Catchup**: Disabled
+## 🏗️ Core Pipelines (DAGs)
 
-## Tasks
+The platform is organized into 3 production workflows located in [airflow/dags/](dags/):
 
-| Task | Technology | Description |
-|------|------------|-------------|
-| `extract_data` | PySpark JDBC | Pull recent predictions from PostgreSQL |
-| `transform_data` | Spark DataFrame | Parse JSON, feature engineering, partition |
-| `train_models` | Python | Retrain models using existing scripts |
-| `validate_models` | Python | Compare accuracy, decide deployment |
-| `deploy_models` | REST API | Call `/admin/reload_models` endpoint |
+### 1. Unified Healthcare Data Pipeline (`healthcare_data_pipeline`)
+* **Purpose**: Primary ETL scheduler driving patient record updates, cleaning, and model retraining triggers.
+* **Extraction**: Reads raw JSON clinical logs, telemetry measurements, and relational databases.
+* **Transformation**: PySpark clean-up, missing value imputation, normalization, and feature tokenization.
+* **Trigger Retraining**: Evaluates validation data drift and triggers Kaggle/Cloud retraining sessions when thresholds are exceeded.
 
-## Local Development
+### 2. Advanced Data Modeling & Time Travel (`healthcare_data_modeling`)
+* **Purpose**: Implements slowly changing dimensions and historical state compliance.
+* **SCD Type 2**: Automatically tracks patient demographics and clinical parameter updates over time using start/end timestamps and active/inactive flag versioning.
+* **Schema Evolution**: Supports progressive database migrations, schema merges, and schema drift detection without pipeline downtime.
+* **Time Travel Queries**: Demonstrates Delta Lake's historical recovery, allowing queries to be run against exact database states at specific timestamps.
 
-### 1. Install Dependencies
+### 3. High-Performance Delta Lake Operations (`delta_lake_operations`)
+* **Purpose**: Optimization routines for low-latency analytics.
+* **Liquid Clustering**: Replaces static partitioning with dynamic Z-Order clustering to speed up patient search.
+* **CDC (Change Data Capture)**: Processes record insertions, updates, and deletions from transactional tables via Delta transaction logs.
+* **Data Compaction**: Automates file compaction and metadata vacuuming to maintain high-performance disk access.
+
+---
+
+## 📊 Lineage & Compliance Tracking (`lineage_emitter.py`)
+
+To satisfy strict healthcare compliance standards (HIPAA/GDPR), the system integrates an **OpenLineage** tracking client.
+* **Metadata Captures**: Captures exact schema contracts, dataset origins, and pipeline task runs.
+* **Lineage Audits**: Automatically logs lineage events (`START`, `COMPLETE`, `FAIL`) to `data/lineage/events/` as timestamped JSON documents, or forwards them to an external catalog collector (e.g. Marquez) if configured.
+
+---
+
+## 🛠️ Local Development & Setup
+
+Ensure you have **Python 3.11** or **3.12** and **Java 11/17** (for PySpark) installed.
+
+### 1. Install Orchestration Stack
 ```bash
-pip install apache-airflow>=2.8.0 pyspark>=3.5.0
+pip install apache-airflow>=2.8.0 pyspark>=3.5.0 delta-spark>=3.1.0
 ```
 
-### 2. Download PostgreSQL JDBC Driver
-```bash
-# For production Spark cluster
-wget https://jdbc.postgresql.org/download/postgresql-42.6.0.jar -P /opt/spark/jars/
-```
-
-### 3. Initialize Airflow
+### 2. Initialize Airflow Local Environment
 ```bash
 cd airflow
 $env:AIRFLOW_HOME = "."
 airflow db init
-airflow standalone
 ```
 
-### 4. Access UI
-Open http://127.0.0.1:8080
+### 3. Create Airflow Admin Account
+```bash
+airflow users create \
+    --username admin \
+    --firstname System \
+    --lastname Administrator \
+    --role Admin \
+    --email admin@clinical.invalid \
+    --password admin
+```
 
-## Environment Variables
+### 4. Launch the Scheduler and Web UI
+```bash
+# Launches standalone Airflow server (Scheduler + Webserver)
+airflow standalone
+```
+Open [http://127.0.0.1:8080](http://127.0.0.1:8080) in your browser and log in with your admin credentials.
 
-| Variable | Description |
-|----------|-------------|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `BACKEND_URL` | API base URL (default: http://127.0.0.1:8000) |
-| `ADMIN_JWT_TOKEN` | Pre-generated admin JWT for deployment |
+---
 
-## Production Deployment
+## ⚙️ Environment Configuration
 
-For production, use managed services:
-- **Databricks** (Spark + Airflow integration)
-- **Google Cloud Composer** + Dataproc
-- **AWS MWAA** + EMR
-- **Azure Synapse** + Data Factory
+Set the following environment variables in your Airflow executor environment:
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `DATABASE_URL` | `sqlite:///./healthcare.db` | Primary transactional database source |
+| `LAKEHOUSE_PATH` | `/tmp/healthcare_warehouse` | Path to storage directory for Delta Lake parquet files |
+| `BACKEND_URL` | `http://127.0.0.1:8000` | Target FastAPI server for reloading retrained models |
+| `OPENLINEAGE_URL` | — | (Optional) Remote OpenLineage collector URL (e.g., Marquez) |
+| `DELTA_CATALOG` | `uc_healthcare_prod` | Unity Catalog database name target |
