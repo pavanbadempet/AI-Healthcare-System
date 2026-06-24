@@ -175,7 +175,7 @@ def signup(user: schemas.UserCreate, db: Session = Depends(database.get_db)) -> 
         raise HTTPException(status_code=400, detail="Username or Email already registered.")
     except Exception:
         db.rollback()
-        logger.error("Signup failed")
+        logger.exception("Signup failed")
         raise HTTPException(status_code=500, detail=SIGNUP_FAILURE_DETAIL)
 
 @router.post("/token", response_model=schemas.Token)
