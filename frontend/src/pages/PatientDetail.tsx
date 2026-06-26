@@ -673,6 +673,7 @@ export default function PatientEMRView({
                       onClick={loadLabKits}
                       disabled={loadingKits}
                       className="p-1 rounded hover:bg-slate-800 disabled:opacity-50 text-slate-400 cursor-pointer"
+                      aria-label="Refresh dispatched kit statuses"
                     >
                       <RefreshCw size={11} className={loadingKits ? "animate-spin" : ""} />
                     </button>
