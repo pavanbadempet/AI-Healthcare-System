@@ -476,8 +476,15 @@ Create a `.env` file in the project root based on the table below:
 
 ## ⚡ Quick Start
 
-### 1. Launch with Docker Compose
+### 1. Interactive Terminal TUI Dashboard (Instant Preview)
+You can visualize the clinical telemetry flow, live vitals stream, bed census occupancy grid, and active ML models registry instantly inside your terminal with zero setup or API keys:
+```bash
+python scripts/clinic_dashboard.py
+```
+
+### 2. Launch with Docker Compose
 Launches the complete service container stack (FastAPI backend + React frontend + PostgreSQL + Redis) in a single command:
+
 ```bash
 git clone https://github.com/pavanbadempet/AI-Healthcare-System.git
 cd AI-Healthcare-System
@@ -485,7 +492,7 @@ cp .env.example .env          # Update GOOGLE_API_KEY & JWT SECRET_KEY
 docker compose up --build
 ```
 
-### 2. Local Developer Mode
+### 3. Local Developer Mode
 
 #### Setup Backend:
 ```bash
