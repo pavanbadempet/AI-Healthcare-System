@@ -859,9 +859,32 @@ Contributions are welcome — bug fixes, new ML models, docs, tests, or translat
 Read [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md). Follow [`AGENTS.md`](AGENTS.md) — the canonical instruction file for all code changes.
 
 ```bash
-python -m pytest tests/ -v
+python -m pytest tests/ -n auto -v
 npm --prefix frontend run test
 ```
+
+### 📋 Pre-Release Validation Checklist
+
+Before submitting a Pull Request, please ensure all local verification checks pass:
+
+1. **Linting & Formatting:** Ensure code style adheres to project guidelines:
+   ```bash
+   ruff format .
+   ruff check . --fix
+   ```
+2. **Test Coverage Verification:** Run all 1,500+ unit/integration tests and verify coverage is above 55%:
+   ```bash
+   python -m pytest tests/ -n auto -v
+   ```
+3. **Frontend Compilation:** Verify the React production build succeeds without TypeScript errors:
+   ```bash
+   npm --prefix frontend run build
+   ```
+4. **Console Dashboard Run:** Ensure the terminal TUI dashboard runs without exceptions:
+   ```bash
+   python scripts/clinic_dashboard.py
+   ```
+
 
 <a href="https://github.com/pavanbadempet/AI-Healthcare-System/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=pavanbadempet/AI-Healthcare-System&max=20" alt="Contributors - Open-Source Developers contributing to the AI Healthcare System codebase" />
