@@ -1,0 +1,23 @@
+# AI Healthcare System - Root Workspace Rules (.cursor/rules/00-root.mdc)
+
+Core constraints, directory rules, and patterns for coding assistants within the workspace.
+
+## System Architecture
+
+- **Backend:** FastAPI (Python 3.11/3.12) REST API. Handles JWT auth, ML predictions (XGBoost), LangGraph RAG coordination, and HL7 FHIR compliance.
+- **Frontend:** Vite SPA (React 19 & TypeScript & Tailwind CSS).
+- **Interoperability:** Complies with HL7 FHIR R4 specifications and Ayushman Bharat Digital Mission (ABDM) guidelines.
+
+## Development Constraints
+
+- **Local Hostname Binding:** Always bind local services to `127.0.0.1`, never use `localhost`.
+- **Database Safety:** Application runtime reads from `DATABASE_URL`. Pytest runs must strictly use temporary in-memory databases and never write to the development database `healthcare.db`.
+- **Inference abstraction:** All LLM and text embedding calls must proceed through `backend/core_ai.py` wrappers. Do not call provider SDKs directly.
+- **HIPAA Privacy:** Mask all PII/PHI in log tracebacks and unhandled exceptions. Maintain full tenant isolation.
+
+## Primary Execution Commands
+
+- **Backend Server:** `uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000`
+- **Backend Tests:** `python -m pytest tests/ -n auto -v`
+- **Frontend Server:** `npm --prefix frontend run dev`
+- **TUI Dashboard:** `python scripts/clinic_dashboard.py`
