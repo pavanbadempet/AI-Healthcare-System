@@ -149,3 +149,83 @@ class TestPatientExplainableAI:
             assert data["patient_explanation"] == "Narrative response"
             assert "bmi" in data["attributions"]
             assert data["attributions"]["bmi"] == 0.05
+
+
+class TestSHAPOptimization:
+    """Verifies that the SHAP TreeExplainer lazy caching works as intended."""
+
+    def test_cache_explainer_lazy_initialization(self, db_session):
+        class RealEstimator:
+            def __init__(self):
+                self.classes_ = [0, 1]
+            def predict(self, X):
+                return np.array([0])
+            def predict_proba(self, X):
+                return np.array([[0.8, 0.2]])
+
+        estimator = RealEstimator()
+        mock_explainer = MagicMock()
+        mock_explainer.expected_value = 0.5
+        mock_explainer.shap_values.return_value = np.array([[0.1, 0.2, 0.3]])
+
+        with patch("shap.TreeExplainer", return_value=mock_explainer) as mock_tree_explainer:
+            # First call: should build and cache explainer
+            attributions1 = _log_feature_attributions(
+                db=db_session,
+                model_name="diabetes",
+                model_version="1.0.0",
+                imputed_list=[1.0, 2.0, 3.0],
+                feature_names=["f1", "f2", "f3"],
+                raw_pred=0,
+                model=estimator
+            )
+            assert hasattr(estimator, "_cached_shap_explainer")
+            assert mock_tree_explainer.call_count == 1
+
+            # Second call: should reuse cached explainer
+            attributions2 = _log_feature_attributions(
+                db=db_session,
+                model_name="diabetes",
+                model_version="1.0.0",
+                imputed_list=[1.0, 2.0, 3.0],
+                feature_names=["f1", "f2", "f3"],
+                raw_pred=0,
+                model=estimator
+            )
+            assert mock_tree_explainer.call_count == 1
+            assert attributions1 == attributions2
+
+    def test_mock_estimator_bypasses_cache(self, db_session):
+        # A mock model (whose type includes "mock") should bypass cache
+        mock_estimator = MagicMock()
+        mock_estimator.predict.return_value = np.array([0])
+        mock_estimator.predict_proba.return_value = np.array([[0.8, 0.2]])
+
+        mock_explainer = MagicMock()
+        mock_explainer.expected_value = 0.5
+        mock_explainer.shap_values.return_value = np.array([[0.1, 0.2, 0.3]])
+
+        with patch("shap.TreeExplainer", return_value=mock_explainer) as mock_tree_explainer:
+            # First call
+            _log_feature_attributions(
+                db=db_session,
+                model_name="diabetes",
+                model_version="1.0.0",
+                imputed_list=[1.0, 2.0, 3.0],
+                feature_names=["f1", "f2", "f3"],
+                raw_pred=0,
+                model=mock_estimator
+            )
+            assert mock_tree_explainer.call_count == 1
+
+            # Second call: should build fresh explainer again
+            _log_feature_attributions(
+                db=db_session,
+                model_name="diabetes",
+                model_version="1.0.0",
+                imputed_list=[1.0, 2.0, 3.0],
+                feature_names=["f1", "f2", "f3"],
+                raw_pred=0,
+                model=mock_estimator
+            )
+            assert mock_tree_explainer.call_count == 2
