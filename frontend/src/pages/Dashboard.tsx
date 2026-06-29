@@ -12,6 +12,7 @@ import { Link } from "react-router-dom";
 
 const RiskTrajectoryChart = lazy(() => import("@/components/operations/RiskTrajectoryChart"));
 import OperationsCockpit from "@/components/operations/OperationsCockpit";
+import LiveECGMonitor from "@/components/operations/LiveECGMonitor";
 import { prefetchRoute } from "@/lib/prefetch";
 import { useTranslation } from "@/lib/i18n";
 
@@ -453,18 +454,8 @@ export default function DashboardPage() {
               </div>
 
               {/* Animated ECG Waveform */}
-              <div className="h-20 w-full mb-5 relative bg-black/20 rounded-lg p-1 border border-white/[0.02]">
-                  <svg viewBox="0 0 400 100" className="w-full h-full overflow-visible">
-                    <path
-                      className={`ecg-line-animate fill-none ${isAlert ? "stroke-[var(--danger)]" : "stroke-[var(--accent-blue)]"}`}
-                      d={bed.ecgD}
-                      strokeWidth={2.5}
-                      style={{
-                        animationDuration: isAlert ? "3s" : "5s",
-                        filter: isAlert ? "drop-shadow(0 0 4px var(--danger))" : "drop-shadow(0 0 4px var(--accent-blue))"
-                      }}
-                    />
-                  </svg>
+              <div className="h-20 w-full mb-5 relative bg-black/20 rounded-lg p-1 border border-white/[0.02] overflow-hidden">
+                <LiveECGMonitor hr={bed.hr} status={bed.status} />
                 <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[var(--bg-card)]/40 pointer-events-none" />
               </div>
 
