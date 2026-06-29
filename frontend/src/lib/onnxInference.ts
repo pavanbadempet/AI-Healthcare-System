@@ -20,25 +20,30 @@ async function getOrInitSession(modelName: string): Promise<ModelSessionCache> {
   const cache = sessions[modelName];
   if (cache.model) return cache;
 
+  const isWebGPUAvailable = typeof navigator !== 'undefined' && 'gpu' in navigator;
+  const options: ort.InferenceSession.SessionOptions = {
+    executionProviders: isWebGPUAvailable ? ['webgpu', 'wasm'] : ['wasm']
+  };
+
   try {
-    console.log(`[ONNX WASM] Loading sessions for ${modelName}...`);
+    console.log(`[ONNX] Loading sessions for ${modelName} (WebGPU supported: ${isWebGPUAvailable})...`);
     if (modelName === 'diabetes') {
-      cache.model = await ort.InferenceSession.create('/models/diabetes.onnx');
+      cache.model = await ort.InferenceSession.create('/models/diabetes.onnx', options);
     } else if (modelName === 'heart') {
-      cache.model = await ort.InferenceSession.create('/models/heart.onnx');
+      cache.model = await ort.InferenceSession.create('/models/heart.onnx', options);
     } else if (modelName === 'liver') {
-      cache.scaler = await ort.InferenceSession.create('/models/liver_scaler.onnx');
-      cache.model = await ort.InferenceSession.create('/models/liver_disease_model.onnx');
+      cache.scaler = await ort.InferenceSession.create('/models/liver_scaler.onnx', options);
+      cache.model = await ort.InferenceSession.create('/models/liver_disease_model.onnx', options);
     } else if (modelName === 'kidney') {
-      cache.scaler = await ort.InferenceSession.create('/models/kidney_scaler.onnx');
-      cache.model = await ort.InferenceSession.create('/models/kidney_model.onnx');
+      cache.scaler = await ort.InferenceSession.create('/models/kidney_scaler.onnx', options);
+      cache.model = await ort.InferenceSession.create('/models/kidney_model.onnx', options);
     } else if (modelName === 'lungs') {
-      cache.scaler = await ort.InferenceSession.create('/models/lungs_scaler.onnx');
-      cache.model = await ort.InferenceSession.create('/models/lungs_model.onnx');
+      cache.scaler = await ort.InferenceSession.create('/models/lungs_scaler.onnx', options);
+      cache.model = await ort.InferenceSession.create('/models/lungs_model.onnx', options);
     }
-    console.log(`[ONNX WASM] Successfully loaded sessions for ${modelName}`);
+    console.log(`[ONNX] Successfully loaded sessions for ${modelName}`);
   } catch (err) {
-    console.error(`[ONNX WASM] Failed to load sessions for ${modelName}:`, err);
+    console.error(`[ONNX] Failed to load sessions for ${modelName}:`, err);
     throw err;
   }
 
