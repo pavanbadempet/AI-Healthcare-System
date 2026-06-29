@@ -547,6 +547,30 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
+                    {/* Expanded Waveform Monitors */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3 pt-3 border-t border-white/[0.04]">
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[9px] text-[var(--success)] font-bold uppercase tracking-wider">SpO2 Pleth Waveform</span>
+                          <span className="text-[10px] text-[var(--success)] font-mono font-bold">{bed.spo2}%</span>
+                        </div>
+                        <div className="h-12 w-full relative bg-black/25 rounded-lg p-1 border border-white/[0.01] overflow-hidden">
+                          <LiveECGMonitor hr={bed.hr} status={bed.status} mode="spo2" />
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[var(--bg-card)]/45 pointer-events-none" />
+                        </div>
+                      </div>
+                      <div>
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-[9px] text-[#8656f5] font-bold uppercase tracking-wider">Respiration (Resp) Waveform</span>
+                          <span className="text-[10px] text-[#8656f5] font-mono font-bold">{bed.rr} RPM</span>
+                        </div>
+                        <div className="h-12 w-full relative bg-black/25 rounded-lg p-1 border border-white/[0.01] overflow-hidden">
+                          <LiveECGMonitor hr={bed.hr} status={bed.status} mode="resp" />
+                          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[var(--bg-card)]/45 pointer-events-none" />
+                        </div>
+                      </div>
+                    </div>
+
                     <div className="bg-white/[0.01] border border-white/[0.03] p-2.5 rounded-lg font-mono text-[10px] text-[var(--text-dim)] space-y-1">
                       <div className="flex justify-between">
                         <span>HL7 MESSAGE:</span>

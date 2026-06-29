@@ -3,9 +3,10 @@ import { useEffect, useRef } from "react";
 interface LiveECGMonitorProps {
   hr: number;
   status: "Stable" | "Alert";
+  mode?: "ecg" | "spo2" | "resp";
 }
 
-export default function LiveECGMonitor({ hr, status }: LiveECGMonitorProps) {
+export default function LiveECGMonitor({ hr, status, mode = "ecg" }: LiveECGMonitorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
   const phaseRef = useRef<number>(0);
@@ -31,62 +32,99 @@ export default function LiveECGMonitor({ hr, status }: LiveECGMonitorProps) {
     }
 
     const isAlert = status === "Alert";
-    const accentColor = isAlert ? "#ff4a4a" : "#00bcd4";
-    const glowColor = isAlert ? "rgba(255, 74, 74, 0.4)" : "rgba(0, 188, 212, 0.4)";
+    
+    // Choose theme colors based on mode
+    let accentColor = "#00bcd4"; // Cyan for ECG Stable
+    let glowColor = "rgba(0, 188, 212, 0.4)";
+    if (mode === "ecg") {
+      accentColor = isAlert ? "#ff4a4a" : "#00bcd4";
+      glowColor = isAlert ? "rgba(255, 74, 74, 0.4)" : "rgba(0, 188, 212, 0.4)";
+    } else if (mode === "spo2") {
+      accentColor = "#00e676"; // Green for SpO2 Pleth
+      glowColor = "rgba(0, 230, 118, 0.4)";
+    } else if (mode === "resp") {
+      accentColor = "#8656f5"; // Purple for respiration
+      glowColor = "rgba(134, 86, 245, 0.4)";
+    }
 
     // Buffer to hold the trace points for scrolling
     const points: number[] = new Array(width).fill(50);
     let drawIndex = 0;
 
     const tick = () => {
-      // Advance phase based on heart rate
-      // 60 BPM = 1 beat per second. At 60fps, phase advances by (hr / 60) / 60 per frame.
+      // Calculate speed factor. Respiration runs much slower than ECG/SpO2.
+      let speedFactor = 1.0;
+      if (mode === "resp") {
+        speedFactor = 0.25; // 4x slower respiration cycles
+      }
+
       const bps = hr / 60;
-      const phaseDelta = bps / 60;
+      const phaseDelta = (bps / 60) * speedFactor;
       phaseRef.current = (phaseRef.current + phaseDelta) % 1;
 
       const p = phaseRef.current;
-      let ecgValue = 50; // baseline height (center)
+      let waveValue = 50; // baseline center height (0-100)
 
-      // Cardiac cycle waveform generator (P-Q-R-S-T)
-      if (p >= 0.0 && p < 0.08) {
-        // P-wave: small smooth bump
-        const t = (p - 0.0) / 0.08;
-        ecgValue -= Math.sin(t * Math.PI) * 4;
-      } else if (p >= 0.10 && p < 0.12) {
-        // Q-wave: brief dip
-        const t = (p - 0.10) / 0.02;
-        ecgValue += Math.sin(t * Math.PI) * 3;
-      } else if (p >= 0.12 && p < 0.16) {
-        // R-wave: sharp high spike
-        const t = (p - 0.12) / 0.04;
-        if (t < 0.5) {
-          ecgValue -= (t / 0.5) * 35;
-        } else {
-          ecgValue -= 35 - ((t - 0.5) / 0.5) * 47;
+      if (mode === "ecg") {
+        // --- Cardiac Cycle waveform (P-Q-R-S-T) ---
+        if (p >= 0.0 && p < 0.08) {
+          // P-wave
+          const t = (p - 0.0) / 0.08;
+          waveValue -= Math.sin(t * Math.PI) * 4;
+        } else if (p >= 0.10 && p < 0.12) {
+          // Q-wave
+          const t = (p - 0.10) / 0.02;
+          waveValue += Math.sin(t * Math.PI) * 3;
+        } else if (p >= 0.12 && p < 0.16) {
+          // R-wave
+          const t = (p - 0.12) / 0.04;
+          if (t < 0.5) {
+            waveValue -= (t / 0.5) * 35;
+          } else {
+            waveValue -= 35 - ((t - 0.5) / 0.5) * 47;
+          }
+        } else if (p >= 0.16 && p < 0.19) {
+          // S-wave
+          const t = (p - 0.16) / 0.03;
+          waveValue += 12 - (t * 12);
+        } else if (p >= 0.24 && p < 0.36) {
+          // T-wave
+          const t = (p - 0.24) / 0.12;
+          waveValue -= Math.sin(t * Math.PI) * 8;
         }
-      } else if (p >= 0.16 && p < 0.19) {
-        // S-wave: sharp dip returning to baseline
-        const t = (p - 0.16) / 0.03;
-        ecgValue += 12 - (t * 12);
-      } else if (p >= 0.24 && p < 0.36) {
-        // T-wave: medium smooth bump
-        const t = (p - 0.24) / 0.12;
-        ecgValue -= Math.sin(t * Math.PI) * 8;
+      } else if (mode === "spo2") {
+        // --- SpO2 Plethysmograph Waveform (Rapid Ascent, Dicrotic Notch, Slow Decay) ---
+        if (p >= 0.0 && p < 0.22) {
+          // Rapid ascent
+          const t = p / 0.22;
+          waveValue -= Math.sin(t * (Math.PI / 2)) * 32;
+        } else if (p >= 0.22 && p < 0.35) {
+          // Dicrotic notch (slight dip and bounce)
+          const t = (p - 0.22) / 0.13;
+          const notchDip = Math.sin(t * Math.PI) * 5;
+          waveValue -= 32 - notchDip;
+        } else if (p >= 0.35 && p < 0.85) {
+          // Slow decay back to baseline
+          const t = (p - 0.35) / 0.50;
+          waveValue -= 32 * (1 - t);
+        }
+      } else if (mode === "resp") {
+        // --- Respiration Waveform (Smooth Sine Wave) ---
+        waveValue -= Math.sin(p * 2 * Math.PI) * 20;
       }
 
       // Add a tiny bit of random high-frequency baseline noise for clinical realism
-      ecgValue += (Math.random() - 0.5) * 0.8;
+      waveValue += (Math.random() - 0.5) * 0.7;
 
       // Update the scrolling buffer
-      points[drawIndex] = ecgValue;
+      points[drawIndex] = waveValue;
       drawIndex = (drawIndex + 1) % width;
 
       // Clear canvas
       ctx.clearRect(0, 0, width, height);
 
       // Draw grid lines
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.025)";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.02)";
       ctx.lineWidth = 1;
       ctx.shadowBlur = 0; // Disable shadow for grid lines to keep them sharp
 
@@ -105,8 +143,8 @@ export default function LiveECGMonitor({ hr, status }: LiveECGMonitorProps) {
         ctx.stroke();
       }
 
-      // Draw the scrolling ECG line with sweep cursor effect
-      ctx.lineWidth = 2.5;
+      // Draw the scrolling signal line with sweep cursor effect
+      ctx.lineWidth = 2.2;
       ctx.strokeStyle = accentColor;
       ctx.shadowColor = glowColor;
       ctx.shadowBlur = 6;
@@ -144,7 +182,7 @@ export default function LiveECGMonitor({ hr, status }: LiveECGMonitorProps) {
       // Draw the bright glowing sweep cursor head
       if (hasArc) {
         ctx.beginPath();
-        ctx.arc(drawIndex, points[drawIndex], 3.5, 0, 2 * Math.PI);
+        ctx.arc(drawIndex, points[drawIndex], 3.2, 0, 2 * Math.PI);
         ctx.fillStyle = "#ffffff";
         ctx.shadowBlur = 10;
         ctx.shadowColor = accentColor;
@@ -161,7 +199,7 @@ export default function LiveECGMonitor({ hr, status }: LiveECGMonitorProps) {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [hr, status]);
+  }, [hr, status, mode]);
 
   return (
     <canvas
