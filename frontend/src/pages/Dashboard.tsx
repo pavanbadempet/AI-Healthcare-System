@@ -15,6 +15,7 @@ import OperationsCockpit from "@/components/operations/OperationsCockpit";
 import LiveECGMonitor from "@/components/operations/LiveECGMonitor";
 import { prefetchRoute } from "@/lib/prefetch";
 import { useTranslation } from "@/lib/i18n";
+import { useMaterialRipple } from "@/lib/ripple";
 
 interface ClinicalBed {
   bed: string;
@@ -30,6 +31,7 @@ interface ClinicalBed {
 export default function DashboardPage() {
   const { user } = useAuthStore();
   const { t } = useTranslation();
+  const { triggerRipple } = useMaterialRipple();
   const [records, setRecords] = useState<HealthRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const { data: telemetry, status: wsStatus } = useTelemetry();
@@ -255,12 +257,12 @@ export default function DashboardPage() {
         </div>
         <div className="flex items-center gap-2">
           <Link to="/patients" onMouseEnter={() => prefetchRoute('/patients')}>
-            <button className="btn btn-secondary text-xs uppercase tracking-wider flex items-center gap-1.5" aria-label="Open EMR Database">
+            <button onClick={triggerRipple} className="btn btn-secondary text-xs uppercase tracking-wider flex items-center gap-1.5" aria-label="Open EMR Database">
               <FileText size={13} /> {t.patientRegistry}
             </button>
           </Link>
           <Link to="/chat" onMouseEnter={() => prefetchRoute('/chat')}>
-            <button className="btn btn-primary text-xs uppercase tracking-wider flex items-center gap-1.5" aria-label="Engage AI Copilot">
+            <button onClick={triggerRipple} className="btn btn-primary text-xs uppercase tracking-wider flex items-center gap-1.5" aria-label="Engage AI Copilot">
               <Sparkles size={13} /> {t.engageCopilot}
             </button>
           </Link>
@@ -606,13 +608,13 @@ export default function DashboardPage() {
               </p>
               <div className="flex flex-col gap-2 mt-3">
                 <button 
-                  onClick={() => alert("Dispatching Code Blue response team to Bed 14C.")}
+                  onClick={(e) => { triggerRipple(e); alert("Dispatching Code Blue response team to Bed 14C."); }}
                   className="btn btn-danger text-[10px] py-1.5 px-3 uppercase tracking-wider font-bold w-full"
                 >
                   🚨 Send Emergency Team (Code Blue)
                 </button>
                 <button 
-                  onClick={() => alert("Awaiting physician confirmation.")}
+                  onClick={(e) => { triggerRipple(e); alert("Awaiting physician confirmation."); }}
                   className="btn btn-secondary text-[10px] py-1.5 px-3 uppercase tracking-wider font-bold w-full"
                 >
                   ❌ Stop Alarm / Dismiss
@@ -639,6 +641,7 @@ export default function DashboardPage() {
               {["7D", "30D", "90D"].map((range) => (
                 <button
                   key={range}
+                  onClick={triggerRipple}
                   className={`px-2 py-0.5 border text-[9px] font-bold tracking-wider rounded transition-colors ${
                     range === "30D"
                       ? "bg-[var(--accent-muted)] border-[var(--accent-border)] text-[var(--accent)]"
