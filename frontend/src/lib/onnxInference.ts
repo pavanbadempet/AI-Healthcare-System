@@ -22,7 +22,8 @@ async function getOrInitSession(modelName: string): Promise<ModelSessionCache> {
 
   const isWebGPUAvailable = typeof navigator !== 'undefined' && 'gpu' in navigator;
   const options: ort.InferenceSession.SessionOptions = {
-    executionProviders: isWebGPUAvailable ? ['webgpu', 'wasm'] : ['wasm']
+    executionProviders: isWebGPUAvailable ? ['webgpu', 'wasm'] : ['wasm'],
+    graphOptimizationLevel: 'all' // Enable graph optimizations (operator fusion, constant folding)
   };
 
   try {
@@ -42,6 +43,31 @@ async function getOrInitSession(modelName: string): Promise<ModelSessionCache> {
       cache.model = await ort.InferenceSession.create('/models/lungs_model.onnx', options);
     }
     console.log(`[ONNX] Successfully loaded sessions for ${modelName}`);
+
+    // JIT Warmup run to compile WebGPU shading pipelines and prevent runtime cold start delays
+    try {
+      const numFeatures = modelName === 'diabetes' || modelName === 'heart' ? 9
+                        : modelName === 'liver' ? 10
+                        : modelName === 'kidney' ? 24
+                        : 22; // lungs has 22 features
+      const dummyInput = new Float32Array(numFeatures).fill(0.0);
+      let runInput: any = dummyInput;
+
+      // If a scaler is present, warm it up first
+      if (cache.scaler) {
+        const dummyTensor = new ort.Tensor('float32', dummyInput, [1, numFeatures]);
+        const scalerOutputs = await cache.scaler.run({ [cache.scaler.inputNames[0]]: dummyTensor });
+        runInput = scalerOutputs[cache.scaler.outputNames[0]].data;
+      }
+
+      if (cache.model) {
+        const dummyTensor = new ort.Tensor('float32', runInput, [1, runInput.length]);
+        await cache.model.run({ [cache.model.inputNames[0]]: dummyTensor });
+        console.log(`[ONNX] WebGPU JIT warmup run completed for ${modelName}`);
+      }
+    } catch (warmupErr) {
+      console.warn(`[ONNX] Warmup run bypassed or failed for ${modelName}:`, warmupErr);
+    }
   } catch (err) {
     console.error(`[ONNX] Failed to load sessions for ${modelName}:`, err);
     throw err;
