@@ -12,8 +12,10 @@ import {
   type SyncAudit
 } from '@/lib/apiFederated';
 import { runFederatedSimulation } from '@/lib/api';
+import { useMaterialRipple } from '@/lib/ripple';
 
 export default function FederatedLearning() {
+  const { triggerRipple } = useMaterialRipple();
   const [stats, setStats] = useState<FederatedStats | null>(null);
   const [audits, setAudits] = useState<SyncAudit[]>([]);
   const [loading, setLoading] = useState(true);
@@ -138,7 +140,7 @@ export default function FederatedLearning() {
         </div>
 
         <button
-          onClick={() => loadData()}
+          onClick={(e) => { triggerRipple(e); loadData(); }}
           disabled={loading}
           className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-850 active:bg-slate-800 text-slate-300 font-medium rounded-xl border border-slate-800 transition-colors"
         >
@@ -285,6 +287,7 @@ export default function FederatedLearning() {
 
             <button
               type="submit"
+              onClick={triggerRipple}
               disabled={syncing || (stats ? stats.pending_count === 0 : false)}
               className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed font-medium rounded-xl transition-colors shadow-lg shadow-purple-600/10 mt-2"
             >
@@ -419,6 +422,7 @@ export default function FederatedLearning() {
 
             <button
               type="submit"
+              onClick={triggerRipple}
               disabled={simulating}
               className="w-full flex items-center justify-center gap-2 px-5 py-3 bg-purple-600 hover:bg-purple-700 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed font-medium rounded-xl transition-colors shadow-lg shadow-purple-600/10 mt-4"
             >
