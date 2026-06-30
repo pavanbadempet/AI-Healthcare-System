@@ -59,7 +59,7 @@ prometheus_client
 ruff
 
 # --- High-Performance System Optimization Extensions ---
-onnxruntime>=1.16.0
+onnxruntime>=1.27.0
 skl2onnx>=1.15.0
 onnxmltools>=1.11.0
 polars>=0.19.0
