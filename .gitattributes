@@ -1,1 +1,7 @@
+backend/*.onnx filter=lfs diff=lfs merge=lfs -text
+backend/*.pkl filter=lfs diff=lfs merge=lfs -text
+data/processed/*.parquet filter=lfs diff=lfs merge=lfs -text
+docs/assets/*.png filter=lfs diff=lfs merge=lfs -text
+frontend/public/*.png filter=lfs diff=lfs merge=lfs -text
+frontend/public/models/*.onnx filter=lfs diff=lfs merge=lfs -text
 data/raw/diabetes_large.csv filter=lfs diff=lfs merge=lfs -text
