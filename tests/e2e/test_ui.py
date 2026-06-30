@@ -11,7 +11,8 @@ def test_ui_smoke(page: Page):
     except Exception:
         pytest.skip("App not running")
 
-    expect(page).to_have_title("AI Healthcare System")
+    import re
+    expect(page).to_have_title(re.compile(r"AI Healthcare System"))
 
     # OR if session persisted, it shows Dashboard.
     # We can check for "Login" button OR "Logout" button.

@@ -69,13 +69,13 @@ def get_shap_values(model, input_vector, feature_names):
         explainer = shap.TreeExplainer(target_estimator)
         shap_values = explainer.shap_values(input_vector)
 
-        # Handle different SHAP output formats (binary class usually gives single array or list of two)
+        # Handle different SHAP output formats (binary class usually gives single array, list of two, or 3D array)
         if isinstance(shap_values, list):
             sv = shap_values[1][0] # Positive class
-        elif len(shap_values.shape) > 1 and shap_values.shape[1] > 1:
-             sv = shap_values[0][1] # Multiclass structure
+        elif len(shap_values.shape) == 3:
+            sv = shap_values[0, :, 1] # Positive class for 3D array (samples, features, classes)
         else:
-            sv = shap_values[0] # Single output
+            sv = shap_values[0] # Single output or 2D array of shape (samples, features)
 
         # Generate HTML Force Plot
         # shap.force_plot returns a Visualizer. .html() gets the string.
@@ -109,8 +109,8 @@ def generate_static_force_plot(model, input_vector, feature_names):
     if not SHAP_AVAILABLE or not MATPLOTLIB_AVAILABLE:
         return None
 
-    import io
     import base64
+    import io
 
     # Unwrap VotingClassifier and CalibratedClassifierCV
     target_estimator = model
@@ -131,8 +131,8 @@ def generate_static_force_plot(model, input_vector, feature_names):
 
         if isinstance(shap_values, list):
             sv = shap_values[1][0]
-        elif len(shap_values.shape) > 1 and shap_values.shape[1] > 1:
-             sv = shap_values[0][1]
+        elif len(shap_values.shape) == 3:
+            sv = shap_values[0, :, 1]
         else:
             sv = shap_values[0]
 
@@ -148,13 +148,13 @@ def generate_static_force_plot(model, input_vector, feature_names):
         )
 
         plt.tight_layout()
-        
+
         # Save to base64 buffer
         buf = io.BytesIO()
         plt.savefig(buf, format="png", dpi=150, bbox_inches="tight")
         plt.close(fig)
         buf.seek(0)
-        
+
         encoded = base64.b64encode(buf.read()).decode("utf-8")
         return f"data:image/png;base64,{encoded}"
     except Exception as e:

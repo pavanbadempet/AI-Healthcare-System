@@ -384,6 +384,17 @@ class ModelService:
                             if os.path.exists(scaler_onnx_path):
                                 entry.scaler_onnx_session = ort.InferenceSession(scaler_onnx_path)
 
+                        # Load pickle model alongside ONNX to support explainability (SHAP) and legacy prediction checks
+                        loaded_obj = self._load_pkl(model_pkl)
+                        if isinstance(loaded_obj, dict) and "model" in loaded_obj:
+                            entry.model = loaded_obj["model"]
+                            entry.imputer = loaded_obj.get("imputer")
+                            entry.conformal_q = loaded_obj.get("conformal_q")
+                        else:
+                            entry.model = loaded_obj
+                        if scaler_pkl:
+                            entry.scaler = self._load_pkl(scaler_pkl)
+
                         entry.model_version = "2.1.0-onnx"
                         entry.training_timestamp = "2026-06-19T00:00:00"
                         entry.model_card_id = f"card-{key}-v2"
