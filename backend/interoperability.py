@@ -15,10 +15,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from . import abdm, audit, auth, database, dicomweb, fhir, models, schemas, smart_fhir, terminology
+from . import abdm, audit, auth, database, dicomweb, fhir, licensing, models, schemas, smart_fhir, terminology
 from .facility_scope import users_share_facility_context
 
-router = APIRouter(prefix="/interop", tags=["Interoperability"])
+router = APIRouter(prefix="/interop", tags=["Interoperability"], dependencies=[Depends(licensing.enforce_license_tier("enterprise"))])
 
 STANDARDS_NOTE = "FHIR-style bundle for integration mapping; local validation and approvals are still required."
 CONSENT_SCOPE = "fhir_bundle_export"
