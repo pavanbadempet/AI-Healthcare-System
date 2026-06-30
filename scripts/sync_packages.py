@@ -17,6 +17,14 @@ PACKAGES = {
         "path": "packages/clinical-tabular",
         "url": "https://github.com/pavanbadempet/clinical-tabular.git",
     },
+    "clinical-fhir-abdm": {
+        "path": "packages/clinical-fhir-abdm",
+        "url": "https://github.com/pavanbadempet/clinical-fhir-abdm.git",
+    },
+    "clinical-rag-cache": {
+        "path": "packages/clinical-rag-cache",
+        "url": "https://github.com/pavanbadempet/clinical-rag-cache.git",
+    },
 }
 
 
