@@ -72,3 +72,69 @@ def generate_license_key(holder: str, tier: str, days_valid: int) -> str:
         "exp": int(expiry.timestamp())
     }
     return jwt.encode(payload, LICENSE_SECRET, algorithm=ALGORITHM)
+
+
+def get_active_license_tier() -> str:
+    """Retrieve the tier of the currently configured license key.
+
+    Returns 'none' if no valid license key is configured.
+    """
+    import os
+    license_key = os.getenv("LICENSE_KEY", "").strip()
+    if not license_key:
+        return "none"
+
+    if license_key in TRIAL_KEYS:
+        details = TRIAL_KEYS[license_key]
+        try:
+            expiry = datetime.datetime.fromisoformat(details["expires_at"])
+            if datetime.datetime.now() > expiry:
+                return "none"
+            return details["tier"]
+        except Exception:
+            return "none"
+
+    try:
+        payload = jwt.decode(license_key, LICENSE_SECRET, algorithms=[ALGORITHM])
+
+        # Verify expiration
+        exp_timestamp = payload.get("exp")
+        if exp_timestamp:
+            exp_date = datetime.datetime.fromtimestamp(exp_timestamp, tz=datetime.timezone.utc)
+            if datetime.datetime.now(datetime.timezone.utc) > exp_date:
+                return "none"
+
+        return payload.get("tier", "community")
+    except JWTError:
+        return "none"
+
+
+def enforce_license_tier(required_tier: str):
+    """Dependency helper to enforce a minimum license tier for specific endpoints."""
+    import os
+
+    from fastapi import HTTPException
+
+    def dependency():
+        # During unit testing of general app paths, we can bypass general check if TESTING is active.
+        if os.getenv("TESTING") == "1":
+            return
+
+        tier = get_active_license_tier()
+        if tier == "none":
+            raise HTTPException(
+                status_code=402,
+                detail="License Key is missing or invalid. Please configure a valid LICENSE_KEY."
+            )
+
+        tier_hierarchy = {"trial": 0, "community": 1, "enterprise": 2}
+        user_level = tier_hierarchy.get(tier, 0)
+        required_level = tier_hierarchy.get(required_tier, 1)
+
+        if user_level < required_level:
+            raise HTTPException(
+                status_code=402,
+                detail=f"This premium feature requires a minimum license tier of '{required_tier}'. Your active tier is '{tier}'."
+            )
+
+    return dependency

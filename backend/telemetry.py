@@ -17,11 +17,11 @@ from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisco
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
-from . import auth, database, models
+from . import auth, database, licensing, models
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(licensing.enforce_license_tier("enterprise"))])
 OPEN_ENCOUNTER_STATUSES = ("open", "in_progress")
 ACTIVE_ADMISSION_STATUSES = ("active",)
 OPEN_SIGNAL_STATUSES = ("open", "acknowledged")

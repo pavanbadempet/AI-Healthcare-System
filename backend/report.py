@@ -12,13 +12,13 @@ from typing import Any, Dict
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 
-from . import auth, database, models, pdf_service, vision_service
+from . import auth, database, licensing, models, pdf_service, vision_service
 
 # --- Logging ---
 # logging.basicConfig(level=logging.INFO) # Handled in main.py
 logger = logging.getLogger(__name__)
 
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(licensing.enforce_license_tier("community"))])
 REPORT_ANALYSIS_FAILURE_DETAIL = "Failed to analyze report"
 HEALTH_REPORT_FAILURE_DETAIL = "Failed to generate health report"
 REPORT_ANALYSIS_DISCLAIMER = (
