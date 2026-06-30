@@ -20,6 +20,9 @@ services:
       - ABDM_FHIR_SERVICE_URL=http://abdm-fhir-service:8003
       - DATABASE_URL=sqlite:////app/healthcare.db
       - LICENSE_KEY=CLINIC-TRIAL-2026
+      - GOOGLE_API_KEY
+      - SECRET_KEY
+      - HF_TOKEN
     volumes:
       - ./healthcare.db:/app/healthcare.db
       - ./backend:/app/backend
@@ -44,6 +47,7 @@ services:
       - MICROSERVICES_MODE=false
       - PREDICTION_SERVICE_URL=http://127.0.0.1:8001
       - LICENSE_KEY=CLINIC-TRIAL-2026
+      - HF_TOKEN
     volumes:
       - ./backend:/app/backend
       - ./models:/app/models
@@ -61,6 +65,8 @@ services:
       - MICROSERVICES_MODE=false
       - RAG_SERVICE_URL=http://127.0.0.1:8002
       - LICENSE_KEY=CLINIC-TRIAL-2026
+      - GOOGLE_API_KEY
+      - HF_TOKEN
     volumes:
       - ./backend:/app/backend
       - ./packages:/app/packages
