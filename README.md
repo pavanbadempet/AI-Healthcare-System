@@ -61,7 +61,7 @@ If you are a B2B SaaS founder or software developer building products that requi
         <li><strong>Price</strong>: <strong>$15.00</strong> (One-time purchase)</li>
         <li><strong>Deliverable</strong>: Instant access to private repository + package updates.</li>
       </ul>
-      <a href="https://polar.sh/shantanam/products/fastapi-license-gate"><strong>Get fastapi-license-gate on Polar &rarr;</strong></a>
+      <a href="https://buy.polar.sh/polar_cl_w8PFaGf5o3oSKktwAAwTfrixiTuZca6GYKI282MVHAa"><strong>Get fastapi-license-gate on Polar &rarr;</strong></a>
     </td>
     <td width="50%" valign="top">
       <h3>📊 clinical-tabular</h3>
@@ -71,7 +71,7 @@ If you are a B2B SaaS founder or software developer building products that requi
         <li><strong>Price</strong>: <strong>$15.00</strong> (One-time purchase)</li>
         <li><strong>Deliverable</strong>: Instant access to private repository + package updates.</li>
       </ul>
-      <a href="https://polar.sh/shantanam/products/clinical-tabular"><strong>Get clinical-tabular SDK on Polar &rarr;</strong></a>
+      <a href="https://buy.polar.sh/polar_cl_02v8Qs0oK1kzY9i7DR6zueACRGXfLd7OCSNLn3IcWJQ"><strong>Get clinical-tabular SDK on Polar &rarr;</strong></a>
     </td>
   </tr>
 </table>
