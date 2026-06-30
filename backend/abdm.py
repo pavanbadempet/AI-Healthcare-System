@@ -1,7 +1,10 @@
 import logging
+import os
 import sys
 from types import ModuleType
 from typing import Any, Optional
+
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -9,10 +12,6 @@ try:
     import clinical_fhir_abdm.abdm as _pkg_abdm
 except ImportError:
     _pkg_abdm = None
-
-
-import os
-import requests
 
 class _MicroservicesABDMSettings:
     def __init__(self, data):

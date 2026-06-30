@@ -1,7 +1,10 @@
 import logging
+import os
 import sys
 from types import ModuleType
 from typing import Any, Dict, List, Optional
+
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -9,10 +12,6 @@ try:
     import clinical_rag_cache.rag as _pkg_rag
 except ImportError:
     _pkg_rag = None
-
-
-import os
-import requests
 
 def _call_rag_add_checkup(user_id, record_id, record_type, data, prediction, timestamp, facility_id=None):
     service_url = os.environ.get("RAG_SERVICE_URL", "http://127.0.0.1:8002")

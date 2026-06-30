@@ -1,7 +1,10 @@
 import logging
+import os
 import sys
 from types import ModuleType
 from typing import Any
+
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -9,10 +12,6 @@ try:
     import clinical_rag_cache.prompt_registry as _pkg_prompts
 except ImportError:
     _pkg_prompts = None
-
-
-import os
-import requests
 
 def _call_get_prompt(name: str) -> str:
     service_url = os.environ.get("RAG_SERVICE_URL", "http://127.0.0.1:8002")
