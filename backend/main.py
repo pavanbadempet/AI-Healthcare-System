@@ -313,6 +313,7 @@ app.add_middleware(CORSMiddleware,
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=_load_allowed_hosts())
 app.add_middleware(middleware.RateLimitMiddleware)
 app.add_middleware(middleware.RequestTracingMiddleware)
+app.add_middleware(middleware.LicenseValidationMiddleware)
 app.add_middleware(middleware.APIVersioningMiddleware)
 
 # --- Routes (versioned under /v1) ---
