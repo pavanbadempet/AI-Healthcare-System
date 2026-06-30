@@ -1,0 +1,36 @@
+name: Sync to Hugging Face Spaces
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  sync-to-hf:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Initialize Git Config
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Prep Hugging Face Dockerfile
+        run: |
+          # Copy Hugging Face Dockerfile as the primary Dockerfile for deployment
+          cp Dockerfile.hf Dockerfile
+          git add Dockerfile
+          # Commit the Dockerfile if changed, otherwise ignore
+          git diff-index --quiet HEAD || git commit -m "deploy: Configure Dockerfile for Hugging Face Spaces [skip ci]"
+
+      - name: Push to Hugging Face Spaces
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+        run: |
+          # Push the clean main branch with LFS pointers directly to HF Spaces
+          git push --force https://pavanbadempet:$HF_TOKEN@huggingface.co/spaces/pavanbadempet/aio-health-backend HEAD:refs/heads/main
