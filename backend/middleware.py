@@ -182,7 +182,7 @@ class LicenseValidationMiddleware(BaseHTTPMiddleware):
     """Verifies that a valid cryptographic license key is provided in self-hosted deployments."""
 
     async def dispatch(self, request: Request, call_next):
-        if os.getenv("TESTING") == "true":
+        if os.getenv("TESTING") in ("1", "true"):
             return await call_next(request)
 
         path = request.url.path
