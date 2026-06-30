@@ -474,8 +474,26 @@ class ModelService:
 
     # ── Prediction ───────────────────────────────────────────────
 
+    def _call_prediction_service(self, model_name: str, data: Any) -> PredictionResult:
+        service_url = os.environ.get("PREDICTION_SERVICE_URL", "http://127.0.0.1:8001")
+        payload = data.model_dump() if hasattr(data, "model_dump") else (data.dict() if hasattr(data, "dict") else {k: v for k, v in data.__dict__.items() if not k.startswith("_")})
+        import requests
+        response = requests.post(f"{service_url}/predict/{model_name}", json=payload, timeout=10)
+        response.raise_for_status()
+        res_dict = response.json()
+        return PredictionResult(
+            prediction=res_dict["prediction"],
+            raw=res_dict["raw"],
+            confidence=res_dict.get("confidence"),
+            risk_level=res_dict.get("risk_level"),
+            disclaimer=res_dict.get("disclaimer", "")
+        )
+
     def predict_diabetes(self, data: Any) -> PredictionResult:
         """Predict diabetes risk from DiabetesInput schema."""
+        if os.environ.get("MICROSERVICES_MODE") == "true":
+            return self._call_prediction_service("diabetes", data)
+
         entry = self._entries["diabetes"]
         if not self.is_available("diabetes"):
             raise ValueError("Diabetes model not available")
@@ -506,6 +524,9 @@ class ModelService:
 
     def predict_heart(self, data: Any) -> PredictionResult:
         """Predict heart disease risk from HeartInput schema."""
+        if os.environ.get("MICROSERVICES_MODE") == "true":
+            return self._call_prediction_service("heart", data)
+
         entry = self._entries["heart"]
         if not self.is_available("heart"):
             raise ValueError("Heart model not available")
@@ -535,6 +556,9 @@ class ModelService:
 
     def predict_liver(self, data: Any) -> PredictionResult:
         """Predict liver disease risk from LiverInput schema."""
+        if os.environ.get("MICROSERVICES_MODE") == "true":
+            return self._call_prediction_service("liver", data)
+
         entry = self._entries["liver"]
         if not self.is_available("liver") or (not entry.scaler and entry.scaler_onnx_session is None):
             raise ValueError("Liver model or scaler not available")
@@ -581,6 +605,9 @@ class ModelService:
 
     def predict_kidney(self, data: Any) -> PredictionResult:
         """Predict kidney disease risk from KidneyInput schema."""
+        if os.environ.get("MICROSERVICES_MODE") == "true":
+            return self._call_prediction_service("kidney", data)
+
         entry = self._entries["kidney"]
         if not self.is_available("kidney") or (not entry.scaler and entry.scaler_onnx_session is None):
             raise ValueError("Kidney model or scaler not available")
@@ -619,6 +646,9 @@ class ModelService:
 
     def predict_lungs(self, data: Any) -> PredictionResult:
         """Predict lung/respiratory risk from LungInput schema."""
+        if os.environ.get("MICROSERVICES_MODE") == "true":
+            return self._call_prediction_service("lungs", data)
+
         entry = self._entries["lungs"]
         if not self.is_available("lungs") or (not entry.scaler and entry.scaler_onnx_session is None):
             raise ValueError("Lung model or scaler not available")

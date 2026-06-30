@@ -1,0 +1,101 @@
+# ============================================================
+# AI Healthcare System — Microservices Compose Orchestration
+# ============================================================
+# Usage:
+#   docker compose -f docker-compose.microservices.yml up --build
+# ============================================================
+
+services:
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: healthcare_api_gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - MICROSERVICES_MODE=true
+      - PREDICTION_SERVICE_URL=http://prediction-service:8001
+      - RAG_SERVICE_URL=http://rag-service:8002
+      - ABDM_FHIR_SERVICE_URL=http://abdm-fhir-service:8003
+      - DATABASE_URL=sqlite:////app/healthcare.db
+      - LICENSE_KEY=CLINIC-TRIAL-2026
+    volumes:
+      - ./healthcare.db:/app/healthcare.db
+      - ./backend:/app/backend
+    restart: unless-stopped
+    depends_on:
+      prediction-service:
+        condition: service_started
+      rag-service:
+        condition: service_started
+      abdm-fhir-service:
+        condition: service_started
+
+  prediction-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: healthcare_prediction_service
+    command: ["python", "microservices/prediction/app.py"]
+    ports:
+      - "8001:8001"
+    environment:
+      - MICROSERVICES_MODE=false
+      - PREDICTION_SERVICE_URL=http://127.0.0.1:8001
+      - LICENSE_KEY=CLINIC-TRIAL-2026
+    volumes:
+      - ./backend:/app/backend
+      - ./models:/app/models
+    restart: unless-stopped
+
+  rag-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: healthcare_rag_service
+    command: ["python", "microservices/rag/app.py"]
+    ports:
+      - "8002:8002"
+    environment:
+      - MICROSERVICES_MODE=false
+      - RAG_SERVICE_URL=http://127.0.0.1:8002
+      - LICENSE_KEY=CLINIC-TRIAL-2026
+    volumes:
+      - ./backend:/app/backend
+      - ./packages:/app/packages
+    restart: unless-stopped
+
+  abdm-fhir-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: healthcare_abdm_fhir_service
+    command: ["python", "microservices/abdm_fhir/app.py"]
+    ports:
+      - "8003:8003"
+    environment:
+      - MICROSERVICES_MODE=false
+      - ABDM_FHIR_SERVICE_URL=http://127.0.0.1:8003
+      - LICENSE_KEY=CLINIC-TRIAL-2026
+    volumes:
+      - ./backend:/app/backend
+      - ./packages:/app/packages
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        - NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
+        - VITE_PUBLIC_API_URL=http://127.0.0.1:8000
+    container_name: healthcare_microservices_frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
+      - VITE_PUBLIC_API_URL=http://127.0.0.1:8000
+    depends_on:
+      - api-gateway
+    restart: unless-stopped

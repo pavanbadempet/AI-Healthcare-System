@@ -11,8 +11,88 @@ except ImportError:
     _pkg_rag = None
 
 
+import os
+import requests
+
+def _call_rag_add_checkup(user_id, record_id, record_type, data, prediction, timestamp, facility_id=None):
+    service_url = os.environ.get("RAG_SERVICE_URL", "http://127.0.0.1:8002")
+    payload = {
+        "user_id": str(user_id),
+        "record_id": str(record_id),
+        "record_type": record_type,
+        "data": data,
+        "prediction": prediction,
+        "timestamp": timestamp,
+        "facility_id": facility_id
+    }
+    res = requests.post(f"{service_url}/rag/checkup", json=payload, timeout=10)
+    res.raise_for_status()
+    return True
+
+def _call_rag_add_interaction(user_id, interaction_id, role, content, timestamp, facility_id=None):
+    service_url = os.environ.get("RAG_SERVICE_URL", "http://127.0.0.1:8002")
+    payload = {
+        "user_id": str(user_id),
+        "interaction_id": str(interaction_id),
+        "role": role,
+        "content": content,
+        "timestamp": timestamp,
+        "facility_id": facility_id
+    }
+    res = requests.post(f"{service_url}/rag/interaction", json=payload, timeout=10)
+    res.raise_for_status()
+    return True
+
+def _call_rag_search(user_id, query, n_results=3, facility_id=None):
+    service_url = os.environ.get("RAG_SERVICE_URL", "http://127.0.0.1:8002")
+    payload = {
+        "user_id": str(user_id),
+        "query": query,
+        "n_results": n_results,
+        "facility_id": facility_id
+    }
+    res = requests.post(f"{service_url}/rag/search", json=payload, timeout=10)
+    res.raise_for_status()
+    return res.json()["results"]
+
+def _call_rag_delete(record_id):
+    service_url = os.environ.get("RAG_SERVICE_URL", "http://127.0.0.1:8002")
+    res = requests.delete(f"{service_url}/rag/record/{record_id}", timeout=10)
+    res.raise_for_status()
+    return True
+
+class _MicroservicesVectorStore:
+    def add(self, text, metadata, record_id):
+        service_url = os.environ.get("RAG_SERVICE_URL", "http://127.0.0.1:8002")
+        payload = {
+            "text": text,
+            "metadata": metadata,
+            "record_id": record_id
+        }
+        res = requests.post(f"{service_url}/rag/add", json=payload, timeout=10)
+        res.raise_for_status()
+
+    def delete(self, record_id):
+        return _call_rag_delete(record_id)
+
+def _call_get_vector_store():
+    return _MicroservicesVectorStore()
+
+
 class _RagModule(ModuleType):
     def __getattr__(self, name: str) -> Any:
+        if os.environ.get("MICROSERVICES_MODE") == "true":
+            if name == "add_checkup_to_db":
+                return _call_rag_add_checkup
+            elif name == "add_interaction_to_db":
+                return _call_rag_add_interaction
+            elif name == "search_similar_records":
+                return _call_rag_search
+            elif name == "delete_record_from_db":
+                return _call_rag_delete
+            elif name == "get_vector_store":
+                return _call_get_vector_store
+
         if _pkg_rag is not None and hasattr(_pkg_rag, name):
             return getattr(_pkg_rag, name)
         raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
