@@ -16,16 +16,9 @@ venv/
 *.db-wal
 *.sqlite3
 
-# Models (general pkl ignored, but production models are tracked)
+# Models (completely ignored in git - loaded via download_models.py)
 *.pkl
-!backend/diabetes_model.pkl
-!backend/heart_disease_model.pkl
-!backend/kidney_model.pkl
-!backend/kidney_scaler.pkl
-!backend/liver_disease_model.pkl
-!backend/liver_scaler.pkl
-!backend/lungs_model.pkl
-!backend/lungs_scaler.pkl
+*.onnx
 
 # Logs & Temp
 *.log
