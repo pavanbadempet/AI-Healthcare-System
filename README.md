@@ -47,6 +47,35 @@
 
 </div>
 
+## 🔑 Commercial Developer Packages (Polar.sh)
+
+If you are a B2B SaaS founder or software developer building products that require offline cryptographic licensing or calibrated machine learning pipelines, you can acquire our production-ready standalone packages directly on **Polar.sh** with zero-config delivery:
+
+<table>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>🔑 fastapi-license-gate</h3>
+      <p>A plug-and-play middleware and token verification system for FastAPI apps that need offline, cryptographically signed customer license verification.</p>
+      <ul>
+        <li><strong>Features</strong>: RSA/HS256 signed JWT validation, tier-based access control, local trial validation key map, configurable exact and prefix path exclusions.</li>
+        <li><strong>Price</strong>: <strong>$15.00</strong> (One-time purchase)</li>
+        <li><strong>Deliverable</strong>: Instant access to private repository + package updates.</li>
+      </ul>
+      <a href="https://polar.sh/shantanam/products/fastapi-license-gate"><strong>Get fastapi-license-gate on Polar &rarr;</strong></a>
+    </td>
+    <td width="50%" valign="top">
+      <h3>📊 clinical-tabular</h3>
+      <p>A production-ready diagnostic support ML SDK containing calibrated classification models, dataset prep, and conformal prediction confidence bounds.</p>
+      <ul>
+        <li><strong>Features</strong>: Calibrated ML diagnostic pipelines, SHAP explainers, Tabular MLP / FT-Transformer architectures, parallelized testing suite.</li>
+        <li><strong>Price</strong>: <strong>$15.00</strong> (One-time purchase)</li>
+        <li><strong>Deliverable</strong>: Instant access to private repository + package updates.</li>
+      </ul>
+      <a href="https://polar.sh/shantanam/products/clinical-tabular"><strong>Get clinical-tabular SDK on Polar &rarr;</strong></a>
+    </td>
+  </tr>
+</table>
+
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## ✨ Why Choose AI Healthcare System?
