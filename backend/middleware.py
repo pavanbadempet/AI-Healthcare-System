@@ -176,3 +176,38 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             request_id,
         )
         return response
+
+
+class LicenseValidationMiddleware(BaseHTTPMiddleware):
+    """Verifies that a valid cryptographic license key is provided in self-hosted deployments."""
+
+    async def dispatch(self, request: Request, call_next):
+        if os.getenv("TESTING") == "true":
+            return await call_next(request)
+
+        path = request.url.path
+        # Exclude infrastructure, docs, authentication, and health checks
+        # So users can always access docs, sign in, or fetch tokens to activate.
+        if (
+            path in ["/", "/healthz", "/docs", "/openapi.json", "/redoc", "/v1/signup", "/v1/token", "/v1/forgot-password", "/v1/reset-password"]
+            or path.startswith("/assets")
+            or path.startswith("/static")
+        ):
+            return await call_next(request)
+
+        license_key = os.getenv("LICENSE_KEY", "").strip()
+        if not license_key:
+            return JSONResponse(
+                status_code=402,
+                content={"detail": "License Key is missing. Please set the LICENSE_KEY environment variable to activate the platform."}
+            )
+
+        from . import licensing
+        is_valid, reason = licensing.verify_license_key(license_key)
+        if not is_valid:
+            return JSONResponse(
+                status_code=402,
+                content={"detail": f"License Key is invalid or expired: {reason}"}
+            )
+
+        return await call_next(request)

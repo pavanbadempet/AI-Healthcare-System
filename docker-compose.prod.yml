@@ -1,0 +1,60 @@
+# ============================================================
+# AI Healthcare System — Production/Clinic Self-Hosted Setup
+# ============================================================
+# Installation:
+#   1. Install Docker Desktop (https://www.docker.com/products/docker-desktop)
+#   2. Download this file and save it as 'docker-compose.yml'
+#   3. Create a '.env' file in the same folder and set:
+#        LICENSE_KEY=your_clinic_license_key_here
+#   4. Run: docker compose up -d
+# ============================================================
+
+version: '3.8'
+
+services:
+  backend:
+    image: ghcr.io/pavanbadempet/ai-healthcare-system-backend:latest
+    container_name: clinic_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=sqlite:///app/healthcare.db
+      - SECRET_KEY=change_this_to_a_secure_random_key_in_production
+      - ALLOWED_HOSTS=127.0.0.1,localhost,backend
+      - CORS_ORIGINS=http://127.0.0.1:3000,http://localhost:3000
+      - LICENSE_KEY=${LICENSE_KEY}
+    volumes:
+      # Persists the clinic database in the folder where they run this file
+      - ./healthcare.db:/app/healthcare.db
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/healthz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: "2.0"
+        reservations:
+          memory: 512M
+          cpus: "0.5"
+
+  frontend:
+    image: ghcr.io/pavanbadempet/ai-healthcare-system-frontend:latest
+    container_name: clinic_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 128M
+          cpus: "0.25"
