@@ -1,7 +1,10 @@
 import logging
+import os
 import sys
 from types import ModuleType
 from typing import Any, Iterable
+
+import requests
 
 logger = logging.getLogger(__name__)
 
@@ -9,10 +12,6 @@ try:
     import clinical_fhir_abdm.fhir as _pkg_fhir
 except ImportError:
     _pkg_fhir = None
-
-
-import os
-import requests
 
 def _call_fhir_patient(patient):
     service_url = os.environ.get("ABDM_FHIR_SERVICE_URL", "http://127.0.0.1:8003")
