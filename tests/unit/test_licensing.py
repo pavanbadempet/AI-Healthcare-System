@@ -83,33 +83,51 @@ def test_license_tier_retrieval():
 @patch.dict(os.environ, {"TESTING": ""})
 def test_tier_restrictions_on_endpoints():
     """Verify that different tiers block/allow endpoints based on hierarchy."""
-    # Trial tier: should fail on report analysis (requires community) and telemetry (requires enterprise)
+    # Trial tier: should fail on report, chat, explanation, telemetry and interop
     with patch.dict(os.environ, {"LICENSE_KEY": "CLINIC-TRIAL-2026"}):
-        # We try to get snapshot/telemetry (requires enterprise)
-        resp1 = client.get("/v1/telemetry/snapshot")
-        assert resp1.status_code == 402
-        assert "requires a minimum license tier of 'enterprise'" in resp1.json()["detail"]
+        # Telemetry (requires enterprise) -> fails
+        resp = client.get("/v1/telemetry/snapshot")
+        assert resp.status_code == 402
 
-        # Report endpoint requires community
-        resp2 = client.post("/v1/analyze/report")
-        assert resp2.status_code == 402
-        assert "requires a minimum license tier of 'community'" in resp2.json()["detail"]
+        # Interop (requires enterprise) -> fails
+        resp = client.get("/v1/interop/export/patient")
+        assert resp.status_code == 402
 
-    # Community tier key: should pass report but fail telemetry
+        # Explanation (requires enterprise) -> fails
+        resp = client.post("/v1/explain/")
+        assert resp.status_code == 402
+
+        # Report endpoint (requires community) -> fails
+        resp = client.post("/v1/analyze/report")
+        assert resp.status_code == 402
+
+        # Chat suggestions (requires community) -> fails
+        resp = client.get("/v1/chat/suggestions")
+        assert resp.status_code == 402
+
+    # Community tier key: should pass report & chat but fail telemetry, interop & explanation
     community_key = licensing.generate_license_key("Apollo", "community", 30)
     with patch.dict(os.environ, {"LICENSE_KEY": community_key}):
         # Telemetry fails
-        resp1 = client.get("/v1/telemetry/snapshot")
-        assert resp1.status_code == 402
+        assert client.get("/v1/telemetry/snapshot").status_code == 402
 
-        # Report (requires community) passes the licensing check.
-        # Note: it might return a 422 Unprocessable Entity because we didn't send a file, but NOT a 402 licensing block!
-        resp2 = client.post("/v1/analyze/report")
-        assert resp2.status_code != 402
+        # Interop fails
+        assert client.get("/v1/interop/export/patient").status_code == 402
 
-    # Enterprise tier key: should pass both licensing checks
+        # Explanation fails
+        assert client.post("/v1/explain/").status_code == 402
+
+        # Report (requires community) passes
+        assert client.post("/v1/analyze/report").status_code != 402
+
+        # Chat (requires community) passes (might fail on auth or something else but not 402)
+        assert client.get("/v1/chat/suggestions").status_code != 402
+
+    # Enterprise tier key: should pass all licensing checks
     enterprise_key = licensing.generate_license_key("Apollo", "enterprise", 30)
     with patch.dict(os.environ, {"LICENSE_KEY": enterprise_key}):
-        # Telemetry check passes (doesn't return 402)
-        resp1 = client.get("/v1/telemetry/snapshot")
-        assert resp1.status_code != 402
+        assert client.get("/v1/telemetry/snapshot").status_code != 402
+        assert client.get("/v1/interop/export/patient").status_code != 402
+        assert client.post("/v1/explain/").status_code != 402
+        assert client.post("/v1/analyze/report").status_code != 402
+        assert client.get("/v1/chat/suggestions").status_code != 402

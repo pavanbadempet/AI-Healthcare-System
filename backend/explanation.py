@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from fastapi.params import Depends as DependsParam
 from pydantic import BaseModel
 
-from . import auth, core_ai, models
+from . import auth, core_ai, licensing, models
 
 # Load Env
 load_dotenv()
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 # AI inference is now managed via core_ai.generate()
 
-router = APIRouter(prefix="/explain", tags=["Explanation"])
+router = APIRouter(prefix="/explain", tags=["Explanation"], dependencies=[Depends(licensing.enforce_license_tier("enterprise"))])
 
 class ExplanationRequest(BaseModel):
     prediction_type: str  # "Diabetes", "Heart Disease"

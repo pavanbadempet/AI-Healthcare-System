@@ -9,10 +9,10 @@ from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from . import agent, audit, auth, database, models, pdf_generator, rag, schemas
+from . import agent, audit, auth, database, licensing, models, pdf_generator, rag, schemas
 
 logger = logging.getLogger(__name__)
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(licensing.enforce_license_tier("community"))])
 HEALTH_REPORT_FAILURE_DETAIL = "Failed to generate health report"
 CHAT_MEDICAL_DISCLAIMER = (
     "This is AI-generated information and is not a medical diagnosis. "

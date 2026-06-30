@@ -27,7 +27,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from . import auth, core_ai, database, models
+from . import auth, core_ai, database, licensing, models
 from .chat_context import build_chat_context, get_suggested_questions
 from .prompt_registry import get_prompt
 
@@ -41,7 +41,7 @@ STREAM_MEDICAL_DISCLAIMER = (
     "Please consult a qualified healthcare professional for medical decisions or emergencies."
 )
 
-router = APIRouter(prefix="/chat", tags=["Streaming Chat"])
+router = APIRouter(prefix="/chat", tags=["Streaming Chat"], dependencies=[Depends(licensing.enforce_license_tier("community"))])
 
 
 class StreamChatMessage(BaseModel):
