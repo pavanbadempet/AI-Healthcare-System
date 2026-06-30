@@ -31,7 +31,7 @@ scikit-learn>=1.4.2
 # Optional — ANN vector backend; falls back to SimpleVectorStore when absent
 turbovec>=0.5.0
 joblib>=1.5.3
-torch>=2.12.0
+torch>=2.12.1
 xgboost>=2.0.3
 lightgbm>=4.6.0
 shap>=0.51.0
