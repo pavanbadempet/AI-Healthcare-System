@@ -17,11 +17,11 @@
         "pii",
         "users"
       ],
-      "sla_hours": 24,
+      "sla_hours": 24.0,
       "freshness_field": "timestamp",
-      "quality_score": 1,
-      "created_at": "2026-06-19T15:23:54.424276",
-      "updated_at": "2026-06-19T15:23:54.424276",
+      "quality_score": 1.0,
+      "created_at": "2026-06-30T12:34:48.175349+00:00",
+      "updated_at": "2026-06-30T12:34:48.175349+00:00",
       "row_count": 0,
       "size_bytes": 0,
       "location": "",
@@ -43,11 +43,11 @@
         "bronze",
         "clinical"
       ],
-      "sla_hours": 24,
+      "sla_hours": 24.0,
       "freshness_field": "timestamp",
-      "quality_score": 1,
-      "created_at": "2026-06-19T15:23:54.681184",
-      "updated_at": "2026-06-19T15:23:54.681184",
+      "quality_score": 1.0,
+      "created_at": "2026-06-30T12:34:48.175349+00:00",
+      "updated_at": "2026-06-30T12:34:48.175349+00:00",
       "row_count": 0,
       "size_bytes": 0,
       "location": "",
@@ -69,11 +69,11 @@
         "bronze",
         "telemetry"
       ],
-      "sla_hours": 24,
+      "sla_hours": 24.0,
       "freshness_field": "timestamp",
-      "quality_score": 1,
-      "created_at": "2026-06-19T15:23:54.937518",
-      "updated_at": "2026-06-19T15:23:54.937518",
+      "quality_score": 1.0,
+      "created_at": "2026-06-30T12:34:48.175349+00:00",
+      "updated_at": "2026-06-30T12:34:48.175349+00:00",
       "row_count": 0,
       "size_bytes": 0,
       "location": "",
@@ -95,11 +95,11 @@
         "bronze",
         "clinical"
       ],
-      "sla_hours": 24,
+      "sla_hours": 24.0,
       "freshness_field": "timestamp",
-      "quality_score": 1,
-      "created_at": "2026-06-19T15:23:55.190080",
-      "updated_at": "2026-06-19T15:23:55.190080",
+      "quality_score": 1.0,
+      "created_at": "2026-06-30T12:34:48.175349+00:00",
+      "updated_at": "2026-06-30T12:34:48.175349+00:00",
       "row_count": 0,
       "size_bytes": 0,
       "location": "",
@@ -121,11 +121,11 @@
         "bronze",
         "pharmacy"
       ],
-      "sla_hours": 24,
+      "sla_hours": 24.0,
       "freshness_field": "timestamp",
-      "quality_score": 1,
-      "created_at": "2026-06-19T15:23:55.444612",
-      "updated_at": "2026-06-19T15:23:55.444612",
+      "quality_score": 1.0,
+      "created_at": "2026-06-30T12:34:48.175349+00:00",
+      "updated_at": "2026-06-30T12:34:48.175349+00:00",
       "row_count": 0,
       "size_bytes": 0,
       "location": "",
@@ -146,11 +146,11 @@
         "bronze",
         "finance"
       ],
-      "sla_hours": 24,
+      "sla_hours": 24.0,
       "freshness_field": "timestamp",
-      "quality_score": 1,
-      "created_at": "2026-06-19T15:23:55.702456",
-      "updated_at": "2026-06-19T15:23:55.702456",
+      "quality_score": 1.0,
+      "created_at": "2026-06-30T12:34:48.175349+00:00",
+      "updated_at": "2026-06-30T12:34:48.175349+00:00",
       "row_count": 0,
       "size_bytes": 0,
       "location": "",
@@ -173,11 +173,11 @@
         "ml",
         "features"
       ],
-      "sla_hours": 12,
+      "sla_hours": 12.0,
       "freshness_field": "timestamp",
-      "quality_score": 1,
-      "created_at": "2026-06-19T15:23:55.955270",
-      "updated_at": "2026-06-19T15:23:55.955270",
+      "quality_score": 1.0,
+      "created_at": "2026-06-30T12:34:48.175349+00:00",
+      "updated_at": "2026-06-30T12:34:48.175349+00:00",
       "row_count": 0,
       "size_bytes": 0,
       "location": "",
@@ -200,11 +200,11 @@
         "ml",
         "features"
       ],
-      "sla_hours": 12,
+      "sla_hours": 12.0,
       "freshness_field": "timestamp",
-      "quality_score": 1,
-      "created_at": "2026-06-19T15:23:56.213530",
-      "updated_at": "2026-06-19T15:23:56.213530",
+      "quality_score": 1.0,
+      "created_at": "2026-06-30T12:34:48.175349+00:00",
+      "updated_at": "2026-06-30T12:34:48.175349+00:00",
       "row_count": 0,
       "size_bytes": 0,
       "location": "",
@@ -226,11 +226,11 @@
         "analytics",
         "dashboard"
       ],
-      "sla_hours": 6,
+      "sla_hours": 6.0,
       "freshness_field": "timestamp",
-      "quality_score": 1,
-      "created_at": "2026-06-19T15:23:56.465946",
-      "updated_at": "2026-06-19T15:23:56.465946",
+      "quality_score": 1.0,
+      "created_at": "2026-06-30T12:34:48.175349+00:00",
+      "updated_at": "2026-06-30T12:34:48.175349+00:00",
       "row_count": 0,
       "size_bytes": 0,
       "location": "",
@@ -252,8 +252,8 @@
       "sla_hours": 24.0,
       "freshness_field": "timestamp",
       "quality_score": 0.98,
-      "created_at": "2026-06-23T19:49:34.208974+00:00",
-      "updated_at": "2026-06-23T19:49:34.222708+00:00",
+      "created_at": "2026-06-30T12:34:48.239779+00:00",
+      "updated_at": "2026-06-30T12:34:48.256954+00:00",
       "row_count": 0,
       "size_bytes": 0,
       "location": "",
@@ -261,6 +261,14 @@
     }
   },
   "lineage": {
+    "patient_accounts": {
+      "upstream": [],
+      "downstream": [
+        "test_catalog_dataset",
+        "gold_health_insights"
+      ],
+      "column_lineage": {}
+    },
     "silver_diabetes": {
       "upstream": [
         "patient_accounts"
@@ -292,7 +300,8 @@
       ],
       "downstream": [
         "gold_health_insights"
-      ]
+      ],
+      "column_lineage": {}
     },
     "gold_health_insights": {
       "upstream": [
@@ -318,13 +327,6 @@
           "transform": "anonymized"
         }
       }
-    },
-    "patient_accounts": {
-      "upstream": [],
-      "downstream": [
-        "test_catalog_dataset",
-        "gold_health_insights"
-      ]
     },
     "test_catalog_dataset": {
       "upstream": [
