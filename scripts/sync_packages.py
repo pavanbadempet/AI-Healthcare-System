@@ -79,8 +79,7 @@ def main():
                 continue
 
             print(f"Subtree split SHA: {split_sha}")
-            # Force push the split commit directly to the remote repository
-            push_cmd = ["git", "push", config["url"], f"{split_sha}:main", "--force"]
+            push_cmd = ["git", "push", config["url"], f"{split_sha}:refs/heads/main", "--force"]
             if run_command(push_cmd):
                 print(f"[OK] Successfully synced '{name}' via force push!")
             else:
