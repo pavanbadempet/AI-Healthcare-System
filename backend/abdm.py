@@ -11,8 +11,73 @@ except ImportError:
     _pkg_abdm = None
 
 
+import os
+import requests
+
+class _MicroservicesABDMSettings:
+    def __init__(self, data):
+        self.client_id = data["client_id"]
+        self.client_secret = data["client_secret"]
+        self.abdm_url = data["abdm_url"]
+        self.consent_request_path = data["consent_request_path"]
+        self._configured = data["configured"]
+        self._missing_keys = data["missing_keys"]
+
+    def configured_for_submission(self) -> bool:
+        return self._configured
+
+    def missing_for_submission(self) -> list[str]:
+        return self._missing_keys
+
+def _call_abdm_get_settings():
+    service_url = os.environ.get("ABDM_FHIR_SERVICE_URL", "http://127.0.0.1:8003")
+    res = requests.get(f"{service_url}/abdm/settings", timeout=10)
+    res.raise_for_status()
+    return _MicroservicesABDMSettings(res.json())
+
+def _call_abdm_get_readiness():
+    service_url = os.environ.get("ABDM_FHIR_SERVICE_URL", "http://127.0.0.1:8003")
+    res = requests.get(f"{service_url}/abdm/readiness", timeout=10)
+    res.raise_for_status()
+    return res.json()
+
+def _call_abdm_normalize_consent_callback(payload):
+    service_url = os.environ.get("ABDM_FHIR_SERVICE_URL", "http://127.0.0.1:8003")
+    res = requests.post(f"{service_url}/abdm/consent/callback", json=payload, timeout=10)
+    res.raise_for_status()
+    return res.json()
+
+def _call_abdm_prepare_consent_request(
+    patient_abha_address, purpose_code, hi_types, date_from, date_to, data_erase_at, requester_id, consent_manager_id=None, transport=None
+):
+    service_url = os.environ.get("ABDM_FHIR_SERVICE_URL", "http://127.0.0.1:8003")
+    payload = {
+        "patient_abha_address": patient_abha_address,
+        "purpose_code": purpose_code,
+        "hi_types": hi_types,
+        "date_from": str(date_from) if date_from else None,
+        "date_to": str(date_to) if date_to else None,
+        "data_erase_at": str(data_erase_at) if data_erase_at else None,
+        "requester_id": requester_id,
+        "consent_manager_id": consent_manager_id
+    }
+    res = requests.post(f"{service_url}/abdm/consent/request", json=payload, timeout=10)
+    res.raise_for_status()
+    return res.json()
+
+
 class _AbdmModule(ModuleType):
     def __getattr__(self, name: str) -> Any:
+        if os.environ.get("MICROSERVICES_MODE") == "true":
+            if name == "get_settings":
+                return _call_abdm_get_settings
+            elif name == "get_readiness":
+                return _call_abdm_get_readiness
+            elif name == "normalize_consent_callback":
+                return _call_abdm_normalize_consent_callback
+            elif name == "prepare_consent_request":
+                return _call_abdm_prepare_consent_request
+
         if _pkg_abdm is not None and hasattr(_pkg_abdm, name):
             return getattr(_pkg_abdm, name)
         raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

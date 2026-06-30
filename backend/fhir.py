@@ -11,8 +11,94 @@ except ImportError:
     _pkg_fhir = None
 
 
+import os
+import requests
+
+def _call_fhir_patient(patient):
+    service_url = os.environ.get("ABDM_FHIR_SERVICE_URL", "http://127.0.0.1:8003")
+    data = {k: str(v) for k, v in patient.__dict__.items() if not k.startswith("_")}
+    res = requests.post(f"{service_url}/fhir/patient", json={"patient": data}, timeout=10)
+    res.raise_for_status()
+    return res.json()
+
+def _call_fhir_encounter(encounter, patient_id):
+    service_url = os.environ.get("ABDM_FHIR_SERVICE_URL", "http://127.0.0.1:8003")
+    data = {k: str(v) for k, v in encounter.__dict__.items() if not k.startswith("_")}
+    res = requests.post(f"{service_url}/fhir/encounter", json={"encounter": data, "patient_id": patient_id}, timeout=10)
+    res.raise_for_status()
+    return res.json()
+
+def _call_fhir_observation(observation, patient_id):
+    service_url = os.environ.get("ABDM_FHIR_SERVICE_URL", "http://127.0.0.1:8003")
+    data = {k: str(v) for k, v in observation.__dict__.items() if not k.startswith("_")}
+    res = requests.post(f"{service_url}/fhir/observation", json={"observation": data, "patient_id": patient_id}, timeout=10)
+    res.raise_for_status()
+    return res.json()
+
+def _call_fhir_diagnostic_report(result, patient_id):
+    service_url = os.environ.get("ABDM_FHIR_SERVICE_URL", "http://127.0.0.1:8003")
+    data = {k: str(v) for k, v in result.__dict__.items() if not k.startswith("_")}
+    res = requests.post(f"{service_url}/fhir/diagnostic_report", json={"result": data, "patient_id": patient_id}, timeout=10)
+    res.raise_for_status()
+    return res.json()
+
+def _call_fhir_medication_request(prescription, patient_id):
+    service_url = os.environ.get("ABDM_FHIR_SERVICE_URL", "http://127.0.0.1:8003")
+    data = {k: str(v) for k, v in prescription.__dict__.items() if not k.startswith("_")}
+    res = requests.post(f"{service_url}/fhir/medication_request", json={"prescription": data, "patient_id": patient_id}, timeout=10)
+    res.raise_for_status()
+    return res.json()
+
+def _call_fhir_invoice(invoice, patient_id):
+    service_url = os.environ.get("ABDM_FHIR_SERVICE_URL", "http://127.0.0.1:8003")
+    data = {k: str(v) for k, v in invoice.__dict__.items() if not k.startswith("_")}
+    res = requests.post(f"{service_url}/fhir/invoice", json={"invoice": data, "patient_id": patient_id}, timeout=10)
+    res.raise_for_status()
+    return res.json()
+
+def _call_fhir_care_event(event, patient_id):
+    service_url = os.environ.get("ABDM_FHIR_SERVICE_URL", "http://127.0.0.1:8003")
+    data = {k: str(v) for k, v in event.__dict__.items() if not k.startswith("_")}
+    res = requests.post(f"{service_url}/fhir/care_event", json={"event": data, "patient_id": patient_id}, timeout=10)
+    res.raise_for_status()
+    return res.json()
+
+def _call_fhir_build_bundle(resources, timestamp=None):
+    service_url = os.environ.get("ABDM_FHIR_SERVICE_URL", "http://127.0.0.1:8003")
+    res = requests.post(f"{service_url}/fhir/build_bundle", json={"resources": list(resources)}, timeout=10)
+    res.raise_for_status()
+    return res.json()
+
+def _call_fhir_audit_event(audit_log):
+    service_url = os.environ.get("ABDM_FHIR_SERVICE_URL", "http://127.0.0.1:8003")
+    data = {k: str(v) for k, v in audit_log.__dict__.items() if not k.startswith("_")}
+    res = requests.post(f"{service_url}/fhir/audit_event", json={"audit_log": data}, timeout=10)
+    res.raise_for_status()
+    return res.json()
+
+
 class _FhirModule(ModuleType):
     def __getattr__(self, name: str) -> Any:
+        if os.environ.get("MICROSERVICES_MODE") == "true":
+            if name == "patient_resource":
+                return _call_fhir_patient
+            elif name == "encounter_resource":
+                return _call_fhir_encounter
+            elif name == "observation_resource":
+                return _call_fhir_observation
+            elif name == "diagnostic_report_resource":
+                return _call_fhir_diagnostic_report
+            elif name == "medication_request_resource":
+                return _call_fhir_medication_request
+            elif name == "invoice_resource":
+                return _call_fhir_invoice
+            elif name == "care_event_resource":
+                return _call_fhir_care_event
+            elif name == "build_bundle":
+                return _call_fhir_build_bundle
+            elif name == "audit_event_resource":
+                return _call_fhir_audit_event
+
         if _pkg_fhir is not None and hasattr(_pkg_fhir, name):
             return getattr(_pkg_fhir, name)
         raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

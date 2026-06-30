@@ -11,8 +11,22 @@ except ImportError:
     _pkg_prompts = None
 
 
+import os
+import requests
+
+def _call_get_prompt(name: str) -> str:
+    service_url = os.environ.get("RAG_SERVICE_URL", "http://127.0.0.1:8002")
+    res = requests.get(f"{service_url}/prompt/get", params={"name": name}, timeout=10)
+    res.raise_for_status()
+    return res.json()["prompt"]
+
+
 class _PromptModule(ModuleType):
     def __getattr__(self, name: str) -> Any:
+        if os.environ.get("MICROSERVICES_MODE") == "true":
+            if name == "get_prompt":
+                return _call_get_prompt
+
         if _pkg_prompts is not None and hasattr(_pkg_prompts, name):
             return getattr(_pkg_prompts, name)
         raise AttributeError(f"module '{__name__}' has no attribute '{name}'")

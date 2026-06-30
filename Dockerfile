@@ -1,59 +1,58 @@
-# ============================================================
-# AI Healthcare System — Backend Dockerfile (Multi-Stage)
-# ============================================================
-# Stage 1: Build dependencies (cached independently from code)
-# Stage 2: Runtime with only production dependencies
-# ============================================================
+# =======================================================
+# AI HEALTHCARE - HUGGING FACE SPACES BACKEND & FRONTEND
+# =======================================================
+# Hugging Face Spaces (Docker Space) requires port 7860
+# and running as a non-root user (uid 1000).
+# =======================================================
 
-# --- Stage 1: Dependency Builder ---
-FROM python:3.12-slim AS builder
-
+# Stage 1: Build Frontend React SPA
+FROM node:20-alpine AS frontend-builder
 WORKDIR /build
 
-# Install system build dependencies
-RUN apt-get update && apt-get install -y \
-    build-essential \
-    && rm -rf /var/lib/apt/lists/*
+# Copy frontend package list and install dependencies
+COPY frontend/package*.json ./
+RUN npm ci
 
-# Copy only dependency manifests for layer caching
-COPY requirements.txt .
-COPY backend/requirements.txt ./backend/requirements.txt
+# Copy frontend source and build the production bundle
+COPY frontend/ ./
+RUN npm run build
 
-# Install Python dependencies to a separate prefix
-RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
-
-# --- Stage 2: Production Runtime ---
+# Stage 2: Final image with Python backend and frontend assets
 FROM python:3.12-slim
 
-WORKDIR /app
-
-# Install only runtime system dependencies (no build-essential)
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
+    build-essential \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy installed Python packages from builder stage
-COPY --from=builder /install /usr/local
+# Set up non-root user required by Hugging Face Spaces
+RUN useradd -m -u 1000 user
+USER user
+ENV HOME=/home/user \
+    PATH=/home/user/.local/bin:$PATH
 
-# Copy application code (changes frequently — last layer)
-COPY . .
+WORKDIR $HOME/app
 
-# Train models if missing (ensures containers have valid models)
-RUN python -c "\
-import os; \
-models = ['backend/diabetes_model.pkl', 'backend/heart_disease_model.pkl']; \
-missing = [m for m in models if not os.path.exists(m) or os.path.getsize(m) == 0]; \
-print(f'Models to train: {missing}') if missing else print('All models present')"
+# Copy requirements
+COPY --chown=user backend/requirements.txt $HOME/app/backend/requirements.txt
+COPY --chown=user requirements.txt $HOME/app/
 
-# Create non-root user for security
-RUN groupadd -r appuser && useradd -r -g appuser -d /app -s /sbin/nologin appuser \
-    && chown -R appuser:appuser /app
-USER appuser
+# Install dependencies based on backend requirements
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r backend/requirements.txt
 
-EXPOSE 8000
+# Copy source code
+COPY --chown=user . $HOME/app/
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
-    CMD curl -f http://127.0.0.1:8000/healthz || exit 1
+# Copy built frontend assets from Stage 1 to home app dir
+COPY --from=frontend-builder --chown=user /build/dist $HOME/app/frontend/dist
 
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Generate placeholder AI models (so the backend doesn't crash if models are missing)
+RUN python scripts/generate_placeholder_models.py
+
+# Expose the specific port Hugging Face Spaces uses
+EXPOSE 7860
+
+# Run FastAPI backend
+CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "7860"]
