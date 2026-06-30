@@ -36,7 +36,7 @@ joblib>=1.5.3
 # --- AI & LLM ---
 google-generativeai>=0.5.2
 langchain-core
-langgraph>=1.2.4
+langgraph>=1.2.7
 huggingface_hub>=0.20.0
 
 # NOTE: RAG uses core_ai-managed embeddings (no sentence-transformers needed)

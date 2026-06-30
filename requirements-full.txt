@@ -46,7 +46,7 @@ google-generativeai>=0.5.2
 langchain-huggingface>=0.0.3
 langchain-community>=0.0.38
 langchain-core
-langgraph>=1.2.4
+langgraph>=1.2.7
 
 # --- Utilities ---
 fpdf
