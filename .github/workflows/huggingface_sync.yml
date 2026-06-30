@@ -12,25 +12,26 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
           lfs: true
 
-      - name: Initialize Git Config
-        run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-      - name: Prep Hugging Face Dockerfile
-        run: |
-          # Copy Hugging Face Dockerfile as the primary Dockerfile for deployment
-          cp Dockerfile.hf Dockerfile
-          git add Dockerfile
-          # Commit the Dockerfile if changed, otherwise ignore
-          git diff-index --quiet HEAD || git commit -m "deploy: Configure Dockerfile for Hugging Face Spaces [skip ci]"
-
-      - name: Push to Hugging Face Spaces
+      - name: Deploy to Hugging Face (Clean History Push)
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          # Push the clean main branch with LFS pointers directly to HF Spaces
+          # Copy Hugging Face Dockerfile as the primary Dockerfile
+          cp Dockerfile.hf Dockerfile
+
+          # Delete the .git directory to completely wipe the commit history
+          rm -rf .git
+
+          # Initialize a clean, fresh repository
+          git init
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Add current files on disk (respects .gitignore: ignores packages/ and data/raw/)
+          git add .
+          git commit -m "deploy: Sync production build"
+
+          # Force-push the single clean commit directly to Hugging Face Space main branch
           git push --force https://pavanbadempet:$HF_TOKEN@huggingface.co/spaces/pavanbadempet/aio-health-backend HEAD:refs/heads/main
