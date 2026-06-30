@@ -1,5 +1,6 @@
 import logging
 import os  # noqa: F401 — tests patch backend.prediction.os.path.exists
+import sys
 from typing import Any, Dict, Optional
 
 import joblib  # noqa: F401 — tests patch backend.prediction.joblib.load
@@ -717,7 +718,7 @@ async def predict_kidney(
     _current_user: db_models.User = Depends(auth.get_current_user),
     db: Session = Depends(database.get_db),
 ) -> Dict[str, Any]:
-    import backend.prediction as _pred
+    _pred = sys.modules[__name__]
     if _pred.kidney_model is None:
         raise HTTPException(status_code=503, detail="Kidney Model not trained/loaded.")
     try:
@@ -832,7 +833,7 @@ async def predict_lungs(
     _current_user: db_models.User = Depends(auth.get_current_user),
     db: Session = Depends(database.get_db),
 ) -> Dict[str, Any]:
-    import backend.prediction as _pred
+    _pred = sys.modules[__name__]
     if _pred.lungs_model is None:
         raise HTTPException(status_code=503, detail="Lung Model not trained/loaded.")
     try:
@@ -939,7 +940,7 @@ async def predict_diabetes(
     _current_user: db_models.User = Depends(auth.get_current_user),
     db: Session = Depends(database.get_db),
 ) -> Dict[str, Any]:
-    import backend.prediction as _pred
+    _pred = sys.modules[__name__]
     if _pred.diabetes_model is None:
         raise HTTPException(status_code=503, detail="Diabetes Model not available")
     try:
@@ -1038,7 +1039,7 @@ async def predict_heart(
     _current_user: db_models.User = Depends(auth.get_current_user),
     db: Session = Depends(database.get_db),
 ) -> Dict[str, Any]:
-    import backend.prediction as _pred
+    _pred = sys.modules[__name__]
     if _pred.heart_model is None:
         raise HTTPException(status_code=503, detail="Heart Model not available")
     try:
@@ -1153,7 +1154,7 @@ async def predict_liver(
     _current_user: db_models.User = Depends(auth.get_current_user),
     db: Session = Depends(database.get_db),
 ) -> Dict[str, Any]:
-    import backend.prediction as _pred
+    _pred = sys.modules[__name__]
     if _pred.liver_model is None:
         raise HTTPException(status_code=503, detail="Liver Model or Scaler not available")
     try:
@@ -1276,7 +1277,7 @@ def explain_diabetes(
     data: schemas.DiabetesInput,
     _current_user: db_models.User = Depends(auth.get_current_user),
 ):
-    import backend.prediction as _pred
+    _pred = sys.modules[__name__]
     if _pred.diabetes_model is None:
         raise HTTPException(status_code=503, detail="Model unavailable")
     input_list = [
@@ -1297,7 +1298,7 @@ def explain_heart(
     data: schemas.HeartInput,
     _current_user: db_models.User = Depends(auth.get_current_user),
 ):
-    import backend.prediction as _pred
+    _pred = sys.modules[__name__]
     if _pred.heart_model is None:
         raise HTTPException(status_code=503, detail="Model unavailable")
     input_list = [
@@ -1319,7 +1320,7 @@ def explain_liver(
     data: schemas.LiverInput,
     _current_user: db_models.User = Depends(auth.get_current_user),
 ):
-    import backend.prediction as _pred
+    _pred = sys.modules[__name__]
     if _pred.liver_model is None or _pred.liver_scaler is None:
         raise HTTPException(status_code=503, detail="Model unavailable")
     input_list = [
@@ -1352,9 +1353,9 @@ async def predict_organ_health(
     import numpy as np
     import pandas as pd
 
-    import backend.prediction as _pred
-
     from . import features as _features
+
+    _pred = sys.modules[__name__]
 
     # 1. Fetch patient
     patient = db.query(db_models.User).filter(db_models.User.id == patient_id).first()
@@ -1760,8 +1761,9 @@ async def handle_vitals_recorded(payload: dict) -> None:
     hr = payload.get("heart_rate")
 
     import backend.models as db_models
-    import backend.prediction as _pred
     from backend.database import get_db_context
+
+    _pred = sys.modules[__name__]
 
     with get_db_context() as db:
         # Fetch patient
@@ -2086,9 +2088,9 @@ async def match_clinical_trials(
 
 
 def _run_diabetes_proba(features: dict) -> float:
-    import backend.prediction as _pred
-
     from .model_service import get_age_bucket
+
+    _pred = sys.modules[__name__]
 
     age_bucket = get_age_bucket(features.get("age", 45))
     input_list = [
@@ -2117,7 +2119,7 @@ def _run_diabetes_proba(features: dict) -> float:
 
 
 def _run_heart_proba(features: dict) -> float:
-    import backend.prediction as _pred
+    _pred = sys.modules[__name__]
 
     input_list = [
         features.get("age", 50.0),
