@@ -3,7 +3,7 @@ services:
     name: healthcare-keygen-server
     env: python
     plan: free
-    buildCommand: pip install fastapi uvicorn PyJWT cryptography
+    buildCommand: pip install fastapi uvicorn python-jose[cryptography] cryptography
     startCommand: uvicorn scripts.keygen_server:app --host 0.0.0.0 --port $PORT
     envVars:
       - key: LICENSE_SECRET
