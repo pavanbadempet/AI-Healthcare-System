@@ -5,7 +5,10 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 
 from backend import licensing
+from backend.licensing import TRIAL_KEYS
 from backend.main import app
+
+TRIAL_KEYS["CLINIC-TRIAL-2026"]["tier"] = "trial"
 
 client = TestClient(app)
 

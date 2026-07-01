@@ -10,6 +10,7 @@ import numpy as np
 import pytest
 
 os.environ["TESTING"] = "1"
+os.environ["MICROSERVICES_MODE"] = "false"
 
 from backend.model_service import (
     ModelService,
