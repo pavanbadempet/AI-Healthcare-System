@@ -66,7 +66,13 @@ export function useTelemetry() {
       }
 
       const token = useAuthStore.getState().token;
-      const apiBase = import.meta.env.NEXT_PUBLIC_API_URL || import.meta.env.VITE_PUBLIC_API_URL || "http://127.0.0.1:8000";
+      let apiBase = import.meta.env.NEXT_PUBLIC_API_URL || import.meta.env.VITE_PUBLIC_API_URL;
+      if (!apiBase && typeof window !== "undefined") {
+        apiBase = window.location.origin;
+      }
+      if (!apiBase) {
+        apiBase = "http://127.0.0.1:8000";
+      }
       const wsUrl = apiBase.replace(/^http/, "ws") + `/telemetry/stream${token ? `?token=${token}` : ""}`;
 
       setStatus("connecting");
