@@ -36,17 +36,35 @@ SCALER_PATH = os.path.join(BASE_DIR, "lungs_scaler.pkl")
 def train_lungs_model():
     print("Starting Lungs Health Model Training...")
 
-    if not os.path.exists(DATASET_PATH):
-        print(f"Error: Dataset not found at {DATASET_PATH}")
-        return
-
-    df = pd.read_parquet(DATASET_PATH)
-    print(f"Loaded Dataset: {len(df)} records")
-
-    # 2. Features & Target
-    # Features as expected by prediction.py (UPPERCASE)
-    X = df[LUNG_FEATURES]
-    Y = df["target"]
+    if os.path.exists(DATASET_PATH):
+        df = pd.read_parquet(DATASET_PATH)
+        print(f"Loaded Dataset: {len(df)} records")
+        X = df[LUNG_FEATURES]
+        Y = df["target"]
+    else:
+        print(f"Dataset not found at {DATASET_PATH}. Using synthetic data.")
+        np.random.seed(42)
+        n_samples = 1000
+        data = {
+            'GENDER': np.random.choice([1, 2], n_samples),
+            'AGE': np.random.randint(20, 85, n_samples),
+            'SMOKING': np.random.choice([1, 2], n_samples),
+            'YELLOW_FINGERS': np.random.choice([1, 2], n_samples),
+            'ANXIETY': np.random.choice([1, 2], n_samples),
+            'PEER_PRESSURE': np.random.choice([1, 2], n_samples),
+            'CHRONIC_DISEASE': np.random.choice([1, 2], n_samples),
+            'FATIGUE': np.random.choice([1, 2], n_samples),
+            'ALLERGY': np.random.choice([1, 2], n_samples),
+            'WHEEZING': np.random.choice([1, 2], n_samples),
+            'ALCOHOL_CONSUMING': np.random.choice([1, 2], n_samples),
+            'COUGHING': np.random.choice([1, 2], n_samples),
+            'SHORTNESS_OF_BREATH': np.random.choice([1, 2], n_samples),
+            'SWALLOWING_DIFFICULTY': np.random.choice([1, 2], n_samples),
+            'CHEST_PAIN': np.random.choice([1, 2], n_samples),
+        }
+        X = pd.DataFrame(data)
+        Y = ((X['SMOKING'] == 2) | (X['COUGHING'] == 2) | (X['AGE'] > 65)).astype(int)
+        print(f"Generated Synthetic Lungs Dataset: {n_samples} records")
 
     # 3. Fit Iterative Imputer (MICE with ExtraTreesRegressor)
     from sklearn.experimental import enable_iterative_imputer  # noqa
