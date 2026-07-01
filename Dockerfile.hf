@@ -6,7 +6,7 @@
 # =======================================================
 
 # Stage 1: Build Frontend React SPA
-FROM node:20-alpine AS frontend-builder
+FROM node:26-alpine AS frontend-builder
 WORKDIR /build
 
 # Copy frontend package list and install dependencies
