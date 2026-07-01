@@ -89,13 +89,27 @@ function registryDisplayForPatient(patient: RegistryPatient) {
   };
 }
 
+interface RegistryPatientWithDisplay extends RegistryPatient {
+  display: {
+    age: number | null;
+    diagnosis: string;
+    dob: string;
+    attending: string;
+    isHighRisk: boolean;
+    mrn: string;
+    risk: string;
+    telemetryStatus: string;
+    unit: string;
+  };
+}
+
 function patientMatchesSearch(
-  patient: RegistryPatient,
-  query: string,
-  display = registryDisplayForPatient(patient)
+  patient: RegistryPatientWithDisplay,
+  query: string
 ) {
   if (!query) return true;
 
+  const display = patient.display;
   const fields = [
     patient.full_name,
     patient.username,
@@ -113,14 +127,28 @@ function patientMatchesSearch(
 
 export default function PatientsPage() {
   const { user } = useAuthStore();
-  const [patients, setPatients] = useState<RegistryPatient[]>([]);
+  const [patients, setPatients] = useState<RegistryPatientWithDisplay[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [lastSyncTime, setLastSyncTime] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [riskFilter, setRiskFilter] = useState<RiskFilter>("ALL");
   const [admissionPanelOpen, setAdmissionPanelOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 15;
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 150);
+    return () => clearTimeout(handler);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearchQuery, riskFilter]);
 
   useEffect(() => {
     setLoading(true);
@@ -138,7 +166,11 @@ export default function PatientsPage() {
 
     registryRequest
       .then((patientList) => {
-        setPatients(patientList);
+        const enriched: RegistryPatientWithDisplay[] = patientList.map((p) => ({
+          ...p,
+          display: registryDisplayForPatient(p),
+        }));
+        setPatients(enriched);
         setLastSyncTime(new Date().toLocaleTimeString());
       })
       .catch((err) => setError(err.message || "Failed to load patient records"))
@@ -163,12 +195,19 @@ export default function PatientsPage() {
     );
   }
 
-  const normalizedSearchQuery = searchQuery.trim().toLowerCase();
+  const normalizedSearchQuery = debouncedSearchQuery.trim().toLowerCase();
   const filteredPatients = patients.filter((patient) => {
-    const display = registryDisplayForPatient(patient);
-    const matchesRisk = riskFilter === "ALL" || display.risk === riskFilter;
-    return matchesRisk && patientMatchesSearch(patient, normalizedSearchQuery, display);
+    const matchesRisk = riskFilter === "ALL" || patient.display.risk === riskFilter;
+    return matchesRisk && patientMatchesSearch(patient, normalizedSearchQuery);
   });
+
+  const totalPages = Math.ceil(filteredPatients.length / itemsPerPage);
+  const paginatedPatients = filteredPatients.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  const onboardingPatients = filteredPatients.slice(0, 10);
 
   return (
     <div className="w-full space-y-6 pb-12 selection:bg-[var(--accent)] selection:text-white">
@@ -265,14 +304,14 @@ export default function PatientsPage() {
               <h2 className="text-sm font-bold text-[var(--text-primary)] uppercase">Select Patient for Onboarding</h2>
             </div>
             <div className="status-badge status-badge-accent">
-              {filteredPatients.length} records available
+              {onboardingPatients.length} records available
             </div>
           </div>
 
-          {filteredPatients.length > 0 ? (
+          {onboardingPatients.length > 0 ? (
             <div className="divide-y divide-[var(--border-subtle)]">
-              {filteredPatients.map((patient) => {
-                const display = registryDisplayForPatient(patient);
+              {onboardingPatients.map((patient) => {
+                const display = patient.display;
                 const patientLabel = patient.full_name || patient.username;
 
                 return (
@@ -325,9 +364,9 @@ export default function PatientsPage() {
               </tr>
             </thead>
             <tbody className="text-xs font-mono">
-              {filteredPatients.length > 0 ? (
-                filteredPatients.map((p) => {
-                  const display = registryDisplayForPatient(p);
+              {paginatedPatients.length > 0 ? (
+                paginatedPatients.map((p) => {
+                  const display = p.display;
 
                   return (
                     <tr key={p.id} className="border-b border-[var(--border)] hover:bg-[rgba(255,255,255,0.015)] transition-colors group">
@@ -412,8 +451,33 @@ export default function PatientsPage() {
             </tbody>
           </table>
         </div>
-        <div className="p-3 border-t border-[var(--border)] bg-[rgba(15,15,17,0.5)] section-label text-right">
-          Showing {filteredPatients.length > 0 ? 1 : 0}-{filteredPatients.length} of {filteredPatients.length} records
+        
+        {/* Pagination controls footer */}
+        <div className="flex items-center justify-between px-4 py-3 bg-[rgba(15,15,17,0.5)] border-t border-[var(--border)] font-mono text-[10px] uppercase tracking-wider text-[var(--text-dim)]">
+          <div>
+            Showing {filteredPatients.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0}-{Math.min(currentPage * itemsPerPage, filteredPatients.length)} of {filteredPatients.length} records
+          </div>
+          {totalPages > 1 && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-2.5 py-1 rounded border border-[var(--border)] bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(255,255,255,0.05)] disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer text-[9px] font-bold"
+              >
+                Previous
+              </button>
+              <span className="text-[var(--text-primary)] font-semibold">Page {currentPage} of {totalPages}</span>
+              <button
+                type="button"
+                onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className="px-2.5 py-1 rounded border border-[var(--border)] bg-[rgba(255,255,255,0.02)] hover:bg-[rgba(255,255,255,0.05)] disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer text-[9px] font-bold"
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

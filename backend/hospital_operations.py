@@ -520,7 +520,10 @@ def get_doctor_patients(
     if current_user.role != "doctor" and not auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="Doctor or admin privileges required")
 
-    query = db.query(models.Encounter)
+    from sqlalchemy import func
+    from sqlalchemy.orm import joinedload
+
+    query = db.query(models.Encounter).options(joinedload(models.Encounter.patient))
     if current_user.role == "doctor":
         query = query.filter(models.Encounter.doctor_id == current_user.id)
     encounters = query.order_by(models.Encounter.started_at.desc()).all()
@@ -528,6 +531,8 @@ def get_doctor_patients(
     panel: dict[int, dict[str, Any]] = {}
     for encounter in encounters:
         patient = encounter.patient
+        if not patient:
+            continue
         row = panel.setdefault(
             encounter.patient_id,
             {
@@ -543,20 +548,40 @@ def get_doctor_patients(
             row["latest_encounter_type"] = encounter.encounter_type
             row["latest_status"] = encounter.status
 
+    if not panel:
+        return []
+
+    patient_ids = list(panel.keys())
+
+    # Fetch grouped open orders count
+    order_query = db.query(
+        models.ClinicalOrder.patient_id,
+        func.count(models.ClinicalOrder.id)
+    ).filter(
+        models.ClinicalOrder.patient_id.in_(patient_ids),
+        models.ClinicalOrder.status.in_(OPEN_ORDER_STATUSES),
+    )
+    if current_user.role == "doctor":
+        order_query = order_query.filter(models.ClinicalOrder.doctor_id == current_user.id)
+    order_counts = order_query.group_by(models.ClinicalOrder.patient_id).all()
+    order_counts_dict = {pid: count for pid, count in order_counts}
+
+    # Fetch grouped active admissions count
+    admission_query = db.query(
+        models.Admission.patient_id,
+        func.count(models.Admission.id)
+    ).filter(
+        models.Admission.patient_id.in_(patient_ids),
+        models.Admission.status.in_(ACTIVE_ADMISSION_STATUSES),
+    )
+    if current_user.role == "doctor":
+        admission_query = admission_query.filter(models.Admission.doctor_id == current_user.id)
+    admission_counts = admission_query.group_by(models.Admission.patient_id).all()
+    admission_counts_dict = {pid: count for pid, count in admission_counts}
+
     for patient_id, row in panel.items():
-        order_query = db.query(models.ClinicalOrder).filter(
-            models.ClinicalOrder.patient_id == patient_id,
-            models.ClinicalOrder.status.in_(OPEN_ORDER_STATUSES),
-        )
-        admission_query = db.query(models.Admission).filter(
-            models.Admission.patient_id == patient_id,
-            models.Admission.status.in_(ACTIVE_ADMISSION_STATUSES),
-        )
-        if current_user.role == "doctor":
-            order_query = order_query.filter(models.ClinicalOrder.doctor_id == current_user.id)
-            admission_query = admission_query.filter(models.Admission.doctor_id == current_user.id)
-        row["open_orders"] = order_query.count()
-        row["active_admissions"] = admission_query.count()
+        row["open_orders"] = order_counts_dict.get(patient_id, 0)
+        row["active_admissions"] = admission_counts_dict.get(patient_id, 0)
 
     return list(panel.values())
 
