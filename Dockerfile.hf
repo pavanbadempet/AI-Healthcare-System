@@ -25,6 +25,7 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
     ca-certificates \
+    gnupg \
     && curl -sLf --retry 3 https://cli.doppler.com/install.sh | sh \
     && rm -rf /var/lib/apt/lists/*
 
