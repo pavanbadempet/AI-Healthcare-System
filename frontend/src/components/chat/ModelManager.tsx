@@ -195,7 +195,7 @@ export const ModelManager: React.FC<{
   const downloadedNames = new Set(downloaded.map(m => m.name));
 
   return (
-    <div className="absolute inset-0 z-50 bg-zinc-950/95 backdrop-blur-3xl flex flex-col animate-in fade-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-[100] bg-zinc-950/95 backdrop-blur-3xl flex flex-col animate-in fade-in zoom-in-95 duration-200">
       {/* Header */}
       <div className="shrink-0 flex items-center justify-between px-5 py-4 border-b border-zinc-800/50 bg-zinc-900/50">
         <div className="flex items-center gap-3">
