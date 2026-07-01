@@ -20,7 +20,7 @@ ALGORITHM = "HS256"
 TRIAL_KEYS = {
     "CLINIC-TRIAL-2026": {
         "holder": "Trial Clinic",
-        "tier": "trial",
+        "tier": "enterprise",
         "expires_at": "2030-12-31"
     }
 }
