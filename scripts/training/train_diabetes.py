@@ -26,30 +26,53 @@ def train_diabetes_model():
     print("Starting Diabetes Model Training (BRFSS 2015)...")
 
     # 1. Load Data
-    if not os.path.exists(DATASET_PATH):
-        print(f"Error: Dataset not found at {DATASET_PATH}")
-        return
-
-    df = pd.read_parquet(DATASET_PATH)
-    print(f"Loaded Dataset: {len(df)} records")
-
-    # 2. Features & Target
-    try:
-        from backend.features import DIABETES_DATASET_MAP, DIABETES_FEATURES
-    except ImportError:
+    # 1. Load Data
+    import numpy as np
+    if os.path.exists(DATASET_PATH):
+        df = pd.read_parquet(DATASET_PATH)
+        print(f"Loaded Dataset: {len(df)} records")
+        
         try:
-            from .features import DIABETES_DATASET_MAP, DIABETES_FEATURES
+            from backend.features import DIABETES_DATASET_MAP, DIABETES_FEATURES
         except ImportError:
-            from features import DIABETES_DATASET_MAP, DIABETES_FEATURES
+            try:
+                from .features import DIABETES_DATASET_MAP, DIABETES_FEATURES
+            except ImportError:
+                from features import DIABETES_DATASET_MAP, DIABETES_FEATURES
 
-    # Check if we need to rename columns
-    if all(col in df.columns for col in DIABETES_DATASET_MAP.keys()):
-        print("Renaming columns to canonical names...")
-        df = df.rename(columns=DIABETES_DATASET_MAP)
+        if all(col in df.columns for col in DIABETES_DATASET_MAP.keys()):
+            print("Renaming columns to canonical names...")
+            df = df.rename(columns=DIABETES_DATASET_MAP)
+            
+        X = df[DIABETES_FEATURES]
+        Y = df["diabetes"]
+    else:
+        print(f"Dataset not found at {DATASET_PATH}. Using synthetic data.")
+        np.random.seed(42)
+        n_samples = 1000
+        
+        try:
+            from backend.features import DIABETES_FEATURES
+        except ImportError:
+            try:
+                from .features import DIABETES_FEATURES
+            except ImportError:
+                from features import DIABETES_FEATURES
 
-    # Select only required features
-    X = df[DIABETES_FEATURES]
-    Y = df["diabetes"]
+        data = {
+            'hypertension': np.random.randint(0, 2, n_samples),
+            'high_chol': np.random.randint(0, 2, n_samples),
+            'bmi': np.random.uniform(15.0, 50.0, n_samples),
+            'smoking_history': np.random.randint(0, 2, n_samples),
+            'heart_disease': np.random.randint(0, 2, n_samples),
+            'physical_activity': np.random.randint(0, 2, n_samples),
+            'general_health': np.random.randint(1, 6, n_samples),
+            'gender': np.random.randint(0, 2, n_samples),
+            'age_bucket': np.random.randint(1, 14, n_samples),
+        }
+        X = pd.DataFrame(data)
+        Y = ((X['hypertension'] == 1) | (X['high_chol'] == 1) | (X['bmi'] > 30.0)).astype(int)
+        print(f"Generated Synthetic Diabetes Dataset: {n_samples} records")
 
     print(f"Features: {X.columns.tolist()}")
 
