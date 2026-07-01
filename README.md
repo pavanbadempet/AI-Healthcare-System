@@ -1,3 +1,13 @@
+---
+title: AIO Health Backend
+emoji: 🏥
+colorFrom: green
+colorTo: blue
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # 🏥 AI Healthcare System — Privacy-First Clinical AI & EHR Interoperability Platform
 
 > A production-ready, HIPAA-oriented clinical intelligence platform combining machine learning diagnostics, a multi-agent RAG chatbot, and full hospital operations.
