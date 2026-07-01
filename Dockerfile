@@ -18,7 +18,7 @@ COPY frontend/ ./
 RUN npm run build
 
 # Stage 2: Final image with Python backend and frontend assets
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
