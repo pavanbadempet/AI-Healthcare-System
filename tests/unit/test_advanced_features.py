@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -87,7 +87,8 @@ class TestAdvancedClinicalFeatures:
             agent = SchedulingAgent(db_session, patient)
 
             # Mock the LLM to output the booking action tag
-            mock_generate.return_value = f"[BOOKING_ACTION: doctor_id={doctor.id}, date=2026-07-01, time=10:00, reason=Chest pain triage]"
+            tomorrow = (datetime.now() + timedelta(days=1)).strftime("%Y-%m-%d")
+            mock_generate.return_value = f"[BOOKING_ACTION: doctor_id={doctor.id}, date={tomorrow}, time=10:00, reason=Chest pain triage]"
 
             history = []
             res = await agent.chat("I want to book an appointment with doctor ID 2", history)

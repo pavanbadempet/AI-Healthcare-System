@@ -36,6 +36,7 @@ except ImportError:
     pass
 
 os.environ["TESTING"] = "1"
+os.environ["MICROSERVICES_MODE"] = "false"
 
 import pytest
 from fastapi.testclient import TestClient
