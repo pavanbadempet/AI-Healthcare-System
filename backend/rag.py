@@ -94,6 +94,10 @@ class _RagModule(ModuleType):
 
         if _pkg_rag is not None and hasattr(_pkg_rag, name):
             return getattr(_pkg_rag, name)
+
+        if name in globals():
+            return globals()[name]
+
         raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -163,14 +167,97 @@ if _pkg_rag is None:
     def get_vector_store() -> Any:
         return MockVectorStore()
 
-    def add_checkup_to_db(checkup: Any, patient_name: str) -> None:
-        pass
+    class SimpleVectorStore:
+        def __init__(self):
+            self.documents = []
+            self.vectors = []
+            self.metadatas = []
+            self.ids = []
+            self.db_file = None
 
-    def add_interaction_to_db(chat_interaction: Any, patient_name: str) -> None:
-        pass
+        def save(self):
+            pass
 
-    def search_similar_records(query: str, patient_name: str, k: int = 3) -> List[Any]:
+        def add(self, text, metadata, record_id):
+            self.documents.append(text)
+            self.metadatas.append(metadata)
+            self.ids.append(record_id)
+
+        def delete(self, record_id):
+            if record_id in self.ids:
+                idx = self.ids.index(record_id)
+                self.ids.pop(idx)
+                self.documents.pop(idx)
+                self.metadatas.pop(idx)
+                return True
+            return False
+
+        def search(self, query, filter_meta=None, k=3):
+            results = []
+            for doc, meta in zip(self.documents, self.metadatas):
+                if filter_meta:
+                    match = True
+                    for kk, vv in filter_meta.items():
+                        if meta.get(kk) != vv:
+                            match = False
+                            break
+                    if not match:
+                        continue
+                results.append(doc)
+            return results[:k]
+
+    class FallbackCoreAI:
+        def embed_text(self, text, *args, **kwargs):
+            return [1.0] * 768
+
+    core_ai = FallbackCoreAI()
+    _store = None
+
+    def add_checkup_to_db(user_id: Any, record_id: str, record_type: str, data: Any, prediction: str, timestamp: str, facility_id: Optional[str] = None) -> None:
+        global _store
+        if _store is not None:
+            text = f"User: {user_id}\nCheckup: {record_type}\nData: {data}\nPrediction: {prediction}"
+            meta = {
+                "user_id": str(user_id),
+                "record_id": str(record_id),
+                "type": record_type,
+                "timestamp": timestamp,
+                "facility_id": facility_id
+            }
+            _store.add(text, meta, record_id)
+
+    def add_interaction_to_db(user_id: Any, interaction_id: str, role: str, content: str, timestamp: str, facility_id: Optional[str] = None) -> None:
+        global _store
+        if _store is not None:
+            text = f"User: {user_id}\nInteraction: {role}: {content}"
+            meta = {
+                "user_id": str(user_id),
+                "interaction_id": str(interaction_id),
+                "role": role,
+                "timestamp": timestamp,
+                "facility_id": facility_id
+            }
+            _store.add(text, meta, interaction_id)
+
+    def search_similar_records(user_id: Any, query: str, n_results: int = 3, facility_id: Optional[str] = None) -> List[Any]:
+        global _store
+        if _store is not None:
+            raw_results = []
+            for doc, meta in zip(_store.documents, _store.metadatas):
+                if meta.get("user_id") != str(user_id):
+                    continue
+                if facility_id and meta.get("facility_id") != facility_id:
+                    continue
+                raw_results.append(RetrievedChunk(
+                    record_type=meta.get("type", "chat_log"),
+                    record_id=meta.get("record_id", meta.get("interaction_id")),
+                    text=doc
+                ))
+            return raw_results[:n_results]
         return []
 
     def delete_record_from_db(record_id: str) -> bool:
+        global _store
+        if _store is not None:
+            return _store.delete(record_id)
         return True
