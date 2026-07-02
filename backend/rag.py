@@ -167,44 +167,110 @@ if _pkg_rag is None:
     def get_vector_store() -> Any:
         return MockVectorStore()
 
+    class LocalitySensitiveHash:
+        def __init__(self, num_tables: int = 4, hash_size: int = 8):
+            self.num_tables = num_tables
+            self.hash_size = hash_size
+            self.dim: Optional[int] = None
+            self.tables: List[Dict[str, set]] = []
+            self._planes: List[Any] = []
+
+        def _init_planes(self, dim: int) -> None:
+            import numpy as np
+            self.dim = dim
+            self.tables = [{} for _ in range(self.num_tables)]
+            self._planes = [np.random.randn(self.hash_size, dim) for _ in range(self.num_tables)]
+
+        def _hash(self, vec: Any, table_idx: int) -> str:
+            import numpy as np
+            projections = self._planes[table_idx] @ np.asarray(vec)
+            return "".join("1" if p > 0 else "0" for p in projections)
+
+        def index(self, record_id: str, vector: Any) -> None:
+            import numpy as np
+            vec = np.asarray(vector)
+            if self.dim is None:
+                self._init_planes(len(vec))
+            for i, table in enumerate(self.tables):
+                h = self._hash(vec, i)
+                table.setdefault(h, set()).add(record_id)
+
+        def query(self, query_vector: Any) -> set:
+            import numpy as np
+            if self.dim is None:
+                return set()
+            vec = np.asarray(query_vector)
+            candidates: set = set()
+            for i, table in enumerate(self.tables):
+                h = self._hash(vec, i)
+                candidates |= table.get(h, set())
+            return candidates
+
+        def clear(self) -> None:
+            self.dim = None
+            self.tables = []
+            self._planes = []
+
     class SimpleVectorStore:
+        LSH_THRESHOLD = 10
+
         def __init__(self):
-            self.documents = []
-            self.vectors = []
-            self.metadatas = []
-            self.ids = []
-            self.db_file = None
+            self.documents: List[str] = []
+            self.vectors: List[Any] = []
+            self.metadatas: List[Dict[str, Any]] = []
+            self.ids: List[str] = []
+            self.db_file: Optional[str] = None
+            self.lsh = LocalitySensitiveHash()
 
         def save(self):
             pass
 
         def add(self, text, metadata, record_id):
+            vec = get_embedding(text)
             self.documents.append(text)
+            self.vectors.append(vec)
             self.metadatas.append(metadata)
             self.ids.append(record_id)
+            if len(self.ids) >= self.LSH_THRESHOLD:
+                self.lsh.index(record_id, vec)
 
         def delete(self, record_id):
             if record_id in self.ids:
                 idx = self.ids.index(record_id)
                 self.ids.pop(idx)
                 self.documents.pop(idx)
+                self.vectors.pop(idx)
                 self.metadatas.pop(idx)
                 return True
             return False
 
+        def _cosine_similarity(self, a, b):
+            import numpy as np
+            a, b = np.asarray(a, dtype=float), np.asarray(b, dtype=float)
+            dot = np.dot(a, b)
+            na, nb = np.linalg.norm(a), np.linalg.norm(b)
+            if na == 0 or nb == 0:
+                return 0.0
+            return float(dot / (na * nb))
+
         def search(self, query, filter_meta=None, k=3):
-            results = []
-            for doc, meta in zip(self.documents, self.metadatas):
+            results = self.search_with_scores(query, filter_meta=filter_meta, k=k)
+            return [r["text"] for r in results]
+
+        def search_with_scores(self, query, filter_meta=None, k=3):
+            import numpy as np
+            query_vec = get_query_embedding(query)
+            scored: List[Dict[str, Any]] = []
+            for i, (doc, meta, vec, rid) in enumerate(
+                zip(self.documents, self.metadatas, self.vectors, self.ids)
+            ):
                 if filter_meta:
-                    match = True
-                    for kk, vv in filter_meta.items():
-                        if meta.get(kk) != vv:
-                            match = False
-                            break
-                    if not match:
+                    if not _metadata_matches_filter(meta, filter_meta):
                         continue
-                results.append(doc)
-            return results[:k]
+                score = self._cosine_similarity(query_vec, vec)
+                scored.append({"text": doc, "id": rid, "score": score, "metadata": meta})
+            scored.sort(key=lambda x: x["score"], reverse=True)
+            return scored[:k]
 
     class FallbackCoreAI:
         def embed_text(self, text, *args, **kwargs):
