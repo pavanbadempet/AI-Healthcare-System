@@ -51,8 +51,11 @@ def _load_database_url() -> str:
             return database_url.replace("libsql://", "sqlite+libsql://", 1)
         return database_url
 
-    # Default fallback to local SQLite database if no database environment variables are set
-    return f"sqlite:///{_get_sqlite_db_path()}"
+    # Default fallback to local SQLite database only in CI/CD environments (like GitHub Actions)
+    if os.getenv("GITHUB_ACTIONS") == "true" or os.getenv("CI") == "true":
+        return f"sqlite:///{_get_sqlite_db_path()}"
+
+    raise RuntimeError("DATABASE_URL environment variable is not set. Cannot start database engine.")
 
 
 def set_sqlite_pragma(dbapi_connection, connection_record):
