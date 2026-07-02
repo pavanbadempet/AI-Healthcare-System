@@ -1,5 +1,6 @@
-import os
 import logging
+import os
+
 from huggingface_hub import hf_hub_download
 
 logger = logging.getLogger(__name__)
@@ -31,16 +32,16 @@ def download_all_models():
     """Download all required model weights from Hugging Face Hub."""
     dest_dir = os.path.dirname(os.path.abspath(__file__))
     token = os.environ.get("HF_TOKEN")
-    
+
     print(f"Starting model downloads from Hugging Face Model Registry: {REPO_ID}...")
     for filename in MODEL_FILES:
         target_path = os.path.join(dest_dir, filename)
-        
+
         # Skip download if the file is already present
         if os.path.exists(target_path) and os.path.getsize(target_path) > 0:
             print(f"Model file already exists locally: {filename} (skipped)")
             continue
-            
+
         print(f"Downloading {filename}...")
         try:
             downloaded_path = hf_hub_download(
