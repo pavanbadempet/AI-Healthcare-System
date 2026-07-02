@@ -258,7 +258,6 @@ if _pkg_rag is None:
             return [r["text"] for r in results]
 
         def search_with_scores(self, query, filter_meta=None, k=3):
-            import numpy as np
             query_vec = get_query_embedding(query)
             scored: List[Dict[str, Any]] = []
             for i, (doc, meta, vec, rid) in enumerate(
