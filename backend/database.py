@@ -51,7 +51,8 @@ def _load_database_url() -> str:
             return database_url.replace("libsql://", "sqlite+libsql://", 1)
         return database_url
 
-    raise RuntimeError("DATABASE_URL environment variable is not set. Cannot start database engine.")
+    # Default fallback to local SQLite database if no database environment variables are set
+    return f"sqlite:///{_get_sqlite_db_path()}"
 
 
 def set_sqlite_pragma(dbapi_connection, connection_record):

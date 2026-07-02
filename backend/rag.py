@@ -261,3 +261,9 @@ if _pkg_rag is None:
         if _store is not None:
             return _store.delete(record_id)
         return True
+
+    def _metadata_matches_filter(meta: Dict[str, Any], filter_meta: Dict[str, Any]) -> bool:
+        for k, v in filter_meta.items():
+            if meta.get(k) != v:
+                return False
+        return True
