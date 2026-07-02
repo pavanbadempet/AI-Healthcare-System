@@ -267,3 +267,14 @@ if _pkg_rag is None:
             if meta.get(k) != v:
                 return False
         return True
+
+    def _normalize_acl_value(value: Any) -> str:
+        return str(value).strip()
+
+    def _build_acl_filter(user_id: Any, facility_id: Optional[str] = None) -> Dict[str, str]:
+        f: Dict[str, str] = {"user_id": _normalize_acl_value(user_id)}
+        if facility_id and facility_id.strip():
+            f["facility_id"] = _normalize_acl_value(facility_id)
+        return f
+
+    DB_FILE = "rag_store.json"
