@@ -53,7 +53,7 @@ if _pkg_prompts is None:
 
     from dataclasses import dataclass, field
     from datetime import datetime, timezone
-    from typing import Any, Dict, List, Optional
+    from typing import Any, Optional
 
     @dataclass
     class PromptVersion:

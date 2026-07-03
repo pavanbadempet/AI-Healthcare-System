@@ -128,8 +128,10 @@ if _pkg_rag is None:
 
     from dataclasses import dataclass, field
     from typing import Any, Dict, List, Optional
+
     import numpy as np
     from sklearn.metrics.pairwise import cosine_similarity
+
     from .vector_store_base import VectorStoreBackend
 
     # ── Token Budget Constants ──
@@ -393,7 +395,7 @@ if _pkg_rag is None:
                         separators=(",", ":"),
                     )
                 os.replace(tmp_path, DB_FILE)
-            except Exception as e:
+            except Exception:
                 logger.error("Failed to save vector store", exc_info=True)
 
         def add(self, text: str, metadata: Dict[str, Any], record_id: str) -> None:
