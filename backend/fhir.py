@@ -1,6 +1,7 @@
 import logging
 import os
 import sys
+from datetime import date, datetime, timezone
 from types import ModuleType
 from typing import Any, Iterable
 
@@ -100,6 +101,10 @@ class _FhirModule(ModuleType):
 
         if _pkg_fhir is not None and hasattr(_pkg_fhir, name):
             return getattr(_pkg_fhir, name)
+
+        if name in globals():
+            return globals()[name]
+
         raise AttributeError(f"module '{__name__}' has no attribute '{name}'")
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -128,82 +133,164 @@ if _pkg_fhir is None:
         ("heart_rate", "8867-4", "Heart rate", "beats/minute", "/min"),
         ("systolic_bp", "8480-6", "Systolic blood pressure", "mmHg", "mm[Hg]"),
         ("diastolic_bp", "8462-4", "Diastolic blood pressure", "mmHg", "mm[Hg]"),
-        ("spo2", "59408-5", "Oxygen saturation in arterial blood by pulse oximetry", "%", "%"),
+        ("spo2", "59408-5", "Oxygen saturation in arterial blood by oximetry", "%", "%"),
         ("temperature_c", "8310-5", "Body temperature", "Celsius", "Cel"),
         ("respiratory_rate", "9279-1", "Respiratory rate", "breaths/minute", "/min"),
     )
 
+    def _string_id(value: Any) -> str:
+        if value is None:
+            raise FHIRValidationError("Invalid FHIR resource")
+        return str(value)
+
+    def _remove_none(value: Any) -> Any:
+        if isinstance(value, dict):
+            return {
+                key: _remove_none(nested)
+                for key, nested in value.items()
+                if nested is not None
+            }
+        if isinstance(value, list):
+            return [_remove_none(item) for item in value if item is not None]
+        return value
+
+    def _date_string(value: Any) -> str | None:
+        if value is None:
+            return None
+        if isinstance(value, datetime):
+            return value.date().isoformat()
+        if isinstance(value, date):
+            return value.isoformat()
+        return str(value)
+
+    def fhir_datetime(value: Any) -> str | None:
+        if value is None:
+            return None
+        if isinstance(value, str):
+            return value
+        if value.tzinfo is None:
+            value = value.replace(tzinfo=timezone.utc)
+        return value.astimezone(timezone.utc).isoformat()
+
     def patient_resource(patient: Any) -> dict[str, Any]:
-        return {
+        patient_id = _string_id(getattr(patient, "id", "demo-id"))
+        return _remove_none({
             "resourceType": "Patient",
-            "id": str(getattr(patient, "id", "demo-id")),
-            "name": [{"text": getattr(patient, "name", "Demo Patient")}],
+            "id": patient_id,
+            "identifier": [{"system": "ai-healthcare-system:user-id", "value": patient_id}],
+            "name": [{"text": getattr(patient, "full_name", None) or getattr(patient, "name", "Demo Patient")}],
             "gender": getattr(patient, "gender", "unknown"),
-            "birthDate": str(getattr(patient, "dob", "2000-01-01")),
-            "text": {"status": "generated", "div": "<div>Mock Patient Resource</div>"},
-        }
+            "birthDate": _date_string(getattr(patient, "dob", "2000-01-01")),
+        })
 
     def encounter_resource(encounter: Any, patient_id: int | str) -> dict[str, Any]:
-        return {
+        return _remove_none({
             "resourceType": "Encounter",
-            "id": str(getattr(encounter, "id", "demo-encounter")),
-            "status": "finished",
-            "class": {"code": "AMB", "display": "ambulatory"},
+            "id": _string_id(getattr(encounter, "id", "demo-encounter")),
+            "status": getattr(encounter, "status", "unknown") or "unknown",
+            "class": {
+                "system": "http://terminology.hl7.org/CodeSystem/v3-ActCode",
+                "code": getattr(encounter, "encounter_type", None) or "AMB",
+            },
             "subject": {"reference": f"Patient/{patient_id}"},
-        }
+            "period": {
+                "start": fhir_datetime(getattr(encounter, "started_at", None)),
+                "end": fhir_datetime(getattr(encounter, "ended_at", None)),
+            },
+        })
 
     def observation_resource(observation: Any, patient_id: int | str) -> dict[str, Any]:
-        return {
+        components = []
+        for field, code, display, unit, unit_code in VITAL_COMPONENTS:
+            val = getattr(observation, field, None)
+            if val is None:
+                continue
+            components.append({
+                "code": {"coding": [{"system": LOINC_SYSTEM, "code": code, "display": display}], "text": display},
+                "valueQuantity": {
+                    "value": float(val),
+                    "unit": unit,
+                    "system": UCUM_SYSTEM,
+                    "code": unit_code,
+                },
+            })
+        return _remove_none({
             "resourceType": "Observation",
-            "id": str(getattr(observation, "id", "demo-obs")),
+            "id": _string_id(getattr(observation, "id", "demo-obs")),
             "status": "final",
             "code": {"text": getattr(observation, "code_text", "Vital Sign")},
             "subject": {"reference": f"Patient/{patient_id}"},
-            "valueQuantity": {"value": float(getattr(observation, "value", 0.0))},
-        }
+            "component": components if components else None,
+            "valueQuantity": {"value": float(getattr(observation, "value", 0.0))} if not components else None,
+        })
 
     def diagnostic_report_resource(result: Any, patient_id: int | str) -> dict[str, Any]:
-        return {
+        return _remove_none({
             "resourceType": "DiagnosticReport",
-            "id": str(getattr(result, "id", "demo-report")),
+            "id": _string_id(getattr(result, "id", "demo-report")),
             "status": "final",
             "code": {"text": "Clinical Diagnostic Report"},
             "subject": {"reference": f"Patient/{patient_id}"},
-        }
+        })
 
     def medication_request_resource(prescription: Any, patient_id: int | str) -> dict[str, Any]:
-        return {
+        return _remove_none({
             "resourceType": "MedicationRequest",
-            "id": str(getattr(prescription, "id", "demo-med")),
+            "id": _string_id(getattr(prescription, "id", "demo-med")),
             "status": "active",
             "intent": "order",
             "subject": {"reference": f"Patient/{patient_id}"},
-        }
+        })
 
     def invoice_resource(invoice: Any, patient_id: int | str) -> dict[str, Any]:
-        return {
+        return _remove_none({
             "resourceType": "Invoice",
-            "id": str(getattr(invoice, "id", "demo-invoice")),
+            "id": _string_id(getattr(invoice, "id", "demo-invoice")),
             "status": "issued",
             "subject": {"reference": f"Patient/{patient_id}"},
-        }
+        })
 
     def care_event_resource(event: Any, patient_id: int | str) -> dict[str, Any]:
-        return {
-            "resourceType": "CarePlan",
-            "id": str(getattr(event, "id", "demo-careplan")),
-            "status": "active",
-            "intent": "plan",
+        return _remove_none({
+            "resourceType": "CareEvent",
+            "id": _string_id(getattr(event, "id", "demo-careplan")),
+            "status": "recorded",
             "subject": {"reference": f"Patient/{patient_id}"},
+            "code": {"text": getattr(event, "event_type", None)},
+            "title": getattr(event, "title", None),
+            "severity": getattr(event, "severity", None),
+            "recorded": fhir_datetime(getattr(event, "created_at", None)),
+        })
+
+    def bundle_entry(resource: dict[str, Any]) -> dict[str, Any]:
+        if not isinstance(resource, dict) or not resource.get("resourceType") or not resource.get("id"):
+            raise FHIRValidationError("Invalid FHIR resource")
+        return {
+            "fullUrl": f"urn:uuid:{resource['resourceType']}-{resource['id']}",
+            "resource": resource,
         }
 
     def build_bundle(resources: Iterable[dict[str, Any]], timestamp: Any = None) -> dict[str, Any]:
-        return {"resourceType": "Bundle", "type": "transaction", "entry": [{"resource": r} for r in resources]}
+        entries = []
+        full_urls = set()
+        for r in resources:
+            entry = bundle_entry(r)
+            full_url = entry["fullUrl"]
+            if full_url in full_urls:
+                raise FHIRValidationError("Duplicate FHIR bundle entry")
+            full_urls.add(full_url)
+            entries.append(entry)
+        return {
+            "resourceType": "Bundle",
+            "type": "collection",
+            "timestamp": fhir_datetime(timestamp or datetime.now(timezone.utc)),
+            "entry": entries,
+        }
 
     def audit_event_resource(audit_log: Any) -> dict[str, Any]:
         return {
             "resourceType": "AuditEvent",
-            "id": str(getattr(audit_log, "id", "demo-audit")),
+            "id": _string_id(getattr(audit_log, "id", "demo-audit")),
             "type": {"code": "rest"},
             "agent": [{"requestor": True}],
             "source": {"observer": {"reference": "Device/healthcare-app"}},
