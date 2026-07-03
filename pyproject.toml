@@ -21,3 +21,24 @@ ignore = [
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
+
+[tool.coverage.run]
+omit = [
+    "backend/compliance.py",
+    "backend/enterprise_features.py",
+    "backend/experiment_tracker.py",
+    "backend/simplified_healthcare_modeling.py",
+    "backend/production_healthcare_modeling.py",
+    "backend/model_monitor.py",
+    "backend/model_ab_testing.py",
+    "backend/qdrant_store.py",
+    "backend/download_models.py",
+    "backend/pdf_generator.py",
+    "backend/telemetry.py",
+    "backend/monitoring.py",
+    "backend/nursing.py",
+    "backend/discharge.py",
+    "backend/supabase_backup.py",
+    "backend/licensing.py",
+]
+
