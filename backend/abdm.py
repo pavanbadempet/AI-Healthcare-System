@@ -362,15 +362,76 @@ if _pkg_abdm is None:
         if not settings.hiu_id:
             raise ABDMConfigurationError("ABDM_HIU_ID is required to build consent request")
 
-        return {
-            "requestId": request_id or "mock-request-id",
-            "timestamp": (timestamp or datetime.now(timezone.utc)).isoformat(),
-            "consent": {
-                "purpose": {"code": purpose},
-                "patient": {"id": abha_address},
-                "hiTypes": selected_hi_types,
-            },
+        def _dt_str(value):
+            if value.tzinfo is None:
+                value = value.replace(tzinfo=timezone.utc)
+            return value.astimezone(timezone.utc).isoformat()
+
+        def _clean_dict(payload: dict[str, Any]) -> dict[str, Any]:
+            cleaned = {}
+            for key, value in payload.items():
+                if value is None:
+                    continue
+                if isinstance(value, dict):
+                    nested = _clean_dict(value)
+                    if nested:
+                        cleaned[key] = nested
+                    continue
+                if isinstance(value, list):
+                    cleaned_list = [
+                        _clean_dict(item) if isinstance(item, dict) else item
+                        for item in value
+                        if item is not None
+                    ]
+                    if cleaned_list:
+                        cleaned[key] = cleaned_list
+                    continue
+                cleaned[key] = value
+            return cleaned
+
+        care_context = None
+        if care_context_reference and care_context_reference.strip():
+            care_context = [{"referenceNumber": care_context_reference.strip()}]
+
+        requested_at = timestamp or datetime.now(timezone.utc)
+        requester_identifier = {
+            "type": settings.requester_identifier_type,
+            "value": settings.requester_identifier_value,
+            "system": settings.requester_identifier_system,
         }
+        return _clean_dict({
+            "requestId": request_id or str(uuid4()),
+            "timestamp": _dt_str(requested_at),
+            "consent": {
+                "purpose": {
+                    "text": PURPOSE_CODES[purpose],
+                    "code": purpose,
+                    "refUri": "http://terminology.hl7.org/CodeSystem/v3-ActReason",
+                },
+                "patient": {"id": abha_address},
+                "hiu": {"id": settings.hiu_id},
+                "hip": {"id": hip_id.strip()} if hip_id and hip_id.strip() else None,
+                "careContexts": care_context,
+                "requester": {
+                    "name": settings.requester_name,
+                    "identifier": requester_identifier,
+                },
+                "hiTypes": selected_hi_types,
+                "permission": {
+                    "accessMode": "VIEW",
+                    "dateRange": {
+                        "from": _dt_str(date_from),
+                        "to": _dt_str(date_to),
+                    },
+                    "dataEraseAt": _dt_str(data_erase_at),
+                    "frequency": {
+                        "unit": "HOUR",
+                        "value": 0,
+                        "repeats": 0,
+                    },
+                },
+            },
+        })
 
     def prepare_consent_request(
         patient_abha_address: str,
@@ -389,6 +450,7 @@ if _pkg_abdm is None:
         settings = get_settings()
         endpoint = f"{settings.base_url.rstrip('/')}{settings.consent_request_path}" if settings.base_url else None
 
+        # Enable a fallback mock response if ABDM_DEMO_MODE=true is enabled
         demo_mode = os.getenv("ABDM_DEMO_MODE", "").strip().lower() in {"1", "true", "yes"}
         if submit and demo_mode:
             def _dt_str(value):
@@ -468,3 +530,4 @@ if _pkg_abdm is None:
             }
 
         raise ABDMConfigurationError("ABDM connector is not fully configured")
+

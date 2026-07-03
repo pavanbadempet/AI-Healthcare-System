@@ -174,13 +174,17 @@ if _pkg_fhir is None:
 
     def patient_resource(patient: Any) -> dict[str, Any]:
         patient_id = _string_id(getattr(patient, "id", "demo-id"))
+        gender = getattr(patient, "gender", None)
+        if gender == "unknown":
+            gender = None
+        dob = getattr(patient, "dob", None)
         return _remove_none({
             "resourceType": "Patient",
             "id": patient_id,
             "identifier": [{"system": "ai-healthcare-system:user-id", "value": patient_id}],
-            "name": [{"text": getattr(patient, "full_name", None) or getattr(patient, "name", "Demo Patient")}],
-            "gender": getattr(patient, "gender", "unknown"),
-            "birthDate": _date_string(getattr(patient, "dob", "2000-01-01")),
+            "name": [{"text": getattr(patient, "full_name", None) or getattr(patient, "username", None) or getattr(patient, "name", None) or "Demo Patient"}],
+            "gender": gender,
+            "birthDate": _date_string(dob),
         })
 
     def encounter_resource(encounter: Any, patient_id: int | str) -> dict[str, Any]:
@@ -220,6 +224,8 @@ if _pkg_fhir is None:
             "status": "final",
             "code": {"text": getattr(observation, "code_text", "Vital Sign")},
             "subject": {"reference": f"Patient/{patient_id}"},
+            "encounter": {"reference": f"Encounter/{getattr(observation, 'encounter_id', '')}"} if getattr(observation, "encounter_id", None) else None,
+            "effectiveDateTime": fhir_datetime(getattr(observation, "observed_at", None)),
             "component": components if components else None,
             "valueQuantity": {"value": float(getattr(observation, "value", 0.0))} if not components else None,
         })
@@ -228,26 +234,63 @@ if _pkg_fhir is None:
         return _remove_none({
             "resourceType": "DiagnosticReport",
             "id": _string_id(getattr(result, "id", "demo-report")),
-            "status": "final",
-            "code": {"text": "Clinical Diagnostic Report"},
+            "status": getattr(result, "status", "final") or "final",
+            "code": {"text": getattr(result, "title", None) or getattr(result, "code_text", "Clinical Diagnostic Report")},
             "subject": {"reference": f"Patient/{patient_id}"},
+            "conclusion": getattr(result, "summary", None) or getattr(result, "conclusion", None),
+            "encounter": {"reference": f"Encounter/{getattr(result, 'encounter_id', '')}"} if getattr(result, "encounter_id", None) else None,
+            "issued": fhir_datetime(getattr(result, "created_at", None)),
         })
 
     def medication_request_resource(prescription: Any, patient_id: int | str) -> dict[str, Any]:
+        items = getattr(prescription, "items", []) or []
+        med_names = [getattr(it, "medication_name", "") for it in items if getattr(it, "medication_name", None)]
+        med_text = "; ".join(med_names) if med_names else "Medication"
+
+        dosage_instructions = []
+        for it in items:
+            med_name = getattr(it, "medication_name", "")
+            dosage = getattr(it, "dosage", "")
+            freq = getattr(it, "frequency", "")
+            dur = getattr(it, "duration", "")
+            inst = getattr(it, "instructions", "")
+
+            desc = f"{med_name}: {dosage}"
+            extra = []
+            if freq:
+                extra.append(freq)
+            if dur:
+                extra.append(dur)
+            if inst:
+                extra.append(inst)
+            if extra:
+                desc += ", " + ", ".join(extra)
+            dosage_instructions.append({"text": desc})
+
         return _remove_none({
             "resourceType": "MedicationRequest",
             "id": _string_id(getattr(prescription, "id", "demo-med")),
-            "status": "active",
+            "status": getattr(prescription, "status", "active") or "active",
             "intent": "order",
             "subject": {"reference": f"Patient/{patient_id}"},
+            "authoredOn": fhir_datetime(getattr(prescription, "created_at", None)),
+            "medicationCodeableConcept": {"text": med_text},
+            "dosageInstruction": dosage_instructions if dosage_instructions else [{"text": "No specific instructions"}],
+            "encounter": {"reference": f"Encounter/{getattr(prescription, 'encounter_id', '')}"} if getattr(prescription, "encounter_id", None) else None,
         })
 
     def invoice_resource(invoice: Any, patient_id: int | str) -> dict[str, Any]:
         return _remove_none({
             "resourceType": "Invoice",
             "id": _string_id(getattr(invoice, "id", "demo-invoice")),
-            "status": "issued",
+            "status": getattr(invoice, "status", "issued") or "issued",
             "subject": {"reference": f"Patient/{patient_id}"},
+            "totalNet": {
+                "value": float(getattr(invoice, "total_amount", 0.0)),
+                "currency": getattr(invoice, "currency", "INR") or "INR",
+            },
+            "date": fhir_datetime(getattr(invoice, "issued_at", None)),
+            "encounter": {"reference": f"Encounter/{getattr(invoice, 'encounter_id', '')}"} if getattr(invoice, "encounter_id", None) else None,
         })
 
     def care_event_resource(event: Any, patient_id: int | str) -> dict[str, Any]:
@@ -270,10 +313,35 @@ if _pkg_fhir is None:
             "resource": resource,
         }
 
+    def _validate_references(resource: Any, present_resources: set[str]) -> None:
+        if isinstance(resource, dict):
+            if "reference" in resource:
+                ref = resource["reference"]
+                if isinstance(ref, str) and "/" in ref:
+                    ref_type, ref_id = ref.split("/", 1)
+                    local_types = {"Patient", "Encounter", "Observation", "DiagnosticReport", "MedicationRequest", "Invoice", "CareEvent"}
+                    if ref_type in local_types and ref not in present_resources:
+                        raise FHIRValidationError(f"Unresolved FHIR reference: {ref}")
+            for value in resource.values():
+                _validate_references(value, present_resources)
+        elif isinstance(resource, list):
+            for item in resource:
+                _validate_references(item, present_resources)
+
     def build_bundle(resources: Iterable[dict[str, Any]], timestamp: Any = None) -> dict[str, Any]:
         entries = []
         full_urls = set()
+        present = set()
         for r in resources:
+            if not isinstance(r, dict) or not r.get("resourceType") or not r.get("id"):
+                raise FHIRValidationError("Invalid FHIR resource")
+            present.add(f"{r['resourceType']}/{r['id']}")
+
+        for r in resources:
+            if r.get("resourceType") == "Observation":
+                if "valueQuantity" not in r and "component" not in r:
+                    raise FHIRValidationError("Observation must include a value or component")
+            _validate_references(r, present)
             entry = bundle_entry(r)
             full_url = entry["fullUrl"]
             if full_url in full_urls:
