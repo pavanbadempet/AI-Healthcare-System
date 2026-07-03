@@ -38,6 +38,7 @@ if _pkg_cache is None:
 
     import json
     import os
+
     import numpy as np
 
     class SemanticCache:
