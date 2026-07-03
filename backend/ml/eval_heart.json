@@ -1,6 +1,6 @@
 {
   "model_name": "heart",
-  "evaluated_at": "2026-06-30T12:36:14.664848+00:00",
+  "evaluated_at": "2026-07-03T18:26:43.478052+00:00",
   "test_set_size": 6,
   "class_distribution": {
     "0": 1,
