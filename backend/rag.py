@@ -165,7 +165,30 @@ if _pkg_rag is None:
             return 2
 
     def get_vector_store() -> Any:
-        return MockVectorStore()
+        global _store
+        if _store is None:
+            local_safety = os.environ.get("LOCAL_FIRST_SAFETY", "").strip().lower() in {"1", "true", "yes", "on"}
+            if local_safety:
+                _store = SimpleVectorStore()
+                return _store
+
+            qdrant_enabled = os.environ.get("QDRANT_HOST") is not None
+            if qdrant_enabled:
+                try:
+                    from backend.qdrant_store import QdrantVectorStore  # noqa: PLC0415
+                    _store = QdrantVectorStore()
+                    _store.load()
+                    return _store
+                except Exception:
+                    pass
+
+            try:
+                from backend.turbovec_store import TurboVecVectorStore  # noqa: PLC0415
+                _store = TurboVecVectorStore()
+                _store.load()
+            except ImportError:
+                _store = SimpleVectorStore()
+        return _store
 
     class LocalitySensitiveHash:
         def __init__(self, num_tables: int = 4, hash_size: int = 8):
