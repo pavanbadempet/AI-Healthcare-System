@@ -3,7 +3,7 @@ import { useAuthStore } from "@/lib/auth";
 import { login, fetchProfile } from "@/lib/api";
 import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Activity, Lock, Mail, User, ArrowRight, HeartPulse, Sparkles, ShieldCheck } from "lucide-react";
+import { Activity, Lock, Mail, User, ArrowRight, HeartPulse, Sparkles, ShieldCheck, Eye, EyeOff } from "lucide-react";
 import { useTranslation } from "@/lib/i18n";
 
 export default function LoginPage() {
@@ -24,6 +24,7 @@ export default function LoginPage() {
   const [view, setView] = useState<'login' | 'forgot'>('login');
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
@@ -275,14 +276,26 @@ export default function LoginPage() {
                     <Lock size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-dim)]" />
                     <input
                       id="login-password"
-                      type="password"
+                      type={showPassword ? "text" : "password"}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="input-clinical pl-9"
+                      className="input-clinical pl-9 pr-9"
                       required
                       aria-label="Password"
                     />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-dim)] hover:text-[var(--text-primary)] transition-colors cursor-pointer"
+                      aria-label={showPassword ? "Hide password" : "Show password"}
+                    >
+                      {showPassword ? (
+                        <EyeOff size={13} aria-hidden="true" />
+                      ) : (
+                        <Eye size={13} aria-hidden="true" />
+                      )}
+                    </button>
                   </div>
                 </div>
 
