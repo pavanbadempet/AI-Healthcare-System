@@ -30,6 +30,9 @@ async def main():
     os.makedirs(args.output_dir, exist_ok=True)
 
     # Initialize DB session
+    from backend import models  # noqa: F401
+    from backend.database import Base, engine
+    Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     try:
         import json
