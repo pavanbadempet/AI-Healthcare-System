@@ -848,24 +848,30 @@ kubectl apply -f k8s/ --namespace healthcare
 
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
-## 🔄 MLOps & Data Platform Architecture
+## 🔄 Data Engineering & MLOps Lakehouse Architecture
 
-The platform integrates an automated Big Data and Machine Learning Operations (MLOps) pipeline designed to process real-time streams and orchestrate model lifecycles at scale.
+The platform integrates an automated, enterprise-grade Data Engineering and Machine Learning Operations (MLOps) pipeline designed to ingest high-frequency real-time streams, model structured clinical schemas, and manage model lifecycles at scale.
 
 ### 1. PySpark Structured Streaming & Medallion Lakehouse
-* **Streaming Vitals Ingestion**: Employs **PySpark Structured Streaming** (`scripts/runners/run_telemetry_streaming.py`) to process high-frequency vitals and clinical measurements from simulated active ward monitors.
-* **Medallion Architecture**: Streamed telemetry is parsed and structured into a Delta Lake Medallion architecture (Raw, Silver, and Gold parquet tables) with full transaction ACID safety.
-* **Compact Scheduling**: Compacts Delta Lake tables and consolidates historical partitions daily via PySpark Cron workflows to optimize disk usage and query times.
+The telemetry streaming pipeline (`scripts/runners/run_telemetry_streaming.py`) processes continuous medical vitals (heart rate, blood pressure, SpO2) using a **Medallion Lakehouse Architecture** on top of **Delta Lake**:
+*   **Bronze Layer (Raw Ingestion):** Captures raw vital events from JSON streams into append-only Delta tables with minimal transformation to preserve data lineage.
+*   **Silver Layer (Cleansing & Structuring):** Cleanses data, enforces schema validation, normalizes timestamps, and filters anomalies (vitals outside physiological bounds) in real time.
+*   **Gold Layer (Aggregated Metrics):** Generates rolling clinical aggregates (e.g., 5-minute average heart rates, moving-window standard deviations) to feed real-time clinician alerts.
+*   **ACID Transactions & Time Travel:** Powered by Delta Lake, allowing schema enforcement, concurrent reads/writes, and time-travel queries for clinical auditability.
 
-### 2. Kaggle API Serverless Cloud Retraining
-* **Automated Cloud Triggers**: Initiates model retraining loops programmatically via `scripts/runners/trigger_kaggle_retrain.py` using the **Kaggle API**.
-* **Zero Local Compute**: Offloads memory-intensive deep learning training (fitting the `FTTransformerClassifier` and `ClinicalTemporalLSTM` models) to Kaggle's serverless cloud runtimes.
-* **Credentials Injection**: Securely injects database parameters and environment credentials (`HF_TOKEN`) directly into the temporary cloud runtime cells for seamless dataset extraction.
+### 2. Apache Airflow Pipeline Orchestration
+The pipeline runs daily data engineering workflows orchestrated via **Apache Airflow** (`airflow/dags/`):
+*   **`healthcare_data_pipeline.py` (Ingestion & ETL):** Manages raw data ingestion, schedules PySpark SparkSubmitOperators to execute ETL tasks, and processes medical data snapshots.
+*   **`healthcare_data_modeling.py` (Dimensional Modeling & SCD):** Transforms operational EHR data into an optimized star schema (Fact Tables & Dimension Tables). Implements **Slowly Changing Dimensions (SCD Type 2)** on the patient dimension table to track historical demographic updates over time.
+*   **`delta_lake_operations.py` (Lakehouse Maintenance):** Schedules daily `OPTIMIZE` and `Z-ORDER BY (patient_id, timestamp)` operations to merge small files and partition the data, alongside `VACUUM` runs to prune obsolete historical data.
 
-### 3. Private Hugging Face Hub Synchronization
-* **Dynamic Model Storage**: Stores large trained model binaries (`.pkl`) and scaler artifacts in a secure, private **Hugging Face Dataset** repository rather than committing large weights directly to Git.
-* **Build-Time Verification**: On container startup or build-time compilation, the model service (`backend/model_service.py`) calls the `huggingface_hub` API to check for missing or placeholder weights and dynamically downloads high-accuracy binaries in memory.
-* **Workflow Decoupling**: Decouples model training pipelines from active deployment branches, preventing Git repository bloating while ensuring 100% build reproducibility.
+### 3. OpenLineage Governance & Schema Contracts
+*   **End-to-End Lineage Tracking:** Employs **OpenLineage** (`lineage_emitter.py`) to emit metadata events at every task execution. This tracks the journey of clinical data from initial vital stream ingestion through dimensional modeling down to model training datasets.
+*   **Data Quality Schema Contracts:** Validates structural consistency and schema evolution rules using data quality contracts (`DbSchemaContract`), raising alerts (`DbContractViolation`) if upstream schema mutations break downstream analytical models.
+
+### 4. Serverless MLOps & Hugging Face Hub Sync
+*   **Kaggle API Cloud Retraining:** Programmatically offloads compute-heavy training loops for deep learning models (e.g., `ClinicalTemporalLSTM` and `FTTransformerClassifier`) to Kaggle's serverless GPU runtimes (`scripts/runners/trigger_kaggle_retrain.py`).
+*   **Private Model Registry Sync:** Dynamically pushes and pulls trained model binaries (`.pkl`, `.onnx`) from a secure, private **Hugging Face Hub** dataset registry, avoiding large file bloat in the Git repository while maintaining 100% build reproducibility.
 
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
