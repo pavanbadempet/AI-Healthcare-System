@@ -572,6 +572,15 @@ npm --prefix frontend run dev
 | **REST API Server** | [http://127.0.0.1:8000](http://127.0.0.1:8000) |
 | **Interactive API Documentation** | [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) |
 
+### 🔄 Zero-Configuration Developer Fallback Modes
+
+To allow the platform to run seamlessly on developer machines and thin CI/CD environments (such as GitHub Actions) without requiring the installation of proprietary/external enterprise dependencies (`clinical-rag-cache` and `clinical-fhir-abdm`), the backend features a robust local fallback system:
+
+*   **Fully-Featured Local RAG & Vector Store Fallback:** Automatically switches to a persistent JSON-based vector store in `backend/rag.py` featuring LSH (Locality Sensitive Hashing) Approximate Nearest Neighbor indexing and hybrid similarity scoring.
+*   **Persistent Semantic Cache Fallback:** Implements a local file-based `SemanticCache` using cosine similarity matching over embeddings to optimize and cache LLM responses locally.
+*   **Fully-Schema-Compliant FHIR/ABDM fallbacks:** Generates fully validated FHIR R4 Resources (Patient, Observation, MedicationRequest, Invoice, CareEvent, etc.) with local reference resolution and bundle validation, satisfying rigorous automated verification tests out-of-the-box.
+*   **Auto-Initializing Database Schema:** Automatically creates and initializes the SQLite schema (`Base.metadata.create_all`) for all standalone audit runners and tests if a local fallback database is used, guaranteeing that clinical agents can run instantly without manual migrations.
+
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
 ## 📡 Complete REST API Contract
