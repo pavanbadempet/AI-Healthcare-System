@@ -1,6 +1,7 @@
 import * as ort from 'onnxruntime-web';
 
-// Set up CDN path for WebAssembly files if not found locally
+// Set up CDN path for WebAssembly files to bypass Cloudflare 25MB limit
+ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.26.0/dist/';
 ort.env.wasm.numThreads = 1;
 
 interface ModelSessionCache {
