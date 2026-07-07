@@ -403,6 +403,17 @@ AI-Healthcare-System/
 ├── airflow/                         # Data Engineering Orchestration
 │   ├── dags/                        # Apache Airflow DAGs for data sync
 │   └── config/                      # Scheduler configurations
+├── mlops/                           # MLOps & Automated Training Pipelines
+│   ├── data_ingestion.py            # Extracts clinical data from source APIs
+│   ├── data_processing.py           # Feature engineering & dataset preparation
+│   ├── model_training.py            # Automated XGBoost retraining & evaluation
+│   └── train.py                     # Entry point for model lifecycle
+├── models/                          # Serialized ML Model Registry
+│   ├── *_model.pkl                  # XGBoost classifier binaries
+│   └── *_scaler.pkl                 # StandardScaler bounds for normalization
+├── data/                            # Local Data Lake (Development)
+│   ├── raw/                         # Raw clinical CSV / JSON files
+│   └── processed/                   # Delta Lake / Parquet cleaned tables
 ├── backend/                         # FastAPI Application Layer
 │   ├── main.py                      # REST App entry point & middleware pipelines
 │   ├── core_ai.py                   # Multi-tier AI Gateway (Ollama -> Gemini -> Cloud)
