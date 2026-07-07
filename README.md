@@ -803,6 +803,31 @@ Yes. Define the `DATABASE_URL=postgresql://user:password@host:5432/dbname` envir
 
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+
+## 🚀 Current Live Serverless Deployment Stack
+
+The platform is currently operating continuously in a multi-cloud serverless production environment. This live topology utilizes 4 major PaaS/SaaS systems interconnected securely:
+
+### 1. Hugging Face Spaces (Primary Hosting)
+* **Application**: The core `FastAPI` backend, the `Vite/React` frontend portal, and the local `Ollama` LLM models.
+* **Architecture**: Deployed via the custom `Dockerfile.hf` which spins up a secure Docker space.
+* **Security**: Operates securely under a non-root user (`uid 1000`) and uses environment secrets for external database routing.
+
+### 2. Neon (Serverless PostgreSQL)
+* **Application**: The primary transactional SQL database for hospital operations.
+* **Architecture**: Serverless PostgreSQL branch providing instantaneous auto-scaling, scale-to-zero capabilities, and point-in-time recovery for critical clinical records.
+
+### 3. Render (Microservices PaaS)
+* **Application**: The `healthcare-keygen-server` handling enterprise license generation and LemonSqueezy payment webhook events.
+* **Architecture**: Continuously deployed directly from the GitHub repository via the `render.yaml` infrastructure-as-code specification.
+
+### 4. GitHub Actions (CI/CD Pipeline Orchestration)
+* **Application**: Fully automated CI/CD pipeline gating every pull request and push to the `main` branch.
+* **Architecture**: Executes the complete 1,500+ unit test suite using `pytest -n auto`, verifies UI components with `Vitest`, runs End-to-End browser tests with `Playwright`, and checks security vulnerabilities with `CodeQL`.
+
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+
 ## 🌐 AWS Enterprise Production Deployment
 
 For production deployments, the platform utilizes **Terraform** for Infrastructure as Code (IaC) to provision a secure, scalable, and highly available AWS environment. Applications are containerized and orchestrated inside an **Amazon EKS (Elastic Kubernetes Service)** cluster.
