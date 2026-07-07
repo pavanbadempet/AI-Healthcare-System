@@ -1,11 +1,11 @@
 
-# 🏥 AI Healthcare System — Privacy-First Clinical AI & EHR Interoperability Platform
+# 🏥 AI Healthcare System — Data Engineering Lakehouse & Clinical AI Platform
 
-> A production-ready, HIPAA-oriented clinical intelligence platform combining machine learning diagnostics, a multi-agent RAG chatbot, and full hospital operations.
+> A production-ready, HIPAA-oriented Data Engineering platform built on a PySpark Medallion Lakehouse, combining Airflow ETL pipelines, machine learning diagnostics, and a multi-agent RAG chatbot.
 
 <div align="center">
 
-<img src="docs/assets/hero-banner.svg" alt="AI Healthcare System - Open-Source HIPAA Clinical Intelligence Platform with React 19, FastAPI, LangGraph, and Ollama local inference" width="100%"/>
+<img src="docs/assets/hero-banner.svg" alt="AI Healthcare System - Open-Source HIPAA Clinical Intelligence Platform with PySpark Medallion Lakehouse, Airflow, FastAPI, LangGraph, and Ollama local inference" width="100%"/>
 
 <br/>
 
@@ -18,12 +18,12 @@
 
 <!-- Tech Stack Badges Row (for-the-badge) -->
 <p align="center">
+  <img src="https://img.shields.io/badge/Apache_Spark-E25A1C?style=for-the-badge&logo=apachespark&logoColor=white" alt="Apache Spark" />
+  <img src="https://img.shields.io/badge/Apache_Airflow-017CEE?style=for-the-badge&logo=apacheairflow&logoColor=white" alt="Apache Airflow" />
+  <img src="https://img.shields.io/badge/Databricks-FF3621?style=for-the-badge&logo=databricks&logoColor=white" alt="Databricks" />
   <img src="https://img.shields.io/badge/Python_3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
   <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/React_19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 19" />
-  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
-  <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />
 </p>
 <p align="center">
   <img src="https://img.shields.io/badge/XGBoost-FF3633?style=for-the-badge&logo=xgboost&logoColor=white" alt="XGBoost" />
@@ -32,7 +32,6 @@
   <img src="https://img.shields.io/badge/FHIR_R4-E73F3E?style=for-the-badge&logo=hl7&logoColor=white" alt="FHIR R4" />
   <img src="https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white" alt="SQLAlchemy" />
   <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
-  <img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis" />
   <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
 </p>
 
