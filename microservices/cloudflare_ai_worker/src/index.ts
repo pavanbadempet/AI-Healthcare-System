@@ -1,13 +1,11 @@
 /**
  * AI Healthcare System - Cloudflare Workers AI Endpoint
  * Exposes an OpenAI-compatible /v1/chat/completions API route
- * powered by Cloudflare's Edge GPUs (@cf/meta/llama-3-8b-instruct)
+ * powered by Groq (acting as a fast edge proxy like the portfolio).
  */
 
 export interface Env {
-  AI: any;
-  // Optional: add a secret token to protect your endpoint
-  // CUSTOM_AUTH_TOKEN: string;
+  GROQ_API_KEY: string;
 }
 
 export default {
@@ -30,44 +28,36 @@ export default {
       return new Response("Not Found", { status: 404 });
     }
 
+    if (!env.GROQ_API_KEY) {
+      return new Response(JSON.stringify({ error: "Worker missing GROQ_API_KEY secret" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
+      });
+    }
+
     try {
       const body: any = await request.json();
       
-      // Cloudflare Workers AI expects messages in the { role, content } format
-      const messages = body.messages || [];
-      
-      // If no model is specified, default to Llama 3 8B
-      const model = body.model || "@cf/meta/llama-3-8b-instruct";
-
-      // Run Inference on Cloudflare Edge GPUs
-      const response = await env.AI.run(model, {
-        messages: messages
-      });
-
-      // Format response to be OpenAI-compatible
-      const openAiResponse = {
-        id: crypto.randomUUID(),
-        object: "chat.completion",
-        created: Math.floor(Date.now() / 1000),
-        model: model,
-        choices: [
-          {
-            index: 0,
-            message: {
-              role: "assistant",
-              content: response.response || ""
-            },
-            finish_reason: "stop"
-          }
-        ],
-        usage: {
-          prompt_tokens: 0,
-          completion_tokens: 0,
-          total_tokens: 0
-        }
+      const upstreamReq = {
+         model: body.model || 'llama-3.3-70b-versatile',
+         messages: body.messages || [],
+         temperature: body.temperature || 0.4,
+         max_tokens: body.max_tokens || 1000
       };
-
-      return new Response(JSON.stringify(openAiResponse), {
+      
+      const upstream = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          Authorization: 'Bearer ' + env.GROQ_API_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(upstreamReq),
+      });
+      
+      const responseData = await upstream.json();
+      
+      return new Response(JSON.stringify(responseData), {
+        status: upstream.status,
         headers: {
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*"
