@@ -353,13 +353,13 @@ ${contextText}
                         : 'bg-[rgba(24,24,27,0.7)] border-[var(--border-focus)] text-[var(--text-primary)]'
                     }`}>
                       {msg.role === 'assistant' ? (
-                        <div className="prose prose-invert prose-xs max-w-none leading-relaxed uppercase font-mono text-[11px]">
+                        <div className="prose prose-invert prose-xs max-w-none leading-relaxed font-mono text-[11px]">
                           <LazyMarkdown>
                             {msg.content || "..."}
                           </LazyMarkdown>
                         </div>
                       ) : (
-                        <p className="whitespace-pre-wrap font-mono text-[11px] uppercase leading-relaxed">{msg.content}</p>
+                        <p className="whitespace-pre-wrap font-mono text-[11px] leading-relaxed">{msg.content}</p>
                       )}
                     </div>
                   </div>
