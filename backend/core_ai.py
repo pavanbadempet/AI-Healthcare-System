@@ -515,11 +515,20 @@ async def _generate_cloud(prompt: str, system: str, model: Optional[str], api_pr
     """Generate text using a cloud provider."""
     try:
         async with httpx.AsyncClient(timeout=30) as client:
-            if api_provider.lower() in ("openai", "openrouter"):
-                base_url = (
-                    "https://api.openai.com/v1" if api_provider.lower() == "openai"
-                    else "https://openrouter.ai/api/v1"
-                )
+            if api_provider.lower() in ("openai", "openrouter", "huggingface", "groq", "together", "custom"):
+                provider = api_provider.lower()
+                if provider == "openai":
+                    base_url = "https://api.openai.com/v1"
+                elif provider == "openrouter":
+                    base_url = "https://openrouter.ai/api/v1"
+                elif provider == "huggingface":
+                    base_url = "https://api-inference.huggingface.co/v1"
+                elif provider == "groq":
+                    base_url = "https://api.groq.com/openai/v1"
+                elif provider == "together":
+                    base_url = "https://api.together.xyz/v1"
+                else:
+                    base_url = os.getenv("CUSTOM_AI_BASE_URL", "http://localhost:8000/v1").rstrip("/")
                 headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
                 target_model = model or (
                     "gpt-4o-mini" if api_provider.lower() == "openai"
@@ -572,11 +581,20 @@ async def _chat_cloud(messages: list[dict], system: str, model: Optional[str], a
     """Chat using a cloud provider."""
     try:
         async with httpx.AsyncClient(timeout=30) as client:
-            if api_provider.lower() in ("openai", "openrouter"):
-                base_url = (
-                    "https://api.openai.com/v1" if api_provider.lower() == "openai"
-                    else "https://openrouter.ai/api/v1"
-                )
+            if api_provider.lower() in ("openai", "openrouter", "huggingface", "groq", "together", "custom"):
+                provider = api_provider.lower()
+                if provider == "openai":
+                    base_url = "https://api.openai.com/v1"
+                elif provider == "openrouter":
+                    base_url = "https://openrouter.ai/api/v1"
+                elif provider == "huggingface":
+                    base_url = "https://api-inference.huggingface.co/v1"
+                elif provider == "groq":
+                    base_url = "https://api.groq.com/openai/v1"
+                elif provider == "together":
+                    base_url = "https://api.together.xyz/v1"
+                else:
+                    base_url = os.getenv("CUSTOM_AI_BASE_URL", "http://localhost:8000/v1").rstrip("/")
                 headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
                 target_model = model or (
                     "gpt-4o-mini" if api_provider.lower() == "openai"
