@@ -1,3 +1,11 @@
+---
+title: Aio Health Backend
+emoji: 🏥
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
 
 # 🏥 AI Healthcare System — Privacy-First Clinical AI & EHR Interoperability Platform
 
