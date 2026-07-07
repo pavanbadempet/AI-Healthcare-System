@@ -129,8 +129,9 @@ async def stream_chat(
                             if chunk:
                                 await chunk_queue.put(("chunk", chunk))
                         await chunk_queue.put(("done", None))
-                    except Exception:
-                        await chunk_queue.put(("error", STREAM_FAILURE_DETAIL))
+                    except Exception as e:
+                        await chunk_queue.put(("error", f"Stream failed: {str(e)}"))
+
 
                 stream_task = asyncio.create_task(ai_stream_consumer())
 
@@ -163,10 +164,9 @@ async def stream_chat(
             except Exception as e:
                 logger.error("Chat streaming error")
                 if "timeout" in str(e).lower():
-                    error_msg = "The AI is taking too long. Please try again or use a cloud provider."
+                    yield f"data: {json.dumps({'error': 'Timeout while contacting AI service.', 'status': 'error'})}\n\n"
                 else:
-                    error_msg = STREAM_FAILURE_DETAIL
-                yield f"data: {json.dumps({'error': error_msg, 'status': 'error'})}\n\n"
+                    yield f"data: {json.dumps({'error': f'Streaming error: {str(e)}', 'status': 'error'})}\n\n"
             finally:
                 if stream_task and not stream_task.done():
                     stream_task.cancel()
