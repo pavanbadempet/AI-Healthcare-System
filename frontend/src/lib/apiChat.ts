@@ -44,13 +44,21 @@ export function streamChat(
 ) {
   const controller = new AbortController();
 
+  let p = cloudProvider || (typeof window !== 'undefined' ? localStorage.getItem('ai_cloud_provider') : null);
+  let k = cloudApiKey || (typeof window !== 'undefined' ? localStorage.getItem('ai_cloud_api_key') : null);
+
+  if (!p) {
+    p = "custom";
+    k = "cloudflare";
+  }
+
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
     ...authHeaders(),
   };
 
-  if (cloudProvider) headers['x-ai-provider'] = cloudProvider;
-  if (cloudApiKey) headers['x-ai-api-key'] = cloudApiKey;
+  if (p) headers['x-ai-provider'] = p;
+  if (k) headers['x-ai-api-key'] = k;
 
   let receivedContent = false;
 

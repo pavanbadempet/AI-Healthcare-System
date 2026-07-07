@@ -1,11 +1,10 @@
 /**
  * AI Healthcare System - Cloudflare Workers AI Endpoint
- * Exposes an OpenAI-compatible /v1/chat/completions API route
- * powered by Groq (acting as a fast edge proxy like the portfolio).
+ * Native @cloudflare/ai deployment for OpenAI-compatible /v1/chat/completions
  */
 
 export interface Env {
-  GROQ_API_KEY: string;
+  AI: any;
 }
 
 export default {
@@ -28,36 +27,43 @@ export default {
       return new Response("Not Found", { status: 404 });
     }
 
-    if (!env.GROQ_API_KEY) {
-      return new Response(JSON.stringify({ error: "Worker missing GROQ_API_KEY secret" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" }
-      });
-    }
-
     try {
       const body: any = await request.json();
       
-      const upstreamReq = {
-         model: body.model || 'llama-3.3-70b-versatile',
-         messages: body.messages || [],
-         temperature: body.temperature || 0.4,
-         max_tokens: body.max_tokens || 1000
-      };
+      const model = body.model || '@cf/meta/llama-3-8b-instruct';
+      const messages = body.messages || [];
       
-      const upstream = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          Authorization: 'Bearer ' + env.GROQ_API_KEY,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(upstreamReq),
+      // We stream if requested, but for now we'll just return the full response 
+      // (The backend pseudo-streams the whole response anyway if cloudflare doesn't SSE)
+      const response = await env.AI.run(model, {
+        messages: messages,
       });
       
-      const responseData = await upstream.json();
+      // Format as OpenAI compatible response
+      const openAiResponse = {
+        id: "chatcmpl-" + Math.random().toString(36).substring(2),
+        object: "chat.completion",
+        created: Math.floor(Date.now() / 1000),
+        model: model,
+        choices: [
+          {
+            index: 0,
+            message: {
+              role: "assistant",
+              content: response.response,
+            },
+            finish_reason: "stop",
+          },
+        ],
+        usage: {
+          prompt_tokens: 0,
+          completion_tokens: 0,
+          total_tokens: 0,
+        },
+      };
       
-      return new Response(JSON.stringify(responseData), {
-        status: upstream.status,
+      return new Response(JSON.stringify(openAiResponse), {
+        status: 200,
         headers: {
           "Content-Type": "application/json",
           "Access-Control-Allow-Origin": "*"
