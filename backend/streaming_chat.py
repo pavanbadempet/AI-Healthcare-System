@@ -78,8 +78,8 @@ async def stream_chat(
             yield f"data: {json.dumps({'reply': 'How can I help you with your health today?', 'status': 'complete'})}\n\n"
         return StreamingResponse(empty_gen(), media_type="text/event-stream")
 
-    provider_override = x_ai_provider
-    api_key_override = x_ai_api_key
+    provider_override = x_ai_provider or "custom"
+    api_key_override = x_ai_api_key or "cloudflare"
     ai_available = await core_ai.is_available() or (provider_override and api_key_override)
 
     if ai_available:
