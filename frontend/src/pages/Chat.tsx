@@ -254,7 +254,7 @@ ${contextText}
                 <p className="mono-meta mt-0.5 text-[9px]">
                   {webllmActive
                     ? `WebGPU Active: ${currentWebLLMModel?.split('-')[0] || 'Local Model'}`
-                    : "Cloudflare Engine Active: Groq Proxy"}
+                    : "Cloudflare Workers AI: Llama 3.1 8B FP8"}
                 </p>
               </div>
             </div>
