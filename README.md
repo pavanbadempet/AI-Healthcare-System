@@ -244,6 +244,12 @@ graph TB
         EVAL["Shared ML Evaluation Module (AUC-ROC · Sensitivity · Specificity)"]
     end
 
+    subgraph DataEngine["DATA ENGINEERING & MLOPS LAKEHOUSE"]
+        AIRFLOW["Apache Airflow (DAG Orchestration & ETL)"]
+        SPARK["PySpark Streaming & Batch Processing"]
+        DELTA[("Delta Lake Medallion Storage (Bronze, Silver, Gold)")]
+    end
+
     subgraph Data["DATA & PERSISTENCE LAYER"]
         DB[(SQL database — SQLite WAL / PostgreSQL)]
         VS[(Vector Store — turbovec SIMD Index / Cosine Similarity)]
@@ -253,6 +259,8 @@ graph TB
     Client --> Gateway
     Gateway --> Service
     Service --> Data
+    DataEngine --> Data
+    Service -.-> DataEngine
 ```
 
 ### 🌐 EKS Cluster Production Topology
