@@ -657,13 +657,9 @@ async def _stream_cloud(messages: list[dict], system: str, model: Optional[str],
 # ═══════════════════════════════════════════════════════════════════════
 
 async def is_available() -> bool:
-    """Check if any AI backend is available (Ollama or Gemini)."""
-    ollama_models = await get_ollama_models()
-    if ollama_models:
-        return True
-    if has_gemini_api_key():
-        return True
-    return False
+    """Check if any AI backend is available."""
+    # We now always have Cloudflare AI available as the default custom provider
+    return True
 
 
 async def generate(
