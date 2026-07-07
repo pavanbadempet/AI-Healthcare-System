@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 3000",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build && node -e \"const fs=require('fs'); fs.readdirSync('dist/assets').filter(f=>f.endsWith('.wasm')).forEach(f=>fs.unlinkSync('dist/assets/'+f))\"",
     "start": "vite preview",
     "lint": "eslint",
     "test": "vitest run",
