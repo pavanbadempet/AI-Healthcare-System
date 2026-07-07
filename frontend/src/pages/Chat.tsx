@@ -61,12 +61,8 @@ export default function ChatCopilotPage() {
   };
 
   useEffect(() => {
-    const isSupported = webllm.isWebGPUSupported();
-    const wasUnloaded = localStorage.getItem("webllm_unloaded") === "true";
-    const isLoaded = webllm.isLoaded();
-    if (isSupported && !isLoaded && !wasUnloaded) {
-      handleWebLLMLoad("Llama-3.2-1B-Instruct-q4f16_1-MLC");
-    }
+    // We no longer auto-load WebLLM by default so that the Cloudflare AI proxy is the default.
+    // The user can still manually load it via the ModelManager.
   }, []);
 
   useEffect(() => {
@@ -258,7 +254,7 @@ ${contextText}
                 <p className="mono-meta mt-0.5 text-[9px]">
                   {webllmActive
                     ? `WebGPU Active: ${currentWebLLMModel?.split('-')[0] || 'Local Model'}`
-                    : "RAG Context Engine Active"}
+                    : "Cloudflare Engine Active: Groq Proxy"}
                 </p>
               </div>
             </div>
