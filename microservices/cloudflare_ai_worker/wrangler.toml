@@ -1,0 +1,10 @@
+name = "ai-healthcare-model"
+main = "src/index.ts"
+compatibility_date = "2024-03-20"
+
+[ai]
+binding = "AI"
+
+# Optional: Add any secrets or env variables
+# [vars]
+# CUSTOM_AUTH_TOKEN = "your-secret-token"
