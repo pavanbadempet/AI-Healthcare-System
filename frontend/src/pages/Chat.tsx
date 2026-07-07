@@ -409,6 +409,9 @@ ${contextText}
               <span className="flex items-center gap-1"><ShieldAlert size={10} aria-hidden="true" /> Sandbox Scope context. Clinical review required.</span>
               <span>Execute with ENTER</span>
             </div>
+            <div className="max-w-3xl mx-auto mt-3 text-center text-[9px] font-mono text-[var(--text-dim)]/70">
+              This is AI-generated information and is not a medical diagnosis. Please consult a qualified healthcare professional for medical decisions or emergencies.
+            </div>
           </div>
         </div>
 

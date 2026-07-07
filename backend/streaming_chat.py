@@ -151,10 +151,6 @@ async def stream_chat(
                             yield f"data: {json.dumps({'error': data, 'status': 'error'})}\n\n"
                             break
                         elif msg_type == "done":
-                            streamed_reply = "".join(streamed_reply_parts)
-                            if STREAM_MEDICAL_DISCLAIMER not in streamed_reply:
-                                disclaimer = f"\n\n{STREAM_MEDICAL_DISCLAIMER}"
-                                yield f"data: {json.dumps({'reply': disclaimer})}\n\n"
                             yield f"data: {json.dumps({'status': 'complete'})}\n\n"
                             break
 
@@ -197,8 +193,6 @@ async def stream_chat(
     async def fallback_generator():
         yield f"data: {json.dumps({'sources': [], 'model': 'fallback'})}\n\n"
         yield f"data: {json.dumps({'reply': fallback_msg})}\n\n"
-        disclaimer_reply = '\n\n' + STREAM_MEDICAL_DISCLAIMER
-        yield f"data: {json.dumps({'reply': disclaimer_reply})}\n\n"
         yield f"data: {json.dumps({'status': 'complete'})}\n\n"
 
     return StreamingResponse(
