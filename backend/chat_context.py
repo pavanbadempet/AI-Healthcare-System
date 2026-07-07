@@ -49,6 +49,9 @@ def _normalize_rag_scope(rag_scope: Optional[str], user: models.User) -> str:
 
 def _build_patient_profile(user: models.User) -> str:
     """Build a structured patient profile from user data."""
+    if user.role and user.role != "patient":
+        return f"### Staff Member: {user.full_name or user.username} (Role: {user.role})\nNote: You are logged in as a staff member. Please use the 'Global Hospital Database' scope to search anonymized historical cases."
+
     lines = [f"### Patient: {user.full_name or user.username}"]
 
     identity = []
