@@ -32,33 +32,35 @@ API = f"https://api.github.com/repos/{OWNER}/{REPO}"
 # Strategy: Mix high-volume generic + long-tail specific terms
 # ============================================================
 TOPICS = [
-    # High-volume Data Engineering & AI
-    "data-engineering",
+    # High-volume (appear in GitHub Explore / Trending)
     "machine-learning",
-    "pyspark",
-    "delta-lake",
-    "apache-airflow",
+    "data-engineering",
     "artificial-intelligence",
+    "healthcare",
     "python",
     "fastapi",
-    # Specific Data Architecture
-    "medallion-architecture",
-    "etl-pipeline",
+    # Data Engineering / MLOps
+    "pyspark",
+    "apache-airflow",
+    "delta-lake",
+    "mlops",
     "lakehouse",
     "data-pipeline",
-    # Healthcare & ML/AI
-    "healthcare",
+    # Specific / Niche
     "medical-ai",
-    "disease-prediction",
+    "clinical-decision-support",
+    "langchain",
     "rag",
     "ollama",
     "xgboost",
+    "shap",
+    "hipaa",
 ]
 
 # Optimized repo description (155 chars max for Google snippet)
 DESCRIPTION = (
-    "AI Data Engineering platform: PySpark Medallion Lakehouse, Apache Airflow ETL, "
-    "Delta Lake, plus 5 ML diagnostic models & LangGraph RAG medical chat."
+    "AI Data Engineering Healthcare Platform: PySpark Medallion Lakehouse, "
+    "Airflow DAGs, 5 ML Models, Local LLM RAG, and FastAPI Clinical Architecture."
 )
 
 HOMEPAGE = ""  # Set to your live demo URL if you have one

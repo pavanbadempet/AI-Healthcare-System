@@ -1,7 +1,7 @@
 
-# 🏥 AI Healthcare System — AI Data Engineering & Clinical Intelligence Lakehouse
+# 🏥 AI Healthcare System — Privacy-First Clinical AI & EHR Interoperability Platform
 
-> A production-ready, HIPAA-oriented AI Data Engineering platform combining a PySpark Medallion Lakehouse, Apache Airflow ETL, machine learning diagnostics, and a multi-agent RAG chatbot.
+> A production-ready, HIPAA-oriented clinical intelligence platform combining PySpark Data Engineering (Medallion Lakehouse), machine learning diagnostics, a multi-agent RAG chatbot, and full hospital operations.
 
 <div align="center">
 
@@ -19,8 +19,6 @@
 <!-- Tech Stack Badges Row (for-the-badge) -->
 <p align="center">
   <img src="https://img.shields.io/badge/Python_3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
-  <img src="https://img.shields.io/badge/Apache_Spark-E25A1C?style=for-the-badge&logo=apachespark&logoColor=white" alt="PySpark" />
-  <img src="https://img.shields.io/badge/Apache_Airflow-017CEE?style=for-the-badge&logo=apacheairflow&logoColor=white" alt="Airflow" />
   <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/React_19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 19" />
   <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
