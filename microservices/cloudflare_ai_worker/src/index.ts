@@ -30,7 +30,10 @@ export default {
     try {
       const body: any = await request.json();
       
-      const model = body.model || '@cf/meta/llama-3-8b-instruct';
+      const requestedModel = body.model || '';
+      // Cloudflare Workers AI natively supports Llama 3.1 8B. We force this model
+      // so that it runs the most powerful edge model regardless of what the backend sends.
+      const model = '@cf/meta/llama-3.1-8b-instruct';
       const messages = body.messages || [];
       
       // We stream if requested, but for now we'll just return the full response 
