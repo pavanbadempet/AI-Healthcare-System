@@ -594,7 +594,7 @@ async def _chat_cloud(messages: list[dict], system: str, model: Optional[str], a
                 elif provider == "together":
                     base_url = "https://api.together.xyz/v1"
                 else:
-                    base_url = os.getenv("CUSTOM_AI_BASE_URL", "https://ai-healthcare-model.pavanbadempet.workers.dev").rstrip("/")
+                    base_url = os.getenv("CUSTOM_AI_BASE_URL", "https://ai-healthcare-model.pavan9b.workers.dev").rstrip("/")
                 headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
                 target_model = model or (
                     "gpt-4o-mini" if api_provider.lower() == "openai"
