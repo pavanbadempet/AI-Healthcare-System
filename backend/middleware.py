@@ -39,18 +39,17 @@ _UNVERSIONED_ROOT_PATHS = frozenset({"/", "/docs", "/openapi.json", "/redoc", "/
 
 # Known API route prefixes that should redirect to /v1 when accessed without prefix
 _API_PREFIXES = (
-    "/signup", "/token", "/profile", "/users",  # auth
+    "/signup", "/token", "/users",               # auth
     "/forgot-password", "/reset-password",       # auth password reset
-    "/predict", "/admin",                        # prediction + admin
-    "/chat", "/records", "/download",            # chat
-    "/analyze", "/reports",                       # report
-    "/snapshot",                                   # telemetry
+    "/records", "/download",                     # chat records
+    "/analyze", "/reports",                      # report
+    "/snapshot",                                 # telemetry
     "/hospital", "/pharmacy", "/diagnostics",
     "/discharge", "/nursing", "/billing",
     "/monitoring", "/interop", "/payments",
     "/events", "/demo-readiness", "/explain",
-    "/ai",                                         # ollama_routes
-    "/appointments",                               # appointments
+    "/ai",                                       # ollama_routes
+    "/appointments",                             # appointments
 )
 
 
