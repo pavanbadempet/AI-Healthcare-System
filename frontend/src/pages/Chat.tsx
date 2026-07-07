@@ -227,7 +227,7 @@ ${contextText}
             const newArr = [...prev];
             const last = newArr[newArr.length - 1];
             if (last.role === 'assistant') {
-              last.content += "\n\n**Error:** Connection interrupted.";
+              last.content += `\n\n**Error:** ${err || "Connection interrupted."}`;
             }
             return newArr;
           });
