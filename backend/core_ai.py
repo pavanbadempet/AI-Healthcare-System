@@ -528,7 +528,7 @@ async def _generate_cloud(prompt: str, system: str, model: Optional[str], api_pr
                 elif provider == "together":
                     base_url = "https://api.together.xyz/v1"
                 else:
-                    base_url = os.getenv("CUSTOM_AI_BASE_URL", "http://localhost:8000/v1").rstrip("/")
+                    base_url = os.getenv("CUSTOM_AI_BASE_URL", "https://ai-healthcare-model.pavanbadempet.workers.dev").rstrip("/")
                 headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
                 target_model = model or (
                     "gpt-4o-mini" if api_provider.lower() == "openai"
@@ -594,7 +594,7 @@ async def _chat_cloud(messages: list[dict], system: str, model: Optional[str], a
                 elif provider == "together":
                     base_url = "https://api.together.xyz/v1"
                 else:
-                    base_url = os.getenv("CUSTOM_AI_BASE_URL", "http://localhost:8000/v1").rstrip("/")
+                    base_url = os.getenv("CUSTOM_AI_BASE_URL", "https://ai-healthcare-model.pavanbadempet.workers.dev").rstrip("/")
                 headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
                 target_model = model or (
                     "gpt-4o-mini" if api_provider.lower() == "openai"
@@ -713,9 +713,12 @@ async def generate(
             logger.debug("Semantic cache lookup error: %s", e)
 
     # Explicit cloud provider override
+    resolved_provider = api_provider or os.getenv("GLOBAL_AI_PROVIDER")
+    resolved_key = api_key or os.getenv("GLOBAL_AI_API_KEY")
+
     result = None
-    if api_provider and api_key and api_provider.lower() not in ("ollama", "gemini"):
-        result = await _generate_cloud(prompt, system, model, api_provider, api_key)
+    if resolved_provider and resolved_key and resolved_provider.lower() not in ("ollama", "gemini"):
+        result = await _generate_cloud(prompt, system, model, resolved_provider, resolved_key)
 
     # Tier A: Ollama
     if not result:
@@ -944,9 +947,9 @@ async def chat_stream(
                 buffer = redacted_buffer[split_idx:]
             else:
                 pass
-
+        
         if buffer:
-            yield redact_pii_from_text(buffer)
+            yield buffer
 
     # 3. Stream redacted response
     async for redacted_chunk in redact_stream_generator(source_generator()):
