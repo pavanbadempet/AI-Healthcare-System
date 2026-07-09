@@ -73,9 +73,9 @@ export default function Tooltip({
             animate={getAnimate()}
             exit={getInitial()}
             transition={{ duration: 0.12, ease: "easeOut" }}
-            className={`absolute ${positionClasses} pointer-events-none z-[100] px-2.5 py-1.5 rounded-lg border border-white/[0.08] bg-[rgba(15,15,18,0.96)] backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.5)] whitespace-nowrap`}
+            className={`absolute ${positionClasses} pointer-events-none z-[100] px-2.5 py-1.5 rounded-lg border border-white/[0.08] bg-[rgba(15,15,18,0.96)] backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.5)] whitespace-normal max-w-xs w-max text-center`}
           >
-            <span className="text-[9px] font-black uppercase tracking-wider text-white/80 select-none">
+            <span className="text-[9px] font-black uppercase tracking-wider text-white/80 select-none leading-relaxed">
               {content}
             </span>
           </motion.div>

@@ -229,7 +229,7 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
         transition={{ duration: 0.25 }}
         className="lg:col-span-7 space-y-6"
       >
-        <div className="panel p-5 relative">
+        <div className="panel p-5 relative !overflow-visible">
           <div className="absolute top-0 right-0 p-2 text-[9px] font-mono border-b border-l border-[var(--border)] bg-[#09090b] text-[var(--text-dim)] uppercase">
             Input Vector Map
           </div>
