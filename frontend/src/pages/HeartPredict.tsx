@@ -39,13 +39,13 @@ const HEART_FIELDS = [
 
 const HEART_EXAMPLES = [
   {
-    name: "Patient Record #103 (Negative)",
-    description: "Actual record from the Cleveland dataset (Target: 0)",
+    name: "Robert M., 67M",
+    description: "Routine checkup. History of mild hypertension, asymptomatic.",
     data: { age: 67, sex: 1, cp: 0, trestbps: 160, chol: 286, fbs: 0, restecg: 0, thalach: 108, exang: 1, oldpeak: 1.5, slope: 1, ca: 3, thal: 2 }
   },
   {
-    name: "Patient Record #14 (Positive)",
-    description: "Actual record from the Cleveland dataset (Target: 1)",
+    name: "James T., 63M",
+    description: "Presents with severe atypical angina, high cholesterol, and elevated max heart rate.",
     data: { age: 63, sex: 1, cp: 3, trestbps: 145, chol: 233, fbs: 1, restecg: 0, thalach: 150, exang: 0, oldpeak: 2.3, slope: 0, ca: 0, thal: 1 }
   }
 ];

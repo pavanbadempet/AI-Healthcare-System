@@ -17,13 +17,13 @@ const LIVER_FIELDS = [
 
 const LIVER_EXAMPLES = [
   {
-    name: "Patient Record #121 (Negative)",
-    description: "Actual record from the ILPD dataset (Target: 2 - Healthy)",
+    name: "Thomas D., 17M",
+    description: "Routine adolescent checkup. Normal liver enzymes and bilirubin levels.",
     data: { Age: 17, Gender: 1, Total_Bilirubin: 0.9, Direct_Bilirubin: 0.3, Alkaline_Phosphotase: 202, Alamine_Aminotransferase: 22, Aspartate_Aminotransferase: 19, Total_Proteins: 7.4, Albumin: 4.1, Albumin_and_Globulin_Ratio: 1.2 }
   },
   {
-    name: "Patient Record #13 (Positive)",
-    description: "Actual record from the ILPD dataset (Target: 1 - Disease)",
+    name: "Patricia L., 65F",
+    description: "Fatigue and mild jaundice. Low albumin and inverted A/G ratio.",
     data: { Age: 65, Gender: 0, Total_Bilirubin: 0.7, Direct_Bilirubin: 0.1, Alkaline_Phosphotase: 187, Alamine_Aminotransferase: 16, Aspartate_Aminotransferase: 18, Total_Proteins: 6.8, Albumin: 3.3, Albumin_and_Globulin_Ratio: 0.9 }
   }
 ];

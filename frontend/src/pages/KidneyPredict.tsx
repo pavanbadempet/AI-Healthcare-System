@@ -38,13 +38,13 @@ const KIDNEY_FIELDS = [
 
 const KIDNEY_EXAMPLES = [
   {
-    name: "Patient Record #12 (Negative)",
-    description: "Actual record from the CKD dataset (Target: 0)",
+    name: "Emily R., 40F",
+    description: "Healthy baseline assessment. Normal GFR, no proteinuria or hematuria.",
     data: { age: 40, bp: 80, sg: 1.025, al: 0, su: 0, rbc: 1, pc: 1, pcc: 0, ba: 0, bgr: 140, bu: 10, sc: 1.2, sod: 135, pot: 5.0, hemo: 15.0, pcv: 48, wc: 10400, rc: 4.5, htn: 0, dm: 0, cad: 0, appet: 1, pe: 0, ane: 0 }
   },
   {
-    name: "Patient Record #48 (Positive)",
-    description: "Actual record from the CKD dataset (Target: 1)",
+    name: "William H., 48M",
+    description: "Diabetic nephropathy follow-up. Elevated BUN and mild proteinuria.",
     data: { age: 48, bp: 80, sg: 1.020, al: 1, su: 0, rbc: 1, pc: 1, pcc: 0, ba: 0, bgr: 121, bu: 36, sc: 1.2, sod: 138, pot: 4.4, hemo: 15.4, pcv: 44, wc: 7800, rc: 5.2, htn: 1, dm: 1, cad: 0, appet: 1, pe: 0, ane: 0 }
   }
 ];
