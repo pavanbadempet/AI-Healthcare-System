@@ -268,13 +268,13 @@ export default function ClinicalIntelligence() {
     };
   }, [alertsFilter]);
 
-  const handlePatientChange = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handlePatientChange = (newId: number) => {
+    setPatientId(newId);
     setAdvisoryDebate(null);
     setAdvisoryError(null);
     setConsensus(null);
-    loadAllData(patientId);
-    loadPatientDetails(patientId);
+    loadAllData(newId);
+    loadPatientDetails(newId);
   };
 
   const handleAcknowledge = async (alertId: number) => {
@@ -348,21 +348,20 @@ export default function ClinicalIntelligence() {
         </div>
 
         {/* Patient Select Form */}
-        <form onSubmit={handlePatientChange} className="flex items-center gap-3 bg-slate-900/40 border border-slate-800 p-2.5 rounded-xl">
-          <span className="text-xs font-semibold text-slate-400 uppercase pl-2">Patient context ID:</span>
-          <input
-            type="number"
+        <div className="flex items-center gap-3 bg-slate-900/40 border border-slate-800 p-2.5 rounded-xl">
+          <span className="text-xs font-semibold text-slate-400 uppercase pl-2">Patient Profile:</span>
+          <select
             value={patientId}
-            onChange={(e) => setPatientId(parseInt(e.target.value) || 1)}
-            className="w-16 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1 text-center font-bold text-sm focus:outline-none focus:border-indigo-500"
-          />
-          <button
-            type="submit"
-            className="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-xs font-medium transition-colors"
+            onChange={(e) => handlePatientChange(parseInt(e.target.value) || 1)}
+            className="w-48 bg-slate-950 border border-slate-800 rounded-lg px-2 py-1.5 text-sm font-medium focus:outline-none focus:border-indigo-500 cursor-pointer"
           >
-            Apply
-          </button>
-        </form>
+            <option value={1}>John Doe - ID 1</option>
+            <option value={2}>Jane Smith - ID 2</option>
+            <option value={3}>Robert Johnson - ID 3</option>
+            <option value={4}>Emily Davis - ID 4</option>
+            <option value={5}>Michael Wilson - ID 5</option>
+          </select>
+        </div>
       </div>
 
       {/* Tabs Navigation */}
