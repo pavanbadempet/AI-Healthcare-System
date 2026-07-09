@@ -64,18 +64,20 @@ export default function Tooltip({
       onMouseLeave={() => setVisible(false)}
       onFocus={() => setVisible(true)}
       onBlur={() => setVisible(false)}
+      title={content}
     >
       {children}
       <AnimatePresence>
         {visible && (
           <motion.div
+            key="tooltip"
             initial={getInitial()}
             animate={getAnimate()}
             exit={getInitial()}
             transition={{ duration: 0.12, ease: "easeOut" }}
-            className={`absolute ${positionClasses} pointer-events-none z-[100] px-2.5 py-1.5 rounded-lg border border-white/[0.08] bg-[rgba(15,15,18,0.96)] backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.5)] whitespace-normal max-w-xs w-max text-center`}
+            className={`absolute ${positionClasses} pointer-events-none z-[9999] px-2.5 py-1.5 rounded-lg border border-white/[0.08] bg-[rgba(15,15,18,0.96)] backdrop-blur-md shadow-[0_4px_12px_rgba(0,0,0,0.5)] whitespace-normal max-w-[250px] w-max text-center`}
           >
-            <span className="text-[9px] font-black uppercase tracking-wider text-white/80 select-none leading-relaxed">
+            <span className="text-[10px] font-bold tracking-wide text-white/90 select-none leading-relaxed shadow-sm">
               {content}
             </span>
           </motion.div>
