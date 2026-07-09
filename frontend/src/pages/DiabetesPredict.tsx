@@ -22,6 +22,19 @@ const DIABETES_FIELDS = [
   ]},
 ];
 
+const DIABETES_EXAMPLES = [
+  {
+    name: "Healthy Profile",
+    description: "Typical values for a healthy patient with low risk of diabetes.",
+    data: { gender: 0, age_bucket: 3, hypertension: 0, high_chol: 0, bmi: 22.5, smoking_history: 0, heart_disease: 0, physical_activity: 1, general_health: 2 }
+  },
+  {
+    name: "High Risk Profile",
+    description: "Typical values for a patient with high risk of diabetes.",
+    data: { gender: 1, age_bucket: 9, hypertension: 1, high_chol: 1, bmi: 34.2, smoking_history: 1, heart_disease: 1, physical_activity: 0, general_health: 4 }
+  }
+];
+
 export default function DiabetesPage() {
   return (
     <div className="py-8">
@@ -30,6 +43,7 @@ export default function DiabetesPage() {
         description="Enter the patient's vitals and laboratory results below. The ML model will analyze the data against the Pima Indians Diabetes Database patterns to predict the onset of diabetes."
         fields={DIABETES_FIELDS}
         onSubmit={predictDiabetes}
+        exampleCases={DIABETES_EXAMPLES}
       />
     </div>
   );

@@ -95,14 +95,21 @@ const FRIENDLY_FEATURE_LABELS: Record<string, string> = {
   CHEST_PAIN: "Chest Pain"
 };
 
+export interface ExampleCase {
+  name: string;
+  description: string;
+  data: Record<string, number>;
+}
+
 interface PredictionFormProps {
   title: string;
   description: string;
   fields: Field[];
   onSubmit: (data: Record<string, number>, computeMode?: 'local' | 'remote') => Promise<PredictionResult>;
+  exampleCases?: ExampleCase[];
 }
 
-export default function PredictionForm({ title, description, fields, onSubmit }: PredictionFormProps) {
+export default function PredictionForm({ title, description, fields, onSubmit, exampleCases }: PredictionFormProps) {
   const [formData, setFormData] = useState<Record<string, number>>({});
   const [computeMode, setComputeMode] = useState<'local' | 'remote'>('remote');
   const [loading, setLoading] = useState(false);
@@ -242,6 +249,25 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
             <h2 className="text-md font-bold text-[var(--text-primary)] uppercase tracking-wider mb-1">{title}</h2>
             <p className="text-[var(--text-secondary)] text-xs font-mono uppercase tracking-wide max-w-xl">{description}</p>
           </div>
+
+          {exampleCases && exampleCases.length > 0 && (
+            <div className="mb-6 bg-[rgba(255,255,255,0.02)] border border-[var(--border)] rounded-lg p-3">
+              <div className="text-[9px] font-bold uppercase text-[var(--text-dim)] tracking-wider mb-2">Example Cases</div>
+              <div className="flex flex-wrap gap-2">
+                {exampleCases.map((example, idx) => (
+                  <button
+                    key={idx}
+                    type="button"
+                    onClick={() => setFormData(example.data)}
+                    className="px-2.5 py-1.5 rounded text-[10px] font-mono border border-[var(--border)] bg-[rgba(10,10,15,0.5)] text-[var(--text-secondary)] hover:text-white hover:border-[var(--accent-border)] hover:bg-[var(--accent-muted)] transition-colors cursor-pointer"
+                    title={example.description}
+                  >
+                    Load: {example.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           <AnimatePresence>
             {error && (

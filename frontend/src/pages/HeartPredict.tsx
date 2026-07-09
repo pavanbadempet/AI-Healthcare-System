@@ -37,6 +37,19 @@ const HEART_FIELDS = [
   ]}
 ];
 
+const HEART_EXAMPLES = [
+  {
+    name: "Healthy Profile",
+    description: "Typical values for a healthy patient with low risk.",
+    data: { age: 45, sex: 1, cp: 3, trestbps: 120, chol: 180, fbs: 0, restecg: 0, thalach: 160, exang: 0, oldpeak: 0, slope: 0, ca: 0, thal: 1 }
+  },
+  {
+    name: "High Risk Profile",
+    description: "Typical values for a patient with high risk of heart disease.",
+    data: { age: 65, sex: 1, cp: 0, trestbps: 160, chol: 280, fbs: 1, restecg: 2, thalach: 110, exang: 1, oldpeak: 3.5, slope: 2, ca: 2, thal: 3 }
+  }
+];
+
 export default function HeartPage() {
   return (
     <div className="py-8">
@@ -45,6 +58,7 @@ export default function HeartPage() {
         description="Enter the patient's cardiovascular parameters. The model evaluates 13 clinical features to predict the presence of heart disease."
         fields={HEART_FIELDS}
         onSubmit={predictHeart}
+        exampleCases={HEART_EXAMPLES}
       />
     </div>
   );
