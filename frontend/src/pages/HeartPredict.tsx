@@ -3,34 +3,34 @@ import PredictionForm from "@/components/predict/PredictionForm";
 import { predictHeart } from "@/lib/api";
 
 const HEART_FIELDS = [
-  { name: "age", label: "Age", type: "number" as const, min: 1, max: 120 },
-  { name: "sex", label: "Sex", type: "select" as const, options: [{ label: "Male", value: 1 }, { label: "Female", value: 0 }] },
-  { name: "cp", label: "Chest Pain Type", type: "select" as const, options: [
+  { name: "age", label: "Age", type: "number" as const, min: 1, max: 120 , tooltip: "Patient's age in years" },
+  { name: "sex", label: "Sex", type: "select" as const, options: [{ label: "Male", value: 1 }, { label: "Female", value: 0 }] , tooltip: "Biological sex of the patient" },
+  { name: "cp", label: "Chest Pain Type", type: "select" as const, tooltip: "Type of chest pain experienced", options: [ /* tooltip: "Type of chest pain experienced" */
       { label: "Typical Angina", value: 0 },
       { label: "Atypical Angina", value: 1 },
       { label: "Non-anginal Pain", value: 2 },
       { label: "Asymptomatic", value: 3 }
   ]},
-  { name: "trestbps", label: "Resting Blood Pressure", type: "number" as const, min: 50, max: 250, tooltip: "Resting blood pressure (in mm Hg on admission to the hospital)" },
-  { name: "chol", label: "Cholesterol", type: "number" as const, min: 100, max: 600, tooltip: "Serum cholesterol in mg/dl" },
-  { name: "fbs", label: "Fasting Blood Sugar > 120 mg/dl", type: "select" as const, options: [{ label: "True", value: 1 }, { label: "False", value: 0 }] },
-  { name: "restecg", label: "Resting ECG Results", type: "select" as const, options: [
+  { name: "trestbps", label: "Resting Blood Pressure", type: "number" as const, min: 50, max: 250 , tooltip: "Resting blood pressure (mm Hg). Normal: 90-120. Elevated: 120-129. High: >= 130" },
+  { name: "chol", label: "Cholesterol", type: "number" as const, min: 100, max: 600 , tooltip: "Serum cholesterol (mg/dl). Normal: < 200. Borderline: 200-239. High: >= 240" },
+  { name: "fbs", label: "Fasting Blood Sugar > 120 mg/dl", type: "select" as const, options: [{ label: "True", value: 1 }, { label: "False", value: 0 }] , tooltip: "Fasting blood sugar > 120 mg/dl (1 = true, 0 = false)" },
+  { name: "restecg", label: "Resting ECG Results", type: "select" as const, tooltip: "Resting electrocardiographic results", options: [ /* tooltip: "Resting electrocardiographic results" */
       { label: "Normal", value: 0 },
       { label: "ST-T wave abnormality", value: 1 },
       { label: "Probable/definite left ventricular hypertrophy", value: 2 }
   ]},
-  { name: "thalach", label: "Max Heart Rate", type: "number" as const, min: 60, max: 220, tooltip: "Maximum heart rate achieved" },
-  { name: "exang", label: "Exercise Induced Angina", type: "select" as const, options: [{ label: "Yes", value: 1 }, { label: "No", value: 0 }] },
-  { name: "oldpeak", label: "ST Depression", type: "number" as const, min: 0, max: 10, step: 0.1, tooltip: "ST depression induced by exercise relative to rest" },
-  { name: "slope", label: "Slope of Peak Exercise ST Segment", type: "select" as const, options: [
+  { name: "thalach", label: "Max Heart Rate", type: "number" as const, min: 60, max: 220 , tooltip: "Maximum heart rate achieved. Normal max is approx 220 minus age" },
+  { name: "exang", label: "Exercise Induced Angina", type: "select" as const, options: [{ label: "Yes", value: 1 }, { label: "No", value: 0 }] , tooltip: "Exercise-induced angina (chest pain)" },
+  { name: "oldpeak", label: "ST Depression", type: "number" as const, min: 0, max: 10, step: 0.1 , tooltip: "ST depression induced by exercise relative to rest. Normal: < 1.0" },
+  { name: "slope", label: "Slope of Peak Exercise ST Segment", type: "select" as const, tooltip: "The slope of the peak exercise ST segment", options: [ /* tooltip: "The slope of the peak exercise ST segment" */
       { label: "Upsloping", value: 0 },
       { label: "Flat", value: 1 },
       { label: "Downsloping", value: 2 }
   ]},
-  { name: "ca", label: "Number of Major Vessels", type: "select" as const, options: [
+  { name: "ca", label: "Number of Major Vessels", type: "select" as const, tooltip: "Number of major vessels (0-3) colored by fluoroscopy", options: [ /* tooltip: "Number of major vessels (0-3) colored by fluoroscopy" */
       { label: "0", value: 0 }, { label: "1", value: 1 }, { label: "2", value: 2 }, { label: "3", value: 3 }, { label: "4", value: 4 }
   ], tooltip: "Number of major vessels (0-3) colored by fluoroscopy" },
-  { name: "thal", label: "Thalassemia", type: "select" as const, options: [
+  { name: "thal", label: "Thalassemia", type: "select" as const, tooltip: "Thalassemia type (blood disorder)", options: [ /* tooltip: "Thalassemia type (blood disorder)" */
       { label: "Normal", value: 1 },
       { label: "Fixed Defect", value: 2 },
       { label: "Reversable Defect", value: 3 }
