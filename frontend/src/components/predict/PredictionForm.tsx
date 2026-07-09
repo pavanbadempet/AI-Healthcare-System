@@ -342,17 +342,7 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
                             </div>
                           )}
                         </div>
-                        {(field.min !== undefined && field.max !== undefined) && (
-                          <input
-                            type="range"
-                            min={field.min}
-                            max={field.max}
-                            step={field.step || 1}
-                            value={formData[field.name] ?? (field.min + (field.max - field.min) / 2)}
-                            onChange={(e) => setFormData({ ...formData, [field.name]: Number(e.target.value) })}
-                            className="w-full h-1.5 bg-[var(--border)] rounded-lg appearance-none cursor-pointer accent-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
-                          />
-                        )}
+
                       </div>
                     )}
                   </div>
