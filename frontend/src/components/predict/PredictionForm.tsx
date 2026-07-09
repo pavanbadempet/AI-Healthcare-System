@@ -266,7 +266,7 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
                 <span className="text-white font-bold flex items-center gap-1.5 uppercase tracking-wider">
                   Compute Enclave Mode
                   <Tooltip content="Choose where the AI calculation runs. 'Local' runs in your browser for maximum privacy and zero latency. 'Remote' uses our servers for heavier computations." position="top">
-                    <span className="cursor-help text-[var(--text-dim)] hover:text-[var(--text-primary)] transition-colors">
+                    <span className="cursor-help text-[var(--text-dim)] hover:text-[var(--text-primary)] transition-colors p-2 -ml-1 flex items-center justify-center">
                       <Activity size={12} aria-hidden="true" />
                     </span>
                   </Tooltip>
@@ -306,8 +306,8 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
                     {field.label} 
                     {field.tooltip && (
                       <Tooltip content={field.tooltip} position="top">
-                        <span className="cursor-help text-[var(--text-dim)] hover:text-[var(--text-primary)] transition-colors">
-                          <Activity size={10} aria-hidden="true" />
+                        <span className="cursor-help text-[var(--text-dim)] hover:text-[var(--text-primary)] transition-colors p-2 -ml-1 flex items-center justify-center">
+                          <Activity size={12} aria-hidden="true" />
                         </span>
                       </Tooltip>
                     )}
