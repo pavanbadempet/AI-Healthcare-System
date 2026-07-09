@@ -11,6 +11,7 @@ import {
 import { fetchRecommendedSpecialists, bookSpecialCareAppointment } from "@/lib/apiIntelligence";
 import { useAuthStore } from "@/lib/auth";
 import { motion, AnimatePresence } from "framer-motion";
+import Tooltip from "@/components/layout/Tooltip";
 import { 
   Video, 
   Calendar, 

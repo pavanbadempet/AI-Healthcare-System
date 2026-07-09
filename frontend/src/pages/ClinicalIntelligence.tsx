@@ -13,6 +13,7 @@ import {
   type ClinicalAlert, type PatientInsight, type ExplainabilityData, type AdvisoryBoardDebate
 } from '@/lib/apiIntelligence';
 import { Mic, Save, Sliders, ClipboardCopy, TrendingDown, RefreshCcw } from 'lucide-react';
+import Tooltip from "@/components/layout/Tooltip";
 
 const MEDICAL_DISCLAIMER =
   'This AI-generated insight is for informational purposes only. Consult a qualified clinician for diagnosis, treatment, or emergencies.';

@@ -13,7 +13,7 @@ import {
 } from "@/lib/api";
 import { fetchClinicalTrials, fetchExternalRecords, fetchHealthPassport, orderLabKit, fetchLabKits } from "@/lib/apiIntelligence";
 import { notifyPatientCareEventsUpdated } from "@/lib/patientCareEvents";
-import { ChevronLeft, FileDigit, BrainCircuit, Loader2, ShieldAlert, RefreshCw, HeartPulse, Info, Check, Plus, Sparkles, QrCode, Globe } from "lucide-react";
+import { ChevronLeft, FileDigit, BrainCircuit, Loader2, ShieldAlert, RefreshCw, HeartPulse, Info, Check, Plus, Sparkles, QrCode, Globe , Activity} from "lucide-react";
 import {
   Radar,
   RadarChart,
@@ -29,6 +29,7 @@ import PatientDiagnosticResults from "@/components/operations/PatientDiagnosticR
 import PatientDiagnosticsReview from "@/components/operations/PatientDiagnosticsReview";
 import PatientMedicationsPanel from "@/components/operations/PatientMedicationsPanel";
 import PatientMonitoringSignals from "@/components/operations/PatientMonitoringSignals";
+import Tooltip from "@/components/layout/Tooltip";
 
 interface PatientIdentity {
   fullName: string;

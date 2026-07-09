@@ -13,6 +13,7 @@ import {
 } from '@/lib/apiFederated';
 import { runFederatedSimulation } from '@/lib/api';
 import { useMaterialRipple } from '@/lib/ripple';
+import Tooltip from "@/components/layout/Tooltip";
 
 export default function FederatedLearning() {
   const { triggerRipple } = useMaterialRipple();
