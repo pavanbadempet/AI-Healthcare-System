@@ -22,13 +22,13 @@ const LUNG_FIELDS = [
 
 const LUNG_EXAMPLES = [
   {
-    name: "Patient Record #23 (Negative)",
-    description: "Actual record from the Lung Cancer dataset (Target: 0)",
+    name: "Susan M., 59F",
+    description: "Non-smoker. Complains of mild fatigue but denies chest pain or chronic cough.",
     data: { GENDER: 0, AGE: 59, SMOKING: 0, YELLOW_FINGERS: 1, ANXIETY: 0, PEER_PRESSURE: 0, CHRONIC_DISEASE: 0, FATIGUE: 1, ALLERGY: 0, WHEEZING: 0, ALCOHOL_CONSUMING: 0, COUGHING: 0, SHORTNESS_OF_BREATH: 0, SWALLOWING_DIFFICULTY: 0, CHEST_PAIN: 0 }
   },
   {
-    name: "Patient Record #14 (Positive)",
-    description: "Actual record from the Lung Cancer dataset (Target: 1)",
+    name: "Richard B., 69M",
+    description: "Heavy smoker. Presents with chronic wheezing, shortness of breath, and chest pain.",
     data: { GENDER: 1, AGE: 69, SMOKING: 1, YELLOW_FINGERS: 1, ANXIETY: 1, PEER_PRESSURE: 0, CHRONIC_DISEASE: 0, FATIGUE: 1, ALLERGY: 0, WHEEZING: 1, ALCOHOL_CONSUMING: 1, COUGHING: 1, SHORTNESS_OF_BREATH: 1, SWALLOWING_DIFFICULTY: 1, CHEST_PAIN: 1 }
   }
 ];

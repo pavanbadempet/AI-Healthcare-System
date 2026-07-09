@@ -24,13 +24,13 @@ const DIABETES_FIELDS = [
 
 const DIABETES_EXAMPLES = [
   {
-    name: "Patient Record #19 (Negative)",
-    description: "Actual record from the BRFSS 2015 dataset (Target: 0)",
+    name: "Sarah W., 55F",
+    description: "Annual physical. High BMI and cholesterol, but no cardiac history. Poor general health.",
     data: { hypertension: 1, high_chol: 1, bmi: 40, smoking_history: 1, heart_disease: 0, physical_activity: 0, general_health: 5, gender: 0, age_bucket: 9 }
   },
   {
-    name: "Patient Record #142 (Positive)",
-    description: "Actual record from the BRFSS 2015 dataset (Target: 1)",
+    name: "Michael K., 58M",
+    description: "Follow-up post myocardial infarction. Sedentary lifestyle with multiple comorbidities.",
     data: { hypertension: 1, high_chol: 1, bmi: 30, smoking_history: 1, heart_disease: 1, physical_activity: 0, general_health: 5, gender: 0, age_bucket: 9 }
   }
 ];
