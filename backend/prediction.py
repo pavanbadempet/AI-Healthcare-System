@@ -51,6 +51,39 @@ def initialize_models():
     lungs_scaler = model_service._entries["lungs"].scaler
 
 
+
+def _run_model_prediction_scaled(model_name: str, input_list: list, X=None):
+    """Run prediction using pickle if available, otherwise ONNX. Supports scaled input."""
+    from . import model_service as ms
+    import numpy as np
+    entry = ms._entries.get(model_name)
+    if not entry:
+        raise ValueError(f"Model {model_name} not found")
+        
+    predict_input = X if X is not None else [input_list]
+        
+    if entry.model is not None:
+        raw_pred = entry.model.predict(predict_input)
+        raw = ms._normalize_prediction(raw_pred)
+        confidence, risk_level = ms._extract_confidence(entry.model, predict_input)
+        proba = entry.model.predict_proba(predict_input)[0]
+        return raw, confidence, risk_level, proba
+    elif entry.onnx_session is not None or entry.is_voting:
+        # ONNX uses unscaled input if scaler_onnx_session exists in model_service
+        # Actually model_service predict_kidney passes input_list to scaler if needed
+        # Let's check how model_service handles it:
+        input_array = np.array([input_list], dtype=np.float32)
+        if entry.scaler_needed and entry.scaler_onnx_session is not None:
+            input_array = entry.scaler_onnx_session.run(None, {entry.scaler_onnx_session.get_inputs()[0].name: input_array})[0]
+        elif entry.scaler_needed and entry.scaler is not None:
+            input_array = entry.scaler.transform(input_array).astype(np.float32)
+        
+        raw, prob = ms._predict_onnx_probs(entry, input_array)
+        confidence, risk_level = ms._classify_confidence(prob)
+        return raw, confidence, risk_level, prob[0]
+    else:
+        raise ValueError(f"No usable model for {model_name}")
+
 def load_pkl(filenames):
     """Backward-compatible pickle loader used by legacy tests and scripts."""
     model_dir = os.path.dirname(os.path.abspath(__file__))
@@ -78,7 +111,7 @@ def _get_imputer_and_conformal(model_name: str, current_model_obj: Any):
     associated with the given model name, maintaining compatibility with tests.
     """
     entry = model_service._entries.get(model_name)
-    if entry and entry.model is current_model_obj:
+    if entry:
         return entry.imputer, entry.conformal_q
     return None, None
 
@@ -719,7 +752,7 @@ async def predict_kidney(
     db: Session = Depends(database.get_db),
 ) -> Dict[str, Any]:
     _pred = sys.modules[__name__]
-    if _pred.kidney_model is None:
+    if not model_service.is_available("kidney"):
         raise HTTPException(status_code=503, detail="Kidney Model not trained/loaded.")
     try:
         import pandas as pd
@@ -747,9 +780,7 @@ async def predict_kidney(
             X = _pred.kidney_scaler.transform(df)
         else:
             X = df.values
-        raw_pred = _pred.kidney_model.predict(X)
-        raw = _normalize_prediction(raw_pred)
-        confidence, risk_level = _extract_confidence(_pred.kidney_model, X)
+        raw, confidence, risk_level, proba = _run_model_prediction_scaled(\"kidney\", imputed_list, X)
         prediction = "Chronic Kidney Disease Detected" if raw == 1 else "Healthy Kidney"
 
         # Extract imputed values for clinical indices
@@ -763,10 +794,9 @@ async def predict_kidney(
         # Calculate Conformal prediction set & Explainability
         proba_pos = None
         try:
-            proba = _pred.kidney_model.predict_proba(X)[0]
             proba_pos = float(proba[1]) if len(proba) > 1 else float(proba[0])
         except Exception as e:
-            logger.warning("Predict proba failed for Kidney: %s", e)
+            logger.warning(\"Predict proba failed for Kidney: %s\", e)
 
         if proba_pos is not None:
             if conformal_q is not None:
@@ -834,7 +864,7 @@ async def predict_lungs(
     db: Session = Depends(database.get_db),
 ) -> Dict[str, Any]:
     _pred = sys.modules[__name__]
-    if _pred.lungs_model is None:
+    if not model_service.is_available("lungs"):
         raise HTTPException(status_code=503, detail="Lung Model not trained/loaded.")
     try:
         import pandas as pd
@@ -861,18 +891,15 @@ async def predict_lungs(
             X = _pred.lungs_scaler.transform(df)
         else:
             X = df.values
-        raw_pred = _pred.lungs_model.predict(X)
-        raw = _normalize_prediction(raw_pred)
-        confidence, risk_level = _extract_confidence(_pred.lungs_model, X)
+        raw, confidence, risk_level, proba = _run_model_prediction_scaled(\"lungs\", imputed_list, X)
         prediction = "Respiratory Issue Detected" if raw == 1 else "Healthy Lungs"
 
         clinical_indices = {}
         proba_pos = None
         try:
-            proba = _pred.lungs_model.predict_proba(X)[0]
             proba_pos = float(proba[1]) if len(proba) > 1 else float(proba[0])
         except Exception as e:
-            logger.warning("Predict proba failed for Lungs: %s", e)
+            logger.warning(\"Predict proba failed for Lungs: %s\", e)
 
         if proba_pos is not None:
             if conformal_q is not None:
@@ -941,7 +968,7 @@ async def predict_diabetes(
     db: Session = Depends(database.get_db),
 ) -> Dict[str, Any]:
     _pred = sys.modules[__name__]
-    if _pred.diabetes_model is None:
+    if not model_service.is_available("diabetes"):
         raise HTTPException(status_code=503, detail="Diabetes Model not available")
     try:
         from .model_service import _extract_confidence, _normalize_prediction
@@ -960,18 +987,15 @@ async def predict_diabetes(
         else:
             imputed_list = [0.0 if x is None else x for x in input_list]
 
-        raw_pred = _pred.diabetes_model.predict([imputed_list])
-        raw = _normalize_prediction(raw_pred)
-        confidence, risk_level = _extract_confidence(_pred.diabetes_model, [imputed_list])
+        raw, confidence, risk_level, proba = _run_model_prediction(\"diabetes\", imputed_list)
         prediction = "High Risk" if raw == 1 else "Low Risk"
 
         clinical_indices = {}
         proba_pos = None
         try:
-            proba = _pred.diabetes_model.predict_proba([imputed_list])[0]
             proba_pos = float(proba[1]) if len(proba) > 1 else float(proba[0])
         except Exception as e:
-            logger.warning("Predict proba failed for Diabetes: %s", e)
+            logger.warning(\"Predict proba failed for Diabetes: %s\", e)
 
         if proba_pos is not None:
             if conformal_q is not None:
@@ -1040,7 +1064,7 @@ async def predict_heart(
     db: Session = Depends(database.get_db),
 ) -> Dict[str, Any]:
     _pred = sys.modules[__name__]
-    if _pred.heart_model is None:
+    if not model_service.is_available("heart"):
         raise HTTPException(status_code=503, detail="Heart Model not available")
     try:
         from .model_service import _extract_confidence, _normalize_prediction
@@ -1057,9 +1081,7 @@ async def predict_heart(
         else:
             imputed_list = [0.0 if x is None else x for x in input_list]
 
-        raw_pred = _pred.heart_model.predict([imputed_list])
-        raw = _normalize_prediction(raw_pred)
-        confidence, risk_level = _extract_confidence(_pred.heart_model, [imputed_list])
+        raw, confidence, risk_level, proba = _run_model_prediction(\"heart\", imputed_list)
         prediction = "Heart Disease Detected" if raw == 1 else "Healthy Heart"
 
         # Extract imputed values for clinical indices
@@ -1084,10 +1106,9 @@ async def predict_heart(
 
         proba_pos = None
         try:
-            proba = _pred.heart_model.predict_proba([imputed_list])[0]
             proba_pos = float(proba[1]) if len(proba) > 1 else float(proba[0])
         except Exception as e:
-            logger.warning("Predict proba failed for Heart: %s", e)
+            logger.warning(\"Predict proba failed for Heart: %s\", e)
 
         if proba_pos is not None:
             if conformal_q is not None:
@@ -1155,7 +1176,7 @@ async def predict_liver(
     db: Session = Depends(database.get_db),
 ) -> Dict[str, Any]:
     _pred = sys.modules[__name__]
-    if _pred.liver_model is None:
+    if not model_service.is_available("liver"):
         raise HTTPException(status_code=503, detail="Liver Model or Scaler not available")
     try:
         import numpy as np
@@ -1185,9 +1206,7 @@ async def predict_liver(
             X = _pred.liver_scaler.transform(df)
         else:
             X = df.values
-        raw_pred = _pred.liver_model.predict(X)
-        raw = _normalize_prediction(raw_pred)
-        confidence, risk_level = _extract_confidence(_pred.liver_model, X)
+        raw, confidence, risk_level, proba = _run_model_prediction_scaled(\"liver\", imputed_list, X)
         prediction = "Liver Disease Detected" if raw == 1 else "Healthy Liver"
 
         # Extract imputed values for clinical indices
@@ -1206,10 +1225,9 @@ async def predict_liver(
 
         proba_pos = None
         try:
-            proba = _pred.liver_model.predict_proba(X)[0]
             proba_pos = float(proba[1]) if len(proba) > 1 else float(proba[0])
         except Exception as e:
-            logger.warning("Predict proba failed for Liver: %s", e)
+            logger.warning(\"Predict proba failed for Liver: %s\", e)
 
         if proba_pos is not None:
             if conformal_q is not None:
