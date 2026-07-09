@@ -314,19 +314,39 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
                         onChange={(val) => setFormData({ ...formData, [field.name]: val })} 
                       />
                     ) : (
-                      <input
-                        id={`field-${field.name}`}
-                        type="number"
-                        min={field.min}
-                        max={field.max}
-                        step={field.step || 1}
-                        value={formData[field.name] ?? ""}
-                        onChange={(e) => setFormData({ ...formData, [field.name]: Number(e.target.value) })}
-                        placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}...`}
-                        required
-                        className="input-clinical"
-                        aria-label={field.label}
-                      />
+                      <div className="flex flex-col gap-2 w-full">
+                        <div className="flex items-center gap-2 w-full">
+                          <input
+                            id={`field-${field.name}`}
+                            type="number"
+                            min={field.min}
+                            max={field.max}
+                            step={field.step || 1}
+                            value={formData[field.name] ?? ""}
+                            onChange={(e) => setFormData({ ...formData, [field.name]: Number(e.target.value) })}
+                            placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}...`}
+                            required
+                            className="input-clinical flex-1 min-w-0"
+                            aria-label={field.label}
+                          />
+                          {(field.min !== undefined && field.max !== undefined) && (
+                            <div className="text-[10px] font-mono text-[var(--text-dim)] whitespace-nowrap bg-[rgba(255,255,255,0.02)] px-2 py-1 rounded border border-[var(--border)]">
+                              {field.min} - {field.max}
+                            </div>
+                          )}
+                        </div>
+                        {(field.min !== undefined && field.max !== undefined) && (
+                          <input
+                            type="range"
+                            min={field.min}
+                            max={field.max}
+                            step={field.step || 1}
+                            value={formData[field.name] ?? (field.min + (field.max - field.min) / 2)}
+                            onChange={(e) => setFormData({ ...formData, [field.name]: Number(e.target.value) })}
+                            className="w-full h-1.5 bg-[var(--border)] rounded-lg appearance-none cursor-pointer accent-[var(--accent)] focus:outline-none focus:ring-1 focus:ring-[var(--accent)]"
+                          />
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
