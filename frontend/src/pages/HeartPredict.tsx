@@ -34,6 +34,9 @@ const HEART_FIELDS = [
       { label: "Normal", value: 1 },
       { label: "Fixed Defect", value: 2 },
       { label: "Reversable Defect", value: 3 }
+  ]}
+];
+
 const HEART_EXAMPLES = [
   {
     name: "Patient Record #103 (Negative)",
