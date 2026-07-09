@@ -27,9 +27,9 @@ const HEART_FIELDS = [
       { label: "Flat", value: 1 },
       { label: "Downsloping", value: 2 }
   ]},
-  { name: "ca", label: "Number of Major Vessels", type: "select" as const, tooltip: "Number of major vessels (0-3) colored by fluoroscopy", options: [ /* tooltip: "Number of major vessels (0-3) colored by fluoroscopy" */
+  { name: "ca", label: "Number of Major Vessels", type: "select" as const, tooltip: "Number of major vessels (0-3) colored by fluoroscopy", options: [
       { label: "0", value: 0 }, { label: "1", value: 1 }, { label: "2", value: 2 }, { label: "3", value: 3 }, { label: "4", value: 4 }
-  ], tooltip: "Number of major vessels (0-3) colored by fluoroscopy" },
+  ] },
   { name: "thal", label: "Thalassemia", type: "select" as const, tooltip: "Thalassemia type (blood disorder)", options: [ /* tooltip: "Thalassemia type (blood disorder)" */
       { label: "Normal", value: 1 },
       { label: "Fixed Defect", value: 2 },

@@ -263,7 +263,14 @@ export default function PredictionForm({ title, description, fields, onSubmit }:
             {/* Compute Enclave Selector Switch */}
             <div className="mb-5 p-3 bg-zinc-950/60 border border-[var(--border)] rounded flex flex-col sm:flex-row justify-between sm:items-center gap-3 text-xs font-mono">
               <div>
-                <span className="text-white font-bold block uppercase tracking-wider">Compute Enclave Mode</span>
+                <span className="text-white font-bold flex items-center gap-1.5 uppercase tracking-wider">
+                  Compute Enclave Mode
+                  <Tooltip content="Choose where the AI calculation runs. 'Local' runs in your browser for maximum privacy and zero latency. 'Remote' uses our servers for heavier computations." position="top">
+                    <span className="cursor-help text-[var(--text-dim)] hover:text-[var(--text-primary)] transition-colors">
+                      <Activity size={12} aria-hidden="true" />
+                    </span>
+                  </Tooltip>
+                </span>
                 <span className="text-[9px] text-[var(--text-dim)] uppercase">Select execution environment target</span>
               </div>
               <div className="flex gap-2">
