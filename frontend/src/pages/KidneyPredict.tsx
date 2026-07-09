@@ -36,6 +36,19 @@ const KIDNEY_FIELDS = [
   { name: "ane", label: "Anemia", type: "select" as const, options: [{ label: "Yes", value: 1 }, { label: "No", value: 0 }] },
 ];
 
+const KIDNEY_EXAMPLES = [
+  {
+    name: "Healthy Profile",
+    description: "Typical values for a healthy patient with normal kidney function.",
+    data: { age: 40, bp: 80, sg: 1.020, al: 0, su: 0, rbc: 1, pc: 1, pcc: 0, ba: 0, bgr: 121, bu: 36, sc: 1.2, sod: 138, pot: 4.4, hemo: 15.4, pcv: 44, wc: 7800, rc: 5.2, htn: 0, dm: 0, cad: 0, appet: 1, pe: 0, ane: 0 }
+  },
+  {
+    name: "High Risk Profile",
+    description: "Typical values for a patient with severe chronic kidney disease indicators.",
+    data: { age: 60, bp: 100, sg: 1.010, al: 4, su: 2, rbc: 0, pc: 0, pcc: 1, ba: 1, bgr: 210, bu: 90, sc: 6.5, sod: 125, pot: 6.8, hemo: 8.5, pcv: 25, wc: 12000, rc: 3.1, htn: 1, dm: 1, cad: 1, appet: 0, pe: 1, ane: 1 }
+  }
+];
+
 export default function KidneyPage() {
   return (
     <div className="py-8">
@@ -44,6 +57,7 @@ export default function KidneyPage() {
         description="Enter the patient's urinalysis and comprehensive metabolic panel results. The AI will evaluate 24 indicators to predict Chronic Kidney Disease."
         fields={KIDNEY_FIELDS}
         onSubmit={predictKidney}
+        exampleCases={KIDNEY_EXAMPLES}
       />
     </div>
   );

@@ -15,6 +15,19 @@ const LIVER_FIELDS = [
   { name: "Albumin_and_Globulin_Ratio", label: "A/G Ratio", type: "number" as const, min: 0, max: 5, step: 0.01 , tooltip: "A/G Ratio. Normal: 1.1-2.5" },
 ];
 
+const LIVER_EXAMPLES = [
+  {
+    name: "Healthy Profile",
+    description: "Typical values for a healthy patient with normal liver function.",
+    data: { Age: 35, Gender: 1, Total_Bilirubin: 0.8, Direct_Bilirubin: 0.2, Alkaline_Phosphotase: 110, Alamine_Aminotransferase: 25, Aspartate_Aminotransferase: 28, Total_Proteins: 7.2, Albumin: 4.5, Albumin_and_Globulin_Ratio: 1.5 }
+  },
+  {
+    name: "High Risk Profile",
+    description: "Typical values for a patient with liver disease indicators.",
+    data: { Age: 55, Gender: 1, Total_Bilirubin: 4.5, Direct_Bilirubin: 2.1, Alkaline_Phosphotase: 350, Alamine_Aminotransferase: 120, Aspartate_Aminotransferase: 145, Total_Proteins: 5.8, Albumin: 2.5, Albumin_and_Globulin_Ratio: 0.7 }
+  }
+];
+
 export default function LiverPage() {
   return (
     <div className="py-8">
@@ -23,6 +36,7 @@ export default function LiverPage() {
         description="Enter the patient's hepatic function panel results. The AI model analyzes liver enzymes, bilirubin, and protein levels to predict potential liver disease."
         fields={LIVER_FIELDS}
         onSubmit={predictLiver}
+        exampleCases={LIVER_EXAMPLES}
       />
     </div>
   );
