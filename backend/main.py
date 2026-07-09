@@ -435,5 +435,3 @@ if os.path.isdir(_frontend_dist):
             return FileResponse(index_file, headers={"Cache-Control": "no-store, no-cache, must-revalidate"})
 
         raise HTTPException(status_code=404)
- 
- 
