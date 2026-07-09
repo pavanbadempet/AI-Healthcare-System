@@ -254,17 +254,23 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
             <div className="mb-6 bg-[rgba(255,255,255,0.02)] border border-[var(--border)] rounded-lg p-3">
               <div className="text-[9px] font-bold uppercase text-[var(--text-dim)] tracking-wider mb-2">Example Cases</div>
               <div className="flex flex-wrap gap-2">
-                {exampleCases.map((example, idx) => (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => setFormData(example.data)}
-                    className="px-2.5 py-1.5 rounded text-[10px] font-mono border border-[var(--border)] bg-[rgba(10,10,15,0.5)] text-[var(--text-secondary)] hover:text-white hover:border-[var(--accent-border)] hover:bg-[var(--accent-muted)] transition-colors cursor-pointer"
-                    title={example.description}
-                  >
-                    Load: {example.name}
-                  </button>
-                ))}
+                <select
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
+                  onChange={(e) => {
+                    const idx = parseInt(e.target.value);
+                    if (!isNaN(idx) && exampleCases[idx]) {
+                      setFormData(exampleCases[idx].data);
+                    }
+                  }}
+                  defaultValue="default"
+                >
+                  <option value="default" disabled>-- Select a Patient Profile to Autofill --</option>
+                  {exampleCases.map((example, idx) => (
+                    <option key={idx} value={idx}>
+                      {example.name} - {example.description}
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           )}
