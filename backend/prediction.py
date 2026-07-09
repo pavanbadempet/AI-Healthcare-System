@@ -780,7 +780,7 @@ async def predict_kidney(
             X = _pred.kidney_scaler.transform(df)
         else:
             X = df.values
-        raw, confidence, risk_level, proba = _run_model_prediction_scaled(\"kidney\", imputed_list, X)
+        raw, confidence, risk_level, proba = _run_model_prediction_scaled("kidney", imputed_list, X)
         prediction = "Chronic Kidney Disease Detected" if raw == 1 else "Healthy Kidney"
 
         # Extract imputed values for clinical indices
@@ -796,7 +796,7 @@ async def predict_kidney(
         try:
             proba_pos = float(proba[1]) if len(proba) > 1 else float(proba[0])
         except Exception as e:
-            logger.warning(\"Predict proba failed for Kidney: %s\", e)
+            logger.warning("Predict proba failed for Kidney: %s", e)
 
         if proba_pos is not None:
             if conformal_q is not None:
@@ -891,7 +891,7 @@ async def predict_lungs(
             X = _pred.lungs_scaler.transform(df)
         else:
             X = df.values
-        raw, confidence, risk_level, proba = _run_model_prediction_scaled(\"lungs\", imputed_list, X)
+        raw, confidence, risk_level, proba = _run_model_prediction_scaled("lungs", imputed_list, X)
         prediction = "Respiratory Issue Detected" if raw == 1 else "Healthy Lungs"
 
         clinical_indices = {}
@@ -899,7 +899,7 @@ async def predict_lungs(
         try:
             proba_pos = float(proba[1]) if len(proba) > 1 else float(proba[0])
         except Exception as e:
-            logger.warning(\"Predict proba failed for Lungs: %s\", e)
+            logger.warning("Predict proba failed for Lungs: %s", e)
 
         if proba_pos is not None:
             if conformal_q is not None:
@@ -987,7 +987,7 @@ async def predict_diabetes(
         else:
             imputed_list = [0.0 if x is None else x for x in input_list]
 
-        raw, confidence, risk_level, proba = _run_model_prediction(\"diabetes\", imputed_list)
+        raw, confidence, risk_level, proba = _run_model_prediction("diabetes", imputed_list)
         prediction = "High Risk" if raw == 1 else "Low Risk"
 
         clinical_indices = {}
@@ -995,7 +995,7 @@ async def predict_diabetes(
         try:
             proba_pos = float(proba[1]) if len(proba) > 1 else float(proba[0])
         except Exception as e:
-            logger.warning(\"Predict proba failed for Diabetes: %s\", e)
+            logger.warning("Predict proba failed for Diabetes: %s", e)
 
         if proba_pos is not None:
             if conformal_q is not None:
@@ -1081,7 +1081,7 @@ async def predict_heart(
         else:
             imputed_list = [0.0 if x is None else x for x in input_list]
 
-        raw, confidence, risk_level, proba = _run_model_prediction(\"heart\", imputed_list)
+        raw, confidence, risk_level, proba = _run_model_prediction("heart", imputed_list)
         prediction = "Heart Disease Detected" if raw == 1 else "Healthy Heart"
 
         # Extract imputed values for clinical indices
@@ -1108,7 +1108,7 @@ async def predict_heart(
         try:
             proba_pos = float(proba[1]) if len(proba) > 1 else float(proba[0])
         except Exception as e:
-            logger.warning(\"Predict proba failed for Heart: %s\", e)
+            logger.warning("Predict proba failed for Heart: %s", e)
 
         if proba_pos is not None:
             if conformal_q is not None:
@@ -1206,7 +1206,7 @@ async def predict_liver(
             X = _pred.liver_scaler.transform(df)
         else:
             X = df.values
-        raw, confidence, risk_level, proba = _run_model_prediction_scaled(\"liver\", imputed_list, X)
+        raw, confidence, risk_level, proba = _run_model_prediction_scaled("liver", imputed_list, X)
         prediction = "Liver Disease Detected" if raw == 1 else "Healthy Liver"
 
         # Extract imputed values for clinical indices
@@ -1227,7 +1227,7 @@ async def predict_liver(
         try:
             proba_pos = float(proba[1]) if len(proba) > 1 else float(proba[0])
         except Exception as e:
-            logger.warning(\"Predict proba failed for Liver: %s\", e)
+            logger.warning("Predict proba failed for Liver: %s", e)
 
         if proba_pos is not None:
             if conformal_q is not None:
