@@ -226,6 +226,94 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
     );
   };
 
+  // Custom Profile Select Component with text input
+  const ProfileSelect = ({ options, onSelect }: { options: ExampleCase[], onSelect: (idx: number) => void }) => {
+    const [open, setOpen] = useState(false);
+    const [query, setQuery] = useState("");
+    const selectRef = useRef<HTMLDivElement>(null);
+    const listboxId = useId();
+
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (selectRef.current && !selectRef.current.contains(event.target as Node)) {
+          setOpen(false);
+        }
+      };
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const filteredOptions = query === "" 
+      ? options 
+      : options.filter((opt) => opt.name.toLowerCase().includes(query.toLowerCase()) || opt.description.toLowerCase().includes(query.toLowerCase()));
+
+    return (
+      <div className="relative w-full" ref={selectRef}>
+        <div 
+          className={`w-full bg-[rgba(255,255,255,0.02)] border ${open ? 'border-[var(--accent)] ring-1 ring-[var(--accent)]' : 'border-[var(--border)] hover:bg-[rgba(255,255,255,0.04)]'} px-3 py-2 text-[var(--text-primary)] text-xs rounded transition-all flex justify-between items-center`}
+        >
+          <input
+            type="text"
+            className="w-full bg-transparent outline-none placeholder:text-[var(--text-muted)] font-mono uppercase"
+            placeholder="-- Search or select a patient profile --"
+            value={query}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setOpen(true);
+            }}
+            onFocus={() => setOpen(true)}
+            onKeyDown={(e) => {
+                if(e.key === 'Enter' && filteredOptions.length > 0) {
+                   onSelect(options.indexOf(filteredOptions[0]));
+                   setQuery(filteredOptions[0].name);
+                   setOpen(false);
+                }
+            }}
+          />
+          <ChevronDown size={13} className={`text-[var(--text-dim)] transition-transform cursor-pointer ${open ? "rotate-180 text-[var(--accent)]" : ""}`} onClick={() => setOpen(!open)} aria-hidden="true" />
+        </div>
+        
+        <AnimatePresence>
+          {open && (
+            <motion.div 
+              initial={{ opacity: 0, y: -4 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -4 }}
+              transition={{ duration: 0.1 }}
+              className="absolute top-full left-0 right-0 mt-1 bg-[#18181b] border border-[var(--border-focus)] rounded overflow-hidden z-50 shadow-[var(--shadow-lg)]"
+              id={listboxId}
+              role="listbox"
+            >
+              <div className="max-h-52 overflow-y-auto py-1">
+                {filteredOptions.length === 0 ? (
+                  <div className="px-3 py-2 text-xs font-mono text-[var(--text-muted)]">No profiles found.</div>
+                ) : (
+                  filteredOptions.map((opt) => {
+                    const idx = options.indexOf(opt);
+                    return (
+                      <div 
+                        key={idx}
+                        onClick={() => {
+                          onSelect(idx);
+                          setQuery(opt.name);
+                          setOpen(false);
+                        }}
+                        className="px-3 py-2 hover:bg-[var(--accent-muted)] hover:text-[var(--accent)] text-xs font-mono uppercase cursor-pointer transition-colors text-[var(--text-secondary)] border-b border-[rgba(255,255,255,0.02)] last:border-0"
+                      >
+                        <div className="font-bold text-[var(--text-primary)]">{opt.name}</div>
+                        <div className="text-[10px] text-[var(--text-dim)] mt-0.5">{opt.description}</div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
       
@@ -252,25 +340,12 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
 
           {exampleCases && exampleCases.length > 0 && (
             <div className="mb-6 bg-[rgba(255,255,255,0.02)] border border-[var(--border)] rounded-lg p-3">
-              <div className="text-[9px] font-bold uppercase text-[var(--text-dim)] tracking-wider mb-2">Example Cases</div>
+              <div className="text-[9px] font-bold uppercase text-[var(--text-dim)] tracking-wider mb-2">Patient Profiles</div>
               <div className="flex flex-wrap gap-2">
-                <select
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm font-medium text-slate-300 focus:outline-none focus:border-indigo-500 cursor-pointer"
-                  onChange={(e) => {
-                    const idx = parseInt(e.target.value);
-                    if (!isNaN(idx) && exampleCases[idx]) {
-                      setFormData(exampleCases[idx].data);
-                    }
-                  }}
-                  defaultValue="default"
-                >
-                  <option value="default" disabled>-- Select a Patient Profile to Autofill --</option>
-                  {exampleCases.map((example, idx) => (
-                    <option key={idx} value={idx}>
-                      {example.name} - {example.description}
-                    </option>
-                  ))}
-                </select>
+                <ProfileSelect 
+                  options={exampleCases} 
+                  onSelect={(idx) => setFormData(exampleCases[idx].data)}
+                />
               </div>
             </div>
           )}
