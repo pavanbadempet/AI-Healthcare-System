@@ -34,19 +34,16 @@ const HEART_FIELDS = [
       { label: "Normal", value: 1 },
       { label: "Fixed Defect", value: 2 },
       { label: "Reversable Defect", value: 3 }
-  ]}
-];
-
 const HEART_EXAMPLES = [
   {
-    name: "Healthy Profile",
-    description: "Typical values for a healthy patient with low risk.",
-    data: { age: 45, sex: 1, cp: 3, trestbps: 120, chol: 180, fbs: 0, restecg: 0, thalach: 160, exang: 0, oldpeak: 0, slope: 0, ca: 0, thal: 1 }
+    name: "Patient Record #103 (Negative)",
+    description: "Actual record from the Cleveland dataset (Target: 0)",
+    data: { age: 67, sex: 1, cp: 0, trestbps: 160, chol: 286, fbs: 0, restecg: 0, thalach: 108, exang: 1, oldpeak: 1.5, slope: 1, ca: 3, thal: 2 }
   },
   {
-    name: "High Risk Profile",
-    description: "Typical values for a patient with high risk of heart disease.",
-    data: { age: 65, sex: 1, cp: 0, trestbps: 160, chol: 280, fbs: 1, restecg: 2, thalach: 110, exang: 1, oldpeak: 3.5, slope: 2, ca: 2, thal: 3 }
+    name: "Patient Record #14 (Positive)",
+    description: "Actual record from the Cleveland dataset (Target: 1)",
+    data: { age: 63, sex: 1, cp: 3, trestbps: 145, chol: 233, fbs: 1, restecg: 0, thalach: 150, exang: 0, oldpeak: 2.3, slope: 0, ca: 0, thal: 1 }
   }
 ];
 
