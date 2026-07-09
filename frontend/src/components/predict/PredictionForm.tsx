@@ -111,6 +111,7 @@ interface PredictionFormProps {
 
 export default function PredictionForm({ title, description, fields, onSubmit, exampleCases }: PredictionFormProps) {
   const [formData, setFormData] = useState<Record<string, number>>({});
+  const [selectedProfile, setSelectedProfile] = useState<ExampleCase | null>(null);
   const [computeMode, setComputeMode] = useState<'local' | 'remote'>('remote');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -344,9 +345,31 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
               <div className="flex flex-wrap gap-2">
                 <ProfileSelect 
                   options={exampleCases} 
-                  onSelect={(idx) => setFormData(exampleCases[idx].data)}
+                  onSelect={(idx) => {
+                    setFormData(exampleCases[idx].data);
+                    setSelectedProfile(exampleCases[idx]);
+                  }}
                 />
               </div>
+              
+              <AnimatePresence>
+                {selectedProfile && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                    animate={{ opacity: 1, height: "auto", marginTop: 12 }}
+                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="p-3 bg-[var(--accent-muted)] border border-[var(--border-focus)] rounded text-xs flex gap-2.5 items-start shadow-inner">
+                      <FileText size={16} className="shrink-0 mt-0.5 text-[var(--accent)]" />
+                      <div>
+                        <span className="font-bold text-[var(--text-primary)] block mb-1 uppercase tracking-wider text-[10px]">Clinical History & Record Summary</span>
+                        <p className="text-[var(--text-secondary)] leading-relaxed">{selectedProfile.description}</p>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
 
