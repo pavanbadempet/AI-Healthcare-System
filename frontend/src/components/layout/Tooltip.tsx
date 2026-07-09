@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from "framer-motion";
 
 interface TooltipProps {
   content: string;
-  position?: "top" | "bottom" | "left" | "right";
+  position?: "top" | "bottom" | "left" | "right" | "top-right";
   children: React.ReactNode;
 }
 
@@ -20,6 +20,9 @@ export default function Tooltip({
   switch (position) {
     case "top":
       positionClasses = "bottom-full left-1/2 -translate-x-1/2 mb-2";
+      break;
+    case "top-right":
+      positionClasses = "bottom-full left-0 mb-2";
       break;
     case "bottom":
       positionClasses = "top-full left-1/2 -translate-x-1/2 mt-2";
@@ -37,6 +40,8 @@ export default function Tooltip({
     switch (position) {
       case "top":
         return { opacity: 0, scale: 0.95, y: 4, x: "-50%" };
+      case "top-right":
+        return { opacity: 0, scale: 0.95, y: 4, x: 0 };
       case "bottom":
         return { opacity: 0, scale: 0.95, y: -4, x: "-50%" };
       case "left":
@@ -51,6 +56,8 @@ export default function Tooltip({
       case "top":
       case "bottom":
         return { opacity: 1, scale: 1, y: 0, x: "-50%" };
+      case "top-right":
+        return { opacity: 1, scale: 1, y: 0, x: 0 };
       case "left":
       case "right":
         return { opacity: 1, scale: 1, y: "-50%", x: 0 };
