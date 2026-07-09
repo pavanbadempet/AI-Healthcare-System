@@ -13,6 +13,7 @@ import {
   type Department
 } from "@/lib/api";
 import { fetchTriageQueue } from "@/lib/apiIntelligence";
+import Tooltip from "@/components/layout/Tooltip";
 
 export default function CapacityPage() {
   const [mounted, setMounted] = useState(false);

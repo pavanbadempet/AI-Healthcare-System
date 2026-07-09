@@ -16,6 +16,7 @@ import LiveECGMonitor from "@/components/operations/LiveECGMonitor";
 import { prefetchRoute } from "@/lib/prefetch";
 import { useTranslation } from "@/lib/i18n";
 import { useMaterialRipple } from "@/lib/ripple";
+import Tooltip from "@/components/layout/Tooltip";
 
 interface ClinicalBed {
   bed: string;
