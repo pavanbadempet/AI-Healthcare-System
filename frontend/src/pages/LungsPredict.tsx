@@ -22,14 +22,14 @@ const LUNG_FIELDS = [
 
 const LUNG_EXAMPLES = [
   {
-    name: "Healthy Profile",
-    description: "Typical values for a healthy patient with no significant symptoms.",
-    data: { GENDER: 0, AGE: 30, SMOKING: 0, YELLOW_FINGERS: 0, ANXIETY: 0, PEER_PRESSURE: 0, CHRONIC_DISEASE: 0, FATIGUE: 0, ALLERGY: 0, WHEEZING: 0, ALCOHOL_CONSUMING: 0, COUGHING: 0, SHORTNESS_OF_BREATH: 0, SWALLOWING_DIFFICULTY: 0, CHEST_PAIN: 0 }
+    name: "Patient Record #23 (Negative)",
+    description: "Actual record from the Lung Cancer dataset (Target: 0)",
+    data: { GENDER: 0, AGE: 59, SMOKING: 0, YELLOW_FINGERS: 1, ANXIETY: 0, PEER_PRESSURE: 0, CHRONIC_DISEASE: 0, FATIGUE: 1, ALLERGY: 0, WHEEZING: 0, ALCOHOL_CONSUMING: 0, COUGHING: 0, SHORTNESS_OF_BREATH: 0, SWALLOWING_DIFFICULTY: 0, CHEST_PAIN: 0 }
   },
   {
-    name: "High Risk Profile",
-    description: "Typical values for a patient with severe symptoms and risk factors.",
-    data: { GENDER: 1, AGE: 65, SMOKING: 1, YELLOW_FINGERS: 1, ANXIETY: 1, PEER_PRESSURE: 1, CHRONIC_DISEASE: 1, FATIGUE: 1, ALLERGY: 0, WHEEZING: 1, ALCOHOL_CONSUMING: 1, COUGHING: 1, SHORTNESS_OF_BREATH: 1, SWALLOWING_DIFFICULTY: 1, CHEST_PAIN: 1 }
+    name: "Patient Record #14 (Positive)",
+    description: "Actual record from the Lung Cancer dataset (Target: 1)",
+    data: { GENDER: 1, AGE: 69, SMOKING: 1, YELLOW_FINGERS: 1, ANXIETY: 1, PEER_PRESSURE: 0, CHRONIC_DISEASE: 0, FATIGUE: 1, ALLERGY: 0, WHEEZING: 1, ALCOHOL_CONSUMING: 1, COUGHING: 1, SHORTNESS_OF_BREATH: 1, SWALLOWING_DIFFICULTY: 1, CHEST_PAIN: 1 }
   }
 ];
 
