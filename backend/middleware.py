@@ -50,6 +50,10 @@ _API_PREFIXES = (
     "/events", "/demo-readiness", "/explain",
     "/ai",                                       # ollama_routes
     "/appointments",                             # appointments
+    "/predict",                                  # prediction
+    "/admin",                                    # admin
+    "/chat",                                     # chat
+    "/profile",                                  # profile
 )
 
 
