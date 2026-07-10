@@ -219,28 +219,28 @@ class ModelService:
 
     def _load_pkl(self, filenames: List[str]) -> Any:
         """Attempt to load a pickle/joblib file from the models directory with memory-mapping."""
+        import sys
+        from contextlib import contextmanager
+
+        @contextmanager
+        def silence_stderr_fd():
+            try:
+                stderr_fd = sys.stderr.fileno()
+                dup_stderr = os.dup(stderr_fd)
+                devnull = os.open(os.devnull, os.O_WRONLY)
+                os.dup2(devnull, stderr_fd)
+                try:
+                    yield
+                finally:
+                    os.dup2(dup_stderr, stderr_fd)
+                    os.close(dup_stderr)
+                    os.close(devnull)
+            except Exception:
+                yield
+
         for f_name in filenames:
             path = os.path.join(self._model_dir, f_name)
             if os.path.exists(path):
-                import os
-                import sys
-                from contextlib import contextmanager
-
-                @contextmanager
-                def silence_stderr_fd():
-                    try:
-                        stderr_fd = sys.stderr.fileno()
-                        dup_stderr = os.dup(stderr_fd)
-                        devnull = os.open(os.devnull, os.O_WRONLY)
-                        os.dup2(devnull, stderr_fd)
-                        try:
-                            yield
-                        finally:
-                            os.dup2(dup_stderr, stderr_fd)
-                            os.close(dup_stderr)
-                            os.close(devnull)
-                    except Exception:
-                        yield
 
                 try:
                     # Use memory mapping to read scikit-learn arrays directly from disk.
