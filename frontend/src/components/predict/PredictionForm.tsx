@@ -286,6 +286,98 @@ const ProfileSelect = ({ options, value, onSelect }: { options: ExampleCase[], v
   );
 };
 
+// Custom Record Select Component with text input
+const RecordSelect = ({ records, value, onSelect }: { records: ExampleCaseRecord[], value: number | null, onSelect: (idx: number) => void }) => {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const selectRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (selectRef.current && !selectRef.current.contains(event.target as Node)) {
+        setOpen(false);
+        setQuery("");
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredRecords = query === "" 
+    ? records 
+    : records.filter((rec) => rec.date.includes(query) || rec.type.toLowerCase().includes(query.toLowerCase()));
+
+  const displayValue = open ? query : (value !== null ? `${records[value].date} - ${records[value].type}` : "");
+
+  return (
+    <div className="relative w-full" ref={selectRef}>
+      <div 
+        className={`w-full bg-[rgba(0,0,0,0.3)] border ${open ? 'border-[var(--accent)] ring-1 ring-[var(--accent)]' : 'border-[var(--border-focus)] hover:bg-[rgba(255,255,255,0.04)]'} px-3 py-2 text-[var(--text-primary)] text-xs rounded transition-all flex justify-between items-center cursor-text`}
+        onClick={() => { if (!open) setOpen(true); }}
+      >
+        <input
+          type="text"
+          className="w-full bg-transparent outline-none placeholder:text-[var(--text-muted)] font-mono uppercase"
+          placeholder="Search by date or type..."
+          value={displayValue}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            if (!open) setOpen(true);
+          }}
+          onFocus={() => {
+            setQuery("");
+            setOpen(true);
+          }}
+          onKeyDown={(e) => {
+              if(e.key === 'Enter' && filteredRecords.length > 0) {
+                 onSelect(records.indexOf(filteredRecords[0]));
+                 setQuery("");
+                 setOpen(false);
+              }
+          }}
+        />
+        <ChevronDown size={13} className={`text-[var(--text-dim)] transition-transform cursor-pointer ${open ? "rotate-180 text-[var(--accent)]" : ""}`} onClick={(e) => { e.stopPropagation(); setOpen(!open); setQuery(""); }} aria-hidden="true" />
+      </div>
+      
+      <AnimatePresence>
+        {open && (
+          <motion.div 
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.1 }}
+            className="absolute top-full left-0 right-0 mt-1 bg-[#18181b] border border-[var(--border-focus)] rounded overflow-hidden z-50 shadow-[var(--shadow-lg)]"
+          >
+            <div className="max-h-60 overflow-y-auto py-1">
+              {filteredRecords.length === 0 ? (
+                <div className="px-3 py-2 text-xs font-mono text-[var(--text-muted)]">No records found.</div>
+              ) : (
+                filteredRecords.map((rec) => {
+                  const idx = records.indexOf(rec);
+                  const isSelected = value === idx;
+                  return (
+                    <div 
+                      key={idx}
+                      onClick={() => {
+                        onSelect(idx);
+                        setQuery("");
+                        setOpen(false);
+                      }}
+                      className={`px-3 py-2 hover:bg-[var(--accent-muted)] hover:text-[var(--accent)] text-xs font-mono uppercase cursor-pointer transition-colors text-[var(--text-secondary)] border-b border-[rgba(255,255,255,0.02)] last:border-0 ${isSelected ? 'bg-[var(--accent-muted)] text-[var(--accent)] font-bold' : ''}`}
+                    >
+                      <div className="font-bold text-[var(--text-primary)]">{rec.date} - {rec.type}</div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
 export default function PredictionForm({ title, description, fields, onSubmit, exampleCases }: PredictionFormProps) {
   const [formData, setFormData] = useState<Record<string, number>>({});
   const [selectedProfile, setSelectedProfile] = useState<ExampleCase | null>(null);
@@ -392,21 +484,16 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
                         
                         {selectedProfile.records ? (
                           <div className="space-y-3 mt-3 border-t border-[rgba(255,255,255,0.05)] pt-3">
-                            <div className="flex items-center gap-2 mb-2">
+                            <div className="flex flex-col gap-2 mb-4">
                               <span className="text-[10px] text-[var(--text-dim)] uppercase font-bold tracking-wider">Select Visit Report:</span>
-                              <select 
-                                className="bg-[rgba(0,0,0,0.3)] border border-[var(--border-focus)] rounded text-xs text-[var(--text-primary)] px-2 py-1 outline-none font-mono focus:border-[var(--accent)]"
-                                value={selectedRecordIndex ?? ""}
-                                onChange={(e) => {
-                                  const idx = parseInt(e.target.value);
+                              <RecordSelect
+                                records={selectedProfile.records}
+                                value={selectedRecordIndex}
+                                onSelect={(idx) => {
                                   setSelectedRecordIndex(idx);
                                   setFormData(selectedProfile.records![idx].data || selectedProfile.data);
                                 }}
-                              >
-                                {selectedProfile.records.map((rec, idx) => (
-                                  <option key={idx} value={idx}>{rec.date} - {rec.type}</option>
-                                ))}
-                              </select>
+                              />
                             </div>
                             
                             <div className="space-y-2">
