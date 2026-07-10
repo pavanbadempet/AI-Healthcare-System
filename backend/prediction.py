@@ -37,6 +37,12 @@ router = APIRouter()
 # will continue to work. The canonical source is model_service.
 def initialize_models():
     """Delegates to model_service.initialize() and syncs module-level model attrs."""
+    try:
+        import torch
+        torch.set_num_threads(1)
+    except ImportError:
+        pass
+        
     global diabetes_model, heart_model, liver_model, kidney_model, lungs_model
     global liver_scaler, kidney_scaler, lungs_scaler
     model_service.initialize()
@@ -841,11 +847,14 @@ async def predict_kidney(
         )
 
         model_metadata = _get_model_metadata("kidney", _pred.kidney_model)
-        narrative = await _generate_clinical_narrative(
-            "kidney", prediction, confidence, risk_level, clinical_indices
-        )
-        patient_explanation = await _generate_patient_explanation(
-            "kidney", prediction, confidence, risk_level, attributions or {}
+        import asyncio
+        narrative, patient_explanation = await asyncio.gather(
+            _generate_clinical_narrative(
+                "kidney", prediction, confidence, risk_level, clinical_indices
+            ),
+            _generate_patient_explanation(
+                "kidney", prediction, confidence, risk_level, attributions or {}
+            )
         )
         return {
             "prediction": prediction,
@@ -944,11 +953,14 @@ async def predict_lungs(
         )
 
         model_metadata = _get_model_metadata("lungs", _pred.lungs_model)
-        narrative = await _generate_clinical_narrative(
-            "lungs", prediction, confidence, risk_level, clinical_indices
-        )
-        patient_explanation = await _generate_patient_explanation(
-            "lungs", prediction, confidence, risk_level, attributions or {}
+        import asyncio
+        narrative, patient_explanation = await asyncio.gather(
+            _generate_clinical_narrative(
+                "lungs", prediction, confidence, risk_level, clinical_indices
+            ),
+            _generate_patient_explanation(
+                "lungs", prediction, confidence, risk_level, attributions or {}
+            )
         )
         res = {
             "prediction": prediction,
@@ -1040,11 +1052,14 @@ async def predict_diabetes(
         )
 
         model_metadata = _get_model_metadata("diabetes", _pred.diabetes_model)
-        narrative = await _generate_clinical_narrative(
-            "diabetes", prediction, confidence, risk_level, clinical_indices
-        )
-        patient_explanation = await _generate_patient_explanation(
-            "diabetes", prediction, confidence, risk_level, attributions or {}
+        import asyncio
+        narrative, patient_explanation = await asyncio.gather(
+            _generate_clinical_narrative(
+                "diabetes", prediction, confidence, risk_level, clinical_indices
+            ),
+            _generate_patient_explanation(
+                "diabetes", prediction, confidence, risk_level, attributions or {}
+            )
         )
         res = {
             "prediction": prediction,
@@ -1153,11 +1168,14 @@ async def predict_heart(
         )
 
         model_metadata = _get_model_metadata("heart", _pred.heart_model)
-        narrative = await _generate_clinical_narrative(
-            "heart", prediction, confidence, risk_level, clinical_indices
-        )
-        patient_explanation = await _generate_patient_explanation(
-            "heart", prediction, confidence, risk_level, attributions or {}
+        import asyncio
+        narrative, patient_explanation = await asyncio.gather(
+            _generate_clinical_narrative(
+                "heart", prediction, confidence, risk_level, clinical_indices
+            ),
+            _generate_patient_explanation(
+                "heart", prediction, confidence, risk_level, attributions or {}
+            )
         )
         return {
             "prediction": prediction,
@@ -1272,11 +1290,14 @@ async def predict_liver(
         )
 
         model_metadata = _get_model_metadata("liver", _pred.liver_model)
-        narrative = await _generate_clinical_narrative(
-            "liver", prediction, confidence, risk_level, clinical_indices
-        )
-        patient_explanation = await _generate_patient_explanation(
-            "liver", prediction, confidence, risk_level, attributions or {}
+        import asyncio
+        narrative, patient_explanation = await asyncio.gather(
+            _generate_clinical_narrative(
+                "liver", prediction, confidence, risk_level, clinical_indices
+            ),
+            _generate_patient_explanation(
+                "liver", prediction, confidence, risk_level, attributions or {}
+            )
         )
         return {
             "prediction": prediction,
