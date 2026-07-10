@@ -668,6 +668,7 @@ async def generate(
     model: Optional[str] = None,
     api_provider: Optional[str] = None,
     api_key: Optional[str] = None,
+    bypass_cache: bool = False,
 ) -> str:
     """
     Generate text using the best available AI backend.
@@ -699,7 +700,8 @@ async def generate(
         )
 
     # 1. Semantic Cache check
-    if os.getenv("SEMANTIC_CACHE_ENABLED", "true").lower() in ("true", "1", "yes", "on"):
+    embedding = None
+    if not bypass_cache and os.getenv("SEMANTIC_CACHE_ENABLED", "true").lower() in ("true", "1", "yes", "on"):
         try:
             embedding = await asyncio.to_thread(embed_text, prompt)
             cached_response = semantic_cache.lookup(prompt, embedding)
@@ -731,9 +733,10 @@ async def generate(
         # Redact PII from the output
         result = redact_pii_from_text(result)
         # Save to semantic cache
-        if os.getenv("SEMANTIC_CACHE_ENABLED", "true").lower() in ("true", "1", "yes", "on"):
+        if not bypass_cache and os.getenv("SEMANTIC_CACHE_ENABLED", "true").lower() in ("true", "1", "yes", "on"):
             try:
-                embedding = await asyncio.to_thread(embed_text, prompt)
+                if embedding is None:
+                    embedding = await asyncio.to_thread(embed_text, prompt)
                 semantic_cache.add(prompt, embedding, result)
             except Exception as e:
                 logger.debug("Semantic cache save error: %s", e)

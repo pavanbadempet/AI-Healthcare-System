@@ -336,7 +336,8 @@ async def _generate_patient_explanation(
         )
         explanation = await generate(
             prompt=prompt,
-            system="You are an empathetic, patient-friendly medical AI assistant. Output only the layperson explanation."
+            system="You are an empathetic, patient-friendly medical AI assistant. Output only the layperson explanation.",
+            bypass_cache=True
         )
         return explanation.strip()
     except Exception as e:
@@ -606,7 +607,8 @@ async def _generate_clinical_narrative(
         )
         narrative = await generate(
             prompt=prompt,
-            system="You are an expert clinical artificial intelligence assistant. Output only the requested clinical summary."
+            system="You are an expert clinical artificial intelligence assistant. Output only the requested clinical summary.",
+            bypass_cache=True
         )
         return narrative.strip()
     except Exception as e:
