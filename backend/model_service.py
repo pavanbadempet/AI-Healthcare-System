@@ -222,17 +222,39 @@ class ModelService:
         for f_name in filenames:
             path = os.path.join(self._model_dir, f_name)
             if os.path.exists(path):
+                import os
+                import sys
+                from contextlib import contextmanager
+
+                @contextmanager
+                def silence_stderr_fd():
+                    try:
+                        stderr_fd = sys.stderr.fileno()
+                        dup_stderr = os.dup(stderr_fd)
+                        devnull = os.open(os.devnull, os.O_WRONLY)
+                        os.dup2(devnull, stderr_fd)
+                        try:
+                            yield
+                        finally:
+                            os.dup2(dup_stderr, stderr_fd)
+                            os.close(dup_stderr)
+                            os.close(devnull)
+                    except Exception:
+                        yield
+
                 try:
                     # Use memory mapping to read scikit-learn arrays directly from disk.
                     # This drastically reduces RSS RAM usage and speeds up model loads.
-                    obj = joblib.load(path, mmap_mode='r')
+                    with silence_stderr_fd():
+                        obj = joblib.load(path, mmap_mode='r')
                     logger.info("Successfully loaded model via mmap: %s", f_name)
                     return obj
                 except Exception as mmap_err:
                     # Fallback to regular file stream loading if memory-mapping fails
                     try:
                         with open(path, 'rb') as f:
-                            obj = joblib.load(f)
+                            with silence_stderr_fd():
+                                obj = joblib.load(f)
                             logger.info("Successfully loaded model (fallback): %s", f_name)
                             return obj
                     except Exception:

@@ -87,8 +87,8 @@
       "compatibility_mode": "BACKWARD",
       "sla_freshness_minutes": 1440,
       "quality_threshold": 0.95,
-      "created_at": "2026-07-10T18:36:21.535919+00:00",
-      "updated_at": "2026-07-10T18:36:21.535919+00:00"
+      "created_at": "2026-07-10T19:41:26.893071+00:00",
+      "updated_at": "2026-07-10T19:41:26.893071+00:00"
     }
   },
   "violations": {
@@ -186,6 +186,34 @@
       },
       {
         "timestamp": "2026-07-10T18:36:21.561548+00:00",
+        "errors": [
+          "Record 0: Field 'id' expects 'int', found 'str'"
+        ],
+        "record_count": 1
+      },
+      {
+        "timestamp": "2026-07-10T18:57:39.268529+00:00",
+        "errors": [
+          "Record 0: Missing required field 'id'"
+        ],
+        "record_count": 1
+      },
+      {
+        "timestamp": "2026-07-10T18:57:39.280133+00:00",
+        "errors": [
+          "Record 0: Field 'id' expects 'int', found 'str'"
+        ],
+        "record_count": 1
+      },
+      {
+        "timestamp": "2026-07-10T19:41:26.914756+00:00",
+        "errors": [
+          "Record 0: Missing required field 'id'"
+        ],
+        "record_count": 1
+      },
+      {
+        "timestamp": "2026-07-10T19:41:26.929215+00:00",
         "errors": [
           "Record 0: Field 'id' expects 'int', found 'str'"
         ],
