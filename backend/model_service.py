@@ -318,41 +318,6 @@ class ModelService:
             self._load_real_models()
             self._initialized = True
 
-    def ensure_pickle_loaded(self, key: str) -> None:
-        """Load pickle model and scaler on-demand if not already loaded."""
-        from unittest.mock import MagicMock
-        entry = self._entries.get(key)
-        if not entry:
-            return
-
-        with self._lock:
-            if entry.model is not None and not isinstance(entry.model, MagicMock):
-                return
-
-            logger.info("Lazy-loading legacy pickle model for %s...", key)
-            model_files = {
-                "diabetes": (["diabetes_model.pkl"], None),
-                "heart":    (["heart_disease_model.pkl"], None),
-                "liver":    (["liver_disease_model.pkl"], ["liver_scaler.pkl"]),
-                "kidney":   (["kidney_model.pkl"], ["kidney_scaler.pkl"]),
-                "lungs":    (["lungs_model.pkl"], ["lungs_scaler.pkl"]),
-            }
-
-            if key in model_files:
-                model_pkl, scaler_pkl = model_files[key]
-                loaded_obj = self._load_pkl(model_pkl)
-                if isinstance(loaded_obj, dict) and "model" in loaded_obj:
-                    entry.model = loaded_obj["model"]
-                    entry.imputer = loaded_obj.get("imputer")
-                    entry.conformal_q = loaded_obj.get("conformal_q")
-                else:
-                    entry.model = loaded_obj
-
-                if scaler_pkl:
-                    entry.scaler = self._load_pkl(scaler_pkl)
-
-                logger.info("Successfully lazy-loaded pickle model for %s", key)
-
     def _inject_mocks(self) -> None:
         """Replace models with MagicMock objects for testing."""
         from unittest.mock import MagicMock
@@ -427,7 +392,17 @@ class ModelService:
                             if os.path.exists(scaler_onnx_path):
                                 entry.scaler_onnx_session = ort.InferenceSession(scaler_onnx_path)
 
-                        # Defer pickle loading for on-demand lazy loading to improve startup performance
+                        # Load pickle model alongside ONNX to support explainability (SHAP) and legacy prediction checks
+                        loaded_obj = self._load_pkl(model_pkl)
+                        if isinstance(loaded_obj, dict) and "model" in loaded_obj:
+                            entry.model = loaded_obj["model"]
+                            entry.imputer = loaded_obj.get("imputer")
+                            entry.conformal_q = loaded_obj.get("conformal_q")
+                        else:
+                            entry.model = loaded_obj
+                        if scaler_pkl:
+                            entry.scaler = self._load_pkl(scaler_pkl)
+
                         entry.model_version = "2.1.0-onnx"
                         entry.training_timestamp = "2026-06-19T00:00:00"
                         entry.model_card_id = f"card-{key}-v2"

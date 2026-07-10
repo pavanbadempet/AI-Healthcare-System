@@ -149,35 +149,11 @@ def _get_confidence(model, input_data):
     return _extract_confidence(model, input_data)
 
 
-def _ensure_and_sync_model(model_name: str) -> None:
-    """Ensure pickle model is loaded and sync module-level variables."""
-    if os.getenv("TESTING") == "1":
-        return
-    model_service.ensure_pickle_loaded(model_name)
-    global diabetes_model, heart_model, liver_model, kidney_model, lungs_model
-    global liver_scaler, kidney_scaler, lungs_scaler
-    entry = model_service._entries.get(model_name)
-    if entry:
-        if model_name == "diabetes":
-            diabetes_model = entry.model
-        elif model_name == "heart":
-            heart_model = entry.model
-        elif model_name == "liver":
-            liver_model = entry.model
-            liver_scaler = entry.scaler
-        elif model_name == "kidney":
-            kidney_model = entry.model
-            kidney_scaler = entry.scaler
-        elif model_name == "lungs":
-            lungs_model = entry.model
-            lungs_scaler = entry.scaler
-
 def _get_imputer_and_conformal(model_name: str, current_model_obj: Any):
     """
     Helper to retrieve the MICE imputer and conformal prediction threshold
     associated with the given model name, maintaining compatibility with tests.
     """
-    _ensure_and_sync_model(model_name)
     entry = model_service._entries.get(model_name)
     if entry:
         return entry.imputer, entry.conformal_q
@@ -1469,7 +1445,6 @@ def explain_diabetes(
     data: schemas.DiabetesInput,
     _current_user: db_models.User = Depends(auth.get_current_user),
 ):
-    _ensure_and_sync_model("diabetes")
     _pred = sys.modules[__name__]
     if _pred.diabetes_model is None:
         raise HTTPException(status_code=503, detail="Model unavailable")
@@ -1491,7 +1466,6 @@ def explain_heart(
     data: schemas.HeartInput,
     _current_user: db_models.User = Depends(auth.get_current_user),
 ):
-    _ensure_and_sync_model("heart")
     _pred = sys.modules[__name__]
     if _pred.heart_model is None:
         raise HTTPException(status_code=503, detail="Model unavailable")
@@ -1514,7 +1488,6 @@ def explain_liver(
     data: schemas.LiverInput,
     _current_user: db_models.User = Depends(auth.get_current_user),
 ):
-    _ensure_and_sync_model("liver")
     _pred = sys.modules[__name__]
     if _pred.liver_model is None or _pred.liver_scaler is None:
         raise HTTPException(status_code=503, detail="Model unavailable")
@@ -1551,8 +1524,6 @@ async def predict_organ_health(
     from . import features as _features
 
     _pred = sys.modules[__name__]
-    for model_name in ["heart", "lungs", "kidney", "diabetes", "liver"]:
-        _ensure_and_sync_model(model_name)
 
     # 1. Fetch patient
     patient = db.query(db_models.User).filter(db_models.User.id == patient_id).first()
