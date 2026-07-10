@@ -514,6 +514,9 @@ class ModelService:
             raw = _normalize_prediction(prediction)
             confidence, risk_level = _extract_confidence(entry.model, [input_list])
 
+        if confidence is not None and raw == 0:
+            confidence = round(100.0 - confidence, 1)
+
         result = "High Risk" if raw == 1 else "Low Risk"
         entry.prediction_count += 1
         return PredictionResult(
@@ -545,6 +548,9 @@ class ModelService:
             prediction = entry.model.predict([input_list])
             raw = _normalize_prediction(prediction)
             confidence, risk_level = _extract_confidence(entry.model, [input_list])
+
+        if confidence is not None and raw == 0:
+            confidence = round(100.0 - confidence, 1)
 
         result = "Heart Disease Detected" if raw == 1 else "Healthy Heart"
         entry.prediction_count += 1
@@ -595,6 +601,9 @@ class ModelService:
             raw = _normalize_prediction(prediction)
             confidence, risk_level = _extract_confidence(entry.model, X_scaled)
 
+        if confidence is not None and raw == 0:
+            confidence = round(100.0 - confidence, 1)
+
         result = "Liver Disease Detected" if raw == 1 else "Healthy Liver"
         entry.prediction_count += 1
         return PredictionResult(
@@ -636,6 +645,9 @@ class ModelService:
             raw = _normalize_prediction(prediction)
             confidence, risk_level = _extract_confidence(entry.model, input_scaled)
 
+        if confidence is not None and raw == 0:
+            confidence = round(100.0 - confidence, 1)
+
         result = "Chronic Kidney Disease Detected" if raw == 1 else "Healthy Kidney"
         entry.prediction_count += 1
         return PredictionResult(
@@ -676,6 +688,9 @@ class ModelService:
             prediction = entry.model.predict(input_scaled)
             raw = _normalize_prediction(prediction)
             confidence, risk_level = _extract_confidence(entry.model, input_scaled)
+
+        if confidence is not None and raw == 0:
+            confidence = round(100.0 - confidence, 1)
 
         result = "Respiratory Issue Detected" if raw == 1 else "Healthy Lungs"
         entry.prediction_count += 1
