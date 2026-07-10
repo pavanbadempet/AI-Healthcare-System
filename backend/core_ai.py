@@ -297,12 +297,13 @@ async def _stream_ollama(messages: list[dict], system: str = "", model: Optional
 # TIER B: GEMINI (Google Cloud)
 # ═══════════════════════════════════════════════════════════════════════
 
-_gemini_configured = False
-_gemini_model = None
+_gemini_disabled = False
 
 
 def has_gemini_api_key() -> bool:
     """Return whether Gemini-backed features can be configured."""
+    if _gemini_disabled:
+        return False
     key = GOOGLE_API_KEY.strip()
     if not key:
         return False
@@ -313,9 +314,15 @@ def has_gemini_api_key() -> bool:
     return True
 
 
+_gemini_configured = False
+_gemini_model = None
+
+
 def _get_gemini_model():
     """Lazy-load Gemini model."""
     global _gemini_configured, _gemini_model
+    if _gemini_disabled:
+        return None
     if _gemini_model:
         return _gemini_model
     if not GOOGLE_API_KEY or GOOGLE_API_KEY == "dummy":
@@ -460,10 +467,14 @@ async def _generate_gemini(prompt: str, system: str = "") -> str:
         return response.text.strip() if response.text else ""
     except Exception as e:
         err = str(e)
-        if "429" in err or "Quota" in err:
+        global _gemini_disabled
+        if any(code in err for code in ["400", "401", "403", "404", "API_KEY_INVALID", "not found"]):
+            logger.error("Permanent Gemini error encountered (%s). Disabling Gemini circuit breaker.", err)
+            _gemini_disabled = True
+        elif "429" in err or "Quota" in err:
             logger.warning("Gemini quota exceeded")
         else:
-            logger.warning("Gemini generation failed")
+            logger.warning("Gemini generation failed: %s", e)
         return ""
 
 
