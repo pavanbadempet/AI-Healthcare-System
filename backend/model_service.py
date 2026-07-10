@@ -428,10 +428,10 @@ class ModelService:
                     entry.status = ModelStatus.ERROR
                     entry.error_message = "Scaler missing"
                 entry.loaded_at = _time.monotonic()
-            except Exception:
+            except Exception as load_exc:
                 entry.status = ModelStatus.ERROR
-                entry.error_message = "Model load failed"
-                logger.error("Failed to load %s model", key)
+                entry.error_message = f"Model load failed: {load_exc}"
+                logger.error("Failed to load %s model: %s", key, load_exc)
 
         with ThreadPoolExecutor(max_workers=len(model_files)) as executor:
             futures = [
