@@ -339,6 +339,14 @@ class ModelService:
 
     def _load_real_models(self) -> None:
         """Load real .pkl models from disk concurrently."""
+        try:
+            import xgboost
+            xgboost.set_config(verbosity=0)
+        except ImportError:
+            pass
+        import warnings
+        warnings.filterwarnings("ignore", category=UserWarning)
+
         model_files = {
             "diabetes": (["diabetes_model.pkl"], None),
             "heart":    (["heart_disease_model.pkl"], None),
