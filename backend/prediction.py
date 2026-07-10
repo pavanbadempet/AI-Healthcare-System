@@ -63,12 +63,15 @@ def _run_model_prediction_scaled(model_name: str, input_list: list, X=None):
     predict_input = X if X is not None else [input_list]
         
     if entry.model is not None:
-        raw_pred = entry.model.predict(predict_input)
-        raw = ms._normalize_prediction(raw_pred)
-        confidence, risk_level = ms._extract_confidence(entry.model, predict_input)
         if hasattr(entry.model, "predict_proba"):
             proba = entry.model.predict_proba(predict_input)[0]
+            raw = 1 if (proba[1] if len(proba) > 1 else proba[0]) >= 0.5 else 0
+            disease_prob = float(proba[1]) if len(proba) > 1 else float(proba[0])
+            confidence, risk_level = ms._classify_confidence(disease_prob)
         else:
+            raw_pred = entry.model.predict(predict_input)
+            raw = ms._normalize_prediction(raw_pred)
+            confidence, risk_level = ms._extract_confidence(entry.model, predict_input)
             proba = [1.0 if raw == 0 else 0.0, 1.0 if raw == 1 else 0.0]
         return raw, confidence, risk_level, proba
     elif entry.onnx_session is not None or entry.is_voting:
