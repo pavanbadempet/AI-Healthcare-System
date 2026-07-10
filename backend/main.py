@@ -5,7 +5,7 @@ import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -376,7 +376,7 @@ def circuit_breaker():
     }
 
 @app.get("/healthz/time_predict")
-async def time_predict():
+async def time_predict(background_tasks: BackgroundTasks):
     import time
     from backend import prediction as pred
     from backend import model_service
@@ -424,7 +424,7 @@ async def time_predict():
         # 5. SHAP Logging
         start = time.time()
         attributions = pred._log_feature_attributions(
-            db, "heart", "2.1.0-onnx",
+            background_tasks, "heart", "2.1.0-onnx",
             imputed_list, _features.HEART_FEATURES, raw, pred.heart_model
         )
         timings["shap_logging"] = time.time() - start

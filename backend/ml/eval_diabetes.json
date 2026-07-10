@@ -1,6 +1,6 @@
 {
   "model_name": "diabetes",
-  "evaluated_at": "2026-07-03T18:26:43.239503+00:00",
+  "evaluated_at": "2026-07-10T18:37:49.339096+00:00",
   "test_set_size": 6,
   "class_distribution": {
     "0": 1,

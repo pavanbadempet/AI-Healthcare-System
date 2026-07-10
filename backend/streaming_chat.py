@@ -78,9 +78,19 @@ async def stream_chat(
             yield f"data: {json.dumps({'reply': 'How can I help you with your health today?', 'status': 'complete'})}\n\n"
         return StreamingResponse(empty_gen(), media_type="text/event-stream")
 
-    provider_override = x_ai_provider or "custom"
-    api_key_override = x_ai_api_key or "cloudflare"
-    ai_available = await core_ai.is_available() or (provider_override and api_key_override)
+    # Patients are restricted from overriding cloud providers
+    is_patient = getattr(current_user, "role", "patient") == "patient"
+
+    if is_patient:
+        provider_override = None
+        api_key_override = None
+        # Since patient cannot override, AI availability depends strictly on core_ai.is_available()
+        ai_available = await core_ai.is_available()
+    else:
+        provider_override = x_ai_provider or "custom"
+        api_key_override = x_ai_api_key or "cloudflare"
+        # If headers are provided by non-patient, we use them; otherwise check if system AI is available
+        ai_available = (provider_override and api_key_override) or await core_ai.is_available()
 
     if ai_available:
         # Build RAG context with Governance Scope
@@ -130,7 +140,9 @@ async def stream_chat(
                                 await chunk_queue.put(("chunk", chunk))
                         await chunk_queue.put(("done", None))
                     except Exception as e:
-                        await chunk_queue.put(("error", f"Stream failed: {str(e)}"))
+                        # Log safe error message, avoiding sensitive detail leakage
+                        logger.error("AI stream consumer exception encountered")
+                        await chunk_queue.put(("error", STREAM_FAILURE_DETAIL))
 
 
                 stream_task = asyncio.create_task(ai_stream_consumer())
@@ -152,6 +164,8 @@ async def stream_chat(
                             yield f"data: {json.dumps({'error': data, 'status': 'error'})}\n\n"
                             break
                         elif msg_type == "done":
+                            # Append medical disclaimer to stream for patients/all users
+                            yield f"data: {json.dumps({'reply': f'\\n\\n{STREAM_MEDICAL_DISCLAIMER}'})}\n\n"
                             yield f"data: {json.dumps({'status': 'complete'})}\n\n"
                             break
 
@@ -166,7 +180,7 @@ async def stream_chat(
                 if "timeout" in str(e).lower():
                     yield f"data: {json.dumps({'error': 'Timeout while contacting AI service.', 'status': 'error'})}\n\n"
                 else:
-                    yield f"data: {json.dumps({'error': f'Streaming error: {str(e)}', 'status': 'error'})}\n\n"
+                    yield f"data: {json.dumps({'error': STREAM_FAILURE_DETAIL, 'status': 'error'})}\n\n"
             finally:
                 if stream_task and not stream_task.done():
                     stream_task.cancel()
@@ -189,6 +203,7 @@ async def stream_chat(
         if context
         else "I don't have enough data to answer that yet. Please complete a health checkup first."
     )
+    fallback_msg = f"{fallback_msg}\n\n{STREAM_MEDICAL_DISCLAIMER}"
 
     async def fallback_generator():
         yield f"data: {json.dumps({'sources': [], 'model': 'fallback'})}\n\n"

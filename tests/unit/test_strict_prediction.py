@@ -19,6 +19,7 @@ app.dependency_overrides[backend.prediction.auth.get_current_user] = lambda: bac
     username="prediction_test_user",
     role="patient",
 )
+app.dependency_overrides[backend.prediction.database.get_db] = lambda: MagicMock()
 
 client = TestClient(app)
 
