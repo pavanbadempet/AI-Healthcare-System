@@ -366,6 +366,12 @@ def health():
         "diagnostics": startup_diagnostics
     }
 
+@app.get("/healthz/models")
+def models_debug_health():
+    """Unauthenticated model status for debugging deployments."""
+    from .model_service import model_service as _ms
+    return _ms.health_check()
+
 @app.post("/generate_report")
 async def generate_report(
     request: Request,
