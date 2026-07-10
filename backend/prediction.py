@@ -56,7 +56,7 @@ def _run_model_prediction_scaled(model_name: str, input_list: list, X=None):
     """Run prediction using pickle if available, otherwise ONNX. Supports scaled input."""
     from . import model_service as ms
     import numpy as np
-    entry = ms._entries.get(model_name)
+    entry = ms.model_service._entries.get(model_name)
     if not entry:
         raise ValueError(f"Model {model_name} not found")
         
@@ -987,7 +987,7 @@ async def predict_diabetes(
         else:
             imputed_list = [0.0 if x is None else x for x in input_list]
 
-        raw, confidence, risk_level, proba = _run_model_prediction("diabetes", imputed_list)
+        raw, confidence, risk_level, proba = _run_model_prediction_scaled("diabetes", imputed_list)
         prediction = "High Risk" if raw == 1 else "Low Risk"
 
         clinical_indices = {}
@@ -1081,7 +1081,7 @@ async def predict_heart(
         else:
             imputed_list = [0.0 if x is None else x for x in input_list]
 
-        raw, confidence, risk_level, proba = _run_model_prediction("heart", imputed_list)
+        raw, confidence, risk_level, proba = _run_model_prediction_scaled("heart", imputed_list)
         prediction = "Heart Disease Detected" if raw == 1 else "Healthy Heart"
 
         # Extract imputed values for clinical indices
