@@ -366,6 +366,21 @@ def health():
         "diagnostics": startup_diagnostics
     }
 
+@app.get("/healthz/check_code")
+def check_code():
+    """Read prediction.py from disk to see what code is running in the container."""
+    import os
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "prediction.py")
+    if not os.path.exists(path):
+        return {"error": f"File not found: {path}"}
+    with open(path, "r", encoding="utf-8") as f:
+        lines = f.readlines()
+    # Return lines around predict_heart's except block (approx 1160-1190)
+    return {
+        "lines": lines[1160:1185],
+        "total_lines": len(lines)
+    }
+
 @app.post("/generate_report")
 async def generate_report(
     request: Request,
