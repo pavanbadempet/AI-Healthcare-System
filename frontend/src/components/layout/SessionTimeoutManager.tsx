@@ -4,7 +4,7 @@ import { useAuthStore } from "@/lib/auth";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShieldAlert, Clock, LogOut, RefreshCw } from "lucide-react";
 
-const TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes
+const TIMEOUT_MS = 365 * 24 * 60 * 60 * 1000; // 1 year (Effectively Disabled)
 const WARNING_MS = 30 * 1000; // 30 seconds
 
 export default function SessionTimeoutManager({ children }: { children: React.ReactNode }) {
