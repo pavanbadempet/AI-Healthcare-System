@@ -28,7 +28,7 @@ libsql-client
 # --- Data Science (Lite) ---
 pandas>=3.0.3
 numpy>=2.4.6
-scikit-learn>=1.8.0
+scikit-learn==1.6.1
 xgboost>=3.2.0
 lightgbm>=4.0.0
 catboost
