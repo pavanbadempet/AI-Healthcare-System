@@ -30,7 +30,7 @@ def _load_secret_key() -> str:
 
 
 def _load_access_token_expire_minutes() -> int:
-    raw_value = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30")
+    raw_value = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "10080")
     try:
         minutes = int(raw_value)
     except ValueError:
