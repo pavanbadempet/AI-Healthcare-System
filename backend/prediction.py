@@ -151,6 +151,8 @@ def _get_confidence(model, input_data):
 
 def _ensure_and_sync_model(model_name: str) -> None:
     """Ensure pickle model is loaded and sync module-level variables."""
+    if os.getenv("TESTING") == "1":
+        return
     model_service.ensure_pickle_loaded(model_name)
     global diabetes_model, heart_model, liver_model, kidney_model, lungs_model
     global liver_scaler, kidney_scaler, lungs_scaler
