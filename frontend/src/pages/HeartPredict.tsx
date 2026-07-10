@@ -42,9 +42,9 @@ const HEART_EXAMPLES = [
     name: "Robert M., 67M",
     description: "Routine checkup. History of mild hypertension, asymptomatic.",
     records: [
-      { date: "2023-01-15", type: "Annual Physical", findings: "Mild hypertension noted (140/90). Advised lifestyle changes." },
-      { date: "2024-05-10", type: "Cardiology Consult", findings: "Patient reports feeling asymptomatic. Stress test ordered." },
-      { date: "2025-06-22", type: "Stress Test", findings: "Exercise-induced angina present. ST depression 1.5mm." }
+      { date: "2023-01-15", type: "Annual Physical", findings: "Mild hypertension noted (140/90). Advised lifestyle changes.", data: { age: 65, sex: 1, cp: 3, trestbps: 140, chol: 220, fbs: 0, restecg: 0, thalach: 125, exang: 0, oldpeak: 0.0, slope: 0, ca: 0, thal: 1 } },
+      { date: "2024-05-10", type: "Cardiology Consult", findings: "Patient reports feeling asymptomatic. Stress test ordered.", data: { age: 66, sex: 1, cp: 3, trestbps: 145, chol: 245, fbs: 0, restecg: 0, thalach: 118, exang: 0, oldpeak: 0.5, slope: 1, ca: 1, thal: 2 } },
+      { date: "2025-06-22", type: "Stress Test", findings: "Exercise-induced angina present. ST depression 1.5mm.", data: { age: 67, sex: 1, cp: 0, trestbps: 160, chol: 286, fbs: 0, restecg: 0, thalach: 108, exang: 1, oldpeak: 1.5, slope: 1, ca: 3, thal: 2 } }
     ],
     data: { age: 67, sex: 1, cp: 0, trestbps: 160, chol: 286, fbs: 0, restecg: 0, thalach: 108, exang: 1, oldpeak: 1.5, slope: 1, ca: 3, thal: 2 }
   },
@@ -52,9 +52,9 @@ const HEART_EXAMPLES = [
     name: "James T., 63M",
     description: "Presents with severe atypical angina, high cholesterol, and elevated max heart rate.",
     records: [
-      { date: "2023-11-05", type: "ER Visit", findings: "Presented with chest pain. EKG normal. Discharged with atypical angina diagnosis." },
-      { date: "2024-02-14", type: "Lipid Panel", findings: "Cholesterol elevated at 233 mg/dL. Fasting blood sugar > 120." },
-      { date: "2025-07-01", type: "Echocardiogram", findings: "No major vessel blockages (0). Normal LV function." }
+      { date: "2023-11-05", type: "ER Visit", findings: "Presented with chest pain. EKG normal. Discharged with atypical angina diagnosis.", data: { age: 61, sex: 1, cp: 1, trestbps: 130, chol: 205, fbs: 0, restecg: 0, thalach: 140, exang: 0, oldpeak: 0.0, slope: 0, ca: 0, thal: 1 } },
+      { date: "2024-02-14", type: "Lipid Panel", findings: "Cholesterol elevated at 233 mg/dL. Fasting blood sugar > 120.", data: { age: 62, sex: 1, cp: 2, trestbps: 135, chol: 233, fbs: 1, restecg: 0, thalach: 145, exang: 0, oldpeak: 1.0, slope: 0, ca: 0, thal: 1 } },
+      { date: "2025-07-01", type: "Echocardiogram", findings: "No major vessel blockages (0). Normal LV function.", data: { age: 63, sex: 1, cp: 3, trestbps: 145, chol: 233, fbs: 1, restecg: 0, thalach: 150, exang: 0, oldpeak: 2.3, slope: 0, ca: 0, thal: 1 } }
     ],
     data: { age: 63, sex: 1, cp: 3, trestbps: 145, chol: 233, fbs: 1, restecg: 0, thalach: 150, exang: 0, oldpeak: 2.3, slope: 0, ca: 0, thal: 1 }
   }

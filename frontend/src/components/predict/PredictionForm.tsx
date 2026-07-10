@@ -99,6 +99,7 @@ export interface ExampleCaseRecord {
   date: string;
   type: string;
   findings: string;
+  data?: Record<string, number>;
 }
 
 export interface ExampleCase {
@@ -288,6 +289,7 @@ const ProfileSelect = ({ options, value, onSelect }: { options: ExampleCase[], v
 export default function PredictionForm({ title, description, fields, onSubmit, exampleCases }: PredictionFormProps) {
   const [formData, setFormData] = useState<Record<string, number>>({});
   const [selectedProfile, setSelectedProfile] = useState<ExampleCase | null>(null);
+  const [selectedRecordIndex, setSelectedRecordIndex] = useState<number | null>(null);
   const [computeMode, setComputeMode] = useState<'local' | 'remote'>('remote');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -361,8 +363,16 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
                   options={exampleCases}
                   value={selectedProfile}
                   onSelect={(idx) => {
-                    setFormData(exampleCases[idx].data);
-                    setSelectedProfile(exampleCases[idx]);
+                    const profile = exampleCases[idx];
+                    setSelectedProfile(profile);
+                    if (profile.records && profile.records.length > 0) {
+                      const lastIdx = profile.records.length - 1;
+                      setSelectedRecordIndex(lastIdx);
+                      setFormData(profile.records[lastIdx].data || profile.data);
+                    } else {
+                      setSelectedRecordIndex(null);
+                      setFormData(profile.data);
+                    }
                   }}
                 />
               </div>
@@ -381,16 +391,38 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
                         <span className="font-bold text-[var(--text-primary)] block mb-1 uppercase tracking-wider text-[10px]">Clinical History & Record Summary</span>
                         
                         {selectedProfile.records ? (
-                          <div className="space-y-2 mt-2 border-t border-[rgba(255,255,255,0.05)] pt-2">
-                            {selectedProfile.records.map((rec, i) => (
-                              <div key={i} className="flex gap-2">
-                                <span className="font-mono text-[9px] text-[var(--accent)] whitespace-nowrap pt-0.5 shrink-0">{rec.date}</span>
-                                <div>
-                                  <span className="font-semibold text-slate-300 text-[10px] uppercase block">{rec.type}</span>
-                                  <span className="text-[var(--text-secondary)]">{rec.findings}</span>
+                          <div className="space-y-3 mt-3 border-t border-[rgba(255,255,255,0.05)] pt-3">
+                            <div className="flex items-center gap-2 mb-2">
+                              <span className="text-[10px] text-[var(--text-dim)] uppercase font-bold tracking-wider">Select Visit Report:</span>
+                              <select 
+                                className="bg-[rgba(0,0,0,0.3)] border border-[var(--border-focus)] rounded text-xs text-[var(--text-primary)] px-2 py-1 outline-none font-mono focus:border-[var(--accent)]"
+                                value={selectedRecordIndex ?? ""}
+                                onChange={(e) => {
+                                  const idx = parseInt(e.target.value);
+                                  setSelectedRecordIndex(idx);
+                                  setFormData(selectedProfile.records![idx].data || selectedProfile.data);
+                                }}
+                              >
+                                {selectedProfile.records.map((rec, idx) => (
+                                  <option key={idx} value={idx}>{rec.date} - {rec.type}</option>
+                                ))}
+                              </select>
+                            </div>
+                            
+                            <div className="space-y-2">
+                              {selectedProfile.records.map((rec, i) => (
+                                <div key={i} className={`flex gap-2 p-2 rounded transition-colors ${i === selectedRecordIndex ? 'bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)]' : 'opacity-60'}`}>
+                                  <span className="font-mono text-[9px] text-[var(--accent)] whitespace-nowrap pt-0.5 shrink-0">{rec.date}</span>
+                                  <div>
+                                    <span className="font-semibold text-slate-300 text-[10px] uppercase block flex items-center gap-2">
+                                      {rec.type}
+                                      {i === selectedRecordIndex && <span className="text-[8px] bg-[var(--accent-muted)] text-[var(--accent)] px-1.5 py-0.5 rounded-full border border-[var(--accent)] border-opacity-20">Currently Populated</span>}
+                                    </span>
+                                    <span className="text-[var(--text-secondary)] leading-relaxed">{rec.findings}</span>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
                         ) : (
                           <p className="text-[var(--text-secondary)] leading-relaxed">{selectedProfile.description}</p>
