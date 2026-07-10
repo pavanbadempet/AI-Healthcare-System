@@ -366,6 +366,15 @@ def health():
         "diagnostics": startup_diagnostics
     }
 
+@app.get("/healthz/circuit_breaker")
+def circuit_breaker():
+    from backend import core_ai
+    return {
+        "gemini_disabled": getattr(core_ai, "_gemini_disabled", None),
+        "has_gemini_key": core_ai.has_gemini_api_key(),
+        "google_api_key_configured": bool(core_ai.GOOGLE_API_KEY)
+    }
+
 @app.post("/generate_report")
 async def generate_report(
     request: Request,
