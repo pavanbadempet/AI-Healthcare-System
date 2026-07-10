@@ -720,7 +720,7 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
                 {(result.confidence !== undefined || result.probability !== undefined) && (
                   <div className="p-3 bg-[rgba(255,255,255,0.015)] border border-[var(--border)] rounded">
                     <div className="flex justify-between items-end mb-2">
-                      <Tooltip content="How sure the AI is about the result. Since the output is 'Healthy Heart', the AI is 96.3% sure the heart is healthy, leaving only a 3.7% chance of disease risk." position="top-left">
+                      <Tooltip content="How sure the AI is about the result. Since the output is 'Healthy Heart', the AI is 96.3% sure the heart is healthy, leaving only a 3.7% chance of disease risk." position="top-right">
                         <span className="section-label cursor-help border-b border-dotted border-white/20 pb-0.5">Confidence Probability</span>
                       </Tooltip>
                       <span className="text-sm font-mono font-bold text-[var(--text-primary)]">
@@ -749,7 +749,7 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
                     
                     {result.risk_level && (
                       <div className="flex items-center gap-1.5 mt-2.5">
-                        <Tooltip content="The urgency or risk level (Low, Moderate, or High) indicating how closely or quickly the patient needs medical attention based on symptoms." position="top-left">
+                        <Tooltip content="The urgency or risk level (Low, Moderate, or High) indicating how closely or quickly the patient needs medical attention based on symptoms." position="top-right">
                           <span className="section-label cursor-help border-b border-dotted border-white/20 pb-0.5">Acuity Stratification:</span>
                         </Tooltip>
                         <span className={`text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${
@@ -773,7 +773,7 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[10px] font-mono uppercase">
                       <div>
-                        <Tooltip content="The list of diagnoses the AI is choosing between. 'Healthy' means the AI has safely ruled out heart disease." position="top-left">
+                        <Tooltip content="The list of diagnoses the AI is choosing between. 'Healthy' means the AI has safely ruled out heart disease." position="top-right">
                           <span className="text-[var(--text-dim)] font-bold block mb-0.5 cursor-help border-b border-dotted border-white/20 pb-0.5">Possible Diagnoses</span>
                         </Tooltip>
                         <span className="text-white bg-zinc-900 border border-white/[0.05] px-1.5 py-0.5 rounded">
@@ -781,7 +781,7 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
                         </span>
                       </div>
                       <div>
-                        <Tooltip content="Shows whether the AI is certain or confused. 'Low Uncertainty' means the AI is highly sure, while 'High' means the case is complex and needs closer review." position="top-left">
+                        <Tooltip content="Shows whether the AI is certain or confused. 'Low Uncertainty' means the AI is highly sure, while 'High' means the case is complex and needs closer review." position="top-right">
                           <span className="text-[var(--text-dim)] font-bold block mb-0.5 cursor-help border-b border-dotted border-white/20 pb-0.5">Certainty Status</span>
                         </Tooltip>
                         <span className={`font-bold ${
@@ -793,7 +793,7 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
                         </span>
                       </div>
                       <div className="sm:col-span-2">
-                        <Tooltip content="A safety buffer. A higher safety margin means the AI was easily able to rule out heart disease based on the safety limits of the model." position="top-left">
+                        <Tooltip content="A safety buffer. A higher safety margin means the AI was easily able to rule out heart disease based on the safety limits of the model." position="top-right">
                           <span className="text-[var(--text-dim)] font-bold block mb-0.5 cursor-help border-b border-dotted border-white/20 pb-0.5">Safety Margin (α)</span>
                         </Tooltip>
                         <span className="text-white">
