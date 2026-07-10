@@ -40,11 +40,21 @@ const KIDNEY_EXAMPLES = [
   {
     name: "Emily R., 40F",
     description: "Healthy baseline assessment. Normal GFR, no proteinuria or hematuria.",
+    records: [
+      { date: "2023-02-14", type: "Routine Labs", findings: "Creatinine 1.0 mg/dL, BUN 12 mg/dL. Normal kidney function." },
+      { date: "2024-04-20", type: "Urinalysis", findings: "Negative for albumin and sugar. Specific gravity 1.025." },
+      { date: "2025-01-10", type: "Annual Physical", findings: "Blood pressure 140/80. No signs of pedal edema. Hemoglobin 15.0." }
+    ],
     data: { age: 40, bp: 80, sg: 1.025, al: 0, su: 0, rbc: 1, pc: 1, pcc: 0, ba: 0, bgr: 140, bu: 10, sc: 1.2, sod: 135, pot: 5.0, hemo: 15.0, pcv: 48, wc: 10400, rc: 4.5, htn: 0, dm: 0, cad: 0, appet: 1, pe: 0, ane: 0 }
   },
   {
     name: "William H., 48M",
     description: "Diabetic nephropathy follow-up. Elevated BUN and mild proteinuria.",
+    records: [
+      { date: "2022-09-05", type: "Endocrinology", findings: "Type 2 Diabetes poorly controlled. Blood glucose 150 mg/dL." },
+      { date: "2024-06-12", type: "Urinalysis", findings: "Trace albuminuria detected (1+). Specific gravity 1.020." },
+      { date: "2025-08-30", type: "Nephrology", findings: "BUN elevated at 36 mg/dL. Mild hypertension noted." }
+    ],
     data: { age: 48, bp: 80, sg: 1.020, al: 1, su: 0, rbc: 1, pc: 1, pcc: 0, ba: 0, bgr: 121, bu: 36, sc: 1.2, sod: 138, pot: 4.4, hemo: 15.4, pcv: 44, wc: 7800, rc: 5.2, htn: 1, dm: 1, cad: 0, appet: 1, pe: 0, ane: 0 }
   }
 ];

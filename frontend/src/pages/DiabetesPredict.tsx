@@ -26,11 +26,21 @@ const DIABETES_EXAMPLES = [
   {
     name: "Sarah W., 55F",
     description: "Annual physical. High BMI and cholesterol, but no cardiac history. Poor general health.",
+    records: [
+      { date: "2023-04-12", type: "Annual Physical", findings: "Patient reports feeling poorly generally. BMI calculated at 40." },
+      { date: "2024-05-18", type: "Lab Results", findings: "High cholesterol noted. Blood pressure slightly elevated." },
+      { date: "2025-08-05", type: "Follow-up", findings: "No improvement in BMI. Continues to report poor general health. Advised diet plan." }
+    ],
     data: { hypertension: 1, high_chol: 1, bmi: 40, smoking_history: 1, heart_disease: 0, physical_activity: 0, general_health: 5, gender: 0, age_bucket: 9 }
   },
   {
     name: "Michael K., 58M",
     description: "Follow-up post myocardial infarction. Sedentary lifestyle with multiple comorbidities.",
+    records: [
+      { date: "2022-11-20", type: "Cardiology", findings: "Admitted for myocardial infarction. Stent placed successfully." },
+      { date: "2024-03-10", type: "Primary Care", findings: "Patient remains sedentary. Hypertension and hyperlipidemia remain uncontrolled." },
+      { date: "2025-06-15", type: "Follow-up", findings: "BMI 30. Patient complains of general malaise and poor health." }
+    ],
     data: { hypertension: 1, high_chol: 1, bmi: 30, smoking_history: 1, heart_disease: 1, physical_activity: 0, general_health: 5, gender: 0, age_bucket: 9 }
   }
 ];

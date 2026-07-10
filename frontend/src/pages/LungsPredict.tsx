@@ -24,11 +24,21 @@ const LUNG_EXAMPLES = [
   {
     name: "Susan M., 59F",
     description: "Non-smoker. Complains of mild fatigue but denies chest pain or chronic cough.",
+    records: [
+      { date: "2022-04-18", type: "Primary Care", findings: "Patient generally healthy. No history of smoking." },
+      { date: "2024-09-02", type: "Urgent Care", findings: "Treated for minor seasonal allergies." },
+      { date: "2025-11-20", type: "Annual Physical", findings: "Mild fatigue reported, but no wheezing or chest pain." }
+    ],
     data: { GENDER: 0, AGE: 59, SMOKING: 0, YELLOW_FINGERS: 1, ANXIETY: 0, PEER_PRESSURE: 0, CHRONIC_DISEASE: 0, FATIGUE: 1, ALLERGY: 0, WHEEZING: 0, ALCOHOL_CONSUMING: 0, COUGHING: 0, SHORTNESS_OF_BREATH: 0, SWALLOWING_DIFFICULTY: 0, CHEST_PAIN: 0 }
   },
   {
     name: "Richard B., 69M",
     description: "Heavy smoker. Presents with chronic wheezing, shortness of breath, and chest pain.",
+    records: [
+      { date: "2023-03-14", type: "Pulmonology", findings: "Chronic smoker. Shortness of breath on exertion." },
+      { date: "2024-08-25", type: "ER Visit", findings: "Acute exacerbation of chronic cough and wheezing." },
+      { date: "2025-12-10", type: "Follow-up", findings: "Chest pain reported. Swallowing difficulty noted. Referred for CT." }
+    ],
     data: { GENDER: 1, AGE: 69, SMOKING: 1, YELLOW_FINGERS: 1, ANXIETY: 1, PEER_PRESSURE: 0, CHRONIC_DISEASE: 0, FATIGUE: 1, ALLERGY: 0, WHEEZING: 1, ALCOHOL_CONSUMING: 1, COUGHING: 1, SHORTNESS_OF_BREATH: 1, SWALLOWING_DIFFICULTY: 1, CHEST_PAIN: 1 }
   }
 ];

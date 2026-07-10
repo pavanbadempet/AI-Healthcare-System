@@ -19,11 +19,21 @@ const LIVER_EXAMPLES = [
   {
     name: "Thomas D., 17M",
     description: "Routine adolescent checkup. Normal liver enzymes and bilirubin levels.",
+    records: [
+      { date: "2023-01-10", type: "Pediatrics", findings: "Healthy 14-year-old. No major issues." },
+      { date: "2024-05-22", type: "Sports Physical", findings: "Cleared for high school athletics." },
+      { date: "2025-06-11", type: "Annual Physical", findings: "Liver enzymes within normal limits. A/G Ratio 1.2." }
+    ],
     data: { Age: 17, Gender: 1, Total_Bilirubin: 0.9, Direct_Bilirubin: 0.3, Alkaline_Phosphotase: 202, Alamine_Aminotransferase: 22, Aspartate_Aminotransferase: 19, Total_Proteins: 7.4, Albumin: 4.1, Albumin_and_Globulin_Ratio: 1.2 }
   },
   {
     name: "Patricia L., 65F",
     description: "Fatigue and mild jaundice. Low albumin and inverted A/G ratio.",
+    records: [
+      { date: "2023-10-15", type: "Primary Care", findings: "Patient complains of prolonged fatigue. Initial labs ordered." },
+      { date: "2024-02-28", type: "Hepatology", findings: "Mild jaundice observed. Alkaline Phosphatase elevated at 187." },
+      { date: "2025-07-05", type: "Follow-up", findings: "Albumin remains low (3.3). Advised further imaging and biopsy." }
+    ],
     data: { Age: 65, Gender: 0, Total_Bilirubin: 0.7, Direct_Bilirubin: 0.1, Alkaline_Phosphotase: 187, Alamine_Aminotransferase: 16, Aspartate_Aminotransferase: 18, Total_Proteins: 6.8, Albumin: 3.3, Albumin_and_Globulin_Ratio: 0.9 }
   }
 ];
