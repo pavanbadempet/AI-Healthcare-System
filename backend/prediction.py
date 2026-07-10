@@ -1168,11 +1168,9 @@ async def predict_heart(
             "attributions": attributions or {},
             "patient_explanation": patient_explanation
         }
-    except Exception as e:
-        import traceback
-        tb = traceback.format_exc()
-        logger.error("Heart prediction error: %s\n%s", e, tb)
-        raise HTTPException(status_code=500, detail=f"Heart prediction error: {e}\n{tb}")
+    except Exception:
+        logger.error("Heart prediction error")
+        _raise_prediction_failure("Heart")
 
 @router.post("/predict/liver", response_model=Dict[str, Any])
 async def predict_liver(
