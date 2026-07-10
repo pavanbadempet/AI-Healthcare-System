@@ -369,8 +369,25 @@ def health():
 @app.get("/healthz/models")
 def models_debug_health():
     """Unauthenticated model status for debugging deployments."""
+    import os
     from .model_service import model_service as _ms
-    return _ms.health_check()
+    health = _ms.health_check()
+    
+    # List files in model dir to see if they exist and their sizes
+    model_dir = _ms._model_dir
+    files_info = {}
+    if os.path.exists(model_dir):
+        for f in os.listdir(model_dir):
+            if any(name in f for name in ["diabetes", "heart", "liver", "kidney", "lungs"]):
+                path = os.path.join(model_dir, f)
+                if os.path.isfile(path):
+                    files_info[f] = os.path.getsize(path)
+                    
+    return {
+        "health": health,
+        "files": files_info,
+        "model_dir": model_dir
+    }
 
 @app.post("/generate_report")
 async def generate_report(
