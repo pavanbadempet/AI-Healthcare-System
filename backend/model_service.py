@@ -250,18 +250,18 @@ class ModelService:
             return
 
         models_to_check = [
-            "diabetes_model.pkl",
-            "heart_disease_model.pkl",
-            "liver_disease_model.pkl",
-            "liver_scaler.pkl",
-            "kidney_model.pkl",
-            "kidney_scaler.pkl",
-            "lungs_model.pkl",
-            "lungs_scaler.pkl",
-            "longitudinal_diabetes_model.pkl",
-            "longitudinal_heart_model.pkl",
-            "longitudinal_liver_model.pkl",
-            "longitudinal_kidney_model.pkl"
+            "diabetes_model.pkl", "diabetes_model.onnx",
+            "heart_disease_model.pkl", "heart_disease_model.onnx",
+            "liver_disease_model.pkl", "liver_disease_model.onnx",
+            "liver_scaler.pkl", "liver_scaler.onnx",
+            "kidney_model.pkl", "kidney_model.onnx",
+            "kidney_scaler.pkl", "kidney_scaler.onnx",
+            "lungs_model.pkl", "lungs_model.onnx",
+            "lungs_scaler.pkl", "lungs_scaler.onnx",
+            "longitudinal_diabetes_model.pkl", "longitudinal_diabetes_model.onnx",
+            "longitudinal_heart_model.pkl", "longitudinal_heart_model.onnx",
+            "longitudinal_liver_model.pkl", "longitudinal_liver_model.onnx",
+            "longitudinal_kidney_model.pkl", "longitudinal_kidney_model.onnx"
         ]
 
         needs_download = False
