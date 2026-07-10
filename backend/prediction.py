@@ -85,6 +85,8 @@ def _run_model_prediction_scaled(model_name: str, input_list: list, X=None):
             raw = ms._normalize_prediction(raw_pred)
             confidence, risk_level = ms._extract_confidence(model_obj, predict_input)
             proba = [1.0 if raw == 0 else 0.0, 1.0 if raw == 1 else 0.0]
+        if confidence is not None and raw == 0:
+            confidence = round(100.0 - confidence, 1)
         return raw, confidence, risk_level, proba
 
     entry = ms.model_service._entries.get(model_name)
@@ -101,6 +103,8 @@ def _run_model_prediction_scaled(model_name: str, input_list: list, X=None):
         
         raw, prob = ms._predict_onnx_probs(entry, input_array)
         confidence, risk_level = ms._classify_confidence(prob)
+        if confidence is not None and raw == 0:
+            confidence = round(100.0 - confidence, 1)
         return raw, confidence, risk_level, [1.0 - prob, prob]
     elif entry.model is not None:
         use_predict = True
@@ -118,6 +122,8 @@ def _run_model_prediction_scaled(model_name: str, input_list: list, X=None):
             raw = ms._normalize_prediction(raw_pred)
             confidence, risk_level = ms._extract_confidence(entry.model, predict_input)
             proba = [1.0 if raw == 0 else 0.0, 1.0 if raw == 1 else 0.0]
+        if confidence is not None and raw == 0:
+            confidence = round(100.0 - confidence, 1)
         return raw, confidence, risk_level, proba
     else:
         raise ValueError(f"No usable model for {model_name}")
