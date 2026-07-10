@@ -773,16 +773,16 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[10px] font-mono uppercase">
                       <div>
-                        <Tooltip content="The list of possible diagnoses the AI is considering. Here it is only [0] (Healthy), meaning the AI has confidently ruled out heart disease entirely." position="top-left">
-                          <span className="text-[var(--text-dim)] font-bold block mb-0.5 cursor-help border-b border-dotted border-white/20 pb-0.5">Prediction Set</span>
+                        <Tooltip content="The list of diagnoses the AI is choosing between. 'Healthy' means the AI has safely ruled out heart disease." position="top-left">
+                          <span className="text-[var(--text-dim)] font-bold block mb-0.5 cursor-help border-b border-dotted border-white/20 pb-0.5">Possible Diagnoses</span>
                         </Tooltip>
                         <span className="text-white bg-zinc-900 border border-white/[0.05] px-1.5 py-0.5 rounded">
-                          {`[${(result.clinical_indices.conformal_prediction_set || []).join(", ")}]`}
+                          {(result.clinical_indices.conformal_prediction_set || []).map((val: any) => Number(val) === 0 ? "Healthy" : "Risk/Disease").join(", ")}
                         </span>
                       </div>
                       <div>
-                        <Tooltip content="Shows if the AI is certain about its decision. 'Low Uncertainty' means the AI is highly confident and decisive, while 'High' means the case is complex and needs closer review." position="top-left">
-                          <span className="text-[var(--text-dim)] font-bold block mb-0.5 cursor-help border-b border-dotted border-white/20 pb-0.5">Uncertainty Status</span>
+                        <Tooltip content="Shows whether the AI is certain or confused. 'Low Uncertainty' means the AI is highly sure, while 'High' means the case is complex and needs closer review." position="top-left">
+                          <span className="text-[var(--text-dim)] font-bold block mb-0.5 cursor-help border-b border-dotted border-white/20 pb-0.5">Certainty Status</span>
                         </Tooltip>
                         <span className={`font-bold ${
                           (result.clinical_indices.uncertainty_status || "").includes("Low") 
@@ -793,8 +793,8 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
                         </span>
                       </div>
                       <div className="sm:col-span-2">
-                        <Tooltip content="A statistical safety margin. A level of 44.22% shows how strongly the AI was able to rule out heart disease based on the safety limits of the model." position="top-left">
-                          <span className="text-[var(--text-dim)] font-bold block mb-0.5 cursor-help border-b border-dotted border-white/20 pb-0.5">Significance Level (Adaptive α)</span>
+                        <Tooltip content="A safety buffer. A higher safety margin means the AI was easily able to rule out heart disease based on the safety limits of the model." position="top-left">
+                          <span className="text-[var(--text-dim)] font-bold block mb-0.5 cursor-help border-b border-dotted border-white/20 pb-0.5">Safety Margin (α)</span>
                         </Tooltip>
                         <span className="text-white">
                           {result.clinical_indices.significance_level !== undefined 
