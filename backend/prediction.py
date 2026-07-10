@@ -66,7 +66,10 @@ def _run_model_prediction_scaled(model_name: str, input_list: list, X=None):
         raw_pred = entry.model.predict(predict_input)
         raw = ms._normalize_prediction(raw_pred)
         confidence, risk_level = ms._extract_confidence(entry.model, predict_input)
-        proba = entry.model.predict_proba(predict_input)[0]
+        if hasattr(entry.model, "predict_proba"):
+            proba = entry.model.predict_proba(predict_input)[0]
+        else:
+            proba = [1.0 if raw == 0 else 0.0, 1.0 if raw == 1 else 0.0]
         return raw, confidence, risk_level, proba
     elif entry.onnx_session is not None or entry.is_voting:
         # ONNX uses unscaled input if scaler_onnx_session exists in model_service
@@ -80,7 +83,7 @@ def _run_model_prediction_scaled(model_name: str, input_list: list, X=None):
         
         raw, prob = ms._predict_onnx_probs(entry, input_array)
         confidence, risk_level = ms._classify_confidence(prob)
-        return raw, confidence, risk_level, prob[0]
+        return raw, confidence, risk_level, [1.0 - prob, prob]
     else:
         raise ValueError(f"No usable model for {model_name}")
 
