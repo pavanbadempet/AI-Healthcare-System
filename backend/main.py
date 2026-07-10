@@ -366,67 +366,6 @@ def health():
         "diagnostics": startup_diagnostics
     }
 
-@app.get("/healthz/models")
-def models_debug_health():
-    """Unauthenticated model status for debugging deployments."""
-    import os
-    from .model_service import model_service as _ms
-    health = _ms.health_check()
-    
-    # List files in model dir to see if they exist and their sizes
-    model_dir = _ms._model_dir
-    files_info = {}
-    if os.path.exists(model_dir):
-        for f in os.listdir(model_dir):
-            if any(name in f for name in ["diabetes", "heart", "liver", "kidney", "lungs"]):
-                path = os.path.join(model_dir, f)
-                if os.path.isfile(path):
-                    files_info[f] = os.path.getsize(path)
-                    
-    return {
-        "health": health,
-        "files": files_info,
-        "model_dir": model_dir
-    }
-
-@app.get("/healthz/test_load")
-def test_load_models():
-    """Attempt to load each model directly to see the exact unpickling exceptions."""
-    import joblib
-    import os
-    import traceback
-    from .model_service import model_service as _ms
-    
-    results = {}
-    model_dir = _ms._model_dir
-    
-    model_files = {
-        "diabetes": "diabetes_model.pkl",
-        "heart": "heart_disease_model.pkl",
-        "liver": "liver_disease_model.pkl",
-        "lungs": "lungs_model.pkl",
-        "kidney": "kidney_model.pkl"
-    }
-    
-    for key, filename in model_files.items():
-        path = os.path.join(model_dir, filename)
-        if not os.path.exists(path):
-            results[key] = {"status": "error", "error": f"File does not exist at {path}"}
-            continue
-            
-        try:
-            # Try regular load
-            obj = joblib.load(path)
-            results[key] = {"status": "success", "type": str(type(obj))}
-        except Exception as e:
-            results[key] = {
-                "status": "error",
-                "error": str(e),
-                "traceback": traceback.format_exc()
-            }
-            
-    return results
-
 @app.post("/generate_report")
 async def generate_report(
     request: Request,
