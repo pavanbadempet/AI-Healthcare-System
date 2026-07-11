@@ -551,9 +551,38 @@ export default function DashboardPage() {
                   <span className={`font-bold text-xs tracking-widest uppercase ${isAlert ? "text-[var(--danger)]" : "text-[var(--accent)]"}`}>
                     {bed.bed}
                   </span>
-                  <h4 className="text-base font-bold text-[var(--text-primary)] uppercase tracking-wide mt-0.5">
-                    {bed.name}
-                  </h4>
+                  {(() => {
+                    const matchingDbPatient = dbPatients.find(
+                      (p: any) =>
+                        p.full_name?.toLowerCase().includes(bed.name.toLowerCase()) ||
+                        p.username?.toLowerCase().includes(bed.name.toLowerCase()) ||
+                        bed.name.toLowerCase().includes(p.full_name?.toLowerCase() || "") ||
+                        bed.name.toLowerCase().includes(p.username?.toLowerCase() || "")
+                    );
+                    const patientDbId = matchingDbPatient?.patient_id || matchingDbPatient?.id;
+                    const staticIdMap: Record<string, number> = {
+                      "Sarah Jenkins": 2,
+                      "Marcus Thorne": 3,
+                      "Linda Zhao": 4,
+                      "Robert G.": 3,
+                      "Emily Watson": 4,
+                      "Oscar M.": 5
+                    };
+                    const targetId = patientDbId || staticIdMap[bed.name] || 1;
+
+                    return (
+                      <h4 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/patients/${targetId}`);
+                        }}
+                        className="text-base font-bold text-[var(--text-primary)] hover:text-[var(--accent)] hover:underline uppercase tracking-wide mt-0.5 cursor-pointer inline-block"
+                        title="Click to view full patient EMR profile"
+                      >
+                        {bed.name}
+                      </h4>
+                    );
+                  })()}
                 </div>
                 <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase ${
                   isAlert 
