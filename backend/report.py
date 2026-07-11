@@ -51,10 +51,10 @@ async def analyze_report(
         HTTPException(500): Analysis failure.
     """
     # 1. Validate File Type
-    if file.content_type not in ["image/jpeg", "image/png", "image/jpg"]:
+    if file.content_type not in ["image/jpeg", "image/png", "image/jpg", "application/pdf"]:
         raise HTTPException(
             status_code=400,
-            detail="Invalid file type. Please upload a JPEG or PNG image."
+            detail="Invalid file type. Please upload a JPEG, PNG, or PDF report."
         )
 
     try:
@@ -62,7 +62,10 @@ async def analyze_report(
         contents = await file.read()
 
         # 3. Analyze via Vision Service
-        result = vision_service.analyze_lab_report(contents)
+        if file.content_type == "application/pdf":
+            result = vision_service.analyze_lab_report_pdf(contents)
+        else:
+            result = vision_service.analyze_lab_report(contents)
 
         return _with_report_analysis_disclaimer(result)
 

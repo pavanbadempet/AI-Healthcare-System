@@ -111,3 +111,96 @@ class LungInput(BaseModel):
     shortness_of_breath: Optional[int] = None
     swallowing_difficulty: Optional[int] = None
     chest_pain: Optional[int] = None
+
+
+class MultiOrganInput(BaseModel):
+    """Unified schema for Multi-Organ Risk Assessment (union of all 5 inputs)"""
+    # Demographics
+    gender: Optional[int] = Field(None, description="0: Female, 1: Male")
+    age: Optional[float] = Field(None, description="Age in years")
+    
+    # Lifestyle & Common Markers
+    smoking: Optional[int] = Field(None, description="0: No, 1: Yes")
+    physical_activity: Optional[int] = Field(None, description="0: No, 1: Yes")
+    alcohol: Optional[int] = Field(None, description="0: No, 1: Yes")
+    general_health: Optional[int] = Field(None, description="1 (Excellent) to 5 (Poor)")
+    bmi: Optional[float] = Field(None, description="Body Mass Index")
+    glucose: Optional[float] = Field(None, description="Blood glucose level")
+    hba1c: Optional[float] = Field(None, description="HbA1c level")
+    
+    # Cardiovascular
+    hypertension: Optional[int] = Field(None, description="0: No, 1: Yes")
+    heart_disease: Optional[int] = Field(None, description="0: No, 1: Yes")
+    cp: Optional[int] = Field(None, description="Chest pain type (0-3)")
+    trestbps: Optional[float] = Field(None, description="Resting blood pressure")
+    chol: Optional[float] = Field(None, description="Serum cholesterol in mg/dl")
+    fbs: Optional[int] = Field(None, description="Fasting blood sugar > 120 mg/dl (1/0)")
+    restecg: Optional[int] = Field(None, description="Resting ECG results (0-2)")
+    thalach: Optional[float] = Field(None, description="Maximum heart rate achieved")
+    exang: Optional[int] = Field(None, description="Exercise induced angina (1/0)")
+    oldpeak: Optional[float] = Field(None, description="ST depression induced by exercise")
+    slope: Optional[int] = Field(None, description="Slope of peak exercise ST segment")
+    ca: Optional[int] = Field(None, description="Number of major vessels (0-4)")
+    thal: Optional[int] = Field(None, description="Thalassemia (1-3)")
+    hdl: Optional[float] = Field(50.0, description="HDL Cholesterol")
+    hyp_treatment: Optional[int] = Field(0, description="0: Untreated, 1: Treated")
+    
+    # Hepatic / Liver
+    total_bilirubin: Optional[float] = None
+    direct_bilirubin: Optional[float] = None
+    alkaline_phosphotase: Optional[float] = None
+    alamine_aminotransferase: Optional[float] = None
+    aspartate_aminotransferase: Optional[float] = None
+    total_proteins: Optional[float] = None
+    albumin: Optional[float] = None
+    albumin_and_globulin_ratio: Optional[float] = None
+    platelets: Optional[float] = Field(250.0, description="Platelets in 10^9/L (Default: 250.0)")
+    
+    # Renal / Kidney
+    bp: Optional[float] = None
+    sg: Optional[float] = None
+    al: Optional[float] = None
+    su: Optional[float] = None
+    rbc: Optional[int] = None
+    pc: Optional[int] = None
+    pcc: Optional[int] = None
+    ba: Optional[int] = None
+    bgr: Optional[float] = None
+    bu: Optional[float] = None
+    sc: Optional[float] = None
+    sod: Optional[float] = None
+    pot: Optional[float] = None
+    hemo: Optional[float] = None
+    pcv: Optional[float] = None
+    wc: Optional[float] = None
+    rc: Optional[float] = None
+    htn: Optional[int] = None
+    dm: Optional[int] = None
+    cad: Optional[int] = None
+    appet: Optional[int] = None
+    pe: Optional[int] = None
+    ane: Optional[int] = None
+    
+    # Lungs / Pulmonary
+    yellow_fingers: Optional[int] = None
+    anxiety: Optional[int] = None
+    peer_pressure: Optional[int] = None
+    chronic_disease: Optional[int] = None
+    fatigue: Optional[int] = None
+    allergy: Optional[int] = None
+    wheezing: Optional[int] = None
+    coughing: Optional[int] = None
+    shortness_of_breath: Optional[int] = None
+    swallowing_difficulty: Optional[int] = None
+    chest_pain: Optional[int] = None
+
+
+class StrokeInput(BaseModel):
+    """Schema for Stroke Risk Prediction (Cerebrovascular risk)"""
+    gender: Optional[int] = Field(None, description="0: Female, 1: Male")
+    age: Optional[float] = Field(None, description="Age in years")
+    hypertension: Optional[int] = Field(None, description="0: No, 1: Yes")
+    heart_disease: Optional[int] = Field(None, description="0: No, 1: Yes")
+    smoking: Optional[int] = Field(None, description="0: No, 1: Yes")
+    bmi: Optional[float] = Field(None, description="Body Mass Index")
+    glucose: Optional[float] = Field(None, description="Average blood glucose level")

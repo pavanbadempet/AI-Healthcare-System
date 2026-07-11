@@ -388,6 +388,30 @@ if _pkg_prompts is None:
             )
 
             self.register(
+                "clinical_multiorgan_narrative",
+                version="1.0",
+                template=(
+                    "You are an expert chief medical officer AI assistant. "
+                    "Synthesize the following multi-organ health risk assessment findings into a single, cohesive, "
+                    "and professional clinical narrative summary for the doctor's chart notes.\n\n"
+                    "Organ System Risk Profile:\n"
+                    "{risk_profile}\n\n"
+                    "Patient Demographic Profile:\n"
+                    "- Age: {age}\n"
+                    "- Gender: {gender}\n\n"
+                    "Instructions:\n"
+                    "1. Provide a professional, high-level clinical summary connecting the dots across different organ systems. "
+                    "Identify any correlations (e.g. renal and cardiac risks often co-occur, hepatic and metabolic risk indicators).\n"
+                    "2. Point out the systems showing high or moderate risks, and note the most significant contributing clinical drivers.\n"
+                    "3. Highlight recommended next steps or specialists to refer to based on the combined profile.\n"
+                    "4. Keep the tone clinical, objective, and precise. Limit the response to 4-5 sentences.\n"
+                    "5. Include a standard medical disclaimer at the very end.\n\n"
+                    "Clinical Narrative Note:"
+                ),
+                description="Comprehensive multi-system clinical synthesis and chart note generator",
+            )
+
+            self.register(
                 "scheduling_system",
                 version="1.0",
                 template=(
