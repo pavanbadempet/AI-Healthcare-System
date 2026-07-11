@@ -589,7 +589,7 @@ async def _generate_cloud(prompt: str, system: str, model: Optional[str], api_pr
                 logger.warning("Anthropic error: %d", r.status_code)
 
     except Exception as e:
-        logger.warning("Cloud AI error (%s): %s", api_provider, e)
+        logger.warning("Cloud AI error (%s)", api_provider, exc_info=True)
     return ""
 
 
@@ -655,7 +655,7 @@ async def _chat_cloud(messages: list[dict], system: str, model: Optional[str], a
                 raise Exception(f"Anthropic error: {r.status_code}")
 
     except Exception as exc:
-        logger.warning("Cloud AI error (%s): %s", api_provider, exc)
+        logger.warning("Cloud AI error (%s)", api_provider, exc_info=True)
         return ""
 
 
