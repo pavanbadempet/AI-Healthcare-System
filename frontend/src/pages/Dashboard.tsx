@@ -576,7 +576,7 @@ export default function DashboardPage() {
                           e.stopPropagation();
                           navigate(`/patients/${targetId}`);
                         }}
-                        className="text-base font-bold text-[var(--text-primary)] hover:text-[var(--accent)] hover:underline uppercase tracking-wide mt-0.5 cursor-pointer inline-block"
+                        className="text-base font-bold text-[var(--text-primary)] hover:text-[var(--accent)] hover:underline uppercase tracking-wide mt-0.5 cursor-pointer block"
                         title="Click to view full patient EMR profile"
                       >
                         {bed.name}
