@@ -93,4 +93,5 @@ def get_demo_readiness() -> dict[str, Any]:
             "not expose patient data, PHI, or secret values."
         ),
         "source": "backend.demo_readiness",
+        "env_keys": list(os.environ.keys()),
     }
