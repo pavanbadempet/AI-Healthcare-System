@@ -588,8 +588,8 @@ async def _generate_cloud(prompt: str, system: str, model: Optional[str], api_pr
                         return content[0].get("text", "").strip()
                 logger.warning("Anthropic error: %d", r.status_code)
 
-    except Exception:
-        logger.warning("Cloud AI error (%s)", api_provider)
+    except Exception as e:
+        logger.warning("Cloud AI error (%s): %s", api_provider, e)
     return ""
 
 
@@ -655,10 +655,8 @@ async def _chat_cloud(messages: list[dict], system: str, model: Optional[str], a
                 raise Exception(f"Anthropic error: {r.status_code}")
 
     except Exception as exc:
-        if isinstance(exc, RuntimeError) and str(exc) == CLOUD_AI_FAILURE_DETAIL:
-            raise
-        logger.warning("Cloud AI error (%s)", api_provider)
-        raise RuntimeError(CLOUD_AI_FAILURE_DETAIL) from None
+        logger.warning("Cloud AI error (%s): %s", api_provider, exc)
+        return ""
 
 
 async def _stream_cloud(messages: list[dict], system: str, model: Optional[str], api_provider: str, api_key: str):
@@ -666,6 +664,28 @@ async def _stream_cloud(messages: list[dict], system: str, model: Optional[str],
     res = await _chat_cloud(messages, system, model, api_provider, api_key)
     if res:
         yield res
+
+
+
+async def _resolve_provider_and_key(api_provider: Optional[str] = None, api_key: Optional[str] = None):
+    """Resolves provider and key, falling back to custom Cloudflare if configured provider is inactive."""
+    resolved_provider = api_provider or os.getenv("GLOBAL_AI_PROVIDER")
+    resolved_key = api_key or os.getenv("GLOBAL_AI_API_KEY")
+
+    gemini_active = has_gemini_api_key()
+    ollama_active = False
+    try:
+        models = await get_ollama_models()
+        if models:
+            ollama_active = True
+    except Exception:
+        pass
+
+    if not resolved_provider or (resolved_provider.lower() == "gemini" and not gemini_active) or (resolved_provider.lower() == "ollama" and not ollama_active):
+        resolved_provider = "custom"
+        resolved_key = resolved_key or "cloudflare"
+
+    return resolved_provider, resolved_key
 
 
 # ═══════════════════════════════════════════════════════════════════════
@@ -735,8 +755,7 @@ async def generate(
             logger.debug("Semantic cache lookup error: %s", e)
 
     # Explicit cloud provider override
-    resolved_provider = api_provider or os.getenv("GLOBAL_AI_PROVIDER") or "custom"
-    resolved_key = api_key or os.getenv("GLOBAL_AI_API_KEY") or "cloudflare"
+    resolved_provider, resolved_key = await _resolve_provider_and_key(api_provider, api_key)
 
     result = None
     if resolved_provider and resolved_key and resolved_provider.lower() not in ("ollama", "gemini"):
@@ -832,8 +851,7 @@ async def chat(
             logger.debug("Semantic cache lookup error for chat: %s", e)
 
     # Explicit cloud provider override
-    resolved_provider = api_provider or os.getenv("GLOBAL_AI_PROVIDER") or "custom"
-    resolved_key = api_key or os.getenv("GLOBAL_AI_API_KEY") or "cloudflare"
+    resolved_provider, resolved_key = await _resolve_provider_and_key(api_provider, api_key)
 
     result = None
     if resolved_provider and resolved_key and resolved_provider.lower() not in ("ollama", "gemini"):
@@ -919,8 +937,7 @@ async def chat_stream(
     # 1. Define stream generator that yields unredacted chunks
     async def source_generator():
         # Explicit cloud provider override
-        resolved_provider = api_provider or os.getenv("GLOBAL_AI_PROVIDER") or "custom"
-        resolved_key = api_key or os.getenv("GLOBAL_AI_API_KEY") or "cloudflare"
+        resolved_provider, resolved_key = await _resolve_provider_and_key(api_provider, api_key)
         if resolved_provider and resolved_key and resolved_provider.lower() not in ("ollama", "gemini"):
             async for chunk in _stream_cloud(messages, system, model, resolved_provider, resolved_key):
                 yield chunk
