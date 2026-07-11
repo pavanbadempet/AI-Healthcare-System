@@ -95,3 +95,48 @@ def get_demo_readiness() -> dict[str, Any]:
         "source": "backend.demo_readiness",
         "env_keys": list(os.environ.keys()),
     }
+
+
+@router.get("/ping")
+def ping_external_hosts() -> dict[str, Any]:
+    import socket
+    import urllib.request
+    
+    results = {}
+    hosts = [
+        ("google", "https://www.google.com"),
+        ("neon_db", "https://ep-ancient-poetry-a1vna8ys-pooler.ap-southeast-1.aws.neon.tech"),
+        ("cloudflare_worker", "https://ai-healthcare-model.pavan9b.workers.dev")
+    ]
+    
+    for name, url in hosts:
+        try:
+            # Try DNS resolution
+            parsed_host = url.split("//")[1].split("/")[0]
+            ip = socket.gethostbyname(parsed_host)
+            dns_ok = True
+        except Exception as dns_err:
+            ip = str(dns_err)
+            dns_ok = False
+            
+        try:
+            # Try HTTP request
+            req = urllib.request.Request(
+                url, 
+                headers={'User-Agent': 'Mozilla/5.0'}
+            )
+            with urllib.request.urlopen(req, timeout=5) as response:
+                status = response.getcode()
+                http_ok = True
+        except Exception as http_err:
+            status = str(http_err)
+            http_ok = False
+            
+        results[name] = {
+            "url": url,
+            "dns_resolved_ip": ip,
+            "dns_ok": dns_ok,
+            "http_status_or_error": status,
+            "http_ok": http_ok
+        }
+    return results
