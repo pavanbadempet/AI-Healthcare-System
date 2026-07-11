@@ -9,7 +9,7 @@ import Tooltip from "./Tooltip";
 import { useTranslation } from "@/lib/i18n";
 import {
   type MenuItem, type MenuGroup,
-  operationsItems, diagnosticsItems, intelligenceItems,
+  operationsItems, diagnosticsItems, intelligenceItems, clinosItems,
   MENU_GROUPS, getIconStyles, colorKeyFromMenuItem,
   COMMAND_ITEMS,
 } from "./nav-config";
@@ -61,6 +61,10 @@ export default function TopNav({
     return item;
   });
 
+  const dynamicClinosItems = clinosItems.map(item => {
+    return item;
+  });
+
   const dynamicMenuGroups = [
     {
       key: "operations",
@@ -88,6 +92,15 @@ export default function TopNav({
       items: dynamicIntelligenceItems,
       cols: 1,
       routes: ["/chat", "/about", "/pricing"],
+    },
+    {
+      key: "clinos",
+      label: language === "es" ? "Sistemas ClinOS" : language === "hi" ? "क्लिओएस" : "ClinOS",
+      emoji: "🚀",
+      accentColor: "text-sky-400 data-[state=open]:text-sky-400",
+      items: dynamicClinosItems,
+      cols: 2,
+      routes: ["/apps", "/federated", "/intelligence", "/companion"],
     },
   ];
 

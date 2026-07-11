@@ -5,6 +5,7 @@ import { fetchProcedureCostEstimate } from "@/lib/apiIntelligence";
 import { motion } from "framer-motion";
 import { Check, Star, Shield, Zap, AlertCircle } from "lucide-react";
 import { useAuthStore } from "@/lib/auth";
+import { toast } from "@/lib/toast";
 
 const PLANS = [
   {
@@ -89,8 +90,10 @@ export default function PricingPage() {
               razorpay_payment_id: response.razorpay_payment_id,
               razorpay_signature: response.razorpay_signature
             });
-            alert("Payment successful! Your account has been upgraded.");
-            window.location.reload();
+            toast.success("Payment successful! Your account has been upgraded.");
+            setTimeout(() => {
+              window.location.reload();
+            }, 1000);
           } catch (err: any) {
             setError(err.message || "Payment verification failed.");
           }

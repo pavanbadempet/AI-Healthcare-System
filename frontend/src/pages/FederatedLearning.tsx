@@ -14,6 +14,7 @@ import {
 import { runFederatedSimulation } from '@/lib/api';
 import { useMaterialRipple } from '@/lib/ripple';
 import Tooltip from "@/components/layout/Tooltip";
+import { toast } from '@/lib/toast';
 
 export default function FederatedLearning() {
   const { triggerRipple } = useMaterialRipple();
@@ -69,9 +70,9 @@ export default function FederatedLearning() {
         sensitivity: 1.0
       });
       loadData();
-      alert('Federated Sync Bridge completed successfully! Differential Privacy noise injected.');
+      toast.success('Federated Sync Bridge completed successfully! Differential Privacy noise injected.');
     } catch (err: any) {
-      alert(err.message || 'Failed to run Federated Sync');
+      toast.error(err.message || 'Failed to run Federated Sync');
     } finally {
       setSyncing(false);
     }
@@ -86,10 +87,10 @@ export default function FederatedLearning() {
       if (res && res.status === 'success') {
         setSimResult(res.results);
       } else {
-        alert('Simulation failed to return results');
+        toast.error('Simulation failed to return results');
       }
     } catch (err: any) {
-      alert(err.message || 'Failed to run Federated DP Simulation');
+      toast.error(err.message || 'Failed to run Federated DP Simulation');
     } finally {
       setSimulating(false);
     }
