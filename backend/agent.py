@@ -70,11 +70,15 @@ def build_external_research_query(query: str) -> str:
 class CoreAIWrapper:
     """LangChain-compatible wrapper around core_ai multi-tier inference."""
 
-    def invoke(self, messages: List[BaseMessage]) -> AIMessage:
+    def invoke(self, messages: List[BaseMessage], config: Optional[dict] = None) -> AIMessage:
         full_prompt = ""
         for msg in messages:
             role = "User" if isinstance(msg, HumanMessage) else "System" if isinstance(msg, SystemMessage) else "AI"
             full_prompt += f"{role}: {msg.content}\n\n"
+
+        model = None
+        if config and isinstance(config, dict):
+            model = config.get("model")
 
         try:
             # Run async generate in sync context
@@ -88,9 +92,9 @@ class CoreAIWrapper:
                 # We're inside an async context — use a thread
                 import concurrent.futures
                 with concurrent.futures.ThreadPoolExecutor() as pool:
-                    result = pool.submit(asyncio.run, core_ai.generate(full_prompt)).result()
+                    result = pool.submit(asyncio.run, core_ai.generate(full_prompt, model=model)).result()
             else:
-                result = asyncio.run(core_ai.generate(full_prompt))
+                result = asyncio.run(core_ai.generate(full_prompt, model=model))
 
             if result:
                 return AIMessage(content=result)
@@ -116,6 +120,7 @@ class AgentState(TypedDict, total=False):
     available_reports: str     # Medical history context
     rag_memories: str          # Semantic memory from vector store (RAG)
     conversation_count: int    # Number of messages for engagement style
+    model: str                 # Selected model name
 
     # Internal Scratchpad
     tavily_results: str
@@ -285,7 +290,8 @@ def generation_node(state: AgentState):
     )
 
     final_msgs = [SystemMessage(content=system_prompt)] + messages
-    response = llm.invoke(final_msgs)
+    model = state.get("model")
+    response = llm.invoke(final_msgs, config={"model": model})
     return {"messages": [response]}
 
 def guardrail_node(state: AgentState):

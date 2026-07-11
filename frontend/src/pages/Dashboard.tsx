@@ -136,6 +136,7 @@ export default function DashboardPage() {
   const [codeBlueActive, setCodeBlueActive] = useState<Record<string, boolean>>({});
   const [telemetryAlarmDismissed, setTelemetryAlarmDismissed] = useState(false);
   const [dbPatients, setDbPatients] = useState<any[]>([]);
+  const [selectedModel, setSelectedModel] = useState<string>("google/gemini-2.5-flash");
 
   // Live telemetry beds state
   const [beds, setBeds] = useState<ClinicalBed[]>([
@@ -973,7 +974,8 @@ export default function DashboardPage() {
             setChatLoading(true);
             try {
               const response = await sendChat(
-                `Patient: ${selectedBed.name}\nAge: ${profile.age}\nGender: ${profile.gender}\nHistory: ${profile.history.join(", ")}\nMeds: ${profile.medications.join(", ")}\nVitals: HR ${selectedBed.hr}, SpO2 ${selectedBed.spo2}, BP ${selectedBed.bp}\nAllergies: ${profile.allergies}\n\nQuery: ${userMsg}`
+                `Patient: ${selectedBed.name}\nAge: ${profile.age}\nGender: ${profile.gender}\nHistory: ${profile.history.join(", ")}\nMeds: ${profile.medications.join(", ")}\nVitals: HR ${selectedBed.hr}, SpO2 ${selectedBed.spo2}, BP ${selectedBed.bp}\nAllergies: ${profile.allergies}\n\nQuery: ${userMsg}`,
+                selectedModel
               );
               const replyText = response.reply || (response as any).response || "";
               setChatMessages(prev => [...prev, { role: "assistant", content: replyText }]);
@@ -1319,6 +1321,22 @@ export default function DashboardPage() {
                           exit={{ opacity: 0, y: -10 }}
                           className="flex flex-col h-[400px] bg-black/10 border border-white/[0.03] rounded-2xl overflow-hidden"
                         >
+                          {/* Model selection header bar */}
+                          <div className="px-4 py-2 bg-white/[0.02] border-b border-white/[0.04] flex items-center justify-between gap-2 shrink-0">
+                            <span className="text-[9px] text-[var(--text-dim)] uppercase font-mono tracking-wider flex items-center gap-1">
+                              <BrainCircuit size={10} className="text-[var(--accent)]" /> Active AI Model:
+                            </span>
+                            <select
+                              value={selectedModel}
+                              onChange={(e) => setSelectedModel(e.target.value)}
+                              className="bg-black/40 border border-white/[0.08] hover:border-white/[0.15] text-[10px] text-white rounded-lg px-2 py-1 outline-none font-semibold cursor-pointer transition-all focus:border-[var(--accent)]"
+                            >
+                              <option value="google/gemini-2.5-flash">Gemini 2.5 Flash (Fast, Recommended)</option>
+                              <option value="google/gemini-2.5-pro">Gemini 2.5 Pro (Deep Clinical Reasoning)</option>
+                              <option value="meta-llama/llama-3-70b-instruct">Llama 3 70B (Cloudflare Host)</option>
+                              <option value="mistralai/mistral-large">Mistral Large (High Accuracy)</option>
+                            </select>
+                          </div>
                           {/* Messages list */}
                           <div className="flex-1 p-4 overflow-y-auto space-y-3 min-h-0">
                             {chatMessages.map((msg, idx) => (
