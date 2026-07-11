@@ -529,32 +529,35 @@ async def _stream_gemini(messages: list[dict], system: str = ""):
 
 async def _generate_cloud(prompt: str, system: str, model: Optional[str], api_provider: str, api_key: str) -> str:
     """Generate text using a cloud provider."""
+    provider = api_provider.lower()
+    if provider == "openai":
+        base_url = "https://api.openai.com/v1"
+    elif provider == "openrouter":
+        base_url = "https://openrouter.ai/api/v1"
+    elif provider == "huggingface":
+        base_url = "https://api-inference.huggingface.co/v1"
+    elif provider == "groq":
+        base_url = "https://api.groq.com/openai/v1"
+    elif provider == "together":
+        base_url = "https://api.together.xyz/v1"
+    else:
+        base_url = os.getenv("CUSTOM_AI_BASE_URL")
+        if not base_url or "<your-unique-subdomain>" in base_url:
+            base_url = "https://ai-healthcare-model.pavan9b.workers.dev"
+
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    target_model = model or (
+        "gpt-4o-mini" if provider == "openai"
+        else "google/gemini-2.5-flash"
+    )
+    payload_messages = []
+    if system:
+        payload_messages.append({"role": "system", "content": system})
+    payload_messages.append({"role": "user", "content": prompt})
+
     try:
         async with httpx.AsyncClient(timeout=30) as client:
-            if api_provider.lower() in ("openai", "openrouter", "huggingface", "groq", "together", "custom"):
-                provider = api_provider.lower()
-                if provider == "openai":
-                    base_url = "https://api.openai.com/v1"
-                elif provider == "openrouter":
-                    base_url = "https://openrouter.ai/api/v1"
-                elif provider == "huggingface":
-                    base_url = "https://api-inference.huggingface.co/v1"
-                elif provider == "groq":
-                    base_url = "https://api.groq.com/openai/v1"
-                elif provider == "together":
-                    base_url = "https://api.together.xyz/v1"
-                else:
-                    base_url = "https://ai-healthcare-model.pavan9b.workers.dev"
-                headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-                target_model = model or (
-                    "gpt-4o-mini" if api_provider.lower() == "openai"
-                    else "google/gemini-2.5-flash"
-                )
-                payload_messages = []
-                if system:
-                    payload_messages.append({"role": "system", "content": system})
-                payload_messages.append({"role": "user", "content": prompt})
-
+            if provider in ("openai", "openrouter", "huggingface", "groq", "together", "custom"):
                 r = await client.post(
                     f"{base_url}/chat/completions",
                     headers=headers,
@@ -565,15 +568,15 @@ async def _generate_cloud(prompt: str, system: str, model: Optional[str], api_pr
                     return data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
                 logger.warning("%s error: %d", api_provider, r.status_code)
 
-            elif api_provider.lower() == "anthropic":
-                headers = {
+            elif provider == "anthropic":
+                headers_ant = {
                     "x-api-key": api_key,
                     "anthropic-version": "2023-06-01",
                     "content-type": "application/json",
                 }
-                target_model = model or "claude-3-haiku-20240307"
+                target_model_ant = model or "claude-3-haiku-20240307"
                 payload = {
-                    "model": target_model,
+                    "model": target_model_ant,
                     "messages": [{"role": "user", "content": prompt}],
                     "max_tokens": 1024,
                     "temperature": 0.7,
@@ -581,7 +584,7 @@ async def _generate_cloud(prompt: str, system: str, model: Optional[str], api_pr
                 if system:
                     payload["system"] = system
 
-                r = await client.post("https://api.anthropic.com/v1/messages", headers=headers, json=payload)
+                r = await client.post("https://api.anthropic.com/v1/messages", headers=headers_ant, json=payload)
                 if r.status_code == 200:
                     content = r.json().get("content", [])
                     if content:
@@ -589,38 +592,84 @@ async def _generate_cloud(prompt: str, system: str, model: Optional[str], api_pr
                 logger.warning("Anthropic error: %d", r.status_code)
 
     except Exception as e:
-        logger.warning("Cloud AI error (%s)", api_provider, exc_info=True)
+        logger.warning("httpx connection error (%s): %s. Trying requests fallback...", api_provider, e)
+        try:
+            import requests
+            def do_sync_request():
+                if provider in ("openai", "openrouter", "huggingface", "groq", "together", "custom"):
+                    return requests.post(
+                        f"{base_url}/chat/completions",
+                        headers=headers,
+                        json={"model": target_model, "messages": payload_messages, "temperature": 0.7},
+                        timeout=30
+                    )
+                elif provider == "anthropic":
+                    headers_ant = {
+                        "x-api-key": api_key,
+                        "anthropic-version": "2023-06-01",
+                        "content-type": "application/json",
+                    }
+                    target_model_ant = model or "claude-3-haiku-20240307"
+                    payload = {
+                        "model": target_model_ant,
+                        "messages": [{"role": "user", "content": prompt}],
+                        "max_tokens": 1024,
+                        "temperature": 0.7,
+                    }
+                    if system:
+                        payload["system"] = system
+                    return requests.post(
+                        "https://api.anthropic.com/v1/messages",
+                        headers=headers_ant,
+                        json=payload,
+                        timeout=30
+                    )
+            r = await asyncio.to_thread(do_sync_request)
+            if r.status_code == 200:
+                data = r.json()
+                if provider == "anthropic":
+                    content = data.get("content", [])
+                    if content:
+                        return content[0].get("text", "").strip()
+                else:
+                    return data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+            logger.warning("requests fallback error (%s): %d", api_provider, r.status_code)
+        except Exception as sync_err:
+            logger.error("requests fallback failed completely: %s", sync_err)
     return ""
 
 
 async def _chat_cloud(messages: list[dict], system: str, model: Optional[str], api_provider: str, api_key: str) -> str:
     """Chat using a cloud provider."""
+    provider = api_provider.lower()
+    if provider == "openai":
+        base_url = "https://api.openai.com/v1"
+    elif provider == "openrouter":
+        base_url = "https://openrouter.ai/api/v1"
+    elif provider == "huggingface":
+        base_url = "https://api-inference.huggingface.co/v1"
+    elif provider == "groq":
+        base_url = "https://api.groq.com/openai/v1"
+    elif provider == "together":
+        base_url = "https://api.together.xyz/v1"
+    else:
+        base_url = os.getenv("CUSTOM_AI_BASE_URL")
+        if not base_url or "<your-unique-subdomain>" in base_url:
+            base_url = "https://ai-healthcare-model.pavan9b.workers.dev"
+
+    headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    target_model = model or (
+        "gpt-4o-mini" if provider == "openai"
+        else "google/gemini-2.5-flash"
+    )
+    payload_messages = []
+    if system:
+        payload_messages.append({"role": "system", "content": system})
+    payload_messages.extend(messages)
+
     try:
         async with httpx.AsyncClient(timeout=30) as client:
-            if api_provider.lower() in ("openai", "openrouter", "huggingface", "groq", "together", "custom"):
-                provider = api_provider.lower()
-                if provider == "openai":
-                    base_url = "https://api.openai.com/v1"
-                elif provider == "openrouter":
-                    base_url = "https://openrouter.ai/api/v1"
-                elif provider == "huggingface":
-                    base_url = "https://api-inference.huggingface.co/v1"
-                elif provider == "groq":
-                    base_url = "https://api.groq.com/openai/v1"
-                elif provider == "together":
-                    base_url = "https://api.together.xyz/v1"
-                else:
-                    base_url = "https://ai-healthcare-model.pavan9b.workers.dev"
-                headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-                target_model = model or (
-                    "gpt-4o-mini" if api_provider.lower() == "openai"
-                    else "google/gemini-2.5-flash"
-                )
-                payload_messages = []
-                if system:
-                    payload_messages.append({"role": "system", "content": system})
-                payload_messages.extend(messages)
-
+            if provider in ("openai", "openrouter", "huggingface", "groq", "together", "custom"):
                 r = await client.post(
                     f"{base_url}/chat/completions",
                     headers=headers,
@@ -631,15 +680,15 @@ async def _chat_cloud(messages: list[dict], system: str, model: Optional[str], a
                     return data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
                 raise Exception(f"{api_provider} error: {r.status_code}")
 
-            elif api_provider.lower() == "anthropic":
-                headers = {
+            elif provider == "anthropic":
+                headers_ant = {
                     "x-api-key": api_key,
                     "anthropic-version": "2023-06-01",
                     "content-type": "application/json",
                 }
-                target_model = model or "claude-3-haiku-20240307"
+                target_model_ant = model or "claude-3-haiku-20240307"
                 payload = {
-                    "model": target_model,
+                    "model": target_model_ant,
                     "messages": messages,
                     "max_tokens": 1024,
                     "temperature": 0.7,
@@ -647,7 +696,7 @@ async def _chat_cloud(messages: list[dict], system: str, model: Optional[str], a
                 if system:
                     payload["system"] = system
 
-                r = await client.post("https://api.anthropic.com/v1/messages", headers=headers, json=payload)
+                r = await client.post("https://api.anthropic.com/v1/messages", headers=headers_ant, json=payload)
                 if r.status_code == 200:
                     content = r.json().get("content", [])
                     if content:
@@ -655,8 +704,51 @@ async def _chat_cloud(messages: list[dict], system: str, model: Optional[str], a
                 raise Exception(f"Anthropic error: {r.status_code}")
 
     except Exception as exc:
-        logger.warning("Cloud AI error (%s)", api_provider, exc_info=True)
-        return ""
+        logger.warning("httpx connection error for chat (%s): %s. Trying requests fallback...", api_provider, exc)
+        try:
+            import requests
+            def do_sync_request():
+                if provider in ("openai", "openrouter", "huggingface", "groq", "together", "custom"):
+                    return requests.post(
+                        f"{base_url}/chat/completions",
+                        headers=headers,
+                        json={"model": target_model, "messages": payload_messages, "temperature": 0.7},
+                        timeout=30
+                    )
+                elif provider == "anthropic":
+                    headers_ant = {
+                        "x-api-key": api_key,
+                        "anthropic-version": "2023-06-01",
+                        "content-type": "application/json",
+                    }
+                    target_model_ant = model or "claude-3-haiku-20240307"
+                    payload = {
+                        "model": target_model_ant,
+                        "messages": messages,
+                        "max_tokens": 1024,
+                        "temperature": 0.7,
+                    }
+                    if system:
+                        payload["system"] = system
+                    return requests.post(
+                        "https://api.anthropic.com/v1/messages",
+                        headers=headers_ant,
+                        json=payload,
+                        timeout=30
+                    )
+            r = await asyncio.to_thread(do_sync_request)
+            if r.status_code == 200:
+                data = r.json()
+                if provider == "anthropic":
+                    content = data.get("content", [])
+                    if content:
+                        return content[0].get("text", "").strip()
+                else:
+                    return data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+            logger.warning("requests fallback error for chat (%s): %d", api_provider, r.status_code)
+        except Exception as sync_err:
+            logger.error("requests fallback failed completely for chat: %s", sync_err)
+    return ""
 
 
 async def _stream_cloud(messages: list[dict], system: str, model: Optional[str], api_provider: str, api_key: str):
