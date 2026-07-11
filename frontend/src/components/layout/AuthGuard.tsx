@@ -38,7 +38,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
       <div className="flex flex-col h-screen overflow-hidden w-full bg-transparent relative">
         <TopNav mobileOpen={mobileMenuOpen} setMobileOpen={setMobileMenuOpen} />
         
-        <main className="flex-1 overflow-auto relative w-full pt-16 z-10">
+        <main className="flex-1 overflow-auto relative w-full pt-16">
           {inIframe && (
             <div className="max-w-[1600px] mx-auto px-4 md:px-6 lg:px-8 pt-4 w-full">
               <div className="p-3 bg-[rgba(234,179,8,0.1)] text-[var(--warning)] border border-yellow-500/20 text-[10px] font-mono rounded-xl flex items-center justify-between gap-4 uppercase tracking-wide">
