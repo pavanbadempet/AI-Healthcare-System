@@ -470,10 +470,23 @@ def _get_triage_recommendation(prediction_val: int, conformal_set: list) -> str:
         return "Secondary Review: Patient presents with unusual clinical features not well-represented in training. Perform manual chart review."
 
 
-def _get_top_risk_factors(model: Any, imputed_list: list, feature_names: list) -> list:
+def _get_top_risk_factors(model: Any, imputed_list: list, feature_names: list, attributions: Optional[dict] = None) -> list:
     """
     Returns a sorted list of top clinical risk factors based on local SHAP feature contributions.
     """
+    try:
+        if attributions:
+            contributions = [(feat, float(val)) for feat, val in attributions.items()]
+            contributions.sort(key=lambda x: abs(x[1]), reverse=True)
+            top_factors = []
+            for feat, val in contributions[:3]:
+                direction = "increases risk" if val > 0 else "decreases risk"
+                display_name = feat.replace('_', ' ').title()
+                top_factors.append(f"{display_name} ({direction})")
+            return top_factors
+    except Exception:
+        pass
+
     try:
         import shap
     except ImportError:
@@ -909,6 +922,13 @@ async def predict_kidney(
         imputed_age = imputed_list[0]
         imputed_sc = imputed_list[11]
 
+        # Log feature attributions for drift monitoring
+        attributions = _log_feature_attributions(
+            background_tasks, "kidney", getattr(model_service._entries["kidney"], "model_version", "1.0.0"),
+            imputed_list, feature_names, raw, _pred.kidney_model,
+            db=db
+        )
+
         # Calculate clinical domain indices
         egfr_data = calculate_egfr_ckd_epi(imputed_age, data.gender or 1, imputed_sc)
         clinical_indices = {"egfr": egfr_data} if egfr_data else {}
@@ -932,7 +952,7 @@ async def predict_kidney(
                     conformal_metrics["triage_recommendation"] = triage
 
                     # Add Top Risk Factors
-                    top_factors = _get_top_risk_factors(_pred.kidney_model, imputed_list, feature_names)
+                    top_factors = _get_top_risk_factors(_pred.kidney_model, imputed_list, feature_names, attributions=attributions)
                     if top_factors:
                         conformal_metrics["top_risk_factors"] = top_factors
 
@@ -949,13 +969,6 @@ async def predict_kidney(
             )
             if recourse:
                 clinical_indices["clinical_recourse"] = recourse
-
-        # Log feature attributions for drift monitoring
-        attributions = _log_feature_attributions(
-            background_tasks, "kidney", getattr(model_service._entries["kidney"], "model_version", "1.0.0"),
-            imputed_list, feature_names, raw, _pred.kidney_model,
-            db=db
-        )
 
         model_metadata = _get_model_metadata("kidney", _pred.kidney_model)
         narrative = ""
@@ -1014,6 +1027,13 @@ async def predict_lungs(
         raw, confidence, risk_level, proba = _run_model_prediction_scaled("lungs", imputed_list, X)
         prediction = "Respiratory Issue Detected" if raw == 1 else "Healthy Lungs"
 
+        # Log feature attributions for drift monitoring
+        attributions = _log_feature_attributions(
+            background_tasks, "lungs", getattr(model_service._entries["lungs"], "model_version", "1.0.0"),
+            imputed_list, feature_names, raw, _pred.lungs_model,
+            db=db
+        )
+
         clinical_indices = {}
         proba_pos = None
         try:
@@ -1033,7 +1053,7 @@ async def predict_lungs(
                     conformal_metrics["triage_recommendation"] = triage
 
                     # Add Top Risk Factors
-                    top_factors = _get_top_risk_factors(_pred.lungs_model, imputed_list, feature_names)
+                    top_factors = _get_top_risk_factors(_pred.lungs_model, imputed_list, feature_names, attributions=attributions)
                     if top_factors:
                         conformal_metrics["top_risk_factors"] = top_factors
 
@@ -1050,13 +1070,6 @@ async def predict_lungs(
             )
             if recourse:
                 clinical_indices["clinical_recourse"] = recourse
-
-        # Log feature attributions for drift monitoring
-        attributions = _log_feature_attributions(
-            background_tasks, "lungs", getattr(model_service._entries["lungs"], "model_version", "1.0.0"),
-            imputed_list, feature_names, raw, _pred.lungs_model,
-            db=db
-        )
 
         model_metadata = _get_model_metadata("lungs", _pred.lungs_model)
         narrative = ""
@@ -1108,6 +1121,13 @@ async def predict_diabetes(
         raw, confidence, risk_level, proba = _run_model_prediction_scaled("diabetes", imputed_list)
         prediction = "High Risk" if raw == 1 else "Low Risk"
 
+        # Log feature attributions for drift monitoring
+        attributions = _log_feature_attributions(
+            background_tasks, "diabetes", getattr(model_service._entries["diabetes"], "model_version", "1.0.0"),
+            imputed_list, _features.DIABETES_FEATURES, raw, _pred.diabetes_model,
+            db=db
+        )
+
         clinical_indices = {}
         proba_pos = None
         try:
@@ -1127,7 +1147,7 @@ async def predict_diabetes(
                     conformal_metrics["triage_recommendation"] = triage
 
                     # Add Top Risk Factors
-                    top_factors = _get_top_risk_factors(_pred.diabetes_model, imputed_list, _features.DIABETES_FEATURES)
+                    top_factors = _get_top_risk_factors(_pred.diabetes_model, imputed_list, _features.DIABETES_FEATURES, attributions=attributions)
                     if top_factors:
                         conformal_metrics["top_risk_factors"] = top_factors
 
@@ -1144,13 +1164,6 @@ async def predict_diabetes(
             )
             if recourse:
                 clinical_indices["clinical_recourse"] = recourse
-
-        # Log feature attributions for drift monitoring
-        attributions = _log_feature_attributions(
-            background_tasks, "diabetes", getattr(model_service._entries["diabetes"], "model_version", "1.0.0"),
-            imputed_list, _features.DIABETES_FEATURES, raw, _pred.diabetes_model,
-            db=db
-        )
 
         model_metadata = _get_model_metadata("diabetes", _pred.diabetes_model)
         narrative = ""
@@ -1220,6 +1233,13 @@ async def predict_heart(
         )
         clinical_indices = {"framingham_risk": framingham_data} if framingham_data else {}
 
+        # Log feature attributions for drift monitoring
+        attributions = _log_feature_attributions(
+            background_tasks, "heart", getattr(model_service._entries["heart"], "model_version", "1.0.0"),
+            imputed_list, _features.HEART_FEATURES, raw, _pred.heart_model,
+            db=db
+        )
+
         proba_pos = None
         try:
             proba_pos = float(proba[1]) if len(proba) > 1 else float(proba[0])
@@ -1238,7 +1258,7 @@ async def predict_heart(
                     conformal_metrics["triage_recommendation"] = triage
 
                     # Add Top Risk Factors
-                    top_factors = _get_top_risk_factors(_pred.heart_model, imputed_list, _features.HEART_FEATURES)
+                    top_factors = _get_top_risk_factors(_pred.heart_model, imputed_list, _features.HEART_FEATURES, attributions=attributions)
                     if top_factors:
                         conformal_metrics["top_risk_factors"] = top_factors
 
@@ -1255,13 +1275,6 @@ async def predict_heart(
             )
             if recourse:
                 clinical_indices["clinical_recourse"] = recourse
-
-        # Log feature attributions for drift monitoring
-        attributions = _log_feature_attributions(
-            background_tasks, "heart", getattr(model_service._entries["heart"], "model_version", "1.0.0"),
-            imputed_list, _features.HEART_FEATURES, raw, _pred.heart_model,
-            db=db
-        )
 
         model_metadata = _get_model_metadata("heart", _pred.heart_model)
         narrative = ""
@@ -1337,6 +1350,13 @@ async def predict_liver(
         )
         clinical_indices = {"fib4": fib4_data} if fib4_data else {}
 
+        # Log feature attributions for drift monitoring
+        attributions = _log_feature_attributions(
+            background_tasks, "liver", getattr(model_service._entries["liver"], "model_version", "1.0.0"),
+            imputed_list, feature_names, raw, _pred.liver_model,
+            db=db
+        )
+
         proba_pos = None
         try:
             proba_pos = float(proba[1]) if len(proba) > 1 else float(proba[0])
@@ -1355,7 +1375,7 @@ async def predict_liver(
                     conformal_metrics["triage_recommendation"] = triage
 
                     # Add Top Risk Factors
-                    top_factors = _get_top_risk_factors(_pred.liver_model, imputed_list, feature_names)
+                    top_factors = _get_top_risk_factors(_pred.liver_model, imputed_list, feature_names, attributions=attributions)
                     if top_factors:
                         conformal_metrics["top_risk_factors"] = top_factors
 
@@ -1372,13 +1392,6 @@ async def predict_liver(
             )
             if recourse:
                 clinical_indices["clinical_recourse"] = recourse
-
-        # Log feature attributions for drift monitoring
-        attributions = _log_feature_attributions(
-            background_tasks, "liver", getattr(model_service._entries["liver"], "model_version", "1.0.0"),
-            imputed_list, feature_names, raw, _pred.liver_model,
-            db=db
-        )
 
         model_metadata = _get_model_metadata("liver", _pred.liver_model)
         narrative = ""
