@@ -612,17 +612,13 @@ def _calculate_clinical_recourse(
 
         def _predict_profile(profile):
             if model_name in ("kidney", "liver", "lungs"):
-                from . import features as _feat
-                feat_names = {
-                    "kidney": _feat.KIDNEY_FEATURES,
-                    "liver": _feat.LIVER_FEATURES,
-                    "lungs": _feat.LUNG_FEATURES
-                }[model_name]
-                df_rec = pd.DataFrame([profile], columns=feat_names)
+                import numpy as np
+                import warnings
+                X_rec = np.array([profile])
                 if scaler is not None:
-                    X_rec = scaler.transform(df_rec)
-                else:
-                    X_rec = df_rec.values
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore")
+                        X_rec = scaler.transform(X_rec)
             else:
                 X_rec = [profile]
             proba_rec = model_obj.predict_proba(X_rec)[0]
