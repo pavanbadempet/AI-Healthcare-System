@@ -13,6 +13,7 @@ import {
 } from "@/lib/api";
 import { fetchClinicalTrials, fetchExternalRecords, fetchHealthPassport, orderLabKit, fetchLabKits } from "@/lib/apiIntelligence";
 import { notifyPatientCareEventsUpdated } from "@/lib/patientCareEvents";
+import { toast } from '@/lib/toast';
 import { ChevronLeft, FileDigit, BrainCircuit, Loader2, ShieldAlert, RefreshCw, HeartPulse, Info, Check, Plus, Sparkles, QrCode, Globe , Activity} from "lucide-react";
 import {
   Radar,
@@ -192,7 +193,7 @@ export default function PatientEMRView({
         shipping_address: shippingAddress
       });
       await loadLabKits();
-      alert("Home diagnostic kit ordered successfully!");
+      toast.success("Home diagnostic kit ordered successfully!");
     } catch (err) {
       console.error(err);
     } finally {

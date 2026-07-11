@@ -4,6 +4,7 @@ import AuthGuard from '@/components/layout/AuthGuard';
 import PageLoader from '@/components/layout/PageLoader';
 import ErrorBoundary from '@/components/layout/ErrorBoundary';
 import { LanguageProvider } from '@/lib/i18n';
+import ToastContainer from '@/components/layout/ToastContainer';
 
 // Lazy-loaded page components for route-based code splitting
 const LoginPage = lazy(() => import('@/pages/Login'));
@@ -98,6 +99,7 @@ export default function App() {
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </Suspense>
+          <ToastContainer />
         </BrowserRouter>
       </LanguageProvider>
     </ErrorBoundary>

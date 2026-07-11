@@ -8,6 +8,7 @@ import {
   fetchSmartApps, registerSmartApp, deleteSmartApp, launchSmartApp, type SmartApp
 } from '@/lib/apiSmart';
 import SmartAppSandbox from '@/components/smart/SmartAppSandbox';
+import { toast } from '@/lib/toast';
 
 export default function AppRegistry() {
   const [apps, setApps] = useState<SmartApp[]>([]);
@@ -81,7 +82,7 @@ export default function AppRegistry() {
       await deleteSmartApp(appId);
       loadApps();
     } catch (err: any) {
-      alert(err.message || 'Failed to delete application');
+      toast.error(err.message || 'Failed to delete application');
     }
   };
 
@@ -96,7 +97,7 @@ export default function AppRegistry() {
       setLaunchingApp(null); // Close launch modal
       setPatientId('');
     } catch (err: any) {
-      alert(err.message || 'Failed to launch SMART application');
+      toast.error(err.message || 'Failed to launch SMART application');
     }
   };
 
