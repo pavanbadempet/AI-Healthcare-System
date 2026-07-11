@@ -772,6 +772,11 @@ async def generate(
         if has_gemini_api_key():
             result = await _generate_gemini(prompt, system)
 
+    # Final safety net: fallback to custom Cloudflare worker if configured provider failed
+    if not result and resolved_provider.lower() in ("ollama", "gemini"):
+        logger.info("Configured provider %s failed to generate, routing to custom Cloudflare fallback...", resolved_provider)
+        result = await _generate_cloud(prompt, system, model, "custom", "cloudflare")
+
     if result:
         # Redact PII from the output
         result = redact_pii_from_text(result)
@@ -871,6 +876,11 @@ async def chat(
         if has_gemini_api_key():
             result = await _chat_gemini(messages, system)
 
+    # Final safety net: fallback to custom Cloudflare worker if configured provider failed
+    if not result and resolved_provider.lower() in ("ollama", "gemini"):
+        logger.info("Configured provider %s failed to chat, routing to custom Cloudflare fallback...", resolved_provider)
+        result = await _chat_cloud(messages, system, model, "custom", "cloudflare")
+
     if result:
         # Redact PII from the output
         result = redact_pii_from_text(result)
@@ -962,6 +972,16 @@ async def chat_stream(
                     return
             except Exception as e:
                 logger.warning(f"Gemini stream error: {e}")
+
+        # Final safety net: fallback to custom Cloudflare worker if configured provider failed
+        if resolved_provider.lower() in ("ollama", "gemini"):
+            logger.info("Configured stream provider %s failed, routing to custom Cloudflare fallback...", resolved_provider)
+            try:
+                async for chunk in _stream_cloud(messages, system, model, "custom", "cloudflare"):
+                    yield chunk
+                return
+            except Exception as stream_err:
+                logger.warning("Fallback custom Cloudflare worker stream failed: %s", stream_err)
 
         # Fallback to mock response to prevent the UI from hanging
         yield "Hello! I am your AI Copilot. Currently, the system is running in offline mode because local Ollama models are not active and a valid Google Gemini API key is not configured.\n\n"
