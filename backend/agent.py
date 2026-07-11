@@ -172,10 +172,12 @@ def supervisor_node(state: AgentState):
     # ROUTING LOGIC
     # Heuristics for speed (saving LLM calls for routing)
     if any(w in last_msg for w in ["latest", "news", "treatment", "research", "study", "2024", "2025"]):
-        return {"next_step": "research"}
+        if not state.get("tavily_results"):
+            return {"next_step": "research"}
 
     if any(w in last_msg for w in ["predict", "risk", "chance", "probability", "analyze"]):
-        return {"next_step": "analyze"}
+        if not state.get("analysis_results"):
+            return {"next_step": "analyze"}
 
     return {"next_step": "respond"}
 
