@@ -47,6 +47,7 @@ export default function LiverPage() {
         fields={LIVER_FIELDS}
         onSubmit={predictLiver}
         exampleCases={LIVER_EXAMPLES}
+        modelName="liver"
       />
     </div>
   );

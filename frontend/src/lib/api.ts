@@ -53,6 +53,7 @@ export {
   predictKidney,
   predictLungs,
   getPatientOrganHealth,
+  fetchPatientExplanation,
   type PredictionResult,
   type OrganRiskDetail,
   type OrganHealthResult,

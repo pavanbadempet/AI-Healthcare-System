@@ -69,6 +69,7 @@ export default function HeartPage() {
         fields={HEART_FIELDS}
         onSubmit={predictHeart}
         exampleCases={HEART_EXAMPLES}
+        modelName="heart"
       />
     </div>
   );
