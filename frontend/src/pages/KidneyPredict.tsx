@@ -68,6 +68,7 @@ export default function KidneyPage() {
         fields={KIDNEY_FIELDS}
         onSubmit={predictKidney}
         exampleCases={KIDNEY_EXAMPLES}
+        modelName="kidney"
       />
     </div>
   );

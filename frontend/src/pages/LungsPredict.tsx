@@ -52,6 +52,7 @@ export default function LungsPage() {
         fields={LUNG_FIELDS}
         onSubmit={predictLungs}
         exampleCases={LUNG_EXAMPLES}
+        modelName="lungs"
       />
     </div>
   );

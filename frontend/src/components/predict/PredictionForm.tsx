@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect, useId } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Activity, AlertTriangle, FileText, CheckCircle2, ChevronDown, Cpu, Sparkles } from "lucide-react";
-import type { PredictionResult } from "@/lib/api";
+import { fetchPatientExplanation, type PredictionResult } from "@/lib/api";
 import Tooltip from "../layout/Tooltip";
 
 interface Field {
@@ -115,6 +115,7 @@ interface PredictionFormProps {
   fields: Field[];
   onSubmit: (data: Record<string, number>, computeMode?: 'local' | 'remote') => Promise<PredictionResult>;
   exampleCases?: ExampleCase[];
+  modelName?: string;
 }
 
 // Custom Select Component to override native ugly OS dropdowns
@@ -378,7 +379,7 @@ const RecordSelect = ({ records, value, onSelect }: { records: ExampleCaseRecord
   );
 };
 
-export default function PredictionForm({ title, description, fields, onSubmit, exampleCases }: PredictionFormProps) {
+export default function PredictionForm({ title, description, fields, onSubmit, exampleCases, modelName }: PredictionFormProps) {
   const [formData, setFormData] = useState<Record<string, number>>({});
   const [selectedProfile, setSelectedProfile] = useState<ExampleCase | null>(null);
   const [selectedRecordIndex, setSelectedRecordIndex] = useState<number | null>(null);
@@ -386,6 +387,7 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<PredictionResult | null>(null);
+  const [generatingExplanation, setGeneratingExplanation] = useState(false);
   const resultRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -399,6 +401,7 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
     setLoading(true);
     setError("");
     setResult(null);
+    setGeneratingExplanation(false);
 
     const parsedData: Record<string, number> = {};
     for (const field of fields) {
@@ -414,6 +417,28 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
     try {
       const res = await onSubmit(parsedData, computeMode);
       setResult(res);
+
+      if (computeMode === 'remote' && modelName) {
+        setGeneratingExplanation(true);
+        fetchPatientExplanation(modelName, {
+          prediction: res.prediction,
+          confidence: res.confidence || 0,
+          risk_level: res.risk_level || "Unknown",
+          attributions: res.attributions || {}
+        })
+          .then((explainRes) => {
+            setResult(prev => prev ? {
+              ...prev,
+              patient_explanation: explainRes.patient_explanation
+            } : null);
+          })
+          .catch((err) => {
+            console.error("Failed to fetch narrative:", err);
+          })
+          .finally(() => {
+            setGeneratingExplanation(false);
+          });
+      }
     } catch (err: any) {
       setError(err.message || "Failed to generate prediction");
     } finally {
@@ -816,7 +841,7 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
                 )}
 
                 {/* Patient Explainable AI (XAI) Panel */}
-                {((result.attributions && Object.keys(result.attributions).length > 0) || result.patient_explanation) && (
+                {((result.attributions && Object.keys(result.attributions).length > 0) || result.patient_explanation || generatingExplanation) && (
                   <div className="space-y-4 border border-[var(--border)] rounded p-4 bg-zinc-950/40">
                     <h4 className="text-[11px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5 border-b border-[var(--border)] pb-2">
                       <Sparkles size={12} className="text-[var(--accent)]" aria-hidden="true" /> Patient-Friendly Explainable AI (XAI)
@@ -869,12 +894,26 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
                       </div>
                     )}
 
-                    {result.patient_explanation && (
+                    {(result.patient_explanation || generatingExplanation) && (
                       <div className="space-y-1.5 pt-2 border-t border-[var(--border)]/40 text-[10px] font-mono uppercase">
                         <span className="text-[var(--text-dim)] font-bold block">Empathetic Layperson Narrative</span>
-                        <p className="text-[var(--text-primary)] leading-relaxed bg-[rgba(255,255,255,0.01)] border border-[var(--border)] p-3 rounded text-[10px] font-mono normal-case">
-                          {result.patient_explanation}
-                        </p>
+                        {generatingExplanation ? (
+                          <div className="space-y-2 bg-[rgba(255,255,255,0.01)] border border-[var(--border)] p-3 rounded normal-case">
+                            <div className="flex items-center gap-2 text-[var(--text-secondary)] mb-2 font-mono text-[9px] uppercase">
+                              <Sparkles size={10} className="text-[var(--accent)] animate-spin" />
+                              Synthesizing diagnostic insights...
+                            </div>
+                            <div className="space-y-1.5">
+                              <div className="h-2 w-full bg-zinc-800/80 rounded animate-pulse" />
+                              <div className="h-2 w-[95%] bg-zinc-800/80 rounded animate-pulse animate-delay-75" />
+                              <div className="h-2 w-[88%] bg-zinc-800/80 rounded animate-pulse animate-delay-150" />
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-[var(--text-primary)] leading-relaxed bg-[rgba(255,255,255,0.01)] border border-[var(--border)] p-3 rounded text-[10px] font-mono normal-case">
+                            {result.patient_explanation}
+                          </p>
+                        )}
                       </div>
                     )}
                   </div>

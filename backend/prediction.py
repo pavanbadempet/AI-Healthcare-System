@@ -962,15 +962,8 @@ async def predict_kidney(
         )
 
         model_metadata = _get_model_metadata("kidney", _pred.kidney_model)
-        import asyncio
-        narrative, patient_explanation = await asyncio.gather(
-            _generate_clinical_narrative(
-                "kidney", prediction, confidence, risk_level, clinical_indices
-            ),
-            _generate_patient_explanation(
-                "kidney", prediction, confidence, risk_level, attributions or {}
-            )
-        )
+        narrative = ""
+        patient_explanation = ""
         return {
             "prediction": prediction,
             "raw": raw,
@@ -1070,15 +1063,8 @@ async def predict_lungs(
         )
 
         model_metadata = _get_model_metadata("lungs", _pred.lungs_model)
-        import asyncio
-        narrative, patient_explanation = await asyncio.gather(
-            _generate_clinical_narrative(
-                "lungs", prediction, confidence, risk_level, clinical_indices
-            ),
-            _generate_patient_explanation(
-                "lungs", prediction, confidence, risk_level, attributions or {}
-            )
-        )
+        narrative = ""
+        patient_explanation = ""
         res = {
             "prediction": prediction,
             "raw": raw,
@@ -1171,15 +1157,8 @@ async def predict_diabetes(
         )
 
         model_metadata = _get_model_metadata("diabetes", _pred.diabetes_model)
-        import asyncio
-        narrative, patient_explanation = await asyncio.gather(
-            _generate_clinical_narrative(
-                "diabetes", prediction, confidence, risk_level, clinical_indices
-            ),
-            _generate_patient_explanation(
-                "diabetes", prediction, confidence, risk_level, attributions or {}
-            )
-        )
+        narrative = ""
+        patient_explanation = ""
         res = {
             "prediction": prediction,
             "raw": raw,
@@ -1289,15 +1268,8 @@ async def predict_heart(
         )
 
         model_metadata = _get_model_metadata("heart", _pred.heart_model)
-        import asyncio
-        narrative, patient_explanation = await asyncio.gather(
-            _generate_clinical_narrative(
-                "heart", prediction, confidence, risk_level, clinical_indices
-            ),
-            _generate_patient_explanation(
-                "heart", prediction, confidence, risk_level, attributions or {}
-            )
-        )
+        narrative = ""
+        patient_explanation = ""
         return {
             "prediction": prediction,
             "raw": raw,
@@ -1413,15 +1385,8 @@ async def predict_liver(
         )
 
         model_metadata = _get_model_metadata("liver", _pred.liver_model)
-        import asyncio
-        narrative, patient_explanation = await asyncio.gather(
-            _generate_clinical_narrative(
-                "liver", prediction, confidence, risk_level, clinical_indices
-            ),
-            _generate_patient_explanation(
-                "liver", prediction, confidence, risk_level, attributions or {}
-            )
-        )
+        narrative = ""
+        patient_explanation = ""
         return {
             "prediction": prediction,
             "raw": raw,
@@ -1437,6 +1402,33 @@ async def predict_liver(
     except Exception:
         logger.error("Liver prediction error")
         _raise_prediction_failure("Liver")
+
+from pydantic import BaseModel as PydanticBaseModel
+
+class ExplanationRequest(PydanticBaseModel):
+    prediction: str
+    confidence: float
+    risk_level: str
+    attributions: Dict[str, float]
+
+@router.post("/predict/explain-text/{model_name}", response_model=Dict[str, str])
+async def get_patient_explanation_endpoint(
+    model_name: str,
+    data: ExplanationRequest,
+    _current_user: db_models.User = Depends(auth.get_current_user),
+):
+    try:
+        explanation = await _generate_patient_explanation(
+            model_name=model_name,
+            prediction=data.prediction,
+            confidence=data.confidence,
+            risk_level=data.risk_level,
+            attributions=data.attributions
+        )
+        return {"patient_explanation": explanation}
+    except Exception as e:
+        logger.error("Failed to generate explanation: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to generate explanation")
 
 # --- Explanation Endpoints (SHAP) ---
 

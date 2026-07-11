@@ -54,6 +54,7 @@ export default function DiabetesPage() {
         fields={DIABETES_FIELDS}
         onSubmit={predictDiabetes}
         exampleCases={DIABETES_EXAMPLES}
+        modelName="diabetes"
       />
     </div>
   );

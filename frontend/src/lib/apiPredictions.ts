@@ -213,3 +213,18 @@ export async function getPatientOrganHealth(patientId: number): Promise<OrganHea
   return apiFetch(`/predict/organ_health/${patientId}`, { method: 'GET' });
 }
 
+export async function fetchPatientExplanation(
+  modelName: string,
+  payload: {
+    prediction: string;
+    confidence: number;
+    risk_level: string;
+    attributions: Record<string, number>;
+  }
+): Promise<{ patient_explanation: string }> {
+  return apiFetch(`/predict/explain-text/${modelName}`, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
+}
+
