@@ -756,20 +756,25 @@ async def generate(
 
     # Explicit cloud provider override
     resolved_provider, resolved_key = await _resolve_provider_and_key(api_provider, api_key)
+    logger.info("CORE_AI GENERATE: resolved_provider=%s, resolved_key_configured=%s", resolved_provider, bool(resolved_key))
 
     result = None
     if resolved_provider and resolved_key and resolved_provider.lower() not in ("ollama", "gemini"):
+        logger.info("CORE_AI GENERATE: Calling _generate_cloud with %s", resolved_provider)
         result = await _generate_cloud(prompt, system, model, resolved_provider, resolved_key)
+        logger.info("CORE_AI GENERATE: _generate_cloud returned length=%d", len(result) if result else 0)
 
     # Tier A: Ollama
     if not result:
         ollama_models = await get_ollama_models()
         if ollama_models:
+            logger.info("CORE_AI GENERATE: Trying Ollama fallback...")
             result = await _generate_ollama(prompt, system, model)
 
     # Tier B: Gemini
     if not result:
         if has_gemini_api_key():
+            logger.info("CORE_AI GENERATE: Trying Gemini fallback...")
             result = await _generate_gemini(prompt, system)
 
     # Final safety net: fallback to custom Cloudflare worker if configured provider failed
