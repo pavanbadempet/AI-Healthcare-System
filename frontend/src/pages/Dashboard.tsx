@@ -967,8 +967,25 @@ export default function DashboardPage() {
             timeline: [{ time: "Current", event: "Admitted to clinical dashboard" }]
           };
 
+          const handleSendChat = async (userMsg: string) => {
+            if (!userMsg.trim() || chatLoading) return;
+            setChatMessages(prev => [...prev, { role: "user", content: userMsg }]);
+            setChatLoading(true);
+            try {
+              const response = await sendChat(
+                `Patient: ${selectedBed.name}\nAge: ${profile.age}\nGender: ${profile.gender}\nHistory: ${profile.history.join(", ")}\nMeds: ${profile.medications.join(", ")}\nVitals: HR ${selectedBed.hr}, SpO2 ${selectedBed.spo2}, BP ${selectedBed.bp}\nAllergies: ${profile.allergies}\n\nQuery: ${userMsg}`
+              );
+              const replyText = response.reply || (response as any).response || "";
+              setChatMessages(prev => [...prev, { role: "assistant", content: replyText }]);
+            } catch (err) {
+              setChatMessages(prev => [...prev, { role: "assistant", content: "Error: Failed to fetch reply from clinical assistant." }]);
+            } finally {
+              setChatLoading(false);
+            }
+          };
+
           return (
-            <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
+            <div className="fixed inset-0 z-[60] bg-black/85 backdrop-blur-md flex items-center justify-center p-4">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -1334,11 +1351,11 @@ export default function DashboardPage() {
                             ].map((sug) => (
                               <button
                                 key={sug}
-                                onClick={async () => {
+                                onClick={() => {
                                   if (chatLoading) return;
-                                  setChatInput(sug);
+                                  handleSendChat(sug);
                                 }}
-                                className="bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.05] text-[9px] text-[var(--text-secondary)] px-2.5 py-1 rounded-full transition-colors"
+                                className="bg-white/[0.02] border border-white/[0.04] hover:bg-white/[0.05] text-[9px] text-[var(--text-secondary)] px-2.5 py-1 rounded-full transition-colors cursor-pointer"
                               >
                                 {sug}
                               </button>
@@ -1347,23 +1364,12 @@ export default function DashboardPage() {
 
                           {/* Input box */}
                           <form
-                            onSubmit={async (e) => {
+                            onSubmit={(e) => {
                               e.preventDefault();
-                              if (!chatInput.trim() || chatLoading) return;
                               const userMsg = chatInput.trim();
-                              setChatInput("");
-                              setChatMessages(prev => [...prev, { role: "user", content: userMsg }]);
-                              setChatLoading(true);
-
-                              try {
-                                const response = await sendChat(
-                                  `Patient: ${selectedBed.name}\nAge: ${profile.age}\nGender: ${profile.gender}\nHistory: ${profile.history.join(", ")}\nMeds: ${profile.medications.join(", ")}\nVitals: HR ${selectedBed.hr}, SpO2 ${selectedBed.spo2}, BP ${selectedBed.bp}\nAllergies: ${profile.allergies}\n\nQuery: ${userMsg}`
-                                );
-                                setChatMessages(prev => [...prev, { role: "assistant", content: response.reply }]);
-                              } catch (err) {
-                                setChatMessages(prev => [...prev, { role: "assistant", content: "Error: Failed to fetch reply from clinical assistant." }]);
-                              } finally {
-                                setChatLoading(false);
+                              if (userMsg && !chatLoading) {
+                                setChatInput("");
+                                handleSendChat(userMsg);
                               }
                             }}
                             className="p-3 border-t border-white/[0.04] bg-white/[0.01] flex gap-2"
