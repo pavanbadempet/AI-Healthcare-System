@@ -94,6 +94,7 @@ def get_demo_readiness() -> dict[str, Any]:
         ),
         "source": "backend.demo_readiness",
         "env_keys": list(os.environ.keys()),
+        "custom_ai_base_url": os.getenv("CUSTOM_AI_BASE_URL"),
     }
 
 
