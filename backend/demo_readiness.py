@@ -133,6 +133,19 @@ def ping_external_hosts() -> dict[str, Any]:
             status = str(http_err)
             http_ok = False
             
+        curl_result = ""
+        if name == "cloudflare_worker":
+            try:
+                import subprocess
+                curl_proc = subprocess.run(
+                    ["curl", "-I", "-s", "--max-time", "5", url],
+                    capture_output=True,
+                    text=True
+                )
+                curl_result = f"STDOUT: {curl_proc.stdout}\nSTDERR: {curl_proc.stderr}\nCODE: {curl_proc.returncode}"
+            except Exception as curl_err:
+                curl_result = str(curl_err)
+
         results[name] = {
             "url": url,
             "dns_resolved_ip": ip,
@@ -140,4 +153,6 @@ def ping_external_hosts() -> dict[str, Any]:
             "http_status_or_error": status,
             "http_ok": http_ok
         }
+        if name == "cloudflare_worker":
+            results[name]["curl_result"] = curl_result
     return results
