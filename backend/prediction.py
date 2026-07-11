@@ -652,8 +652,8 @@ def _calculate_clinical_recourse(
                         current_val = test_profile[index]
                         best_val = target_val
                         best_val_proba = current_prob
-                        # Step-wise boundary search (binary/grid search)
-                        for step_val in np.linspace(current_val, target_val, 6):
+                        # Step-wise boundary search (binary/grid search) - optimized to 3 steps to reduce server load
+                        for step_val in np.linspace(current_val, target_val, 3):
                             temp_profile = list(test_profile)
                             temp_profile[index] = step_val
                             prob_pos_step = _predict_profile(temp_profile)
