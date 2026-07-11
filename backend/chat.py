@@ -61,6 +61,7 @@ class ChatRequest(BaseModel):
     message: str
     history: List[Message] = []
     current_context: Dict[str, Any] = {}
+    model: Optional[str] = None
 
 class RecordCreate(BaseModel):
     record_type: str
@@ -141,7 +142,8 @@ def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth
             "user_id": current_user.id,
             "available_reports": context,
             "rag_memories": rag_context,
-            "conversation_count": len(messages)
+            "conversation_count": len(messages),
+            "model": request.model
         })
         response = _with_medical_disclaimer(result['messages'][-1].content)
 

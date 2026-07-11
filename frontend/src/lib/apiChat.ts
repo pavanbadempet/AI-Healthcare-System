@@ -10,8 +10,8 @@ export interface ChatMessage {
   timestamp?: string;
 }
 
-export async function sendChat(message: string): Promise<{ reply: string }> {
-  return apiFetch('/chat', { method: 'POST', body: JSON.stringify({ message }) });
+export async function sendChat(message: string, model?: string): Promise<{ reply: string }> {
+  return apiFetch('/chat', { method: 'POST', body: JSON.stringify({ message, model }) });
 }
 
 export async function getChatHistory(): Promise<ChatMessage[]> {
