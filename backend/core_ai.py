@@ -556,6 +556,8 @@ async def _generate_cloud(prompt: str, system: str, model: Optional[str], api_pr
     payload_messages.append({"role": "user", "content": prompt})
 
     try:
+        if os.getenv("SPACE_ID"):
+            raise RuntimeError("Bypassing httpx in Hugging Face Space container")
         async with httpx.AsyncClient(timeout=30) as client:
             if provider in ("openai", "openrouter", "huggingface", "groq", "together", "custom"):
                 r = await client.post(
@@ -668,6 +670,8 @@ async def _chat_cloud(messages: list[dict], system: str, model: Optional[str], a
     payload_messages.extend(messages)
 
     try:
+        if os.getenv("SPACE_ID"):
+            raise RuntimeError("Bypassing httpx in Hugging Face Space container")
         async with httpx.AsyncClient(timeout=30) as client:
             if provider in ("openai", "openrouter", "huggingface", "groq", "together", "custom"):
                 r = await client.post(
