@@ -118,3 +118,35 @@ def client(db_session):
     with TestClient(app, base_url="http://127.0.0.1") as c:
         yield c
     app.dependency_overrides.clear()
+
+
+@pytest.fixture(autouse=True)
+def mock_cloudflare_network_calls(monkeypatch):
+    """Globally intercept outbound requests to Cloudflare Worker to avoid network hits."""
+    import requests
+    import httpx
+
+    orig_requests_post = requests.post
+    def patched_requests_post(url, *args, **kwargs):
+        if "ai-healthcare-model.pavan9b.workers.dev" in url:
+            mock_res = requests.Response()
+            mock_res.status_code = 200
+            mock_res._content = b'{"choices": [{"message": {"content": "mocked cloud response"}}]}'
+            return mock_res
+        return orig_requests_post(url, *args, **kwargs)
+
+    monkeypatch.setattr(requests, "post", patched_requests_post)
+
+    orig_httpx_request = httpx.AsyncClient.request
+    async def patched_httpx_request(self, method, url, *args, **kwargs):
+        url_str = str(url)
+        if "ai-healthcare-model.pavan9b.workers.dev" in url_str:
+            return httpx.Response(
+                200,
+                content=b'{"choices": [{"message": {"content": "mocked cloud response"}}]}'
+            )
+        return await orig_httpx_request(self, method, url, *args, **kwargs)
+
+    monkeypatch.setattr(httpx.AsyncClient, "request", patched_httpx_request)
+
+
