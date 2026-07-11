@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Activity, Heart, Droplets, Wind, Clipboard, ArrowRight } from "lucide-react";
+import { Activity, Heart, Droplets, Wind, Clipboard, ArrowRight, Sparkles, Upload } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const ASSESSMENT_MODES = [
@@ -59,6 +59,45 @@ export default function PredictHub() {
           Select a diagnostic subsystem node to open an assessment interface. Models run on-premises in the secure AI enclave.
         </p>
       </header>
+
+      {/* Unified Diagnostics Hub Hero Card */}
+      <Link to="/predict/unified">
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          whileHover={{ scale: 1.005 }}
+          className="group relative panel p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between cursor-pointer overflow-hidden transition-all duration-200 border-[var(--accent)]/30 hover:border-[var(--accent)] bg-[rgba(14,165,233,0.03)] hover:bg-[rgba(14,165,233,0.05)] shadow-lg shadow-sky-500/5"
+        >
+          {/* Subtle accent glow */}
+          <div className="absolute -top-24 -right-24 w-48 h-48 rounded-full blur-[70px] opacity-10 bg-[var(--accent)] pointer-events-none" />
+
+          <div className="flex flex-col sm:flex-row gap-5 items-start sm:items-center">
+            <div className="p-3.5 rounded bg-[rgba(14,165,233,0.1)] border border-[var(--accent)]/20 text-[var(--accent)]">
+              <Upload size={22} className="group-hover:scale-105 transition-transform" />
+            </div>
+            <div className="space-y-1 border-none pl-0">
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-[var(--accent)]/10 text-[var(--accent)] border border-[var(--accent)]/25 uppercase">
+                  Highly Recommended
+                </span>
+                <span className="text-[9px] font-mono text-[var(--text-dim)] uppercase">
+                  Upload-First Flow
+                </span>
+              </div>
+              <h2 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider">
+                Unified Multi-Organ Diagnostics
+              </h2>
+              <p className="text-xs text-[var(--text-dim)] font-mono uppercase leading-normal max-w-2xl">
+                Upload your medical lab report (PDF/Image) to auto-fill metrics and concurrently evaluate Diabetes, Cardiovascular, Hepatic, Renal, and Pulmonary risks in a single click.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 sm:mt-0 flex items-center gap-1.5 font-bold text-xs uppercase tracking-wider text-[var(--accent)]">
+            Open Unified Hub <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+          </div>
+        </motion.div>
+      </Link>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" role="list" aria-label="Available diagnostic models">
         {ASSESSMENT_MODES.map((mode, i) => (

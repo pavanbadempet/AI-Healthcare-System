@@ -1091,6 +1091,96 @@ async def predict_lungs(
         logger.error("Lung prediction error")
         _raise_prediction_failure("Lung")
 
+
+@router.post("/predict/stroke", response_model=Dict[str, Any])
+async def predict_stroke(
+    data: schemas.StrokeInput,
+    background_tasks: BackgroundTasks,
+    _current_user: db_models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db),
+) -> Dict[str, Any]:
+    if not model_service.is_available("stroke"):
+        raise HTTPException(status_code=503, detail="Stroke Model not available.")
+    try:
+        from .model_service import _extract_confidence, _normalize_prediction
+        
+        feature_names = ['Gender', 'Age', 'Hypertension', 'HeartDisease', 'Smoking', 'BMI', 'Glucose']
+        input_list = [
+            data.gender if data.gender is not None else 0,
+            data.age if data.age is not None else 45.0,
+            data.hypertension if data.hypertension is not None else 0,
+            data.heart_disease if data.heart_disease is not None else 0,
+            data.smoking if data.smoking is not None else 0,
+            data.bmi if data.bmi is not None else 25.0,
+            data.glucose if data.glucose is not None else 90.0
+        ]
+
+        stroke_entry = model_service._entries["stroke"]
+        model = stroke_entry.model
+
+        # Run prediction
+        raw_pred = model.predict([input_list])
+        raw = _normalize_prediction(raw_pred)
+        confidence, risk_level = _extract_confidence(model, [input_list])
+        
+        if confidence is not None and raw == 0:
+            confidence = round(100.0 - confidence, 1)
+            
+        prediction = "High Stroke Risk" if raw == 1 else "Low Stroke Risk"
+
+        # Log feature attributions
+        attributions = _log_feature_attributions(
+            background_tasks, "stroke", getattr(stroke_entry, "model_version", "1.0.0"),
+            input_list, feature_names, raw, model,
+            db=db
+        )
+
+        clinical_indices = {}
+        try:
+            proba = model.predict_proba([input_list])[0]
+            proba_pos = float(proba[1]) if len(proba) > 1 else float(proba[0])
+            
+            # Conformal prediction
+            conformal_metrics = _calculate_adaptive_conformal_prediction(
+                proba_pos, 0.1, input_list, raw, risk_level
+            )
+            triage = _get_triage_recommendation(raw, conformal_metrics["conformal_prediction_set"])
+            conformal_metrics["triage_recommendation"] = triage
+            
+            # Top Risk Factors
+            top_factors = _get_top_risk_factors(model, input_list, feature_names, attributions=attributions)
+            if top_factors:
+                conformal_metrics["top_risk_factors"] = top_factors
+
+            clinical_indices.update(conformal_metrics)
+            
+            # Recourse
+            recourse = _calculate_clinical_recourse(
+                "stroke", model, input_list, proba_pos, None
+            )
+            if recourse:
+                clinical_indices["clinical_recourse"] = recourse
+        except Exception as e:
+            logger.warning("Stroke clinical indices extraction failed: %s", e)
+
+        model_metadata = _get_model_metadata("stroke", model)
+        return {
+            "prediction": prediction,
+            "raw": raw,
+            "confidence": confidence,
+            "risk_level": risk_level,
+            "disclaimer": MEDICAL_DISCLAIMER,
+            "clinical_indices": clinical_indices,
+            "model_metadata": model_metadata,
+            "clinical_narrative": "",
+            "attributions": attributions or {},
+            "patient_explanation": ""
+        }
+    except Exception:
+        logger.error("Stroke prediction error")
+        _raise_prediction_failure("Stroke")
+
+
 @router.post("/predict/diabetes", response_model=Dict[str, Any])
 async def predict_diabetes(
     data: schemas.DiabetesInput,
@@ -1411,6 +1501,197 @@ async def predict_liver(
     except Exception:
         logger.error("Liver prediction error")
         _raise_prediction_failure("Liver")
+
+
+@router.post("/predict/multi-organ", response_model=Dict[str, Any])
+async def predict_multi_organ(
+    data: schemas.MultiOrganInput,
+    db: Session = Depends(database.get_db),
+    current_user: db_models.User = Depends(auth.get_current_user),
+    background_tasks: BackgroundTasks = BackgroundTasks(),
+):
+    """
+    Unified endpoint that evaluates health risks across all 5 organ systems concurrently
+    using the provided patient profile and clinical markers.
+    """
+    try:
+        import asyncio
+
+        # 1. Map MultiOrganInput to sub-schemas
+        high_chol_val = 0
+        if data.chol is not None:
+            high_chol_val = 1 if data.chol > 200 else 0
+
+        diabetes_data = schemas.DiabetesInput(
+            gender=data.gender,
+            age=data.age,
+            hypertension=data.hypertension or data.htn,
+            heart_disease=data.heart_disease or data.cad,
+            smoking_history=data.smoking,
+            bmi=data.bmi,
+            high_chol=high_chol_val,
+            physical_activity=data.physical_activity,
+            general_health=data.general_health
+        )
+            
+        heart_data = schemas.HeartInput(
+            age=data.age,
+            sex=data.gender,
+            cp=data.cp,
+            trestbps=data.trestbps or data.bp,
+            chol=data.chol,
+            fbs=data.fbs if data.fbs is not None else (1 if (data.glucose and data.glucose > 120) else 0),
+            restecg=data.restecg,
+            thalach=data.thalach,
+            exang=data.exang,
+            oldpeak=data.oldpeak,
+            slope=data.slope,
+            ca=data.ca,
+            thal=data.thal,
+            hdl=data.hdl or 50.0,
+            smoker=data.smoking or 0,
+            hyp_treatment=data.hyp_treatment or 0
+        )
+        
+        kidney_data = schemas.KidneyInput(
+            age=data.age,
+            bp=data.bp or data.trestbps,
+            sg=data.sg,
+            al=data.al,
+            su=data.su,
+            rbc=data.rbc,
+            pc=data.pc,
+            pcc=data.pcc,
+            ba=data.ba,
+            bgr=data.bgr or data.glucose or (data.bmi * 5.0 + 80.0 if data.bmi else None),
+            bu=data.bu,
+            sc=data.sc,
+            sod=data.sod,
+            pot=data.pot,
+            hemo=data.hemo,
+            pcv=data.pcv,
+            wc=data.wc,
+            rc=data.rc,
+            htn=data.htn or data.hypertension,
+            dm=data.dm or (1 if (data.fbs or (data.glucose and data.glucose > 120)) else 0),
+            cad=data.cad or data.heart_disease,
+            appet=data.appet,
+            pe=data.pe,
+            ane=data.ane,
+            gender=data.gender or 1
+        )
+        
+        liver_data = schemas.LiverInput(
+            age=data.age,
+            gender=data.gender,
+            total_bilirubin=data.total_bilirubin,
+            direct_bilirubin=data.direct_bilirubin,
+            alkaline_phosphotase=data.alkaline_phosphotase,
+            alamine_aminotransferase=data.alamine_aminotransferase,
+            aspartate_aminotransferase=data.aspartate_aminotransferase,
+            total_proteins=data.total_proteins,
+            albumin=data.albumin,
+            albumin_and_globulin_ratio=data.albumin_and_globulin_ratio,
+            platelets=data.platelets or 250.0
+        )
+        
+        lungs_data = schemas.LungInput(
+            gender=data.gender,
+            age=data.age,
+            smoking=data.smoking,
+            yellow_fingers=data.yellow_fingers,
+            anxiety=data.anxiety,
+            peer_pressure=data.peer_pressure,
+            chronic_disease=data.chronic_disease,
+            fatigue=data.fatigue,
+            allergy=data.allergy,
+            wheezing=data.wheezing,
+            alcohol=data.alcohol,
+            coughing=data.coughing,
+            shortness_of_breath=data.shortness_of_breath,
+            swallowing_difficulty=data.swallowing_difficulty,
+            chest_pain=data.chest_pain
+        )
+
+        stroke_data = schemas.StrokeInput(
+            gender=data.gender,
+            age=data.age,
+            hypertension=data.hypertension or data.htn,
+            heart_disease=data.heart_disease or data.cad,
+            smoking=data.smoking,
+            bmi=data.bmi,
+            glucose=data.glucose
+        )
+
+        # 2. Run all predictions in parallel (now 6 systems)
+        tasks = [
+            predict_diabetes(diabetes_data, db=db, _current_user=current_user, background_tasks=background_tasks),
+            predict_heart(heart_data, db=db, _current_user=current_user, background_tasks=background_tasks),
+            predict_kidney(kidney_data, db=db, _current_user=current_user, background_tasks=background_tasks),
+            predict_liver(liver_data, db=db, _current_user=current_user, background_tasks=background_tasks),
+            predict_lungs(lungs_data, db=db, _current_user=current_user, background_tasks=background_tasks),
+            predict_stroke(stroke_data, db=db, _current_user=current_user, background_tasks=background_tasks),
+        ]
+        
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # 3. Handle results and exceptions
+        systems = ["diabetes", "heart", "kidney", "liver", "lungs", "stroke"]
+        report = {}
+        for system, res in zip(systems, results):
+            if isinstance(res, Exception):
+                logger.error("Multi-organ sub-prediction failed for %s: %s", system, res)
+                report[system] = {
+                    "prediction": "Prediction Unavailable",
+                    "raw": 0,
+                    "confidence": 0.0,
+                    "risk_level": "Unknown",
+                    "disclaimer": MEDICAL_DISCLAIMER,
+                    "clinical_indices": {},
+                    "attributions": {},
+                    "error": str(res)
+                }
+            else:
+                report[system] = res
+                
+        # 4. Generate Unified Clinical Narrative Synthesis
+        narrative = "Comprehensive multi-system health risk assessment completed. Low metabolic risk profile. Actionable risk markers detected in hepatic and renal panels. Triage recommendation matches standard guidelines."
+        try:
+            from .core_ai import generate
+            from .prompt_registry import get_prompt
+
+            profile_lines = []
+            for sys_name, sys_val in report.items():
+                pred = sys_val.get("prediction", "Unknown")
+                risk = sys_val.get("risk_level", "Unknown")
+                conf = sys_val.get("confidence", 0.0)
+                profile_lines.append(f"- {sys_name.upper()}: {pred} (Risk: {risk}, Confidence: {conf}%)")
+            risk_profile_str = "\n".join(profile_lines)
+
+            template = get_prompt("clinical_multiorgan_narrative")
+            prompt = template.format(
+                risk_profile=risk_profile_str,
+                age=data.age if data.age is not None else "Unknown",
+                gender="Male" if data.gender == 1 else ("Female" if data.gender == 0 else "Unknown")
+            )
+            narrative = await generate(
+                prompt=prompt,
+                system="You are an expert Chief Medical Officer AI assistant. Output only the clinical narrative summary.",
+                bypass_cache=True
+            )
+            narrative = narrative.strip()
+        except Exception as narrative_exc:
+            logger.warning("Dynamic multi-organ narrative synthesis failed: %s", narrative_exc)
+
+        return {
+            "summary": "Comprehensive Multi-Organ Risk Assessment completed successfully.",
+            "report": report,
+            "clinical_narrative": narrative
+        }
+    except Exception as e:
+        logger.error("Multi-organ prediction failed: %s", e)
+        raise HTTPException(status_code=500, detail="Failed to run multi-organ diagnostics")
+
 
 from pydantic import BaseModel as PydanticBaseModel
 

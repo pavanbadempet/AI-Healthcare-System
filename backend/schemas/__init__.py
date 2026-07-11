@@ -129,6 +129,8 @@ from .prediction import (  # noqa: F401
     KidneyInput,
     LiverInput,
     LungInput,
+    MultiOrganInput,
+    StrokeInput,
     PredictionReviewCreate,
 )
 

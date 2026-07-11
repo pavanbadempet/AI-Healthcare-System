@@ -294,5 +294,19 @@ export async function uploadLabReportImage(file: File): Promise<any> {
   return res.json();
 }
 
+export function predictMultiOrgan(payload: any): Promise<any> {
+  return apiFetch('/predict/multi-organ', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function predictStroke(payload: any): Promise<any> {
+  return apiFetch('/predict/stroke', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
 
 

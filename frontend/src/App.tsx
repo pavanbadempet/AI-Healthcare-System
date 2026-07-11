@@ -15,6 +15,7 @@ const PatientDetailPage = lazy(() => import('@/pages/PatientDetail'));
 const ChatPage = lazy(() => import('@/pages/Chat'));
 const TelemedicinePage = lazy(() => import('@/pages/Telemedicine'));
 const PredictPage = lazy(() => import('@/pages/Predict'));
+const UnifiedHubPage = lazy(() => import('@/pages/UnifiedHub'));
 const DiabetesPredictPage = lazy(() => import('@/pages/DiabetesPredict'));
 const HeartPredictPage = lazy(() => import('@/pages/HeartPredict'));
 const KidneyPredictPage = lazy(() => import('@/pages/KidneyPredict'));
@@ -74,6 +75,7 @@ export default function App() {
                 <Route path="/chat" element={<ChatPage />} />
                 <Route path="/telemedicine" element={<TelemedicinePage />} />
                 <Route path="/predict" element={<PredictPage />} />
+                <Route path="/predict/unified" element={<UnifiedHubPage />} />
                 <Route path="/predict/diabetes" element={<DiabetesPredictPage />} />
                 <Route path="/predict/heart" element={<HeartPredictPage />} />
                 <Route path="/predict/kidney" element={<KidneyPredictPage />} />
