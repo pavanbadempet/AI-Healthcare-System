@@ -735,8 +735,8 @@ async def generate(
             logger.debug("Semantic cache lookup error: %s", e)
 
     # Explicit cloud provider override
-    resolved_provider = api_provider or os.getenv("GLOBAL_AI_PROVIDER")
-    resolved_key = api_key or os.getenv("GLOBAL_AI_API_KEY")
+    resolved_provider = api_provider or os.getenv("GLOBAL_AI_PROVIDER") or "custom"
+    resolved_key = api_key or os.getenv("GLOBAL_AI_API_KEY") or "cloudflare"
 
     result = None
     if resolved_provider and resolved_key and resolved_provider.lower() not in ("ollama", "gemini"):
@@ -831,10 +831,13 @@ async def chat(
         except Exception as e:
             logger.debug("Semantic cache lookup error for chat: %s", e)
 
-    result = None
     # Explicit cloud provider override
-    if api_provider and api_key and api_provider.lower() not in ("ollama", "gemini"):
-        result = await _chat_cloud(messages, system, model, api_provider, api_key)
+    resolved_provider = api_provider or os.getenv("GLOBAL_AI_PROVIDER") or "custom"
+    resolved_key = api_key or os.getenv("GLOBAL_AI_API_KEY") or "cloudflare"
+
+    result = None
+    if resolved_provider and resolved_key and resolved_provider.lower() not in ("ollama", "gemini"):
+        result = await _chat_cloud(messages, system, model, resolved_provider, resolved_key)
 
     # Tier A: Ollama
     if not result:
@@ -916,8 +919,10 @@ async def chat_stream(
     # 1. Define stream generator that yields unredacted chunks
     async def source_generator():
         # Explicit cloud provider override
-        if api_provider and api_key and api_provider.lower() not in ("ollama", "gemini"):
-            async for chunk in _stream_cloud(messages, system, model, api_provider, api_key):
+        resolved_provider = api_provider or os.getenv("GLOBAL_AI_PROVIDER") or "custom"
+        resolved_key = api_key or os.getenv("GLOBAL_AI_API_KEY") or "cloudflare"
+        if resolved_provider and resolved_key and resolved_provider.lower() not in ("ollama", "gemini"):
+            async for chunk in _stream_cloud(messages, system, model, resolved_provider, resolved_key):
                 yield chunk
             return
 
