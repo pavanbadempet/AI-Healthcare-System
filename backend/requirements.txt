@@ -72,5 +72,5 @@ redis>=5.0.0
 msgpack>=1.0.5
 great-expectations>=0.18.0
 faker>=24.0.0
-scipy>=1.11.0
+scipy>=1.17.1
 scikit-learn
