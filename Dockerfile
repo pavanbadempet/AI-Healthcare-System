@@ -17,7 +17,16 @@ RUN npm ci
 COPY frontend/ ./
 RUN npm run build
 
-# Stage 2: Final image with Python backend and frontend assets
+# Stage 2: Build Rust API Gateway
+FROM rust:1.80-slim AS rust-builder
+WORKDIR /build
+
+# Copy rust gateway source and build it
+COPY rust_gateway/ ./rust_gateway/
+WORKDIR /build/rust_gateway
+RUN cargo build --release
+
+# Stage 3: Final image with Python backend, frontend assets, and Rust gateway
 FROM python:3.12-slim
 
 # Install system dependencies
@@ -51,6 +60,9 @@ COPY --chown=user . $HOME/app/
 
 # Copy built frontend assets from Stage 1 to home app dir
 COPY --from=frontend-builder --chown=user /build/dist $HOME/app/frontend/dist
+
+# Copy built Rust gateway from Stage 2
+COPY --from=rust-builder --chown=user /build/rust_gateway/target/release/rust_gateway $HOME/app/rust_gateway/target/release/rust_gateway
 
 # Download AI model weights from Hugging Face Model Registry
 RUN python backend/download_models.py

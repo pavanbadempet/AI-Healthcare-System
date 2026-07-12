@@ -29,8 +29,7 @@ fi
 echo "Checking model weights..."
 python backend/download_models.py
 
-echo "Building Rust API Gateway..."
-cd rust_gateway && cargo build --release && cd ..
+# Rust gateway is already built via Docker multi-stage build
 
 if [ -n "$DOPPLER_TOKEN" ]; then
     echo "Starting Python server with Doppler Secrets Manager on port 8001..."
@@ -41,7 +40,7 @@ else
 fi
 
 echo "Initializing database to ensure Rust gateway can connect..."
-if [ -n "$DOPPLER_TOKEN" ]; then doppler run -- python -c "from backend.database import engine; from backend.models import Base; Base.metadata.create_all(bind=engine)"; else python -c "from backend.database import engine; from backend.models import Base; Base.metadata.create_all(bind=engine)"; fi import engine; from backend.models import Base; Base.metadata.create_all(bind=engine)"
+if [ -n "$DOPPLER_TOKEN" ]; then doppler run -- python -c "from backend.database import engine; from backend.models import Base; Base.metadata.create_all(bind=engine)"; else python -c "from backend.database import engine; from backend.models import Base; Base.metadata.create_all(bind=engine)"; fi
 
 echo "Starting Rust Gateway on port 7860..."
 export DATABASE_URL=$SQLX_URL
