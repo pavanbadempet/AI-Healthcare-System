@@ -1049,44 +1049,64 @@ async def chat_stream(
     async def source_generator():
         # Explicit cloud provider override
         resolved_provider, resolved_key = await _resolve_provider_and_key(api_provider, api_key)
+        has_yielded = False
+
         if resolved_provider and resolved_key and resolved_provider.lower() not in ("ollama", "gemini"):
-            async for chunk in _stream_cloud(messages, system, model, resolved_provider, resolved_key):
-                yield chunk
-            return
-
-        # Tier A: Ollama
-        ollama_models = await get_ollama_models()
-        if ollama_models:
-            async for chunk in _stream_ollama(messages, system, model):
-                yield chunk
-            return
-
-        # Tier B: Gemini (pseudo-stream)
-        if has_gemini_api_key():
             try:
-                has_yielded = False
-                async for chunk in _stream_gemini(messages, system):
+                async for chunk in _stream_cloud(messages, system, model, resolved_provider, resolved_key):
                     if chunk:
                         has_yielded = True
                         yield chunk
+            except Exception as e:
+                logger.warning("Cloud stream failed: %s", e)
+            if has_yielded:
+                return
+
+        # Tier A: Ollama
+        if not has_yielded:
+            ollama_models = await get_ollama_models()
+            if ollama_models:
+                try:
+                    async for chunk in _stream_ollama(messages, system, model):
+                        if chunk:
+                            has_yielded = True
+                            yield chunk
+                except Exception as e:
+                    logger.warning("Ollama stream failed: %s", e)
                 if has_yielded:
                     return
-            except Exception as e:
-                logger.warning(f"Gemini stream error: {e}")
+
+        # Tier B: Gemini (pseudo-stream)
+        if not has_yielded:
+            if has_gemini_api_key():
+                try:
+                    async for chunk in _stream_gemini(messages, system):
+                        if chunk:
+                            has_yielded = True
+                            yield chunk
+                except Exception as e:
+                    logger.warning(f"Gemini stream error: {e}")
+                if has_yielded:
+                    return
 
         # Final safety net: fallback to custom Cloudflare worker if configured provider failed
-        if resolved_provider.lower() in ("ollama", "gemini"):
+        if not has_yielded and resolved_provider.lower() in ("ollama", "gemini"):
             logger.info("Configured stream provider %s failed, routing to custom Cloudflare fallback...", resolved_provider)
             try:
                 async for chunk in _stream_cloud(messages, system, model, "custom", "cloudflare"):
-                    yield chunk
-                return
+                    if chunk:
+                        has_yielded = True
+                        yield chunk
             except Exception as stream_err:
                 logger.warning("Fallback custom Cloudflare worker stream failed: %s", stream_err)
+            if has_yielded:
+                return
 
-        # Fallback to mock response to prevent the UI from hanging
-        yield "Hello! I am your AI Copilot. Currently, the system is running in offline mode because local Ollama models are not active and a valid Google Gemini API key is not configured.\n\n"
-        yield "I can assist you with simulated clinical summaries, guide you through the EHR interface, or answer general workflow questions. How can I help you today?"
+        if not has_yielded:
+            # Fallback to mock response to prevent the UI from hanging
+            yield "Hello! I am your AI Copilot. Currently, the system is running in offline mode because local Ollama models are not active and a valid Google Gemini API key is not configured.\n\n"
+            yield "I can assist you with simulated clinical summaries, guide you through the EHR interface, or answer general workflow questions. How can I help you today?"
+
 
     # 2. Define stream wrapper to redact PII from chunks
     async def redact_stream_generator(generator):
