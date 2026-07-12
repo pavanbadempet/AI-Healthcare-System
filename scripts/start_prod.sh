@@ -12,8 +12,8 @@ python backend/download_models.py
 
 if [ -n "$DOPPLER_TOKEN" ]; then
     echo "Starting server with Doppler Secrets Manager..."
-    exec doppler run -- uvicorn backend.main:app --host 0.0.0.0 --port 7860
+    exec doppler run -- uvicorn backend.main:app --host 0.0.0.0 --port 7860 --workers 4
 else
     echo "DOPPLER_TOKEN not found. Starting server with standard environment variables..."
-    exec uvicorn backend.main:app --host 0.0.0.0 --port 7860
+    exec uvicorn backend.main:app --host 0.0.0.0 --port 7860 --workers 4
 fi
