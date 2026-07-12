@@ -166,7 +166,7 @@ async def stream_chat(
                             break
                         elif msg_type == "done":
                             # Append medical disclaimer to stream for patients/all users
-                            yield f"data: {json.dumps({'reply': f'\\n\\n{STREAM_MEDICAL_DISCLAIMER}'})}\n\n"
+                            yield f"data: {json.dumps({'reply': f'\n\n{STREAM_MEDICAL_DISCLAIMER}'})}\n\n"
                             yield f"data: {json.dumps({'status': 'complete'})}\n\n"
                             break
 
