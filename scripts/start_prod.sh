@@ -25,7 +25,7 @@ echo "Initializing database to ensure Rust gateway can connect..."
 python -c "from backend.database import engine; from backend.models import Base; Base.metadata.create_all(bind=engine)"
 
 echo "Starting Rust Gateway on port 7860..."
-if [ -d "/data" ] || [ -n "$SPACE_ID" ]; then
+if [ -f "/data/healthcare.db" ]; then
     export DATABASE_URL="sqlite:///data/healthcare.db"
 else
     export DATABASE_URL="sqlite://../healthcare.db"
