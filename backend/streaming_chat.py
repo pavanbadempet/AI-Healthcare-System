@@ -36,10 +36,7 @@ logger = logging.getLogger(__name__)
 # SSE Heartbeat interval (keeps connection alive through proxies)
 SSE_HEARTBEAT_INTERVAL = 15.0
 STREAM_FAILURE_DETAIL = "AI stream failed. Please try again later."
-STREAM_MEDICAL_DISCLAIMER = (
-    "This is AI-generated information and is not a medical diagnosis. "
-    "Please consult a qualified healthcare professional for medical decisions or emergencies."
-)
+
 
 router = APIRouter(prefix="/chat", tags=["Streaming Chat"], dependencies=[Depends(licensing.enforce_license_tier("community"))])
 
@@ -165,8 +162,6 @@ async def stream_chat(
                             yield f"data: {json.dumps({'error': data, 'status': 'error'})}\n\n"
                             break
                         elif msg_type == "done":
-                            # Append medical disclaimer to stream for patients/all users
-                            yield f"data: {json.dumps({'reply': f'\n\n{STREAM_MEDICAL_DISCLAIMER}'})}\n\n"
                             yield f"data: {json.dumps({'status': 'complete'})}\n\n"
                             break
 
@@ -204,7 +199,7 @@ async def stream_chat(
         if context
         else "I don't have enough data to answer that yet. Please complete a health checkup first."
     )
-    fallback_msg = f"{fallback_msg}\n\n{STREAM_MEDICAL_DISCLAIMER}"
+    # Fallback message uses static disclaimer in UI
 
     async def fallback_generator():
         yield f"data: {json.dumps({'sources': [], 'model': 'fallback'})}\n\n"

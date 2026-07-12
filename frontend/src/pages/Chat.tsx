@@ -173,16 +173,8 @@ ${contextText}
           semanticCache.set(currentInput, accumulatedReply);
         }
 
-        // Append medical disclaimer
-        const disclaimer = "\n\nThis is AI-generated information and is not a medical diagnosis. Please consult a qualified healthcare professional for medical decisions or emergencies.";
-        setMessages(prev => {
-          const newArr = [...prev];
-          const last = newArr[newArr.length - 1];
-          if (last.role === 'assistant' && !last.content.includes("This is AI-generated information")) {
-            last.content += disclaimer;
-          }
-          return newArr;
-        });
+        // UI handles medical disclaimer natively at the bottom of the chat window
+
 
       } catch (err: any) {
         console.error("WebLLM Chat error:", err);

@@ -14,10 +14,7 @@ from . import agent, audit, auth, database, licensing, models, pdf_generator, ra
 logger = logging.getLogger(__name__)
 router = APIRouter(dependencies=[Depends(licensing.enforce_license_tier("community"))])
 HEALTH_REPORT_FAILURE_DETAIL = "Failed to generate health report"
-CHAT_MEDICAL_DISCLAIMER = (
-    "This is AI-generated information and is not a medical diagnosis. "
-    "Please consult a qualified healthcare professional for medical decisions or emergencies."
-)
+
 
 # Maximum input lengths to prevent abuse
 MAX_CHAT_MESSAGE_LENGTH = 4000
@@ -47,10 +44,7 @@ def _sanitize_record_type(record_type: str) -> str:
     return sanitized
 
 
-def _with_medical_disclaimer(response: str) -> str:
-    if CHAT_MEDICAL_DISCLAIMER in response:
-        return response
-    return f"{response}\n\n{CHAT_MEDICAL_DISCLAIMER}"
+# Removed _with_medical_disclaimer since UI handles it
 
 # --- Schemas ---
 class Message(BaseModel):
@@ -145,7 +139,7 @@ def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth
             "conversation_count": len(messages),
             "model": request.model
         })
-        response = _with_medical_disclaimer(result['messages'][-1].content)
+        response = result['messages'][-1].content
 
         # Save AI response
         if save_data:
