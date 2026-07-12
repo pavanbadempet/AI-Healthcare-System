@@ -11,7 +11,8 @@ export interface ChatMessage {
 }
 
 export async function sendChat(message: string, model?: string): Promise<{ reply: string }> {
-  return apiFetch('/chat', { method: 'POST', body: JSON.stringify({ message, model }) });
+  const language = typeof window !== 'undefined' ? localStorage.getItem('app-language') || 'en' : 'en';
+  return apiFetch('/chat', { method: 'POST', body: JSON.stringify({ message, model, language }) });
 }
 
 export async function getChatHistory(): Promise<ChatMessage[]> {
@@ -62,10 +63,12 @@ export function streamChat(
 
   let receivedContent = false;
 
+  const language = typeof window !== 'undefined' ? localStorage.getItem('app-language') || 'en' : 'en';
+
   fetch(`${API_BASE}/chat/stream`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ message, history, model, rag_scope: ragScope }),
+    body: JSON.stringify({ message, history, model, rag_scope: ragScope, language }),
     signal: controller.signal,
   })
     .then(async (res) => {
@@ -109,7 +112,7 @@ export function streamChat(
           const syncRes = await fetch(`${API_BASE}/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', ...authHeaders() },
-            body: JSON.stringify({ message, history }),
+            body: JSON.stringify({ message, history, language }),
           });
           if (syncRes.status === 401) {
             if (typeof window !== 'undefined') {

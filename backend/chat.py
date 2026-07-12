@@ -56,6 +56,7 @@ class ChatRequest(BaseModel):
     history: List[Message] = []
     current_context: Dict[str, Any] = {}
     model: Optional[str] = None
+    language: Optional[str] = "en"
 
 class RecordCreate(BaseModel):
     record_type: str
@@ -94,6 +95,9 @@ def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth
     # Build profile
     profile = f"Name: {current_user.full_name or 'N/A'}, Age: {current_user.dob or 'N/A'}, " \
               f"Gender: {current_user.gender or 'N/A'}, Height/Weight: {current_user.height}/{current_user.weight}"
+              
+    if request.language and request.language != "en":
+        profile += f"\n\nIMPORTANT: The user is communicating in the language code '{request.language}'. You must output your entire response translated accurately into this language."
 
     # Save user message
     if save_data:
@@ -122,7 +126,7 @@ def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth
     # RAG memory
     rag_context = ""
     try:
-        memories = rag.search_similar_records(str(current_user.id), sanitized_message, n_results=5)
+        memories = rag.advanced_search_similar_records(str(current_user.id), sanitized_message, n_results=5)
         if memories:
             rag_context = "\n".join(memories[:3])
     except (ValueError, RuntimeError):

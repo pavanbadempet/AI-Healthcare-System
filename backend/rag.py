@@ -753,3 +753,86 @@ if _pkg_rag is None:
     def delete_record_from_db(record_id: str) -> bool:
         """Delete from vector index."""
         return get_vector_store().delete(str(record_id))
+
+# =========================================================================
+# ADVANCED RAG PIPELINE WRAPPER
+# =========================================================================
+
+import asyncio
+from typing import List, Optional
+
+def advanced_search_similar_records(
+    user_id: str,
+    query: str,
+    n_results: int = 3,
+    facility_id: Optional[str] = None,
+) -> List[str]:
+    """
+    Advanced RAG retrieval using Query Expansion and Cross-Encoder Re-ranking.
+    Wraps the underlying vector store's search mechanism.
+    """
+    try:
+        from backend import core_ai
+    except ImportError:
+        try:
+            import core_ai
+        except ImportError:
+            core_ai = None
+            
+    # If core_ai is not available or missing advanced functions, fallback to standard search
+    if core_ai is None or not hasattr(core_ai, "generate_expanded_queries") or not hasattr(core_ai, "rerank_documents"):
+        # We need to call the standard search_similar_records from the active module
+        base_search = sys.modules[__name__].search_similar_records
+        return base_search(user_id, query, n_results, facility_id)
+
+    try:
+        # 1. Query Expansion (Multi-Query)
+        # Using asyncio.run since this is a synchronous function
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                # If we're inside an event loop (FastAPI route), use run_coroutine_threadsafe or create_task
+                # But search_similar_records is called synchronously in chat.py!
+                # Actually, in FastAPI, sync endpoints run in a threadpool, so get_event_loop() might fail or we can use new_event_loop.
+                loop = asyncio.new_event_loop()
+                queries = loop.run_until_complete(core_ai.generate_expanded_queries(query, k=3))
+                loop.close()
+            else:
+                queries = loop.run_until_complete(core_ai.generate_expanded_queries(query, k=3))
+        except Exception:
+            loop = asyncio.new_event_loop()
+            queries = loop.run_until_complete(core_ai.generate_expanded_queries(query, k=3))
+            loop.close()
+            
+        logger.info(f"Advanced RAG expanded queries: {queries}")
+        
+        # 2. Wide Retrieval
+        # We retrieve a larger candidate pool for EACH expanded query (e.g. top 10)
+        base_search = getattr(sys.modules[__name__], "search_similar_records")
+        all_candidates = []
+        for q in queries:
+            results = base_search(user_id, q, n_results=10, facility_id=facility_id)
+            if results:
+                all_candidates.extend(results)
+                
+        # Deduplicate candidates (preserving order of first appearance)
+        unique_candidates = []
+        seen = set()
+        for doc in all_candidates:
+            if doc not in seen:
+                seen.add(doc)
+                unique_candidates.append(doc)
+                
+        if not unique_candidates:
+            return []
+            
+        logger.info(f"Advanced RAG retrieved {len(unique_candidates)} unique candidates. Reranking...")
+            
+        # 3. Cross-Encoder Re-ranking
+        top_docs = core_ai.rerank_documents(query, unique_candidates, top_k=n_results)
+        return top_docs
+        
+    except Exception as e:
+        logger.error(f"Advanced RAG pipeline failed: {e}. Falling back to standard retrieval.")
+        base_search = getattr(sys.modules[__name__], "search_similar_records")
+        return base_search(user_id, query, n_results, facility_id)

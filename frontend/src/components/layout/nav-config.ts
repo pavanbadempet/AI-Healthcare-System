@@ -296,8 +296,8 @@ export const clinosItems: MenuItem[] = [
     highlights: ["Alert Engine", "SHAP Explanations", "AI Narrative"],
   },
   {
-    id: "cara_companion",
-    title: "Cara Companion",
+    id: "aura_companion",
+    title: "Aura Companion",
     href: "/companion",
     icon: Smile,
     desc: "Empathetic patient health companion",
@@ -333,7 +333,7 @@ export const COMMAND_ITEMS = [
   { label: "SMART App Registry", href: "/apps", category: "ClinOS", desc: "Register and launch third-party SMART apps", icon: Plug },
   { label: "Federated Privacy Mesh", href: "/federated", category: "ClinOS", desc: "Privacy-preserving distributed model sync bridge", icon: ShieldCheck },
   { label: "Clinical Intelligence Command Center", href: "/intelligence", category: "ClinOS", desc: "Real-time vitals alerts and explainable AI SHAP report", icon: BrainCircuit },
-  { label: "Cara Health Companion", href: "/companion", category: "ClinOS", desc: "Warm symptom tracker, flare diary, and empathetic AI companion", icon: Smile },
+  { label: "Aura Health Companion", href: "/companion", category: "ClinOS", desc: "Warm symptom tracker, flare diary, and empathetic AI companion", icon: Smile },
 ];
 
 /* ───────────────────────────────────────────────────

@@ -22,13 +22,45 @@ export default {
       });
     }
 
-    // Only allow POST to /chat/completions or /v1/chat/completions
-    if (request.method !== "POST" || (url.pathname !== "/v1/chat/completions" && url.pathname !== "/chat/completions")) {
+    // Only allow POST to /chat/completions, /v1/chat/completions, /rerank, or /embed
+    if (request.method !== "POST" || (url.pathname !== "/v1/chat/completions" && url.pathname !== "/chat/completions" && url.pathname !== "/rerank" && url.pathname !== "/embed")) {
       return new Response("Not Found", { status: 404 });
     }
 
     try {
       const body: any = await request.json();
+      
+      if (url.pathname === "/embed") {
+        // Handle embedding request
+        const embedResponse = await env.AI.run('@cf/baai/bge-base-en-v1.5', {
+          text: body.text
+        });
+        
+        return new Response(JSON.stringify(embedResponse), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+          }
+        });
+      }
+      
+      if (url.pathname === "/rerank") {
+        // Handle reranking request
+        const contexts = (body.sentences || []).map((text: string) => ({ text }));
+        const rerankResponse = await env.AI.run('@cf/baai/bge-reranker-base', {
+          query: body.query,
+          contexts: contexts
+        });
+        
+        return new Response(JSON.stringify(rerankResponse), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+          }
+        });
+      }
       
       const requestedModel = body.model || '';
       // Cloudflare Workers AI natively supports Llama 3.1 8B. We force this model

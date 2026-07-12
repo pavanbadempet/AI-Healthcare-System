@@ -31,6 +31,11 @@ export default function LanguageSelector({ language, setLanguage }: LanguageSele
     { code: 'en', label: 'English' },
     { code: 'es', label: 'Español' },
     { code: 'hi', label: 'हिन्दी' },
+    { code: 'te', label: 'తెలుగు' },
+    { code: 'fr', label: 'Français' },
+    { code: 'de', label: 'Deutsch' },
+    { code: 'zh', label: '中文' },
+    { code: 'ar', label: 'العربية' },
   ];
 
   return (
@@ -43,7 +48,7 @@ export default function LanguageSelector({ language, setLanguage }: LanguageSele
         >
           <Globe size={13} aria-hidden="true" />
           <span className="hidden sm:inline text-[9px] font-bold uppercase tracking-wider">
-            {language === 'en' ? 'EN' : language === 'es' ? 'ES' : 'HI'}
+            {language.toUpperCase()}
           </span>
           <ChevronDown
             size={11}

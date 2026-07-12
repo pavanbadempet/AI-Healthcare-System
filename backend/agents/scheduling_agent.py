@@ -684,7 +684,7 @@ class SchedulingAgent:
         history_chunks = []
         if self.has_active_abdm_consent():
             try:
-                history_chunks = rag.search_similar_records(
+                history_chunks = rag.advanced_search_similar_records(
                     user_id=str(self.user.id),
                     query="FHIR Bundle Patient History Summary",
                     n_results=3,

@@ -51,6 +51,7 @@ class StreamChatRequest(BaseModel):
     history: List[StreamChatMessage] = []
     model: Optional[str] = None
     rag_scope: Optional[str] = "patient"
+    language: Optional[str] = "en"
 
 
 # ── SSE Streaming Chat ────────────────────────────────────────────────
@@ -109,6 +110,8 @@ async def stream_chat(
         system_prompt = get_prompt("streaming_system").format(
             context=context[:2500] if len(context) > 2500 else context
         )
+        if req.language and req.language != "en":
+            system_prompt += f"\n\nIMPORTANT: The user is communicating in the language code '{req.language}'. You must output your entire response translated accurately into this language."
 
         async def stream_generator() -> AsyncGenerator[str, None]:
             """Robust streaming generator with heartbeat and error handling."""

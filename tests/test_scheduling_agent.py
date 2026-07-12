@@ -44,7 +44,7 @@ def mock_rag_by_default():
     """Mock RAG vector store and search globally for all tests."""
     mock_store = MagicMock()
     with patch("backend.rag.get_vector_store", return_value=mock_store) as mock_get_store, \
-         patch("backend.rag.search_similar_records", return_value=[]) as mock_search:
+         patch("backend.rag.advanced_search_similar_records", return_value=[]) as mock_search:
         yield mock_get_store, mock_search
 
 @pytest.mark.asyncio

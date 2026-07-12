@@ -367,23 +367,38 @@ def embed_text(text: str, task_type: str = "retrieval_document") -> list[float]:
         logger.debug("Embedding cache lookup failed: %s", ex_cache)
 
     try:
-        import google.generativeai as genai
-        if not _gemini_configured:
-            genai.configure(api_key=GOOGLE_API_KEY)
-            _gemini_configured = True
-        result = genai.embed_content(
-            model=GEMINI_EMBEDDING_MODEL,
-            content=text,
-            task_type=task_type,
+        # Use Cloudflare Workers AI for embeddings
+        import httpx
+        url = "https://ai-healthcare-model.pavan9b.workers.dev/embed"
+        
+        response = httpx.post(
+            url, 
+            json={"text": [text]},
+            timeout=15.0
         )
-        embedding = result.get("embedding") or [0.0] * 768
-        try:
-            cache.set(cache_key, embedding, ttl=86400) # Cache for 24 hours
-        except Exception as ex_cache:
-            logger.debug("Embedding cache set failed: %s", ex_cache)
-        return embedding
-    except Exception:
-        logger.error("Embedding failed")
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        # Cloudflare returns: {"shape": [...], "data": [[...]]}
+        # The vector is the first element of "data"
+        if "data" in data and len(data["data"]) > 0:
+            embedding = data["data"][0]
+            # Ensure it's a list of floats
+            embedding = [float(x) for x in embedding]
+            
+            try:
+                cache.set(cache_key, embedding, ttl=86400) # Cache for 24 hours
+            except Exception as ex_cache:
+                logger.debug("Embedding cache set failed: %s", ex_cache)
+                
+            return embedding
+        else:
+            logger.error(f"Cloudflare embedding format unexpected: {data}")
+            return [0.0] * 768
+            
+    except Exception as e:
+        logger.error(f"Error calling Cloudflare embedding API: {str(e)}")
         return [0.0] * 768
 
 
@@ -1188,3 +1203,81 @@ async def chat_stream(
     # 3. Stream redacted response
     async for redacted_chunk in redact_stream_generator(source_generator()):
         yield redacted_chunk
+
+
+# =========================================================================
+# ADVANCED RAG PIPELINE EXTENSIONS
+# =========================================================================
+
+# =========================================================================
+# Advanced RAG Utilities
+# =========================================================================
+
+async def generate_expanded_queries(query: str, k: int = 3) -> list[str]:
+    """
+    Use the LLM fallback pipeline to generate semantic variations of a patient query
+    for better RAG retrieval.
+    """
+    system_prompt = (
+        "You are an expert clinical terminology assistant. "
+        "The user will provide a medical query (often in colloquial terms). "
+        f"Your task is to generate {k} distinct, clinical search variations of this query "
+        "to improve database retrieval. "
+        "Output ONLY the queries separated by a newline character. No numbering, no bullets, no introduction."
+    )
+    
+    # Use the synchronous wrapper for generate (since search_similar_records is sync)
+    # Actually, core_ai.generate is async, but we'll use a sync wrapper inside rag.py or we can use asyncio.run
+    # Wait, core_ai.generate is async!
+    # Let's write this as async, and use asyncio.run in the caller.
+    expanded_text = await generate(query, system_prompt)
+    if not expanded_text:
+        return [query]
+    
+    variations = [line.strip().strip('-*1234567890. ') for line in expanded_text.split('\n') if line.strip()]
+    
+    # Always include the original query
+    results = [query]
+    for v in variations:
+        if v and v.lower() not in [r.lower() for r in results] and len(results) < k + 1:
+            results.append(v)
+            
+    return results
+
+def rerank_documents(query: str, documents: list[str], top_k: int = 3) -> list[str]:
+    """
+    Re-rank a list of retrieved documents against the query using Cloudflare Workers AI.
+    Returns the top_k most relevant documents.
+    """
+    if not documents:
+        return []
+    
+    try:
+        url = "https://ai-healthcare-model.pavan9b.workers.dev/rerank"
+        payload = {
+            "query": query,
+            "sentences": documents
+        }
+        import httpx
+        logger.info("CORE_AI RERANK: Calling Cloudflare Workers AI Reranker...")
+        response = httpx.post(url, json=payload, timeout=10.0)
+        response.raise_for_status()
+        
+        data = response.json()
+        
+        # Cloudflare reranker typically returns an array of objects under "response"
+        results_list = data.get("response", data) if isinstance(data, dict) else data
+        
+        # Sort indices by score descending, just in case they aren't pre-sorted
+        if isinstance(results_list, list) and len(results_list) > 0 and ("id" in results_list[0] or "index" in results_list[0]):
+            results_list.sort(key=lambda x: x.get("score", 0), reverse=True)
+            # Reorder the original documents based on the indices
+            ranked_docs = [documents[item.get("id", item.get("index"))] for item in results_list]
+            return ranked_docs[:top_k]
+        else:
+            logger.warning(f"Unexpected Cloudflare reranker format: {data}")
+            return documents[:top_k]
+            
+    except Exception as e:
+        logger.warning(f"Cloudflare reranking failed: {e}. Falling back to original ordering.")
+        return documents[:top_k]

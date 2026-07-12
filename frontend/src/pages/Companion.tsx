@@ -25,7 +25,7 @@ interface SymptomEntry {
 
 interface ChatMessage {
   id: string;
-  role: 'user' | 'cara';
+  role: 'user' | 'aura';
   text: string;
   timestamp: Date;
 }
@@ -49,7 +49,7 @@ const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const COMPANION_RESPONSES: Record<string, string[]> = {
   greeting: [
-    "Hey there! 🌸 I'm Cara, your health companion. How are you feeling today?",
+    "Hey there! 🌸 I'm Aura, your health companion. How are you feeling today?",
     "Welcome back! ☀️ Remember, it's completely okay to have tough days. I'm right here with you.",
     "Hi friend! 🌷 I noticed you haven't logged in a while. No pressure — whenever you're ready, I'm here.",
   ],
@@ -83,7 +83,7 @@ const COMPANION_RESPONSES: Record<string, string[]> = {
   ],
 };
 
-function getCaraResponse(input: string, severity?: Severity): string {
+function getAuraResponse(input: string, severity?: Severity): string {
   const lower = input.toLowerCase();
   if (severity) {
     const responses = COMPANION_RESPONSES[severity];
@@ -408,7 +408,7 @@ function CompanionChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: 'welcome',
-      role: 'cara',
+      role: 'aura',
       text: COMPANION_RESPONSES.greeting[Math.floor(Math.random() * COMPANION_RESPONSES.greeting.length)],
       timestamp: new Date(),
     },
@@ -433,12 +433,12 @@ function CompanionChat() {
     setInput('');
     setIsTyping(true);
 
-    // Simulate Cara's thoughtful response
+    // Simulate Aura's thoughtful response
     setTimeout(() => {
       const response: ChatMessage = {
-        id: `cara-${Date.now()}`,
-        role: 'cara',
-        text: getCaraResponse(userMsg.text),
+        id: `aura-${Date.now()}`,
+        role: 'aura',
+        text: getAuraResponse(userMsg.text),
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, response]);
@@ -457,7 +457,7 @@ function CompanionChat() {
           <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#0a0a1a]" />
         </div>
         <div>
-          <h3 className="text-white/90 font-semibold text-sm">Cara</h3>
+          <h3 className="text-white/90 font-semibold text-sm">Aura</h3>
           <p className="text-[11px] text-emerald-400/80">Online • Here for you</p>
         </div>
         <div className="ml-auto">
@@ -506,7 +506,7 @@ function CompanionChat() {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => e.key === 'Enter' && sendMessage()}
-            placeholder="Tell Cara how you're feeling..."
+            placeholder="Tell Aura how you're feeling..."
             className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-2.5 text-sm text-white/80
               placeholder:text-white/25 focus:outline-none focus:border-orange-400/40 transition-colors"
           />
@@ -621,7 +621,7 @@ function Disclaimer() {
     <div className="rounded-2xl p-4 bg-amber-500/[0.06] border border-amber-500/20 flex items-start gap-3">
       <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
       <p className="text-xs text-amber-200/70 leading-relaxed">
-        <strong className="text-amber-300">Medical Disclaimer:</strong> Cara is an AI wellness companion and does not provide medical diagnoses,
+        <strong className="text-amber-300">Medical Disclaimer:</strong> Aura is an AI wellness companion and does not provide medical diagnoses,
         treatment recommendations, or emergency care. Always consult a qualified healthcare professional for medical advice,
         diagnosis, or treatment. If you are experiencing a medical emergency, please call your local emergency services immediately.
       </p>
