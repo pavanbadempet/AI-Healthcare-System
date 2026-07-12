@@ -7,6 +7,20 @@
 # ==============================================================================
 
 # Download models on-demand before starting the server
+# Hugging Face Spaces automatically injects a Postgres DATABASE_URL if the add-on is enabled.
+# Since the Rust gateway is compiled specifically for SQLite, we must override it here.
+# NOTE: SQLAlchemy and SQLx have different URI formats for SQLite!
+if [ -d "/data" ]; then
+    export SQLALCHEMY_URL="sqlite:////data/healthcare.db"
+    export SQLX_URL="sqlite:///data/healthcare.db"
+else
+    export SQLALCHEMY_URL="sqlite:///healthcare.db"
+    export SQLX_URL="sqlite://../healthcare.db"
+fi
+
+export DATABASE_URL=$SQLALCHEMY_URL
+
+# Download models on-demand before starting the server
 echo "Checking model weights..."
 python backend/download_models.py
 
@@ -25,10 +39,6 @@ echo "Initializing database to ensure Rust gateway can connect..."
 python -c "from backend.database import engine; from backend.models import Base; Base.metadata.create_all(bind=engine)"
 
 echo "Starting Rust Gateway on port 7860..."
-if [ -f "/data/healthcare.db" ]; then
-    export DATABASE_URL="sqlite:///data/healthcare.db"
-else
-    export DATABASE_URL="sqlite://../healthcare.db"
-fi
+export DATABASE_URL=$SQLX_URL
 cd rust_gateway
 exec ./target/release/rust_gateway
