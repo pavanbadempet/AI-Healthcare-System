@@ -41,7 +41,7 @@ else
 fi
 
 echo "Initializing database to ensure Rust gateway can connect..."
-python -c "from backend.database import engine; from backend.models import Base; Base.metadata.create_all(bind=engine)"
+if [ -n "$DOPPLER_TOKEN" ]; then doppler run -- python -c "from backend.database import engine; from backend.models import Base; Base.metadata.create_all(bind=engine)"; else python -c "from backend.database import engine; from backend.models import Base; Base.metadata.create_all(bind=engine)"; fi import engine; from backend.models import Base; Base.metadata.create_all(bind=engine)"
 
 echo "Starting Rust Gateway on port 7860..."
 export DATABASE_URL=$SQLX_URL
