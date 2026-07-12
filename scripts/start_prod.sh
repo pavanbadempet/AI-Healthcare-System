@@ -25,4 +25,5 @@ echo "Initializing database to ensure Rust gateway can connect..."
 python -c "from backend.database import engine; from backend.models import Base; Base.metadata.create_all(bind=engine)"
 
 echo "Starting Rust Gateway on port 7860..."
-exec ./rust_gateway/target/release/rust_gateway
+cd rust_gateway
+exec ./target/release/rust_gateway
