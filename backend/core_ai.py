@@ -51,7 +51,7 @@ OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
 OLLAMA_TIMEOUT = int(os.getenv("OLLAMA_TIMEOUT", "120"))
 
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY", "")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-pro")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
 GEMINI_EMBEDDING_MODEL = os.getenv("GEMINI_EMBEDDING_MODEL", "models/gemini-embedding-2")
 GEMINI_VISION_MODEL = os.getenv("GEMINI_VISION_MODEL", GEMINI_MODEL)
 
@@ -856,28 +856,38 @@ async def generate(
     logger.info("CORE_AI GENERATE: resolved_provider=%s, resolved_key_configured=%s", resolved_provider, bool(resolved_key))
 
     result = None
-    if resolved_provider and resolved_key and resolved_provider.lower() not in ("ollama", "gemini"):
-        logger.info("CORE_AI GENERATE: Calling _generate_cloud with %s", resolved_provider)
-        result = await _generate_cloud(prompt, system, model, resolved_provider, resolved_key)
-        logger.info("CORE_AI GENERATE: _generate_cloud returned length=%d", len(result) if result else 0)
+    
+    # 1. Try explicit provider (if requested via UI)
+    if api_provider:
+        if api_provider.lower() == "gemini" and has_gemini_api_key():
+            logger.info("CORE_AI GENERATE: Executing explicit provider Gemini...")
+            result = await _generate_gemini(prompt, system)
+        elif api_provider.lower() == "ollama":
+            ollama_models = await get_ollama_models()
+            if ollama_models:
+                logger.info("CORE_AI GENERATE: Executing explicit provider Ollama...")
+                result = await _generate_ollama(prompt, system, model)
+        else:
+            logger.info("CORE_AI GENERATE: Executing explicit provider %s...", api_provider)
+            result = await _generate_cloud(prompt, system, model, api_provider, api_key)
 
-    # Tier A: Ollama
-    if not result:
-        ollama_models = await get_ollama_models()
-        if ollama_models:
-            logger.info("CORE_AI GENERATE: Trying Ollama fallback...")
-            result = await _generate_ollama(prompt, system, model)
+    # 2. Default Primary: Cloudflare (if not already tried)
+    if not result and (not api_provider or api_provider.lower() != "custom"):
+        logger.info("CORE_AI GENERATE: Executing Default Primary (Cloudflare)...")
+        result = await _generate_cloud(prompt, system, model, "custom", "cloudflare")
 
-    # Tier B: Gemini
-    if not result:
+    # 3. Tier A Fallback: Gemini (if not already tried)
+    if not result and (not api_provider or api_provider.lower() != "gemini"):
         if has_gemini_api_key():
-            logger.info("CORE_AI GENERATE: Trying Gemini fallback...")
+            logger.info("CORE_AI GENERATE: Trying Tier A fallback (Gemini)...")
             result = await _generate_gemini(prompt, system)
 
-    # Final safety net: fallback to custom Cloudflare worker if configured provider failed
-    if not result and resolved_provider.lower() in ("ollama", "gemini"):
-        logger.info("Configured provider %s failed to generate, routing to custom Cloudflare fallback...", resolved_provider)
-        result = await _generate_cloud(prompt, system, model, "custom", "cloudflare")
+    # 4. Tier B Fallback: Ollama (if not already tried)
+    if not result and (not api_provider or api_provider.lower() != "ollama"):
+        ollama_models = await get_ollama_models()
+        if ollama_models:
+            logger.info("CORE_AI GENERATE: Trying Tier B fallback (Ollama)...")
+            result = await _generate_ollama(prompt, system, model)
 
     if result:
         # Redact PII from the output
@@ -961,27 +971,41 @@ async def chat(
     resolved_provider, resolved_key = await _resolve_provider_and_key(api_provider, api_key)
 
     result = None
-    if resolved_provider and resolved_key and resolved_provider.lower() not in ("ollama", "gemini"):
-        result = await _chat_cloud(messages, system, model, resolved_provider, resolved_key)
+    
+    # 1. Try explicit provider (if requested via UI)
+    if api_provider:
+        if api_provider.lower() == "gemini" and has_gemini_api_key():
+            result = await _chat_gemini(messages, system)
+        elif api_provider.lower() == "ollama":
+            ollama_models = await get_ollama_models()
+            if ollama_models:
+                try:
+                    result = await _chat_ollama(messages, system, model)
+                except Exception:
+                    logger.warning("Ollama explicit chat failed")
+        else:
+            result = await _chat_cloud(messages, system, model, api_provider, api_key)
 
-    # Tier A: Ollama
-    if not result:
+    # 2. Default Primary: Cloudflare (if not already tried)
+    if not result and (not api_provider or api_provider.lower() != "custom"):
+        logger.info("CORE_AI CHAT: Executing Default Primary (Cloudflare)...")
+        result = await _chat_cloud(messages, system, model, "custom", "cloudflare")
+
+    # 3. Tier A Fallback: Gemini (if not already tried)
+    if not result and (not api_provider or api_provider.lower() != "gemini"):
+        if has_gemini_api_key():
+            logger.info("CORE_AI CHAT: Trying Tier A fallback (Gemini)...")
+            result = await _chat_gemini(messages, system)
+
+    # 4. Tier B Fallback: Ollama (if not already tried)
+    if not result and (not api_provider or api_provider.lower() != "ollama"):
         ollama_models = await get_ollama_models()
         if ollama_models:
             try:
+                logger.info("CORE_AI CHAT: Trying Tier B fallback (Ollama)...")
                 result = await _chat_ollama(messages, system, model)
             except Exception:
-                logger.warning("Ollama chat failed, trying Gemini")
-
-    # Tier B: Gemini
-    if not result:
-        if has_gemini_api_key():
-            result = await _chat_gemini(messages, system)
-
-    # Final safety net: fallback to custom Cloudflare worker if configured provider failed
-    if not result and resolved_provider.lower() in ("ollama", "gemini"):
-        logger.info("Configured provider %s failed to chat, routing to custom Cloudflare fallback...", resolved_provider)
-        result = await _chat_cloud(messages, system, model, "custom", "cloudflare")
+                logger.warning("Ollama fallback chat failed")
 
     if result:
         # Redact PII from the output
@@ -1052,56 +1076,79 @@ async def chat_stream(
         resolved_provider, resolved_key = await _resolve_provider_and_key(api_provider, api_key)
         has_yielded = False
 
-        if resolved_provider and resolved_key and resolved_provider.lower() not in ("ollama", "gemini"):
-            try:
-                async for chunk in _stream_cloud(messages, system, model, resolved_provider, resolved_key):
-                    if chunk:
-                        has_yielded = True
-                        yield chunk
-            except Exception as e:
-                logger.warning("Cloud stream failed: %s", e)
-            if has_yielded:
-                return
-
-        # Tier A: Ollama
-        if not has_yielded:
-            ollama_models = await get_ollama_models()
-            if ollama_models:
-                try:
-                    async for chunk in _stream_ollama(messages, system, model):
-                        if chunk:
-                            has_yielded = True
-                            yield chunk
-                except Exception as e:
-                    logger.warning("Ollama stream failed: %s", e)
-                if has_yielded:
-                    return
-
-        # Tier B: Gemini (pseudo-stream)
-        if not has_yielded:
-            if has_gemini_api_key():
+        # 1. Try explicit provider (if requested via UI)
+        if api_provider:
+            if api_provider.lower() == "gemini" and has_gemini_api_key():
                 try:
                     async for chunk in _stream_gemini(messages, system):
                         if chunk:
                             has_yielded = True
                             yield chunk
                 except Exception as e:
-                    logger.warning(f"Gemini stream error: {e}")
-                if has_yielded:
-                    return
+                    logger.warning(f"Explicit Gemini stream error: {e}")
+            elif api_provider.lower() == "ollama":
+                ollama_models = await get_ollama_models()
+                if ollama_models:
+                    try:
+                        async for chunk in _stream_ollama(messages, system, model):
+                            if chunk:
+                                has_yielded = True
+                                yield chunk
+                    except Exception as e:
+                        logger.warning("Explicit Ollama stream failed: %s", e)
+            else:
+                try:
+                    async for chunk in _stream_cloud(messages, system, model, api_provider, api_key):
+                        if chunk:
+                            has_yielded = True
+                            yield chunk
+                except Exception as e:
+                    logger.warning("Explicit Cloud stream failed: %s", e)
 
-        # Final safety net: fallback to custom Cloudflare worker if configured provider failed
-        if not has_yielded and resolved_provider.lower() in ("ollama", "gemini"):
-            logger.info("Configured stream provider %s failed, routing to custom Cloudflare fallback...", resolved_provider)
+        if has_yielded:
+            return
+
+        # 2. Default Primary: Cloudflare (if not already tried)
+        if not has_yielded and (not api_provider or api_provider.lower() != "custom"):
+            logger.info("CORE_AI STREAM: Executing Default Primary (Cloudflare)...")
             try:
                 async for chunk in _stream_cloud(messages, system, model, "custom", "cloudflare"):
                     if chunk:
                         has_yielded = True
                         yield chunk
-            except Exception as stream_err:
-                logger.warning("Fallback custom Cloudflare worker stream failed: %s", stream_err)
+            except Exception as e:
+                logger.warning("Cloudflare primary stream failed: %s", e)
             if has_yielded:
                 return
+
+        # 3. Tier A Fallback: Gemini (if not already tried)
+        if not has_yielded and (not api_provider or api_provider.lower() != "gemini"):
+            if has_gemini_api_key():
+                logger.info("CORE_AI STREAM: Trying Tier A fallback (Gemini)...")
+                try:
+                    async for chunk in _stream_gemini(messages, system):
+                        if chunk:
+                            has_yielded = True
+                            yield chunk
+                except Exception as e:
+                    logger.warning(f"Gemini fallback stream error: {e}")
+                if has_yielded:
+                    return
+
+        # 4. Tier B Fallback: Ollama (if not already tried)
+        if not has_yielded and (not api_provider or api_provider.lower() != "ollama"):
+            ollama_models = await get_ollama_models()
+            if ollama_models:
+                logger.info("CORE_AI STREAM: Trying Tier B fallback (Ollama)...")
+                try:
+                    async for chunk in _stream_ollama(messages, system, model):
+                        if chunk:
+                            has_yielded = True
+                            yield chunk
+                except Exception as e:
+                    logger.warning("Ollama fallback stream failed: %s", e)
+                if has_yielded:
+                    return
 
         if not has_yielded:
             # Fallback to mock response to prevent the UI from hanging

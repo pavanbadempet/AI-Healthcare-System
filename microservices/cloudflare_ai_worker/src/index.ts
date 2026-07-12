@@ -22,8 +22,8 @@ export default {
       });
     }
 
-    // Only allow POST to /v1/chat/completions
-    if (request.method !== "POST" || url.pathname !== "/v1/chat/completions") {
+    // Only allow POST to /chat/completions or /v1/chat/completions
+    if (request.method !== "POST" || (url.pathname !== "/v1/chat/completions" && url.pathname !== "/chat/completions")) {
       return new Response("Not Found", { status: 404 });
     }
 
@@ -33,7 +33,7 @@ export default {
       const requestedModel = body.model || '';
       // Cloudflare Workers AI natively supports Llama 3.1 8B. We force this model
       // so that it runs the most powerful edge model regardless of what the backend sends.
-      const model = '@cf/meta/llama-3.1-8b-instruct';
+      const model = '@cf/meta/llama-4-scout-17b-16e-instruct';
       const messages = body.messages || [];
       
       // We stream if requested, but for now we'll just return the full response 

@@ -116,8 +116,7 @@ class ClinicalAuditAgent(BaseAgent):
             # Construct system prompt and user query
             system_prompt = (
                 "You are an AI Clinical Audit Agent. Your job is to analyze real-time patient vitals, "
-                "evaluate deterioration risk, and suggest immediate clinical actions. "
-                "Keep your assessment structured, objective, and highly actionable. Include a medical disclaimer."
+                "Keep your assessment structured, objective, and highly actionable."
             )
 
             user_prompt = (
@@ -218,9 +217,6 @@ class ClinicalAuditAgent(BaseAgent):
             report_md.append(audit["assessment"])
             report_md.append("")
             report_md.append("---")
-
-        report_md.append("\n*Disclaimer: AI-generated health suggestions are for auditing support only. Always consult a qualified clinician for patient care.*")
-
         self.finish("completed")
         report_json = {
             "name": self.name,
