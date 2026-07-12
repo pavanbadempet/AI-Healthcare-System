@@ -55,8 +55,6 @@ async fn main() {
 
     let app = Router::new()
         .route("/healthz_rust", get(health_check))
-        .route("/v1/token", post(auth::login_handler))
-        .route("/v1/profile", get(auth::profile_handler))
         .nest("/v1/appointments", appointments::router())
         // Fallback proxy to Python backend
         .fallback(proxy_handler_fallback)
