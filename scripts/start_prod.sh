@@ -46,4 +46,4 @@ python -c "from backend.database import engine; from backend.models import Base;
 echo "Starting Rust Gateway on port 7860..."
 export DATABASE_URL=$SQLX_URL
 cd rust_gateway
-exec ./target/release/rust_gateway
+if [ -n "$DOPPLER_TOKEN" ]; then doppler run -- ./target/release/rust_gateway; else ./target/release/rust_gateway; fi
