@@ -98,23 +98,30 @@ def create_appointment(
     dt_str = f"{appt.date} {appt.time}"
     appointment_dt = _parse_appointment_datetime(appt.date, appt.time)
 
-    doctor = db.query(models.User).filter(
-        models.User.id == appt.doctor_id,
-        models.User.role == "doctor"
-    ).first()
-    if not doctor:
-        raise HTTPException(status_code=400, detail="Selected doctor not found")
-    if not users_share_facility_context(db, current_user.id, doctor.id):
-        raise HTTPException(status_code=400, detail=APPOINTMENT_FACILITY_MISMATCH_DETAIL)
-    specialization = _doctor_specialization(doctor)
-    facility_id = _resolve_appointment_facility_id(current_user, doctor)
+    doctor_name_display = appt.specialist
+    facility_id = current_user.facility_id
+    specialization = appt.specialist
+
+    if appt.doctor_id:
+        doctor = db.query(models.User).filter(
+            models.User.id == appt.doctor_id,
+            models.User.role == "doctor"
+        ).first()
+        if not doctor:
+            raise HTTPException(status_code=400, detail="Selected doctor not found")
+        if not users_share_facility_context(db, current_user.id, doctor.id):
+            raise HTTPException(status_code=400, detail=APPOINTMENT_FACILITY_MISMATCH_DETAIL)
+        specialization = _doctor_specialization(doctor)
+        facility_id = _resolve_appointment_facility_id(current_user, doctor)
+        _ensure_doctor_slot_available(db, doctor.id, appointment_dt)
+        doctor_name_display = _doctor_display_name(doctor)
+
     _ensure_future_slot(appointment_dt)
-    _ensure_doctor_slot_available(db, doctor.id, appointment_dt)
 
     new_appt = models.Appointment(
         facility_id=facility_id,
         user_id=current_user.id,
-        doctor_id=doctor.id,
+        doctor_id=appt.doctor_id,
         specialist=specialization,
         date_time=appointment_dt,
         reason=appt.reason,
@@ -132,7 +139,7 @@ def create_appointment(
     email_service.send_booking_confirmation(
         to_email=current_user.email or "patient@example.com",
         patient_name=current_user.full_name or current_user.username,
-        doctor_name=_doctor_display_name(doctor),
+        doctor_name=doctor_name_display,
         date_time=dt_str,
         link=video_link
     )
