@@ -87,10 +87,11 @@ async def stream_chat(
         # Since patient cannot override, AI availability depends strictly on core_ai.is_available()
         ai_available = await core_ai.is_available()
     else:
-        provider_override = x_ai_provider or "custom"
-        api_key_override = x_ai_api_key or "cloudflare"
+        provider_override = x_ai_provider
+        api_key_override = x_ai_api_key
         # If headers are provided by non-patient, we use them; otherwise check if system AI is available
         ai_available = (provider_override and api_key_override) or await core_ai.is_available()
+
 
     if ai_available:
         # Build RAG context with Governance Scope
