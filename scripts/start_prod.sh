@@ -21,5 +21,8 @@ else
     uvicorn backend.main:app --host 0.0.0.0 --port 8001 --workers 4 &
 fi
 
+echo "Initializing database to ensure Rust gateway can connect..."
+python -c "from backend.database import engine; from backend.models import Base; Base.metadata.create_all(bind=engine)"
+
 echo "Starting Rust Gateway on port 7860..."
 exec ./rust_gateway/target/release/rust_gateway

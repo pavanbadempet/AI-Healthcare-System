@@ -22,19 +22,19 @@ python-jose[cryptography]>=3.5.0
 sqlalchemy
 psycopg2-binary
 python-dotenv
-sqlalchemy-libsql
-libsql-client
+# sqlalchemy-libsql
+# libsql-client
 
 # --- Data Science (Lite) ---
 pandas>=3.0.3
 numpy>=2.4.6
-scikit-learn==1.6.1
-xgboost>=3.2.0
-lightgbm>=4.0.0
-catboost
-torch
-shap>=0.51.0
-joblib>=1.5.3
+# scikit-learn
+# xgboost
+# lightgbm
+# catboost
+# torch
+# shap
+# joblib
 
 # --- AI & LLM ---
 google-generativeai>=0.5.2
@@ -61,9 +61,9 @@ prometheus_client
 ruff
 
 # --- High-Performance System Optimization Extensions ---
-onnxruntime>=1.16.0
-skl2onnx>=1.15.0
-onnxmltools>=1.11.0
+# onnxruntime
+# skl2onnx
+# onnxmltools
 polars>=0.19.0
 deltalake>=0.15.0
 duckdb>=0.9.0

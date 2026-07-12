@@ -9,6 +9,7 @@ use bcrypt::verify;
 use jsonwebtoken::{encode, EncodingKey, Header};
 use serde::{Deserialize, Serialize};
 use std::time::{SystemTime, UNIX_EPOCH};
+use sqlx::FromRow;
 
 use crate::{execute_proxy, AppState};
 
@@ -68,15 +69,21 @@ async fn try_native_login(
     // Parse form data
     let form: LoginForm = serde_urlencoded::from_bytes(body_bytes)?;
 
-    // Query user
-    let user_row = sqlx::query!(
+#[derive(FromRow)]
+struct UserRow {
+    id: i64,
+    username: String,
+    hashed_password: String,
+}
+
+    let user_row = sqlx::query_as::<_, UserRow>(
         r#"
         SELECT id, username, hashed_password 
         FROM users 
         WHERE username = ? AND is_deleted = 0
-        "#,
-        form.username
+        "#
     )
+    .bind(&form.username)
     .fetch_optional(&state.db_pool)
     .await?;
 
@@ -132,16 +139,16 @@ async fn try_native_login(
         "occurred_at": now
     }).to_string();
 
-    sqlx::query!(
+    sqlx::query(
         r#"
         INSERT INTO audit_logs (admin_id, target_user_id, action, details)
         VALUES (?, ?, ?, ?)
-        "#,
-        user_row.id,
-        user_row.id,
-        "LOGIN_SUCCESS",
-        details
+        "#
     )
+    .bind(user_row.id)
+    .bind(user_row.id)
+    .bind("LOGIN_SUCCESS")
+    .bind(details)
     .execute(&state.db_pool)
     .await?;
 
@@ -225,8 +232,29 @@ async fn try_native_profile(
         &jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::HS256),
     )?;
 
-    // 3. Query DB
-    let user_row = sqlx::query!(
+#[derive(FromRow)]
+struct UserProfileRow {
+    username: String,
+    email: Option<String>,
+    full_name: Option<String>,
+    gender: Option<String>,
+    dob: Option<String>,
+    height: Option<f64>,
+    weight: Option<f64>,
+    blood_type: Option<String>,
+    existing_ailments: Option<String>,
+    profile_picture: Option<String>,
+    about_me: Option<String>,
+    diet: Option<String>,
+    activity_level: Option<String>,
+    sleep_hours: Option<f64>,
+    stress_level: Option<String>,
+    specialization: Option<String>,
+    allow_data_collection: i64,
+    role: String,
+}
+
+    let user_row = sqlx::query_as::<_, UserProfileRow>(
         r#"
         SELECT 
             username, email, full_name, gender, dob, height, weight, 
@@ -235,9 +263,9 @@ async fn try_native_profile(
             allow_data_collection, role
         FROM users 
         WHERE username = ? AND is_deleted = 0
-        "#,
-        token_data.claims.sub
+        "#
     )
+    .bind(&token_data.claims.sub)
     .fetch_optional(&state.db_pool)
     .await?;
 
@@ -265,4 +293,76 @@ async fn try_native_profile(
     };
 
     Ok(Json(profile).into_response())
+}
+
+#[derive(Clone, Serialize, Deserialize)]
+pub struct AuthenticatedUser {
+    pub id: i64,
+    pub username: String,
+    pub role: String,
+    pub facility_id: Option<i64>,
+}
+
+impl axum::extract::FromRequestParts<AppState> for AuthenticatedUser
+{
+    type Rejection = (StatusCode, Json<serde_json::Value>);
+
+    async fn from_request_parts(
+        parts: &mut axum::http::request::Parts,
+        state: &AppState,
+    ) -> Result<Self, Self::Rejection> {
+        match extract_user(state, &parts.headers).await {
+            Ok(user) => Ok(user),
+            Err(_e) => {
+                Err((
+                    StatusCode::UNAUTHORIZED,
+                    Json(serde_json::json!({"detail": "Not authenticated"})),
+                ))
+            }
+        }
+    }
+}
+
+pub async fn extract_user(
+    state: &AppState,
+    headers: &axum::http::HeaderMap,
+) -> Result<AuthenticatedUser, Box<dyn std::error::Error>> {
+    let auth_header = headers
+        .get("Authorization")
+        .ok_or("Missing Authorization header")?
+        .to_str()?;
+
+    if !auth_header.starts_with("Bearer ") {
+        return Err("Invalid Authorization header format".into());
+    }
+    let token = &auth_header[7..];
+
+    let token_data = jsonwebtoken::decode::<Claims>(
+        token,
+        &jsonwebtoken::DecodingKey::from_secret(state.secret_key.as_bytes()),
+        &jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::HS256),
+    )?;
+
+#[derive(FromRow)]
+struct AuthUserRow {
+    id: i64,
+    username: String,
+    role: String,
+    facility_id: Option<i64>,
+}
+
+    let user_row = sqlx::query_as::<_, AuthUserRow>(
+        r#"SELECT id, username, role, facility_id FROM users WHERE username = ? AND is_deleted = 0"#
+    )
+    .bind(&token_data.claims.sub)
+    .fetch_optional(&state.db_pool)
+    .await?;
+
+    let u = user_row.ok_or("User not found")?;
+    Ok(AuthenticatedUser {
+        id: u.id,
+        username: u.username.clone(),
+        role: u.role.clone(),
+        facility_id: u.facility_id,
+    })
 }

@@ -1,10 +1,10 @@
 use axum::{
     body::{Body, Bytes},
     extract::{Request, State},
-    http::{uri::Uri, StatusCode, Method, HeaderMap},
-    response::{IntoResponse, Response},
-    routing::{any, post, get},
-    Json, Router,
+    http::{uri::Uri, HeaderMap, Method, StatusCode},
+    response::Response,
+    routing::{any, get, post},
+    Router,
 };
 use http_body_util::BodyExt;
 use reqwest::Client;
@@ -15,6 +15,7 @@ use dotenvy::dotenv;
 use std::env;
 
 mod auth;
+mod appointments;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -50,10 +51,11 @@ async fn main() {
 
     let app = Router::new()
         .route("/healthz_rust", get(health_check))
-        .route("/v1/auth/token", post(auth::login_handler))
-        .route("/v1/auth/profile", get(auth::profile_handler))
+        .route("/v1/token", post(auth::login_handler))
+        .route("/v1/profile", get(auth::profile_handler))
+        .nest("/v1/appointments", appointments::router())
         // Fallback proxy to Python backend
-        .fallback(any(proxy_handler_fallback))
+        .fallback(proxy_handler_fallback)
         .layer(CorsLayer::permissive())
         .with_state(state);
 

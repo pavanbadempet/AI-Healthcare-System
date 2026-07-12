@@ -233,7 +233,7 @@ async def lifespan(app: FastAPI):
         startup_diagnostics["fallback_engine"] = str(database.engine)
 
     try:
-        run_migrations()
+        # run_migrations()
         models.Base.metadata.create_all(bind=database.engine)
         startup_diagnostics["schema_creation"] = "success"
     except Exception as err:
@@ -242,7 +242,7 @@ async def lifespan(app: FastAPI):
         database.fallback_to_memory()
         startup_diagnostics["fallback_memory_engine"] = str(database.engine)
         try:
-            run_migrations()
+            # run_migrations()
             models.Base.metadata.create_all(bind=database.engine)
             startup_diagnostics["schema_creation_fallback"] = "success"
         except Exception as err2:
