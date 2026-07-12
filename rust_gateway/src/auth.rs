@@ -80,7 +80,7 @@ struct UserRow {
         r#"
         SELECT id, username, hashed_password 
         FROM users 
-        WHERE username = ? AND is_deleted = 0
+        WHERE username = $1 AND is_deleted = 0
         "#
     )
     .bind(&form.username)
@@ -142,7 +142,7 @@ struct UserRow {
     sqlx::query(
         r#"
         INSERT INTO audit_logs (admin_id, target_user_id, action, details)
-        VALUES (?, ?, ?, ?)
+        VALUES ($1, $2, $3, $4)
         "#
     )
     .bind(user_row.id)
@@ -262,7 +262,7 @@ struct UserProfileRow {
             diet, activity_level, sleep_hours, stress_level, specialization, 
             allow_data_collection, role
         FROM users 
-        WHERE username = ? AND is_deleted = 0
+        WHERE username = $1 AND is_deleted = 0
         "#
     )
     .bind(&token_data.claims.sub)
@@ -352,7 +352,7 @@ struct AuthUserRow {
 }
 
     let user_row = sqlx::query_as::<_, AuthUserRow>(
-        r#"SELECT id, username, role, facility_id FROM users WHERE username = ? AND is_deleted = 0"#
+        r#"SELECT id, username, role, facility_id FROM users WHERE username = $1 AND is_deleted = 0"#
     )
     .bind(&token_data.claims.sub)
     .fetch_optional(&state.db_pool)

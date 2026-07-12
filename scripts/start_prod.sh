@@ -10,15 +10,20 @@
 # Hugging Face Spaces automatically injects a Postgres DATABASE_URL if the add-on is enabled.
 # Since the Rust gateway is compiled specifically for SQLite, we must override it here.
 # NOTE: SQLAlchemy and SQLx have different URI formats for SQLite!
-if [ -d "/data" ]; then
-    export SQLALCHEMY_URL="sqlite:////data/healthcare.db"
-    export SQLX_URL="sqlite:///data/healthcare.db"
+if [ -z "$DATABASE_URL" ]; then
+    if [ -d "/data" ]; then
+        export SQLALCHEMY_URL="sqlite:////data/healthcare.db"
+        export SQLX_URL="sqlite:///data/healthcare.db"
+    else
+        export SQLALCHEMY_URL="sqlite:///healthcare.db"
+        export SQLX_URL="sqlite://../healthcare.db"
+    fi
+    export DATABASE_URL=$SQLALCHEMY_URL
 else
-    export SQLALCHEMY_URL="sqlite:///healthcare.db"
-    export SQLX_URL="sqlite://../healthcare.db"
+    # Normalize DATABASE_URL for Postgres/SQLAlchemy
+    export SQLALCHEMY_URL=$DATABASE_URL
+    export SQLX_URL=$DATABASE_URL
 fi
-
-export DATABASE_URL=$SQLALCHEMY_URL
 
 # Download models on-demand before starting the server
 echo "Checking model weights..."

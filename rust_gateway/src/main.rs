@@ -8,7 +8,7 @@ use axum::{
 };
 use http_body_util::BodyExt;
 use reqwest::Client;
-use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
+use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::net::SocketAddr;
 use tower_http::cors::CorsLayer;
 use dotenvy::dotenv;
@@ -21,7 +21,7 @@ mod appointments;
 pub struct AppState {
     pub http_client: Client,
     pub python_backend_url: String,
-    pub db_pool: SqlitePool,
+    pub db_pool: PgPool,
     pub secret_key: String,
 }
 
@@ -32,19 +32,15 @@ async fn main() {
     
     println!("Starting Rust API Gateway...");
 
-    let mut db_url = env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite://../healthcare.db".to_string());
-    if !db_url.starts_with("sqlite:") {
-        println!("Ignoring non-SQLite DATABASE_URL from environment. Forcing SQLite.");
-        db_url = "sqlite://../healthcare.db".to_string();
-    }
+    let mut db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
     let secret_key = env::var("SECRET_KEY").unwrap_or_else(|_| "test_secret_key_for_local_tests_only".to_string());
 
-    // Connect to SQLite with WAL mode enabled to support concurrent readers/writers
-    let pool = SqlitePoolOptions::new()
+    // Connect to PostgreSQL
+    let pool = PgPoolOptions::new()
         .max_connections(5)
         .connect(&db_url)
         .await
-        .expect("Failed to create SQLite connection pool");
+        .expect("Failed to create Postgres connection pool");
 
     let state = AppState {
         http_client: Client::new(),

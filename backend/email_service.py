@@ -50,7 +50,7 @@ def send_booking_confirmation(to_email: str, patient_name: str, doctor_name: str
             msg['Subject'] = subject
             msg.attach(MIMEText(body, 'plain'))
 
-            server = smtplib.SMTP(smtp_server, smtp_port)
+            server = smtplib.SMTP(smtp_server, smtp_port, timeout=5)
             server.starttls()
             server.login(smtp_user, smtp_password)
             text = msg.as_string()
@@ -105,7 +105,7 @@ def send_password_reset(to_email: str, username: str, reset_link: str) -> bool:
             msg['Subject'] = subject
             msg.attach(MIMEText(body, 'plain'))
 
-            server = smtplib.SMTP(smtp_server, smtp_port)
+            server = smtplib.SMTP(smtp_server, smtp_port, timeout=5)
             server.starttls()
             server.login(smtp_user, smtp_password)
             text = msg.as_string()

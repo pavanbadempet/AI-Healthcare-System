@@ -72,16 +72,16 @@ async fn get_appointments(
 
     let query = if user.role == "admin" {
         if let Some(fid) = user.facility_id {
-            sqlx::query_as::<_, Appointment>("SELECT * FROM appointments WHERE facility_id = ? AND is_deleted = 0 ORDER BY date_time ASC")
+            sqlx::query_as::<_, Appointment>("SELECT * FROM appointments WHERE facility_id = $1 AND is_deleted = 0 ORDER BY date_time ASC")
                 .bind(fid)
         } else {
             sqlx::query_as::<_, Appointment>("SELECT * FROM appointments WHERE is_deleted = 0 ORDER BY date_time ASC")
         }
     } else if user.role == "doctor" {
-        sqlx::query_as::<_, Appointment>("SELECT * FROM appointments WHERE doctor_id = ? AND is_deleted = 0 ORDER BY date_time ASC")
+        sqlx::query_as::<_, Appointment>("SELECT * FROM appointments WHERE doctor_id = $1 AND is_deleted = 0 ORDER BY date_time ASC")
             .bind(user.id)
     } else {
-        sqlx::query_as::<_, Appointment>("SELECT * FROM appointments WHERE user_id = ? AND is_deleted = 0 ORDER BY date_time ASC")
+        sqlx::query_as::<_, Appointment>("SELECT * FROM appointments WHERE user_id = $1 AND is_deleted = 0 ORDER BY date_time ASC")
             .bind(user.id)
     };
 
@@ -123,7 +123,7 @@ async fn create_appointment(
 
     let doctor_id = payload.doctor_id;
     let doctor: Option<DoctorInfo> = sqlx::query_as(
-        "SELECT id, role, facility_id, specialization FROM users WHERE id = ? AND role = 'doctor'"
+        "SELECT id, role, facility_id, specialization FROM users WHERE id = $1 AND role = 'doctor'"
     )
     .bind(doctor_id)
     .fetch_optional(pool)
@@ -142,7 +142,7 @@ async fn create_appointment(
     }
 
     let existing: Option<(i64,)> = sqlx::query_as(
-        "SELECT id FROM appointments WHERE doctor_id = ? AND date_time = ? AND status IN (?, ?)"
+        "SELECT id FROM appointments WHERE doctor_id = $1 AND date_time = $2 AND status IN ($3, $4)"
     )
     .bind(doctor_id)
     .bind(appointment_dt)
@@ -163,7 +163,7 @@ async fn create_appointment(
     let result = sqlx::query_as::<_, Appointment>(
         r#"
         INSERT INTO appointments (facility_id, user_id, doctor_id, specialist, date_time, reason, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING id, facility_id, user_id, doctor_id, specialist, date_time, reason, status, created_at
         "#
     )
@@ -195,12 +195,12 @@ async fn get_doctors(
     let query = if user.role == "admin" && user.facility_id.is_some() {
         sqlx::query_as::<_, DoctorResponse>(
             r#"SELECT id, full_name, specialization, consultation_fee, profile_picture 
-               FROM users WHERE role = 'doctor' AND facility_id = ?"#
+               FROM users WHERE role = 'doctor' AND facility_id = $1"#
         ).bind(user.facility_id)
     } else if user.facility_id.is_some() {
         sqlx::query_as::<_, DoctorResponse>(
             r#"SELECT id, full_name, specialization, consultation_fee, profile_picture 
-               FROM users WHERE role = 'doctor' AND (facility_id = ? OR facility_id IS NULL)"#
+               FROM users WHERE role = 'doctor' AND (facility_id = $1 OR facility_id IS NULL)"#
         ).bind(user.facility_id)
     } else {
         sqlx::query_as::<_, DoctorResponse>(
@@ -235,7 +235,7 @@ async fn cancel_appointment(
     let pool = &state.db_pool;
 
     let appt: Option<Appointment> = sqlx::query_as(
-        "SELECT * FROM appointments WHERE id = ?"
+        "SELECT * FROM appointments WHERE id = $1"
     )
     .bind(appointment_id)
     .fetch_optional(pool)
@@ -256,7 +256,7 @@ async fn cancel_appointment(
         }
     }
 
-    sqlx::query("UPDATE appointments SET status = 'Cancelled' WHERE id = ?")
+    sqlx::query("UPDATE appointments SET status = 'Cancelled' WHERE id = $1")
         .bind(appointment_id)
         .execute(pool)
         .await
@@ -276,7 +276,7 @@ async fn reschedule_appointment(
     let pool = &state.db_pool;
 
     let appt: Option<Appointment> = sqlx::query_as(
-        "SELECT * FROM appointments WHERE id = ?"
+        "SELECT * FROM appointments WHERE id = $1"
     )
     .bind(appointment_id)
     .fetch_optional(pool)
@@ -312,7 +312,7 @@ async fn reschedule_appointment(
 
     if let Some(doc_id) = appt.doctor_id {
         let existing: Option<(i64,)> = sqlx::query_as(
-            "SELECT id FROM appointments WHERE doctor_id = ? AND date_time = ? AND status IN (?, ?) AND id != ?"
+            "SELECT id FROM appointments WHERE doctor_id = $1 AND date_time = $2 AND status IN ($3, $4) AND id != $5"
         )
         .bind(doc_id)
         .bind(new_dt)
@@ -329,7 +329,7 @@ async fn reschedule_appointment(
         }
     }
 
-    sqlx::query("UPDATE appointments SET date_time = ?, status = 'Rescheduled' WHERE id = ?")
+    sqlx::query("UPDATE appointments SET date_time = $1, status = 'Rescheduled' WHERE id = $2")
         .bind(new_dt)
         .bind(appointment_id)
         .execute(pool)
@@ -349,7 +349,7 @@ async fn delete_appointment(
     let pool = &state.db_pool;
 
     let appt: Option<Appointment> = sqlx::query_as(
-        "SELECT * FROM appointments WHERE id = ?"
+        "SELECT * FROM appointments WHERE id = $1"
     )
     .bind(appointment_id)
     .fetch_optional(pool)
@@ -370,7 +370,7 @@ async fn delete_appointment(
         }
     }
 
-    sqlx::query("DELETE FROM appointments WHERE id = ?")
+    sqlx::query("DELETE FROM appointments WHERE id = $1")
         .bind(appointment_id)
         .execute(pool)
         .await
