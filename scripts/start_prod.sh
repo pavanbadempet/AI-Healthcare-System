@@ -10,10 +10,16 @@
 echo "Checking model weights..."
 python backend/download_models.py
 
+echo "Building Rust API Gateway..."
+cd rust_gateway && cargo build --release && cd ..
+
 if [ -n "$DOPPLER_TOKEN" ]; then
-    echo "Starting server with Doppler Secrets Manager..."
-    exec doppler run -- uvicorn backend.main:app --host 0.0.0.0 --port 7860 --workers 4
+    echo "Starting Python server with Doppler Secrets Manager on port 8001..."
+    doppler run -- uvicorn backend.main:app --host 0.0.0.0 --port 8001 --workers 4 &
 else
-    echo "DOPPLER_TOKEN not found. Starting server with standard environment variables..."
-    exec uvicorn backend.main:app --host 0.0.0.0 --port 7860 --workers 4
+    echo "DOPPLER_TOKEN not found. Starting Python server with standard environment variables on port 8001..."
+    uvicorn backend.main:app --host 0.0.0.0 --port 8001 --workers 4 &
 fi
+
+echo "Starting Rust Gateway on port 7860..."
+exec ./rust_gateway/target/release/rust_gateway
