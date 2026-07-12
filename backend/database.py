@@ -25,9 +25,7 @@ def _get_sqlite_db_path() -> str:
 
 
 def _load_database_url() -> str:
-    # 0. Enforce SQLite on Hugging Face Spaces because the Rust Gateway only supports SQLite
-    if os.getenv("SPACE_ID") or os.getenv("SPACES_ID"):
-        return f"sqlite:///{_get_sqlite_db_path()}"
+    # (Removed hardcoded SQLite override for HF Spaces)
 
     # 1. TESTING environment variable takes priority, but respect DATABASE_URL override if not running pytest
     if os.getenv("TESTING", "").strip().lower() in {"1", "true", "yes", "on"}:
