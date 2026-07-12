@@ -73,3 +73,4 @@ msgpack>=1.0.5
 great-expectations>=0.18.0
 faker>=24.0.0
 scipy>=1.11.0
+scikit-learn

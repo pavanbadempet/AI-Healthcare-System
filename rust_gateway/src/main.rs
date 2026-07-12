@@ -32,7 +32,11 @@ async fn main() {
     
     println!("Starting Rust API Gateway...");
 
-    let db_url = env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite://../healthcare.db".to_string());
+    let mut db_url = env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite://../healthcare.db".to_string());
+    if !db_url.starts_with("sqlite:") {
+        println!("Ignoring non-SQLite DATABASE_URL from environment. Forcing SQLite.");
+        db_url = "sqlite://../healthcare.db".to_string();
+    }
     let secret_key = env::var("SECRET_KEY").unwrap_or_else(|_| "test_secret_key_for_local_tests_only".to_string());
 
     // Connect to SQLite with WAL mode enabled to support concurrent readers/writers
