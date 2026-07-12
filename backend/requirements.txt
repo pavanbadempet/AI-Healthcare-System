@@ -28,7 +28,7 @@ python-dotenv
 # --- Data Science (Lite) ---
 pandas>=3.0.3
 numpy>=2.4.6
-scikit-learn
+scikit-learn==1.6.1
 xgboost
 lightgbm
 catboost
