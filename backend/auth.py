@@ -204,7 +204,7 @@ def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(), db:
             details={
                 "resource_type": "auth_session",
                 "outcome": "success",
-                "occurred_at": datetime.now(timezone.utc),
+                "occurred_at": datetime.now(timezone.utc).isoformat(),
             },
         )
 
@@ -418,7 +418,7 @@ def reset_password(
         details={
             "resource_type": "user_auth",
             "outcome": "success",
-            "occurred_at": datetime.now(timezone.utc),
+            "occurred_at": datetime.now(timezone.utc).isoformat(),
         },
     )
 
