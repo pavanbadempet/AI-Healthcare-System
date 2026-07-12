@@ -14,3 +14,6 @@ tokio = { version = "1.52.3", features = ["full"] }
 tower-http = { version = "0.7.0", features = ["cors", "fs", "trace"] }
 chrono = { version = "0.4", features = ["serde"] }
 http-body-util = "0.1.3"
+bcrypt = "0.19.2"
+dotenvy = "0.15.7"
+serde_urlencoded = "0.7.1"
