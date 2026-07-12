@@ -5,6 +5,7 @@
 
 export interface Env {
   AI: any;
+  GROQ_API_KEY?: string;
 }
 
 export default {
@@ -61,49 +62,90 @@ export default {
           }
         });
       }
-      
-      const requestedModel = body.model || '';
-      // Cloudflare Workers AI natively supports Llama 3.1 8B. We force this model
-      // so that it runs the most powerful edge model regardless of what the backend sends.
-      const model = '@cf/meta/llama-4-scout-17b-16e-instruct';
+
+      const isStream = body.stream === true;
       const messages = body.messages || [];
       
-      // We stream if requested, but for now we'll just return the full response 
-      // (The backend pseudo-streams the whole response anyway if cloudflare doesn't SSE)
-      const response = await env.AI.run(model, {
-        messages: messages,
-      });
-      
-      // Format as OpenAI compatible response
-      const openAiResponse = {
-        id: "chatcmpl-" + Math.random().toString(36).substring(2),
-        object: "chat.completion",
-        created: Math.floor(Date.now() / 1000),
-        model: model,
-        choices: [
-          {
-            index: 0,
-            message: {
-              role: "assistant",
-              content: response.response,
-            },
-            finish_reason: "stop",
+      // If Groq API Key is configured in the Cloudflare Worker secrets, use Groq
+      if (env.GROQ_API_KEY) {
+        const groqBody = {
+          model: "llama-3.1-8b-instant",
+          messages: messages,
+          temperature: body.temperature || 0.7,
+          stream: isStream
+        };
+        
+        const groqRequest = new Request("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${env.GROQ_API_KEY}`,
+            "Content-Type": "application/json"
           },
-        ],
-        usage: {
-          prompt_tokens: 0,
-          completion_tokens: 0,
-          total_tokens: 0,
-        },
-      };
+          body: JSON.stringify(groqBody)
+        });
+        
+        const groqResponse = await fetch(groqRequest);
+        
+        // Pass through the response (handles both stream and non-stream seamlessly)
+        const newHeaders = new Headers(groqResponse.headers);
+        newHeaders.set("Access-Control-Allow-Origin", "*");
+        return new Response(groqResponse.body, {
+          status: groqResponse.status,
+          headers: newHeaders
+        });
+      }
       
-      return new Response(JSON.stringify(openAiResponse), {
-        status: 200,
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*"
-        }
-      });
+      // Fallback to Cloudflare AI if Groq is not configured
+      const model = '@cf/meta/llama-4-scout-17b-16e-instruct';
+      
+      if (isStream) {
+        const stream = await env.AI.run(model, {
+          messages: messages,
+          stream: true
+        });
+        
+        return new Response(stream, {
+          headers: {
+            "Content-Type": "text/event-stream",
+            "Access-Control-Allow-Origin": "*"
+          }
+        });
+      } else {
+        const response = await env.AI.run(model, {
+          messages: messages,
+        });
+        
+        // Format as OpenAI compatible response
+        const openAiResponse = {
+          id: "chatcmpl-" + Math.random().toString(36).substring(2),
+          object: "chat.completion",
+          created: Math.floor(Date.now() / 1000),
+          model: model,
+          choices: [
+            {
+              index: 0,
+              message: {
+                role: "assistant",
+                content: response.response,
+              },
+              finish_reason: "stop",
+            },
+          ],
+          usage: {
+            prompt_tokens: 0,
+            completion_tokens: 0,
+            total_tokens: 0,
+          },
+        };
+        
+        return new Response(JSON.stringify(openAiResponse), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*"
+          }
+        });
+      }
     } catch (e: any) {
       return new Response(JSON.stringify({ error: e.message }), { 
         status: 500,

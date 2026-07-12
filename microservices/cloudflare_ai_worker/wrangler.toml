@@ -5,6 +5,9 @@ compatibility_date = "2024-03-20"
 [ai]
 binding = "AI"
 
-# Optional: Add any secrets or env variables
+# Note: To enable Groq inference, add a secret using:
+# wrangler secret put GROQ_API_KEY
+
+# Optional: Add any non-secret env variables
 # [vars]
 # CUSTOM_AUTH_TOKEN = "your-secret-token"
