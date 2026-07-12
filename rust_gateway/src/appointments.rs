@@ -72,16 +72,16 @@ async fn get_appointments(
 
     let query = if user.role == "admin" {
         if let Some(fid) = user.facility_id {
-            sqlx::query_as::<_, Appointment>("SELECT * FROM appointments WHERE facility_id = $1 AND is_deleted = 0 ORDER BY date_time ASC")
+            sqlx::query_as::<_, Appointment>("SELECT id, facility_id, user_id, doctor_id, specialist, date_time, reason, status, created_at FROM appointments WHERE facility_id = $1 AND is_deleted = 0 ORDER BY date_time ASC")
                 .bind(fid)
         } else {
             sqlx::query_as::<_, Appointment>("SELECT * FROM appointments WHERE is_deleted = 0 ORDER BY date_time ASC")
         }
     } else if user.role == "doctor" {
-        sqlx::query_as::<_, Appointment>("SELECT * FROM appointments WHERE doctor_id = $1 AND is_deleted = 0 ORDER BY date_time ASC")
+        sqlx::query_as::<_, Appointment>("SELECT id, facility_id, user_id, doctor_id, specialist, date_time, reason, status, created_at FROM appointments WHERE doctor_id = $1 AND is_deleted = 0 ORDER BY date_time ASC")
             .bind(user.id)
     } else {
-        sqlx::query_as::<_, Appointment>("SELECT * FROM appointments WHERE user_id = $1 AND is_deleted = 0 ORDER BY date_time ASC")
+        sqlx::query_as::<_, Appointment>("SELECT id, facility_id, user_id, doctor_id, specialist, date_time, reason, status, created_at FROM appointments WHERE user_id = $1 AND is_deleted = 0 ORDER BY date_time ASC")
             .bind(user.id)
     };
 
@@ -235,7 +235,7 @@ async fn cancel_appointment(
     let pool = &state.db_pool;
 
     let appt: Option<Appointment> = sqlx::query_as(
-        "SELECT * FROM appointments WHERE id = $1"
+        "SELECT id, facility_id, user_id, doctor_id, specialist, date_time, reason, status, created_at FROM appointments WHERE id = $1"
     )
     .bind(appointment_id)
     .fetch_optional(pool)
@@ -276,7 +276,7 @@ async fn reschedule_appointment(
     let pool = &state.db_pool;
 
     let appt: Option<Appointment> = sqlx::query_as(
-        "SELECT * FROM appointments WHERE id = $1"
+        "SELECT id, facility_id, user_id, doctor_id, specialist, date_time, reason, status, created_at FROM appointments WHERE id = $1"
     )
     .bind(appointment_id)
     .fetch_optional(pool)
@@ -349,7 +349,7 @@ async fn delete_appointment(
     let pool = &state.db_pool;
 
     let appt: Option<Appointment> = sqlx::query_as(
-        "SELECT * FROM appointments WHERE id = $1"
+        "SELECT id, facility_id, user_id, doctor_id, specialist, date_time, reason, status, created_at FROM appointments WHERE id = $1"
     )
     .bind(appointment_id)
     .fetch_optional(pool)
