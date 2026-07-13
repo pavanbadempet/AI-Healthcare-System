@@ -25,6 +25,20 @@ fi
 echo "Checking model weights..."
 python backend/download_models.py
 
+if [ -n "$UPSTASH_KAFKA_SERVERS" ]; then
+    echo "UPSTASH_KAFKA_SERVERS detected. Starting PySpark real-time streaming architecture..."
+    # 1. Start the Kafka Producer (hospital monitors) in the background
+    python scripts/runners/simulate_vitals_stream.py --kafka --kafka-servers "$UPSTASH_KAFKA_SERVERS" &
+    # 2. Start the PySpark Consumer (Data Engineering pipeline) in the background
+    python scripts/runners/run_telemetry_streaming.py --kafka --kafka-servers "$UPSTASH_KAFKA_SERVERS" &
+elif [ -n "$ENABLE_PYSPARK_STREAMING" ]; then
+    echo "ENABLE_PYSPARK_STREAMING detected. Starting PySpark local filesystem streaming architecture..."
+    # 1. Start the JSON File Producer (hospital monitors) in the background
+    python scripts/runners/simulate_vitals_stream.py &
+    # 2. Start the PySpark Consumer (Data Engineering pipeline) in the background
+    python scripts/runners/run_telemetry_streaming.py &
+fi
+
 # Rust gateway is already built via Docker multi-stage build
 
 if [ -n "$DOPPLER_TOKEN" ]; then

@@ -6,7 +6,7 @@ import {
   LayoutDashboard, MessageSquare, Heart, Activity,
   FlaskConical, Stethoscope, Wind, User,
   CreditCard, Video, Info, ShieldCheck,
-  BedDouble, Server, Settings, Plug, BrainCircuit, Smile,
+  BedDouble, Server, Settings, Plug, BrainCircuit, Smile, Workflow
 } from "lucide-react";
 
 /* ───────────────────────────────────────────────────
@@ -103,6 +103,21 @@ export const operationsItems: MenuItem[] = [
     gradient: "bg-gradient-to-br from-cyan-950/80 via-cyan-900/20 to-black/60",
     highlights: ["Live Video Room", "Online Meeting"],
     subActions: [{ title: "Start Video Call", href: "/telemedicine" }],
+  },
+  {
+    id: "data-engineering",
+    title: "Data Engineering",
+    href: "/data-engineering",
+    icon: Workflow,
+    desc: "PySpark Stream Pipeline & Lakehouse",
+    longDesc:
+      "Visualize the Medallion Data Architecture. Monitor real-time PySpark Structured Streaming throughput, latency, and Airflow-style execution graphs.",
+    color: "text-amber-400",
+    bg: "bg-amber-500/10",
+    borderHover: "hover:border-amber-500/60",
+    glow: "drop-shadow-[0_0_15px_rgba(251,191,36,0.5)]",
+    gradient: "bg-gradient-to-br from-amber-950/80 via-amber-900/20 to-black/60",
+    highlights: ["PySpark Engine", "Delta Lakehouse", "Pipeline DAG"],
   },
   {
     id: "infrastructure",
