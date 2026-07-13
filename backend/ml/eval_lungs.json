@@ -1,0 +1,68 @@
+{
+  "model_name": "lungs",
+  "evaluated_at": "2026-06-18T06:06:24.724089+00:00",
+  "test_set_size": 62,
+  "class_distribution": {
+    "0": 2,
+    "1": 60
+  },
+  "accuracy": 0.9677,
+  "auc_roc": 0.9667,
+  "sensitivity": 0.9833,
+  "specificity": 0.5,
+  "classification_report": {
+    "0": {
+      "precision": 0.5,
+      "recall": 0.5,
+      "f1-score": 0.5,
+      "support": 2.0
+    },
+    "1": {
+      "precision": 0.9833333333333333,
+      "recall": 0.9833333333333333,
+      "f1-score": 0.9833333333333333,
+      "support": 60.0
+    },
+    "macro avg": {
+      "precision": 0.7416666666666667,
+      "recall": 0.7416666666666667,
+      "f1-score": 0.7416666666666667,
+      "support": 62.0
+    },
+    "weighted avg": {
+      "precision": 0.967741935483871,
+      "recall": 0.967741935483871,
+      "f1-score": 0.967741935483871,
+      "support": 62.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      1,
+      1
+    ],
+    [
+      1,
+      59
+    ]
+  ],
+  "feature_importances": {},
+  "n_features": 15,
+  "feature_names": [
+    "GENDER",
+    "AGE",
+    "SMOKING",
+    "YELLOW_FINGERS",
+    "ANXIETY",
+    "PEER_PRESSURE",
+    "CHRONIC_DISEASE",
+    "FATIGUE",
+    "ALLERGY",
+    "WHEEZING",
+    "ALCOHOL_CONSUMING",
+    "COUGHING",
+    "SHORTNESS_OF_BREATH",
+    "SWALLOWING_DIFFICULTY",
+    "CHEST_PAIN"
+  ]
+}

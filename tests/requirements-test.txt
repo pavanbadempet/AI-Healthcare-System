@@ -1,0 +1,11 @@
+pytest
+pytest-cov
+pytest-asyncio
+pytest-playwright
+httpx
+playwright
+hypothesis
+pytz
+alembic
+pytest-xdist
+

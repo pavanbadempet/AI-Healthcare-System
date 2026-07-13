@@ -1,0 +1,224 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healthcare-backend
+  namespace: healthcare
+  labels:
+    app: healthcare-backend
+    version: v1.0.0
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: healthcare-backend
+  template:
+    metadata:
+      labels:
+        app: healthcare-backend
+        version: v1.0.0
+    spec:
+      containers:
+      - name: backend
+        image: healthcare/backend:latest
+        ports:
+        - containerPort: 8000
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: healthcare-secrets
+              key: database-url
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: healthcare-secrets
+              key: redis-url
+        - name: GOOGLE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: healthcare-secrets
+              key: google-api-key
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: healthcare-secrets
+              key: jwt-secret
+        - name: ENVIRONMENT
+          value: "production"
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        volumeMounts:
+        - name: model-storage
+          mountPath: /app/models
+          readOnly: true
+        - name: vector-store
+          mountPath: /app/vector_store.pkl
+          subPath: vector_store.pkl
+      volumes:
+      - name: model-storage
+        persistentVolumeClaim:
+          claimName: model-storage-pvc
+      - name: vector-store
+        configMap:
+          name: vector-store-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healthcare-frontend
+  namespace: healthcare
+  labels:
+    app: healthcare-frontend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: healthcare-frontend
+  template:
+    metadata:
+      labels:
+        app: healthcare-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: healthcare/frontend:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NEXT_PUBLIC_API_URL
+          value: "https://api.healthcare.example.com"
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healthcare-postgres
+  namespace: healthcare
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: healthcare-postgres
+  template:
+    metadata:
+      labels:
+        app: healthcare-postgres
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:15
+        ports:
+        - containerPort: 5432
+        env:
+        - name: POSTGRES_DB
+          value: healthcare_prod
+        - name: POSTGRES_USER
+          value: healthcare_admin
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: healthcare-secrets
+              key: postgres-password
+        - name: PGDATA
+          value: /var/lib/postgresql/data/pgdata
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1000m"
+        volumeMounts:
+        - name: postgres-storage
+          mountPath: /var/lib/postgresql/data
+        - name: postgres-init
+          mountPath: /docker-entrypoint-initdb.d
+      volumes:
+      - name: postgres-storage
+        persistentVolumeClaim:
+          claimName: postgres-storage-pvc
+      - name: postgres-init
+        configMap:
+          name: postgres-init-script
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: healthcare-redis
+  namespace: healthcare
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: healthcare-redis
+  template:
+    metadata:
+      labels:
+        app: healthcare-redis
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+        command:
+        - redis-server
+        - --appendonly
+        - "yes"
+        - --requirepass
+        - $(REDIS_PASSWORD)
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: healthcare-secrets
+              key: redis-password
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "200m"
+        volumeMounts:
+        - name: redis-storage
+          mountPath: /data
+      volumes:
+      - name: redis-storage
+        persistentVolumeClaim:
+          claimName: redis-storage-pvc

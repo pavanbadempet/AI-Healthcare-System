@@ -1,0 +1,65 @@
+{
+  "model_name": "kidney",
+  "evaluated_at": "2026-07-01T14:22:22.161958+00:00",
+  "test_set_size": 200,
+  "class_distribution": {
+    "1": 200
+  },
+  "accuracy": 1.0,
+  "auc_roc": NaN,
+  "sensitivity": null,
+  "specificity": null,
+  "classification_report": {
+    "1": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 200.0
+    },
+    "macro avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 200.0
+    },
+    "weighted avg": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
+      "support": 200.0
+    }
+  },
+  "confusion_matrix": [
+    [
+      200
+    ]
+  ],
+  "feature_importances": {},
+  "n_features": 24,
+  "feature_names": [
+    "age",
+    "bp",
+    "sg",
+    "al",
+    "su",
+    "rbc",
+    "pc",
+    "pcc",
+    "ba",
+    "bgr",
+    "bu",
+    "sc",
+    "sod",
+    "pot",
+    "hemo",
+    "pcv",
+    "wc",
+    "rc",
+    "htn",
+    "dm",
+    "cad",
+    "appet",
+    "pe",
+    "ane"
+  ]
+}

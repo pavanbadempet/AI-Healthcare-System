@@ -1,0 +1,133 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: healthcare-backend
+  namespace: healthcare
+  labels:
+    app: healthcare-backend
+spec:
+  selector:
+    app: healthcare-backend
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+    protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: healthcare-frontend
+  namespace: healthcare
+  labels:
+    app: healthcare-frontend
+spec:
+  selector:
+    app: healthcare-frontend
+  ports:
+  - name: http
+    port: 3000
+    targetPort: 3000
+    protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: healthcare-postgres
+  namespace: healthcare
+  labels:
+    app: healthcare-postgres
+spec:
+  selector:
+    app: healthcare-postgres
+  ports:
+  - name: postgres
+    port: 5432
+    targetPort: 5432
+    protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: healthcare-redis
+  namespace: healthcare
+  labels:
+    app: healthcare-redis
+spec:
+  selector:
+    app: healthcare-redis
+  ports:
+  - name: redis
+    port: 6379
+    targetPort: 6379
+    protocol: TCP
+  type: ClusterIP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: healthcare-mlflow
+  namespace: healthcare
+  labels:
+    app: healthcare-mlflow
+spec:
+  selector:
+    app: healthcare-mlflow
+  ports:
+  - name: http
+    port: 5000
+    targetPort: 5000
+    protocol: TCP
+  type: ClusterIP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: healthcare-ingress
+  namespace: healthcare
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/websocket-services: "healthcare-backend"
+spec:
+  tls:
+  - hosts:
+    - api.healthcare.example.com
+    - app.healthcare.example.com
+    - mlflow.healthcare.example.com
+    secretName: healthcare-tls
+  rules:
+  - host: api.healthcare.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: healthcare-backend
+            port:
+              number: 8000
+  - host: app.healthcare.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: healthcare-frontend
+            port:
+              number: 3000
+  - host: mlflow.healthcare.example.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: healthcare-mlflow
+            port:
+              number: 5000

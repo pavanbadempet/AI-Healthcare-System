@@ -1,0 +1,24 @@
+node_modules
+.next
+playwright-report
+test-results
+venv
+.venv
+.git
+.gitignore
+__pycache__
+*.pyc
+*.pyd
+*.pyo
+# *.pkl # REMOVED: We want to include our compressed models
+!backend/*.pkl # Explicitly include models in backend
+healthcare.db
+healthcare.db-shm
+healthcare.db-wal
+.env
+data/ # Exclude raw data folder
+.pytest_cache
+.vscode
+dist
+build
+rust_gateway/target/

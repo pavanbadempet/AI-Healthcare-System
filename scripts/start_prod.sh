@@ -1,0 +1,46 @@
+#!/bin/bash
+# ==============================================================================
+# AI HEALTHCARE SYSTEM — STARTUP SCRIPT
+# ==============================================================================
+# Runs uvicorn with Doppler secrets injection if DOPPLER_TOKEN is configured.
+# Falls back to standard environment variables if DOPPLER_TOKEN is absent.
+# ==============================================================================
+
+# Download models on-demand before starting the server
+# Hugging Face Spaces automatically injects a Postgres DATABASE_URL if the add-on is enabled.
+# Since the Rust gateway is compiled specifically for SQLite, we must override it here.
+# NOTE: SQLAlchemy and SQLx have different URI formats for SQLite!
+# If DOPPLER_TOKEN is NOT set, and DATABASE_URL is missing, we use the Neon DB by default.
+if [ -z "$DOPPLER_TOKEN" ] && [ -z "$DATABASE_URL" ]; then
+    export SQLALCHEMY_URL="postgresql://neondb_owner:npg_K1utSTqdOX8F@ep-ancient-poetry-a1vna8ys-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+    export SQLX_URL="postgresql://neondb_owner:npg_K1utSTqdOX8F@ep-ancient-poetry-a1vna8ys-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+    export DATABASE_URL=$SQLALCHEMY_URL
+elif [ -n "$DATABASE_URL" ]; then
+    # Normalize DATABASE_URL for Postgres/SQLAlchemy if provided via standard env var
+    export SQLALCHEMY_URL=$DATABASE_URL
+    export SQLX_URL=$DATABASE_URL
+fi
+
+# Download models on-demand before starting the server
+echo "Checking model weights..."
+python backend/download_models.py
+
+# Rust gateway is already built via Docker multi-stage build
+
+if [ -n "$DOPPLER_TOKEN" ]; then
+    echo "Starting Python server with Doppler Secrets Manager on port 8001..."
+    doppler run -- uvicorn backend.main:app --host 0.0.0.0 --port 8001 --workers 4 &
+else
+    echo "DOPPLER_TOKEN not found. Starting Python server with standard environment variables on port 8001..."
+    uvicorn backend.main:app --host 0.0.0.0 --port 8001 --workers 4 &
+fi
+
+echo "Initializing database to ensure Rust gateway can connect..."
+if [ -n "$DOPPLER_TOKEN" ]; then doppler run -- python -c "from backend.database import engine; from backend.models import Base; Base.metadata.create_all(bind=engine)"; else python -c "from backend.database import engine; from backend.models import Base; Base.metadata.create_all(bind=engine)"; fi
+
+echo "Starting Rust Gateway on port 7860..."
+if [ -n "$SQLX_URL" ]; then
+    export DATABASE_URL=$SQLX_URL
+fi
+cd rust_gateway
+if [ -n "$DOPPLER_TOKEN" ]; then doppler run -- ./target/release/rust_gateway; else ./target/release/rust_gateway; fi

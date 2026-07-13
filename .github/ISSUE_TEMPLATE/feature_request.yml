@@ -1,0 +1,70 @@
+name: ✨ Feature Request
+description: Suggest a new feature or improvement
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+assignees:
+  - pavanbadempet
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a feature! Help us understand your idea.
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which area does this feature relate to?
+      options:
+        - Backend API
+        - Frontend (React/Vite)
+        - ML Models / Predictions
+        - AI Chat / RAG
+        - Authentication / Security
+        - PDF Reports
+        - DevOps / Infrastructure
+        - Documentation
+        - New Module
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve? Is it related to a frustration?
+      placeholder: "I'm frustrated when..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative solutions or features you've considered?
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      options:
+        - 🔴 Must Have — Blocking
+        - 🟠 Should Have — Important
+        - 🟡 Nice to Have — Quality of Life
+        - 🟢 Future — Long-term vision
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional Context
+      description: Add any mockups, screenshots, or references.

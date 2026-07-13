@@ -1,0 +1,974 @@
+
+import { useState, useRef, useEffect, useId } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Activity, AlertTriangle, FileText, CheckCircle2, ChevronDown, Cpu, Sparkles } from "lucide-react";
+import { fetchPatientExplanation, type PredictionResult } from "@/lib/api";
+import Tooltip from "../layout/Tooltip";
+
+interface Field {
+  name: string;
+  label: string;
+  type: "number" | "select";
+  options?: { label: string; value: number }[];
+  min?: number;
+  max?: number;
+  step?: number;
+  placeholder?: string;
+  tooltip?: string;
+}
+
+const FRIENDLY_FEATURE_LABELS: Record<string, string> = {
+  // Diabetes (BRFSS)
+  bmi: "Body Mass Index (BMI)",
+  hypertension: "High Blood Pressure",
+  high_chol: "High Cholesterol",
+  smoking_history: "Smoking History",
+  heart_disease: "Heart Disease History",
+  physical_activity: "Physical Activity",
+  general_health: "General Health Rating",
+  gender: "Biological Gender",
+  age: "Age",
+  age_bucket: "Age Group",
+  // Heart (Cleveland)
+  sex: "Gender",
+  cp: "Chest Pain Type",
+  trestbps: "Resting Blood Pressure",
+  chol: "Serum Cholesterol",
+  fbs: "Fasting Blood Sugar",
+  restecg: "Resting ECG Results",
+  thalach: "Max Heart Rate",
+  exang: "Exercise Induced Angina",
+  oldpeak: "ST Depression",
+  slope: "ST Slope",
+  ca: "Major Vessels Count",
+  thal: "Thalassemia Type",
+  // Kidney (Renal)
+  bp: "Blood Pressure",
+  sg: "Specific Gravity",
+  al: "Albumin",
+  su: "Sugar",
+  rbc: "Red Blood Cells",
+  pc: "Pus Cell",
+  pcc: "Pus Cell Clumps",
+  ba: "Bacteria",
+  bgr: "Blood Glucose Random",
+  bu: "Blood Urea",
+  sc: "Serum Creatinine",
+  sod: "Sodium",
+  pot: "Potassium",
+  hemo: "Hemoglobin",
+  pcv: "Packed Cell Volume",
+  wc: "White Blood Cell Count",
+  rc: "Red Blood Cell Count",
+  htn: "Hypertension",
+  dm: "Diabetes Mellitus",
+  cad: "Coronary Artery Disease",
+  appet: "Appetite",
+  pe: "Pedal Edema",
+  ane: "Anemia",
+  // Liver (ILPD)
+  Age: "Age",
+  Gender: "Biological Gender",
+  Total_Bilirubin: "Total Bilirubin",
+  Direct_Bilirubin: "Direct Bilirubin",
+  Total_Proteins: "Total Proteins",
+  Albumin: "Albumin",
+  Albumin_and_Globulin_Ratio: "Albumin/Globulin Ratio",
+  Alamine_Aminotransferase: "ALT Enzyme Level",
+  Aspartate_Aminotransferase: "AST Enzyme Level",
+  Alkaline_Phosphotase: "Alkaline Phosphatase",
+  // Lungs (Pulmonary)
+  GENDER: "Biological Gender",
+  AGE: "Age",
+  SMOKING: "Smoking History",
+  YELLOW_FINGERS: "Yellow Fingers",
+  ANXIETY: "Anxiety",
+  PEER_PRESSURE: "Peer Pressure",
+  CHRONIC_DISEASE: "Chronic Disease",
+  FATIGUE: "Fatigue Level",
+  ALLERGY: "Allergy History",
+  WHEEZING: "Wheezing Symptoms",
+  ALCOHOL_CONSUMING: "Alcohol Consumption",
+  COUGHING: "Coughing Symptoms",
+  SHORTNESS_OF_BREATH: "Shortness of Breath",
+  SWALLOWING_DIFFICULTY: "Difficulty Swallowing",
+  CHEST_PAIN: "Chest Pain"
+};
+
+export interface ExampleCaseRecord {
+  date: string;
+  type: string;
+  findings: string;
+  data?: Record<string, number>;
+}
+
+export interface ExampleCase {
+  name: string;
+  description: string;
+  records?: ExampleCaseRecord[];
+  data: Record<string, number>;
+}
+
+interface PredictionFormProps {
+  title: string;
+  description: string;
+  fields: Field[];
+  onSubmit: (data: Record<string, number>, computeMode?: 'local' | 'remote') => Promise<PredictionResult>;
+  exampleCases?: ExampleCase[];
+  modelName?: string;
+}
+
+// Custom Select Component to override native ugly OS dropdowns
+const CustomSelect = ({ field, value, onChange }: { field: Field, value: number | undefined, onChange: (val: number) => void }) => {
+  const [open, setOpen] = useState(false);
+  const selectRef = useRef<HTMLDivElement>(null);
+  const listboxId = useId();
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (selectRef.current && !selectRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const selectedOption = field.options?.find(o => o.value === value);
+
+  return (
+    <div className="relative w-full" ref={selectRef}>
+      <div 
+        onClick={() => setOpen(!open)}
+        className={`w-full bg-[rgba(255,255,255,0.02)] border ${open ? 'border-[var(--accent)] ring-1 ring-[var(--accent)]' : 'border-[var(--border)] hover:bg-[rgba(255,255,255,0.04)]'} px-3 py-2 text-[var(--text-secondary)] text-xs rounded cursor-pointer transition-all flex justify-between items-center`}
+        role="combobox"
+        aria-expanded={open}
+        aria-controls={listboxId}
+        aria-haspopup="listbox"
+        aria-label={`Select ${field.label}`}
+        tabIndex={0}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setOpen(!open); } }}
+      >
+        <span className={selectedOption ? "text-[var(--text-primary)] font-medium uppercase font-mono" : "text-[var(--text-muted)] font-mono uppercase"}>
+          {selectedOption ? selectedOption.label : `-- SELECT ${field.label} --`}
+        </span>
+        <ChevronDown size={13} className={`text-[var(--text-dim)] transition-transform ${open ? "rotate-180 text-[var(--accent)]" : ""}`} aria-hidden="true" />
+      </div>
+      
+      <AnimatePresence>
+        {open && (
+          <motion.div 
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.1 }}
+            className="absolute top-full left-0 right-0 mt-1 bg-[#18181b] border border-[var(--border-focus)] rounded overflow-hidden z-50 shadow-[var(--shadow-lg)]"
+            id={listboxId}
+            role="listbox"
+            aria-label={`Options for ${field.label}`}
+          >
+            <div className="max-h-52 overflow-y-auto py-1">
+              {field.options?.map((opt) => (
+                <div 
+                  key={opt.value}
+                  onClick={() => {
+                    onChange(opt.value);
+                    setOpen(false);
+                  }}
+                  className={`px-3 py-2 hover:bg-[var(--accent-muted)] hover:text-[var(--accent)] text-xs font-mono uppercase cursor-pointer transition-colors ${value === opt.value ? 'text-[var(--accent)] bg-[var(--accent-muted)] font-bold' : 'text-[var(--text-secondary)]'}`}
+                  role="option"
+                  aria-selected={value === opt.value}
+                  tabIndex={0}
+                  onKeyDown={(e) => { if (e.key === 'Enter') { onChange(opt.value); setOpen(false); } }}
+                >
+                  {opt.label}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// Custom Profile Select Component with text input
+const ProfileSelect = ({ options, value, onSelect }: { options: ExampleCase[], value: ExampleCase | null, onSelect: (idx: number) => void }) => {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const selectRef = useRef<HTMLDivElement>(null);
+  const listboxId = useId();
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (selectRef.current && !selectRef.current.contains(event.target as Node)) {
+        setOpen(false);
+        setQuery(""); // Reset query when closing
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredOptions = query === "" 
+    ? options 
+    : options.filter((opt) => opt.name.toLowerCase().includes(query.toLowerCase()) || opt.description.toLowerCase().includes(query.toLowerCase()));
+
+  // Determine what to show in the input box
+  const displayValue = open ? query : (value ? value.name : "");
+
+  return (
+    <div className="relative w-full" ref={selectRef}>
+      <div 
+        className={`w-full bg-[rgba(255,255,255,0.02)] border ${open ? 'border-[var(--accent)] ring-1 ring-[var(--accent)]' : 'border-[var(--border)] hover:bg-[rgba(255,255,255,0.04)]'} px-3 py-2 text-[var(--text-primary)] text-xs rounded transition-all flex justify-between items-center`}
+      >
+        <input
+          type="text"
+          className="w-full bg-transparent outline-none placeholder:text-[var(--text-muted)] font-mono uppercase"
+          placeholder="-- Search or select a patient profile --"
+          value={displayValue}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            if (!open) setOpen(true);
+          }}
+          onFocus={() => {
+            setQuery("");
+            setOpen(true);
+          }}
+          onKeyDown={(e) => {
+              if(e.key === 'Enter' && filteredOptions.length > 0) {
+                 onSelect(options.indexOf(filteredOptions[0]));
+                 setQuery("");
+                 setOpen(false);
+              }
+          }}
+        />
+        <ChevronDown size={13} className={`text-[var(--text-dim)] transition-transform cursor-pointer ${open ? "rotate-180 text-[var(--accent)]" : ""}`} onClick={() => { setOpen(!open); setQuery(""); }} aria-hidden="true" />
+      </div>
+      
+      <AnimatePresence>
+        {open && (
+          <motion.div 
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.1 }}
+            className="absolute top-full left-0 right-0 mt-1 bg-[#18181b] border border-[var(--border-focus)] rounded overflow-hidden z-50 shadow-[var(--shadow-lg)]"
+            id={listboxId}
+            role="listbox"
+          >
+            <div className="max-h-60 overflow-y-auto py-1">
+              {filteredOptions.length === 0 ? (
+                <div className="px-3 py-2 text-xs font-mono text-[var(--text-muted)]">No profiles found.</div>
+              ) : (
+                filteredOptions.map((opt) => {
+                  const isSelected = value?.name === opt.name;
+                  return (
+                    <div 
+                      key={opt.name}
+                      onClick={() => {
+                        onSelect(options.indexOf(opt));
+                        setQuery("");
+                        setOpen(false);
+                      }}
+                      className={`px-3 py-2 hover:bg-[var(--accent-muted)] hover:text-[var(--accent)] text-xs font-mono uppercase cursor-pointer transition-colors text-[var(--text-secondary)] border-b border-[rgba(255,255,255,0.02)] last:border-0 ${isSelected ? 'bg-[var(--accent-muted)] text-[var(--accent)] font-bold' : ''}`}
+                    >
+                      <div className="font-bold text-[var(--text-primary)]">{opt.name}</div>
+                      <div className="text-[10px] text-[var(--text-dim)] mt-0.5 truncate">{opt.description}</div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// Custom Record Select Component with text input
+const RecordSelect = ({ records, value, onSelect }: { records: ExampleCaseRecord[], value: number | null, onSelect: (idx: number) => void }) => {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const selectRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (selectRef.current && !selectRef.current.contains(event.target as Node)) {
+        setOpen(false);
+        setQuery("");
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const filteredRecords = query === "" 
+    ? records 
+    : records.filter((rec) => rec.date.includes(query) || rec.type.toLowerCase().includes(query.toLowerCase()));
+
+  const displayValue = open ? query : (value !== null ? `${records[value].date} - ${records[value].type}` : "");
+
+  return (
+    <div className="relative w-full" ref={selectRef}>
+      <div 
+        className={`w-full bg-[rgba(0,0,0,0.3)] border ${open ? 'border-[var(--accent)] ring-1 ring-[var(--accent)]' : 'border-[var(--border-focus)] hover:bg-[rgba(255,255,255,0.04)]'} px-3 py-2 text-[var(--text-primary)] text-xs rounded transition-all flex justify-between items-center cursor-text`}
+        onClick={() => { if (!open) setOpen(true); }}
+      >
+        <input
+          type="text"
+          className="w-full bg-transparent outline-none placeholder:text-[var(--text-muted)] font-mono uppercase"
+          placeholder="Search by date or type..."
+          value={displayValue}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            if (!open) setOpen(true);
+          }}
+          onFocus={() => {
+            setQuery("");
+            setOpen(true);
+          }}
+          onKeyDown={(e) => {
+              if(e.key === 'Enter' && filteredRecords.length > 0) {
+                 onSelect(records.indexOf(filteredRecords[0]));
+                 setQuery("");
+                 setOpen(false);
+              }
+          }}
+        />
+        <ChevronDown size={13} className={`text-[var(--text-dim)] transition-transform cursor-pointer ${open ? "rotate-180 text-[var(--accent)]" : ""}`} onClick={(e) => { e.stopPropagation(); setOpen(!open); setQuery(""); }} aria-hidden="true" />
+      </div>
+      
+      <AnimatePresence>
+        {open && (
+          <motion.div 
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.1 }}
+            className="absolute top-full left-0 right-0 mt-1 bg-[#18181b] border border-[var(--border-focus)] rounded overflow-hidden z-50 shadow-[var(--shadow-lg)]"
+          >
+            <div className="max-h-60 overflow-y-auto py-1">
+              {filteredRecords.length === 0 ? (
+                <div className="px-3 py-2 text-xs font-mono text-[var(--text-muted)]">No records found.</div>
+              ) : (
+                filteredRecords.map((rec) => {
+                  const idx = records.indexOf(rec);
+                  const isSelected = value === idx;
+                  return (
+                    <div 
+                      key={idx}
+                      onClick={() => {
+                        onSelect(idx);
+                        setQuery("");
+                        setOpen(false);
+                      }}
+                      className={`px-3 py-2 hover:bg-[var(--accent-muted)] hover:text-[var(--accent)] text-xs font-mono uppercase cursor-pointer transition-colors text-[var(--text-secondary)] border-b border-[rgba(255,255,255,0.02)] last:border-0 ${isSelected ? 'bg-[var(--accent-muted)] text-[var(--accent)] font-bold' : ''}`}
+                    >
+                      <div className="font-bold text-[var(--text-primary)]">{rec.date} - {rec.type}</div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+export default function PredictionForm({ title, description, fields, onSubmit, exampleCases, modelName }: PredictionFormProps) {
+  const [formData, setFormData] = useState<Record<string, number>>({});
+  const [selectedProfile, setSelectedProfile] = useState<ExampleCase | null>(null);
+  const [selectedRecordIndex, setSelectedRecordIndex] = useState<number | null>(null);
+  const [computeMode, setComputeMode] = useState<'local' | 'remote'>('remote');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [result, setResult] = useState<PredictionResult | null>(null);
+  const [generatingExplanation, setGeneratingExplanation] = useState(false);
+  const resultRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (result && window.innerWidth < 1024) {
+      resultRef.current?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+    }
+  }, [result]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    setResult(null);
+    setGeneratingExplanation(false);
+
+    const parsedData: Record<string, number> = {};
+    for (const field of fields) {
+      const val = formData[field.name];
+      if (val === undefined || isNaN(val)) {
+        setError(`Please provide a valid value for ${field.label}`);
+        setLoading(false);
+        return;
+      }
+      parsedData[field.name] = Number(val);
+    }
+
+    try {
+      const res = await onSubmit(parsedData, computeMode);
+      setResult(res);
+
+      if (computeMode === 'remote' && modelName) {
+        setGeneratingExplanation(true);
+        fetchPatientExplanation(modelName, {
+          prediction: res.prediction,
+          confidence: res.confidence || 0,
+          risk_level: res.risk_level || "Unknown",
+          attributions: res.attributions || {}
+        })
+          .then((explainRes) => {
+            setResult(prev => prev ? {
+              ...prev,
+              patient_explanation: explainRes.patient_explanation
+            } : null);
+          })
+          .catch((err) => {
+            console.error("Failed to fetch narrative:", err);
+          })
+          .finally(() => {
+            setGeneratingExplanation(false);
+          });
+      }
+    } catch (err: any) {
+      setError(err.message || "Failed to generate prediction");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const isHighRisk = result?.prediction.toLowerCase().includes("positive") || result?.prediction.toLowerCase().includes("disease") || result?.prediction.toLowerCase().includes("high");
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 w-full">
+      
+      {/* Left Column: Form */}
+      <motion.div 
+        initial={{ opacity: 0, y: 8 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.25 }}
+        className="lg:col-span-7 space-y-6"
+      >
+        <div className="panel p-5 relative !overflow-visible">
+          <div className="absolute top-0 right-0 p-2 text-[9px] font-mono border-b border-l border-[var(--border)] bg-[#09090b] text-[var(--text-dim)] uppercase">
+            Input Vector Map
+          </div>
+          
+          <div className="mb-6 mt-2">
+            <div className="status-badge status-badge-accent mb-3">
+              <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse" aria-hidden="true"></span>
+              DIAGNOSTIC PIPELINE
+            </div>
+            <h2 className="text-md font-bold text-[var(--text-primary)] uppercase tracking-wider mb-1">{title}</h2>
+            <p className="text-[var(--text-secondary)] text-xs font-mono uppercase tracking-wide max-w-xl">{description}</p>
+          </div>
+
+          {exampleCases && exampleCases.length > 0 && (
+            <div className="mb-6 bg-[rgba(255,255,255,0.02)] border border-[var(--border)] rounded-lg p-3">
+              <div className="text-[9px] font-bold uppercase text-[var(--text-dim)] tracking-wider mb-2">Patient Profiles</div>
+              <div className="flex flex-wrap gap-2">
+                <ProfileSelect 
+                  options={exampleCases}
+                  value={selectedProfile}
+                  onSelect={(idx) => {
+                    const profile = exampleCases[idx];
+                    setSelectedProfile(profile);
+                    if (profile.records && profile.records.length > 0) {
+                      const lastIdx = profile.records.length - 1;
+                      setSelectedRecordIndex(lastIdx);
+                      setFormData(profile.records[lastIdx].data || profile.data);
+                    } else {
+                      setSelectedRecordIndex(null);
+                      setFormData(profile.data);
+                    }
+                  }}
+                />
+              </div>
+              
+              <AnimatePresence>
+                {selectedProfile && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                    animate={{ opacity: 1, height: "auto", marginTop: 12 }}
+                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                    className="overflow-hidden"
+                  >
+                    <div className="p-3 bg-[var(--accent-muted)] border border-[var(--border-focus)] rounded text-xs flex gap-2.5 items-start shadow-inner">
+                      <FileText size={16} className="shrink-0 mt-0.5 text-[var(--accent)]" />
+                      <div className="w-full">
+                        <span className="font-bold text-[var(--text-primary)] block mb-1 uppercase tracking-wider text-[10px]">Clinical History & Record Summary</span>
+                        
+                        {selectedProfile.records ? (
+                          <div className="space-y-3 mt-3 border-t border-[rgba(255,255,255,0.05)] pt-3">
+                            <div className="flex flex-col gap-2 mb-4">
+                              <span className="text-[10px] text-[var(--text-dim)] uppercase font-bold tracking-wider">Select Visit Report:</span>
+                              <RecordSelect
+                                records={selectedProfile.records}
+                                value={selectedRecordIndex}
+                                onSelect={(idx) => {
+                                  setSelectedRecordIndex(idx);
+                                  setFormData(selectedProfile.records![idx].data || selectedProfile.data);
+                                }}
+                              />
+                            </div>
+                            
+                            <div className="space-y-2">
+                              {selectedProfile.records.map((rec, i) => (
+                                <div key={i} className={`flex gap-2 p-2 rounded transition-colors ${i === selectedRecordIndex ? 'bg-[rgba(255,255,255,0.03)] border border-[rgba(255,255,255,0.05)]' : 'opacity-60'}`}>
+                                  <span className="font-mono text-[9px] text-[var(--accent)] whitespace-nowrap pt-0.5 shrink-0">{rec.date}</span>
+                                  <div>
+                                    <span className="font-semibold text-slate-300 text-[10px] uppercase block flex items-center gap-2">
+                                      {rec.type}
+                                      {i === selectedRecordIndex && <span className="text-[8px] bg-[var(--accent-muted)] text-[var(--accent)] px-1.5 py-0.5 rounded-full border border-[var(--accent)] border-opacity-20">Currently Populated</span>}
+                                    </span>
+                                    <span className="text-[var(--text-secondary)] leading-relaxed">{rec.findings}</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-[var(--text-secondary)] leading-relaxed">{selectedProfile.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          <AnimatePresence>
+            {error && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }} 
+                animate={{ opacity: 1, height: "auto" }} 
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden mb-4"
+              >
+                <div className="p-3 bg-[var(--danger-muted)] border border-[var(--danger-border)] text-[var(--danger)] flex items-start gap-2" role="alert">
+                  <AlertTriangle size={14} className="shrink-0 mt-0.5" aria-hidden="true" />
+                  <p className="text-[10px] font-mono uppercase tracking-wider">{error}</p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <form onSubmit={handleSubmit} className="space-y-4 relative z-10">
+            {/* Compute Enclave Selector Switch */}
+            <div className="mb-5 p-3 bg-zinc-950/60 border border-[var(--border)] rounded flex flex-col sm:flex-row justify-between sm:items-center gap-3 text-xs font-mono">
+              <div>
+                <span className="text-white font-bold flex items-center gap-1.5 uppercase tracking-wider">
+                  Compute Enclave Mode
+                  <Tooltip content="Choose where the AI calculation runs. 'Local' runs in your browser for maximum privacy and zero latency. 'Remote' uses our servers for heavier computations." position="top-right">
+                    <span className="cursor-help text-[var(--text-dim)] hover:text-[var(--text-primary)] transition-colors p-2 -ml-1 flex items-center justify-center">
+                      <Activity size={12} aria-hidden="true" />
+                    </span>
+                  </Tooltip>
+                </span>
+                <span className="text-[9px] text-[var(--text-dim)] uppercase">Select execution environment target</span>
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setComputeMode("local")}
+                  className={`px-3 py-1.5 border text-[10px] font-bold uppercase tracking-wider rounded transition-all cursor-pointer ${
+                    computeMode === "local"
+                      ? "text-[var(--accent)] border-[var(--accent)] bg-[var(--accent-muted)]"
+                      : "text-[var(--text-dim)] border-[var(--border)] hover:text-white hover:bg-zinc-900"
+                  }`}
+                >
+                  Local Edge (WASM)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setComputeMode("remote")}
+                  className={`px-3 py-1.5 border text-[10px] font-bold uppercase tracking-wider rounded transition-all cursor-pointer ${
+                    computeMode === "remote"
+                      ? "text-[var(--accent)] border-[var(--accent)] bg-[var(--accent-muted)]"
+                      : "text-[var(--text-dim)] border-[var(--border)] hover:text-white hover:bg-zinc-900"
+                  }`}
+                >
+                  Remote AI (SHAP)
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {fields.map((field) => (
+                <div key={field.name} className="space-y-1.5">
+                  <label className="section-label flex items-center gap-1 mb-1" htmlFor={`field-${field.name}`}>
+                    {field.label} 
+                    {field.tooltip && (
+                      <Tooltip content={field.tooltip} position="top-right">
+                        <span className="cursor-help text-[var(--text-dim)] hover:text-[var(--text-primary)] transition-colors p-2 -ml-1 flex items-center justify-center">
+                          <Activity size={12} aria-hidden="true" />
+                        </span>
+                      </Tooltip>
+                    )}
+                  </label>
+                  
+                  <div className="relative">
+                    {field.type === "select" ? (
+                      <CustomSelect 
+                        field={field} 
+                        value={formData[field.name]} 
+                        onChange={(val) => setFormData({ ...formData, [field.name]: val })} 
+                      />
+                    ) : (
+                      <div className="flex flex-col gap-2 w-full">
+                        <div className="flex items-center gap-2 w-full">
+                          <input
+                            id={`field-${field.name}`}
+                            type="number"
+                            min={field.min}
+                            max={field.max}
+                            step={field.step || 1}
+                            value={formData[field.name] ?? ""}
+                            onChange={(e) => setFormData({ ...formData, [field.name]: Number(e.target.value) })}
+                            placeholder={field.placeholder || `Enter ${field.label.toLowerCase()}...`}
+                            required
+                            className="input-clinical flex-1 min-w-0"
+                            aria-label={field.label}
+                          />
+                          {(field.min !== undefined && field.max !== undefined) && (
+                            <div className="text-[10px] font-mono text-[var(--text-dim)] whitespace-nowrap bg-[rgba(255,255,255,0.02)] px-2 py-1 rounded border border-[var(--border)]">
+                              {field.min} - {field.max}
+                            </div>
+                          )}
+                        </div>
+
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <button 
+              type="submit" 
+              disabled={loading} 
+              className="w-full mt-4 btn btn-primary py-2.5 cursor-pointer flex items-center justify-center gap-2"
+              aria-label={loading ? "Running diagnostic pipeline" : "Execute diagnostics compute"}
+            >
+              {loading ? (
+                <>
+                  <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  INVERTING NEURAL GRAPH...
+                </>
+              ) : (
+                <>
+                  <Sparkles size={13} aria-hidden="true" />
+                  EXECUTE COMPUTE
+                </>
+              )}
+            </button>
+          </form>
+        </div>
+      </motion.div>
+
+      {/* Right Column: Results */}
+      <motion.div 
+        ref={resultRef} 
+        initial={{ opacity: 0, y: 8 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.25, delay: 0.05 }}
+        className="lg:col-span-5 h-full"
+      >
+        <AnimatePresence mode="wait">
+          {!result ? (
+            <motion.div 
+              key="awaiting"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="h-full min-h-[420px] panel flex flex-col items-center justify-center text-center p-8 relative bg-[rgba(24,24,27,0.4)]"
+            >
+              <div className="absolute top-0 left-0 p-2 text-[9px] font-mono border-b border-r border-[var(--border)] bg-[#09090b] text-[var(--text-dim)] uppercase">
+                Analysis Matrix
+              </div>
+              
+              {loading ? (
+                <div className="space-y-4 w-full max-w-xs" role="status" aria-label="Processing diagnostic analysis">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="relative w-12 h-12 flex items-center justify-center">
+                      <span className={`w-10 h-10 border-2 border-dashed rounded-full animate-spin absolute ${computeMode === 'local' ? 'border-amber-400' : 'border-[var(--accent)]'}`} />
+                      <Activity className={computeMode === 'local' ? 'text-amber-400' : 'text-[var(--accent)]'} size={18} aria-hidden="true" />
+                    </div>
+                    <div className="text-center font-mono text-[10px] uppercase">
+                      {computeMode === 'local' ? (
+                        <>
+                          <p className="text-amber-400 animate-pulse tracking-widest font-bold">WASM Edge Compute</p>
+                          <p className="text-[var(--text-dim)] mt-0.5">Initializing ONNX Session...</p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-[var(--accent)] animate-pulse tracking-widest font-bold">Computing Vectors</p>
+                          <p className="text-[var(--text-dim)] mt-0.5">Neural Graph: v3.2</p>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="w-12 h-12 bg-[rgba(255,255,255,0.02)] border border-[var(--border)] rounded flex items-center justify-center mb-4">
+                    <Cpu size={20} className="text-[var(--text-dim)]" aria-hidden="true" />
+                  </div>
+                  <h3 className="text-xs font-bold text-[var(--text-primary)] mb-1 uppercase tracking-widest">Awaiting Telemetry</h3>
+                  <p className="text-[10px] font-mono text-[var(--text-dim)] max-w-xs uppercase leading-relaxed">Submit patient metrics to start the secure inference pipeline.</p>
+                </>
+              )}
+            </motion.div>
+          ) : (
+            <motion.div 
+              key="result"
+              initial={{ opacity: 0 }} 
+              animate={{ opacity: 1 }} 
+              className={`panel p-6 h-full flex flex-col justify-between ${isHighRisk ? 'border-[var(--danger)] shadow-[0_0_12px_rgba(239,68,68,0.1)]' : 'border-[var(--success)] shadow-[0_0_12px_rgba(16,185,129,0.1)]'}`}
+              role="region"
+              aria-label="Diagnostic results"
+            >
+              <div className="space-y-6">
+                {result._fallback && (
+                  <div className="bg-amber-500/10 border border-amber-500/20 text-amber-500 p-3 rounded flex items-start gap-2 text-xs font-mono">
+                    <AlertTriangle size={14} className="shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold uppercase">WASM Fallback Triggered</p>
+                      <p className="text-[10px] text-amber-500/80 mt-0.5">Local edge inference failed (missing model or uncompiled tensors). Falling back to remote secure cloud inference.</p>
+                    </div>
+                  </div>
+                )}
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded border ${isHighRisk ? 'bg-[var(--danger-muted)] text-[var(--danger)] border-[var(--danger-border)]' : 'bg-[var(--success-muted)] text-[var(--success)] border-[var(--success-border)]'}`}>
+                    {isHighRisk ? <AlertTriangle size={18} aria-hidden="true" /> : <CheckCircle2 size={18} aria-hidden="true" />}
+                  </div>
+                  <div>
+                    <h3 className="section-label mb-0.5">Classification Output</h3>
+                    <p className={`text-md font-bold uppercase tracking-wider ${isHighRisk ? 'text-[var(--danger)]' : 'text-[var(--success)]'}`}>
+                      {result.prediction.split('.')[0]}
+                    </p>
+                  </div>
+                </div>
+
+                {(result.confidence !== undefined || result.probability !== undefined) && (
+                  <div className="p-3 bg-[rgba(255,255,255,0.015)] border border-[var(--border)] rounded">
+                    <div className="flex justify-between items-end mb-2">
+                      <Tooltip content="How sure the AI is about the result. Since the output is 'Healthy Heart', the AI is 96.3% sure the heart is healthy, leaving only a 3.7% chance of disease risk." position="top-right">
+                        <span className="section-label cursor-help border-b border-dotted border-white/20 pb-0.5">Confidence Probability</span>
+                      </Tooltip>
+                      <span className="text-sm font-mono font-bold text-[var(--text-primary)]">
+                        {result.confidence !== undefined ? `${result.confidence}%` : `${((result.probability ?? 0) * 100).toFixed(1)}%`}
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full bg-[var(--border)] overflow-hidden rounded-full">
+                      <motion.div 
+                        initial={{ width: 0 }} 
+                        animate={{ width: `${result.confidence ?? ((result.probability ?? 0) * 100)}%` }} 
+                        transition={{ duration: 0.6, ease: "easeOut" }}
+                        className={`h-full ${
+                          (result.confidence ?? ((result.probability ?? 0) * 100)) >= 75 
+                            ? 'bg-[var(--danger)]' 
+                            : (result.confidence ?? ((result.probability ?? 0) * 100)) >= 40 
+                              ? 'bg-[var(--warning)]' 
+                              : 'bg-[var(--success)]'
+                        }`}
+                        role="progressbar"
+                        aria-valuenow={Math.round(result.confidence ?? ((result.probability ?? 0) * 100))}
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-label={`Confidence: ${result.confidence ?? ((result.probability ?? 0) * 100)}%`}
+                      />
+                    </div>
+                    
+                    {result.risk_level && (
+                      <div className="flex items-center gap-1.5 mt-2.5">
+                        <Tooltip content="The urgency or risk level (Low, Moderate, or High) indicating how closely or quickly the patient needs medical attention based on symptoms." position="top-right">
+                          <span className="section-label cursor-help border-b border-dotted border-white/20 pb-0.5">Acuity Stratification:</span>
+                        </Tooltip>
+                        <span className={`text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${
+                          result.risk_level === 'High' 
+                            ? 'text-[var(--danger)] bg-[var(--danger-muted)] border-[var(--danger-border)]'
+                            : result.risk_level === 'Moderate'
+                              ? 'text-[var(--warning)] bg-[var(--warning-muted)] border-[var(--warning-border)]'
+                              : 'text-[var(--success)] bg-[var(--success-muted)] border-[var(--success-border)]'
+                        }`}>
+                          {result.risk_level}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {result.clinical_indices && (
+                  <div className="space-y-4 border border-[var(--border)] rounded p-4 bg-zinc-950/40">
+                    <h4 className="text-[11px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5 border-b border-[var(--border)] pb-2">
+                      <Sparkles size={12} className="text-[var(--accent)]" aria-hidden="true" /> Advanced Conformal & Recourse Analytics
+                    </h4>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[10px] font-mono uppercase">
+                      <div>
+                        <Tooltip content="The list of diagnoses the AI is choosing between. 'Healthy' means the AI has safely ruled out heart disease." position="top-right">
+                          <span className="text-[var(--text-dim)] font-bold block mb-0.5 cursor-help border-b border-dotted border-white/20 pb-0.5">Possible Diagnoses</span>
+                        </Tooltip>
+                        <span className="text-white bg-zinc-900 border border-white/[0.05] px-1.5 py-0.5 rounded">
+                          {(result.clinical_indices.conformal_prediction_set || []).map((val: any) => Number(val) === 0 ? "Healthy" : "Risk/Disease").join(", ")}
+                        </span>
+                      </div>
+                      <div>
+                        <Tooltip content="Shows whether the AI is certain or confused. 'Low Uncertainty' means the AI is highly sure, while 'High' means the case is complex and needs closer review." position="top-right">
+                          <span className="text-[var(--text-dim)] font-bold block mb-0.5 cursor-help border-b border-dotted border-white/20 pb-0.5">Certainty Status</span>
+                        </Tooltip>
+                        <span className={`font-bold ${
+                          (result.clinical_indices.uncertainty_status || "").includes("Low") 
+                            ? "text-[var(--success)]" 
+                            : "text-[var(--danger)]"
+                        }`}>
+                          {result.clinical_indices.uncertainty_status || "N/A"}
+                        </span>
+                      </div>
+                      <div className="sm:col-span-2">
+                        <Tooltip content="A safety buffer. A higher safety margin means the AI was easily able to rule out heart disease based on the safety limits of the model." position="top-right">
+                          <span className="text-[var(--text-dim)] font-bold block mb-0.5 cursor-help border-b border-dotted border-white/20 pb-0.5">Safety Margin (α)</span>
+                        </Tooltip>
+                        <span className="text-white">
+                          {result.clinical_indices.significance_level !== undefined 
+                            ? `${(result.clinical_indices.significance_level * 100).toFixed(2)}%` 
+                            : "N/A"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {result.clinical_indices.clinical_recourse && (
+                      <div className="space-y-1.5 pt-2 border-t border-[var(--border)]/40 text-[10px] font-mono uppercase">
+                        <span className="text-[var(--text-dim)] font-bold block animate-pulse">Lifestyle Action Recourse</span>
+                        <p className="text-amber-500 leading-normal bg-amber-500/5 border border-amber-500/10 p-2.5 rounded">
+                          {result.clinical_indices.clinical_recourse}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Patient Explainable AI (XAI) Panel */}
+                {((result.attributions && Object.keys(result.attributions).length > 0) || result.patient_explanation || generatingExplanation) && (
+                  <div className="space-y-4 border border-[var(--border)] rounded p-4 bg-zinc-950/40">
+                    <h4 className="text-[11px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5 border-b border-[var(--border)] pb-2">
+                      <Sparkles size={12} className="text-[var(--accent)]" aria-hidden="true" /> Patient-Friendly Explainable AI (XAI)
+                    </h4>
+
+                    {result.attributions && Object.keys(result.attributions).length > 0 && (
+                      <div className="space-y-2.5">
+                        <span className="section-label block">Key Health Drivers Impact</span>
+                        <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                          {Object.entries(result.attributions)
+                            .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
+                            .filter(([_, val]) => Math.abs(val) > 0.0001)
+                            .map(([feat, val]) => {
+                              const friendlyName = FRIENDLY_FEATURE_LABELS[feat] || feat;
+                              const isPositive = val > 0;
+                              const absPercent = Math.min(100, Math.round(Math.abs(val) * 100));
+                              return (
+                                <div key={feat} className="text-[10px] font-mono uppercase space-y-1">
+                                  <div className="flex justify-between text-[9px]">
+                                    <span className="text-[var(--text-primary)] font-bold">{friendlyName}</span>
+                                    <span className={isPositive ? "text-[var(--danger)]" : "text-[var(--success)]"}>
+                                      {isPositive ? `+${absPercent}% Risk Amplifier` : `-${absPercent}% Risk Mitigator`}
+                                    </span>
+                                  </div>
+                                  <div className="h-1.5 w-full bg-zinc-900 rounded-full overflow-hidden flex">
+                                    {isPositive ? (
+                                      <>
+                                        <div className="w-1/2 bg-zinc-900" />
+                                        <div 
+                                          className="bg-[var(--danger)] rounded-r-full" 
+                                          style={{ width: `${absPercent / 2}%` }}
+                                        />
+                                      </>
+                                    ) : (
+                                      <>
+                                        <div className="flex-1 flex justify-end">
+                                          <div 
+                                            className="bg-[var(--success)] rounded-l-full" 
+                                            style={{ width: `${absPercent / 2}%` }}
+                                          />
+                                        </div>
+                                        <div className="w-1/2 bg-zinc-900" />
+                                      </>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                        </div>
+                      </div>
+                    )}
+
+                    {(result.patient_explanation || generatingExplanation) && (
+                      <div className="space-y-1.5 pt-2 border-t border-[var(--border)]/40 text-[10px] font-mono uppercase">
+                        <span className="text-[var(--text-dim)] font-bold block">Empathetic Layperson Narrative</span>
+                        {generatingExplanation ? (
+                          <div className="space-y-2 bg-[rgba(255,255,255,0.01)] border border-[var(--border)] p-3 rounded normal-case">
+                            <div className="flex items-center gap-2 text-[var(--text-secondary)] mb-2 font-mono text-[9px] uppercase">
+                              <Sparkles size={10} className="text-[var(--accent)] animate-spin" />
+                              Synthesizing diagnostic insights...
+                            </div>
+                            <div className="space-y-1.5">
+                              <div className="h-2 w-full bg-zinc-800/80 rounded animate-pulse" />
+                              <div className="h-2 w-[95%] bg-zinc-800/80 rounded animate-pulse animate-delay-75" />
+                              <div className="h-2 w-[88%] bg-zinc-800/80 rounded animate-pulse animate-delay-150" />
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-[var(--text-primary)] leading-relaxed bg-[rgba(255,255,255,0.01)] border border-[var(--border)] p-3 rounded text-[10px] font-mono normal-case">
+                            {result.patient_explanation}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {result.advice && result.advice.length > 0 && (
+                  <div className="space-y-3">
+                    <h4 className="section-label flex items-center gap-1.5 border-b border-[var(--border)] pb-1.5">
+                      <FileText size={12} className="text-[var(--accent)]" aria-hidden="true" /> Recommended Protocol
+                    </h4>
+                    <div className="space-y-2">
+                      {result.advice.map((item, i) => (
+                        <div 
+                          key={i} 
+                          className="text-[10px] font-mono uppercase leading-normal flex items-start gap-2 p-2.5 bg-[rgba(255,255,255,0.01)] border border-[var(--border)] rounded text-[var(--text-primary)]"
+                        >
+                          <span className="text-[var(--accent)] font-bold">{`>`}</span>
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+              
+              <div className="mt-6 pt-4 border-t border-[var(--border)]">
+                <p className="text-[9px] text-[var(--text-dim)] font-mono uppercase leading-normal mb-2">
+                  {result.disclaimer || "AI-assisted screening tool, not a medical diagnosis. Consult a qualified professional."}
+                </p>
+                <p className="text-[9px] text-[var(--text-dim)] font-bold uppercase tracking-wider text-center border border-[var(--border)] py-1 bg-[rgba(255,255,255,0.01)] font-mono">
+                  Clinical Support Feed • Not Diagnostic
+                </p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </motion.div>
+    </div>
+  );
+}
