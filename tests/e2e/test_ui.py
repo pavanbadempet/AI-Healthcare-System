@@ -1,0 +1,29 @@
+import pytest
+from playwright.sync_api import Page, expect
+
+# Prerequisite: App must be running on 127.0.0.1:3000
+BASE_URL = "http://127.0.0.1:3000"
+
+@pytest.mark.e2e
+def test_ui_smoke(page: Page):
+    try:
+        page.goto(BASE_URL)
+    except Exception:
+        pytest.skip("App not running")
+
+    import re
+    expect(page).to_have_title(re.compile(r"AI Healthcare System"))
+
+    # OR if session persisted, it shows Dashboard.
+    # We can check for "Login" button OR "Logout" button.
+
+    login_btn = page.locator('button:has-text("Login")')
+    logout_btn = page.locator('button:has-text("Logout")')
+
+    if login_btn.count() > 0:
+        expect(login_btn).to_be_visible()
+    elif logout_btn.count() > 0:
+        expect(logout_btn).to_be_visible()
+    else:
+        # Maybe in Signup tab?
+        pass

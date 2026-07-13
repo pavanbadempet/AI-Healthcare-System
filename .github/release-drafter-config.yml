@@ -1,0 +1,59 @@
+name-template: 'v$RESOLVED_VERSION'
+tag-template: 'v$RESOLVED_VERSION'
+template: |
+  ## 🏥 AI Healthcare System — $RESOLVED_VERSION
+
+  ### What's Changed
+
+  $CHANGES
+
+  **Full Changelog**: https://github.com/pavanbadempet/AI-Healthcare-System/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+
+categories:
+  - title: '🚀 Features'
+    labels:
+      - 'enhancement'
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'bug'
+  - title: '🔒 Security'
+    labels:
+      - 'security'
+  - title: '📚 Documentation'
+    labels:
+      - 'documentation'
+  - title: '🧪 Tests'
+    label: 'tests'
+  - title: '⚙️ Infrastructure'
+    labels:
+      - 'infrastructure'
+      - 'github-actions'
+      - 'docker'
+  - title: '📦 Dependencies'
+    labels:
+      - 'dependencies'
+  - title: '🔧 Maintenance'
+    labels:
+      - 'refactor'
+      - 'performance'
+
+change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+change-title-escapes: '\<*_&'
+
+version-resolver:
+  major:
+    labels:
+      - 'breaking-change'
+  minor:
+    labels:
+      - 'enhancement'
+  patch:
+    labels:
+      - 'bug'
+      - 'dependencies'
+      - 'refactor'
+  default: patch
+
+exclude-labels:
+  - 'skip-changelog'
+  - 'stale'

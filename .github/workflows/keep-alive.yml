@@ -1,0 +1,43 @@
+name: Keep Alive
+
+on:
+  schedule:
+    # Runs every 14 minutes to prevent free tier spin-down (Render spins down after 15 min of inactivity)
+    - cron: '*/14 * * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  ping-services:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11.9"
+
+      - name: Install Playwright
+        run: |
+          python -m pip install --upgrade pip
+          pip install playwright requests
+          playwright install chromium
+
+      - name: Ping Backends (Render)
+        run: |
+          echo "Pinging primary backend (Fastest/New)..."
+          # Render wakes up if it receives any request. It might take 50s, so we give it a 30s timeout
+          # Even if curl times out, the request reached Render and it will start waking up
+          curl -s -o /dev/null -w "%{http_code}" --max-time 30 https://aio-health-backend-gdzi.onrender.com/healthz || echo "Primary ping sent"
+          
+          echo "Pinging secondary backend (Fallback)..."
+          curl -s -o /dev/null -w "%{http_code}" --max-time 30 https://aio-health-backend.onrender.com/healthz || echo "Secondary ping sent"
+          
+      - name: Ping Frontend
+        env:
+          FRONTEND_URL: ${{ vars.FRONTEND_URL }}
+        run: |
+          echo "Launching headless browser to ping frontend..."
+          python scripts/keep_alive_frontend.py

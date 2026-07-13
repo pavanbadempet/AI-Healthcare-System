@@ -1,0 +1,181 @@
+groups:
+  - name: healthcare_service_alerts
+    rules:
+      - alert: HighErrorRate
+        expr: sum(rate(http_requests_total{status=~"5.."}[5m])) / sum(rate(http_requests_total[5m])) * 100 > 5
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High HTTP error rate (> 5%) detected"
+          description: "The HTTP error rate for service {{ $labels.service }} is {{ $value | printf \"%.2f\" }}% over the last 5 minutes."
+
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le, service)) > 2.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow HTTP response times (p95 > 2s)"
+          description: "The p95 HTTP response duration for service {{ $labels.service }} is {{ $value | printf \"%.2f\" }}s."
+
+      - alert: ServiceDown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Healthcare application instance down"
+          description: "Instance {{ $labels.instance }} has been unreachable for more than 1 minute."
+
+  - name: database_alerts
+    rules:
+      - alert: DatabaseConnectionPoolExhausted
+        expr: active_db_connections >= max_db_connections
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Database connection pool exhausted"
+          description: "Active database connections pool is full ({{ $value }} connections) on instance {{ $labels.instance }}."
+
+      - alert: DatabaseSlowQueries
+        expr: histogram_quantile(0.95, sum(rate(db_query_duration_seconds_bucket[5m])) by (le)) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Slow database queries detected"
+          description: "Database 95th percentile query duration is {{ $value | printf \"%.2f\" }}s over the last 5 minutes."
+
+      - alert: DatabaseReplicationLag
+        expr: pg_replication_lag_seconds > 30
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Database replication lag exceeding 30s"
+          description: "PostgreSQL read replica replication lag is {{ $value }}s on instance {{ $labels.instance }}."
+
+  - name: prediction_service_alerts
+    rules:
+      - alert: PredictionServiceDown
+        expr: rate(prediction_requests_total[5m]) == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Prediction service down or receiving zero requests"
+          description: "Inference engine has processed zero prediction queries over the last 5 minutes."
+
+      - alert: PredictionLatencyHigh
+        expr: histogram_quantile(0.95, sum(rate(prediction_latency_seconds_bucket[5m])) by (le, model_name)) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Model inference latency high (p95 > 500ms)"
+          description: "Prediction p95 latency for model {{ $labels.model_name }} is {{ $value | printf \"%.2f\" }}s."
+
+      - alert: ModelDriftDetected
+        expr: feature_drift_psi > 0.25
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Model data drift critical (PSI > 0.25)"
+          description: "Features for model {{ $labels.model_name }} show high statistical drift with PSI = {{ $value }}."
+
+      - alert: ModelAccuracyDegradation
+        expr: model_accuracy_score < 0.90
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "Model prediction accuracy degraded"
+          description: "Recent sliding window accuracy score for model {{ $labels.model_name }} has dropped to {{ $value | printf \"%.2f\" }}."
+
+  - name: data_pipeline_alerts
+    rules:
+      - alert: DataQualityBelowThreshold
+        expr: dataset_quality_score < 0.95
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Dataset quality score below threshold (95%)"
+          description: "Dataset {{ $labels.dataset_id }} has a data validation pass rate of {{ $value | printf \"%.2f\" }}%."
+
+      - alert: DLQSizeHigh
+        expr: dlq_records_count > 100
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Dead Letter Queue records count high"
+          description: "The DLQ folder contains {{ $value }} failed records pending backfill/retry."
+
+      - alert: ETLPipelineFailure
+        expr: dag_run_failed{dag_id="healthcare_data_pipeline"} == 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "ETL Pipeline DAG Run failed"
+          description: "Airflow DAG run for healthcare_data_pipeline has failed."
+
+      - alert: DataFreshnessSLABreach
+        expr: dataset_staleness_hours > dataset_sla_hours
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Dataset SLA freshness breach"
+          description: "Dataset {{ $labels.dataset_id }} freshness SLA violated. Last update was {{ $value }} hours ago."
+
+  - name: infrastructure_alerts
+    rules:
+      - alert: CacheHitRateLow
+        expr: sum(rate(cache_hits_total[15m])) / (sum(rate(cache_hits_total[15m])) + sum(rate(cache_misses_total[15m]))) * 100 < 50
+        for: 15m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Cache hit rate low (< 50%)"
+          description: "System cache hit rate has dropped to {{ $value | printf \"%.2f\" }}% over the last 15 minutes."
+
+      - alert: HighMemoryUsage
+        expr: node_memory_Active_bytes / node_memory_MemTotal_bytes * 100 > 90
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory utilization (> 90%)"
+          description: "System active memory utilization is {{ $value | printf \"%.2f\" }}% on instance {{ $labels.instance }}."
+
+      - alert: HighCPUUsage
+        expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[10m])) * 100) > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU utilization (> 85%)"
+          description: "CPU utilization is {{ $value | printf \"%.2f\" }}% on instance {{ $labels.instance }}."
+
+      - alert: DiskSpaceLow
+        expr: node_filesystem_free_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"} * 100 < 10
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Low disk space (< 10%)"
+          description: "Root partition disk space remaining is {{ $value | printf \"%.2f\" }}%."
+
+      - alert: RedisConnectionFailure
+        expr: redis_up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis cache service down"
+          description: "The Redis instance is unreachable from the FastAPI backend."

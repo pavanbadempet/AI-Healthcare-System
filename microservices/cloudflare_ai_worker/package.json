@@ -1,0 +1,16 @@
+{
+  "name": "cloudflare_ai_worker",
+  "version": "1.0.0",
+  "description": "Cloudflare Workers AI Inference Endpoint",
+  "main": "src/index.ts",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "dev": "wrangler dev"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20240320.1",
+    "typescript": "^5.0.0",
+    "wrangler": "^3.0.0"
+  }
+}

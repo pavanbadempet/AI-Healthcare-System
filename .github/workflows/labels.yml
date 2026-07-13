@@ -1,0 +1,22 @@
+# Auto-label and manage GitHub Labels — runs once on push, sets up your label taxonomy
+# After first run, labels persist on the repo permanently
+name: Sync Labels
+
+on:
+  workflow_dispatch: # Manual trigger only — run once to set up labels
+
+permissions:
+  issues: write
+  pull-requests: write
+  contents: read
+
+jobs:
+  sync-labels:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: EndBug/label-sync@v2
+        with:
+          config-file: .github/labels.yml
+          delete-other-labels: false
+          token: ${{ secrets.GITHUB_TOKEN }}

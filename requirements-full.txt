@@ -1,0 +1,58 @@
+# =======================================================
+# AI HEALTHCARE - FULL REQUIREMENTS (Local Development)
+# =======================================================
+# Use for local dev with full ML capabilities
+# For Render deployment, use requirements.txt (lite version)
+# =======================================================
+
+# --- Core API & Server ---
+fastapi>=0.111.0
+uvicorn[standard]>=0.29.0
+python-multipart>=0.0.32
+orjson
+starlette
+requests>=2.32.3
+razorpay
+
+# --- Authentication & Security ---
+passlib[bcrypt]>=1.7.4
+bcrypt<4.0
+pyjwt>=2.8.0
+python-jose[cryptography]>=3.3.0
+
+# --- Database & Config ---
+sqlalchemy
+python-dotenv
+
+# --- Data Science & ML (Full) ---
+pandas>=2.2.2
+numpy>=2.4.6
+scikit-learn>=1.4.2
+# Optional — ANN vector backend; falls back to SimpleVectorStore when absent
+turbovec>=0.5.0
+joblib>=1.5.3
+torch>=2.12.0
+xgboost>=2.0.3
+lightgbm>=4.6.0
+shap>=0.51.0
+sentence-transformers
+
+# --- Visualization ---
+matplotlib>=3.10.9
+plotly>=5.21.0
+
+# --- AI & LLM (Full) ---
+google-generativeai>=0.5.2
+langchain-huggingface>=0.0.3
+langchain-community>=0.0.38
+langchain-core
+langgraph>=1.2.4
+
+# --- Utilities ---
+fpdf
+pillow
+feedparser>=6.0.10
+
+# --- Data Pipeline (Orchestration) ---
+apache-airflow>=3.2.2
+pyspark>=4.1.2

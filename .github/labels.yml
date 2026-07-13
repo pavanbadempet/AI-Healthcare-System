@@ -1,0 +1,132 @@
+# Label definitions for the repository
+# Run the "Sync Labels" workflow to apply these
+
+# ── Type ──
+- name: "bug"
+  color: "d73a4a"
+  description: "Something isn't working"
+
+- name: "enhancement"
+  color: "a2eeef"
+  description: "New feature or request"
+
+- name: "documentation"
+  color: "0075ca"
+  description: "Improvements or additions to docs"
+
+- name: "refactor"
+  color: "d4c5f9"
+  description: "Code cleanup, no functional change"
+
+- name: "security"
+  color: "e11d48"
+  description: "Security vulnerability or hardening"
+
+- name: "performance"
+  color: "f9d0c4"
+  description: "Performance improvement"
+
+# ── Priority ──
+- name: "priority: critical"
+  color: "b60205"
+  description: "Must fix immediately"
+
+- name: "priority: high"
+  color: "d93f0b"
+  description: "Fix in current sprint"
+
+- name: "priority: medium"
+  color: "fbca04"
+  description: "Fix soon"
+
+- name: "priority: low"
+  color: "0e8a16"
+  description: "Nice to have"
+
+# ── Component ──
+- name: "backend"
+  color: "1d76db"
+  description: "Backend API / Python"
+
+- name: "frontend"
+  color: "5319e7"
+  description: "React/Vite Frontend"
+
+- name: "ml-models"
+  color: "006b75"
+  description: "Machine Learning models and training"
+
+- name: "ai-chat"
+  color: "7057ff"
+  description: "AI Chat / RAG / LLM"
+
+- name: "auth"
+  color: "b4a8d1"
+  description: "Authentication & authorization"
+
+- name: "infrastructure"
+  color: "c5def5"
+  description: "Docker, CI/CD, Terraform, deployment"
+
+# ── Status ──
+- name: "triage"
+  color: "ededed"
+  description: "Needs triage and classification"
+
+- name: "in-progress"
+  color: "0052cc"
+  description: "Actively being worked on"
+
+- name: "blocked"
+  color: "b60205"
+  description: "Blocked by another issue or dependency"
+
+- name: "needs-review"
+  color: "ff9f1c"
+  description: "Waiting for code review"
+
+- name: "wontfix"
+  color: "ffffff"
+  description: "Will not be fixed"
+
+- name: "duplicate"
+  color: "cfd3d7"
+  description: "This issue already exists"
+
+# ── Dependencies (Dependabot) ──
+- name: "dependencies"
+  color: "0366d6"
+  description: "Dependency update"
+
+- name: "python"
+  color: "3572A5"
+  description: "Python ecosystem"
+
+- name: "javascript"
+  color: "f1e05a"
+  description: "JavaScript/TypeScript ecosystem"
+
+- name: "github-actions"
+  color: "2088ff"
+  description: "GitHub Actions workflow"
+
+- name: "docker"
+  color: "0db7ed"
+  description: "Docker / container"
+
+# ── Special ──
+- name: "good first issue"
+  color: "7057ff"
+  description: "Good for newcomers"
+
+- name: "help wanted"
+  color: "008672"
+  description: "Extra attention is needed"
+
+- name: "breaking-change"
+  color: "b60205"
+  description: "Introduces a breaking change"
+
+- name: "hipaa"
+  color: "e11d48"
+  description: "HIPAA compliance related"

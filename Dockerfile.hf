@@ -1,0 +1,71 @@
+# =======================================================
+# AI HEALTHCARE - HUGGING FACE SPACES BACKEND & FRONTEND
+# =======================================================
+# Hugging Face Spaces (Docker Space) requires port 7860
+# and running as a non-root user (uid 1000).
+# =======================================================
+
+# Stage 1: Build Frontend React SPA
+FROM node:20-alpine AS frontend-builder
+WORKDIR /build
+
+# Copy frontend package list and install dependencies
+COPY frontend/package*.json ./
+RUN npm ci
+
+# Copy frontend source and build the production bundle
+COPY frontend/ ./
+RUN npm run build
+
+# Stage 2: Final image with Python backend and frontend assets
+FROM python:3.12-slim
+
+# Install system dependencies and Rust
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    ca-certificates \
+    gnupg \
+    && curl -sLf --retry 3 https://cli.doppler.com/install.sh | sh \
+    && rm -rf /var/lib/apt/lists/*
+
+
+# Set up non-root user required by Hugging Face Spaces
+RUN useradd -m -u 1000 user
+USER user
+ENV HOME=/home/user \
+    PATH=/home/user/.cargo/bin:/home/user/.local/bin:$PATH
+
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+
+WORKDIR $HOME/app
+
+# Copy requirements
+COPY --chown=user backend/requirements.txt $HOME/app/backend/requirements.txt
+COPY --chown=user requirements.txt $HOME/app/
+
+# Install dependencies based on backend requirements
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r backend/requirements.txt
+
+# Copy source code
+COPY --chown=user . $HOME/app/
+
+# Build Rust Gateway during image build phase
+RUN cd rust_gateway && cargo build --release
+
+# Copy built frontend assets from Stage 1 to home app dir
+COPY --from=frontend-builder --chown=user /build/dist $HOME/app/frontend/dist
+
+# Download AI model weights from Hugging Face Model Registry
+RUN python backend/download_models.py
+
+# Make startup script executable
+RUN chmod +x scripts/start_prod.sh
+
+# Expose the specific port Hugging Face Spaces uses
+EXPOSE 7860
+
+# Run FastAPI backend with Doppler/standard fallback
+CMD ["bash", "scripts/start_prod.sh"]
+

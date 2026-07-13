@@ -1,0 +1,36 @@
+name: 📚 Documentation
+description: Report missing, incorrect, or unclear documentation
+title: "[Docs]: "
+labels: ["documentation", "triage"]
+assignees:
+  - pavanbadempet
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What needs documenting?
+      description: Describe what documentation is missing or needs improvement.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: doc_type
+    attributes:
+      label: Documentation Type
+      options:
+        - API Reference
+        - Architecture Docs
+        - Setup / Installation Guide
+        - User Guide
+        - Code Comments / Docstrings
+        - AGENTS.md / CONTEXT.md
+        - README
+    validations:
+      required: true
+
+  - type: textarea
+    id: location
+    attributes:
+      label: Location
+      description: Which file or section is affected?
+      placeholder: "docs/AI_AGENT_ARCHITECTURE.md, section 3..."

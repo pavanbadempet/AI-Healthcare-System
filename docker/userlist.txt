@@ -1,0 +1,5 @@
+# Format: "username" "password"
+# Example entry:
+# "dbuser" "scram-sha-256 password hash"
+"postgres" "md5passwordhash"
+"healthcare_user" "md5passwordhash"
