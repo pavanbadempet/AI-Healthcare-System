@@ -227,7 +227,7 @@ def check_generated_files(files: dict[str, str]) -> list[str]:
 def _is_local_only_generated_file(rel_path: str) -> bool:
     path = pathlib.PurePosixPath(rel_path)
     return (
-        rel_path in {"CLAUDE.md", "GEMINI.md", ".cursorrules"}
+        path.name in {"CLAUDE.md", "GEMINI.md", ".cursorrules"}
         or path.parts[:1] in {(".cursor",), (".kiro",)}
     )
 
