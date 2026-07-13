@@ -1054,7 +1054,7 @@ def get_external_records(
         raise HTTPException(status_code=403, detail="Patients can only access their own external records")
     elif current_user.role == "doctor" and not _doctor_assigned_to_patient(db, current_user.id, patient_id):
         raise HTTPException(status_code=403, detail="Doctor is not assigned to this patient")
-    
+
     _ensure_facility_access(current_user, patient.facility_id)
 
     # Generate mock external health records representing cross-facility transfer via ABDM
@@ -1117,7 +1117,7 @@ def get_health_passport(
         raise HTTPException(status_code=403, detail="Patients can only access their own health passport")
     elif current_user.role == "doctor" and not _doctor_assigned_to_patient(db, current_user.id, patient_id):
         raise HTTPException(status_code=403, detail="Doctor is not assigned to this patient")
-    
+
     _ensure_facility_access(current_user, patient.facility_id)
 
     latest_vital = db.query(models.VitalObservation).filter(

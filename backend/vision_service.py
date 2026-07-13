@@ -64,9 +64,9 @@ def analyze_lab_report_pdf(pdf_bytes: bytes) -> Dict[str, Any]:
         import google.generativeai as genai
         genai.configure(api_key=core_ai.GOOGLE_API_KEY)
         model = genai.GenerativeModel(core_ai.GEMINI_VISION_MODEL)
-        
+
         prompt = get_prompt("lab_report_vision")
-        
+
         response = model.generate_content([
             {
                 'mime_type': 'application/pdf',
@@ -74,7 +74,7 @@ def analyze_lab_report_pdf(pdf_bytes: bytes) -> Dict[str, Any]:
             },
             prompt
         ])
-        
+
         text = (getattr(response, "text", "") or "").strip()
         text = text.replace("```json", "").replace("```", "").strip()
         result = json.loads(text)

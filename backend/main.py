@@ -5,7 +5,7 @@ import sys
 from contextlib import asynccontextmanager
 from pathlib import Path
 
-from fastapi import Depends, FastAPI, HTTPException, Request, BackgroundTasks
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.gzip import GZipMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
@@ -22,6 +22,8 @@ else:
 
 # Configure Logging with PII Redaction
 import re
+
+
 class PIIRedactingFilter(logging.Filter):
     def filter(self, record):
         if isinstance(record.msg, str):
@@ -35,9 +37,9 @@ logger.addFilter(PIIRedactingFilter())
 
 # Configure Rate Limiter
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from slowapi.util import get_remote_address
 
 # Use global limiter for all components to import
 limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
@@ -404,21 +406,21 @@ def circuit_breaker():
 @app.get("/healthz/time_predict")
 async def time_predict(background_tasks: BackgroundTasks):
     import time
-    from backend import prediction as pred
-    from backend import model_service
+
     from backend import database
     from backend import features as _features
-    
+    from backend import prediction as pred
+
     timings = {}
-    
+
     # 1. DB Session
     start = time.time()
     db = next(database.get_db())
     timings["db_session_init"] = time.time() - start
-    
+
     # Payload
     input_list = [67, 1, 0, 160, 286, 0, 0, 108, 1, 1.5, 1, 3, 2]
-    
+
     try:
         # 2. Imputer
         start = time.time()
@@ -429,24 +431,24 @@ async def time_predict(background_tasks: BackgroundTasks):
         else:
             imputed_list = [0.0 if x is None else x for x in input_list]
         timings["imputer_and_conformal"] = time.time() - start
-        
+
         # 3. Model predict
         start = time.time()
         raw, confidence, risk_level, proba = pred._run_model_prediction_scaled("heart", imputed_list)
         prediction = "Heart Disease Detected" if raw == 1 else "Healthy Heart"
         timings["model_prediction"] = time.time() - start
-        
+
         # 4. Conformal / Triage / Risk
         start = time.time()
         proba_pos = float(proba[1]) if len(proba) > 1 else float(proba[0])
         conformal_metrics = pred._calculate_adaptive_conformal_prediction(
             proba_pos, conformal_q, imputed_list, raw, risk_level
         )
-        triage = pred._get_triage_recommendation(raw, conformal_metrics["conformal_prediction_set"])
-        top_factors = pred._get_top_risk_factors(pred.heart_model, imputed_list, _features.HEART_FEATURES)
+        pred._get_triage_recommendation(raw, conformal_metrics["conformal_prediction_set"])
+        pred._get_top_risk_factors(pred.heart_model, imputed_list, _features.HEART_FEATURES)
         clinical_indices = {"framingham_risk": {}, **conformal_metrics}
         timings["conformal_triage_factors"] = time.time() - start
-        
+
         # 5. SHAP Logging
         start = time.time()
         attributions = pred._log_feature_attributions(
@@ -454,7 +456,7 @@ async def time_predict(background_tasks: BackgroundTasks):
             imputed_list, _features.HEART_FEATURES, raw, pred.heart_model
         )
         timings["shap_logging"] = time.time() - start
-        
+
         # 6. Narrative and Explanation
         start = time.time()
         import asyncio
@@ -467,12 +469,12 @@ async def time_predict(background_tasks: BackgroundTasks):
             )
         )
         timings["narrative_and_explanation"] = time.time() - start
-        
+
     except Exception as e:
         timings["error"] = str(e)
     finally:
         db.close()
-        
+
     return timings
 
 @app.post("/generate_report")

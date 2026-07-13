@@ -106,7 +106,7 @@ def get_analytics_report(
     """Fetch the Gold Layer analyst report."""
     if admin.facility_id is not None:
         raise HTTPException(status_code=403, detail="Global analytics report requires global admin privileges")
-        
+
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     report_path = os.path.join(base_dir, "data", "gold", "analyst_report.json")
 
@@ -241,7 +241,7 @@ def get_attribution_drift_report(
     """Return a model feature attribution drift analysis report compared to baseline profiles."""
     if admin.facility_id is not None:
         raise HTTPException(status_code=403, detail="Global drift report requires global admin privileges")
-        
+
     import numpy as np
 
     from .models import DbFeatureAttributionLog
@@ -627,7 +627,7 @@ def clear_semantic_cache(
     """Evict all items in the semantic cache to handle stale narratives or policy updates."""
     if admin.facility_id is not None:
         raise HTTPException(status_code=403, detail="Clearing the semantic cache requires global admin privileges")
-        
+
     from .core_ai import semantic_cache
     semantic_cache.clear()
     return {
@@ -645,7 +645,7 @@ def run_federated_simulation(
     """Run the federated learning simulation with custom epochs and privacy budget epsilon."""
     if admin.facility_id is not None:
         raise HTTPException(status_code=403, detail="Federated simulation requires global admin privileges")
-        
+
     import os
     import sys
 

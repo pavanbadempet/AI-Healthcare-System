@@ -1,9 +1,11 @@
 import logging
+
 logging.basicConfig(level=logging.DEBUG)
+
+import os
 
 from backend import model_service
 
-import os
 if "TESTING" in os.environ:
     del os.environ["TESTING"]
 

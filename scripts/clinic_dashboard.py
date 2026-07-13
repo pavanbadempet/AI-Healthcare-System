@@ -2,19 +2,18 @@
 """
 🏥 AI Healthcare System - Interactive Clinic Terminal Dashboard (TUI)
 ===================================================================
-A self-contained, high-fidelity CLI dashboard using ANSI escape codes to 
-visualize real-time clinical occupancy, telemetry streams, database pools, 
+A self-contained, high-fidelity CLI dashboard using ANSI escape codes to
+visualize real-time clinical occupancy, telemetry streams, database pools,
 and machine learning model diagnostics.
 
 Usage:
     python scripts/clinic_dashboard.py
 """
 
+import math
+import random
 import sys
 import time
-import random
-import os
-import math
 
 # ANSI Colors
 CLR_RESET = "\033[0m"
@@ -112,7 +111,7 @@ def draw_layout():
     clear_screen()
     # Draw top header bar
     sys.stdout.write(f"{BG_BLUE}{FG_HI_WHITE}{CLR_BOLD}" + " 🏥 AI HEALTHCARE PLATFORM - REAL-TIME OPERATION ENGINE ".center(80) + f"{CLR_RESET}\n")
-    
+
     # Grid Borders
     for y in range(2, 24):
         # Left and Right borders
@@ -120,11 +119,11 @@ def draw_layout():
         sys.stdout.write(f"{FG_HI_BLACK}║{CLR_RESET}")
         move_cursor(y, 80)
         sys.stdout.write(f"{FG_HI_BLACK}║{CLR_RESET}")
-    
+
     # Internal horizontal separations
     move_cursor(10, 1)
     sys.stdout.write(f"{FG_HI_BLACK}" + "╠" + "═"*78 + "╣" + f"{CLR_RESET}")
-    
+
     move_cursor(18, 1)
     sys.stdout.write(f"{FG_HI_BLACK}" + "╠" + "═"*78 + "╣" + f"{CLR_RESET}")
 
@@ -145,13 +144,13 @@ def render_dashboard(stream):
     # --- Top Left: Operational Census (Beds Grid) ---
     move_cursor(2, 3)
     sys.stdout.write(f"{FG_CYAN}{CLR_BOLD}🩺 INPATIENT WARD CENSUS{CLR_RESET}")
-    
+
     occupied = sum(stream.beds)
     total = len(stream.beds)
     pct = (occupied / total) * 100
     move_cursor(3, 3)
     sys.stdout.write(f"{FG_WHITE}Occupancy: {CLR_BOLD}{occupied}/{total}{CLR_RESET} ({pct:.1f}%)   ")
-    
+
     # Render beds grid
     grid_y = 5
     grid_x = 3
@@ -169,17 +168,17 @@ def render_dashboard(stream):
     # --- Top Right: Systems Telemetry Stats ---
     move_cursor(2, 47)
     sys.stdout.write(f"{FG_CYAN}{CLR_BOLD}🖥️ SYSTEM CLUSTER STATE{CLR_RESET}")
-    
+
     move_cursor(3, 47)
     sys.stdout.write(f"{FG_WHITE}FastAPI Gateway: {FG_GREEN}● ONLINE{CLR_RESET}")
-    
+
     move_cursor(4, 47)
     sys.stdout.write(f"{FG_WHITE}Active DB Pools: {FG_HI_YELLOW}{stream.db_connections}{CLR_RESET}")
-    
+
     hit_rate = (stream.cache_hits / max(1, stream.cache_hits + stream.cache_misses)) * 100
     move_cursor(5, 47)
     sys.stdout.write(f"{FG_WHITE}Redis Cache Hit: {FG_HI_GREEN}{hit_rate:.1f}%{CLR_RESET} ({stream.cache_hits} hits)")
-    
+
     move_cursor(6, 47)
     sys.stdout.write(f"{FG_WHITE}LangGraph Agent: {FG_GREEN}IDLE / MONITORING{CLR_RESET}")
 
@@ -192,14 +191,14 @@ def render_dashboard(stream):
     # --- Middle Left: Live ICU Vitals Streaming ---
     move_cursor(10, 3)
     sys.stdout.write(f"{FG_CYAN}{CLR_BOLD}📡 LIVE PATIENT VITAL CHANNELS (BED 07){CLR_RESET}")
-    
+
     if stream.vitals_history:
         hr, sbp, dbp, spo2, temp = stream.vitals_history[-1]
-        
+
         # Color code HR status
         hr_color = FG_GREEN if 60 <= hr <= 100 else FG_HI_RED
         spo2_color = FG_GREEN if spo2 >= 95 else FG_HI_RED
-        
+
         move_cursor(12, 3)
         sys.stdout.write(f"{FG_WHITE}Heart Rate (PR):    {hr_color}{CLR_BOLD}{hr} bpm{CLR_RESET}   ")
         move_cursor(13, 3)
@@ -208,11 +207,11 @@ def render_dashboard(stream):
         sys.stdout.write(f"{FG_WHITE}Oxygen Sat (SpO2):  {spo2_color}{CLR_BOLD}{spo2}%{CLR_RESET}      ")
         move_cursor(15, 3)
         sys.stdout.write(f"{FG_WHITE}Body Temperature:   {FG_GREEN}{temp:.1f} °F{CLR_RESET}   ")
-    
+
     # --- Middle Right: ML Inference Diagnostics ---
     move_cursor(10, 42)
     sys.stdout.write(f"{FG_CYAN}{CLR_BOLD}🧠 ACTIVE CLINICAL ML PIPELINES{CLR_RESET}")
-    
+
     models = [
         ("Diabetes XGBoost", 0.8287, FG_HI_BLUE),
         ("Heart XGBoost", 0.8467, FG_HI_GREEN),
@@ -220,7 +219,7 @@ def render_dashboard(stream):
         ("Kidney XGBoost", 0.9912, FG_HI_MAGENTA),
         ("Lungs XGBoost", 0.9250, FG_HI_YELLOW)
     ]
-    
+
     for idx, (name, auc, color) in enumerate(models):
         move_cursor(12 + idx, 42)
         # Draw a little text bar chart representing AUC
@@ -231,7 +230,7 @@ def render_dashboard(stream):
     # --- Bottom: Real-Time Event & Audit Log Stream ---
     move_cursor(18, 3)
     sys.stdout.write(f"{FG_CYAN}{CLR_BOLD}📑 AUDIT TRAIL & TRANSACTION LOGS{CLR_RESET}")
-    
+
     events = [
         f"[{time.strftime('%H:%M:%S')}] [SECURE] Inbound REST call verified under X-Request-ID.",
         f"[{time.strftime('%H:%M:%S')}] [AUDIT] Clinician reviewed and validated Diabetes diagnosis override.",
@@ -239,7 +238,7 @@ def render_dashboard(stream):
         f"[{time.strftime('%H:%M:%S')}] [RAG] Retrieved medical context for Lungs check in 2.4ms.",
         f"[{time.strftime('%H:%M:%S')}] [TELEMETRY] Broadcasted clinic census status over WebSocket.",
     ]
-    
+
     # Show last 4 events based on clock ticks
     for idx in range(4):
         move_cursor(19 + idx, 3)

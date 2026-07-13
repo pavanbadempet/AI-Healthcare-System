@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 import joblib  # noqa: F401 — tests patch backend.prediction.joblib.load
 import numpy as np
 import pandas as pd
-from fastapi import APIRouter, HTTPException, BackgroundTasks
+from fastapi import APIRouter, BackgroundTasks, HTTPException
 from sqlalchemy.orm import Session
 
 # --- Custom Modules ---
@@ -42,7 +42,7 @@ def initialize_models():
         torch.set_num_threads(1)
     except ImportError:
         pass
-        
+
     global diabetes_model, heart_model, liver_model, kidney_model, lungs_model
     global liver_scaler, kidney_scaler, lungs_scaler
     model_service.initialize()
@@ -60,14 +60,16 @@ def initialize_models():
 
 def _run_model_prediction_scaled(model_name: str, input_list: list, X=None):
     """Run prediction using pickle if available, otherwise ONNX. Supports scaled input."""
-    from . import model_service as ms
-    import numpy as np
     import sys
+
+    import numpy as np
+
+    from . import model_service as ms
     _pred = sys.modules[__name__]
     model_obj = getattr(_pred, f"{model_name}_model", None)
-    
+
     predict_input = X if X is not None else [input_list]
-    
+
     # In testing mode, prioritize the mocked global model variables
     if os.getenv("TESTING") == "1" and model_obj is not None:
         use_predict = True
@@ -79,7 +81,7 @@ def _run_model_prediction_scaled(model_name: str, input_list: list, X=None):
                 disease_prob = float(proba[1]) if len(proba) > 1 else float(proba[0])
                 confidence, risk_level = ms._classify_confidence(disease_prob)
                 use_predict = False
-        
+
         if use_predict:
             raw_pred = model_obj.predict(predict_input)
             raw = ms._normalize_prediction(raw_pred)
@@ -92,7 +94,7 @@ def _run_model_prediction_scaled(model_name: str, input_list: list, X=None):
     entry = ms.model_service._entries.get(model_name)
     if not entry:
         raise ValueError(f"Model {model_name} not found")
-        
+
     if entry.onnx_session is not None or entry.is_voting:
         # ONNX uses unscaled input if scaler_onnx_session exists in model_service
         input_array = np.array([input_list], dtype=np.float32)
@@ -100,7 +102,7 @@ def _run_model_prediction_scaled(model_name: str, input_list: list, X=None):
             input_array = entry.scaler_onnx_session.run(None, {entry.scaler_onnx_session.get_inputs()[0].name: input_array})[0]
         elif entry.scaler_needed and entry.scaler is not None:
             input_array = entry.scaler.transform(input_array).astype(np.float32)
-        
+
         raw, prob = ms._predict_onnx_probs(entry, input_array)
         confidence, risk_level = ms._classify_confidence(prob)
         if confidence is not None and raw == 0:
@@ -116,7 +118,7 @@ def _run_model_prediction_scaled(model_name: str, input_list: list, X=None):
                 disease_prob = float(proba[1]) if len(proba) > 1 else float(proba[0])
                 confidence, risk_level = ms._classify_confidence(disease_prob)
                 use_predict = False
-                
+
         if use_predict:
             raw_pred = entry.model.predict(predict_input)
             raw = ms._normalize_prediction(raw_pred)
@@ -309,10 +311,10 @@ def _log_feature_attributions(
     try:
         from fastapi import BackgroundTasks
         from sqlalchemy.orm import Session
-        
+
         background_tasks = None
         db_session = db
-        
+
         if isinstance(background_tasks_or_db, BackgroundTasks):
             background_tasks = background_tasks_or_db
         elif isinstance(background_tasks_or_db, Session):
@@ -588,7 +590,6 @@ def _calculate_clinical_recourse(
         import itertools
 
         import numpy as np
-        import pandas as pd
 
         # Schema: (index, check_fn, target_val, description, is_continuous)
         candidates = {
@@ -625,8 +626,9 @@ def _calculate_clinical_recourse(
 
         def _predict_profile(profile):
             if model_name in ("kidney", "liver", "lungs"):
-                import numpy as np
                 import warnings
+
+                import numpy as np
                 X_rec = np.array([profile])
                 if scaler is not None:
                     with warnings.catch_warnings():
@@ -893,7 +895,6 @@ async def predict_kidney(
         import pandas as pd
 
         from . import features as _features
-        from .model_service import _extract_confidence, _normalize_prediction
         feature_names = _features.KIDNEY_FEATURES
         input_list = [
             data.age, data.bp, data.sg, data.al, data.su,
@@ -1003,7 +1004,6 @@ async def predict_lungs(
         import pandas as pd
 
         from . import features as _features
-        from .model_service import _extract_confidence, _normalize_prediction
         feature_names = _features.LUNG_FEATURES
         input_list = [
             data.gender, data.age, data.smoking, data.yellow_fingers,
@@ -1103,7 +1103,7 @@ async def predict_stroke(
         raise HTTPException(status_code=503, detail="Stroke Model not available.")
     try:
         from .model_service import _extract_confidence, _normalize_prediction
-        
+
         feature_names = ['Gender', 'Age', 'Hypertension', 'HeartDisease', 'Smoking', 'BMI', 'Glucose']
         input_list = [
             data.gender if data.gender is not None else 0,
@@ -1122,10 +1122,10 @@ async def predict_stroke(
         raw_pred = model.predict([input_list])
         raw = _normalize_prediction(raw_pred)
         confidence, risk_level = _extract_confidence(model, [input_list])
-        
+
         if confidence is not None and raw == 0:
             confidence = round(100.0 - confidence, 1)
-            
+
         prediction = "High Stroke Risk" if raw == 1 else "Low Stroke Risk"
 
         # Log feature attributions
@@ -1139,21 +1139,21 @@ async def predict_stroke(
         try:
             proba = model.predict_proba([input_list])[0]
             proba_pos = float(proba[1]) if len(proba) > 1 else float(proba[0])
-            
+
             # Conformal prediction
             conformal_metrics = _calculate_adaptive_conformal_prediction(
                 proba_pos, 0.1, input_list, raw, risk_level
             )
             triage = _get_triage_recommendation(raw, conformal_metrics["conformal_prediction_set"])
             conformal_metrics["triage_recommendation"] = triage
-            
+
             # Top Risk Factors
             top_factors = _get_top_risk_factors(model, input_list, feature_names, attributions=attributions)
             if top_factors:
                 conformal_metrics["top_risk_factors"] = top_factors
 
             clinical_indices.update(conformal_metrics)
-            
+
             # Recourse
             recourse = _calculate_clinical_recourse(
                 "stroke", model, input_list, proba_pos, None
@@ -1192,7 +1192,6 @@ async def predict_diabetes(
     if (os.getenv("TESTING") == "1" and _pred.diabetes_model is None) or (os.getenv("TESTING") != "1" and not model_service.is_available("diabetes")):
         raise HTTPException(status_code=503, detail="Diabetes Model not available")
     try:
-        from .model_service import _extract_confidence, _normalize_prediction
 
         age_bucket = get_age_bucket(data.age) if data.age is not None else None
         input_list = [
@@ -1286,7 +1285,6 @@ async def predict_heart(
     if (os.getenv("TESTING") == "1" and _pred.heart_model is None) or (os.getenv("TESTING") != "1" and not model_service.is_available("heart")):
         raise HTTPException(status_code=503, detail="Heart Model not available")
     try:
-        from .model_service import _extract_confidence, _normalize_prediction
         input_list = [
             data.age, data.sex, data.cp, data.trestbps, data.chol,
             data.fbs, data.restecg, data.thalach, data.exang,
@@ -1400,7 +1398,6 @@ async def predict_liver(
         import pandas as pd
 
         from . import features as _features
-        from .model_service import _extract_confidence, _normalize_prediction
         feature_names = _features.LIVER_FEATURES
         input_list = [
             data.age, data.gender, data.total_bilirubin, data.direct_bilirubin,
@@ -1533,7 +1530,7 @@ async def predict_multi_organ(
             physical_activity=data.physical_activity,
             general_health=data.general_health
         )
-            
+
         heart_data = schemas.HeartInput(
             age=data.age,
             sex=data.gender,
@@ -1552,7 +1549,7 @@ async def predict_multi_organ(
             smoker=data.smoking or 0,
             hyp_treatment=data.hyp_treatment or 0
         )
-        
+
         kidney_data = schemas.KidneyInput(
             age=data.age,
             bp=data.bp or data.trestbps,
@@ -1580,7 +1577,7 @@ async def predict_multi_organ(
             ane=data.ane,
             gender=data.gender or 1
         )
-        
+
         liver_data = schemas.LiverInput(
             age=data.age,
             gender=data.gender,
@@ -1594,7 +1591,7 @@ async def predict_multi_organ(
             albumin_and_globulin_ratio=data.albumin_and_globulin_ratio,
             platelets=data.platelets or 250.0
         )
-        
+
         lungs_data = schemas.LungInput(
             gender=data.gender,
             age=data.age,
@@ -1632,9 +1629,9 @@ async def predict_multi_organ(
             predict_lungs(lungs_data, db=db, _current_user=current_user, background_tasks=background_tasks),
             predict_stroke(stroke_data, db=db, _current_user=current_user, background_tasks=background_tasks),
         ]
-        
+
         results = await asyncio.gather(*tasks, return_exceptions=True)
-        
+
         # 3. Handle results and exceptions
         systems = ["diabetes", "heart", "kidney", "liver", "lungs", "stroke"]
         report = {}
@@ -1653,7 +1650,7 @@ async def predict_multi_organ(
                 }
             else:
                 report[system] = res
-                
+
         # 4. Generate Unified Clinical Narrative Synthesis
         narrative = "Comprehensive multi-system health risk assessment completed. Low metabolic risk profile. Actionable risk markers detected in hepatic and renal panels. Triage recommendation matches standard guidelines."
         try:
@@ -1694,6 +1691,7 @@ async def predict_multi_organ(
 
 
 from pydantic import BaseModel as PydanticBaseModel
+
 
 class ExplanationRequest(PydanticBaseModel):
     prediction: str

@@ -2,7 +2,7 @@ import asyncio
 import logging
 import operator
 import os
-from typing import Annotated, List, TypedDict, Optional
+from typing import Annotated, List, Optional, TypedDict
 
 import requests
 from dotenv import load_dotenv

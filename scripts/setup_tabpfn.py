@@ -1,5 +1,5 @@
 import os
-import sys
+
 
 def main():
     print("==========================================================")
@@ -29,7 +29,7 @@ def main():
         if change != 'y':
             print("Configuration left unchanged.")
             return
-    
+
     token = input("Enter your TabPFN API Key/Token: ").strip()
     if not token:
         print("Error: Token cannot be empty.")
@@ -46,7 +46,7 @@ def main():
                     updated = True
                 else:
                     lines.append(line)
-    
+
     if not updated:
         lines.append(f'\n# TabPFN API key for local deep learning inference\nTABPFN_TOKEN="{token}"\n')
 

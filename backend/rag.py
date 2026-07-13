@@ -766,6 +766,7 @@ if _pkg_rag is None:
 import asyncio
 from typing import List, Optional
 
+
 def advanced_search_similar_records(
     user_id: str,
     query: str,
@@ -783,7 +784,7 @@ def advanced_search_similar_records(
             import core_ai
         except ImportError:
             core_ai = None
-            
+
     # If core_ai is not available or missing advanced functions, fallback to standard search
     if core_ai is None or not hasattr(core_ai, "generate_expanded_queries") or not hasattr(core_ai, "rerank_documents"):
         # We need to call the standard search_similar_records from the active module
@@ -808,9 +809,9 @@ def advanced_search_similar_records(
             loop = asyncio.new_event_loop()
             queries = loop.run_until_complete(core_ai.generate_expanded_queries(query, k=3))
             loop.close()
-            
+
         logger.info(f"Advanced RAG expanded queries: {queries}")
-        
+
         # 2. Wide Retrieval
         # We retrieve a larger candidate pool for EACH expanded query (e.g. top 10)
         base_search = getattr(sys.modules[__name__], "search_similar_records")
@@ -819,7 +820,7 @@ def advanced_search_similar_records(
             results = base_search(user_id, q, n_results=10, facility_id=facility_id)
             if results:
                 all_candidates.extend(results)
-                
+
         # Deduplicate candidates (preserving order of first appearance)
         unique_candidates = []
         seen = set()
@@ -827,16 +828,16 @@ def advanced_search_similar_records(
             if doc not in seen:
                 seen.add(doc)
                 unique_candidates.append(doc)
-                
+
         if not unique_candidates:
             return []
-            
+
         logger.info(f"Advanced RAG retrieved {len(unique_candidates)} unique candidates. Reranking...")
-            
+
         # 3. Cross-Encoder Re-ranking
         top_docs = core_ai.rerank_documents(query, unique_candidates, top_k=n_results)
         return top_docs
-        
+
     except Exception as e:
         logger.error(f"Advanced RAG pipeline failed: {e}. Falling back to standard retrieval.")
         base_search = getattr(sys.modules[__name__], "search_similar_records")

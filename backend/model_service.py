@@ -109,9 +109,9 @@ def _initialize_stroke_model() -> Any:
     Train a lightweight clinical scikit-learn LogisticRegression model for stroke risk prediction
     to run natively in the secure enclave without requiring external model downloads.
     """
-    from sklearn.linear_model import LogisticRegression
     import numpy as np
-    
+    from sklearn.linear_model import LogisticRegression
+
     # Features: [gender, age, hypertension, heart_disease, smoking, bmi, glucose]
     # Generate a synthetic training set matching clinical profiles
     np.random.seed(42)
@@ -124,7 +124,7 @@ def _initialize_stroke_model() -> Any:
     X[:, 4] = np.random.choice([0, 1], size=200, p=[0.6, 0.4]) # Smoking
     X[:, 5] = np.random.uniform(18, 40, size=200) # BMI
     X[:, 6] = np.random.uniform(70, 250, size=200) # Glucose
-    
+
     # Calculate probability score using clinical coefficients
     score = (
         -4.5 # Intercept
@@ -138,7 +138,7 @@ def _initialize_stroke_model() -> Any:
     )
     prob = 1 / (1 + np.exp(-score))
     y = (prob > 0.4).astype(int) # Target label
-    
+
     model = LogisticRegression(max_iter=1000)
     model.fit(X, y)
     return model
@@ -380,7 +380,7 @@ class ModelService:
 
             logger.info("Loading ML models from %s ...", self._model_dir)
             self._load_real_models()
-            
+
             # Initialize dynamic in-memory stroke model
             import time as _time
             stroke_entry = self._entries["stroke"]
@@ -396,7 +396,7 @@ class ModelService:
                 logger.error("Failed to initialize stroke model: %s", e)
                 stroke_entry.status = ModelStatus.ERROR
                 stroke_entry.error_message = str(e)
-                
+
             self._initialized = True
 
     def _inject_mocks(self) -> None:

@@ -32,6 +32,7 @@ default_args = {
 # Shared Spark session builder for Delta Lake + Unity Catalog
 def _create_spark(app_name: str):
     import os
+
     from pyspark.sql import SparkSession
     catalog = os.getenv("DELTA_CATALOG", "uc_healthcare_prod")
     return SparkSession.builder \

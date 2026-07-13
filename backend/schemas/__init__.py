@@ -132,8 +132,8 @@ from .prediction import (  # noqa: F401
     LiverInput,
     LungInput,
     MultiOrganInput,
-    StrokeInput,
     PredictionReviewCreate,
+    StrokeInput,
 )
 
 # Records domain

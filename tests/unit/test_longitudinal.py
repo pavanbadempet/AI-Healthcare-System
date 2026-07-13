@@ -1,6 +1,7 @@
 """Tests for the longitudinal (time-series) prediction endpoints and models."""
 
 import importlib.util
+
 import numpy as np
 import pytest
 

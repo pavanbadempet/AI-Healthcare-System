@@ -1,5 +1,6 @@
 import os
 import sys
+
 from huggingface_hub import HfApi
 
 # Ensure repository root is in the python path
@@ -31,24 +32,24 @@ MODEL_FILES = [
 def upload_models():
     """Create the model registry and upload local weights to Hugging Face Model Hub."""
     api = HfApi()
-    
+
     # Read Hugging Face token from environment
     token = os.environ.get("HF_TOKEN")
     if not token:
         print("Error: HF_TOKEN environment variable not set.")
         print("Please set it in your environment: $env:HF_TOKEN=\"your_write_token\"")
         return
-        
+
     print(f"Creating Hugging Face model repository: {REPO_ID} (if it doesn't exist)...")
     try:
         api.create_repo(repo_id=REPO_ID, repo_type="model", exist_ok=True, token=token)
         print("Model repository is ready.")
     except Exception as e:
         print(f"Note: {str(e)}")
-        
+
     # Locate the backend directory where local models are stored
     backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../backend"))
-    
+
     print("\nStarting upload of local weights to registry...")
     uploaded_count = 0
     for filename in MODEL_FILES:
@@ -69,7 +70,7 @@ def upload_models():
                 print(f" -> Failed to upload {filename}: {str(e)}")
         else:
             print(f" -> Skipping {filename} (not found locally in backend/)")
-            
+
     print(f"\nCompleted. Uploaded {uploaded_count} model files to {REPO_ID}.")
 
 if __name__ == "__main__":

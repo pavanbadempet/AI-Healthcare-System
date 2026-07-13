@@ -17,7 +17,6 @@ import logging
 import os
 import shutil
 import subprocess
-import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -40,7 +39,7 @@ def backup_db() -> None:
     if db_url.startswith("postgresql://") or db_url.startswith("postgresql+psycopg2://") or db_url.startswith("postgres://"):
         backup_file = BACKUPS_DIR / f"postgres_backup_{timestamp}.sql"
         logger.info("Starting PostgreSQL backup to %s...", backup_file)
-        
+
         # Parse connection parameters from URL
         # postgresql://username:password@host:port/database
         import urllib.parse
@@ -65,7 +64,7 @@ def backup_db() -> None:
             "-f", str(backup_file),
             database
         ]
-        
+
         try:
             subprocess.run(cmd, env=env, check=True)
             logger.info("✅ PostgreSQL backup completed successfully.")
@@ -80,7 +79,7 @@ def backup_db() -> None:
         sqlite_path = db_url.replace("sqlite:///", "").replace("sqlite://", "")
         if not sqlite_path:
             sqlite_path = "healthcare.db"
-        
+
         if not os.path.exists(sqlite_path):
             logger.warning("SQLite database file %s does not exist. Nothing to backup.", sqlite_path)
             return
@@ -103,7 +102,7 @@ def restore_db(backup_path: str) -> None:
 
     if db_url.startswith("postgresql://") or db_url.startswith("postgresql+psycopg2://") or db_url.startswith("postgres://"):
         logger.info("Restoring PostgreSQL database from %s...", backup_path)
-        
+
         import urllib.parse
         url_parsed = urllib.parse.urlparse(db_url)
         username = url_parsed.username or "postgres"
@@ -124,7 +123,7 @@ def restore_db(backup_path: str) -> None:
             "-d", "postgres",
             "-c", f"SELECT pg_terminate_backend(pg_stat_activity.pid) FROM pg_stat_activity WHERE pg_stat_activity.datname = '{database}' AND pid <> pg_backend_pid();"
         ]
-        
+
         restore_cmd = [
             "pg_restore",
             "-h", host,
@@ -160,7 +159,7 @@ def restore_db(backup_path: str) -> None:
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-    
+
     parser = argparse.ArgumentParser(description="Healthcare DB Management Utility")
     subparsers = parser.add_subparsers(dest="command", required=True)
 

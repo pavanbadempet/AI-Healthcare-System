@@ -123,8 +123,8 @@ def client(db_session):
 @pytest.fixture(autouse=True)
 def mock_cloudflare_network_calls(monkeypatch):
     """Globally intercept outbound requests to Cloudflare Worker to avoid network hits."""
-    import requests
     import httpx
+    import requests
 
     orig_requests_post = requests.post
     def patched_requests_post(url, *args, **kwargs):

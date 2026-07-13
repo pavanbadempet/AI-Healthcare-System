@@ -1,7 +1,7 @@
 import os
+import shutil
 import subprocess
 import sys
-import shutil
 
 # Baseline commit at the end of May
 BASELINE_COMMIT = "b380a544aa952dff5cc3f013d338b1acde9c3fd5"
@@ -247,7 +247,7 @@ def main():
     # Recreate commits with backdated timestamps
     for idx, c in enumerate(COMMITS):
         print(f"\n[{idx+1}/{len(COMMITS)}] Committing: {c['msg'].splitlines()[0]}")
-        
+
         # Stage the files/folders in this commit group
         staged_any = False
         for file in c["files"]:
@@ -294,7 +294,7 @@ def main():
         for file in remaining_files:
             if os.path.exists(file):
                 run_cmd(["git", "add", file])
-        
+
         env = os.environ.copy()
         env["GIT_AUTHOR_DATE"] = "2026-06-19 09:15:00"
         env["GIT_COMMITTER_DATE"] = "2026-06-19 09:15:00"

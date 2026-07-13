@@ -9,7 +9,7 @@ from langchain_core.messages import AIMessage, HumanMessage
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
-from . import agent, audit, auth, database, licensing, models, pdf_generator, rag, schemas, core_ai
+from . import agent, audit, auth, core_ai, database, licensing, models, pdf_generator, rag, schemas
 
 logger = logging.getLogger(__name__)
 router = APIRouter(dependencies=[Depends(licensing.enforce_license_tier("community"))])
@@ -95,7 +95,7 @@ def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth
     # Build profile
     profile = f"Name: {current_user.full_name or 'N/A'}, Age: {current_user.dob or 'N/A'}, " \
               f"Gender: {current_user.gender or 'N/A'}, Height/Weight: {current_user.height}/{current_user.weight}"
-              
+
     if request.language and request.language != "en":
         profile += f"\n\nIMPORTANT: The user is communicating in the language code '{request.language}'. You must output your entire response translated accurately into this language."
 
@@ -256,10 +256,10 @@ async def aura_fallback_chat(
 ):
     """Fallback endpoint for Aura AI when WebLLM is unavailable on the client."""
     sanitized_message = _sanitize_chat_input(request.message)
-    
+
     # Simple prompt for Aura
-    system_prompt = """You are Aura, an empathetic and highly intelligent AI health companion. 
-    You provide supportive, friendly, and medically-safe responses to patients. 
+    system_prompt = """You are Aura, an empathetic and highly intelligent AI health companion.
+    You provide supportive, friendly, and medically-safe responses to patients.
     Always include a disclaimer that you are an AI, not a doctor, if giving medical advice."""
 
     messages = [{"role": "system", "content": system_prompt}]

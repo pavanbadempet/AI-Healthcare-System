@@ -2,6 +2,7 @@ import os
 import shutil
 import subprocess
 
+
 def run_cmd(cmd, cwd=None):
     result = subprocess.run(cmd, shell=True, cwd=cwd, capture_output=True, text=True)
     if result.returncode != 0:
@@ -10,6 +11,7 @@ def run_cmd(cmd, cwd=None):
     return True
 
 import time
+
 temp_dir = os.path.join(os.environ['TEMP'], f'hf_sync_{int(time.time())}')
 
 # Copy everything

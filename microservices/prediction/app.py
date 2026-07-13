@@ -8,11 +8,13 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")
 os.environ["MICROSERVICES_MODE"] = "false"
 
 import uvicorn
-from fastapi import FastAPI, Depends, HTTPException
-from backend.model_service import model_service
-from backend.schemas import DiabetesInput, HeartInput, LiverInput, KidneyInput, LungInput
-from backend.prediction import initialize_models
+from fastapi import Depends, FastAPI, HTTPException
+
 from backend.licensing import verify_license_key
+from backend.model_service import model_service
+from backend.prediction import initialize_models
+from backend.schemas import DiabetesInput, HeartInput, KidneyInput, LiverInput, LungInput
+
 
 def enforce_license():
     license_key = os.environ.get("LICENSE_KEY", "").strip()

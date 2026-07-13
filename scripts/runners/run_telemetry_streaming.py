@@ -226,6 +226,7 @@ def process_conformed_record(db, record, avg_stats=None, heart_risk=None, lung_r
         avg_hr, avg_systolic_bp, avg_diastolic_bp, avg_spo2, avg_temp, avg_resp_rate = avg_stats
     else:
         from datetime import timedelta
+
         from sqlalchemy import func
         two_minutes_ago = observed_at - timedelta(minutes=2)
 
@@ -246,7 +247,7 @@ def process_conformed_record(db, record, avg_stats=None, heart_risk=None, lung_r
         avg_systolic_bp = float(stats[1]) if stats[1] is not None else systolic_bp
         avg_diastolic_bp = float(stats[2]) if stats[2] is not None else diastolic_bp
         avg_spo2 = float(stats[3]) if stats[3] is not None else spo2
-        avg_temp = float(stats[4]) if stats[4] is not None else temp
+        float(stats[4]) if stats[4] is not None else temp
         avg_resp_rate = float(stats[5]) if stats[5] is not None else resp_rate
 
     # --- 3. Calculate ML Risk Probabilities ---
@@ -432,7 +433,6 @@ def process_batch(df, batch_id):
             r["_avg_stats"] = stats
 
         # 3. Vectorized ML Inference
-        import numpy as np
         import pandas as pd
 
         heart_inputs = []
@@ -477,7 +477,7 @@ def process_batch(df, batch_id):
                 lung_probs = lungs_model.predict_proba(X_lung)[:, 1]
             except Exception as ex:
                 logger.debug(f"Vectorized lungs model prediction failed: {ex}")
-        ml_duration_ms = (time.perf_counter() - ml_start) * 1000
+        (time.perf_counter() - ml_start) * 1000
 
         # 4. Process records individually with pre-computed values, without flushing yet
         pending_alerts = []

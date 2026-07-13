@@ -84,7 +84,7 @@ async def test_pharmacy_generic_substitution(client, db_session):
 @pytest.mark.asyncio
 async def test_diagnosis_consensus(client, db_session):
     headers, doc_id = _get_auth_headers(client, db_session, "cons_doc", "doctor")
-    
+
     # Create patient and assign doctor via appointment
     patient = models.User(
         username="cons_patient",
@@ -96,7 +96,7 @@ async def test_diagnosis_consensus(client, db_session):
     db_session.add(patient)
     db_session.commit()
     patient_id = patient.id
-    
+
     from datetime import datetime
     appt = models.Appointment(
         user_id=patient_id,
@@ -105,7 +105,7 @@ async def test_diagnosis_consensus(client, db_session):
         status="Scheduled"
     )
     db_session.add(appt)
-    
+
     # Seed high glucose vitals and low diabetes risk to trigger conflict
     vitals = models.VitalObservation(
         patient_id=patient_id,
@@ -113,7 +113,7 @@ async def test_diagnosis_consensus(client, db_session):
         observed_at=datetime.now()
     )
     db_session.add(vitals)
-    
+
     record = models.HealthRecord(
         user_id=patient_id,
         record_type="diabetes",
@@ -132,7 +132,7 @@ async def test_diagnosis_consensus(client, db_session):
 
     with patch("backend.core_ai.generate", new_callable=AsyncMock) as mock_generate:
         mock_generate.return_value = json.dumps(mock_consensus)
-        
+
         r = client.get(f"/v1/predict/consensus/{patient_id}", headers=headers)
         assert r.status_code == 200
         data = r.json()
@@ -142,13 +142,13 @@ async def test_diagnosis_consensus(client, db_session):
 @pytest.mark.asyncio
 async def test_esi_triage_queue(client, db_session):
     headers, _ = _get_auth_headers(client, db_session, "triage_doc", "doctor")
-    
+
     # Create critical patient
     patient = models.User(username="crit_pat", email="crit@test.com", role="patient", facility_id=1)
     db_session.add(patient)
     db_session.commit()
     patient_id = patient.id
-    
+
     from datetime import datetime
     vitals = models.VitalObservation(
         patient_id=patient_id,
@@ -171,7 +171,7 @@ async def test_abdm_external_records(client, db_session):
     db_session.add(patient)
     db_session.commit()
     patient_id = patient.id
-    
+
     from datetime import datetime
     appt = models.Appointment(
         user_id=patient_id,
@@ -200,7 +200,7 @@ async def test_health_passport_qr(client, db_session):
 @pytest.mark.asyncio
 async def test_home_lab_kits(client, db_session):
     headers, pat_id = _get_auth_headers(client, db_session, "kit_pat", "patient")
-    
+
     # Order kit
     r = client.post(
         "/v1/diagnostics/lab-kits",
@@ -242,7 +242,7 @@ async def test_special_care_booking(client, db_session):
 @pytest.mark.asyncio
 async def test_specialist_referral_matcher(client, db_session):
     headers, pat_id = _get_auth_headers(client, db_session, "ref_pat", "patient")
-    
+
     # Seed high risk disease records
     from datetime import datetime
     db_session.add(models.HealthRecord(

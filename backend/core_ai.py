@@ -366,33 +366,33 @@ def embed_text(text: str, task_type: str = "retrieval_document") -> list[float]:
         # Use Cloudflare Workers AI for embeddings
         import requests
         url = "https://ai-healthcare-model.pavan9b.workers.dev/embed"
-        
+
         response = requests.post(
-            url, 
+            url,
             json={"text": [text]},
             timeout=15.0
         )
         response.raise_for_status()
-        
+
         data = response.json()
-        
+
         # Cloudflare returns: {"shape": [...], "data": [[...]]}
         # The vector is the first element of "data"
         if "data" in data and len(data["data"]) > 0:
             embedding = data["data"][0]
             # Ensure it's a list of floats
             embedding = [float(x) for x in embedding]
-            
+
             try:
                 cache.set(cache_key, embedding, ttl=86400) # Cache for 24 hours
             except Exception as ex_cache:
                 logger.debug("Embedding cache set failed: %s", ex_cache)
-                
+
             return embedding
         else:
             logger.error(f"Cloudflare embedding format unexpected: {data}")
             return [0.0] * 768
-            
+
     except Exception as e:
         logger.error(f"Error calling Cloudflare embedding API: {str(e)}")
         return [0.0] * 768
@@ -481,8 +481,9 @@ async def _generate_gemini(prompt: str, system: str = "") -> str:
         err = str(e)
         global _gemini_disabled
         if any(code in err for code in ["400", "401", "403", "404", "API_KEY_INVALID", "not found"]):
-            from .guardrails import redact_pii_from_text
             import re
+
+            from .guardrails import redact_pii_from_text
             clean_err = redact_pii_from_text(err)
             clean_err = re.sub(r"(?i)token=[^\s]+", "token=REDACTED", clean_err)
             clean_err = re.sub(r"(?i)key=[^\s]+", "key=REDACTED", clean_err)
@@ -773,13 +774,14 @@ async def _chat_cloud(messages: list[dict], system: str, model: Optional[str], a
 
 async def _stream_cloud(messages: list[dict], system: str, model: Optional[str], api_provider: str, api_key: str):
     """Yield text chunks from cloud APIs using thread-based requests streaming."""
+    import json
     import queue
     import threading
-    import json
+
     import requests
-    
+
     q = queue.Queue()
-    
+
     def fetch_stream():
         try:
             provider = api_provider.lower()
@@ -799,10 +801,11 @@ async def _stream_cloud(messages: list[dict], system: str, model: Optional[str],
                     base_url = "https://ai-healthcare-model.pavan9b.workers.dev"
 
             headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-            if model and ("cloudflare" in model.lower() or "ollama" in model.lower()):
-                model = None
+            local_model = model
+            if local_model and ("cloudflare" in local_model.lower() or "ollama" in local_model.lower()):
+                local_model = None
 
-            target_model = model or (
+            target_model = local_model or (
                 "gpt-4o-mini" if provider == "openai"
                 else "mistralai/Mistral-7B-Instruct-v0.3" if provider == "huggingface"
                 else "google/gemini-2.5-flash"
@@ -811,7 +814,7 @@ async def _stream_cloud(messages: list[dict], system: str, model: Optional[str],
             if system:
                 payload_messages.append({"role": "system", "content": system})
             payload_messages.extend(messages)
-            
+
             with requests.post(
                 f"{base_url}/chat/completions",
                 headers=headers,
@@ -829,20 +832,20 @@ async def _stream_cloud(messages: list[dict], system: str, model: Optional[str],
             q.put(e)
         finally:
             q.put(None)
-            
+
     thread = threading.Thread(target=fetch_stream, daemon=True)
     thread.start()
-    
+
     while True:
         # Await the queue get non-blockingly
         item = await asyncio.to_thread(q.get)
-        
+
         if item is None:
             break
         if isinstance(item, Exception):
             logger.error(f"Stream error: {item}")
             break
-            
+
         if item.startswith("data: "):
             data_str = item[6:]
             if data_str.strip() == "[DONE]":
@@ -958,7 +961,7 @@ async def generate(
     logger.info("CORE_AI GENERATE: resolved_provider=%s, resolved_key_configured=%s", resolved_provider, bool(resolved_key))
 
     result = None
-    
+
     # 1. Try explicit provider (if requested via UI)
     if api_provider:
         if api_provider.lower() == "gemini" and has_gemini_api_key():
@@ -1073,7 +1076,7 @@ async def chat(
     resolved_provider, resolved_key = await _resolve_provider_and_key(api_provider, api_key)
 
     result = None
-    
+
     # 1. Try explicit provider (if requested via UI)
     if api_provider:
         if api_provider.lower() == "gemini" and has_gemini_api_key():
@@ -1283,7 +1286,7 @@ async def chat_stream(
                 buffer = redacted_buffer[split_idx:]
             else:
                 pass
-        
+
         if buffer:
             yield buffer
 
@@ -1312,7 +1315,7 @@ async def generate_expanded_queries(query: str, k: int = 3) -> list[str]:
         "to improve database retrieval. "
         "Output ONLY the queries separated by a newline character. No numbering, no bullets, no introduction."
     )
-    
+
     # Use the synchronous wrapper for generate (since search_similar_records is sync)
     # Actually, core_ai.generate is async, but we'll use a sync wrapper inside rag.py or we can use asyncio.run
     # Wait, core_ai.generate is async!
@@ -1320,15 +1323,15 @@ async def generate_expanded_queries(query: str, k: int = 3) -> list[str]:
     expanded_text = await generate(query, system_prompt)
     if not expanded_text:
         return [query]
-    
+
     variations = [line.strip().strip('-*1234567890. ') for line in expanded_text.split('\n') if line.strip()]
-    
+
     # Always include the original query
     results = [query]
     for v in variations:
         if v and v.lower() not in [r.lower() for r in results] and len(results) < k + 1:
             results.append(v)
-            
+
     return results
 
 def rerank_documents(query: str, documents: list[str], top_k: int = 3) -> list[str]:
@@ -1338,7 +1341,7 @@ def rerank_documents(query: str, documents: list[str], top_k: int = 3) -> list[s
     """
     if not documents:
         return []
-    
+
     try:
         payload = {
             "query": query,
@@ -1348,12 +1351,12 @@ def rerank_documents(query: str, documents: list[str], top_k: int = 3) -> list[s
         url = "https://ai-healthcare-model.pavan9b.workers.dev/rerank"
         response = requests.post(url, json=payload, timeout=10.0)
         response.raise_for_status()
-        
+
         data = response.json()
-        
+
         # Cloudflare reranker typically returns an array of objects under "response"
         results_list = data.get("response", data) if isinstance(data, dict) else data
-        
+
         # Sort indices by score descending, just in case they aren't pre-sorted
         if isinstance(results_list, list) and len(results_list) > 0 and ("id" in results_list[0] or "index" in results_list[0]):
             results_list.sort(key=lambda x: x.get("score", 0), reverse=True)
@@ -1363,7 +1366,7 @@ def rerank_documents(query: str, documents: list[str], top_k: int = 3) -> list[s
         else:
             logger.warning(f"Unexpected Cloudflare reranker format: {data}")
             return documents[:top_k]
-            
+
     except Exception as e:
         logger.warning(f"Cloudflare reranking failed: {e}. Falling back to original ordering.")
         return documents[:top_k]
