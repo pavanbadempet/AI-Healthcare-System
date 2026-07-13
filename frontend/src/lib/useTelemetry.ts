@@ -35,6 +35,7 @@ export interface TelemetryData {
   spark_batch_id?: number;
   spark_records_processed?: number;
   spark_ml_latency_ms?: number;
+  is_real_stream?: boolean;
   ai_nodes_active: number;
   ed_boarding: number;
   ed_avg_wait_min: number;

@@ -536,10 +536,17 @@ export default function DashboardPage() {
             animate={{ opacity: 1, scale: 1 }}
             className="flex flex-wrap items-center gap-x-4 gap-y-1.5 bg-black/40 px-4 py-2 rounded-xl border border-white/[0.04] text-[10px] font-mono text-[var(--text-secondary)] uppercase tracking-wide"
           >
-            <span className="flex items-center gap-1.5 text-[var(--accent-blue)] font-bold">
-              <span className="w-1.5 h-1.5 rounded-full bg-[var(--accent-blue)] animate-ping" />
-              Spark Stream Engine
-            </span>
+            {telemetry.is_real_stream ? (
+              <span className="flex items-center gap-1.5 text-[var(--success)] font-bold" title="100% Real PySpark Structured Streaming Engine active via local backend">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse" />
+                Real PySpark Active
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 text-[var(--warning)] font-bold" title="Built-in simulated data stream active">
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--warning)] animate-pulse" />
+                Spark Simulator
+              </span>
+            )}
             <span className="border-l border-white/10 pl-3">Batch #{telemetry.spark_batch_id}</span>
             <span className="border-l border-white/10 pl-3">In-Memory Ingest: {telemetry.spark_records_processed ?? 0} Recs</span>
             <span className="border-l border-white/10 pl-3">Process Time: {telemetry.system_latency_ms} ms</span>

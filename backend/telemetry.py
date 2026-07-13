@@ -178,7 +178,8 @@ def build_telemetry_snapshot(db: Session, current_user: models.User) -> dict:
         "spark_batch_id": spark_batch_id,
         "spark_records_processed": spark_records_processed,
         "spark_ml_latency_ms": spark_ml_latency_ms,
-                "ai_nodes_active": 12,
+        "is_real_stream": bool(os.getenv("ENABLE_PYSPARK_STREAMING") or os.getenv("UPSTASH_KAFKA_SERVERS")),
+        "ai_nodes_active": 12,
         "cpu_percent": psutil.cpu_percent(interval=None),
         "ram_percent": psutil.virtual_memory().percent,
         "hl7_logs": list(HL7_MESSAGES),
@@ -331,38 +332,39 @@ async def telemetry_stream(websocket: WebSocket):
     try:
         while True:
             if current_user is not None:
-                # Simulate a live Spark Streaming batch ingestion
+                # Simulate a live Spark Streaming batch ingestion if not using real streaming
                 with database.get_db_context() as db:
-                    try:
-                        from backend.models.clinical import SparkStreamingMetrics
-                        # Check if there is a recent metric, if not or randomly, insert one
-                        latest_m = db.query(SparkStreamingMetrics).order_by(SparkStreamingMetrics.timestamp.desc()).first()
-                        # If latest metric is older than 5 seconds, insert a new one
-                        if not latest_m or (datetime.now(timezone.utc) - latest_m.timestamp.replace(tzinfo=timezone.utc)).total_seconds() > 5:
-                            new_batch_id = (latest_m.batch_id + 1) if latest_m else 1000
-                            new_metric = SparkStreamingMetrics(
-                                batch_id=new_batch_id,
-                                records_processed=random.randint(5, 25),
-                                processing_time_ms=float(random.randint(8, 22)),
-                                ml_latency_ms=float(random.uniform(2.5, 6.8)),
-                                timestamp=datetime.now(timezone.utc)
-                            )
-                            db.add(new_metric)
-                            db.commit()
-
-                            # Keep table pruned to last 100 rows
-                            row_count = db.query(SparkStreamingMetrics).count()
-                            if row_count > 100:
-                                oldest = db.query(SparkStreamingMetrics).order_by(SparkStreamingMetrics.timestamp.asc()).first()
-                                if oldest:
-                                    db.delete(oldest)
-                                    db.commit()
-                    except Exception as ingest_ex:
+                    if not os.getenv("UPSTASH_KAFKA_SERVERS") and not os.getenv("ENABLE_PYSPARK_STREAMING"):
                         try:
-                            db.rollback()
-                        except Exception:
-                            pass
-                        logger.warning("Simulated streaming telemetry ingestion failed: %s", ingest_ex)
+                            from backend.models.clinical import SparkStreamingMetrics
+                            # Check if there is a recent metric, if not or randomly, insert one
+                            latest_m = db.query(SparkStreamingMetrics).order_by(SparkStreamingMetrics.timestamp.desc()).first()
+                            # If latest metric is older than 5 seconds, insert a new one
+                            if not latest_m or (datetime.now(timezone.utc) - latest_m.timestamp.replace(tzinfo=timezone.utc)).total_seconds() > 5:
+                                new_batch_id = (latest_m.batch_id + 1) if latest_m else 1000
+                                new_metric = SparkStreamingMetrics(
+                                    batch_id=new_batch_id,
+                                    records_processed=random.randint(5, 25),
+                                    processing_time_ms=float(random.randint(8, 22)),
+                                    ml_latency_ms=float(random.uniform(2.5, 6.8)),
+                                    timestamp=datetime.now(timezone.utc)
+                                )
+                                db.add(new_metric)
+                                db.commit()
+
+                                # Keep table pruned to last 100 rows
+                                row_count = db.query(SparkStreamingMetrics).count()
+                                if row_count > 100:
+                                    oldest = db.query(SparkStreamingMetrics).order_by(SparkStreamingMetrics.timestamp.asc()).first()
+                                    if oldest:
+                                        db.delete(oldest)
+                                        db.commit()
+                        except Exception as ingest_ex:
+                            try:
+                                db.rollback()
+                            except Exception:
+                                pass
+                            logger.warning("Simulated streaming telemetry ingestion failed: %s", ingest_ex)
 
                     snapshot = build_telemetry_snapshot(db, current_user)
             else:
