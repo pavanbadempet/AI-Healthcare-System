@@ -170,10 +170,10 @@ def create_nursing_task(
     current_user: models.User = Depends(auth.get_current_user),
 ):
     _require_doctor_or_admin(current_user)
-    
+
     if task.due_at and task.due_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=400, detail="Nursing task due date must be in the future")
-        
+
     patient, nurse, encounter, admission, department = _validate_context(db, task)
     _ensure_facility_access(current_user, patient.facility_id)
     if current_user.role == "doctor":

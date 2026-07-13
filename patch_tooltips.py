@@ -1,5 +1,5 @@
-import re
 import os
+import re
 
 files_to_update = {
     "DiabetesPredict.tsx": {
@@ -64,7 +64,7 @@ for file_name, tooltips in files_to_update.items():
     full_path = os.path.join(base_path, file_name)
     if not os.path.exists(full_path):
         continue
-    
+
     with open(full_path, "r", encoding="utf-8") as f:
         content = f.read()
 
@@ -76,10 +76,10 @@ for file_name, tooltips in files_to_update.items():
         # But some objects are single line, some are multi line.
         # Actually, simpler: replace `name: "field"` with `name: "field", tooltip: "..."`
         # But we must be careful not to duplicate if tooltip already exists.
-        
+
         # Remove existing tooltip for this field if any (basic regex)
         # We will just do a simple replacement for known formats.
-        
+
         # Find the line containing `name: "field"`
         lines = content.split('\n')
         for i, line in enumerate(lines):
@@ -103,10 +103,10 @@ for file_name, tooltips in files_to_update.items():
                     line = line + f' /* {tooltip_str} */' # Will inject inside the options... wait, better not.
                     # Just insert after `type: "number" as const` or similar.
                     line = re.sub(r'(type:\s*"[^"]+"\s*as\s*const)', r'\1, ' + tooltip_str, line)
-                
+
                 lines[i] = line
         content = '\n'.join(lines)
-    
+
     with open(full_path, "w", encoding="utf-8") as f:
         f.write(content)
 

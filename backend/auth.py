@@ -126,12 +126,15 @@ def _ensure_admin_can_access_user(admin: models.User, user: models.User) -> None
 
 # --- Endpoints ---
 
-import pyotp
-import qrcode
 import base64
 from io import BytesIO
-from fastapi import Request, Form
+
+import pyotp
+import qrcode
+from fastapi import Form, Request
+
 from .main import limiter
+
 
 @router.post("/signup", response_model=schemas.UserResponse)
 @limiter.limit("5/minute")
@@ -339,7 +342,7 @@ def enable_2fa(req: schemas.TOTPVerifyRequest, current_user: models.User = Depen
     """
     if current_user.is_totp_enabled:
         raise HTTPException(status_code=400, detail="2FA is already enabled")
-    
+
     if not current_user.totp_secret:
         raise HTTPException(status_code=400, detail="2FA setup not initiated")
 

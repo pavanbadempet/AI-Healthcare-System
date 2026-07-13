@@ -1,5 +1,4 @@
 import re
-import os
 
 filepath = "backend/prediction.py"
 with open(filepath, "r", encoding="utf-8") as f:
@@ -14,7 +13,7 @@ def _run_model_prediction(model_name: str, input_list: list):
     entry = ms._entries.get(model_name)
     if not entry:
         raise ValueError(f"Model {model_name} not found")
-        
+
     if entry.model is not None:
         raw_pred = entry.model.predict([input_list])
         raw = ms._normalize_prediction(raw_pred)
@@ -77,25 +76,25 @@ prediction_patterns = [
      r"        raw, confidence, risk_level, proba = _run_model_prediction(\"kidney\", imputed_list)"),
     (r"        try:\n            proba = _pred\.kidney_model\.predict_proba\(\[imputed_list\]\)\[0\]\n            proba_pos = float\(proba\[1\]\) if len\(proba\) > 1 else float\(proba\[0\]\)\n        except Exception as e:\n            logger\.warning\(\"Predict proba failed for Kidney: %s\", e\)",
      r"        try:\n            proba_pos = float(proba[1]) if len(proba) > 1 else float(proba[0])\n        except Exception as e:\n            logger.warning(\"Predict proba failed for Kidney: %s\", e)"),
-     
+
     # Lungs
     (r"        raw_pred = _pred\.lungs_model\.predict\(\[imputed_list\]\)\n        raw = _normalize_prediction\(raw_pred\)\n        confidence, risk_level = _extract_confidence\(_pred\.lungs_model, \[imputed_list\]\)",
      r"        raw, confidence, risk_level, proba = _run_model_prediction(\"lungs\", imputed_list)"),
     (r"        try:\n            proba = _pred\.lungs_model\.predict_proba\(\[imputed_list\]\)\[0\]\n            proba_pos = float\(proba\[1\]\) if len\(proba\) > 1 else float\(proba\[0\]\)\n        except Exception as e:\n            logger\.warning\(\"Predict proba failed for Lungs: %s\", e\)",
      r"        try:\n            proba_pos = float(proba[1]) if len(proba) > 1 else float(proba[0])\n        except Exception as e:\n            logger.warning(\"Predict proba failed for Lungs: %s\", e)"),
-     
+
     # Diabetes
     (r"        raw_pred = _pred\.diabetes_model\.predict\(\[imputed_list\]\)\n        raw = _normalize_prediction\(raw_pred\)\n        confidence, risk_level = _extract_confidence\(_pred\.diabetes_model, \[imputed_list\]\)",
      r"        raw, confidence, risk_level, proba = _run_model_prediction(\"diabetes\", imputed_list)"),
     (r"        try:\n            proba = _pred\.diabetes_model\.predict_proba\(\[imputed_list\]\)\[0\]\n            proba_pos = float\(proba\[1\]\) if len\(proba\) > 1 else float\(proba\[0\]\)\n        except Exception as e:\n            logger\.warning\(\"Predict proba failed for Diabetes: %s\", e\)",
      r"        try:\n            proba_pos = float(proba[1]) if len(proba) > 1 else float(proba[0])\n        except Exception as e:\n            logger.warning(\"Predict proba failed for Diabetes: %s\", e)"),
-     
+
     # Heart
     (r"        raw_pred = _pred\.heart_model\.predict\(\[imputed_list\]\)\n        raw = _normalize_prediction\(raw_pred\)\n        confidence, risk_level = _extract_confidence\(_pred\.heart_model, \[imputed_list\]\)",
      r"        raw, confidence, risk_level, proba = _run_model_prediction(\"heart\", imputed_list)"),
     (r"        try:\n            proba = _pred\.heart_model\.predict_proba\(\[imputed_list\]\)\[0\]\n            proba_pos = float\(proba\[1\]\) if len\(proba\) > 1 else float\(proba\[0\]\)\n        except Exception as e:\n            logger\.warning\(\"Predict proba failed for Heart: %s\", e\)",
      r"        try:\n            proba_pos = float(proba[1]) if len(proba) > 1 else float(proba[0])\n        except Exception as e:\n            logger.warning(\"Predict proba failed for Heart: %s\", e)"),
-     
+
     # Liver
     (r"        raw_pred = _pred\.liver_model\.predict\(\[imputed_list\]\)\n        raw = _normalize_prediction\(raw_pred\)\n        confidence, risk_level = _extract_confidence\(_pred\.liver_model, \[imputed_list\]\)",
      r"        raw, confidence, risk_level, proba = _run_model_prediction(\"liver\", imputed_list)"),

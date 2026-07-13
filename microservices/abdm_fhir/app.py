@@ -1,7 +1,7 @@
 import os
 import sys
-from typing import Optional, Dict, Any, List
 from types import SimpleNamespace
+from typing import Any, Dict
 
 # Ensure repository root is in the python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
@@ -10,9 +10,10 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")
 os.environ["MICROSERVICES_MODE"] = "false"
 
 import uvicorn
-from fastapi import FastAPI, Depends, HTTPException
-from pydantic import BaseModel
+from fastapi import Depends, FastAPI, HTTPException
+
 from backend.licensing import verify_license_key
+
 
 def enforce_license():
     license_key = os.environ.get("LICENSE_KEY", "").strip()
@@ -22,8 +23,8 @@ def enforce_license():
     if not is_valid:
         raise HTTPException(status_code=403, detail=f"Invalid license key: {reason}")
 
-import clinical_fhir_abdm.fhir as fhir_lib
 import clinical_fhir_abdm.abdm as abdm_lib
+import clinical_fhir_abdm.fhir as fhir_lib
 
 app = FastAPI(title="FHIR and ABDM Microservice", dependencies=[Depends(enforce_license)])
 

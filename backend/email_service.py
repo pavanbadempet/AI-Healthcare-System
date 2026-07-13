@@ -17,20 +17,20 @@ def _send_email_via_smtp(to_email: str, subject: str, html_body: str, plain_body
     smtp_port = int(os.getenv("SMTP_PORT", 587))
     smtp_user = os.getenv("SMTP_EMAIL")
     smtp_password = os.getenv("SMTP_PASSWORD")
-    
+
     if not smtp_server or not smtp_user:
         logger.info(f"SIMULATED EMAIL to {to_email}: {subject}")
         return True
-        
+
     try:
         msg = MIMEMultipart('alternative')
         msg['From'] = smtp_user
         msg['To'] = to_email
         msg['Subject'] = subject
-        
+
         msg.attach(MIMEText(plain_body, 'plain'))
         msg.attach(MIMEText(html_body, 'html'))
-        
+
         server = smtplib.SMTP(smtp_server, smtp_port, timeout=10)
         server.starttls()
         server.login(smtp_user, smtp_password)

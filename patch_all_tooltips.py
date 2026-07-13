@@ -1,5 +1,5 @@
-import re
 import os
+import re
 
 base_path = "frontend/src/pages"
 
@@ -15,9 +15,9 @@ def inject_import(content, component_name, import_statement):
     return content
 
 def add_tooltip(content, target_text, tooltip_text):
-    # E.g. <span className="...">Active Encounters</span> -> 
+    # E.g. <span className="...">Active Encounters</span> ->
     # <span className="...">Active Encounters <Tooltip content="..." position="top"><Activity size={12} className="inline ml-1 mb-0.5 cursor-help opacity-70 hover:opacity-100" /></Tooltip></span>
-    
+
     # Simple replacement: look for exactly >TargetText<
     replacement = f'>{target_text} <Tooltip content="{tooltip_text}" position="top"><Activity size={{12}} className="inline ml-1 mb-0.5 cursor-help text-[var(--text-dim)] hover:text-[var(--text-primary)] transition-colors" /></Tooltip><'
     return content.replace(f'>{target_text}<', replacement)
@@ -56,7 +56,7 @@ for filename, patches in files_to_patch.items():
     if not os.path.exists(filepath):
         print(f"Skipping {filename}")
         continue
-    
+
     with open(filepath, "r", encoding="utf-8") as f:
         content = f.read()
 
@@ -69,10 +69,10 @@ for filename, patches in files_to_patch.items():
             content = re.sub(r'import\s+\{(.*?)\}\s+from\s+["\']lucide-react["\'];', r'import {\1, Activity} from "lucide-react";', content)
         else:
             content = inject_import(content, "Activity", 'import { Activity } from "lucide-react";')
-            
+
     for target, tooltip in patches:
         content = add_tooltip(content, target, tooltip)
-        
+
     with open(filepath, "w", encoding="utf-8") as f:
         f.write(content)
     print(f"Patched {filename}")

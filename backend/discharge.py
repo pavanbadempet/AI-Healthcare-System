@@ -145,10 +145,10 @@ def create_discharge_summary(
 ):
     _require_doctor_or_admin(current_user)
     patient, admission, encounter = _validate_summary_context(db, summary)
-    
+
     if admission.status == "discharged":
         raise HTTPException(status_code=400, detail="Cannot create discharge summary for an already discharged admission")
-        
+
     _ensure_facility_access(current_user, admission.facility_id or patient.facility_id)
     doctor_id = summary.doctor_id if summary.doctor_id is not None else admission.doctor_id
 

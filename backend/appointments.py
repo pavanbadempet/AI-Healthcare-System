@@ -274,7 +274,7 @@ def reschedule_appointment(
             new_dt,
             exclude_appointment_id=appt.id,
         )
-    
+
     _ensure_patient_slot_available(
         db,
         appt.user_id,
@@ -428,7 +428,7 @@ async def agent_stream_endpoint(
                                 ).first()
                                 if existing:
                                     raise ValueError("Doctor already booked at that slot")
-                                    
+
                                 existing_patient = db.query(models.Appointment).filter(
                                     models.Appointment.user_id == current_user.id,
                                     models.Appointment.date_time == appointment_dt,
@@ -557,12 +557,12 @@ def book_special_care_appointment(
         reason=final_reason,
         status="Scheduled"
     )
-    
+
     _ensure_future_slot(parsed_dt)
     _ensure_patient_slot_available(db, req.patient_id, parsed_dt)
     if req.doctor_id:
         _ensure_doctor_slot_available(db, req.doctor_id, parsed_dt)
-        
+
     db.add(db_appt)
     db.commit()
     db.refresh(db_appt)

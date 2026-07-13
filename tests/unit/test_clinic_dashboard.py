@@ -1,9 +1,10 @@
-import sys
 import os
+import sys
 
 # Import the dashboard script components
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from scripts.clinic_dashboard import TelemetryStream
+
 
 def test_telemetry_stream_initialization():
     stream = TelemetryStream()
@@ -18,10 +19,10 @@ def test_telemetry_stream_initialization():
 def test_telemetry_stream_update():
     stream = TelemetryStream()
     stream.update()
-    
+
     assert stream.tick == 1
     assert len(stream.vitals_history) == 1
-    
+
     hr, sbp, dbp, spo2, temp = stream.vitals_history[0]
     assert 50 <= hr <= 120
     assert 90 <= sbp <= 150
@@ -33,6 +34,6 @@ def test_telemetry_stream_vitals_history_limit():
     stream = TelemetryStream()
     for _ in range(15):
         stream.update()
-        
+
     # Should cap at 10 historical records
     assert len(stream.vitals_history) == 10

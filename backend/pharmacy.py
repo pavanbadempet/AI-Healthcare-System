@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
-import os
-import requests
 import logging
+import os
+from datetime import datetime, timezone
+
+import requests
+
 logger = logging.getLogger(__name__)
 from typing import Any
 
@@ -358,10 +360,10 @@ def dispense_prescription(
     _require_pharmacy_or_admin(current_user)
     prescription = _get_prescription(db, prescription_id)
     _ensure_facility_access(current_user, prescription.facility_id)
-    
+
     if prescription.status == "dispensed":
         raise HTTPException(status_code=409, detail="Prescription is already fully dispensed")
-        
+
     if not dispense.items:
         raise HTTPException(status_code=400, detail="Dispense request must include at least one item")
 
@@ -507,7 +509,7 @@ def compare_medication_pricing(
     current_user: models.User = Depends(auth.get_current_user),
 ) -> dict[str, Any]:
     goodrx_key = os.getenv("GOODRX_API_KEY")
-    
+
     if goodrx_key:
         try:
             # Real GoodRx API call implementation (simulated endpoint structure as GoodRx doesn't have public API docs for this)

@@ -140,7 +140,7 @@ async def stream_chat(
                             if chunk:
                                 await chunk_queue.put(("chunk", chunk))
                         await chunk_queue.put(("done", None))
-                    except Exception as e:
+                    except Exception:
                         # Log safe error message, avoiding sensitive detail leakage
                         logger.error("AI stream consumer exception encountered")
                         await chunk_queue.put(("error", STREAM_FAILURE_DETAIL))

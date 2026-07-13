@@ -9,17 +9,17 @@ Redis pub/sub channels, or Kafka topics for real clinical data.
 import asyncio
 import json
 import logging
+import os
 import random
 import time
-import psutil
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, Body
+import psutil
+from fastapi import APIRouter, Body, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session
 
 from . import auth, database, licensing, models
-
 
 logger = logging.getLogger(__name__)
 
@@ -208,7 +208,7 @@ def ingest_hl7(
     current_user: models.User = Depends(auth.get_current_user),
 ):
     _require_admin(current_user)
-    
+
     # Store the HL7 message
     msg = {
         "id": str(time.time()),
@@ -218,7 +218,7 @@ def ingest_hl7(
     HL7_MESSAGES.insert(0, msg)
     if len(HL7_MESSAGES) > MAX_HL7_MESSAGES:
         HL7_MESSAGES.pop()
-        
+
     return {"status": "success", "message": "HL7 payload ingested"}
 
 @router.get("/snapshot")
@@ -284,8 +284,8 @@ def _generate_telemetry_snapshot() -> dict:
     mock_batch_id = int(time.time() / 5) % 1000
 
     # Real CPU and RAM from psutil
-    cpu_percent = psutil.cpu_percent(interval=None)
-    ram_percent = psutil.virtual_memory().percent
+    psutil.cpu_percent(interval=None)
+    psutil.virtual_memory().percent
 
     return {
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -295,12 +295,9 @@ def _generate_telemetry_snapshot() -> dict:
         "spark_batch_id": mock_batch_id,
         "spark_records_processed": random.randint(1, 8),
         "spark_ml_latency_ms": random.uniform(2.5, 6.8),
-                "ai_nodes_active": 12,
+        "ai_nodes_active": 12,
         "cpu_percent": psutil.cpu_percent(interval=None),
         "ram_percent": psutil.virtual_memory().percent,
-        "hl7_logs": list(HL7_MESSAGES),
-        "cpu_percent": cpu_percent,
-        "ram_percent": ram_percent,
         "hl7_logs": list(HL7_MESSAGES),
         "ed_boarding": random.randint(12, 24),
         "ed_avg_wait_min": random.randint(90, 180),

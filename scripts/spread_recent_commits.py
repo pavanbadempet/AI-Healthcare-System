@@ -109,8 +109,8 @@ def main():
     os.chdir(repo_dir)
 
     print("Checking git status...")
-    status = run_cmd(["git", "status", "--short"])
-    
+    run_cmd(["git", "status", "--short"])
+
     # We first reset back to the remote baseline commit (62da3a3)
     # Keeping changes in the working directory (soft/mixed reset)
     print("Resetting branch to 62da3a3 (leaving files modified in working directory)...")
@@ -178,7 +178,7 @@ def main():
         print(f"\nCommitting remaining {len(remaining_files)} files in a cleanup commit...")
         for file in remaining_files:
             run_cmd(["git", "add", file])
-        
+
         env = os.environ.copy()
         env["GIT_AUTHOR_DATE"] = "2026-06-19 09:10:00"
         env["GIT_COMMITTER_DATE"] = "2026-06-19 09:10:00"

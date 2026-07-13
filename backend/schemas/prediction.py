@@ -118,7 +118,7 @@ class MultiOrganInput(BaseModel):
     # Demographics
     gender: Optional[int] = Field(None, description="0: Female, 1: Male")
     age: Optional[float] = Field(None, description="Age in years")
-    
+
     # Lifestyle & Common Markers
     smoking: Optional[int] = Field(None, description="0: No, 1: Yes")
     physical_activity: Optional[int] = Field(None, description="0: No, 1: Yes")
@@ -127,7 +127,7 @@ class MultiOrganInput(BaseModel):
     bmi: Optional[float] = Field(None, description="Body Mass Index")
     glucose: Optional[float] = Field(None, description="Blood glucose level")
     hba1c: Optional[float] = Field(None, description="HbA1c level")
-    
+
     # Cardiovascular
     hypertension: Optional[int] = Field(None, description="0: No, 1: Yes")
     heart_disease: Optional[int] = Field(None, description="0: No, 1: Yes")
@@ -144,7 +144,7 @@ class MultiOrganInput(BaseModel):
     thal: Optional[int] = Field(None, description="Thalassemia (1-3)")
     hdl: Optional[float] = Field(50.0, description="HDL Cholesterol")
     hyp_treatment: Optional[int] = Field(0, description="0: Untreated, 1: Treated")
-    
+
     # Hepatic / Liver
     total_bilirubin: Optional[float] = None
     direct_bilirubin: Optional[float] = None
@@ -155,7 +155,7 @@ class MultiOrganInput(BaseModel):
     albumin: Optional[float] = None
     albumin_and_globulin_ratio: Optional[float] = None
     platelets: Optional[float] = Field(250.0, description="Platelets in 10^9/L (Default: 250.0)")
-    
+
     # Renal / Kidney
     bp: Optional[float] = None
     sg: Optional[float] = None
@@ -180,7 +180,7 @@ class MultiOrganInput(BaseModel):
     appet: Optional[int] = None
     pe: Optional[int] = None
     ane: Optional[int] = None
-    
+
     # Lungs / Pulmonary
     yellow_fingers: Optional[int] = None
     anxiety: Optional[int] = None

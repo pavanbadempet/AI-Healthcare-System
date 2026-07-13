@@ -1,5 +1,4 @@
 import re
-import os
 
 filepath = "backend/prediction.py"
 with open(filepath, "r", encoding="utf-8") as f:
@@ -14,9 +13,9 @@ def _run_model_prediction_scaled(model_name: str, input_list: list, X=None):
     entry = ms._entries.get(model_name)
     if not entry:
         raise ValueError(f"Model {model_name} not found")
-        
+
     predict_input = X if X is not None else [input_list]
-        
+
     if entry.model is not None:
         raw_pred = entry.model.predict(predict_input)
         raw = ms._normalize_prediction(raw_pred)
@@ -32,7 +31,7 @@ def _run_model_prediction_scaled(model_name: str, input_list: list, X=None):
             input_array = entry.scaler_onnx_session.run(None, {entry.scaler_onnx_session.get_inputs()[0].name: input_array})[0]
         elif entry.scaler_needed and entry.scaler is not None:
             input_array = entry.scaler.transform(input_array).astype(np.float32)
-        
+
         raw, prob = ms._predict_onnx_probs(entry, input_array)
         confidence, risk_level = ms._classify_confidence(prob)
         return raw, confidence, risk_level, prob[0]

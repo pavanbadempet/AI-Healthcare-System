@@ -31,7 +31,7 @@ def train_diabetes_model():
     if os.path.exists(DATASET_PATH):
         df = pd.read_parquet(DATASET_PATH)
         print(f"Loaded Dataset: {len(df)} records")
-        
+
         try:
             from backend.features import DIABETES_DATASET_MAP, DIABETES_FEATURES
         except ImportError:
@@ -43,14 +43,14 @@ def train_diabetes_model():
         if all(col in df.columns for col in DIABETES_DATASET_MAP.keys()):
             print("Renaming columns to canonical names...")
             df = df.rename(columns=DIABETES_DATASET_MAP)
-            
+
         X = df[DIABETES_FEATURES]
         Y = df["diabetes"]
     else:
         print(f"Dataset not found at {DATASET_PATH}. Using synthetic data.")
         np.random.seed(42)
         n_samples = 1000
-        
+
         try:
             from backend.features import DIABETES_FEATURES
         except ImportError:

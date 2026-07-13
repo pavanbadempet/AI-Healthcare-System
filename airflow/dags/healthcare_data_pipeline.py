@@ -18,6 +18,7 @@ from airflow.operators.python import PythonOperator
 from airflow.providers.redis.hooks.redis import RedisHook
 from airflow.providers.spark.operators.spark_submit import SparkSubmitOperator
 from airflow.sensors.sql import SqlSensor
+
 from airflow import DAG
 
 logger = logging.getLogger(__name__)
@@ -144,8 +145,9 @@ dag = DAG(
 def extract_patient_data(**context):
     """Extract patient data from source systems"""
     import os
-    from airflow.providers.postgres.hooks.postgres import PostgresHook
+
     from airflow.models import Variable
+    from airflow.providers.postgres.hooks.postgres import PostgresHook
 
     postgres_hook = PostgresHook(postgres_conn_id='healthcare_postgres')
 
@@ -189,8 +191,9 @@ def extract_patient_data(**context):
 def extract_lab_results(**context):
     """Extract lab results data"""
     import os
-    from airflow.providers.postgres.hooks.postgres import PostgresHook
+
     from airflow.models import Variable
+    from airflow.providers.postgres.hooks.postgres import PostgresHook
 
     postgres_hook = PostgresHook(postgres_conn_id='healthcare_postgres')
 
@@ -231,8 +234,9 @@ def extract_lab_results(**context):
 def extract_claims_data(**context):
     """Extract claims data with optional backfill support."""
     import os
-    from airflow.providers.postgres.hooks.postgres import PostgresHook
+
     from airflow.models import Variable
+    from airflow.providers.postgres.hooks.postgres import PostgresHook
 
     postgres_hook = PostgresHook(postgres_conn_id='healthcare_postgres')
 
@@ -279,7 +283,6 @@ def transform_and_clean_data(**context):
     Records that fail individual cleaning steps are routed to the
     dead-letter queue so they can be inspected and retried later.
     """
-    import os
     import pandas as pd
 
     # Get extracted data from Parquet staging files
@@ -360,6 +363,7 @@ def enrich_with_ml_predictions(**context):
     """Enrich data with ML predictions"""
 
     import os
+
     import joblib
     import pandas as pd
 
@@ -415,7 +419,6 @@ def enrich_with_ml_predictions(**context):
 
 def prepare_diabetes_features(df, patients_df=None):
     """Prepare features for diabetes prediction using actual patient profiles to avoid skew"""
-    import numpy as np
     from datetime import datetime
 
     if patients_df is not None and not patients_df.empty:
@@ -445,7 +448,6 @@ def prepare_diabetes_features(df, patients_df=None):
 
 def prepare_heart_features(df, patients_df=None):
     """Prepare features for heart disease prediction using actual patient profiles to avoid skew"""
-    import numpy as np
     from datetime import datetime
 
     if patients_df is not None and not patients_df.empty:
@@ -487,6 +489,7 @@ def prepare_heart_features(df, patients_df=None):
 def load_to_data_warehouse(**context):
     """Load processed data to data warehouse"""
     import os
+
     from airflow.providers.postgres.hooks.postgres import PostgresHook
 
     postgres_hook = PostgresHook(postgres_conn_id='healthcare_warehouse')
@@ -636,7 +639,7 @@ def generate_data_quality_report(**context):
             }).encode('utf-8')
             try:
                 req = urllib.request.Request(slack_url, data=payload, headers={'Content-Type': 'application/json'})
-                with urllib.request.urlopen(req, timeout=5) as response:
+                with urllib.request.urlopen(req, timeout=5):
                     pass
             except Exception as e:
                 logger.error(f"Failed to send Slack alert: {e}")

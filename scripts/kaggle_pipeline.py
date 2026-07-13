@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+
 from huggingface_hub import HfApi
 
 # Target repository on Hugging Face Model Hub
@@ -60,7 +61,7 @@ def run_kaggle_pipeline():
     print("\n--- Step 3: Running Model Training Scripts ---")
     # Make sure data/processed directories exist
     os.makedirs(os.path.join(repo_dir, "data/processed"), exist_ok=True)
-    
+
     # Run the training scripts in order
     run_command("python scripts/training/train_diabetes.py", cwd=repo_dir)
     run_command("python scripts/training/train_heart.py", cwd=repo_dir)
@@ -71,7 +72,7 @@ def run_kaggle_pipeline():
     # 4. Upload all compiled models to Hugging Face Model Registry
     print("\n--- Step 4: Uploading Weights to Hugging Face Model Registry ---")
     api = HfApi()
-    
+
     try:
         api.create_repo(repo_id=REPO_ID, repo_type="model", exist_ok=True, token=token)
         print(f"Created/Verified target repository: {REPO_ID}")
@@ -80,7 +81,7 @@ def run_kaggle_pipeline():
 
     backend_dir = os.path.join(repo_dir, "backend")
     uploaded = 0
-    
+
     for filename in MODEL_FILES:
         filepath = os.path.join(backend_dir, filename)
         if os.path.exists(filepath):

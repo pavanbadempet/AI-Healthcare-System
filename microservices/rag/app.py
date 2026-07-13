@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import Optional, Dict, Any, List
+from typing import Any, Dict, Optional
 
 # Ensure repository root is in the python path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))
@@ -9,9 +9,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")
 os.environ["MICROSERVICES_MODE"] = "false"
 
 import uvicorn
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import Depends, FastAPI, HTTPException
 from pydantic import BaseModel
+
 from backend.licensing import verify_license_key
+
 
 def enforce_license():
     license_key = os.environ.get("LICENSE_KEY", "").strip()
@@ -22,8 +24,8 @@ def enforce_license():
         raise HTTPException(status_code=403, detail=f"Invalid license key: {reason}")
 
 # Import real package implementations
-import clinical_rag_cache.rag as rag_lib
 import clinical_rag_cache.prompt_registry as prompt_lib
+import clinical_rag_cache.rag as rag_lib
 
 app = FastAPI(title="Clinical RAG and Prompt Microservice", dependencies=[Depends(enforce_license)])
 

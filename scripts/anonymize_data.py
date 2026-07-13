@@ -17,7 +17,7 @@ import logging
 import os
 import shutil
 import sqlite3
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 try:
     from faker import Faker
@@ -66,7 +66,7 @@ class DataAnonymizer:
             return dob.strftime("%Y-%m-%d")
         elif ft == "text":
             return "Synthetic clinical notes and chat context."
-        
+
         return value
 
     def anonymize_database(self, input_path: str, output_path: str) -> None:
@@ -134,7 +134,7 @@ class DataAnonymizer:
         """Generates completely mock dataset schemas from scratch."""
         conn = sqlite3.connect(output_path)
         cursor = conn.cursor()
-        
+
         try:
             cursor.execute(
                 """
@@ -148,7 +148,7 @@ class DataAnonymizer:
                 )
                 """
             )
-            
+
             for _ in range(num_records):
                 cursor.execute(
                     "INSERT INTO synthetic_patients (name, email, phone, ssn, dob) VALUES (?, ?, ?, ?, ?)",
@@ -167,7 +167,7 @@ class DataAnonymizer:
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-    
+
     parser = argparse.ArgumentParser(description="HIPAA Data Anonymizer")
     parser.add_argument("--input", default="healthcare.db", help="Path to production database file")
     parser.add_argument("--output", default="anonymized.db", help="Path to write anonymized staging database")

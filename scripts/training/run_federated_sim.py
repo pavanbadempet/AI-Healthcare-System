@@ -8,8 +8,9 @@ using a central coordinator, aggregating weights with Laplace Differential Priva
 
 import numpy as np
 from sklearn.datasets import make_classification
-from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
+from sklearn.model_selection import train_test_split
+
 
 def sigmoid(z):
     return 1 / (np.exp(-np.clip(z, -25, 25)) + 1)
@@ -30,7 +31,7 @@ class LocalHospitalNode:
 
         # Sigmoid predictions
         predictions = sigmoid(np.dot(self.X, W) + b)
-        
+
         # Loss gradient
         error = predictions - self.y
         dW = np.dot(self.X.T, error) / N
@@ -40,7 +41,7 @@ class LocalHospitalNode:
         l2_norm = np.linalg.norm(dW)
         if l2_norm > clip_value:
             dW = dW * (clip_value / l2_norm)
-            
+
         if abs(db) > clip_value:
             db = db * (clip_value / abs(db))
 
@@ -105,7 +106,7 @@ def run_simulation(epochs=10, epsilon=1.5, sensitivity=1.0):
         n_redundant=1,
         random_state=42
     )
-    
+
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
 
     # Split training set among 3 hospital clients
@@ -131,7 +132,7 @@ def run_simulation(epochs=10, epsilon=1.5, sensitivity=1.0):
         db = np.sum(error) / len(X_train)
         W_central -= 0.5 * dW
         b_central -= 0.5 * db
-        
+
     y_pred_central = (sigmoid(np.dot(X_val, W_central) + b_central) >= 0.5).astype(int)
     acc_central = accuracy_score(y_val, y_pred_central)
     print(f"\nBaseline Centralized Model Accuracy (No DP): {acc_central * 100:.2f}%")
@@ -139,7 +140,7 @@ def run_simulation(epochs=10, epsilon=1.5, sensitivity=1.0):
     # 3. Federated Training with Differential Privacy
     coordinator = FederatedCoordinator(num_features=5, epsilon=epsilon, sensitivity=sensitivity)
     print(f"Federated training started with privacy budget epsilon={epsilon}...")
-    
+
     epoch_history = []
     for epoch in range(epochs):
         client_updates = []
@@ -152,7 +153,7 @@ def run_simulation(epochs=10, epsilon=1.5, sensitivity=1.0):
             })
 
         coordinator.aggregate_updates(client_updates)
-        
+
         # Intermediate eval
         y_pred_fed = coordinator.predict(X_val)
         acc_fed = accuracy_score(y_val, y_pred_fed)
