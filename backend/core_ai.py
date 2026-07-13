@@ -558,8 +558,12 @@ async def _generate_cloud(prompt: str, system: str, model: Optional[str], api_pr
             base_url = "https://ai-healthcare-model.pavan9b.workers.dev"
 
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+    if model and ("cloudflare" in model.lower() or "ollama" in model.lower()):
+        model = None
+
     target_model = model or (
         "gpt-4o-mini" if provider == "openai"
+        else "mistralai/Mistral-7B-Instruct-v0.3" if provider == "huggingface"
         else "google/gemini-2.5-flash"
     )
     payload_messages = []
@@ -795,8 +799,12 @@ async def _stream_cloud(messages: list[dict], system: str, model: Optional[str],
                     base_url = "https://ai-healthcare-model.pavan9b.workers.dev"
 
             headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
+            if model and ("cloudflare" in model.lower() or "ollama" in model.lower()):
+                model = None
+
             target_model = model or (
                 "gpt-4o-mini" if provider == "openai"
+                else "mistralai/Mistral-7B-Instruct-v0.3" if provider == "huggingface"
                 else "google/gemini-2.5-flash"
             )
             payload_messages = []
@@ -868,8 +876,13 @@ async def _resolve_provider_and_key(api_provider: Optional[str] = None, api_key:
         pass
 
     if not resolved_provider or (resolved_provider.lower() == "gemini" and not gemini_active) or (resolved_provider.lower() == "ollama" and not ollama_active):
-        resolved_provider = "custom"
-        resolved_key = resolved_key or "cloudflare"
+        hf_token = os.getenv("HF_TOKEN")
+        if os.getenv("SPACE_ID") and hf_token:
+            resolved_provider = "huggingface"
+            resolved_key = hf_token
+        else:
+            resolved_provider = "custom"
+            resolved_key = resolved_key or "cloudflare"
 
     return resolved_provider, resolved_key
 

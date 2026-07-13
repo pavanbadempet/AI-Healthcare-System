@@ -193,7 +193,10 @@ def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestFor
     Authenticate user and return JWT access token.
     """
     try:
-        user = db.query(models.User).filter(models.User.username == form_data.username, models.User.is_deleted == False).first()
+        user = db.query(models.User).filter(
+            (models.User.username == form_data.username) | (models.User.email == form_data.username),
+            models.User.is_deleted == False
+        ).first()
         if not user:
             raise HTTPException(status_code=401, detail="Incorrect username or password")
 
