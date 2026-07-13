@@ -18,7 +18,7 @@ COPY frontend/ ./
 RUN npm run build
 
 # Stage 2: Build Rust API Gateway
-FROM rust:1.80-slim AS rust-builder
+FROM rust:1.97-slim AS rust-builder
 WORKDIR /build
 
 # Copy rust gateway source and build it
