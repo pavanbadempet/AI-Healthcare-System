@@ -364,7 +364,13 @@ class GDPRCompliance:
 
     def _generate_pseudonym(self, original_value: str) -> str:
         """Generate consistent pseudonym for a value"""
-        hash_input = f"{original_value}_{os.getenv('PSEUDONYM_SALT', 'default')}"
+        salt = os.getenv('PSEUDONYM_SALT')
+        if not salt:
+            if os.getenv("TESTING", "").strip().lower() in {"1", "true", "yes", "on"}:
+                salt = "test_salt"
+            else:
+                raise RuntimeError("PSEUDONYM_SALT environment variable is required for secure anonymization")
+        hash_input = f"{original_value}_{salt}"
         return hashlib.sha256(hash_input.encode()).hexdigest()[:16]
 
     def _check_retention_grounds(self, user_id: int) -> List[str]:
@@ -435,7 +441,12 @@ class ComplianceManager:
         self.redis = redis_client
 
         # Initialize compliance modules
-        encryption_key = os.getenv('ENCRYPTION_KEY', Fernet.generate_key())
+        encryption_key = os.getenv('ENCRYPTION_KEY')
+        if not encryption_key:
+            if os.getenv("TESTING", "").strip().lower() in {"1", "true", "yes", "on"}:
+                encryption_key = Fernet.generate_key()
+            else:
+                raise RuntimeError("ENCRYPTION_KEY environment variable is required")
         self.hipaa = HIPAACompliance(db_session, encryption_key)
         self.gdpr = GDPRCompliance(db_session)
 

@@ -30,6 +30,7 @@ from sqlalchemy.orm import Session
 from . import auth, core_ai, database, licensing, models
 from .chat_context import build_chat_context, get_suggested_questions
 from .prompt_registry import get_prompt
+from .security_decorators import no_log_zone_async
 
 logger = logging.getLogger(__name__)
 
@@ -57,6 +58,7 @@ class StreamChatRequest(BaseModel):
 # ── SSE Streaming Chat ────────────────────────────────────────────────
 
 @router.post("/stream")
+@no_log_zone_async
 async def stream_chat(
     req: StreamChatRequest,
     db: Session = Depends(database.get_db),
