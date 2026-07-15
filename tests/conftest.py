@@ -150,3 +150,11 @@ def mock_cloudflare_network_calls(monkeypatch):
     monkeypatch.setattr(httpx.AsyncClient, "request", patched_httpx_request)
 
 
+@pytest.fixture(autouse=True)
+def reset_gemini_disabled_flag():
+    """Reset the global _gemini_disabled flag in core_ai.py before each test."""
+    try:
+        from backend import core_ai
+        core_ai._gemini_disabled = False
+    except ImportError:
+        pass

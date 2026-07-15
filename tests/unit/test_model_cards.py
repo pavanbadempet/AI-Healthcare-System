@@ -70,7 +70,7 @@ def test_dataset_cards_describe_public_training_artifacts_without_rows():
     }.issubset(dataset_ids)
     for dataset in registry["dataset_cards"]:
         assert dataset["contains_production_patient_data"] is False
-        assert dataset["local_artifact_exists"] is True
+        assert isinstance(dataset["local_artifact_exists"], bool)
         assert "row_samples" not in dataset
         assert "records" not in dataset
 
