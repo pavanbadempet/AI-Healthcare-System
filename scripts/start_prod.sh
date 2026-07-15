@@ -12,8 +12,9 @@
 # NOTE: SQLAlchemy and SQLx have different URI formats for SQLite!
 # If DOPPLER_TOKEN is NOT set, and DATABASE_URL is missing, we use the Neon DB by default.
 if [ -z "$DOPPLER_TOKEN" ] && [ -z "$DATABASE_URL" ]; then
-    export SQLALCHEMY_URL="postgresql://neondb_owner:npg_K1utSTqdOX8F@ep-ancient-poetry-a1vna8ys-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
-    export SQLX_URL="postgresql://neondb_owner:npg_K1utSTqdOX8F@ep-ancient-poetry-a1vna8ys-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
+    echo "WARNING: DOPPLER_TOKEN and DATABASE_URL are not set. Using local SQLite database."
+    export SQLALCHEMY_URL="sqlite:///./healthcare.db"
+    export SQLX_URL="sqlite://healthcare.db"
     export DATABASE_URL=$SQLALCHEMY_URL
 elif [ -n "$DATABASE_URL" ]; then
     # Normalize DATABASE_URL for Postgres/SQLAlchemy if provided via standard env var
