@@ -93,10 +93,16 @@ def test_event_bus_does_not_log_redis_credentials(caplog):
     caplog.set_level("INFO", logger="backend.event_bus")
     bus = ClinicalEventBus()
 
+    import sys
+    from unittest.mock import MagicMock
+    
     try:
-        import redis.asyncio  # Ensure the submodule is loaded for the patch
+        import redis.asyncio
     except ImportError:
         pass
+        
+    if "redis.asyncio" not in sys.modules:
+        sys.modules["redis.asyncio"] = MagicMock()
 
     with patch("redis.asyncio.from_url", return_value=object()):
         bus._init_redis(redis_url)

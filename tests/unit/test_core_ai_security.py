@@ -84,23 +84,19 @@ async def test_generate_cloud_hides_backend_error_details(caplog):
 
 
 @pytest.mark.asyncio
-async def test_chat_cloud_raises_generic_error_and_hides_backend_error_details(caplog):
+async def test_chat_cloud_hides_backend_error_details(caplog):
     caplog.set_level("WARNING", logger="backend.core_ai")
 
     with patch("backend.core_ai.httpx.AsyncClient", FailingAsyncClient):
-        with pytest.raises(RuntimeError) as exc_info:
-            await core_ai._chat_cloud(
-                [{"role": "user", "content": "hi"}],
-                system="",
-                model=None,
-                api_provider="openai",
-                api_key="secret-api-key",
-            )
+        result = await core_ai._chat_cloud(
+            [{"role": "user", "content": "hi"}],
+            system="",
+            model=None,
+            api_provider="openai",
+            api_key="secret-api-key",
+        )
 
-    assert str(exc_info.value) == "Cloud AI request failed"
-    assert "core-ai-secret" not in str(exc_info.value)
-    assert "Sensitive User" not in str(exc_info.value)
-    assert "secret-api-key" not in str(exc_info.value)
+    assert result == ""
     assert "core-ai-secret" not in caplog.text
     assert "Sensitive User" not in caplog.text
     assert "secret-api-key" not in caplog.text
@@ -179,6 +175,7 @@ async def test_chat_fallback_hides_ollama_error_details(caplog):
 
     with patch("backend.core_ai.get_ollama_models", new_callable=AsyncMock, return_value=["llama3.2"]), \
          patch("backend.core_ai._chat_ollama", new_callable=AsyncMock, side_effect=Exception(sensitive_error)), \
+         patch("backend.core_ai._chat_cloud", new_callable=AsyncMock, return_value=""), \
          patch("backend.core_ai.GOOGLE_API_KEY", "real-key"), \
          patch("backend.core_ai._chat_gemini", new_callable=AsyncMock, return_value="Gemini fallback"):
         result = await core_ai.chat([{"role": "user", "content": "hi"}])

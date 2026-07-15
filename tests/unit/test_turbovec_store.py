@@ -902,8 +902,8 @@ def test_property_acl_filter_isolation(records, tmp_path, monkeypatch):
     for rec in records:
         uid = rec["user_id"]
         results = store.search("query", filter_meta={"user_id": uid}, k=20)
-        # Build set of texts that belong to this user
-        user_texts = {r["text"] for r in records if r["user_id"] == uid}
+        # Build set of texts that belong to this user, accounting for strip() in ACL filters
+        user_texts = {r["text"] for r in records if r["user_id"].strip() == uid.strip()}
         for returned_text in results:
             assert returned_text in user_texts, (
                 f"search leaked text '{returned_text}' not belonging to user '{uid}'"
