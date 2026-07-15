@@ -10,7 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from . import agent, audit, auth, core_ai, database, licensing, models, pdf_generator, rag, schemas
-from .security_decorators import no_log_zone, no_log_zone_async
+from .security_decorators import no_log_zone
 
 logger = logging.getLogger(__name__)
 router = APIRouter(dependencies=[Depends(licensing.enforce_license_tier("community"))])
