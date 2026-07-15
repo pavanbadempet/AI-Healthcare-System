@@ -56,8 +56,9 @@ class TestSemanticCache:
     @patch("backend.core_ai.has_gemini_api_key")
     @patch("backend.core_ai.get_ollama_models")
     @patch("backend.core_ai.embed_text")
+    @patch("backend.core_ai._generate_cloud")
     @patch("backend.core_ai._generate_gemini")
-    async def test_semantic_cache_generate(self, mock_gemini_gen, mock_embed, mock_get_ollama, mock_has_key):
+    async def test_semantic_cache_generate(self, mock_gemini_gen, mock_gen_cloud, mock_embed, mock_get_ollama, mock_has_key):
         from backend.core_ai import generate, semantic_cache
 
         # Reset cache
@@ -66,6 +67,7 @@ class TestSemanticCache:
         # Mock Ollama to be unavailable and Gemini API key to exist to force falling back to Gemini
         mock_get_ollama.return_value = []
         mock_has_key.return_value = True
+        mock_gen_cloud.return_value = ""
 
         # Mock embeddings to be identical
         mock_embed.return_value = [0.1] * 768
@@ -116,6 +118,9 @@ class TestAdaptiveConformalPrediction:
         assert metrics_sparse["adjusted_thresholds"] > 0.80
 
 
+import backend.explainability
+
+@pytest.mark.skipif(not backend.explainability.SHAP_AVAILABLE, reason="SHAP not installed")
 class TestAttributionDriftMonitoring:
     """Tests for SHAP feature attribution logging and drift report endpoint."""
 
@@ -357,11 +362,13 @@ class TestClinicalAdversarialSecurityGuardrails:
     @pytest.mark.asyncio
     @patch("backend.core_ai.has_gemini_api_key")
     @patch("backend.core_ai.get_ollama_models")
+    @patch("backend.core_ai._generate_cloud")
     @patch("backend.core_ai._generate_gemini")
-    async def test_generate_redacts_pii(self, mock_gemini_gen, mock_get_ollama, mock_has_key):
+    async def test_generate_redacts_pii(self, mock_gemini_gen, mock_gen_cloud, mock_get_ollama, mock_has_key):
         from backend.core_ai import generate
         mock_get_ollama.return_value = []
         mock_has_key.return_value = True
+        mock_gen_cloud.return_value = ""
         mock_gemini_gen.return_value = "Patient email is john@doe.com and SSN is 111-22-3333."
 
         with patch.dict(os.environ, {"SEMANTIC_CACHE_ENABLED": "false"}):
@@ -374,11 +381,13 @@ class TestClinicalAdversarialSecurityGuardrails:
     @pytest.mark.asyncio
     @patch("backend.core_ai.has_gemini_api_key")
     @patch("backend.core_ai.get_ollama_models")
+    @patch("backend.core_ai._chat_cloud")
     @patch("backend.core_ai._chat_gemini")
-    async def test_chat_redacts_pii(self, mock_gemini_chat, mock_get_ollama, mock_has_key):
+    async def test_chat_redacts_pii(self, mock_gemini_chat, mock_chat_cloud, mock_get_ollama, mock_has_key):
         from backend.core_ai import chat
         mock_get_ollama.return_value = []
         mock_has_key.return_value = True
+        mock_chat_cloud.return_value = ""
         mock_gemini_chat.return_value = "Send Aadhaar card copy to user. Aadhaar: 1234 5678 9012"
 
         with patch.dict(os.environ, {"SEMANTIC_CACHE_ENABLED": "false"}):

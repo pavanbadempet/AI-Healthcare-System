@@ -28,7 +28,7 @@ class TestCoreAIWrapper:
 
         with patch("backend.agent.core_ai") as mock_core:
             # Make generate return a coroutine
-            async def fake_generate(prompt):
+            async def fake_generate(prompt, **kwargs):
                 return "Test response"
             mock_core.generate = fake_generate
 
@@ -46,7 +46,7 @@ class TestCoreAIWrapper:
         wrapper = CoreAIWrapper()
 
         with patch("backend.agent.core_ai") as mock_core:
-            async def fake_generate(prompt):
+            async def fake_generate(prompt, **kwargs):
                 return ""
             mock_core.generate = fake_generate
 
@@ -62,7 +62,7 @@ class TestCoreAIWrapper:
         caplog.set_level("ERROR", logger="backend.agent")
 
         with patch("backend.agent.core_ai") as mock_core:
-            async def fake_generate(prompt):
+            async def fake_generate(prompt, **kwargs):
                 raise Exception(sensitive_error)
             mock_core.generate = fake_generate
 
@@ -82,7 +82,7 @@ class TestCoreAIWrapper:
         wrapper = CoreAIWrapper()
 
         with patch("backend.agent.core_ai") as mock_core:
-            async def fake_generate(prompt):
+            async def fake_generate(prompt, **kwargs):
                 raise Exception("429 Quota exceeded")
             mock_core.generate = fake_generate
 

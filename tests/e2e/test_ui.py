@@ -1,4 +1,5 @@
 import pytest
+pytest.importorskip("playwright")
 from playwright.sync_api import Page, expect
 
 # Prerequisite: App must be running on 127.0.0.1:3000

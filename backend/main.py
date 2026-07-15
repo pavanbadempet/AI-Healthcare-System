@@ -43,6 +43,8 @@ from slowapi.util import get_remote_address
 
 # Use global limiter for all components to import
 limiter = Limiter(key_func=get_remote_address, default_limits=["60/minute"])
+if os.getenv("TESTING") == "1":
+    limiter.enabled = False
 GENERATE_REPORT_FAILURE_DETAIL = "Failed to generate report"
 
 

@@ -4,6 +4,9 @@ Tests SHAP value generation for model explanations.
 """
 from unittest.mock import MagicMock, patch
 
+import pytest
+pytest.importorskip("shap")
+
 import numpy as np
 
 from backend.explainability import generate_static_force_plot, get_shap_values

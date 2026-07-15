@@ -407,6 +407,7 @@ async def test_chat_gemini_returns_empty_when_no_model():
 @pytest.mark.asyncio
 async def test_generate_uses_ollama_when_available():
     with (
+        patch("backend.core_ai._generate_cloud", AsyncMock(return_value=None)),
         patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=["llama3.2"])),
         patch("backend.core_ai._generate_ollama", AsyncMock(return_value="Ollama says: glucose is sugar")),
     ):
@@ -417,6 +418,7 @@ async def test_generate_uses_ollama_when_available():
 @pytest.mark.asyncio
 async def test_generate_falls_back_to_gemini_when_ollama_empty():
     with (
+        patch("backend.core_ai._generate_cloud", AsyncMock(return_value=None)),
         patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=[])),
         patch("backend.core_ai.has_gemini_api_key", return_value=True),
         patch("backend.core_ai._generate_gemini", AsyncMock(return_value="Gemini says: glucose is sugar")),
@@ -435,6 +437,7 @@ async def test_generate_uses_explicit_cloud_provider():
 @pytest.mark.asyncio
 async def test_generate_returns_mock_fallback_when_all_unavailable():
     with (
+        patch("backend.core_ai._generate_cloud", AsyncMock(return_value=None)),
         patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=[])),
         patch("backend.core_ai.has_gemini_api_key", return_value=False),
     ):
@@ -448,6 +451,7 @@ async def test_generate_returns_mock_fallback_when_all_unavailable():
 @pytest.mark.asyncio
 async def test_chat_uses_ollama_when_available():
     with (
+        patch("backend.core_ai._chat_cloud", AsyncMock(return_value=None)),
         patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=["llama3.2"])),
         patch("backend.core_ai._chat_ollama", AsyncMock(return_value="Ollama chat reply")),
     ):
@@ -458,6 +462,7 @@ async def test_chat_uses_ollama_when_available():
 @pytest.mark.asyncio
 async def test_chat_falls_back_to_gemini_on_ollama_failure():
     with (
+        patch("backend.core_ai._chat_cloud", AsyncMock(return_value=None)),
         patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=["llama3.2"])),
         patch("backend.core_ai._chat_ollama", AsyncMock(side_effect=Exception("timeout"))),
         patch("backend.core_ai.has_gemini_api_key", return_value=True),
@@ -470,6 +475,7 @@ async def test_chat_falls_back_to_gemini_on_ollama_failure():
 @pytest.mark.asyncio
 async def test_chat_returns_mock_when_all_unavailable():
     with (
+        patch("backend.core_ai._chat_cloud", AsyncMock(return_value=None)),
         patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=[])),
         patch("backend.core_ai.has_gemini_api_key", return_value=False),
     ):
@@ -495,7 +501,11 @@ async def test_chat_stream_yields_ollama_chunks():
         yield "chunk1"
         yield "chunk2"
 
+    async def fake_empty_stream(*args, **kwargs):
+        if False: yield
+
     with (
+        patch("backend.core_ai._stream_cloud", fake_empty_stream),
         patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=["llama3.2"])),
         patch("backend.core_ai._stream_ollama", fake_stream),
     ):
@@ -509,7 +519,11 @@ async def test_chat_stream_falls_back_to_gemini():
     async def fake_gemini_stream(*args, **kwargs):
         yield "Gemini chunk"
 
+    async def fake_empty_stream(*args, **kwargs):
+        if False: yield
+
     with (
+        patch("backend.core_ai._stream_cloud", fake_empty_stream),
         patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=[])),
         patch("backend.core_ai.has_gemini_api_key", return_value=True),
         patch("backend.core_ai._stream_gemini", fake_gemini_stream),
@@ -521,7 +535,11 @@ async def test_chat_stream_falls_back_to_gemini():
 
 @pytest.mark.asyncio
 async def test_chat_stream_yields_mock_when_all_unavailable():
+    async def fake_empty_stream(*args, **kwargs):
+        if False: yield
+
     with (
+        patch("backend.core_ai._stream_cloud", fake_empty_stream),
         patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=[])),
         patch("backend.core_ai.has_gemini_api_key", return_value=False),
     ):

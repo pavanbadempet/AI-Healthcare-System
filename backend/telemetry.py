@@ -366,6 +366,13 @@ async def telemetry_stream(websocket: WebSocket):
                     snapshot = build_telemetry_snapshot(db, current_user)
             else:
                 snapshot = _generate_telemetry_snapshot()
+            
+            # Enforce Zero-Trust/Confidentiality: Mask all PHI from HL7 logs
+            from backend.guardrails import redact_pii_from_text
+            for hl7_log in snapshot.get("hl7_logs", []):
+                if "msg" in hl7_log:
+                    hl7_log["msg"] = redact_pii_from_text(hl7_log["msg"])
+
             await websocket.send_text(json.dumps(snapshot))
             await asyncio.sleep(2)
     except WebSocketDisconnect:

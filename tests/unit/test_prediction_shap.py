@@ -4,6 +4,8 @@ Additional tests for backend/prediction.py SHAP explanation endpoints.
 from unittest.mock import MagicMock, patch
 
 import numpy as np
+import pytest
+pytest.importorskip("shap")
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
