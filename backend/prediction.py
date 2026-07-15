@@ -12,7 +12,6 @@ from sqlalchemy.orm import Session
 # --- Custom Modules ---
 from . import audit, database, explainability, schemas
 from . import features as _features
-from .tee_enclave import ConfidentialEnclave
 from .clinical_indices import (
     calculate_egfr_ckd_epi,
     calculate_fib4_index,
@@ -26,6 +25,7 @@ from .model_service import (  # noqa: F401 — re-exported for backward compat &
     get_age_bucket,
     model_service,
 )
+from .tee_enclave import ConfidentialEnclave
 
 # --- Logging Configuration ---
 logger = logging.getLogger(__name__)
@@ -92,7 +92,7 @@ def _run_model_prediction_scaled(model_name: str, input_list: list, X=None):
             if confidence is not None and raw == 0:
                 confidence = round(100.0 - confidence, 1)
             return raw, confidence, risk_level, proba
-            
+
         enclave = ConfidentialEnclave()
         enclave._attested = True # Bypassed hash check for this execution
         return enclave.execute(_test_execution)

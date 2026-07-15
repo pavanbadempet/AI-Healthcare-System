@@ -1,4 +1,3 @@
-import ctypes
 import hashlib
 import logging
 from typing import Any, Callable, TypeVar
@@ -27,7 +26,7 @@ class ConfidentialEnclave:
         if self.expected_hash and current_hash != self.expected_hash:
             logger.error("ENCLAVE ATTESTATION FAILED. Payload hash mismatch.")
             raise EnclaveAttestationError("Payload failed cryptographic attestation.")
-        
+
         self._attested = True
         return True
 
@@ -38,9 +37,9 @@ class ConfidentialEnclave:
         """
         if self.expected_hash and not self._attested:
             raise EnclaveAttestationError("Cannot execute in enclave without successful attestation.")
-            
+
         logger.debug("[TEE] Entering Confidential Enclave execution context.")
-        
+
         # Execute the function
         try:
             result = func(*args, **kwargs)
@@ -48,14 +47,14 @@ class ConfidentialEnclave:
         finally:
             logger.debug("[TEE] Exiting Confidential Enclave context. Simulating secure memory wipe.")
             self._wipe_memory(args, kwargs)
-            
+
     async def execute_async(self, func: Callable[..., Any], *args, **kwargs) -> Any:
         """Async variant of execute."""
         if self.expected_hash and not self._attested:
             raise EnclaveAttestationError("Cannot execute in enclave without successful attestation.")
-            
+
         logger.debug("[TEE] Entering Confidential Enclave async execution context.")
-        
+
         try:
             result = await func(*args, **kwargs)
             return result
@@ -67,9 +66,9 @@ class ConfidentialEnclave:
         """Async generator variant of execute."""
         if self.expected_hash and not self._attested:
             raise EnclaveAttestationError("Cannot execute in enclave without successful attestation.")
-            
+
         logger.debug("[TEE] Entering Confidential Enclave async execution context (stream).")
-        
+
         try:
             async for chunk in func(*args, **kwargs):
                 yield chunk
@@ -91,7 +90,7 @@ class ConfidentialEnclave:
             if isinstance(val, bytearray):
                 for i in range(len(val)):
                     val[i] = 0
-        
+
         # Aggressive explicit deletion
         del args
         del kwargs

@@ -583,7 +583,7 @@ async def _generate_cloud(prompt: str, system: str, model: Optional[str], api_pr
             base_url = "https://ai-healthcare-model.pavan9b.workers.dev"
 
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-    
+
     # Zero Retention / Opt-Out telemetry headers for privacy
     headers["OAI-Telemetry"] = "false"
     headers["x-api-telemetry-opt-out"] = "true"
@@ -638,7 +638,7 @@ async def _generate_cloud(prompt: str, system: str, model: Optional[str], api_pr
                         return content[0].get("text", "").strip()
                 logger.warning("Anthropic error: %d", r.status_code)
 
-    except Exception as e:
+    except Exception:
         logger.warning("httpx connection error (%s). Trying requests fallback...", api_provider)
         try:
             import requests
@@ -705,7 +705,7 @@ async def _chat_cloud(messages: list[dict], system: str, model: Optional[str], a
             base_url = "https://ai-healthcare-model.pavan9b.workers.dev"
 
     headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-    
+
     # Zero Retention / Opt-Out telemetry headers for privacy
     headers["OAI-Telemetry"] = "false"
     headers["x-api-telemetry-opt-out"] = "true"
@@ -756,7 +756,7 @@ async def _chat_cloud(messages: list[dict], system: str, model: Optional[str], a
                         return content[0].get("text", "").strip()
                 raise Exception(f"Anthropic error: {r.status_code}")
 
-    except Exception as exc:
+    except Exception:
         logger.warning("httpx connection error for chat (%s). Trying requests fallback...", api_provider)
         try:
             import requests
@@ -833,7 +833,7 @@ async def _stream_cloud(messages: list[dict], system: str, model: Optional[str],
                     base_url = "https://ai-healthcare-model.pavan9b.workers.dev"
 
             headers = {"Authorization": f"Bearer {api_key}", "Content-Type": "application/json"}
-            
+
             # Zero Retention / Opt-Out telemetry headers for privacy
             headers["OAI-Telemetry"] = "false"
             headers["x-api-telemetry-opt-out"] = "true"
@@ -945,6 +945,7 @@ async def is_available() -> bool:
 
 
 from .security_decorators import no_log_zone_async, no_log_zone_async_gen
+
 
 @no_log_zone_async
 async def generate(
