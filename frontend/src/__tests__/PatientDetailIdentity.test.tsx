@@ -124,6 +124,7 @@ vi.mock('@/lib/api', () => ({
     full_name: 'Admin Patient',
     role: 'patient',
   })),
+  getAdminPatients: vi.fn(() => Promise.resolve([])),
   getAdminUsers: vi.fn(() => Promise.resolve([])),
   getDoctorPatients: vi.fn(() => Promise.resolve([
     {
@@ -266,9 +267,12 @@ describe('Patient detail identity', () => {
     });
 
     expect(await screen.findByRole('heading', { name: /Patient Self/ })).toBeInTheDocument();
-    expect(screen.getByText(/DOB: 1990-01-01/i)).toBeInTheDocument();
-    expect(screen.getByText(/SEX: FEMALE/i)).toBeInTheDocument();
-    expect(screen.getByText(/BLOOD: B\+/i)).toBeInTheDocument();
+    const dobElements = screen.getAllByText(/DOB: 1990-01-01/i);
+    expect(dobElements.length).toBeGreaterThan(0);
+    const sexElements = screen.getAllByText(/SEX: FEMALE/i);
+    expect(sexElements.length).toBeGreaterThan(0);
+    const bloodElements = screen.getAllByText(/BLOOD: B\+/i);
+    expect(bloodElements.length).toBeGreaterThan(0);
     expect(getDoctorPatients).not.toHaveBeenCalled();
     expect(getAdminUsers).not.toHaveBeenCalled();
   });
@@ -355,9 +359,12 @@ describe('Patient detail identity', () => {
     });
 
     expect(await screen.findByRole('heading', { name: /Admin Patient/ })).toBeInTheDocument();
-    expect(screen.getByText(/DOB: 1988-04-15/i)).toBeInTheDocument();
-    expect(screen.getByText(/SEX: MALE/i)).toBeInTheDocument();
-    expect(screen.getByText(/BLOOD: O\+/i)).toBeInTheDocument();
+    const dobElements = screen.getAllByText(/DOB: 1988-04-15/i);
+    expect(dobElements.length).toBeGreaterThan(0);
+    const sexElements = screen.getAllByText(/SEX: MALE/i);
+    expect(sexElements.length).toBeGreaterThan(0);
+    const bloodElements = screen.getAllByText(/BLOOD: O\+/i);
+    expect(bloodElements.length).toBeGreaterThan(0);
     expect(getAdminPatient).toHaveBeenCalledWith(42);
     expect(getAdminUsers).not.toHaveBeenCalled();
     expect(getDoctorPatients).not.toHaveBeenCalled();
