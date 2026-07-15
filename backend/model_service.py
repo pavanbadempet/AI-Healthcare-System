@@ -437,7 +437,6 @@ class ModelService:
         }
 
         import time as _time
-        from concurrent.futures import ThreadPoolExecutor
 
         def load_single_model(key, model_pkl, scaler_pkl):
             entry = self._entries[key]
@@ -522,13 +521,8 @@ class ModelService:
                 entry.error_message = f"Model load failed: {load_exc}"
                 logger.error("Failed to load %s model: %s", key, load_exc)
 
-        with ThreadPoolExecutor(max_workers=len(model_files)) as executor:
-            futures = [
-                executor.submit(load_single_model, key, model_pkl, scaler_pkl)
-                for key, (model_pkl, scaler_pkl) in model_files.items()
-            ]
-            for future in futures:
-                future.result()
+        for key, (model_pkl, scaler_pkl) in model_files.items():
+            load_single_model(key, model_pkl, scaler_pkl)
 
     def reload(self) -> Dict[str, Any]:
         """Force reload all models from disk. Returns status dict."""
