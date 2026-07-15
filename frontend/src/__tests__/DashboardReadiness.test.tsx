@@ -63,6 +63,7 @@ vi.mock('@/lib/api', () => ({
     source: 'backend.demo_readiness',
   })),
   getRecords: vi.fn(() => Promise.reject(new ApiConnectionError('/records'))),
+  getAdminPatients: vi.fn(() => Promise.resolve([])),
 }));
 
 describe('Dashboard readiness and degraded states', () => {
