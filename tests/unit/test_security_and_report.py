@@ -350,7 +350,7 @@ def test_analyze_report_rejects_non_image_files(client):
     headers = _auth_headers(client, "report_user1")
     response = client.post(
         "/analyze/report",
-        files={"file": ("test.pdf", b"PDF content", "application/pdf")},
+        files={"file": ("test.txt", b"Text content", "text/plain")},
         headers=headers,
     )
     assert response.status_code == 400

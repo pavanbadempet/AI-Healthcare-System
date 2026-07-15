@@ -13,6 +13,9 @@ class FailingWebSocket:
     async def send_text(self, message: str):
         raise Exception("telemetry send failed token=telemetry-secret patient_name=Sensitive User")
 
+    async def close(self, code: int = 1000):
+        pass
+
 
 class MissingTokenWebSocket:
     query_params = {}

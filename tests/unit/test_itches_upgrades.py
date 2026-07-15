@@ -227,13 +227,15 @@ async def test_special_care_booking(client, db_session):
         json={
             "patient_id": pat_id,
             "specialist": "Gynecology",
-            "date_time": "2026-06-25T10:00:00",
+            "date_time": "2027-06-25T10:00:00",
             "reason": "Routine Consultation",
             "request_female_clinician": True,
             "home_visit_van": True
         },
         headers=headers
     )
+    if r.status_code != 200:
+        print(r.text)
     assert r.status_code == 200
     data = r.json()
     assert data["female_clinician_assigned"] is True

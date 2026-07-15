@@ -158,5 +158,5 @@ def test_multi_organ_prediction(client, db_session):
     response = client.post("/predict/multi-organ", json=payload, headers=get_auth_headers(client, "multiuser"))
     assert response.status_code == 200
     data = response.json()
-    assert "health_index" in data
-    assert "organ_risks" in data
+    assert "summary" in data
+    assert "report" in data

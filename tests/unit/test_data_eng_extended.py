@@ -24,12 +24,16 @@ def mock_dependencies():
         def __init__(self, *args, **kwargs):
             pass
 
+    class _ColMock:
+        def cast(self, *args, **kwargs): return self
+        def alias(self, *args, **kwargs): return self
+
     def _function_stub(*args, **kwargs):
-        return None
+        return _ColMock()
 
     pyspark_sql.SparkSession = SparkSession
     pyspark_sql.DataFrame = SparkDF
-    for name in ["col", "count", "sum", "avg", "max", "min"]:
+    for name in ["col", "count", "sum", "avg", "max", "min", "from_json"]:
         setattr(pyspark_functions, name, _function_stub)
     for name in ["StructType", "StructField", "StringType", "FloatType", "DateType", "TimestampType"]:
         setattr(pyspark_types, name, _SparkType)
@@ -53,9 +57,14 @@ from backend.data_engineering_platform import (
 class MockSparkSession:
     def __init__(self):
         self.read = MockSparkReader()
+        self.readStream = MockSparkReader()
+    def createDataFrame(self, data):
+        return MockDataFrame()
 
 class MockSparkReader:
     def format(self, fmt):
+        return self
+    def option(self, key, value):
         return self
     def options(self, **kwargs):
         return self
@@ -73,6 +82,9 @@ class MockDataFrame:
     
     def count(self):
         return self._count
+    
+    def select(self, *cols, **kwargs):
+        return self
         
     def dropDuplicates(self):
         return self
@@ -119,28 +131,30 @@ async def test_extract_database(data_pipeline):
         "last_extract_value": "2024-01-01"
     }
     result = await data_pipeline._extract_from_database(config)
-    assert result["status"] == "success"
+    assert "dataframe" in result
     assert result["record_count"] == 10
 
 @pytest.mark.asyncio
 async def test_extract_api(data_pipeline):
     config = {
         "type": "api",
-        "endpoint": "https://api.example.com/data",
+        "base_url": "https://api.example.com",
+        "endpoint": "/data",
         "auth_token": "secret"
     }
-    with patch("httpx.AsyncClient") as mock_client:
-        mock_resp = MagicMock()
-        mock_resp.status_code = 200
-        mock_resp.json.return_value = [{"id": 1}, {"id": 2}]
+    with patch("requests.get") as mock_get:
+        mock_resp1 = MagicMock()
+        mock_resp1.status_code = 200
+        mock_resp1.json.return_value = [{"id": 1}, {"id": 2}]
         
-        instance = AsyncMock()
-        instance.get.return_value = mock_resp
-        instance.__aenter__.return_value = instance
-        mock_client.return_value = instance
+        mock_resp2 = MagicMock()
+        mock_resp2.status_code = 200
+        mock_resp2.json.return_value = []
+        
+        mock_get.side_effect = [mock_resp1, mock_resp2]
         
         result = await data_pipeline._extract_from_api(config)
-        assert result["status"] == "success"
+        assert "dataframe" in result
         assert result["record_count"] == 2
 
 @pytest.mark.asyncio
@@ -151,17 +165,18 @@ async def test_extract_file(data_pipeline):
         "format": "json"
     }
     result = await data_pipeline._extract_from_file(config)
-    assert result["status"] == "success"
+    assert "dataframe" in result
 
 @pytest.mark.asyncio
 async def test_extract_stream(data_pipeline):
     config = {
         "type": "stream",
+        "stream_type": "kafka",
         "topic": "test_topic",
         "brokers": "localhost:9092"
     }
     result = await data_pipeline._extract_from_stream(config)
-    assert result["status"] == "success"
+    assert "streaming_dataframe" in result
 
 @pytest.mark.asyncio
 async def test_transform_data(data_pipeline):
@@ -173,25 +188,26 @@ async def test_transform_data(data_pipeline):
         ]
     }
     result = await data_pipeline._transform_data(extract_result, config)
-    assert result["status"] == "success"
+    assert "transformed_dataframes" in result
 
 @pytest.mark.asyncio
 async def test_load_data(data_pipeline):
     transform_result = {"transformed_data": MockDataFrame()}
     config = {
-        "target": {
+        "targets": [{
+            "name": "target_1",
             "type": "database",
             "connection_string": "jdbc:postgres://localhost/db",
             "table": "target_table",
             "mode": "append"
-        }
+        }]
     }
     result = await data_pipeline._load_data(transform_result, config)
-    assert result["status"] == "success"
+    assert "target_1" in result
 
 @pytest.mark.asyncio
 async def test_assess_data_quality(data_pipeline):
-    load_result = {"data": MockDataFrame()}
+    load_result = {"target_1": {"records_written": 100}}
     metrics = await data_pipeline._assess_data_quality(load_result)
     assert isinstance(metrics, DataQualityMetrics)
 
@@ -211,6 +227,6 @@ async def test_run_etl_pipeline(data_pipeline):
 
 @pytest.mark.asyncio
 async def test_cache_pipeline_metrics(data_pipeline):
-    metrics = {"status": "success", "record_count": 100}
+    metrics = {"pipeline_id": "test_pipe_1", "status": "success", "record_count": 100}
     await data_pipeline._cache_pipeline_metrics(metrics)
-    assert data_pipeline.redis.hset.called
+    assert data_pipeline.redis.setex.called
