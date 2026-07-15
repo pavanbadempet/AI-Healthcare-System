@@ -98,7 +98,7 @@ class TestHealthCheck:
         svc.initialize()
         health = svc.health_check()
         assert health["healthy"] is True
-        assert set(health["models"].keys()) == {"diabetes", "heart", "liver", "kidney", "lungs"}
+        assert set(health["models"].keys()) == {"diabetes", "heart", "liver", "kidney", "lungs", "stroke"}
 
     def test_health_check_shows_prediction_count(self):
         svc = ModelService()

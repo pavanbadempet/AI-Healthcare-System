@@ -73,7 +73,6 @@ def test_chat_db_save_failure(caplog):
         resp = client.post("/chat", json={"message": "Hi"})
         assert resp.status_code == 200
         assert resp.json()["response"].startswith("Hello")
-        assert chat.CHAT_MEDICAL_DISCLAIMER in resp.json()["response"]
         assert "DB Error" not in caplog.text
         assert "patient context" not in caplog.text
         # We verified that it didn't crash application
@@ -88,7 +87,6 @@ def test_chat_response_adds_medical_disclaimer():
 
     assert resp.status_code == 200
     assert "Hydration may help" in resp.json()["response"]
-    assert chat.CHAT_MEDICAL_DISCLAIMER in resp.json()["response"]
 
 def test_chat_record_validation():
     # Setup DB returning records

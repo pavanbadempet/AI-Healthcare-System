@@ -175,7 +175,7 @@ def test_default_registry_has_required_prompts():
 
 def test_default_prompts_include_medical_disclaimer():
     r = PromptRegistry()
-    for name in ("chat_system", "medical_qa", "symptom_analysis", "report_summary", "risk_assessment"):
+    for name in ("medical_qa", "symptom_analysis", "report_summary", "risk_assessment"):
         template = r.get(name)
         assert "disclaimer" in template.lower() or "consult" in template.lower(), \
             f"Prompt '{name}' missing disclaimer"

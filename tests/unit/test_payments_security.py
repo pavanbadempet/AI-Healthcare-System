@@ -86,7 +86,8 @@ def test_create_order_hides_gateway_error_details(client):
     mock_client.order.create.side_effect = Exception(sensitive_err)
     
     with patch("backend.payments.ACTIVE_GATEWAY", "razorpay"), \
-         patch("backend.payments.razorpay_client", mock_client):
+         patch("backend.payments.razorpay_client", mock_client), \
+         patch("backend.payments._testing_enabled", return_value=False):
         r = client.post("/payments/create-order", json={"plan_id": "pro"}, headers=headers)
         assert r.status_code == 500
         assert "Failed to create payment order" in r.text
