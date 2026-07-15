@@ -19,7 +19,7 @@ def _send_email_via_smtp(to_email: str, subject: str, html_body: str, plain_body
     smtp_password = os.getenv("SMTP_PASSWORD")
 
     if not smtp_server or not smtp_user:
-        logger.info(f"SIMULATED EMAIL to {to_email}: {subject}")
+        logger.info("SIMULATED EMAIL sent")
         return True
 
     try:
@@ -36,10 +36,10 @@ def _send_email_via_smtp(to_email: str, subject: str, html_body: str, plain_body
         server.login(smtp_user, smtp_password)
         server.sendmail(smtp_user, to_email, msg.as_string())
         server.quit()
-        logger.info(f"Email sent successfully to {to_email}")
+        logger.info("Email sent successfully")
         return True
-    except Exception as e:
-        logger.error(f"Failed to send email to {to_email} via SMTP: {e}")
+    except Exception:
+        logger.error("Failed to send email via SMTP")
         return False
 
 def send_booking_confirmation(to_email: str, patient_name: str, doctor_name: str, date_time: str, link: str):

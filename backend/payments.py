@@ -48,7 +48,7 @@ try:
     else:
         razorpay_client = None
 except Exception as e:
-    logger.error(f"Failed to initialize Razorpay: {e}")
+    logger.error("Failed to initialize Razorpay")
     razorpay_client = None
 
 CREATE_ORDER_FAILURE_DETAIL = "Failed to create payment order"
@@ -146,7 +146,7 @@ def create_order(
                 "plan_id": req.plan_id
             }
         except Exception as e:
-            logger.error(f"Stripe order creation failed: {e}")
+            logger.error("Stripe order creation failed")
             raise HTTPException(status_code=500, detail=CREATE_ORDER_FAILURE_DETAIL)
 
     elif ACTIVE_GATEWAY == "razorpay":
@@ -185,7 +185,7 @@ def create_order(
                 "plan_id": req.plan_id
             }
         except Exception as e:
-            logger.error(f"Razorpay order creation failed: {e}")
+            logger.error("Razorpay order creation failed")
             raise HTTPException(status_code=500, detail=CREATE_ORDER_FAILURE_DETAIL)
 
     else:
@@ -221,7 +221,7 @@ def verify_payment(
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Stripe verification failed: {e}")
+            logger.error("Stripe verification failed")
             raise HTTPException(status_code=500, detail=VERIFY_PAYMENT_FAILURE_DETAIL)
 
     elif req.gateway == "razorpay":
@@ -247,7 +247,7 @@ def verify_payment(
         except HTTPException:
             raise
         except Exception as e:
-            logger.error(f"Razorpay verification failed: {e}")
+            logger.error("Razorpay verification failed")
             raise HTTPException(status_code=500, detail=VERIFY_PAYMENT_FAILURE_DETAIL)
 
     else:

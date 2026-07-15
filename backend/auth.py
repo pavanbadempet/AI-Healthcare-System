@@ -184,9 +184,9 @@ def signup(request: Request, user: schemas.UserCreate, db: Session = Depends(dat
     except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=400, detail="Username or Email already registered.")
-    except Exception:
+    except Exception as e:
         db.rollback()
-        logger.error("Signup failed")
+        logger.error("Signup failed due to an internal error")
         raise HTTPException(status_code=500, detail=SIGNUP_FAILURE_DETAIL)
 
 @router.post("/token", response_model=schemas.Token)
@@ -233,8 +233,8 @@ def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestFor
         return {"access_token": access_token, "token_type": "bearer"}
     except HTTPException:
         raise
-    except Exception:
-        logger.error("Login failed")
+    except Exception as e:
+        logger.error("Login failed due to an internal error")
         raise HTTPException(status_code=500, detail=LOGIN_FAILURE_DETAIL)
 
 @router.get("/profile", response_model=Dict[str, Any])

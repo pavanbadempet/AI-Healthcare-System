@@ -165,6 +165,8 @@ async def stream_chat(
                             yield f"data: {json.dumps({'error': data, 'status': 'error'})}\n\n"
                             break
                         elif msg_type == "done":
+                            disclaimer = "\n\n*This is AI-generated information and is not a medical diagnosis. Please consult a qualified healthcare professional for medical decisions.*"
+                            yield f"data: {json.dumps({'reply': disclaimer})}\n\n"
                             yield f"data: {json.dumps({'status': 'complete'})}\n\n"
                             break
 
@@ -198,9 +200,10 @@ async def stream_chat(
     context, _ = build_chat_context(db, question, current_user, req.rag_scope)
     fallback_msg = (
         f"I found the following from your records:\n\n{context}\n\n"
-        "(AI response unavailable; showing raw data fallback)"
+        "(AI response unavailable; showing raw data fallback)\n\n"
+        "*This is AI-generated information and is not a medical diagnosis. Please consult a qualified healthcare professional for medical decisions.*"
         if context
-        else "I don't have enough data to answer that yet. Please complete a health checkup first."
+        else "I don't have enough data to answer that yet. Please complete a health checkup first.\n\n*This is AI-generated information and is not a medical diagnosis. Please consult a qualified healthcare professional for medical decisions.*"
     )
     # Fallback message uses static disclaimer in UI
 

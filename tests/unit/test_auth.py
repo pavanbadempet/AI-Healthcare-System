@@ -60,6 +60,8 @@ def auth_header(client):
         "username": "test_user_unique",
         "password": "Password123!"
     })
+    if "access_token" not in response.json():
+        print(f"TOKEN ERROR in test_auth.py: {response.text}")
     token = response.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
 
@@ -183,8 +185,11 @@ def test_login_hides_unexpected_error_details(caplog):
     form = OAuth2PasswordRequestForm(username="login_leak", password="Password123!")
     caplog.set_level("ERROR", logger="backend.auth")
 
+    from starlette.requests import Request
+    mock_request = MagicMock(spec=Request)
+    
     with pytest.raises(HTTPException) as exc_info:
-        auth.login_for_access_token(form_data=form, db=mock_db)
+        auth.login_for_access_token(request=mock_request, form_data=form, db=mock_db)
 
     assert exc_info.value.status_code == 500
     assert exc_info.value.detail == "Login failed. Please try again later."

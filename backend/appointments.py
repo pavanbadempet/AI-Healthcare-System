@@ -120,19 +120,21 @@ def create_appointment(
     facility_id = current_user.facility_id
     specialization = appt.specialist
 
-    if appt.doctor_id:
-        doctor = db.query(models.User).filter(
-            models.User.id == appt.doctor_id,
-            models.User.role == "doctor"
-        ).first()
-        if not doctor:
-            raise HTTPException(status_code=400, detail="Selected doctor not found")
-        if not users_share_facility_context(db, current_user.id, doctor.id):
-            raise HTTPException(status_code=400, detail=APPOINTMENT_FACILITY_MISMATCH_DETAIL)
-        specialization = _doctor_specialization(doctor)
-        facility_id = _resolve_appointment_facility_id(current_user, doctor)
-        _ensure_doctor_slot_available(db, doctor.id, appointment_dt)
-        doctor_name_display = _doctor_display_name(doctor)
+    if not appt.doctor_id:
+        raise HTTPException(status_code=400, detail="Selected doctor not found")
+
+    doctor = db.query(models.User).filter(
+        models.User.id == appt.doctor_id,
+        models.User.role == "doctor"
+    ).first()
+    if not doctor:
+        raise HTTPException(status_code=400, detail="Selected doctor not found")
+    if not users_share_facility_context(db, current_user.id, doctor.id):
+        raise HTTPException(status_code=400, detail=APPOINTMENT_FACILITY_MISMATCH_DETAIL)
+    specialization = _doctor_specialization(doctor)
+    facility_id = _resolve_appointment_facility_id(current_user, doctor)
+    _ensure_doctor_slot_available(db, doctor.id, appointment_dt)
+    doctor_name_display = _doctor_display_name(doctor)
 
     _ensure_future_slot(appointment_dt)
     _ensure_patient_slot_available(db, current_user.id, appointment_dt)

@@ -1,6 +1,6 @@
 {
   "model_name": "liver",
-  "evaluated_at": "2026-07-13T09:02:32.027965+00:00",
+  "evaluated_at": "2026-07-14T20:10:03.759357+00:00",
   "test_set_size": 6,
   "class_distribution": {
     "0": 3,

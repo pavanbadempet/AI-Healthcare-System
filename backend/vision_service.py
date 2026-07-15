@@ -61,27 +61,21 @@ def analyze_lab_report_pdf(pdf_bytes: bytes) -> Dict[str, Any]:
         if not core_ai.has_gemini_api_key():
             raise HTTPException(status_code=503, detail="Vision API Key not configured")
 
-        import google.generativeai as genai
-        genai.configure(api_key=core_ai.GOOGLE_API_KEY)
-        model = genai.GenerativeModel(core_ai.GEMINI_VISION_MODEL)
-
         prompt = get_prompt("lab_report_vision")
 
-        response = model.generate_content([
-            {
-                'mime_type': 'application/pdf',
-                'data': pdf_bytes
-            },
-            prompt
-        ])
+        text = core_ai.generate_vision_content_pdf(prompt, pdf_bytes)
+        if not text:
+            raise HTTPException(status_code=503, detail="Vision Model Unavailable")
 
-        text = (getattr(response, "text", "") or "").strip()
         text = text.replace("```json", "").replace("```", "").strip()
         result = json.loads(text)
         return result
+    except HTTPException as he:
+        raise he
     except Exception as e:
         logger.error("PDF analysis failed: %s", e)
         return {
             "extracted_data": {},
             "summary": "Could not analyze the PDF report. Please ensure the file is not password-protected and contains clear text."
         }
+

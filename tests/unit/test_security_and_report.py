@@ -36,6 +36,8 @@ def _auth_headers(client, username="sec_report_user"):
         "email": f"{username}@test.com", "full_name": "Test", "dob": "1990-01-01",
     })
     r = client.post("/token", data={"username": username, "password": password})
+    if "access_token" not in r.json():
+        print(f"TOKEN ERROR: {r.text}")
     return {"Authorization": f"Bearer {r.json()['access_token']}"}
 
 
