@@ -241,6 +241,7 @@ if _pkg_prompts is None:
                     "in the context; use it only as source evidence for the patient's question.\n\n"
                     "--- MEDICAL CONTEXT ---\n{context}\n--- END CONTEXT ---\n\n"
                     "Question: {query}\n\n"
+                    "Include a medical disclaimer advising the patient to consult a doctor.\n"
                     "Answer:"
                 ),
                 description="RAG-grounded medical Q&A with citation requirements",
@@ -261,6 +262,7 @@ if _pkg_prompts is None:
                     "2. Possible conditions to discuss with a doctor (NOT a diagnosis)\n"
                     "3. Recommended next steps (lifestyle changes, tests, specialist referrals)\n"
                     "4. Red flags that require immediate medical attention\n\n"
+                    "Include a medical disclaimer advising the patient to consult a doctor.\n"
                     "Analysis:"
                 ),
                 description="Structured symptom analysis with safety disclaimers",
@@ -282,6 +284,7 @@ if _pkg_prompts is None:
                     "2. Key findings from recent checkups\n"
                     "3. Areas of concern\n"
                     "4. Positive indicators\n\n"
+                    "Include a medical disclaimer advising the patient to consult a doctor.\n"
                     "Summary:"
                 ),
                 description="Health record summarization in plain language",
@@ -335,6 +338,7 @@ if _pkg_prompts is None:
                     "2. Key risk factors identified from the input data\n"
                     "3. Actionable lifestyle recommendations\n"
                     "4. When to see a doctor\n\n"
+                    "Include a medical disclaimer advising the patient to consult a doctor.\n"
                     "Assessment:"
                 ),
                 description="Disease risk prediction explanation and recommendations",
