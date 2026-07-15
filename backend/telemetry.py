@@ -366,7 +366,7 @@ async def telemetry_stream(websocket: WebSocket):
                     snapshot = build_telemetry_snapshot(db, current_user)
             else:
                 snapshot = _generate_telemetry_snapshot()
-            
+
             # Enforce Zero-Trust/Confidentiality: Mask all PHI from HL7 logs
             from backend.guardrails import redact_pii_from_text
             for hl7_log in snapshot.get("hl7_logs", []):

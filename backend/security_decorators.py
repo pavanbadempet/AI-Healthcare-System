@@ -1,6 +1,6 @@
 import functools
 import logging
-from typing import Callable, Any, TypeVar
+from typing import Any, Callable, TypeVar
 
 T = TypeVar('T')
 
@@ -21,7 +21,7 @@ class NoLogZone:
 def no_log_zone(func: Callable[..., T]) -> Callable[..., T]:
     """
     Decorator to wrap sensitive clinical prediction functions.
-    Temporarily suppresses all application logs (logger.info, logger.debug) 
+    Temporarily suppresses all application logs (logger.info, logger.debug)
     during the function's execution to guarantee zero data leakage in server logs.
     """
     @functools.wraps(func)

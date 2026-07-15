@@ -47,7 +47,7 @@ try:
         razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
     else:
         razorpay_client = None
-except Exception as e:
+except Exception:
     logger.error("Failed to initialize Razorpay")
     razorpay_client = None
 
@@ -145,7 +145,7 @@ def create_order(
                 "status": "created",
                 "plan_id": req.plan_id
             }
-        except Exception as e:
+        except Exception:
             logger.error("Stripe order creation failed")
             raise HTTPException(status_code=500, detail=CREATE_ORDER_FAILURE_DETAIL)
 
@@ -184,7 +184,7 @@ def create_order(
                 "status": order["status"],
                 "plan_id": req.plan_id
             }
-        except Exception as e:
+        except Exception:
             logger.error("Razorpay order creation failed")
             raise HTTPException(status_code=500, detail=CREATE_ORDER_FAILURE_DETAIL)
 
@@ -220,7 +220,7 @@ def verify_payment(
                 plan_id = metadata.get("plan", "pro")
         except HTTPException:
             raise
-        except Exception as e:
+        except Exception:
             logger.error("Stripe verification failed")
             raise HTTPException(status_code=500, detail=VERIFY_PAYMENT_FAILURE_DETAIL)
 
@@ -246,7 +246,7 @@ def verify_payment(
             raise HTTPException(status_code=400, detail="Invalid payment signature")
         except HTTPException:
             raise
-        except Exception as e:
+        except Exception:
             logger.error("Razorpay verification failed")
             raise HTTPException(status_code=500, detail=VERIFY_PAYMENT_FAILURE_DETAIL)
 
