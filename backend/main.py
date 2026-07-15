@@ -22,6 +22,7 @@ else:
 
 # Configure Logging with PII Redaction
 import re
+from backend.security_decorators import no_log_zone_async
 
 
 class PIIRedactingFilter(logging.Filter):
@@ -480,6 +481,7 @@ async def time_predict(background_tasks: BackgroundTasks):
     return timings
 
 @app.post("/generate_report")
+@no_log_zone_async
 async def generate_report(
     request: Request,
     current_user: models.User = Depends(auth.get_current_user),

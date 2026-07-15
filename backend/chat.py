@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from . import agent, audit, auth, core_ai, database, licensing, models, pdf_generator, rag, schemas
+from .security_decorators import no_log_zone, no_log_zone_async
 
 logger = logging.getLogger(__name__)
 router = APIRouter(dependencies=[Depends(licensing.enforce_license_tier("community"))])
@@ -87,6 +88,7 @@ def get_chat_history(current_user: models.User = Depends(auth.get_current_user),
     return [{"role": log.role, "content": log.content, "timestamp": log.timestamp} for log in logs]
 
 @router.post("/chat")
+@no_log_zone
 def chat_endpoint(request: ChatRequest, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
     """AI Chat with RAG context."""
     sanitized_message = _sanitize_chat_input(request.message)

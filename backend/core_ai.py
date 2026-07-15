@@ -682,7 +682,7 @@ async def _generate_cloud(prompt: str, system: str, model: Optional[str], api_pr
                     return data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
             logger.warning("requests fallback error (%s): %d", api_provider, r.status_code)
         except Exception as sync_err:
-            logger.error("requests fallback failed completely: %s", sync_err)
+            logger.error("requests fallback failed completely")
     return ""
 
 
@@ -800,7 +800,7 @@ async def _chat_cloud(messages: list[dict], system: str, model: Optional[str], a
                     return data.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
             logger.warning("requests fallback error for chat (%s): %d", api_provider, r.status_code)
         except Exception as sync_err:
-            logger.error("requests fallback failed completely for chat: %s", sync_err)
+            logger.error("requests fallback failed completely for chat")
     return ""
 
 

@@ -143,7 +143,7 @@ class ClinicalAdvisoryBoard(BaseAgent):
                 cleaned = "\n".join(lines).strip()
             consensus_data = json.loads(cleaned)
         except Exception as ex:
-            logger.warning("Advisory Board failed to parse GP synthesis JSON: %s. Raw content: %s", ex, gp_synthesis)
+            logger.warning("Advisory Board failed to parse GP synthesis JSON: %s", ex)
             consensus_data["consensus_note"] = gp_synthesis
 
         # Log high-priority CareEvent for auditability
