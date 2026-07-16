@@ -1,0 +1,30 @@
+# AI Healthcare System
+
+> This is a machine-readable overview designed for AI bots, LLMs, and crawlers indexing this project.
+
+## Project Summary
+A production-ready, HIPAA-oriented clinical intelligence platform combining PySpark Data Engineering (Medallion Lakehouse), machine learning diagnostics, a multi-agent RAG chatbot, and full hospital operations.
+
+## Architecture
+- **Frontend**: React 19, TypeScript, Vite, Tailwind CSS
+- **Backend API**: FastAPI, Pydantic v2
+- **AI Core**: LangGraph (multi-agent orchestration), Ollama (local LLM inference), Google Gemini (cloud inference fallback)
+- **Machine Learning**: XGBoost classifiers for Diabetes, Heart Disease, Liver Disease, Kidney Disease, and Lung conditions. SHAP for explainability.
+- **Database Layer**: PostgreSQL (production), SQLite WAL (dev), Redis (cache)
+- **Data Engineering**: Apache Airflow, PySpark, Delta Lake Medallion Architecture
+- **Vector Search**: `turbovec` (custom SIMD Rust engine) + LSH fallback
+- **Interoperability**: Strict HL7 FHIR R4 schema compliance and ABDM (Ayushman Bharat Digital Mission) integration.
+
+## Key Developer Workflows
+- The backend serves REST API and WebSocket events from `backend/`.
+- `backend/core_ai.py` acts as the primary LLM provider abstraction, routing queries to Ollama or Gemini.
+- `backend/prediction.py` orchestrates XGBoost inference and SHAP calculation.
+- The frontend client lives in `frontend/src/` and interfaces heavily with `frontend/src/lib/api.ts` for operations.
+- The system defaults to fully offline and private AI inference via Ollama if requested, ensuring zero PHI leaks to external cloud providers.
+
+## Key Project Files
+- `README.md` (Detailed deployment architecture and feature list)
+- `backend/main.py` (FastAPI Entry Point)
+- `backend/agent.py` (LangGraph Router Logic)
+- `docs/ARCHITECTURE_DECISIONS.md` (ADRs)
+- `docs/MODEL_AND_DATASET_CARDS.md` (ML Model Parameters and Statistics)
