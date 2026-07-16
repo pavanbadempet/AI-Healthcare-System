@@ -273,21 +273,30 @@ export default function DashboardPage() {
       setBeds((prevBeds) =>
         prevBeds.map((bed) => {
           // Stable beds fluctuate slightly, Alert bed (Marcus Thorne) fluctuates at higher rates
-          const hrDelta = bed.status === "Alert" 
+          const isAlert = bed.status === "Alert";
+          const hrDelta = isAlert 
             ? Math.floor(Math.random() * 5) - 2 // -2 to 2
             : Math.floor(Math.random() * 3) - 1; // -1 to 1
 
-          const newHr = Math.max(bed.status === "Alert" ? 110 : 55, Math.min(bed.status === "Alert" ? 130 : 95, bed.hr + hrDelta));
+          const newHr = Math.max(isAlert ? 110 : 55, Math.min(isAlert ? 130 : 95, bed.hr + hrDelta));
           const spo2Delta = Math.random() > 0.8 ? (Math.random() > 0.5 ? 1 : -1) : 0;
-          const newSpo2 = Math.max(bed.status === "Alert" ? 90 : 95, Math.min(100, bed.spo2 + spo2Delta));
+          const newSpo2 = Math.max(isAlert ? 90 : 95, Math.min(100, bed.spo2 + spo2Delta));
           const rrDelta = Math.random() > 0.7 ? (Math.random() > 0.5 ? 1 : -1) : 0;
-          const newRr = Math.max(bed.status === "Alert" ? 20 : 12, Math.min(bed.status === "Alert" ? 28 : 20, bed.rr + rrDelta));
+          const newRr = Math.max(isAlert ? 20 : 12, Math.min(isAlert ? 28 : 20, bed.rr + rrDelta));
+
+          // Parse and fluctuate BP dynamically
+          const [sys, dia] = bed.bp.split("/").map(Number);
+          const bpDeltaSys = Math.floor(Math.random() * 3) - 1; // -1 to 1
+          const bpDeltaDia = Math.floor(Math.random() * 3) - 1; // -1 to 1
+          const newSys = Math.max(isAlert ? 130 : 95, Math.min(isAlert ? 165 : 135, sys + bpDeltaSys));
+          const newDia = Math.max(isAlert ? 80 : 60, Math.min(isAlert ? 105 : 90, dia + bpDeltaDia));
 
           return {
             ...bed,
             hr: newHr,
             spo2: newSpo2,
-            rr: newRr
+            rr: newRr,
+            bp: `${newSys}/${newDia}`
           };
         })
       );
@@ -679,11 +688,13 @@ export default function DashboardPage() {
                 {/* Blood Pressure */}
                 <div className="bg-white/[0.02] border border-white/[0.04] group-hover:border-white/[0.08] rounded-xl p-2.5 flex flex-col justify-between">
                   <span className="text-[9px] text-[var(--text-secondary)] font-bold uppercase tracking-wider">Blood Pressure</span>
-                  <div className="flex items-baseline gap-1 mt-1">
-                    <span className="font-mono text-lg font-black text-[var(--text-primary)]">
+                  <div className="flex flex-col mt-1">
+                    <span className="font-mono text-base font-black text-[var(--text-primary)]">
                       {bed.bp}
                     </span>
-                    <span className="text-[10px] text-[var(--text-dim)] uppercase">mmHg</span>
+                    <span className="text-[8px] text-[var(--text-dim)] font-mono uppercase tracking-wider">
+                      MAP: {Math.round((Number(bed.bp.split('/')[0]) + 2 * Number(bed.bp.split('/')[1])) / 3)} mmHg
+                    </span>
                   </div>
                 </div>
 

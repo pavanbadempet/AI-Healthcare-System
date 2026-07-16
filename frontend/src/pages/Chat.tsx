@@ -374,9 +374,39 @@ ${contextText}
           </div>
 
           {/* Input Area */}
-          <div className="p-3 bg-[rgba(15,15,17,0.7)] border-t border-[var(--border)]">
-            <div className="relative flex items-center max-w-3xl mx-auto">
-              <label htmlFor="chat-input" className="sr-only">Chat message input</label>
+          <div className="p-4 bg-[rgba(15,15,17,0.85)] border-t border-[var(--border)] backdrop-blur-md">
+            {/* Quick Action Chips */}
+            <div className="max-w-3xl mx-auto mb-3 flex flex-wrap gap-1.5 justify-center">
+              <button 
+                onClick={() => setInput("Evaluate patient Sarah Jenkins's cardiovascular vitals")}
+                className="px-2.5 py-1 bg-white/[0.02] border border-white/[0.04] hover:border-[var(--accent-border)] hover:bg-[var(--accent-muted)] rounded-full text-[9px] font-mono uppercase text-[var(--text-secondary)] hover:text-[var(--accent)] transition-all cursor-pointer flex items-center gap-1"
+              >
+                <User size={10} /> Sarah Jenkins Vitals
+              </button>
+              <button 
+                onClick={() => setInput("What are the standard diagnostic guidelines for type 2 diabetes?")}
+                className="px-2.5 py-1 bg-white/[0.02] border border-white/[0.04] hover:border-[var(--accent-border)] hover:bg-[var(--accent-muted)] rounded-full text-[9px] font-mono uppercase text-[var(--text-secondary)] hover:text-[var(--accent)] transition-all cursor-pointer flex items-center gap-1"
+              >
+                <FileText size={10} /> Diabetes Guidelines
+              </button>
+              <button 
+                onClick={() => setInput("Explain risk factors for stage 3 chronic kidney disease")}
+                className="px-2.5 py-1 bg-white/[0.02] border border-white/[0.04] hover:border-[var(--accent-border)] hover:bg-[var(--accent-muted)] rounded-full text-[9px] font-mono uppercase text-[var(--text-secondary)] hover:text-[var(--accent)] transition-all cursor-pointer flex items-center gap-1"
+              >
+                <BrainCircuit size={10} /> Kidney Disease Risks
+              </button>
+            </div>
+
+            <div className="relative flex flex-col sm:flex-row items-stretch sm:items-center gap-2 max-w-3xl mx-auto bg-black/40 border border-zinc-800/80 rounded-xl p-1.5 focus-within:border-[var(--accent)] focus-within:ring-1 focus-within:ring-[var(--accent)]/30 transition-all">
+              {/* Active Model Pill */}
+              <button 
+                onClick={() => setShowModelManager(true)}
+                className="px-2.5 py-1.5 bg-zinc-900/60 border border-zinc-800/60 hover:bg-zinc-900 rounded-lg text-[9px] font-mono font-bold uppercase tracking-wider text-[var(--text-secondary)] flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse" />
+                {webllmActive ? "Local GPU" : "Cloud AI"}
+              </button>
+
               <input 
                 id="chat-input"
                 type="text" 
@@ -385,19 +415,20 @@ ${contextText}
                 onKeyDown={e => { if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(input); } }}
                 placeholder={webllmLoading ? "Please wait while local browser AI initializes..." : "Query diagnostics, research guidelines, or patient files..."}
                 disabled={isLoading || !!webllmLoading}
-                className="input-clinical pr-10 disabled:opacity-50"
+                className="flex-1 bg-transparent px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none disabled:opacity-50 min-w-0"
                 aria-label="Type a message to the AI copilot"
               />
+              
               <button 
                 onClick={() => handleSend(input)}
                 disabled={!input.trim() || isLoading || !!webllmLoading}
-                className="absolute right-1.5 p-1.5 bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] disabled:opacity-30 disabled:bg-transparent disabled:text-[var(--text-dim)] transition-colors rounded cursor-pointer"
+                className="p-2 bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] disabled:opacity-30 disabled:bg-transparent disabled:text-[var(--text-dim)] transition-all rounded-lg cursor-pointer flex items-center justify-center shrink-0"
                 aria-label="Send message"
               >
                 <Send size={13} aria-hidden="true" />
               </button>
             </div>
-            <div className="max-w-3xl mx-auto mt-2 flex justify-between items-center text-[8px] font-mono uppercase text-[var(--text-dim)] tracking-wider">
+            <div className="max-w-3xl mx-auto mt-2.5 flex justify-between items-center text-[8px] font-mono uppercase text-[var(--text-dim)] tracking-wider">
               <span className="flex items-center gap-1"><ShieldAlert size={10} aria-hidden="true" /> Sandbox Scope context. Clinical review required.</span>
               <span>Execute with ENTER</span>
             </div>

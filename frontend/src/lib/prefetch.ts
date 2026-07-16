@@ -23,20 +23,8 @@ export const prefetchRoute = (path: string) => {
     case '/predict':
       import('@/pages/Predict').catch(() => {});
       break;
-    case '/predict/diabetes':
-      import('@/pages/DiabetesPredict').catch(() => {});
-      break;
-    case '/predict/heart':
-      import('@/pages/HeartPredict').catch(() => {});
-      break;
-    case '/predict/kidney':
-      import('@/pages/KidneyPredict').catch(() => {});
-      break;
-    case '/predict/liver':
-      import('@/pages/LiverPredict').catch(() => {});
-      break;
-    case '/predict/lungs':
-      import('@/pages/LungsPredict').catch(() => {});
+    case '/predict/unified':
+      import('@/pages/UnifiedHub').catch(() => {});
       break;
     case '/infrastructure':
       import('@/pages/Infrastructure').catch(() => {});
@@ -60,6 +48,8 @@ export const prefetchRoute = (path: string) => {
       // Check if it matches a patient detail path: /patients/:id
       if (cleanPath.startsWith('/patients/')) {
         import('@/pages/PatientDetail').catch(() => {});
+      } else if (cleanPath.startsWith('/predict/')) {
+        import('@/pages/DynamicPredict').catch(() => {});
       }
       break;
   }
