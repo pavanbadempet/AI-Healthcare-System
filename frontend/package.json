@@ -1,6 +1,28 @@
 {
-  "name": "frontend",
-  "version": "0.1.0",
+  "name": "ai-healthcare-system-frontend",
+  "version": "1.0.0",
+  "description": "Privacy-First Clinical AI & EHR Interoperability Platform Frontend",
+  "keywords": [
+    "healthcare",
+    "ai",
+    "clinical",
+    "ehr",
+    "fhir",
+    "medical",
+    "dashboard",
+    "react",
+    "tailwind",
+    "telemedicine"
+  ],
+  "author": "Pavan Badempet",
+  "homepage": "https://github.com/pavanbadempet/AI-Healthcare-System#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pavanbadempet/AI-Healthcare-System.git"
+  },
+  "bugs": {
+    "url": "https://github.com/pavanbadempet/AI-Healthcare-System/issues"
+  },
   "private": true,
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 3000",
