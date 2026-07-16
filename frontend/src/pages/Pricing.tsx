@@ -158,9 +158,9 @@ export default function PricingPage() {
   return (
     <div className="w-full mx-auto pb-12 selection:bg-[var(--accent)] selection:text-white">
       <div className="text-center mb-10">
-        <h1 className="text-xl font-bold text-[var(--text-primary)] uppercase tracking-wider">Pricing Plans</h1>
+        <h1 className="text-xl font-bold text-[var(--text-primary)] uppercase tracking-wider">Procedure Costs & Coverage</h1>
         <p className="text-xs text-[var(--text-secondary)] font-mono uppercase tracking-wide mt-1 max-w-xl mx-auto leading-relaxed">
-          Upgrade your diagnostic scope to unlock advanced ensemble models, RAG document references, and priority consultations.
+          Calculate out-of-pocket patient cost estimations, check insurance coverage structures, and review hospital plan tier allotments.
         </p>
       </div>
 

@@ -1,17 +1,14 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Smile, Sun, Cloud, Heart, Activity, FileText, ClipboardList,
-  Send, Moon, Pill, ThermometerSun, TrendingUp, ChevronRight,
-  Sparkles, Calendar, BarChart3, MessageCircleHeart, PlusCircle,
-  Check, X, AlertTriangle, Loader2,
+  Smile, Sun, Heart, Activity, FileText, ClipboardList,
+  Send, Moon, Pill, TrendingUp, ChevronRight,
+  Sparkles, Calendar, BarChart3, MessageCircle, PlusCircle,
+  Check, X, AlertTriangle, Loader2, Info
 } from 'lucide-react';
 import TopNav from '@/components/layout/TopNav';
 import { useAuthStore } from '@/lib/auth';
 
-/* ─────────────────────────────────────────────────
-   TYPE DEFINITIONS
-   ───────────────────────────────────────────────── */
 type Severity = 'mild' | 'moderate' | 'severe';
 
 interface SymptomEntry {
@@ -26,18 +23,15 @@ interface SymptomEntry {
 
 interface ChatMessage {
   id: string;
-  role: 'user' | 'aura';
+  role: 'user' | 'system';
   text: string;
   timestamp: Date;
 }
 
-/* ─────────────────────────────────────────────────
-   CONSTANTS
-   ───────────────────────────────────────────────── */
 const SEVERITY_COLORS: Record<Severity, { bar: string; bg: string; text: string; border: string; dot: string }> = {
-  mild:     { bar: '#34d399', bg: 'rgba(52,211,153,0.15)', text: '#6ee7b7', border: 'rgba(52,211,153,0.4)', dot: '#34d399' },
-  moderate: { bar: '#fbbf24', bg: 'rgba(251,191,36,0.15)', text: '#fcd34d', border: 'rgba(251,191,36,0.4)', dot: '#fbbf24' },
-  severe:   { bar: '#f87171', bg: 'rgba(248,113,113,0.15)', text: '#fca5a5', border: 'rgba(248,113,113,0.4)', dot: '#f87171' },
+  mild:     { bar: 'var(--success)', bg: 'var(--success-muted)', text: 'var(--success)', border: 'var(--success-border)', dot: 'var(--success)' },
+  moderate: { bar: 'var(--warning)', bg: 'var(--warning-muted)', text: 'var(--warning)', border: 'var(--warning-border)', dot: 'var(--warning)' },
+  severe:   { bar: 'var(--danger)', bg: 'var(--danger-muted)', text: 'var(--danger)', border: 'var(--danger-border)', dot: 'var(--danger)' },
 };
 
 const SYMPTOM_LIST = [
@@ -46,68 +40,33 @@ const SYMPTOM_LIST = [
   'Brain Fog', 'Stomach Pain', 'Back Pain', 'Anxiety', 'Palpitations',
 ];
 
-const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
 const COMPANION_RESPONSES: Record<string, string[]> = {
   greeting: [
-    "Hey there! 🌸 I'm Aura, your health companion. How are you feeling today?",
-    "Welcome back! ☀️ Remember, it's completely okay to have tough days. I'm right here with you.",
-    "Hi friend! 🌷 I noticed you haven't logged in a while. No pressure — whenever you're ready, I'm here.",
+    "Patient simulator initialized. Log clinical symptom trends or query simulated compliance statistics.",
   ],
   mild: [
-    "I'm glad it's a mild day! 💚 Keep doing those small things that help — stretching, hydration, rest. You're doing great!",
-    "A mild day is still worth celebrating! 🎉 Remember, progress isn't always linear, and gentle days matter too.",
-    "That's wonderful to hear! 🌿 Your body is telling you it's managing well. Keep listening to it.",
+    "Simulation log saved. Severity classified as Mild. Continuous monitoring is recommended.",
   ],
   moderate: [
-    "I hear you — moderate days can be draining. 💛 Have you tried a warm compress or some gentle movement today?",
-    "Moderate flares are your body asking for extra care. 🧸 Maybe take a shorter walk and stay extra hydrated?",
-    "Hang in there. 💛 Moderate doesn't mean you're failing — it means you're honest about how you feel.",
+    "Simulation log saved. Severity classified as Moderate. Advice clinician consult if status degrades.",
   ],
   severe: [
-    "I'm so sorry you're going through this. ❤️ Please remember this flare won't last forever. Can you rest and reach out to your doctor?",
-    "Severe days are hard. 💗 You are incredibly brave for showing up. Please be extra gentle with yourself today.",
-    "I wish I could take this pain away. ❤️‍🩹 If symptoms persist, please consider contacting your healthcare provider. You deserve proper support.",
+    "Simulation log saved. Severity classified as Severe. Alert flag raised. Medical emergency review suggested.",
   ],
   general: [
-    "That's a really important observation. I've noted it in your log! 📝",
-    "Thank you for sharing that with me. Tracking these patterns helps your doctor help you better. 💜",
-    "I appreciate you being so open. Remember — no question or feeling is too small to mention. 🌻",
-  ],
-  sleep: [
-    "Sleep is such a crucial part of recovery! 😴 Even small improvements in sleep quality can reduce flare severity.",
-    "If you're having trouble sleeping, try dimming screens an hour before bed and keeping the room cool. 🌙",
-  ],
-  medication: [
-    "Great job staying on top of your meds! 💊 Consistency really makes a difference over time.",
-    "If you missed a dose, don't worry — just take it when you remember and get back on track. No judgment here! 💪",
-  ],
+    "Record updated in patient self-reporting ledger.",
+  ]
 };
 
-function getAuraResponse(input: string, severity?: Severity): string {
+function getSimulatedResponse(input: string, severity?: Severity): string {
   const lower = input.toLowerCase();
   if (severity) {
     const responses = COMPANION_RESPONSES[severity];
     return responses[Math.floor(Math.random() * responses.length)];
   }
-  if (lower.includes('sleep') || lower.includes('tired') || lower.includes('insomnia')) {
-    return COMPANION_RESPONSES.sleep[Math.floor(Math.random() * COMPANION_RESPONSES.sleep.length)];
-  }
-  if (lower.includes('medicine') || lower.includes('pill') || lower.includes('medication') || lower.includes('med')) {
-    return COMPANION_RESPONSES.medication[Math.floor(Math.random() * COMPANION_RESPONSES.medication.length)];
-  }
-  if (lower.includes('pain') || lower.includes('hurt') || lower.includes('ache') || lower.includes('sore')) {
-    return COMPANION_RESPONSES.severe[Math.floor(Math.random() * COMPANION_RESPONSES.severe.length)];
-  }
-  if (lower.includes('good') || lower.includes('better') || lower.includes('great') || lower.includes('fine')) {
-    return COMPANION_RESPONSES.mild[Math.floor(Math.random() * COMPANION_RESPONSES.mild.length)];
-  }
-  return COMPANION_RESPONSES.general[Math.floor(Math.random() * COMPANION_RESPONSES.general.length)];
+  return COMPANION_RESPONSES.general[0];
 }
 
-/* ─────────────────────────────────────────────────
-   SEED DATA GENERATOR — last 7 days of demo entries
-   ───────────────────────────────────────────────── */
 function generateSeedData(): SymptomEntry[] {
   const entries: SymptomEntry[] = [];
   const severities: Severity[] = ['mild', 'moderate', 'severe', 'mild', 'moderate', 'mild', 'moderate'];
@@ -128,709 +87,359 @@ function generateSeedData(): SymptomEntry[] {
   return entries;
 }
 
-/* ─────────────────────────────────────────────────
-   FLOATING CLOUD CARD COMPONENT
-   ───────────────────────────────────────────────── */
-function CloudCard({
-  icon: Icon, label, value, delay, onClick, active,
-}: {
-  icon: React.ElementType; label: string; value: string; delay: number; onClick?: () => void; active?: boolean;
-}) {
-  return (
-    <motion.button
-      onClick={onClick}
-      initial={{ y: 20, opacity: 0 }}
-      animate={{ y: [0, -8, 0], opacity: 1 }}
-      transition={{ y: { repeat: Infinity, duration: 4 + delay, ease: 'easeInOut' }, opacity: { duration: 0.6, delay: delay * 0.15 } }}
-      className="group relative cursor-pointer"
-      style={{ animationDelay: `${delay * 200}ms` }}
-    >
-      <div
-        className={`relative rounded-3xl px-6 py-5 transition-all duration-300
-          ${active
-            ? 'bg-white/20 border-2 border-white/40 shadow-[0_0_30px_rgba(255,255,255,0.2)]'
-            : 'bg-white/10 border border-white/20 hover:bg-white/15 hover:border-white/30 hover:shadow-[0_0_20px_rgba(255,255,255,0.1)]'
-          }
-          backdrop-blur-xl`}
-      >
-        <div className="flex items-center gap-3 mb-2">
-          <div className={`p-2 rounded-xl ${active ? 'bg-white/25' : 'bg-white/10 group-hover:bg-white/15'} transition-colors`}>
-            <Icon className="w-5 h-5 text-white/90" />
-          </div>
-          <span className="text-sm font-semibold text-white/90 tracking-wide">{label}</span>
-        </div>
-        <p className="text-xs text-white/60 pl-1">{value}</p>
-        {active && (
-          <motion.div
-            layoutId="cloud-indicator"
-            className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 rounded-full bg-white/60"
-          />
-        )}
-      </div>
-    </motion.button>
-  );
-}
-
-/* ─────────────────────────────────────────────────
-   WEEKLY FLARE BAR CHART
-   ───────────────────────────────────────────────── */
-function FlareChart({ entries }: { entries: SymptomEntry[] }) {
-  const last7 = useMemo(() => {
-    const days: (SymptomEntry | null)[] = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const key = d.toISOString().split('T')[0];
-      const entry = entries.find(e => e.date === key);
-      days.push(entry || null);
-    }
-    return days;
-  }, [entries]);
-
-  const severityHeight: Record<Severity, number> = { mild: 35, moderate: 65, severe: 100 };
-
-  return (
-    <div className="rounded-3xl p-6 bg-white/[0.06] border border-white/10 backdrop-blur-xl">
-      <div className="flex items-center gap-2 mb-5">
-        <BarChart3 className="w-5 h-5 text-orange-300" />
-        <h3 className="text-white/90 font-semibold text-lg">Weekly Flare Tracker</h3>
-      </div>
-      <div className="flex items-end justify-between gap-2 h-32">
-        {last7.map((entry, i) => {
-          const today = new Date();
-          today.setDate(today.getDate() - (6 - i));
-          const dayLabel = DAY_LABELS[today.getDay()];
-          const sev = entry?.severity || null;
-          const height = sev ? severityHeight[sev] : 8;
-          const color = sev ? SEVERITY_COLORS[sev].bar : '#4b5563';
-
-          return (
-            <div key={i} className="flex flex-col items-center gap-2 flex-1">
-              <motion.div
-                initial={{ height: 0 }}
-                animate={{ height: `${height}%` }}
-                transition={{ duration: 0.8, delay: i * 0.08, ease: 'easeOut' }}
-                className="w-full max-w-[36px] rounded-xl relative overflow-hidden"
-                style={{ backgroundColor: `${color}30` }}
-              >
-                <motion.div
-                  initial={{ height: 0 }}
-                  animate={{ height: '100%' }}
-                  transition={{ duration: 0.6, delay: i * 0.08 + 0.3 }}
-                  className="absolute bottom-0 w-full rounded-xl"
-                  style={{ backgroundColor: color }}
-                />
-              </motion.div>
-              <span className="text-[11px] text-white/50 font-medium">{dayLabel}</span>
-            </div>
-          );
-        })}
-      </div>
-      {/* Legend */}
-      <div className="flex gap-4 mt-4 justify-center">
-        {(['mild', 'moderate', 'severe'] as Severity[]).map(s => (
-          <div key={s} className="flex items-center gap-1.5">
-            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: SEVERITY_COLORS[s].dot }} />
-            <span className="text-[11px] text-white/50 capitalize">{s}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────
-   CHECK-IN FORM
-   ───────────────────────────────────────────────── */
-function CheckInForm({
-  onSubmit,
-  onCancel,
-}: {
-  onSubmit: (entry: Omit<SymptomEntry, 'id'>) => void;
-  onCancel: () => void;
-}) {
+export default function Companion() {
+  const [entries, setEntries] = useState<SymptomEntry[]>(generateSeedData);
+  const [showCheckIn, setShowCheckIn] = useState(false);
+  const [activeSection, setActiveSection] = useState<string>('daily');
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    { id: '1', role: 'system', text: COMPANION_RESPONSES.greeting[0], timestamp: new Date() }
+  ]);
+  const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  
+  // Check-In Form state
   const [symptom, setSymptom] = useState(SYMPTOM_LIST[0]);
   const [severity, setSeverity] = useState<Severity>('mild');
-  const [sleepHours, setSleepHours] = useState(7);
+  const [sleepHours, setSleepHours] = useState(8);
   const [tookMeds, setTookMeds] = useState(true);
   const [notes, setNotes] = useState('');
 
-  const handleSubmit = () => {
-    onSubmit({
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, isTyping]);
+
+  const handleSubmitLog = (e: React.FormEvent) => {
+    e.preventDefault();
+    const newEntry: SymptomEntry = {
+      id: `entry-${Date.now()}`,
       date: new Date().toISOString().split('T')[0],
       symptom,
       severity,
       sleepHours,
       tookMeds,
       notes,
-    });
+    };
+    setEntries(prev => [...prev, newEntry]);
+    setShowCheckIn(false);
+    
+    // Simulate system response
+    setIsTyping(true);
+    setTimeout(() => {
+      setMessages(prev => [...prev, {
+        id: `msg-${Date.now()}`,
+        role: 'system',
+        text: getSimulatedResponse('', severity),
+        timestamp: new Date()
+      }]);
+      setIsTyping(false);
+    }, 800);
   };
 
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -20 }}
-      className="rounded-3xl p-6 bg-white/[0.06] border border-white/10 backdrop-blur-xl"
-    >
-      <div className="flex items-center justify-between mb-5">
-        <div className="flex items-center gap-2">
-          <ClipboardList className="w-5 h-5 text-orange-300" />
-          <h3 className="text-white/90 font-semibold text-lg">Daily Check-In</h3>
-        </div>
-        <button onClick={onCancel} className="p-1.5 rounded-xl hover:bg-white/10 transition-colors">
-          <X className="w-4 h-4 text-white/50" />
-        </button>
-      </div>
-
-      {/* Symptom Selection */}
-      <div className="mb-4">
-        <label className="text-sm text-white/60 mb-2 block font-medium">What's bothering you?</label>
-        <div className="flex flex-wrap gap-2">
-          {SYMPTOM_LIST.map(s => (
-            <button
-              key={s}
-              onClick={() => setSymptom(s)}
-              className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all duration-200
-                ${symptom === s
-                  ? 'bg-orange-500/30 border border-orange-400/50 text-orange-200'
-                  : 'bg-white/5 border border-white/10 text-white/50 hover:bg-white/10 hover:text-white/70'
-                }`}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Severity */}
-      <div className="mb-4">
-        <label className="text-sm text-white/60 mb-2 block font-medium">How severe?</label>
-        <div className="flex gap-2">
-          {(['mild', 'moderate', 'severe'] as Severity[]).map(s => (
-            <button
-              key={s}
-              onClick={() => setSeverity(s)}
-              className={`flex-1 py-2.5 rounded-2xl text-sm font-semibold capitalize transition-all duration-200 border
-                ${severity === s
-                  ? `border-transparent text-black`
-                  : 'border-white/10 text-white/50 hover:bg-white/5'
-                }`}
-              style={severity === s ? { backgroundColor: SEVERITY_COLORS[s].bar } : undefined}
-            >
-              {s}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Sleep */}
-      <div className="mb-4">
-        <label className="text-sm text-white/60 mb-2 block font-medium">
-          <Moon className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
-          Sleep last night: <span className="text-white/80">{sleepHours}h</span>
-        </label>
-        <input
-          type="range"
-          min={0}
-          max={12}
-          step={0.5}
-          value={sleepHours}
-          onChange={e => setSleepHours(parseFloat(e.target.value))}
-          className="w-full accent-orange-400"
-        />
-        <div className="flex justify-between text-[10px] text-white/30 mt-1">
-          <span>0h</span><span>6h</span><span>12h</span>
-        </div>
-      </div>
-
-      {/* Medication */}
-      <div className="mb-5">
-        <label className="text-sm text-white/60 mb-2 block font-medium">
-          <Pill className="w-3.5 h-3.5 inline mr-1.5 -mt-0.5" />
-          Did you take your medication today?
-        </label>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setTookMeds(true)}
-            className={`flex-1 py-2 rounded-2xl text-sm font-medium transition-all border
-              ${tookMeds
-                ? 'bg-emerald-500/20 border-emerald-400/40 text-emerald-300'
-                : 'border-white/10 text-white/40 hover:bg-white/5'
-              }`}
-          >
-            <Check className="w-4 h-4 inline mr-1 -mt-0.5" /> Yes
-          </button>
-          <button
-            onClick={() => setTookMeds(false)}
-            className={`flex-1 py-2 rounded-2xl text-sm font-medium transition-all border
-              ${!tookMeds
-                ? 'bg-red-500/20 border-red-400/40 text-red-300'
-                : 'border-white/10 text-white/40 hover:bg-white/5'
-              }`}
-          >
-            <X className="w-4 h-4 inline mr-1 -mt-0.5" /> Missed
-          </button>
-        </div>
-      </div>
-
-      {/* Notes */}
-      <div className="mb-5">
-        <label className="text-sm text-white/60 mb-2 block font-medium">Any additional notes? (optional)</label>
-        <textarea
-          value={notes}
-          onChange={e => setNotes(e.target.value)}
-          placeholder="How are you really feeling today..."
-          rows={2}
-          className="w-full rounded-2xl bg-white/5 border border-white/10 px-4 py-3 text-sm text-white/80
-            placeholder:text-white/25 focus:outline-none focus:border-orange-400/40 focus:ring-1 focus:ring-orange-400/20
-            resize-none transition-colors"
-        />
-      </div>
-
-      <button
-        onClick={handleSubmit}
-        className="w-full py-3 rounded-2xl font-semibold text-sm transition-all duration-300
-          bg-gradient-to-r from-orange-500 to-rose-500 text-white
-          hover:from-orange-400 hover:to-rose-400 hover:shadow-[0_0_30px_rgba(251,146,60,0.3)]
-          active:scale-[0.98]"
-      >
-        <Sparkles className="w-4 h-4 inline mr-2 -mt-0.5" />
-        Log Check-In
-      </button>
-    </motion.div>
-  );
-}
-
-/* ─────────────────────────────────────────────────
-   COMPANION CHAT
-   ───────────────────────────────────────────────── */
-function CompanionChat() {
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      id: 'welcome',
-      role: 'aura',
-      text: COMPANION_RESPONSES.greeting[Math.floor(Math.random() * COMPANION_RESPONSES.greeting.length)],
-      timestamp: new Date(),
-    },
-  ]);
-  const [input, setInput] = useState('');
-  const [isTyping, setIsTyping] = useState(false);
-  const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
-  }, [messages, isTyping]);
-
-  const sendMessage = async () => {
+  const handleSendChat = () => {
     if (!input.trim()) return;
     const userMsg: ChatMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
-      text: input.trim(),
-      timestamp: new Date(),
+      text: input,
+      timestamp: new Date()
     };
-    
-    // Save current messages to history
-    const historyPayload = messages.map(m => ({
-      role: m.role === 'aura' ? 'assistant' : 'user',
-      content: m.text
-    }));
-    
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsTyping(true);
 
-    try {
-      const token = useAuthStore.getState().token;
-      // Call backend Aura fallback
-      const res = await fetch("http://localhost:8000/api/v1/chat/aura", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          message: userMsg.text,
-          history: historyPayload
-        })
-      });
-      
-      let replyText = "";
-      if (res.ok) {
-        const data = await res.json();
-        replyText = data.response;
-      } else {
-        replyText = getAuraResponse(userMsg.text); // fallback to local mock if server fails
-      }
-      
-      const response: ChatMessage = {
-        id: `aura-${Date.now()}`,
-        role: 'aura',
-        text: replyText,
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, response]);
-    } catch (err) {
-      console.error("Aura API error", err);
-      // Fallback
-      const response: ChatMessage = {
-        id: `aura-${Date.now()}`,
-        role: 'aura',
-        text: getAuraResponse(userMsg.text),
-        timestamp: new Date(),
-      };
-      setMessages(prev => [...prev, response]);
-    } finally {
+    setTimeout(() => {
+      setMessages(prev => [...prev, {
+        id: `bot-${Date.now()}`,
+        role: 'system',
+        text: getSimulatedResponse(input),
+        timestamp: new Date()
+      }]);
       setIsTyping(false);
-    }
+    }, 800);
   };
 
-  return (
-    <div className="rounded-3xl bg-white/[0.06] border border-white/10 backdrop-blur-xl flex flex-col h-full">
-      {/* Header */}
-      <div className="px-6 py-4 border-b border-white/10 flex items-center gap-3">
-        <div className="relative">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-orange-400 to-rose-400 flex items-center justify-center">
-            <Smile className="w-5 h-5 text-white" />
-          </div>
-          <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#0a0a1a]" />
-        </div>
-        <div>
-          <h3 className="text-white/90 font-semibold text-sm">Aura</h3>
-          <p className="text-[11px] text-emerald-400/80">Online • Here for you</p>
-        </div>
-        <div className="ml-auto">
-          <MessageCircleHeart className="w-5 h-5 text-orange-300/50" />
-        </div>
-      </div>
+  // Computations
+  const avgSleep = useMemo(() => {
+    return entries.length > 0
+      ? (entries.reduce((s, e) => s + e.sleepHours, 0) / entries.length).toFixed(1)
+      : '—';
+  }, [entries]);
 
-      {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0" style={{ maxHeight: '340px' }}>
-        <AnimatePresence>
-          {messages.map(msg => (
-            <motion.div
-              key={msg.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div
-                className={`max-w-[85%] px-4 py-3 text-sm leading-relaxed
-                  ${msg.role === 'user'
-                    ? 'bg-orange-500/20 border border-orange-400/30 text-white/90 rounded-2xl rounded-tr-md'
-                    : 'bg-white/[0.07] border border-white/10 text-white/80 rounded-2xl rounded-tl-md'
-                  }`}
+  const medCompliance = useMemo(() => {
+    return entries.length > 0
+      ? Math.round((entries.filter(e => e.tookMeds).length / entries.length) * 100)
+      : 0;
+  }, [entries]);
+
+  const mostCommonSymptom = useMemo(() => {
+    if (entries.length === 0) return '—';
+    const topSymptom = entries.reduce<Record<string, number>>((acc, e) => {
+      acc[e.symptom] = (acc[e.symptom] || 0) + 1;
+      return acc;
+    }, {});
+    return Object.entries(topSymptom).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
+  }, [entries]);
+
+  return (
+    <div className="w-full space-y-6 pb-12 selection:bg-[var(--accent)] selection:text-white relative">
+      <header className="space-y-1.5 border-l-2 border-[var(--accent)] pl-4">
+        <h1 className="text-xl font-bold text-[var(--text-primary)] uppercase tracking-wider">Patient Self-Reporting Simulation</h1>
+        <p className="text-[var(--text-dim)] text-xs font-mono tracking-wide max-w-xl uppercase">
+          Simulate and audit home-based patient portal logging feeds, symptom diaries, and medication compliance logs.
+        </p>
+      </header>
+
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        {/* Left Column: Logging & Metrics */}
+        <div className="lg:col-span-7 space-y-6">
+          
+          {/* Simulation Controls Card */}
+          <div className="glass-card rounded-2xl p-5 border border-white/[0.04]">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wide flex items-center gap-2">
+                <ClipboardList size={14} className="text-[var(--accent)]" />
+                Simulate Patient Log Entry
+              </h2>
+              <button 
+                onClick={() => setShowCheckIn(!showCheckIn)}
+                className="btn btn-secondary text-xs uppercase tracking-wider"
               >
-                {msg.text}
-              </div>
-            </motion.div>
-          ))}
-        </AnimatePresence>
-        {isTyping && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-            <div className="bg-white/[0.07] border border-white/10 rounded-2xl rounded-tl-md px-4 py-3 flex items-center gap-1">
-              <span className="w-2 h-2 rounded-full bg-white/30 animate-bounce" style={{ animationDelay: '0ms' }} />
-              <span className="w-2 h-2 rounded-full bg-white/30 animate-bounce" style={{ animationDelay: '150ms' }} />
-              <span className="w-2 h-2 rounded-full bg-white/30 animate-bounce" style={{ animationDelay: '300ms' }} />
+                {showCheckIn ? "Hide Portal Panel" : "Open Log Form"}
+              </button>
             </div>
-          </motion.div>
-        )}
-      </div>
 
-      {/* Input */}
-      <div className="px-4 py-3 border-t border-white/10">
-        <div className="flex gap-2">
-          <input
-            type="text"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && sendMessage()}
-            placeholder="Tell Aura how you're feeling..."
-            className="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-2.5 text-sm text-white/80
-              placeholder:text-white/25 focus:outline-none focus:border-orange-400/40 transition-colors"
-          />
-          <button
-            onClick={sendMessage}
-            disabled={!input.trim()}
-            className="p-2.5 rounded-2xl bg-gradient-to-br from-orange-500 to-rose-500 text-white
-              hover:from-orange-400 hover:to-rose-400 disabled:opacity-30 disabled:cursor-not-allowed
-              transition-all active:scale-95"
-          >
-            <Send className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────
-   BIOMETRICS MINI CARD
-   ───────────────────────────────────────────────── */
-function BiometricsMini({ entries }: { entries: SymptomEntry[] }) {
-  const avgSleep = entries.length > 0
-    ? (entries.reduce((s, e) => s + e.sleepHours, 0) / entries.length).toFixed(1)
-    : '—';
-  const medCompliance = entries.length > 0
-    ? Math.round((entries.filter(e => e.tookMeds).length / entries.length) * 100)
-    : 0;
-  const topSymptom = entries.length > 0
-    ? entries.reduce<Record<string, number>>((acc, e) => { acc[e.symptom] = (acc[e.symptom] || 0) + 1; return acc; }, {})
-    : {};
-  const mostCommon = Object.entries(topSymptom).sort((a, b) => b[1] - a[1])[0]?.[0] || '—';
-
-  return (
-    <div className="rounded-3xl p-6 bg-white/[0.06] border border-white/10 backdrop-blur-xl">
-      <div className="flex items-center gap-2 mb-4">
-        <TrendingUp className="w-5 h-5 text-orange-300" />
-        <h3 className="text-white/90 font-semibold text-lg">Health Snapshot</h3>
-      </div>
-      <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-2xl bg-white/[0.05] border border-white/10 p-4 text-center">
-          <Moon className="w-5 h-5 text-blue-300 mx-auto mb-1" />
-          <div className="text-xl font-bold text-white/90">{avgSleep}h</div>
-          <div className="text-[11px] text-white/40 mt-0.5">Avg Sleep</div>
-        </div>
-        <div className="rounded-2xl bg-white/[0.05] border border-white/10 p-4 text-center">
-          <Pill className="w-5 h-5 text-emerald-300 mx-auto mb-1" />
-          <div className="text-xl font-bold text-white/90">{medCompliance}%</div>
-          <div className="text-[11px] text-white/40 mt-0.5">Med Compliance</div>
-        </div>
-        <div className="rounded-2xl bg-white/[0.05] border border-white/10 p-4 text-center">
-          <AlertTriangle className="w-5 h-5 text-orange-300 mx-auto mb-1" />
-          <div className="text-sm font-bold text-white/90 mt-0.5">{mostCommon}</div>
-          <div className="text-[11px] text-white/40 mt-0.5">Top Symptom</div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────
-   RECENT LOGS LIST
-   ───────────────────────────────────────────────── */
-function RecentLogs({ entries }: { entries: SymptomEntry[] }) {
-  const recent = entries.slice(-5).reverse();
-  return (
-    <div className="rounded-3xl p-6 bg-white/[0.06] border border-white/10 backdrop-blur-xl">
-      <div className="flex items-center gap-2 mb-4">
-        <Calendar className="w-5 h-5 text-orange-300" />
-        <h3 className="text-white/90 font-semibold text-lg">Recent Entries</h3>
-      </div>
-      {recent.length === 0 ? (
-        <p className="text-sm text-white/40 text-center py-4">No entries yet. Try logging a check-in!</p>
-      ) : (
-        <div className="space-y-2">
-          {recent.map(entry => (
-            <div
-              key={entry.id}
-              className="flex items-center gap-3 rounded-2xl p-3 bg-white/[0.03] border border-white/[0.06] hover:bg-white/[0.06] transition-colors"
-            >
-              <div
-                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                style={{ backgroundColor: SEVERITY_COLORS[entry.severity].dot }}
-              />
-              <div className="flex-1 min-w-0">
-                <div className="text-sm text-white/80 font-medium">{entry.symptom}</div>
-                <div className="text-[11px] text-white/40">{entry.date} • {entry.sleepHours}h sleep • {entry.tookMeds ? 'Took meds' : 'Missed meds'}</div>
-              </div>
-              <span
-                className="text-[11px] font-semibold px-2.5 py-1 rounded-full capitalize"
-                style={{
-                  backgroundColor: SEVERITY_COLORS[entry.severity].bg,
-                  color: SEVERITY_COLORS[entry.severity].text,
-                  border: `1px solid ${SEVERITY_COLORS[entry.severity].border}`,
-                }}
-              >
-                {entry.severity}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ─────────────────────────────────────────────────
-   DISCLAIMER BANNER
-   ───────────────────────────────────────────────── */
-function Disclaimer() {
-  return (
-    <div className="rounded-2xl p-4 bg-amber-500/[0.06] border border-amber-500/20 flex items-start gap-3">
-      <AlertTriangle className="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" />
-      <p className="text-xs text-amber-200/70 leading-relaxed">
-        <strong className="text-amber-300">Medical Disclaimer:</strong> Aura is an AI wellness companion and does not provide medical diagnoses,
-        treatment recommendations, or emergency care. Always consult a qualified healthcare professional for medical advice,
-        diagnosis, or treatment. If you are experiencing a medical emergency, please call your local emergency services immediately.
-      </p>
-    </div>
-  );
-}
-
-/* ═══════════════════════════════════════════════════
-   MAIN PAGE COMPONENT
-   ═══════════════════════════════════════════════════ */
-export default function Companion() {
-  const [entries, setEntries] = useState<SymptomEntry[]>(generateSeedData);
-  const [showCheckIn, setShowCheckIn] = useState(false);
-  const [activeSection, setActiveSection] = useState<string>('daily');
-
-  const handleCheckIn = (data: Omit<SymptomEntry, 'id'>) => {
-    const newEntry: SymptomEntry = { ...data, id: `entry-${Date.now()}` };
-    setEntries(prev => [...prev, newEntry]);
-    setShowCheckIn(false);
-  };
-
-  return (
-    <div className="min-h-screen bg-[#0a0a1a]">
-      <TopNav />
-
-      {/* ── SUNSET SKY HERO ── */}
-      <div
-        className="relative overflow-hidden"
-        style={{
-          background: 'linear-gradient(180deg, #1a0a2e 0%, #2d1b4e 15%, #5c2d82 30%, #c06040 50%, #e88d50 65%, #f4a460 78%, #f8c07c 88%, #fde8c8 100%)',
-          minHeight: '340px',
-        }}
-      >
-        {/* Animated clouds */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          {[...Array(6)].map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute rounded-full blur-3xl opacity-20"
-              style={{
-                width: `${200 + i * 80}px`,
-                height: `${60 + i * 20}px`,
-                background: 'white',
-                top: `${10 + i * 12}%`,
-                left: `${-10 + i * 18}%`,
-              }}
-              animate={{
-                x: [0, 40, 0],
-                opacity: [0.15, 0.25, 0.15],
-              }}
-              transition={{
-                duration: 8 + i * 2,
-                repeat: Infinity,
-                ease: 'easeInOut',
-                delay: i * 1.5,
-              }}
-            />
-          ))}
-        </div>
-
-        {/* Hero content */}
-        <div className="relative z-10 max-w-7xl mx-auto px-4 pt-24 pb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center mb-8"
-          >
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/20 backdrop-blur-sm mb-4">
-              <Sun className="w-4 h-4 text-amber-200" />
-              <span className="text-xs font-medium text-white/80">Your Personal Health Companion</span>
-            </div>
-            <h1 className="text-4xl md:text-5xl font-bold text-white mb-3" style={{ fontFamily: "'Inter', sans-serif", textShadow: '0 2px 20px rgba(0,0,0,0.3)' }}>
-              Good {new Date().getHours() < 12 ? 'Morning' : new Date().getHours() < 18 ? 'Afternoon' : 'Evening'} ☀️
-            </h1>
-            <p className="text-white/60 text-lg max-w-md mx-auto">
-              How are you feeling today? Let's track your wellness together.
-            </p>
-          </motion.div>
-
-          {/* Cloud cards row */}
-          <div className="flex flex-wrap justify-center gap-4">
-            <CloudCard
-              icon={ClipboardList}
-              label="Daily Log"
-              value="Track symptoms & mood"
-              delay={0}
-              active={activeSection === 'daily'}
-              onClick={() => { setActiveSection('daily'); setShowCheckIn(true); }}
-            />
-            <CloudCard
-              icon={Activity}
-              label="Biometrics"
-              value="Sleep, meds & vitals"
-              delay={1}
-              active={activeSection === 'bio'}
-              onClick={() => setActiveSection('bio')}
-            />
-            <CloudCard
-              icon={FileText}
-              label="Doctor Notes"
-              value="SOAP note summaries"
-              delay={2}
-              active={activeSection === 'notes'}
-              onClick={() => setActiveSection('notes')}
-            />
-            <CloudCard
-              icon={Heart}
-              label="Health History"
-              value="Past conditions & trends"
-              delay={3}
-              active={activeSection === 'history'}
-              onClick={() => setActiveSection('history')}
-            />
-          </div>
-        </div>
-
-        {/* Bottom gradient fade to dark */}
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#0a0a1a] to-transparent" />
-      </div>
-
-      {/* ── MAIN CONTENT ── */}
-      <div className="max-w-7xl mx-auto px-4 -mt-8 pb-16 relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-          {/* LEFT COLUMN — Chart, Check-in, Biometrics, Logs */}
-          <div className="lg:col-span-7 space-y-6">
-            {/* Check-in or Prompt */}
-            <AnimatePresence mode="wait">
-              {showCheckIn ? (
-                <CheckInForm
-                  key="checkin"
-                  onSubmit={handleCheckIn}
-                  onCancel={() => setShowCheckIn(false)}
-                />
-              ) : (
-                <motion.button
-                  key="prompt"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  onClick={() => setShowCheckIn(true)}
-                  className="w-full rounded-3xl p-5 bg-gradient-to-r from-orange-500/10 to-rose-500/10 border border-orange-400/20
-                    hover:border-orange-400/40 hover:shadow-[0_0_30px_rgba(251,146,60,0.1)] transition-all duration-300 text-left
-                    flex items-center gap-4 group"
-                >
-                  <div className="p-3 rounded-2xl bg-orange-500/20 group-hover:bg-orange-500/30 transition-colors">
-                    <PlusCircle className="w-6 h-6 text-orange-300" />
-                  </div>
+            {showCheckIn && (
+              <form onSubmit={handleSubmitLog} className="space-y-4 pt-3 border-t border-white/[0.04]">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <div className="text-white/80 font-semibold text-sm">Log Today's Check-In</div>
-                    <div className="text-white/40 text-xs mt-0.5">Track your symptoms, sleep, and medications</div>
+                    <label className="section-label mb-1 block">Reported Symptom</label>
+                    <select 
+                      value={symptom}
+                      onChange={e => setSymptom(e.target.value)}
+                      className="w-full bg-[#0a0a0f] border border-zinc-800 rounded-xl p-2.5 text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none"
+                    >
+                      {SYMPTOM_LIST.map(s => (
+                        <option key={s} value={s}>{s}</option>
+                      ))}
+                    </select>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-white/30 ml-auto group-hover:text-orange-300 transition-colors" />
-                </motion.button>
-              )}
-            </AnimatePresence>
 
-            <FlareChart entries={entries} />
-            <BiometricsMini entries={entries} />
-            <RecentLogs entries={entries} />
+                  <div>
+                    <label className="section-label mb-1 block">Severity Classification</label>
+                    <div className="flex gap-2">
+                      {(['mild', 'moderate', 'severe'] as Severity[]).map(s => (
+                        <button
+                          type="button"
+                          key={s}
+                          onClick={() => setSeverity(s)}
+                          className={`flex-1 py-2 rounded-xl text-xs font-bold capitalize border transition-all ${
+                            severity === s
+                              ? 'bg-[var(--accent-muted)] border-[var(--accent-border)] text-[var(--accent)]'
+                              : 'bg-transparent border-zinc-800 text-[var(--text-secondary)] hover:border-zinc-700'
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="section-label mb-1 block">Sleep Duration: {sleepHours} Hours</label>
+                    <input 
+                      type="range"
+                      min={0}
+                      max={12}
+                      step={0.5}
+                      value={sleepHours}
+                      onChange={e => setSleepHours(parseFloat(e.target.value))}
+                      className="w-full accent-[var(--accent)]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="section-label mb-1 block">Medication Taken</label>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setTookMeds(true)}
+                        className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all ${
+                          tookMeds
+                            ? 'bg-[var(--success-muted)] border-[var(--success-border)] text-[var(--success)]'
+                            : 'bg-transparent border-zinc-800 text-[var(--text-secondary)]'
+                        }`}
+                      >
+                        Yes, Compliant
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setTookMeds(false)}
+                        className={`flex-1 py-2 rounded-xl text-xs font-bold border transition-all ${
+                          !tookMeds
+                            ? 'bg-[var(--danger-muted)] border-[var(--danger-border)] text-[var(--danger)]'
+                            : 'bg-transparent border-zinc-800 text-[var(--text-secondary)]'
+                        }`}
+                      >
+                        No, Missed
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="section-label mb-1 block">Patient Notes</label>
+                  <textarea 
+                    value={notes}
+                    onChange={e => setNotes(e.target.value)}
+                    placeholder="Patient notes..."
+                    rows={2}
+                    className="w-full bg-[#0a0a0f] border border-zinc-800 rounded-xl p-3 text-xs text-[var(--text-primary)] focus:border-[var(--accent)] focus:outline-none resize-none"
+                  />
+                </div>
+
+                <button type="submit" className="w-full btn btn-primary text-xs uppercase tracking-wider py-2.5">
+                  Submit Log Entry to EMR
+                </button>
+              </form>
+            )}
           </div>
 
-          {/* RIGHT COLUMN — Companion Chat */}
-          <div className="lg:col-span-5 space-y-6">
-            <CompanionChat />
-            <Disclaimer />
+          {/* Health Snapshot Vitals */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="glass-card rounded-2xl p-4 border border-white/[0.04] text-center">
+              <Moon size={16} className="text-[var(--accent-blue)] mx-auto mb-1.5" />
+              <div className="text-xl font-bold text-[var(--text-primary)] font-mono">{avgSleep}h</div>
+              <div className="text-[9px] text-[var(--text-dim)] font-mono uppercase tracking-wide mt-0.5">Average Sleep</div>
+            </div>
+            <div className="glass-card rounded-2xl p-4 border border-white/[0.04] text-center">
+              <Pill size={16} className="text-[var(--success)] mx-auto mb-1.5" />
+              <div className="text-xl font-bold text-[var(--text-primary)] font-mono">{medCompliance}%</div>
+              <div className="text-[9px] text-[var(--text-dim)] font-mono uppercase tracking-wide mt-0.5">Med Compliance</div>
+            </div>
+            <div className="glass-card rounded-2xl p-4 border border-white/[0.04] text-center">
+              <AlertTriangle size={16} className="text-[var(--warning)] mx-auto mb-1.5" />
+              <div className="text-xs font-bold text-[var(--text-primary)] truncate mt-1">{mostCommonSymptom}</div>
+              <div className="text-[9px] text-[var(--text-dim)] font-mono uppercase tracking-wide mt-1">Top Symptom</div>
+            </div>
+          </div>
+
+          {/* Recent Log Entries */}
+          <div className="glass-card rounded-2xl p-5 border border-white/[0.04]">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--text-primary)] mb-4 flex items-center gap-1.5">
+              <Calendar size={13} className="text-[var(--accent)]" />
+              Inbound Portal Logs
+            </h3>
+            <div className="space-y-3">
+              {entries.slice(-5).reverse().map(entry => (
+                <div 
+                  key={entry.id}
+                  className="flex items-center gap-3 rounded-xl p-3 bg-white/[0.01] border border-white/[0.03] hover:border-white/[0.06] transition-colors"
+                >
+                  <span 
+                    className="w-2.5 h-2.5 rounded-full shrink-0" 
+                    style={{ backgroundColor: SEVERITY_COLORS[entry.severity].dot }}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wide">{entry.symptom}</div>
+                    <div className="text-[9px] text-[var(--text-dim)] font-mono uppercase mt-0.5">
+                      Logged: {entry.date} • {entry.sleepHours}h Sleep • {entry.tookMeds ? "Compliant" : "Missed"}
+                    </div>
+                  </div>
+                  <span 
+                    className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold border uppercase"
+                    style={{
+                      backgroundColor: SEVERITY_COLORS[entry.severity].bg,
+                      color: SEVERITY_COLORS[entry.severity].text,
+                      borderColor: SEVERITY_COLORS[entry.severity].border
+                    }}
+                  >
+                    {entry.severity}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
+
+        {/* Right Column: Portal Message Simulator */}
+        <div className="lg:col-span-5 space-y-6">
+          <div className="glass-card rounded-2xl border border-white/[0.04] flex flex-col h-[400px]">
+            <div className="panel-header bg-[rgba(15,15,17,0.5)] border-b border-[var(--border)] px-4 py-3 flex justify-between items-center">
+              <div>
+                <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">Patient Engagement Sync</h3>
+                <p className="text-[8px] text-[var(--success)] font-mono uppercase tracking-wider mt-0.5 flex items-center gap-1">
+                  <span className="w-1 h-1 rounded-full bg-[var(--success)] animate-pulse" />
+                  Simulator Mode Active
+                </p>
+              </div>
+            </div>
+
+            {/* Chat History */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3" style={{ maxHeight: '280px' }}>
+              {messages.map(msg => (
+                <div 
+                  key={msg.id}
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div 
+                    className={`max-w-[85%] px-3 py-2 text-xs rounded-xl border ${
+                      msg.role === 'user'
+                        ? 'bg-[var(--accent-muted)] border-[var(--accent-border)] text-[var(--text-primary)]'
+                        : 'bg-white/[0.02] border-white/[0.04] text-[var(--text-secondary)]'
+                    }`}
+                  >
+                    {msg.text}
+                  </div>
+                </div>
+              ))}
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="bg-white/[0.02] border border-white/[0.04] rounded-xl px-3 py-2 flex items-center gap-1">
+                    <Loader2 size={10} className="animate-spin text-[var(--accent)]" />
+                    <span className="text-[9px] font-mono text-[var(--text-dim)] uppercase">Generating log response...</span>
+                  </div>
+                </div>
+              )}
+              <div ref={scrollRef} />
+            </div>
+
+            {/* Chat Input */}
+            <div className="p-3 border-t border-white/[0.04] bg-black/20">
+              <div className="flex gap-2">
+                <input 
+                  type="text" 
+                  value={input}
+                  onChange={e => setInput(e.target.value)}
+                  onKeyDown={e => { if(e.key === 'Enter') handleSendChat(); }}
+                  placeholder="Simulate medical compliance inquiry..."
+                  className="flex-1 bg-black/40 border border-zinc-800/80 rounded-lg px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--accent)]"
+                />
+                <button 
+                  onClick={handleSendChat}
+                  disabled={!input.trim()}
+                  className="p-2 bg-[var(--accent)] text-white hover:bg-[var(--accent-hover)] rounded-lg disabled:opacity-30 transition-colors cursor-pointer"
+                >
+                  <Send size={12} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Medical Disclaimer Panel */}
+          <div className="rounded-xl p-4 bg-zinc-950/40 border border-zinc-800/60 flex items-start gap-3">
+            <Info className="w-5 h-5 text-[var(--accent)] shrink-0 mt-0.5" />
+            <p className="text-[10px] text-[var(--text-secondary)] font-mono uppercase tracking-wide leading-relaxed">
+              <strong className="text-[var(--text-primary)] font-bold block mb-0.5">Clinical Simulator Notice</strong> 
+              This portal simulates patients self-reporting diagnostics and treatment compliance. Always consult clinical practitioners for real diagnosis, treatment audits, or emergency medical review.
+            </p>
+          </div>
+        </div>
+
       </div>
     </div>
   );
