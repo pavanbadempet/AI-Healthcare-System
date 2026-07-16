@@ -5,6 +5,11 @@
 
 <div align="center">
 
+> **⭐ If you find this architecture or the AI agent integrations useful, please consider giving the repository a Star! It helps others discover this project.**
+
+<br/>
+
+
 <img src="docs/assets/hero-banner.svg" alt="AI Healthcare System - Open-Source HIPAA Clinical Intelligence Platform with React 19, FastAPI, LangGraph, and Ollama local inference" width="100%"/>
 
 <br/>

@@ -1,3 +1,6 @@
 data/raw/diabetes_large.csv filter=lfs diff=lfs merge=lfs -text
 rust_gateway/target/** filter=lfs diff=lfs merge=lfs -text
 data/raw/*.csv filter=lfs diff=lfs merge=lfs -text
+
+# Ignore massive Repomix output files so they don't skew GitHub's language statistics towards Markdown
+docs/repomix-output-*.md linguist-generated=true
