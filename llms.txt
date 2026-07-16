@@ -28,3 +28,6 @@ A production-ready, HIPAA-oriented clinical intelligence platform combining PySp
 - `backend/agent.py` (LangGraph Router Logic)
 - `docs/ARCHITECTURE_DECISIONS.md` (ADRs)
 - `docs/MODEL_AND_DATASET_CARDS.md` (ML Model Parameters and Statistics)
+
+## Full Codebase Context
+- [Complete Codebase Output](docs/repomix-output-pavanbadempet-AI-Healthcare-System.md): A single, consolidated file containing the entire source code, models, and schemas for direct ingestion by LLMs and AI Agents.
