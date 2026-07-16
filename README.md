@@ -36,6 +36,8 @@
   <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
 </p>
 
+> **🤖 AI Agents & LLMs:** See [`docs/repomix-output-pavanbadempet-AI-Healthcare-System.md`](docs/repomix-output-pavanbadempet-AI-Healthcare-System.md) for the complete, AI-friendly context of this repository.
+
 <h3>
   <a href="#-quick-start"><strong>Quick Start Guide</strong></a> &middot;
   <a href="#-feature-highlights"><strong>Core Features</strong></a> &middot;
