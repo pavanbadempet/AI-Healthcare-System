@@ -1,0 +1,15 @@
+title: AI Healthcare System Documentation
+description: Privacy-First Clinical AI & EHR Interoperability Platform Documentation
+url: "https://pavanbadempet.github.io"
+baseurl: "/AI-Healthcare-System"
+
+# Automatically generate SEO tags and a sitemap.xml for Google Indexing
+plugins:
+  - jekyll-seo-tag
+  - jekyll-sitemap
+
+# Force Jekyll to parse all markdown files properly for search engines
+markdown: kramdown
+kramdown:
+  input: GFM
+  hard_wrap: false
