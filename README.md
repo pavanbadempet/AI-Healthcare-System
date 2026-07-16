@@ -19,6 +19,8 @@
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml/badge.svg" alt="CodeQL security analysis scanner badge" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/pavanbadempet/AI-Healthcare-System?color=22c55e&style=flat-square" alt="MIT license open-source badge" /></a>
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/stargazers"><img src="https://img.shields.io/github/stars/pavanbadempet/AI-Healthcare-System?style=flat-square&color=f59e0b" alt="GitHub stars popularity badge" /></a>
+  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/discussions"><img src="https://img.shields.io/github/discussions/pavanbadempet/AI-Healthcare-System?style=flat-square&color=0969da" alt="GitHub Discussions" /></a>
+  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/contribute"><img src="https://img.shields.io/github/issues/pavanbadempet/AI-Healthcare-System/good%20first%20issue?style=flat-square&label=good%20first%20issues&color=7057ff" alt="Good First Issues" /></a>
 </p>
 
 <!-- Tech Stack Badges Row (for-the-badge) -->
