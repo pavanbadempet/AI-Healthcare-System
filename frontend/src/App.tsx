@@ -17,11 +17,7 @@ const ChatPage = lazy(() => import('@/pages/Chat'));
 const TelemedicinePage = lazy(() => import('@/pages/Telemedicine'));
 const PredictPage = lazy(() => import('@/pages/Predict'));
 const UnifiedHubPage = lazy(() => import('@/pages/UnifiedHub'));
-const DiabetesPredictPage = lazy(() => import('@/pages/DiabetesPredict'));
-const HeartPredictPage = lazy(() => import('@/pages/HeartPredict'));
-const KidneyPredictPage = lazy(() => import('@/pages/KidneyPredict'));
-const LiverPredictPage = lazy(() => import('@/pages/LiverPredict'));
-const LungsPredictPage = lazy(() => import('@/pages/LungsPredict'));
+const DynamicPredictPage = lazy(() => import('@/pages/DynamicPredict'));
 const InfrastructurePage = lazy(() => import('@/pages/Infrastructure'));
 const CapacityPage = lazy(() => import('@/pages/Capacity'));
 const AdminPage = lazy(() => import('@/pages/Admin'));
@@ -78,11 +74,7 @@ export default function App() {
                 <Route path="/telemedicine" element={<TelemedicinePage />} />
                 <Route path="/predict" element={<PredictPage />} />
                 <Route path="/predict/unified" element={<UnifiedHubPage />} />
-                <Route path="/predict/diabetes" element={<DiabetesPredictPage />} />
-                <Route path="/predict/heart" element={<HeartPredictPage />} />
-                <Route path="/predict/kidney" element={<KidneyPredictPage />} />
-                <Route path="/predict/liver" element={<LiverPredictPage />} />
-                <Route path="/predict/lungs" element={<LungsPredictPage />} />
+                <Route path="/predict/:modelType" element={<DynamicPredictPage />} />
                 <Route path="/infrastructure" element={<InfrastructurePage />} />
                 <Route path="/capacity" element={<CapacityPage />} />
                 <Route path="/admin" element={<AdminPage />} />

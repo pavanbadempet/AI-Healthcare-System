@@ -1,0 +1,30 @@
+            "username": "test_user_unique",
+            "password": "Password123!",
+            "email": "unique@example.com",
+            "full_name": "Unique User",
+            "dob": "1995-05-05"
+        })
+        # Login to get token
+        response = client.post("/token", data={
+            "username": "test_user_unique",
+            "password": "Password123!"
+        })
+        if "access_token" not in response.json():
+            print(f"TOKEN ERROR in test_auth.py: {response.text}")
+>       token = response.json()["access_token"]
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+E       KeyError: 'access_token'
+
+tests\unit\test_auth.py:65: KeyError
+----------------------------- Captured log setup ------------------------------
+INFO     backend.model_service:model_service.py:419 TESTING MODE: Injected mock models
+        """With TESTING=1 mocked models, SHAP is not available � should return 500 or SHAP unavailable dict."""
+        _signup(client, "pred_user1")
+>       h = _login(client, "pred_user1")
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+tests\unit\test_auth_and_prediction.py:425: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _
+
+client = <starlette.testclient.TestClient object at 0x00000253D5EAB8A0>
+username = 'pred_user1', password = 'AuthTest123!'
