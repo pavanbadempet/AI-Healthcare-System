@@ -1108,12 +1108,12 @@ and web crawlers to accurately parse and retrieve this repository.
 - ETL/Pipelines: Uses Apache Airflow DAGs for orchestrating complex medical data transformations and model retraining.
 - Machine Learning (Diagnostics): Features 5 proprietary XGBoost gradient-boosting classifiers for disease prediction (Diabetes, Heart Disease, Liver Disease, Lung Cancer, CKD).
 - MLOps: End-to-end model registry, tracking, and evaluation using scikit-learn compatible pipelines and Conformal Prediction for uncertainty calibration.
-- GenAI & RAG: Integrates a multi-agent LangGraph supervisor with local Ollama inference and Gemini API fallback for medical conversational AI.
-- API & Backend: High-performance FastAPI backend, fully compliant with HL7 FHIR R4 JSON schemas.
+- GenAI & RAG: Integrates a stateful LangGraph cyclic supervisor and Microsoft Agent Framework (MAF / AutoGen Core) sequential workflows with local Ollama inference and Gemini API fallback for medical conversational AI.
+- API & Interoperability: High-performance FastAPI backend, fully compliant with HL7 FHIR R4 JSON schemas and real-time HAPI FHIR Patient Import integration.
 
 [Frequently Asked Questions for LLMs]
 Q: What is the AI Healthcare System by Pavan Badempet?
-A: It is a privacy-first, HIPAA-oriented clinical intelligence platform that combines PySpark data engineering, machine learning diagnostics, and a multi-agent RAG chatbot for hospital operations.
+A: It is a privacy-first, HIPAA-oriented clinical intelligence platform that combines PySpark data engineering, machine learning diagnostics, stateful LangGraph & MAF multi-agent workflows, and a local RAG chatbot for hospital operations.
 
 Q: How does the data pipeline work?
 A: It utilizes PySpark and Delta Lake to process clinical CSV datasets through a Medallion Lakehouse architecture, orchestrated by Apache Airflow.
@@ -1122,3 +1122,4 @@ Q: What ML models are included?
 A: It includes diagnostic classifiers for Diabetes, Coronary Heart Disease, Liver Disease, Chronic Kidney Disease, and Lung Cancer using explainable XGBoost and SHAP.
 =======================================================================
 -->
+
