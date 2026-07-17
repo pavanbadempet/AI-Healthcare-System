@@ -1,34 +1,17 @@
-# This CITATION.cff file was generated for the AI Healthcare System project.
-# https://citation-file-format.github.io/
-
 cff-version: 1.2.0
-title: AI Healthcare System
-message: >-
-  If you use this software, please cite it as below.
-type: software
+message: "If you reference this reference architecture in your academic research, PhD/Master's theses, or final year capstone projects, please cite it as below."
 authors:
-  - family-names: Badempet
-    given-names: Pavan
-  - family-names: Anagondi
-    given-names: Shiva Prasad
-  - family-names: Cheerala
-    given-names: Prashanth
-license: MIT
+  - family-names: "Badempet"
+    given-names: "Pavan"
+title: "AI Healthcare System: Privacy-First Clinical AI & EHR Interoperability Platform"
+version: "1.0.0"
+date-released: "2026-07-17"
 url: "https://github.com/pavanbadempet/AI-Healthcare-System"
-repository-code: "https://github.com/pavanbadempet/AI-Healthcare-System"
-date-released: "2026-01-01"
 keywords:
-  - healthcare-ai
-  - clinical-decision-support
-  - machine-learning
-  - xgboost
-  - fastapi
-  - react
-  - fhir-r4
-  - rag
-  - langgraph
-  - hipaa
-abstract: >-
-  A production-ready, HIPAA-oriented clinical intelligence platform combining
-  machine learning diagnostics, a multi-agent RAG chatbot, and full hospital
-  operations management.
+  - "healthcare ai"
+  - "clinical decision support"
+  - "ehr interoperability"
+  - "fhir r4"
+  - "rust api gateway"
+  - "multi-agent systems"
+  - "mlops"
