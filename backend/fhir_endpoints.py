@@ -342,3 +342,90 @@ def get_fhir_audit_events(
 
     return build_bundle(resources)
 
+
+@router.post("/Patient/import/{external_fhir_id}", status_code=status.HTTP_201_CREATED)
+def import_fhir_patient(
+    external_fhir_id: str,
+    db: Session = Depends(database.get_db),
+) -> Dict[str, Any]:
+    """Fetch a real patient from public HAPI FHIR server and import into local DB."""
+    import requests
+    fhir_url = f"https://hapi.fhir.org/baseR4/Patient/{external_fhir_id}"
+    try:
+        res = requests.get(fhir_url, timeout=10)
+        if res.status_code == 404:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Patient {external_fhir_id} not found on public HAPI FHIR server"
+            )
+        res.raise_for_status()
+        patient_data = res.json()
+    except requests.RequestException as e:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Failed to communicate with public HAPI FHIR server: {str(e)}"
+        )
+
+    # 1. Parse Name
+    full_name = "Imported Patient"
+    names = patient_data.get("name", [])
+    if names:
+        first_name = names[0]
+        if "text" in first_name:
+            full_name = first_name["text"]
+        else:
+            given = " ".join(first_name.get("given", []))
+            family = first_name.get("family", "")
+            full_name = f"{given} {family}".strip() or "Imported Patient"
+
+    # 2. Parse Gender
+    gender = patient_data.get("gender", "unknown")
+    if gender not in ("male", "female", "other", "unknown"):
+        gender = "unknown"
+
+    # 3. Parse DOB
+    dob = patient_data.get("birthDate", None)
+
+    # 4. Parse Email
+    email = f"fhir_{external_fhir_id}@hospital.org"
+    telecoms = patient_data.get("telecom", [])
+    for t in telecoms:
+        if t.get("system") == "email":
+            email = t.get("value", email)
+
+    # 5. Check if already exists in DB
+    username = f"fhir_{external_fhir_id}"
+    existing_user = db.query(models.User).filter(models.User.username == username).first()
+    if existing_user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Patient with username {username} is already imported"
+        )
+
+    # 6. Create User record
+    new_user = models.User(
+        username=username,
+        hashed_password=auth.get_password_hash("temporary_fhir_pass_123"),
+        role="patient",
+        full_name=full_name,
+        gender=gender,
+        dob=dob,
+        email=email,
+        allow_data_collection=1,
+    )
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    return {
+        "status": "success",
+        "message": "Patient successfully imported from public HAPI FHIR server",
+        "local_user_id": new_user.id,
+        "username": new_user.username,
+        "full_name": new_user.full_name,
+        "gender": new_user.gender,
+        "dob": new_user.dob,
+        "email": new_user.email
+    }
+
+
