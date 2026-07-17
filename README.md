@@ -1078,8 +1078,6 @@ MIT License — Copyright © 2026 **Pavan Badempet**, Shiva Prasad Anagondi, Pra
 
 ### **If you find this project useful, give it a ⭐ star!**
 
-[![Star History Chart](https://api.star-history.com/svg?repos=pavanbadempet/AI-Healthcare-System&type=Date)](https://star-history.com/#pavanbadempet/AI-Healthcare-System&Date)
-
 </div>
 
 <!-- 
