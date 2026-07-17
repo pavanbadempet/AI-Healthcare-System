@@ -112,3 +112,9 @@ data/processed/
 data/raw/
 *.png
 kaggle_run_logs.txt
+
+# Temporary test logs and outputs
+pytest_failures.txt
+test_output.txt
+traceback.txt
+tests_diff.txt
