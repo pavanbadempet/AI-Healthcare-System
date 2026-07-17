@@ -12,7 +12,7 @@ A production-ready, HIPAA-oriented clinical intelligence platform combining PySp
 - **Machine Learning**: XGBoost classifiers for Diabetes, Heart Disease, Liver Disease, Kidney Disease, and Lung conditions. SHAP for explainability.
 - **Database Layer**: PostgreSQL (production), SQLite WAL (dev), Redis (cache)
 - **Data Engineering**: Apache Airflow, PySpark, Delta Lake Medallion Architecture
-- **Vector Search**: `turbovec` (custom SIMD Rust engine) + LSH fallback
+- **Vector Search & API Gateway**: High-performance compiled Rust Gateway using Tonic gRPC, PyO3 native extensions, Rayon parallelization, AVX2 SIMD intrinsics, ArcSwap lock-free concurrency, and Microsoft's mimalloc allocator.
 - **Interoperability**: Strict HL7 FHIR R4 schema compliance and ABDM (Ayushman Bharat Digital Mission) integration.
 
 ## Key Developer Workflows
