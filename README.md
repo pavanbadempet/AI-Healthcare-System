@@ -74,14 +74,14 @@ If you are a B2B SaaS founder or software developer building products that requi
       <a href="https://buy.polar.sh/polar_cl_w8PFaGf5o3oSKktwAAwTfrixiTuZca6GYKI282MVHAa"><strong>Get fastapi-license-gate on Polar &rarr;</strong></a>
     </td>
     <td width="50%" valign="top">
-      <h3>📊 clinical-tabular</h3>
-      <p>A production-ready diagnostic support ML SDK containing calibrated classification models, dataset prep, and conformal prediction confidence bounds.</p>
+      <h3>📊 tabular-ml-sdk</h3>
+      <p>A production-ready machine learning SDK for tabular data, featuring calibrated classification pipelines, dataset preprocessing, and confidence bounds.</p>
       <ul>
-        <li><strong>Features</strong>: Calibrated ML diagnostic pipelines, SHAP explainers, Tabular MLP / FT-Transformer architectures, parallelized testing suite.</li>
+        <li><strong>Features</strong>: Calibrated ML pipelines, SHAP feature importance explainers, Tabular MLP / FT-Transformer architectures, parallelized validation suite.</li>
         <li><strong>Price</strong>: <strong>$15.00</strong> (One-time purchase)</li>
         <li><strong>Deliverable</strong>: Instant access to private repository + package updates.</li>
       </ul>
-      <a href="https://buy.polar.sh/polar_cl_02v8Qs0oK1kzY9i7DR6zueACRGXfLd7OCSNLn3IcWJQ"><strong>Get clinical-tabular SDK on Polar &rarr;</strong></a>
+      <a href="https://buy.polar.sh/polar_cl_02v8Qs0oK1kzY9i7DR6zueACRGXfLd7OCSNLn3IcWJQ"><strong>Get tabular-ml-sdk on Polar &rarr;</strong></a>
     </td>
   </tr>
 </table>
@@ -399,6 +399,31 @@ stateDiagram-v2
 ```
 
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+
+## 🤖 SOTA Clinical AI Agents & System Telemetry
+
+ClinOS features state-of-the-art domain agent pipelines and telemetry layers for clinical precision and operational governance.
+
+### 1. SOTA Multi-Agent Clinical AI Suite
+The core clinical workflows are driven by three specialized SOTA AI agents registered in `backend/agents/`:
+*   **Clinical Billing & Claims Denial Agent (`ClinicalBillingAgent`)**: Audits clinical SOAP notes for medical coding suitability, generates recommended CPT/ICD-10 codes, and estimates claims refusal risks (`LOW`, `MEDIUM`, `HIGH`). Integrated directly into `POST /v1/billing/invoices/{invoice_id}/audit`.
+*   **Clinical Discharge Coordinator Agent (`ClinicalDischargeAgent`)**: Automatically compiles structured care transition plans, patient-facing medication schedules, primary care follow-up rules, and red-flag symptom warnings. Integrated directly into `POST /v1/discharge/summaries/generate/{patient_id}`.
+*   **Clinical Nursing Care Coordinator Agent (`ClinicalNursingAgent`)**: Analyzes live telemetry trends over the past 24 hours, aggregates system warnings, and compiles shift change handoff cards and prioritized task checklists. Integrated directly into `POST /v1/nursing/patients/{patient_id}/handoff`.
+
+### 2. SOTA System Maintenance & Compliance Data Purging
+We built an automated system maintenance pipeline executing database storage reclamation and HIPAA/GDPR data retention purging:
+*   **Storage Optimization**: Performs SQLite/PostgreSQL `VACUUM` & `ANALYZE` and SQLite Vector Store optimizations to maintain fast query response times.
+*   **Compliance Data Purging**: Evaluates configured HIPAA data retention thresholds (1 year for chat logs, 6 years for clinical records) and deletes or archives expired entries.
+*   **Automated Execution**: Exposed via a secure, admin-only endpoint (`POST /v1/admin/maintenance`) and a cron-ready CLI script (`scripts/run_maintenance.py`).
+
+### 3. SOTA Telemetry, Structured Logging & Distributed Tracing
+*   **Correlation Tracking**: Implements thread-safe context-propagation to pass correlation IDs (`X-Correlation-ID`) across the Rust Gateway, FastAPI middlewares, and downstream task queues.
+*   **PII Exception Redaction**: Filters all console and file log outputs to automatically scrub sensitive patient email addresses, phone numbers, and PII.
+*   **Prometheus Exporters**: Exposes system metrics (CPU utilization, RAM memory, active PostgreSQL/SQLite connections) and HTTP route latency histograms directly on `/metrics` for scraper systems.
+*   **Grafana Telemetry Dashboard**: Pre-configured SOTA dashboard panels (loaded dynamically from [monitoring/grafana/](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/monitoring/grafana)) visualizing Gateway resources, SQLx pools, and route latency p95 processing boundaries.
+
+<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+
 
 ## 📁 Project Structure Tree
 
