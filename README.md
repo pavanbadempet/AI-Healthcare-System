@@ -23,6 +23,10 @@
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/contribute"><img src="https://img.shields.io/github/issues/pavanbadempet/AI-Healthcare-System/good%20first%20issue?style=flat-square&label=good%20first%20issues&color=7057ff" alt="Good First Issues" /></a>
 </p>
 
+<p align="center">
+  <a href="https://codespaces.new/pavanbadempet/AI-Healthcare-System"><img src="https://github.com/codespaces/badge.svg" alt="Open in GitHub Codespaces" height="38"/></a>
+</p>
+
 <!-- Tech Stack Badges Row (for-the-badge) -->
 <p align="center">
   <img src="https://img.shields.io/badge/Python_3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
