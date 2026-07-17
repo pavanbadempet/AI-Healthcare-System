@@ -86,6 +86,43 @@ async def trigger_billing_agent_audit(
     return report
 
 
+@router.post("/agents/maf-billing-audit", status_code=status.HTTP_200_OK)
+async def trigger_maf_billing_agent_audit(
+    soap_note: str = Query(..., description="The clinical SOAP note to audit"),
+    current_admin: models.User = Depends(get_current_admin),
+):
+    """Audits a SOAP note using Microsoft Agent Framework (MAF) to flag claims denial risk."""
+    from backend.maf_orchestrator import run_maf_billing_audit
+    report = await run_maf_billing_audit(soap_note)
+    return report
+
+
+@router.post("/agents/maf-handoff-audit", status_code=status.HTTP_200_OK)
+async def trigger_maf_handoff_agent_audit(
+    soap_note: str = Query(..., description="The clinical SOAP note to audit"),
+    current_admin: models.User = Depends(get_current_admin),
+):
+    """Audits a SOAP note using a multi-agent MAF handoff orchestration (billing & safety compliance)."""
+    from backend.maf_orchestrator import run_maf_handoff_audit
+    report = await run_maf_handoff_audit(soap_note)
+    return report
+
+
+@router.post("/agents/langgraph-triage", status_code=status.HTTP_200_OK)
+async def trigger_langgraph_triage(
+    symptoms: str = Query(..., description="The clinical symptoms to triage"),
+    patient_id: int = Query(1, description="The patient ID context"),
+    current_admin: models.User = Depends(get_current_admin),
+):
+    """Triages symptoms using a stateful LangGraph workflow (triage, safety, compliance)."""
+    from backend.langgraph_orchestrator import run_langgraph_triage
+    report = await run_langgraph_triage(symptoms, patient_id)
+    return report
+
+
+
+
+
 @router.post("/agents/discharge-summary", status_code=status.HTTP_200_OK)
 async def trigger_discharge_agent_summary(
     patient_id: int = Query(..., description="The patient ID to generate discharge summary for"),

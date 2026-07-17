@@ -80,7 +80,6 @@ def _check_transmission_security() -> Dict[str, Any]:
 
 def _check_breach_notification() -> Dict[str, Any]:
     """§164.408 - Notification to individuals."""
-    from .breach_notification import breach_manager
     return {
         "id": "breach_notification",
         "safeguard": "§164.408 — Breach Notification",

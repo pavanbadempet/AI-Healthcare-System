@@ -6,7 +6,8 @@ corresponding Questionnaire definitions, and saves structured observations to th
 
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict
+
 from sqlalchemy.orm import Session
 
 from backend.models.auth import User
@@ -36,7 +37,7 @@ def ingest_fhir_questionnaire_response(
     subject_ref = response_json.get("subject", {}).get("reference", "")
     if not subject_ref or not subject_ref.startswith("Patient/"):
         raise ValueError("Missing or invalid subject reference in QuestionnaireResponse")
-    
+
     patient_id_str = subject_ref.split("/")[-1].strip()
     try:
         patient_id = int(patient_id_str)
@@ -71,7 +72,7 @@ def ingest_fhir_questionnaire_response(
 
     # 4. Parse Answers from QuestionnaireResponse
     vitals_dict: Dict[str, float] = {}
-    
+
     # LOINC code to VitalObservation attribute mapping
     loinc_map = {
         "8867-4": "heart_rate",
@@ -89,14 +90,14 @@ def ingest_fhir_questionnaire_response(
         answers = resp_item.get("answer", [])
         if not link_id or not answers:
             continue
-        
+
         loinc_code = link_id_to_loinc.get(link_id)
         if not loinc_code or loinc_code not in loinc_map:
             continue
-            
+
         attr_name = loinc_map[loinc_code]
         first_answer = answers[0]
-        
+
         # Support various FHIR answer value types
         val = None
         for key in ["valueDecimal", "valueInteger", "valueQuantity", "valueString", "valueBoolean"]:

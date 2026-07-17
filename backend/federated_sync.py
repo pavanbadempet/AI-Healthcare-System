@@ -189,17 +189,17 @@ def trigger_federated_sync(
         "weight_2": 0.0,
         "bias": 0.0
     }
-    
+
     # Define baseline local model weights for local forward pass
     w = [0.1, -0.2, 0.15, -0.05]
     b = 0.0
-    
+
     for f in feedbacks:
         try:
             feats = json.loads(f.input_features) if isinstance(f.input_features, str) else (f.input_features or {})
         except Exception:
             feats = {}
-            
+
         # Extract numeric values from the features dict
         x = []
         if isinstance(feats, dict):
@@ -210,17 +210,17 @@ def trigger_federated_sync(
                     break
         while len(x) < 4:
             x.append(1.0)
-            
+
         # Sigmoid forward pass: z = w^T x + b
         z = sum(w[i] * x[i] for i in range(4)) + b
         pred_prob = 1.0 / (1.0 + math.exp(-max(-10.0, min(10.0, z))))
-        
+
         # Get clinician-corrected label (0.0 or 1.0)
         corrected = 1.0 if str(f.corrected_label).lower() in ("1", "true", "positive", "high", "disease") else 0.0
-        
+
         # Backprop error: error = prediction - label
         error = pred_prob - corrected
-        
+
         # Accumulate parameter gradients
         base_gradients["weight_0"] += error * x[0]
         base_gradients["weight_1"] += error * x[1]

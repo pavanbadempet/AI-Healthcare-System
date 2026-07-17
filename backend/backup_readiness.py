@@ -130,9 +130,9 @@ def get_readiness() -> dict[str, Any]:
 
 def run_sqlite_backup(db_path_or_conn, backup_dir: str = "backups") -> str:
     """Executes a real physical SQLite backup of the database."""
-    import sqlite3
-    import os
     import logging
+    import os
+    import sqlite3
     from datetime import datetime, timezone
 
     logger = logging.getLogger(__name__)

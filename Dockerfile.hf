@@ -27,8 +27,10 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     gnupg \
     default-jre-headless \
+    protobuf-compiler \
     && curl -sLf --retry 3 https://cli.doppler.com/install.sh | sh \
     && rm -rf /var/lib/apt/lists/*
+
 
 
 # Set up non-root user required by Hugging Face Spaces

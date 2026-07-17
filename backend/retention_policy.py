@@ -11,6 +11,8 @@ import os
 from datetime import datetime, timezone
 from typing import Any
 
+from sqlalchemy.orm import Session
+
 POLICY_WINDOWS = (
     ("patient_records", "Patient medical and account records", "PATIENT_RECORD_RETENTION_YEARS", "years"),
     ("chat_logs", "AI chat logs and conversational context", "CHAT_LOG_RETENTION_DAYS", "days"),
@@ -113,8 +115,8 @@ def execute_retention_cleanup(db: Session) -> dict[str, int]:
     Deletes records that exceed the configured retention windows.
     """
     import os
-    from datetime import datetime, timezone, timedelta
-    from sqlalchemy.orm import Session
+    from datetime import datetime, timedelta, timezone
+
     from . import models
 
     deleted_counts = {}

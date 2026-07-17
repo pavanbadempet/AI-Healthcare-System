@@ -198,6 +198,7 @@ def signup(request: Request, user: schemas.UserCreate, db: Session = Depends(dat
 
 import threading
 
+
 class LoginBruteForceProtector:
     def __init__(self):
         self._lock = threading.Lock()

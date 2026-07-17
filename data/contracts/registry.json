@@ -20,8 +20,8 @@
       "compatibility_mode": "BACKWARD",
       "sla_freshness_minutes": 1440,
       "quality_threshold": 0.95,
-      "created_at": "2026-07-10T16:56:54.836451+00:00",
-      "updated_at": "2026-07-10T16:56:54.836451+00:00"
+      "created_at": "2026-07-17T18:15:26.874241+00:00",
+      "updated_at": "2026-07-17T18:15:26.874246+00:00"
     },
     "etl_lab_results": {
       "contract_id": "etl_lab_results",
@@ -43,8 +43,8 @@
       "compatibility_mode": "BACKWARD",
       "sla_freshness_minutes": 1440,
       "quality_threshold": 0.95,
-      "created_at": "2026-07-10T16:56:54.836451+00:00",
-      "updated_at": "2026-07-10T16:56:54.836451+00:00"
+      "created_at": "2026-07-17T18:15:26.874257+00:00",
+      "updated_at": "2026-07-17T18:15:26.874263+00:00"
     },
     "prediction_input": {
       "contract_id": "prediction_input",
@@ -65,8 +65,8 @@
       "compatibility_mode": "BACKWARD",
       "sla_freshness_minutes": 1440,
       "quality_threshold": 0.95,
-      "created_at": "2026-07-10T16:56:54.836451+00:00",
-      "updated_at": "2026-07-10T16:56:54.836451+00:00"
+      "created_at": "2026-07-17T18:15:26.874268+00:00",
+      "updated_at": "2026-07-17T18:15:26.874270+00:00"
     },
     "test_contract": {
       "contract_id": "test_contract",
@@ -87,413 +87,105 @@
       "compatibility_mode": "BACKWARD",
       "sla_freshness_minutes": 1440,
       "quality_threshold": 0.95,
-      "created_at": "2026-07-15T16:28:18.111078+00:00",
-      "updated_at": "2026-07-15T16:28:18.111231+00:00"
+      "created_at": "2026-07-17T19:05:49.134954+00:00",
+      "updated_at": "2026-07-17T19:05:49.135004+00:00"
     }
   },
   "violations": {
     "test_contract": [
       {
-        "timestamp": "2026-07-10T16:57:25.210725+00:00",
+        "timestamp": "2026-07-17T18:17:01.653915+00:00",
         "errors": [
           "Record 0: Missing required field 'id'"
         ],
         "record_count": 1
       },
       {
-        "timestamp": "2026-07-10T16:57:25.222018+00:00",
+        "timestamp": "2026-07-17T18:17:01.656116+00:00",
         "errors": [
           "Record 0: Field 'id' expects 'int', found 'str'"
         ],
         "record_count": 1
       },
       {
-        "timestamp": "2026-07-10T17:07:30.634401+00:00",
+        "timestamp": "2026-07-17T18:29:07.118916+00:00",
         "errors": [
           "Record 0: Missing required field 'id'"
         ],
         "record_count": 1
       },
       {
-        "timestamp": "2026-07-10T17:07:30.643817+00:00",
+        "timestamp": "2026-07-17T18:29:07.122793+00:00",
         "errors": [
           "Record 0: Field 'id' expects 'int', found 'str'"
         ],
         "record_count": 1
       },
       {
-        "timestamp": "2026-07-10T17:36:43.289070+00:00",
+        "timestamp": "2026-07-17T18:34:12.253691+00:00",
         "errors": [
           "Record 0: Missing required field 'id'"
         ],
         "record_count": 1
       },
       {
-        "timestamp": "2026-07-10T17:36:43.296513+00:00",
+        "timestamp": "2026-07-17T18:34:12.257820+00:00",
         "errors": [
           "Record 0: Field 'id' expects 'int', found 'str'"
         ],
         "record_count": 1
       },
       {
-        "timestamp": "2026-07-10T17:54:45.481160+00:00",
+        "timestamp": "2026-07-17T18:37:16.737336+00:00",
         "errors": [
           "Record 0: Missing required field 'id'"
         ],
         "record_count": 1
       },
       {
-        "timestamp": "2026-07-10T17:54:45.491881+00:00",
+        "timestamp": "2026-07-17T18:37:16.739918+00:00",
         "errors": [
           "Record 0: Field 'id' expects 'int', found 'str'"
         ],
         "record_count": 1
       },
       {
-        "timestamp": "2026-07-10T18:09:34.354469+00:00",
+        "timestamp": "2026-07-17T18:49:47.247803+00:00",
         "errors": [
           "Record 0: Missing required field 'id'"
         ],
         "record_count": 1
       },
       {
-        "timestamp": "2026-07-10T18:09:34.363996+00:00",
+        "timestamp": "2026-07-17T18:49:47.251096+00:00",
         "errors": [
           "Record 0: Field 'id' expects 'int', found 'str'"
         ],
         "record_count": 1
       },
       {
-        "timestamp": "2026-07-10T18:20:40.103484+00:00",
+        "timestamp": "2026-07-17T18:57:37.983928+00:00",
         "errors": [
           "Record 0: Missing required field 'id'"
         ],
         "record_count": 1
       },
       {
-        "timestamp": "2026-07-10T18:20:40.110696+00:00",
+        "timestamp": "2026-07-17T18:57:37.988197+00:00",
         "errors": [
           "Record 0: Field 'id' expects 'int', found 'str'"
         ],
         "record_count": 1
       },
       {
-        "timestamp": "2026-07-10T18:36:21.550296+00:00",
+        "timestamp": "2026-07-17T19:05:49.140307+00:00",
         "errors": [
           "Record 0: Missing required field 'id'"
         ],
         "record_count": 1
       },
       {
-        "timestamp": "2026-07-10T18:36:21.561548+00:00",
-        "errors": [
-          "Record 0: Field 'id' expects 'int', found 'str'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-10T18:57:39.268529+00:00",
-        "errors": [
-          "Record 0: Missing required field 'id'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-10T18:57:39.280133+00:00",
-        "errors": [
-          "Record 0: Field 'id' expects 'int', found 'str'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-10T19:41:26.914756+00:00",
-        "errors": [
-          "Record 0: Missing required field 'id'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-10T19:41:26.929215+00:00",
-        "errors": [
-          "Record 0: Field 'id' expects 'int', found 'str'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-13T06:22:27.971649+00:00",
-        "errors": [
-          "Record 0: Missing required field 'id'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-13T06:22:27.974356+00:00",
-        "errors": [
-          "Record 0: Field 'id' expects 'int', found 'str'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-13T09:02:06.447734+00:00",
-        "errors": [
-          "Record 0: Missing required field 'id'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-13T09:02:06.450301+00:00",
-        "errors": [
-          "Record 0: Field 'id' expects 'int', found 'str'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-14T16:51:45.949171+00:00",
-        "errors": [
-          "Record 0: Missing required field 'id'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-14T16:51:45.953772+00:00",
-        "errors": [
-          "Record 0: Field 'id' expects 'int', found 'str'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-14T17:12:29.619881+00:00",
-        "errors": [
-          "Record 0: Missing required field 'id'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-14T17:12:29.623396+00:00",
-        "errors": [
-          "Record 0: Field 'id' expects 'int', found 'str'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-14T17:16:47.599739+00:00",
-        "errors": [
-          "Record 0: Missing required field 'id'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-14T17:16:47.603359+00:00",
-        "errors": [
-          "Record 0: Field 'id' expects 'int', found 'str'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-14T17:27:55.156353+00:00",
-        "errors": [
-          "Record 0: Missing required field 'id'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-14T17:27:55.158720+00:00",
-        "errors": [
-          "Record 0: Field 'id' expects 'int', found 'str'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-14T18:47:09.892168+00:00",
-        "errors": [
-          "Record 0: Missing required field 'id'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-14T18:47:09.896126+00:00",
-        "errors": [
-          "Record 0: Field 'id' expects 'int', found 'str'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-14T18:49:24.523661+00:00",
-        "errors": [
-          "Record 0: Missing required field 'id'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-14T18:49:24.535128+00:00",
-        "errors": [
-          "Record 0: Field 'id' expects 'int', found 'str'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-14T18:51:43.840807+00:00",
-        "errors": [
-          "Record 0: Missing required field 'id'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-14T18:51:43.843683+00:00",
-        "errors": [
-          "Record 0: Field 'id' expects 'int', found 'str'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-14T19:13:44.674916+00:00",
-        "errors": [
-          "Record 0: Missing required field 'id'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-14T19:13:44.679000+00:00",
-        "errors": [
-          "Record 0: Field 'id' expects 'int', found 'str'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-14T19:49:48.863447+00:00",
-        "errors": [
-          "Record 0: Missing required field 'id'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-14T19:49:48.867042+00:00",
-        "errors": [
-          "Record 0: Field 'id' expects 'int', found 'str'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-14T19:57:51.763217+00:00",
-        "errors": [
-          "Record 0: Missing required field 'id'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-14T19:57:51.766373+00:00",
-        "errors": [
-          "Record 0: Field 'id' expects 'int', found 'str'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-14T20:09:34.801050+00:00",
-        "errors": [
-          "Record 0: Missing required field 'id'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-14T20:09:34.803553+00:00",
-        "errors": [
-          "Record 0: Field 'id' expects 'int', found 'str'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-15T05:02:27.855467+00:00",
-        "errors": [
-          "Record 0: Missing required field 'id'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-15T05:02:27.861664+00:00",
-        "errors": [
-          "Record 0: Field 'id' expects 'int', found 'str'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-15T06:34:34.971213+00:00",
-        "errors": [
-          "Record 0: Missing required field 'id'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-15T06:34:34.974061+00:00",
-        "errors": [
-          "Record 0: Field 'id' expects 'int', found 'str'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-15T13:34:54.655925+00:00",
-        "errors": [
-          "Record 0: Missing required field 'id'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-15T13:34:54.660983+00:00",
-        "errors": [
-          "Record 0: Field 'id' expects 'int', found 'str'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-15T13:40:12.128650+00:00",
-        "errors": [
-          "Record 0: Missing required field 'id'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-15T13:40:12.131276+00:00",
-        "errors": [
-          "Record 0: Field 'id' expects 'int', found 'str'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-15T15:08:05.219305+00:00",
-        "errors": [
-          "Record 0: Missing required field 'id'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-15T15:08:05.224094+00:00",
-        "errors": [
-          "Record 0: Field 'id' expects 'int', found 'str'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-15T15:15:29.806192+00:00",
-        "errors": [
-          "Record 0: Missing required field 'id'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-15T15:15:29.810270+00:00",
-        "errors": [
-          "Record 0: Field 'id' expects 'int', found 'str'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-15T16:28:18.119462+00:00",
-        "errors": [
-          "Record 0: Missing required field 'id'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-07-15T16:28:18.123211+00:00",
+        "timestamp": "2026-07-17T19:05:49.143654+00:00",
         "errors": [
           "Record 0: Field 'id' expects 'int', found 'str'"
         ],

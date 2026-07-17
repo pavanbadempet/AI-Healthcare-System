@@ -359,7 +359,7 @@ async def generate_nursing_handoff_card(
         raise HTTPException(status_code=403, detail="Nurse, doctor, or admin privileges required")
     patient = _get_patient(db, patient_id)
     _ensure_facility_access(current_user, patient.facility_id)
-    
+
     from backend.agents.nursing_agent import ClinicalNursingAgent
     agent = ClinicalNursingAgent(db)
     report = await agent.generate_handoff_card(patient_id)

@@ -7,6 +7,7 @@ and synchronizes the parsed clinical data into the local database models.
 import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
+
 from sqlalchemy.orm import Session
 
 from backend.models.auth import User
@@ -42,19 +43,18 @@ def process_hl7_message(hl7_str: str, db: Session) -> Dict[str, Any]:
 
     msh_fields: List[str] = []
     pid_fields: List[str] = []
-    pv1_fields: List[str] = []
     obx_segments: List[List[str]] = []
 
     for seg in segments:
         fields = seg.split("|")
         seg_type = fields[0]
-        
+
         if seg_type == "MSH":
             msh_fields = fields
         elif seg_type == "PID":
             pid_fields = fields
         elif seg_type == "PV1":
-            pv1_fields = fields
+            _pv1_fields = fields
         elif seg_type == "OBX":
             obx_segments.append(fields)
 
@@ -168,12 +168,12 @@ def process_hl7_message(hl7_str: str, db: Session) -> Dict[str, Any]:
         for obx in obx_segments:
             if len(obx) < 6:
                 continue
-            
+
             # OBX-3 (Observation Identifier) contains code^display^system
             obs_id = obx[3].split("^")[0].strip()
             # OBX-5 (Observation Value)
             val_str = obx[5].strip()
-            
+
             # OBX-14 (Date/Time of Observation)
             if len(obx) > 14 and obx[14]:
                 observed_time = parse_hl7_datetime(obx[14])
@@ -196,7 +196,7 @@ def process_hl7_message(hl7_str: str, db: Session) -> Dict[str, Any]:
             db.flush()
             response_summary["records_created"] = 1
             response_summary["details"].append(f"Ingested observation record containing vitals: {list(vitals_dict.keys())}.")
-        
+
         db.commit()
         return response_summary
 

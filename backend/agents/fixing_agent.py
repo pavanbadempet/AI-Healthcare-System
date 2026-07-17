@@ -1,5 +1,6 @@
 import json
 import logging
+
 from sqlalchemy.orm import Session
 
 from backend.agents.base_agent import BaseAgent
@@ -51,7 +52,7 @@ class ClinicalFixingAgent(BaseAgent):
 
             structured_report = json.loads(clean_str)
             self.log_step("Parse Healing Plan", "Successfully parsed structured self-healing recovery plan.")
-            
+
             # Execute actual maintenance if suggested or if a lock condition is found
             healing_actions = structured_report.get("healing_actions", [])
             run_maintenance = False
@@ -59,7 +60,7 @@ class ClinicalFixingAgent(BaseAgent):
                 if any(kw in action.lower() for kw in ["vacuum", "optimize", "maintenance", "reclaim", "repair"]):
                     run_maintenance = True
                     break
-            
+
             if "lock" in error_logs.lower() or "vacuum" in error_logs.lower():
                 run_maintenance = True
 

@@ -1,6 +1,6 @@
 import json
 import logging
-import os
+
 from sqlalchemy.orm import Session
 
 from backend.agents.base_agent import BaseAgent
@@ -25,7 +25,7 @@ class ClinicalPatchAgent(BaseAgent):
         or suboptimal versions.
         """
         import importlib.metadata
-        
+
         # Local knowledge base of known vulnerabilities / insecure package versions
         CVE_DATABASE = {
             "fastapi": {"max_vulnerable": "0.100.0", "cve": "CVE-2023-46122", "severity": "MEDIUM", "fix": "Upgrade to fastapi>=0.100.1"},
@@ -36,13 +36,13 @@ class ClinicalPatchAgent(BaseAgent):
             "pydantic": {"max_vulnerable": "1.10.11", "cve": "CVE-2023-38199", "severity": "LOW", "fix": "Upgrade to pydantic>=1.10.12 or v2"},
             "jinja2": {"max_vulnerable": "3.1.2", "cve": "CVE-2024-22195", "severity": "HIGH", "fix": "Upgrade to Jinja2>=3.1.3"},
         }
-        
+
         audit_results = {
             "vulnerabilities_found": [],
             "packages_scanned": 0,
             "status": "SECURE",
         }
-        
+
         def is_vulnerable(installed_version: str, max_vulnerable: str) -> bool:
             try:
                 inst_parts = [int(x) for x in installed_version.split(".") if x.isdigit()]
@@ -68,10 +68,10 @@ class ClinicalPatchAgent(BaseAgent):
                     })
             except importlib.metadata.PackageNotFoundError:
                 continue
-                
+
         if audit_results["vulnerabilities_found"]:
             audit_results["status"] = "VULNERABLE"
-            
+
         return audit_results
 
     async def audit_and_apply_patches(self, dependencies: str, env_config: str) -> dict:
@@ -83,7 +83,7 @@ class ClinicalPatchAgent(BaseAgent):
         # 1. Run local programmatic security vulnerability check
         self.log_step("Real Dependency Audit", "Running programmatic vulnerability scan on installed environment...")
         local_audit = self._run_real_security_audit()
-        
+
         # Inject the real audit findings into the dependencies string
         findings_summary = ""
         if local_audit["vulnerabilities_found"]:
@@ -92,7 +92,7 @@ class ClinicalPatchAgent(BaseAgent):
                 findings_summary += f"- {v['package']} ({v['installed_version']}): {v['cve']} [{v['severity']}]. Remediation: {v['remediation']}\n"
         else:
             findings_summary += "\nPROGRAMMATIC SECURITY FINDINGS:\n- Programmatic scan of installed packages detected zero active CVE matching patterns.\n"
-            
+
         dependencies = f"{dependencies}\n{findings_summary}"
 
         if not dependencies or not dependencies.strip():
@@ -121,10 +121,10 @@ class ClinicalPatchAgent(BaseAgent):
             clean_str = clean_str.strip()
 
             structured_report = json.loads(clean_str)
-            
+
             # Enrich report with programmatic audit findings
             structured_report["programmatic_audit"] = local_audit
-            
+
             self.log_step("Parse Patch Report", "Successfully parsed structured security patching report.")
             self.finish("completed")
             return {

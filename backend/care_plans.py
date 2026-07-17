@@ -1,6 +1,7 @@
 import logging
-from typing import Dict, Any, List
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
+from typing import Any, Dict
+
 from backend.fhir import fhir_datetime
 
 logger = logging.getLogger(__name__)
@@ -74,7 +75,7 @@ def generate_care_plan(patient_id: str, condition: str, severity: str = "moderat
     """
     cond_key = condition.strip().lower()
     template = CARE_PLAN_TEMPLATES.get(cond_key)
-    
+
     if not template:
         # Generic fallback care plan
         template = {
@@ -86,10 +87,10 @@ def generate_care_plan(patient_id: str, condition: str, severity: str = "moderat
                 {"name": "General Diagnostics", "detail": "Undergo recommended age-appropriate screening evaluations."}
             ]
         }
-        
+
     now_dt = datetime.now(timezone.utc)
     end_dt = now_dt + timedelta(days=180) # 6 months duration
-    
+
     fhir_goals = []
     for i, g in enumerate(template["goals"]):
         fhir_goals.append({
@@ -99,7 +100,7 @@ def generate_care_plan(patient_id: str, condition: str, severity: str = "moderat
             },
             "lifecycleStatus": "active"
         })
-        
+
     fhir_activities = []
     for i, act in enumerate(template["activities"]):
         fhir_activities.append({
@@ -113,7 +114,7 @@ def generate_care_plan(patient_id: str, condition: str, severity: str = "moderat
                 "description": act["detail"]
             }
         })
-        
+
     return {
         "resourceType": "CarePlan",
         "id": f"plan-{cond_key}-{int(now_dt.timestamp())}",
