@@ -1,6 +1,6 @@
 import logging
 import time
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -46,11 +46,13 @@ class TelehealthSession:
         """
         Generates a compliant access token configuration for secure WebRTC/signaling connection.
         """
-        import os
         import hashlib
-        import jwt as pyjwt
+        import os
         from datetime import datetime, timedelta
-        from backend.auth import SECRET_KEY, ALGORITHM
+
+        import jwt as pyjwt
+
+        from backend.auth import ALGORITHM, SECRET_KEY
 
         # 1. Build a real secure JWT token for WebRTC signaling
         token_payload = {
@@ -109,7 +111,7 @@ class TelehealthSession:
             rating = "POOR"
         elif packet_loss > 1.0 or latency_ms > 100.0:
             rating = "FAIR"
-            
+
         self.quality_log = {
             "packet_loss_percentage": packet_loss,
             "average_latency_ms": latency_ms,

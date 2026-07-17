@@ -535,7 +535,7 @@ def prepare_consent_request(
         "Authorization": f"Bearer {settings.access_token}",
         "X-Link-Client-Id": settings.client_id or "",
     }
-    
+
     try:
         import requests
         response = requests.post(
@@ -571,12 +571,12 @@ def verify_gateway_signature(signature_header: str | None, payload_bytes: bytes)
     """
     if not signature_header:
         return False
-        
+
     if signature_header.startswith("Bearer "):
         token = signature_header.split(" ")[1]
     else:
         token = signature_header
-        
+
     try:
         # Check if it is a valid internal JWT user token first
         from backend import auth
@@ -587,12 +587,12 @@ def verify_gateway_signature(signature_header: str | None, payload_bytes: bytes)
         pass
 
     settings = get_settings()
-    
+
     # Enable bypass ONLY if not configured/enabled or explicitly in local test mode without keys
     demo_mode = os.getenv("ABDM_DEMO_MODE", "").strip().lower() in {"1", "true", "yes"}
     if demo_mode and not settings.client_secret:
         return True # Bypass in demo mode if keys are absent
-        
+
     try:
         import jwt
         jwt.decode(

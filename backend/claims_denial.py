@@ -1,7 +1,9 @@
-import os
 import json
-from typing import Dict, Any, List
+import os
+from typing import Any, Dict, List
+
 from backend.claims import CMS1500Claim
+
 
 def load_billing_rules() -> dict:
     """Loads billing guidelines from dynamic JSON contract database, falling back to static patterns."""
@@ -21,7 +23,7 @@ def load_billing_rules() -> dict:
             "applicable_cpts": ["90837", "90791"]
         }
     }
-    
+
     possible_paths = [
         os.path.join(os.path.dirname(__file__), "..", "data", "contracts", "billing_rules.json"),
         os.path.abspath(os.path.join(os.path.dirname(__file__), "data", "contracts", "billing_rules.json")),
@@ -103,7 +105,7 @@ def analyse_denial_risk(claim: CMS1500Claim) -> Dict[str, Any]:
                 if dx.strip().upper().startswith(prefix.upper()):
                     matching_dx = True
                     break
-            
+
             if not matching_dx:
                 warnings.append(f"CPT {cpt} Mismatch: {message}. Claimed diagnoses: {claim.diagnoses}")
                 if denial_risk != "HIGH":

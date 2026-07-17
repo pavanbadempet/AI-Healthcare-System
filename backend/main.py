@@ -22,6 +22,7 @@ else:
 
 # Configure Structured JSON Logging with PII Redaction
 from backend.logging_config import setup_structured_logging
+
 setup_structured_logging()
 
 from backend.security_decorators import no_log_zone_async
@@ -84,8 +85,10 @@ from . import (
     discharge,
     explanation,
     federated_sync,
+    fhir_compression,
     fhir_endpoints,
     hospital_operations,
+    i18n_audio,
     interoperability,
     longitudinal_prediction,
     middleware,
@@ -100,8 +103,6 @@ from . import (
     smart_fhir_endpoints,
     streaming_chat,
     telemetry,
-    i18n_audio,
-    fhir_compression,
 )
 from .pdf_service import generate_medical_report
 
@@ -519,7 +520,7 @@ def get_prometheus_metrics():
     except Exception as e:
         logger.warning("Failed to update system metrics: %s", e)
 
-    from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+    from prometheus_client import CONTENT_TYPE_LATEST, generate_latest
     return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 # --- Static Files (WebLLM AI Copilot page) ---

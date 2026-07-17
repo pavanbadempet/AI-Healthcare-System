@@ -4,11 +4,10 @@ Provides offline cryptographic validation of B2B clinic licensing keys (signed J
 """
 import datetime
 import logging
+import os
 from typing import Tuple
 
 from jose import JWTError, jwt
-
-import os
 
 logger = logging.getLogger(__name__)
 

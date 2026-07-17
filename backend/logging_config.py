@@ -4,12 +4,13 @@ Configures root logging handlers to format all application outputs as structured
 Enforces request tracing via thread-safe/async context propagation of correlation IDs.
 """
 
+import contextvars
 import json
 import logging
 import re
 import uuid
-import contextvars
 from datetime import datetime, timezone
+
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 
@@ -50,7 +51,7 @@ class StructuredJSONFormatter(logging.Formatter):
 def setup_structured_logging(level: int = logging.INFO) -> None:
     """Configures root logger to output structured JSON with PII redaction."""
     root = logging.getLogger()
-    
+
     # Remove default handlers to prevent duplicate outputs
     for handler in list(root.handlers):
         root.removeHandler(handler)
@@ -58,7 +59,7 @@ def setup_structured_logging(level: int = logging.INFO) -> None:
     handler = logging.StreamHandler()
     handler.setFormatter(StructuredJSONFormatter())
     handler.addFilter(PIIRedactingFilter())
-    
+
     root.addHandler(handler)
     root.setLevel(level)
 

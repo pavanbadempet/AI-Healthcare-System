@@ -9,13 +9,26 @@ logger = logging.getLogger(__name__)
 import hmac
 import json
 from datetime import datetime, timezone
-from typing import Any
+from typing import Any, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from . import abdm, audit, auth, database, dicomweb, fhir, licensing, models, schemas, smart_fhir, terminology, ai_governance
+from . import (
+    abdm,
+    ai_governance,
+    audit,
+    auth,
+    database,
+    dicomweb,
+    fhir,
+    licensing,
+    models,
+    schemas,
+    smart_fhir,
+    terminology,
+)
 from .facility_scope import users_share_facility_context
 
 router = APIRouter(prefix="/interop", tags=["Interoperability"], dependencies=[Depends(licensing.enforce_license_tier("enterprise"))])
@@ -733,12 +746,12 @@ def record_abdm_consent_callback(
 ) -> dict[str, Any]:
     """Record a PHI-safe ABDM consent lifecycle callback for sandbox readiness."""
     _require_admin(current_user)
-    
+
     # Enforce gateway signature verification
     sig_header = request.headers.get("Authorization") or request.headers.get("X-Gateway-Signature")
     if not abdm.verify_gateway_signature(sig_header, b""):
         raise HTTPException(status_code=401, detail="Invalid ABDM gateway signature")
-        
+
     patient, consent, facility_id = _resolve_abdm_callback_subject(db, current_user, payload)
     try:
         normalized = abdm.normalize_consent_callback(
@@ -861,6 +874,7 @@ def lookup_terminology_code(
 
 from pydantic import BaseModel
 
+
 class TerminologySearchRequest(BaseModel):
     query: str
 
@@ -893,7 +907,7 @@ def get_ai_governance_ledger(
     # Require admin or doctor role to view AI audit ledger
     if current_user.role not in ("admin", "doctor"):
         raise HTTPException(status_code=403, detail="Role not permitted to view AI governance data")
-    
+
     report = ai_governance.get_governance_report(db)
     return {
         "status": "success",
@@ -1149,7 +1163,7 @@ def get_external_records(
     events = db.query(models.ABDMConsentEvent).filter(
         models.ABDMConsentEvent.patient_id == patient_id
     ).order_by(models.ABDMConsentEvent.notification_at.desc()).all()
-    
+
     external_records = []
     for ev in events:
         import json
@@ -1159,7 +1173,7 @@ def get_external_records(
                 hi_types_list = [hi_types_list]
         except Exception:
             hi_types_list = []
-            
+
         external_records.append({
             "id": f"abdm_event_{ev.id}",
             "source_facility": f"ABDM Partner Facility (ID: {ev.facility_id})",

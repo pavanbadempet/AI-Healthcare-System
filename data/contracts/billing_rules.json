@@ -1,0 +1,37 @@
+{
+  "cpt_diagnosis_rules": {
+    "90837": {
+      "prefix": "F",
+      "message": "Psychotherapy requires a behavioral health diagnosis (e.g., F32.x, F41.x)"
+    },
+    "90791": {
+      "prefix": "F",
+      "message": "Psychiatric diagnostic evaluation requires a behavioral health diagnosis"
+    },
+    "50200": {
+      "prefix": "N",
+      "message": "Renal biopsy requires a genitourinary / renal diagnosis (e.g., N18.x)"
+    },
+    "90935": {
+      "prefix": "N",
+      "message": "Hemodialysis requires a genitourinary / renal diagnosis (e.g., N18.x)"
+    },
+    "93000": {
+      "prefix": "I",
+      "message": "Electrocardiogram requires a circulatory / cardiac diagnosis (e.g., I25.x)"
+    },
+    "93015": {
+      "prefix": "I",
+      "message": "Cardiovascular stress test requires a circulatory / cardiac diagnosis"
+    },
+    "94010": {
+      "prefix": "J",
+      "message": "Spirometry / lung function test requires a respiratory diagnosis (e.g., J44.x)"
+    }
+  },
+  "telemedicine_rules": {
+    "telehealth_places_of_service": ["02", "10"],
+    "required_modifiers": ["95", "GT", "GQ"],
+    "applicable_cpts": ["90837", "90791"]
+  }
+}

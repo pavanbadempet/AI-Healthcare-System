@@ -1,5 +1,6 @@
 import json
 import logging
+
 from sqlalchemy.orm import Session
 
 from backend.agents.base_agent import BaseAgent
@@ -51,26 +52,28 @@ class ClinicalCallingAgent(BaseAgent):
 
             structured_report = json.loads(clean_str)
             self.log_step("Parse Telephony Routing", "Successfully parsed emergency broadcast routing plan.")
-            
+
             # Synthesize the emergency call script into a real audio stream
             call_script = structured_report.get("call_script", "")
             if call_script:
                 self.log_step("Speech Synthesis", "Generating real-time emergency spoken script via TTS...")
                 try:
-                    from gtts import gTTS
-                    import io
                     import base64
-                    
+                    import io
+
+                    from gtts import gTTS
+
                     tts = gTTS(text=call_script, lang="en")
                     mp3_fp = io.BytesIO()
                     tts.write_to_fp(mp3_fp)
                     mp3_bytes = mp3_fp.getvalue()
-                    
+
                     structured_report["synthesized_audio_base64"] = base64.b64encode(mp3_bytes).decode("utf-8")
                     self.log_step("Speech Synthesis", "Spoken alarm synthesized successfully.")
                 except Exception as tts_err:
                     logger.warning("TTS speech synthesis failed for Calling Agent: %s", tts_err)
                     import base64
+
                     from backend.i18n_audio import generate_offline_melody_wav
                     try:
                         offline_wav = generate_offline_melody_wav()
@@ -84,7 +87,7 @@ class ClinicalCallingAgent(BaseAgent):
                         ) * 10
                         structured_report["synthesized_audio_base64"] = base64.b64encode(mock_mp3).decode("utf-8")
                         self.log_step("Speech Synthesis", "Spoken alarm generated using offline fallback silence.")
-            
+
             self.finish("completed")
             return {
                 "telemetry": {

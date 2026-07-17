@@ -1,7 +1,7 @@
 """Production-grade clinical terminology lookup and search service.
 
-Provides a unified interface to validate and lookup codes against LOINC, 
-SNOMED CT, ICD-10-CM, and RxNorm standard systems. Integrates NLM RxNorm 
+Provides a unified interface to validate and lookup codes against LOINC,
+SNOMED CT, ICD-10-CM, and RxNorm standard systems. Integrates NLM RxNorm
 APIs and a local SQLite cache for high-performance sub-millisecond retrievals.
 """
 
@@ -315,7 +315,7 @@ def semantic_map_symptoms(text: str) -> list[dict[str, Any]]:
         return []
     import re
     tokens = set(re.findall(r"\w+", text.lower()))
-    
+
     matches = []
     synonyms = {
         "heartrate": {"heart", "rate", "pulse", "bpm"},
@@ -332,12 +332,12 @@ def semantic_map_symptoms(text: str) -> list[dict[str, Any]]:
         "oxygen": {"oxygen", "spo2", "saturation", "pulseox"},
         "spo2": {"oxygen", "spo2", "saturation", "pulseox"}
     }
-    
+
     expanded_tokens = set(tokens)
     for token in tokens:
         if token in synonyms:
             expanded_tokens.update(synonyms[token])
-            
+
     # Match against static concepts
     for concept in _CONCEPTS.values():
         display_words = set(re.findall(r"\w+", concept.display.lower()))
@@ -363,5 +363,5 @@ def semantic_map_symptoms(text: str) -> list[dict[str, Any]]:
             conn.close()
     except Exception:
         pass
-            
+
     return matches

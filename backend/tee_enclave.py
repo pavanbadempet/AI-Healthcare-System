@@ -117,7 +117,7 @@ class ConfidentialEnclave:
         Securely sanitizes and clears mutable variables from memory, forcing GC collect.
         """
         import gc
-        
+
         # Overwrite mutable arguments to zero/clear them out in memory
         for arg in args:
             if isinstance(arg, bytearray):

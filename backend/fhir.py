@@ -341,10 +341,10 @@ def validate_fhir_resource(r: dict[str, Any]) -> None:
     """Validates standard HL7 FHIR R4 constraints for patient clinical resources."""
     if not isinstance(r, dict):
         raise FHIRValidationError("Invalid FHIR resource")
-    
+
     res_type = r.get("resourceType")
     res_id = r.get("id")
-    
+
     if not res_type or not isinstance(res_type, str):
         raise FHIRValidationError("Invalid FHIR resource")
     if not res_id or not isinstance(res_id, str) or not str(res_id).strip():
@@ -358,7 +358,7 @@ def validate_fhir_resource(r: dict[str, Any]) -> None:
         if "gender" in r:
             if not isinstance(r["gender"], str) or r["gender"] not in ("male", "female", "other", "unknown"):
                 raise FHIRValidationError("Patient resource must contain a valid gender code")
-            
+
     elif res_type == "Observation":
         if "status" in r:
             if r["status"] not in ("registered", "preliminary", "final", "amended", "corrected"):

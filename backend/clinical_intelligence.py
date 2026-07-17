@@ -260,13 +260,13 @@ def get_prediction_explainability(
         # Construct dynamic explanation text based on the top contributing features
         sorted_attributions = sorted(log.attributions.items(), key=lambda x: abs(x[1]), reverse=True)
         top_contrib = sorted_attributions[:2] if len(sorted_attributions) >= 2 else sorted_attributions
-        
+
         contrib_clauses = [f"{feat} ({val * 100:.1f}%)" for feat, val in top_contrib]
         explanation_text = (
             f"The primary features driving this prediction are {', '.join(contrib_clauses)}. "
             f"These features represent the highest contributors to the model outcome."
         )
-        
+
         return {
             "prediction_id": prediction_id,
             "model_name": log.model_name,

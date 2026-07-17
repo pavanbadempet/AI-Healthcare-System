@@ -1,5 +1,6 @@
 import logging
-from typing import Dict, Any, List
+from typing import Any, Dict
+
 from backend.core_ai import chat
 
 logger = logging.getLogger(__name__)
@@ -38,7 +39,7 @@ async def compile_clinical_note(transcript: str, format_type: str = "SOAP") -> D
         )
 
     compiled_text = await chat([{"role": "user", "content": f"Transcript:\n{transcript}"}], system=system_prompt)
-    
+
     detected_codes = []
     text_lower = (compiled_text or "").lower() + " " + transcript.lower()
     for disease, (icd_code, icd_desc) in ICD10_MAPPING.items():

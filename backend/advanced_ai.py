@@ -374,7 +374,7 @@ class RealTimePredictionService:
         """Generate XAI explanation using dynamic SHAP-style attribution based on input features"""
         try:
             top_features = []
-            
+
             if model_type == "diabetes":
                 feature_names = ['glucose', 'bmi', 'age', 'insulin', 'blood_pressure']
                 glucose = features[0] if len(features) > 0 else 100.0
@@ -382,7 +382,7 @@ class RealTimePredictionService:
                 age = features[2] if len(features) > 2 else 30.0
                 insulin = features[3] if len(features) > 3 else 80.0
                 bp = features[4] if len(features) > 4 else 120.0
-                
+
                 attrs = {
                     'glucose': abs(glucose - 95.0) / 95.0,
                     'bmi': abs(bmi - 22.0) / 22.0,
@@ -390,10 +390,10 @@ class RealTimePredictionService:
                     'insulin': abs(insulin - 80.0) / 80.0,
                     'blood_pressure': abs(bp - 120.0) / 120.0
                 }
-                
+
                 total = sum(attrs.values()) or 1.0
                 sorted_attrs = sorted(attrs.items(), key=lambda x: x[1], reverse=True)
-                
+
                 for name, attr_val in sorted_attrs:
                     idx = feature_names.index(name)
                     top_features.append({
@@ -401,17 +401,17 @@ class RealTimePredictionService:
                         'importance': round(attr_val / total, 3),
                         'value': float(features[idx]) if len(features) > idx else 0.0
                     })
-                    
+
             elif model_type == "heart":
                 feature_names = ['age', 'sex', 'cp', 'trestbps', 'chol', 'fbs', 'restecg', 'thalach', 'exang', 'oldpeak', 'slope', 'ca', 'thal']
                 age = features[0] if len(features) > 0 else 45.0
-                sex = features[1] if len(features) > 1 else 1.0
+                _sex = features[1] if len(features) > 1 else 1.0
                 cp = features[2] if len(features) > 2 else 0.0
                 trestbps = features[3] if len(features) > 3 else 120.0
                 chol = features[4] if len(features) > 4 else 200.0
                 thalach = features[7] if len(features) > 7 else 150.0
                 oldpeak = features[9] if len(features) > 9 else 0.0
-                
+
                 attrs = {
                     'age': age / 75.0,
                     'trestbps': abs(trestbps - 120.0) / 120.0,
@@ -420,10 +420,10 @@ class RealTimePredictionService:
                     'oldpeak': oldpeak / 3.0,
                     'cp': cp / 3.0
                 }
-                
+
                 total = sum(attrs.values()) or 1.0
                 sorted_attrs = sorted(attrs.items(), key=lambda x: x[1], reverse=True)
-                
+
                 for name, attr_val in sorted_attrs:
                     try:
                         idx = feature_names.index(name)
@@ -441,7 +441,7 @@ class RealTimePredictionService:
                         'importance': round(1.0 / len(features), 3) if len(features) > 0 else 0.0,
                         'value': float(val)
                     })
-            
+
             explanation = {
                 'method': 'shap',
                 'top_features': top_features[:3],

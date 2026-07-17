@@ -335,7 +335,7 @@ if _pkg_rag is None:
                     self.db_path = os.path.join(os.path.dirname(DB_FILE), f"vector_store_test_temp_{uuid.uuid4().hex}.db")
             else:
                 self.db_path = os.path.splitext(DB_FILE)[0] + ".db"
-            
+
             import sqlite3
             with self._lock:
                 os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
@@ -371,7 +371,7 @@ if _pkg_rag is None:
                         metas = data.get("metadatas", []) or []
                         vecs = data.get("vectors", []) or []
                         rids = data.get("ids", []) or []
-                        
+
                         with sqlite3.connect(self.db_path) as conn:
                             for rid, doc, meta, vec in zip(rids, docs, metas, vecs):
                                 conn.execute(
@@ -404,7 +404,7 @@ if _pkg_rag is None:
                         metas = data.get("metadatas", []) or []
                         vecs = data.get("vectors", []) or []
                         rids = data.get("ids", []) or []
-                        
+
                         with sqlite3.connect(self.db_path) as conn:
                             for rid, doc, meta, vec in zip(rids, docs, metas, vecs):
                                 conn.execute(
@@ -425,20 +425,20 @@ if _pkg_rag is None:
                         cursor = conn.cursor()
                         cursor.execute("SELECT id, document, metadata, vector FROM vectors")
                         rows = cursor.fetchall()
-                    
+
                     self.documents = []
                     self.metadatas = []
                     self.vectors = []
                     self.ids = []
-                    
+
                     for rid, doc, meta_str, vec_str in rows:
                         self.ids.append(rid)
                         self.documents.append(doc)
                         self.metadatas.append(json.loads(meta_str))
                         self.vectors.append(json.loads(vec_str))
-                    
+
                     self.id_to_idx = {rid: i for i, rid in enumerate(self.ids)}
-                    
+
                     # Re-index LSH
                     self.lsh.clear()
                     for record_id, vec in zip(self.ids, self.vectors):

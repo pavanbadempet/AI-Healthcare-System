@@ -7,6 +7,7 @@ import base64
 import json
 import logging
 import zlib
+
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 

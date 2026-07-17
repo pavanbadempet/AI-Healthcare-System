@@ -6,8 +6,6 @@ import logging
 import os
 from datetime import datetime, timezone
 
-import requests
-
 logger = logging.getLogger(__name__)
 from typing import Any
 
@@ -505,10 +503,10 @@ async def check_prescription_safety(
 
 def _generate_goodrx_signature(api_key: str, secret: str, path: str, params: dict) -> str:
     """Generates an HMAC-SHA256 signature for authenticating GoodRx API requests."""
-    import hmac
     import hashlib
+    import hmac
     import urllib.parse
-    
+
     sorted_params = sorted(params.items())
     param_str = urllib.parse.urlencode(sorted_params)
     message = f"{path}?{param_str}".encode("utf-8")
@@ -552,7 +550,7 @@ def compare_medication_pricing(
     base_price = 15.0
     ndc_code = "N/A"
     active_ingredient = "Unknown"
-    
+
     try:
         import requests
         # Query OpenFDA NDC endpoint
@@ -577,7 +575,7 @@ def compare_medication_pricing(
                 openfda_msg = f"Medicine details verified via OpenFDA API (NDC: {ndc_code}, Active Ingredient: {active_ingredient})."
     except Exception as e:
         logger.warning("OpenFDA API drug search failed: %s", e)
-        
+
     # If OpenFDA lookup did not resolve custom pricing, use local fallbacks
     if base_price == 15.0:
         med_lower = medication_name.lower()

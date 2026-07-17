@@ -6,9 +6,9 @@ triggered by clinician workflows (e.g., patient-view hook).
 
 import logging
 from typing import Any, Dict, List
+
 from sqlalchemy.orm import Session
 
-from backend.models.auth import User
 from backend.models.clinical import VitalObservation
 
 logger = logging.getLogger(__name__)
@@ -37,7 +37,7 @@ def evaluate_cardio_risk_service(request_data: Dict[str, Any], db: Session) -> D
     """
     context = request_data.get("context", {})
     patient_id_str = context.get("patientId")
-    
+
     if not patient_id_str:
         return {"cards": []}
 
@@ -69,7 +69,7 @@ def evaluate_cardio_risk_service(request_data: Dict[str, Any], db: Session) -> D
     tachycardia = latest_obs.heart_rate and latest_obs.heart_rate >= 100
 
     if high_bp or tachycardia:
-        detail_msg = f"Patient vital check triggered warnings: "
+        detail_msg = "Patient vital check triggered warnings: "
         conditions = []
         if high_bp:
             conditions.append(f"Elevated systolic BP ({latest_obs.systolic_bp} mmHg)")

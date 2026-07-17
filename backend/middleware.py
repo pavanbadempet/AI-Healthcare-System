@@ -160,7 +160,7 @@ class RequestTracingMiddleware(BaseHTTPMiddleware):
         header_val = request.headers.get(REQUEST_ID_HEADER) or request.headers.get("X-Correlation-ID") or request.headers.get("x-correlation-id")
         request_id = _safe_request_id(header_val)
         request.state.request_id = request_id
-        
+
         from backend.logging_config import correlation_id_var
         token = correlation_id_var.set(request_id)
         try:
@@ -230,13 +230,13 @@ class PrometheusMetricsMiddleware(BaseHTTPMiddleware):
         # Exclude /metrics path to prevent scrape loop pollution
         if request.url.path == "/metrics":
             return await call_next(request)
-            
+
         start_time = time.time()
-        
+
         endpoint = request.url.path
         if "route" in request.scope and request.scope["route"] is not None:
             endpoint = request.scope["route"].path
-            
+
         try:
             response = await call_next(request)
             status_code = str(response.status_code)

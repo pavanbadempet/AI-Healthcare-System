@@ -84,3 +84,8 @@ cryptography>=41.0.0
 slowapi>=0.1.9
 pyotp>=2.9.0
 qrcode>=7.4.2
+agent-framework>=1.11.0
+langgraph>=0.1.0
+langchain-core>=0.2.0
+
+

@@ -1,4 +1,5 @@
-from typing import Dict, Any, List
+from typing import Any, Dict, List
+
 
 class CMS1500Claim:
     def __init__(

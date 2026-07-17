@@ -6,16 +6,17 @@ Audits clinician override logs and tracks doctor-agreement rates for post-market
 
 import logging
 from datetime import datetime, timezone
-from typing import Any, Dict, List
-from sqlalchemy.orm import Session
+from typing import Any, Dict, List, Optional
+
 from sqlalchemy import func
+from sqlalchemy.orm import Session
 
 from backend.models.intelligence import ClinicalAICorrection
-from backend import models
 
 logger = logging.getLogger(__name__)
 
 from dataclasses import dataclass
+
 
 @dataclass
 class AIFunctionRecord:
@@ -117,7 +118,7 @@ def log_clinician_override(
 def get_governance_report(db: Session) -> List[Dict[str, Any]]:
     """Computes clinical agreement rates and drift telemetry for post-market monitoring."""
     report = []
-    
+
     # Query override stats grouped by function
     stats = db.query(
         ClinicalAICorrection.function_name,

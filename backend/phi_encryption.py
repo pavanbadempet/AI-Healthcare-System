@@ -5,7 +5,6 @@ Requires PHI_ENCRYPTION_KEY environment variable in production.
 """
 import logging
 import os
-from typing import Optional
 
 logger = logging.getLogger(__name__)
 

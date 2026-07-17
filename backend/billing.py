@@ -497,7 +497,7 @@ async def audit_invoice_denial_risk(
     invoice = db.query(models.Invoice).filter(models.Invoice.id == invoice_id).first()
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
-    
+
     _ensure_facility_access(current_user, invoice.facility_id)
 
     # Fetch patient clinical notes/SOAP note
@@ -506,7 +506,7 @@ async def audit_invoice_denial_risk(
         encounter = db.query(models.Encounter).filter(models.Encounter.id == invoice.encounter_id).first()
         if encounter and encounter.notes:
             soap_note = encounter.notes
-    
+
     from backend.agents.billing_agent import ClinicalBillingAgent
     agent = ClinicalBillingAgent(db)
     report = await agent.audit_billing_claim(soap_note)

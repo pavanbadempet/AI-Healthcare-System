@@ -10,7 +10,7 @@ from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, System
 from langgraph.graph import END, StateGraph
 
 # All AI inference goes through core_ai — never call providers directly.
-from . import core_ai
+from . import core_ai, models
 from .prompt_registry import get_prompt
 
 # Configure Logging
@@ -269,17 +269,18 @@ def profiler_node(state: AgentState):
         chat_summary.append(f"{role}: {msg.content}")
 
     prompt = (
-        f"Analyze this healthcare conversation and write a very brief 1-sentence summary of the user's primary concern or emotional state to save in long-term clinical memory.\n"
-        f"Conversation:\n" + "\n".join(chat_summary) + "\n\n"
+        "Analyze this healthcare conversation and write a very brief 1-sentence summary of the user's primary concern or emotional state to save in long-term clinical memory.\n"
+        "Conversation:\n" + "\n".join(chat_summary) + "\n\n"
         "Output ONLY the new 1-sentence summary."
     )
 
     try:
-        from backend.database import get_db_context
         from langchain_core.messages import HumanMessage
+
+        from backend.database import get_db_context
         summary_msg = llm.invoke([HumanMessage(content=prompt)])
         summary_text = summary_msg.content.strip() if summary_msg else ""
-        
+
         if summary_text and len(summary_text) > 5:
             with get_db_context() as db:
                 user = db.query(models.User).filter(models.User.id == user_id).first()
@@ -290,7 +291,7 @@ def profiler_node(state: AgentState):
                     return {"psych_profile": summary_text}
     except Exception as e:
         logger.error("Failed to update psych_profile in profiler node: %s", e)
-        
+
     return {}
 
 def generation_node(state: AgentState):

@@ -589,10 +589,10 @@ class HealthcareDataPipeline:
                         mode=write_mode,
                         batchsize=batch_size
                     ).save()
-                
+
                 query = df.writeStream.foreachBatch(write_micro_batch).start()
                 query.awaitTermination(timeout=3)
-                
+
                 return {
                     'target': 'database',
                     'table': table_name,
@@ -648,10 +648,10 @@ class HealthcareDataPipeline:
                         writer.option("header", "true").csv(file_path)
                     elif file_format == 'json':
                         writer.json(file_path)
-                
+
                 query = df.writeStream.foreachBatch(write_micro_batch).start()
                 query.awaitTermination(timeout=3)
-                
+
                 return {
                     'target': 'file',
                     'file_path': file_path,
@@ -801,7 +801,7 @@ class HealthcareDataPipeline:
                         non_null_bills = pl_df.filter(pl.col("billed_amount").is_not_null()).height
                         if non_null_bills > 0:
                             validity_scores.append(valid_bills / non_null_bills)
-                    
+
                     if validity_scores:
                         validity = sum(validity_scores) / len(validity_scores)
                     else:
@@ -1010,7 +1010,7 @@ class HealthcareDataPipeline:
 def _apply_cloud_integration_configs(builder: SparkSession.builder) -> SparkSession.builder:
     import os
     provider = os.getenv("CLOUD_PROVIDER", "").strip().lower()
-    
+
     # 1. AWS (S3, EMR, Glue Catalog)
     if provider == "aws" or os.getenv("AWS_ACCESS_KEY_ID"):
         aws_key = os.getenv("AWS_ACCESS_KEY_ID")
@@ -1021,12 +1021,12 @@ def _apply_cloud_integration_configs(builder: SparkSession.builder) -> SparkSess
                 .config("spark.hadoop.fs.s3a.secret.key", aws_secret) \
                 .config("spark.hadoop.fs.s3a.impl", "org.apache.hadoop.fs.s3a.S3AFileSystem") \
                 .config("spark.hadoop.fs.s3a.aws.credentials.provider", "org.apache.hadoop.fs.s3a.SimpleAWSCredentialsProvider")
-        
+
         # Enable AWS Glue Data Catalog integration if explicitly requested
         if os.getenv("AWS_GLUE_CATALOG_ENABLED", "").strip().lower() in ("1", "true", "yes"):
             builder = builder \
                 .config("hive.metastore.client.factory.class", "com.amazonaws.glue.catalog.metastore.AWSGlueClientMetastoreFactory")
-            
+
     # 2. Microsoft Azure (ADLS Gen2 / Blob Storage)
     if provider == "azure" or os.getenv("AZURE_STORAGE_ACCOUNT"):
         account = os.getenv("AZURE_STORAGE_ACCOUNT")
@@ -1059,7 +1059,7 @@ def _apply_cloud_integration_configs(builder: SparkSession.builder) -> SparkSess
                 .config("spark.snowflake.password", sf_password or "") \
                 .config("spark.snowflake.db", os.getenv("SNOWFLAKE_DATABASE", "")) \
                 .config("spark.snowflake.schema", os.getenv("SNOWFLAKE_SCHEMA", ""))
-            
+
     return builder
 
 # Initialize Spark session
@@ -1067,10 +1067,10 @@ def create_spark_session() -> SparkSession:
     """Create optimized Spark session for healthcare data processing"""
     import os
     builder = SparkSession.builder.appName("HealthcareDataPipeline")
-    
+
     # Apply cloud integration configurations dynamically based on environment settings
     builder = _apply_cloud_integration_configs(builder)
-    
+
     # Optimize config specifically for constrained free-tier deployments (like Hugging Face Spaces)
     is_hf = bool(os.getenv("SPACE_ID") or os.getenv("SPACE_NAME") or os.getenv("HF_SPACE") or os.getenv("RUNNING_IN_HF_SPACE"))
     if is_hf:
@@ -1084,7 +1084,7 @@ def create_spark_session() -> SparkSession:
     else:
         builder = builder \
             .config("spark.sql.shuffle.partitions", "200")
-            
+
     return builder \
         .config("spark.sql.adaptive.enabled", "true") \
         .config("spark.sql.adaptive.coalescePartitions.enabled", "true") \

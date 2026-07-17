@@ -584,8 +584,8 @@ class HealthcareDataModeler:
 
     def apply_schema_evolution_example(self) -> Dict[str, Any]:
         """Example of schema evolution for patient table"""
-        from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DateType
-        
+        from pyspark.sql.types import DateType, IntegerType, StringType, StructField, StructType
+
         # Determine the evolved schema for patients
         try:
             current_schema = self.spark.table("patients").schema
@@ -597,11 +597,11 @@ class HealthcareDataModeler:
                 StructField("full_name", StringType(), True),
                 StructField("dob", DateType(), True),
             ]
-            
+
         # Add evolved fields dynamically
         evolved_fields.append(StructField("blood_type", StringType(), True))
         evolved_fields.append(StructField("emergency_contact", StringType(), True))
-        
+
         evolved_schema = StructType(evolved_fields)
         evolved_df = self.spark.createDataFrame([], evolved_schema)
 

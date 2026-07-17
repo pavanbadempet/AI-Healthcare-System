@@ -1,6 +1,7 @@
 import logging
-from typing import Dict, Any, List
 from datetime import datetime, timezone
+from typing import Any, Dict, List
+
 from backend.fhir import fhir_datetime
 
 logger = logging.getLogger(__name__)
@@ -34,16 +35,16 @@ def score_assessment(responses: List[int], questionnaire_type: str = "PHQ-9") ->
     """
     questionnaire_type = questionnaire_type.upper()
     expected_len = 9 if questionnaire_type == "PHQ-9" else 7
-    
+
     if len(responses) != expected_len:
         raise ValueError(f"Expected exactly {expected_len} responses for {questionnaire_type}, got {len(responses)}")
-    
+
     for r in responses:
         if not (0 <= r <= 3):
             raise ValueError("All responses must be integers between 0 and 3")
-            
+
     total_score = sum(responses)
-    
+
     if questionnaire_type == "PHQ-9":
         if total_score <= 4:
             severity = "Minimal or None"
@@ -73,7 +74,7 @@ def score_assessment(responses: List[int], questionnaire_type: str = "PHQ-9") ->
         else:
             severity = "Severe Anxiety"
             recommendation = "Pharmacotherapy and active psychotherapy referral recommended."
-            
+
     return {
         "questionnaire": questionnaire_type,
         "score": total_score,
@@ -88,7 +89,7 @@ def to_fhir_observation(patient_id: str, score: int, severity: str, questionnair
     questionnaire_type = questionnaire_type.upper()
     loinc_code = "44249-1" if questionnaire_type == "PHQ-9" else "69737-5"
     loinc_display = "PHQ-9 Patient Depression Questionnaire" if questionnaire_type == "PHQ-9" else "GAD-7 Patient Anxiety Questionnaire"
-    
+
     return {
         "resourceType": "Observation",
         "id": f"obs-{questionnaire_type.lower()}-{int(datetime.now(timezone.utc).timestamp())}",

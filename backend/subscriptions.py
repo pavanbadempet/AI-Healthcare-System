@@ -7,6 +7,7 @@ Enables client applications to register webhooks for clinical events
 import logging
 import threading
 from typing import Any, Dict, List
+
 import requests
 
 logger = logging.getLogger(__name__)
@@ -95,7 +96,7 @@ def dispatch_observation_notifications(patient_id: int, observation_id: int, vit
             match = True
         elif "Observation?code=" in criteria:
             target_code = criteria.split("code=")[-1].strip()
-            
+
             # Vital sign code mapping (LOINC)
             loinc_map = {
                 "heart_rate": "8867-4",
@@ -106,7 +107,7 @@ def dispatch_observation_notifications(patient_id: int, observation_id: int, vit
                 "respiratory_rate": "9279-1",
                 "blood_glucose": "2339-0"
             }
-            
+
             # Check if the target vital sign was populated in this observation
             for key, code in loinc_map.items():
                 if code == target_code and vitals_dict.get(key) is not None:

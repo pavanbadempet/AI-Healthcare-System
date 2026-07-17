@@ -5,9 +5,10 @@ and enforces HIPAA/GDPR data retention purging policies.
 """
 
 import logging
-import sqlite3
 import os
+import sqlite3
 from typing import Any, Dict
+
 from sqlalchemy import text
 from sqlalchemy.orm import Session
 

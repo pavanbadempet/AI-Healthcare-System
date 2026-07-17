@@ -19,12 +19,14 @@ RUN npm run build
 
 # Stage 2: Build Rust Gateway
 FROM rust:latest AS rust-builder
+RUN apt-get update && apt-get install -y protobuf-compiler
 WORKDIR /build
 
 # Copy rust gateway source and build it
 COPY rust_gateway/ ./rust_gateway/
 WORKDIR /build/rust_gateway
 RUN cargo build --release
+
 
 # Stage 3: Final image with Python backend, frontend assets, and Rust gateway
 FROM python:3.12-slim
