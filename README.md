@@ -114,10 +114,11 @@ The platform is designed with a decoupled, high-performance architecture separat
 |:---|:---|:---|:---|
 | **Frontend Surface** | React 19 &bull; TypeScript &bull; Vite &bull; Tailwind CSS &bull; Lucide | Responsive clinician portal, telemedicine console, real-time vitals graphs, chat UI | [frontend/src/](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/frontend/src) |
 | **Gateway & Routers** | FastAPI &bull; Uvicorn &bull; Pydantic v2 &bull; SQLAlchemy &bull; Alembic | High-throughput REST API, 8-layer security middleware, JWT RBAC, DB connection pool | [backend/main.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/main.py) |
-| **Clinical Reasoning** | LangGraph &bull; Ollama &bull; Google Gemini API &bull; turbovec | Multi-agent RAG coordination, private local LLM fallback, vector search indexing | [backend/agent.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/agent.py) |
+| **Clinical Reasoning** | LangGraph &bull; MAF (Microsoft Agent Framework) &bull; Ollama &bull; Google Gemini API &bull; turbovec | Stateful cyclic graphs, multi-agent sequential workflows, local LLM fallback, vector search indexing | [backend/langgraph_orchestrator.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/langgraph_orchestrator.py) |
 | **XAI & Calibration** | XGBoost &bull; Scikit-Learn &bull; SHAP &bull; Conformal Prediction | 5 diagnostic risk classifiers, SHAP local explanations, prediction uncertainty bounds | [backend/prediction.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/prediction.py) |
 | **Persistence & Cache**| PostgreSQL &bull; SQLite (WAL mode) &bull; Redis Cluster | Multi-tenant EHR schemas, transactional health logs, session/telemetry caching | [backend/database.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/database.py) |
 | **DevOps & MLOps** | Terraform &bull; AWS EKS/RDS &bull; PySpark &bull; Apache Airflow | 3-replica HA K8s scaling, AWS IaC provisioning, telemetry data lakehouse DAGs | [terraform/main.tf](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/terraform/main.tf) |
+
 
 ### 🦀 High-Performance Rust Execution Core
 
@@ -149,8 +150,9 @@ Diabetes, Heart, Liver, Kidney, Lungs — trained on real clinical datasets (BRF
 </td>
 <td width="33%" valign="top">
 
-### 💬 RAG Medical Chat
-Gemini embeddings + vector store + LangGraph agent. Personalized responses grounded in patient history with citation tracking and token budget management.
+### 💬 Stateful AI Agents
+LangGraph cyclic graphs + MAF sequential workflows + local RAG. Medical decision support with local Ollama fallback, FHIR patient context, and audit tracking.
+
 
 </td>
 </tr>
@@ -200,10 +202,11 @@ Before running the application, ensure your environment meets the following spec
 | Feature / Capability | AI Healthcare System | OpenMRS | GNU Health | Typical Legacy EHRs |
 |:---|:---:|:---:|:---:|:---:|
 | **AI Clinical Decision Support** | ✅ Integrated (5 ML Models + SHAP) | ❌ None | ❌ None | ❌ Hardcoded rules only |
-| **Interactive RAG Chatbot** | ✅ LangGraph + Local Ollama Fallback | ❌ None | ❌ None | ❌ None |
+| **Interactive RAG Chatbot** | ✅ LangGraph + MAF + Local Ollama Fallback | ❌ None | ❌ None | ❌ None |
 | **Modern Technology Stack** | ✅ React 19 + Vite 8 + FastAPI | ❌ Legacy Java Server Pages | ❌ GTK / Python 2/3 Desktop | ❌ Legacy ASP.NET / Java Swing |
 | **Offline Privacy Gate** | ✅ Fully Offline Local Inference Option | ❌ N/A | ❌ N/A | ❌ Heavy Cloud Dependency |
-| **FHIR R4 Interoperability** | ✅ Native Serialization & Bundle Export | ✅ Supported | ⚠️ Partial | ⚠️ Custom proprietary APIs |
+| **FHIR R4 Interoperability** | ✅ Native Serialization & HAPI FHIR Imports | ✅ Supported | ⚠️ Partial | ⚠️ Custom proprietary APIs |
+
 | **ABDM Digital Health Stack** | ✅ Active Consent Lifecycle & Sandboxing | ❌ Third-party plugins | ❌ None | ❌ Enterprise integration required |
 | **Modern Telemetry Broadcasting**| ✅ Live WebSockets Broadcasts | ❌ None | ❌ None | ❌ Batch reporting only |
 
