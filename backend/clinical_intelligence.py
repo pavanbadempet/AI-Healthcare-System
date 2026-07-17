@@ -251,10 +251,30 @@ async def generate_patient_insights(
 @router.get("/explainability/{prediction_id}", response_model=schemas.ExplainabilityResponse)
 def get_prediction_explainability(
     prediction_id: int,
+    db: Session = Depends(database.get_db),
     current_user: models.User = Depends(auth.get_current_user),
 ) -> dict[str, Any]:
     """Get SHAP-style feature importances explaining a model prediction."""
-    # SHAP feature importance mock for cardiovascular / general clinical risk
+    log = db.query(models.DbFeatureAttributionLog).filter(models.DbFeatureAttributionLog.id == prediction_id).first()
+    if log:
+        # Construct dynamic explanation text based on the top contributing features
+        sorted_attributions = sorted(log.attributions.items(), key=lambda x: abs(x[1]), reverse=True)
+        top_contrib = sorted_attributions[:2] if len(sorted_attributions) >= 2 else sorted_attributions
+        
+        contrib_clauses = [f"{feat} ({val * 100:.1f}%)" for feat, val in top_contrib]
+        explanation_text = (
+            f"The primary features driving this prediction are {', '.join(contrib_clauses)}. "
+            f"These features represent the highest contributors to the model outcome."
+        )
+        
+        return {
+            "prediction_id": prediction_id,
+            "model_name": log.model_name,
+            "feature_importances": log.attributions,
+            "explanation_text": explanation_text,
+        }
+
+    # Fallback to general cardiovascular risk explanation if specific log not found (e.g. for default demo predictions)
     feature_importances = {
         "systolic_bp": 0.28,
         "heart_rate": 0.22,
@@ -276,3 +296,4 @@ def get_prediction_explainability(
         "feature_importances": feature_importances,
         "explanation_text": explanation_text,
     }
+

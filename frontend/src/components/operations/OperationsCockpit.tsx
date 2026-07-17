@@ -33,7 +33,7 @@ const roleProfiles: Record<string, RoleProfile> = {
     title: "Admin Command Console",
     description: "Hospital-wide throughput, department queues, consent exchange, and revenue status.",
     actions: [
-      { label: "Operations cockpit", href: "/dashboard", detail: "Real-time clinic throughput overview", icon: Radio },
+      { label: "Operations Console", href: "/dashboard", detail: "Real-time clinic throughput overview", icon: Radio },
       { label: "Patient database", href: "/patients", detail: "Longitudinal patient registries", icon: Users },
       { label: "Capacity board", href: "/capacity", detail: "Bed maps & ward metrics", icon: TrendingUp },
     ],
@@ -226,7 +226,7 @@ export default function OperationsCockpit() {
             Live Hospital Workflow Layer
           </div>
           <h2 id="operations-cockpit-title" className="text-lg font-bold text-[var(--text-primary)] uppercase tracking-wide">
-            Operational Dashboard Cockpit
+            Operational Dashboard Console
           </h2>
           <p className="mt-1 max-w-3xl text-xs text-[var(--text-secondary)] font-mono uppercase leading-relaxed">
             Role-scoped pipeline status spanning OPD/IPD, monitoring signals, predictive diagnostics, pharmacy stock, and consent exchange logs.

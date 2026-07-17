@@ -126,3 +126,40 @@ def get_readiness() -> dict[str, Any]:
         "secret_values_exposed": False,
         "privacy_note": "Backup readiness reports operational metadata only and do not expose backup credentials, owner contact values, runbook URLs, patient identifiers, or clinical data.",
     }
+
+
+def run_sqlite_backup(db_path_or_conn, backup_dir: str = "backups") -> str:
+    """Executes a real physical SQLite backup of the database."""
+    import sqlite3
+    import os
+    import logging
+    from datetime import datetime, timezone
+
+    logger = logging.getLogger(__name__)
+    os.makedirs(backup_dir, exist_ok=True)
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    backup_file = os.path.join(backup_dir, f"backup_{timestamp}.db")
+
+    logger.info("Starting live SQLite backup")
+
+    if isinstance(db_path_or_conn, str):
+        src_conn = sqlite3.connect(db_path_or_conn)
+        close_src = True
+    else:
+        src_conn = db_path_or_conn
+        close_src = False
+
+    dest_conn = sqlite3.connect(backup_file)
+
+    try:
+        with dest_conn:
+            src_conn.backup(dest_conn)
+        logger.info("Live SQLite backup completed successfully: %s", backup_file)
+        return os.path.abspath(backup_file)
+    except Exception as e:
+        logger.error("Failed to run SQLite backup: %s", e)
+        raise
+    finally:
+        dest_conn.close()
+        if close_src:
+            src_conn.close()

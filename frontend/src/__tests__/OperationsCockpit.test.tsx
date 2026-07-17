@@ -44,7 +44,7 @@ describe('OperationsCockpit', () => {
     await renderCockpit();
 
     await waitFor(() => {
-      expect(screen.getByText('Operational Dashboard Cockpit')).toBeInTheDocument();
+      expect(screen.getByText('Operational Dashboard Console')).toBeInTheDocument();
     });
     expect(getAdminOperationsCockpit).toHaveBeenCalledTimes(1);
     expect(screen.getByText('Admin Command Console')).toBeInTheDocument();

@@ -124,3 +124,37 @@ def build_patient_deletion_plan(db: Session, patient_id: int) -> dict[str, Any]:
         },
         "privacy_note": "Aggregate deletion plan only; no patient names, contact details, clinical free text, raw values, or vector text are returned.",
     }
+
+
+def execute_patient_deletion(db: Session, patient_id: int) -> dict[str, Any]:
+    """
+    Executes a real database-level patient deletion propagation.
+    Deletes patient-scoped records in reverse dependency order to prevent FK issues.
+    """
+    patient = db.query(models.User).filter(
+        models.User.id == patient_id,
+        models.User.role == "patient",
+    ).first()
+    if patient is None:
+        raise PrivacyOperationNotFound("Patient not found")
+
+    deleted_counts = {}
+
+    # Delete dependent tables first, user record last
+    for table_name, model, column_name in reversed(DATABASE_SURFACES):
+        column = getattr(model, column_name)
+        count = db.query(model).filter(column == patient_id).delete(synchronize_session=False)
+        deleted_counts[table_name] = count
+
+    db.commit()
+
+    return {
+        "source": "backend.privacy_operations",
+        "deleted_at": datetime.now(timezone.utc).isoformat(),
+        "patient_id": patient_id,
+        "destructive_actions_executed": True,
+        "database": {
+            "tables": deleted_counts,
+            "total_records_deleted": sum(deleted_counts.values()),
+        }
+    }

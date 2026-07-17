@@ -319,3 +319,17 @@ def get_discharge_metrics(
         "discharged_admissions": discharged_admissions_query.count(),
         "clinical_safety_note": "Discharge metrics support operations; clinicians remain responsible for discharge decisions.",
     }
+
+
+@router.post("/summaries/generate/{patient_id}", status_code=200)
+async def auto_generate_discharge_summary(
+    patient_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    """Auto-generates a structured clinical discharge summary and care transition plan using SOTA Discharge Coordinator Agent."""
+    _ensure_doctor_can_access_patient(db, current_user, patient_id)
+    from backend.agents.discharge_agent import ClinicalDischargeAgent
+    agent = ClinicalDischargeAgent(db)
+    report = await agent.generate_discharge_plan(patient_id)
+    return report

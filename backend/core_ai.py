@@ -15,8 +15,6 @@ Usage:
     text = await chat([{"role": "user", "content": "What causes diabetes?"}], system="...")
     async for chunk in chat_stream(messages, system="..."):
         print(chunk, end="")
-
-Ported from Universe Dex Singularity AI Engine, adapted for healthcare domain.
 """
 
 import asyncio

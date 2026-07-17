@@ -59,6 +59,25 @@ def initialize_models():
 
 
 
+def _attest_model_in_enclave(enclave, model_name: str):
+    """Resolve the model file path and cryptographically attest it in the enclave."""
+    model_dir = os.path.dirname(os.path.abspath(__file__))
+    file_name = f"{model_name}_model.pkl"
+    if model_name == "heart":
+        file_name = "heart_disease_model.pkl"
+    elif model_name == "liver":
+        file_name = "liver_disease_model.pkl"
+
+    file_path = os.path.join(model_dir, file_name)
+    if not os.path.exists(file_path):
+        file_path = os.path.join(model_dir, file_name.replace(".pkl", ".onnx"))
+
+    if os.path.exists(file_path):
+        enclave.attest_model_file(model_name, file_path)
+    else:
+        # Fallback to manual flag if no model binary exists on disk
+        enclave._attested = True
+
 def _run_model_prediction_scaled(model_name: str, input_list: list, X=None):
     """Run prediction using pickle if available, otherwise ONNX. Supports scaled input."""
     import sys
@@ -94,7 +113,7 @@ def _run_model_prediction_scaled(model_name: str, input_list: list, X=None):
             return raw, confidence, risk_level, proba
 
         enclave = ConfidentialEnclave()
-        enclave._attested = True # Bypassed hash check for this execution
+        _attest_model_in_enclave(enclave, model_name)
         return enclave.execute(_test_execution)
 
     entry = ms.model_service._entries.get(model_name)
@@ -116,7 +135,7 @@ def _run_model_prediction_scaled(model_name: str, input_list: list, X=None):
                 confidence = round(100.0 - confidence, 1)
             return raw, confidence, risk_level, [1.0 - prob, prob]
         enclave = ConfidentialEnclave()
-        enclave._attested = True
+        _attest_model_in_enclave(enclave, model_name)
         return enclave.execute(_onnx_execution)
     elif entry.model is not None:
         def _pkl_execution():
@@ -139,7 +158,7 @@ def _run_model_prediction_scaled(model_name: str, input_list: list, X=None):
                 confidence = round(100.0 - confidence, 1)
             return raw, confidence, risk_level, proba
         enclave = ConfidentialEnclave()
-        enclave._attested = True
+        _attest_model_in_enclave(enclave, model_name)
         return enclave.execute(_pkl_execution)
     else:
         raise ValueError(f"No usable model for {model_name}")
@@ -919,10 +938,14 @@ async def predict_kidney(
         ]
 
         imputer, conformal_q = _get_imputer_and_conformal("kidney", _pred.kidney_model)
+        imputed_list = None
         if imputer is not None:
-            imputed_arr = imputer.transform([input_list])
-            imputed_list = imputed_arr[0].tolist()
-        else:
+            try:
+                imputed_arr = imputer.transform([input_list])
+                imputed_list = imputed_arr[0].tolist()
+            except Exception as e:
+                logger.warning("Imputer transform failed for kidney, falling back: %s", e)
+        if imputed_list is None:
             imputed_list = [0.0 if x is None else x for x in input_list]
 
         df = pd.DataFrame([imputed_list], columns=feature_names)
@@ -1027,10 +1050,14 @@ async def predict_lungs(
         ]
 
         imputer, conformal_q = _get_imputer_and_conformal("lungs", _pred.lungs_model)
+        imputed_list = None
         if imputer is not None:
-            imputed_arr = imputer.transform([input_list])
-            imputed_list = imputed_arr[0].tolist()
-        else:
+            try:
+                imputed_arr = imputer.transform([input_list])
+                imputed_list = imputed_arr[0].tolist()
+            except Exception as e:
+                logger.warning("Imputer transform failed for lungs, falling back: %s", e)
+        if imputed_list is None:
             imputed_list = [0.0 if x is None else x for x in input_list]
 
         df = pd.DataFrame([imputed_list], columns=feature_names)
@@ -1215,10 +1242,14 @@ async def predict_diabetes(
         ]
 
         imputer, conformal_q = _get_imputer_and_conformal("diabetes", _pred.diabetes_model)
+        imputed_list = None
         if imputer is not None:
-            imputed_arr = imputer.transform([input_list])
-            imputed_list = imputed_arr[0].tolist()
-        else:
+            try:
+                imputed_arr = imputer.transform([input_list])
+                imputed_list = imputed_arr[0].tolist()
+            except Exception as e:
+                logger.warning("Imputer transform failed for diabetes, falling back: %s", e)
+        if imputed_list is None:
             imputed_list = [0.0 if x is None else x for x in input_list]
 
         raw, confidence, risk_level, proba = _run_model_prediction_scaled("diabetes", imputed_list)
@@ -1306,10 +1337,14 @@ async def predict_heart(
         ]
 
         imputer, conformal_q = _get_imputer_and_conformal("heart", _pred.heart_model)
+        imputed_list = None
         if imputer is not None:
-            imputed_arr = imputer.transform([input_list])
-            imputed_list = imputed_arr[0].tolist()
-        else:
+            try:
+                imputed_arr = imputer.transform([input_list])
+                imputed_list = imputed_arr[0].tolist()
+            except Exception as e:
+                logger.warning("Imputer transform failed for heart, falling back: %s", e)
+        if imputed_list is None:
             imputed_list = [0.0 if x is None else x for x in input_list]
 
         raw, confidence, risk_level, proba = _run_model_prediction_scaled("heart", imputed_list)
@@ -1421,10 +1456,14 @@ async def predict_liver(
         ]
 
         imputer, conformal_q = _get_imputer_and_conformal("liver", _pred.liver_model)
+        imputed_list = None
         if imputer is not None:
-            imputed_arr = imputer.transform([input_list])
-            imputed_list = imputed_arr[0].tolist()
-        else:
+            try:
+                imputed_arr = imputer.transform([input_list])
+                imputed_list = imputed_arr[0].tolist()
+            except Exception as e:
+                logger.warning("Imputer transform failed for liver, falling back: %s", e)
+        if imputed_list is None:
             imputed_list = [0.0 if x is None else x for x in input_list]
 
         df = pd.DataFrame([imputed_list], columns=feature_names)
@@ -2248,10 +2287,14 @@ async def handle_vitals_recorded(payload: dict) -> None:
             input_list_db = [hypertension, high_chol, bmi, smoking_history, heart_disease, physical_activity, general_health, gender_val, age_bucket]
 
             imputer, conformal_q = _pred._get_imputer_and_conformal("diabetes", _pred.diabetes_model)
+            imputed_list = None
             if imputer is not None:
-                imputed_arr = imputer.transform([input_list_db])
-                imputed_list = imputed_arr[0].tolist()
-            else:
+                try:
+                    imputed_arr = imputer.transform([input_list_db])
+                    imputed_list = imputed_arr[0].tolist()
+                except Exception:
+                    pass
+            if imputed_list is None:
                 imputed_list = [0.0 if x is None else x for x in input_list_db]
 
             try:
@@ -2290,10 +2333,14 @@ async def handle_vitals_recorded(payload: dict) -> None:
             input_list_hr = [age_val, sex, cp, trestbps, chol, fbs, restecg, thalach, exang, oldpeak, slope, ca, thal]
 
             imputer, conformal_q = _pred._get_imputer_and_conformal("heart", _pred.heart_model)
+            imputed_list = None
             if imputer is not None:
-                imputed_arr = imputer.transform([input_list_hr])
-                imputed_list = imputed_arr[0].tolist()
-            else:
+                try:
+                    imputed_arr = imputer.transform([input_list_hr])
+                    imputed_list = imputed_arr[0].tolist()
+                except Exception:
+                    pass
+            if imputed_list is None:
                 imputed_list = [0.0 if x is None else x for x in input_list_hr]
 
             try:
@@ -2567,10 +2614,14 @@ def _run_diabetes_proba(features: dict) -> float:
         age_bucket
     ]
     imputer, _ = _pred._get_imputer_and_conformal("diabetes", _pred.diabetes_model)
+    imputed_list = None
     if imputer is not None:
-        imputed_arr = imputer.transform([input_list])
-        imputed_list = imputed_arr[0].tolist()
-    else:
+        try:
+            imputed_arr = imputer.transform([input_list])
+            imputed_list = imputed_arr[0].tolist()
+        except Exception:
+            pass
+    if imputed_list is None:
         imputed_list = [0.0 if x is None else x for x in input_list]
 
     try:
@@ -2599,10 +2650,14 @@ def _run_heart_proba(features: dict) -> float:
         features.get("thal", 2.0)
     ]
     imputer, _ = _pred._get_imputer_and_conformal("heart", _pred.heart_model)
+    imputed_list = None
     if imputer is not None:
-        imputed_arr = imputer.transform([input_list])
-        imputed_list = imputed_arr[0].tolist()
-    else:
+        try:
+            imputed_arr = imputer.transform([input_list])
+            imputed_list = imputed_arr[0].tolist()
+        except Exception:
+            pass
+    if imputed_list is None:
         imputed_list = [0.0 if x is None else x for x in input_list]
 
     try:

@@ -35,7 +35,7 @@ export default function InfrastructurePage() {
     
     // Connect to backend telemetry stream
     const token = useAuthStore.getState().token;
-    const wsUrl = `ws://localhost:8000/api/v1/telemetry/stream?token=${token}`;
+    const wsUrl = `ws://127.0.0.1:8000/api/v1/telemetry/stream?token=${token}`;
     const ws = new WebSocket(wsUrl);
     
     ws.onmessage = (event) => {

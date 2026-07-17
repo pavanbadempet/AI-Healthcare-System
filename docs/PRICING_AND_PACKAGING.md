@@ -1,22 +1,22 @@
-# Pricing And Packaging
+# Pricing And Packaging (Perpetual Lifetime License Model)
 
 These are starting points for India-first clinic sales. Adjust after real pilots, not before.
 
 ## Pricing Principles
 
-- Charge for workflow value, not AI novelty.
-- Keep the first plan affordable for solo clinics.
-- Avoid unlimited free usage.
+- **No Recurring Subscriptions**: We sell a one-time purchase, lifetime license key.
+- Sell once, host forever locally (eliminating recurring SaaS cost or cloud lock-in).
 - Charge separately for custom deployment, integrations, migration, and training.
+- Charge an optional Annual Software Maintenance & Support fee (e.g. 20% of one-time cost).
 - Do not include regulated claims in plan names or marketing.
 
-## India Launch Plans
+## India Launch Plans (One-Time Purchase)
 
-| Plan | Target Buyer | Monthly Price Target | Users | Best For |
+| Plan | Target Buyer | One-Time Purchase Target | Users | Best For |
 | --- | --- | --- | --- | --- |
-| Clinic Starter | solo clinic | INR 2,999-4,999 | 1 doctor + 2 staff | appointments, records, reports |
-| Clinic Team | small clinic | INR 7,999-14,999 | up to 5 doctors + 10 staff | multi-doctor workflows |
-| Clinic Group | clinic group | custom | custom | onboarding, retention, deployment support |
+| Clinic Starter | solo clinic | INR 49,999 (Lifetime) | 1 doctor + 2 staff | appointments, records, reports |
+| Clinic Team | small clinic | INR 149,999 (Lifetime) | up to 5 doctors + 10 staff | multi-doctor workflows |
+| Clinic Group | clinic group | custom (Enterprise) | custom | onboarding, retention, deployment support |
 
 ## Feature Packaging
 

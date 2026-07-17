@@ -637,6 +637,168 @@ if _pkg_prompts is None:
                 description="Clinical trials screening and matching template",
             )
 
+            self.register(
+                "clinical_billing_audit",
+                version="1.0",
+                template=(
+                    "You are an expert clinical medical billing auditor and claims denial specialist.\n\n"
+                    "Consultation SOAP Note:\n{soap_note}\n\n"
+                    "Analyze the SOAP note and perform the following tasks:\n"
+                    "1. Extract/Recommend accurate ICD-10 diagnostic codes and CPT procedure codes based on documentation.\n"
+                    "2. Cross-reference diagnostic codes with CPT codes to ensure medical necessity rules are satisfied.\n"
+                    "3. Evaluate the risk of claim denial (LOW, MEDIUM, HIGH) by identifying gaps in documentation or missing details.\n"
+                    "4. Suggest specific corrective actions to reduce denial probability.\n\n"
+                    "You MUST output your response in this exact JSON format:\n"
+                    "{{\n"
+                    '  "icd10_codes": ["ICD-10 Code 1", "ICD-10 Code 2"],\n'
+                    '  "cpt_codes": ["CPT Code 1", "CPT Code 2"],\n'
+                    '  "denial_risk": "LOW | MEDIUM | HIGH",\n'
+                    '  "warnings": ["Warning of mismatch or documentation gap 1"],\n'
+                    '  "recommendations": ["Actionable coding or note correction 1"]\n'
+                    "}}\n\n"
+                    "Ensure you output ONLY a valid JSON object. Do not include markdown formatting like ```json."
+                ),
+                description="Medical billing and claims denial risk audit template",
+            )
+
+            self.register(
+                "clinical_discharge_summary",
+                version="1.0",
+                template=(
+                    "You are a chief clinical discharge coordinator.\n\n"
+                    "Patient Demographic & Medical Profile:\n{patient_context}\n\n"
+                    "Recent Vitals & Telemetry History:\n{vitals_history}\n\n"
+                    "Disease Risk Predictions:\n{predictions_summary}\n\n"
+                    "Synthesize the clinical history and construct a professional transition-of-care discharge summary:\n"
+                    "1. Summarize clinical course and current status.\n"
+                    "2. Formulate a transition-of-care activity and safety plan.\n"
+                    "3. Write friendly, easy-to-understand instructions for the patient.\n"
+                    "4. Recommend follow-up timelines and specialty visits.\n\n"
+                    "You MUST output your response in this exact JSON format:\n"
+                    "{{\n"
+                    '  "discharge_summary": "Professional discharge summary narrative.",\n'
+                    '  "transition_plan": ["Activity level limit 1", "Dietary instruction 2"],\n'
+                    '  "patient_instructions": "Friendly instructions translating the care plan.",\n'
+                    '  "follow_up_appointments": "Timelines for primary doctor or specialist review."\n'
+                    "}}\n\n"
+                    "Ensure you output ONLY a valid JSON object. Do not include markdown formatting like ```json."
+                ),
+                description="Patient discharge summary and transition-of-care plan template",
+            )
+
+            self.register(
+                "clinical_nursing_handoff",
+                version="1.0",
+                template=(
+                    "You are a charge nurse leading ward shift-change handoffs.\n\n"
+                    "Patient Vitals & Demographics:\n{patient_context}\n\n"
+                    "Vital Trends (Last 24 Hours):\n{vital_trends}\n\n"
+                    "Active Telemetry Alerts:\n{active_alerts}\n\n"
+                    "Evaluate the patient telemetry profile and generate a structured nurse handover card:\n"
+                    "1. Summarize patient current status and stability.\n"
+                    "2. Identify priority monitoring tasks and nursing duties for the incoming shift.\n"
+                    "3. Determine the required vital sign monitoring frequency (e.g. Q2h, Q4h).\n"
+                    "4. Highlight critical safety concerns (fall risks, allergy alerts, cardiac instability).\n\n"
+                    "You MUST output your response in this exact JSON format:\n"
+                    "{{\n"
+                    '  "handoff_summary": "Charge nurse clinical summary of the patient status.",\n'
+                    '  "priority_tasks": ["Priority nursing task 1", "Medication administration 2"],\n'
+                    '  "monitoring_frequency": "e.g. Every 4 hours (Q4h)",\n'
+                    '  "safety_concerns": ["Allergy alert 1", "Fall risk warning 2"]\n'
+                    "}}\n\n"
+                    "Ensure you output ONLY a valid JSON object. Do not include markdown formatting like ```json."
+                ),
+                description="Nurse shift handoff and care coordination template",
+            )
+
+            self.register(
+                "security_patch_analysis",
+                version="1.0",
+                template=(
+                    "You are a SOTA cyber security patching and configuration auditor for a healthcare system.\n\n"
+                    "System Dependencies:\n{dependencies}\n\n"
+                    "Environment Configuration:\n{env_config}\n\n"
+                    "Analyze the system security posture and generate a structured Security Patch & Audit Report:\n"
+                    "1. Evaluate dependency security (pinning status, known vulnerabilities).\n"
+                    "2. Verify environment configuration safety (secret key, debug mode, CORS origins).\n"
+                    "3. Suggest specific virtual hotpatch rules or package upgrades.\n\n"
+                    "You MUST output your response in this exact JSON format:\n"
+                    "{{\n"
+                    '  "vulnerabilities": ["Vulnerability 1 details", "Vulnerability 2 details"],\n'
+                    '  "posture_score": 85,\n'
+                    '  "recommended_patches": ["Package upgrade 1 instruction", "CORS policy restriction 2"],\n'
+                    '  "hotpatches_applied": ["Rule 1: sanitise input for command injection"]\n'
+                    "}}\n\n"
+                    "Ensure you output ONLY a valid JSON object. Do not include markdown formatting like ```json."
+                ),
+                description="Security configuration audit and automated patching template",
+            )
+
+            self.register(
+                "auto_fixing_analysis",
+                version="1.0",
+                template=(
+                    "You are a SOTA system self-healing and recovery coordinator.\n\n"
+                    "Active Error Logs & Diagnostics:\n{error_logs}\n\n"
+                    "System Health Signals:\n{health_signals}\n\n"
+                    "Analyze the system faults and generate a structured Self-Healing & Recovery Report:\n"
+                    "1. Identify the root cause of the active errors.\n"
+                    "2. Propose precise self-healing actions (e.g. rebuild indexes, clear cache, retry connection).\n"
+                    "3. List specific diagnostic checks to run to verify restoration.\n\n"
+                    "You MUST output your response in this exact JSON format:\n"
+                    "{{\n"
+                    '  "faults_detected": ["Fault 1 details", "Fault 2 details"],\n'
+                    '  "healing_actions": ["Clear semantic cache", "Vacuum database indexes"],\n'
+                    '  "status": "restored"\n'
+                    "}}\n\n"
+                    "Ensure you output ONLY a valid JSON object. Do not include markdown formatting like ```json."
+                ),
+                description="System self-healing fault analysis and recovery template",
+            )
+
+            self.register(
+                "auto_calling_analysis",
+                version="1.0",
+                template=(
+                    "You are a SOTA clinical telephony and alert broadcast routing coordinator.\n\n"
+                    "Active Telemetry Alarm / Alert Details:\n{alert_details}\n\n"
+                    "On-Call Medical Staff Directory:\n{staff_directory}\n\n"
+                    "Analyze the emergency signal and determine the optimal calling/notification routing:\n"
+                    "1. Evaluate alarm urgency level (Critical, Warning, Info).\n"
+                    "2. Select the highest priority medical contact from on-call list.\n"
+                    "3. Generate a synthesized voice call message script for phone delivery.\n\n"
+                    "You MUST output your response in this exact JSON format:\n"
+                    "{{\n"
+                    '  "urgency": "CRITICAL",\n'
+                    '  "assigned_contact": "Dr. Sarah Jenkins (Cardiology attending, +1-555-0199)",\n'
+                    '  "call_script": "This is an automated alert from ClinOS. Patient Marcus Thorne in Bed 14C is triggering a Critical Heart Rate Alarm at 118 bpm. Please attend immediately.",\n'
+                    '  "broadcast_success": true\n'
+                    "}}\n\n"
+                    "Ensure you output ONLY a valid JSON object. Do not include markdown formatting like ```json."
+                ),
+                description="Clinical emergency calling and notification routing template",
+            )
+
+            self.register(
+                "wellness_advisory_analysis",
+                version="1.0",
+                template=(
+                    "You are a SOTA patient wellness, lifestyle, and preventive care advisor.\n\n"
+                    "Patient Lifestyle & Minor Symptoms:\n{patient_data}\n\n"
+                    "Generate a structured SOTA Preventive Wellness Plan:\n"
+                    "1. Evaluate minor symptom indicators and suggest nutritional/exercise lifestyle modifications.\n"
+                    "2. You MUST include a clear medical disclaimer explaining that this is not a diagnostic tool and the user should consult a clinician for diagnosis, treatment, or emergencies.\n\n"
+                    "You MUST output your response in this exact JSON format:\n"
+                    "{{\n"
+                    '  "wellness_plan": ["Recommendation 1", "Recommendation 2"],\n'
+                    '  "disclaimer": "Medical Disclaimer: This advisory is for informational purposes only. Consult a qualified clinician for emergencies or diagnoses.",\n'
+                    '  "symptom_urgency": "low"\n'
+                    "}}\n\n"
+                    "Ensure you output ONLY a valid JSON object. Do not include markdown formatting like ```json."
+                ),
+                description="Patient wellness companion and preventive care advisory template",
+            )
+
     _registry: Optional[PromptRegistry] = None
 
     def get_prompt_registry() -> PromptRegistry:

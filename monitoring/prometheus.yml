@@ -51,3 +51,10 @@ scrape_configs:
     static_configs:
       - targets: ['node-exporter:9100']
     scrape_interval: 30s
+
+  - job_name: 'rust-gateway'
+    static_configs:
+      - targets: ['gateway:7860', 'host.docker.internal:7860']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+

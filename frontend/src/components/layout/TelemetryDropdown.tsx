@@ -10,15 +10,43 @@ import Tooltip from "./Tooltip";
 export default function TelemetryDropdown() {
   const [telemetryOpen, setTelemetryOpen] = useState(false);
   const telemetryRef = useRef<HTMLDivElement>(null);
-  const [telemetryStats, setTelemetryStats] = useState({ cpu: 12, latency: 22 });
+  
+  const [gatewayMetrics, setGatewayMetrics] = useState({
+    cpu_usage_percent: 8.5,
+    ram_usage_percent: 42.1,
+    total_memory_mb: 8192,
+    used_memory_mb: 3450,
+    active_db_connections: 2,
+    ipc_mode: "TCP Loopback (Tuned)",
+  });
+
+  const [cpuHistory, setCpuHistory] = useState<number[]>(new Array(12).fill(8));
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setTelemetryStats({
-        cpu: Math.floor(Math.random() * 8) + 8,
-        latency: Math.floor(Math.random() * 6) + 19,
-      });
-    }, 4000);
+    async function fetchGatewayMetrics() {
+      try {
+        let apiBase = import.meta.env.NEXT_PUBLIC_API_URL || import.meta.env.VITE_PUBLIC_API_URL;
+        if (!apiBase && typeof window !== "undefined") {
+          apiBase = window.location.origin;
+        }
+        if (!apiBase) {
+          apiBase = "http://127.0.0.1:7860";
+        }
+        const gatewayUrl = apiBase.replace(":8000", ":7860") + "/v1/telemetry/health";
+        
+        const response = await fetch(gatewayUrl);
+        if (response.ok) {
+          const data = await response.json();
+          setGatewayMetrics(data);
+          setCpuHistory(prev => [...prev.slice(1), data.cpu_usage_percent]);
+        }
+      } catch (err) {
+        console.warn("Failed to fetch real-time gateway metrics:", err);
+      }
+    }
+
+    fetchGatewayMetrics();
+    const interval = setInterval(fetchGatewayMetrics, 3000);
     return () => clearInterval(interval);
   }, []);
 
@@ -31,6 +59,18 @@ export default function TelemetryDropdown() {
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
   }, [telemetryOpen]);
+
+  // Construct SVG points for the live sparkline (224px width, 24px height)
+  const sparkWidth = 224;
+  const sparkHeight = 24;
+  const points = cpuHistory.map((val, idx) => {
+    const x = (idx / (cpuHistory.length - 1)) * sparkWidth;
+    // Map val (0-100) to height (sparkHeight to 0 with padding)
+    const y = sparkHeight - (val / 100) * (sparkHeight - 4) - 2;
+    return `${x},${y}`;
+  });
+  const pathD = points.length > 0 ? `M ${points.join(" L ")}` : "";
+  const areaD = points.length > 0 ? `${pathD} L ${sparkWidth},${sparkHeight} L 0,${sparkHeight} Z` : "";
 
   return (
     <div ref={telemetryRef} className="relative">
@@ -66,36 +106,74 @@ export default function TelemetryDropdown() {
                 <div>
                   <div className="flex justify-between items-center text-[10px] font-bold font-mono uppercase text-[var(--text-secondary)] mb-1">
                     <span>CPU Core Load</span>
-                    <span className="text-[var(--text-primary)]">{telemetryStats.cpu}%</span>
+                    <span className="text-[var(--text-primary)]">{gatewayMetrics.cpu_usage_percent.toFixed(1)}%</span>
                   </div>
                   <div className="h-1.5 w-full bg-white/[0.04] rounded-full overflow-hidden border border-white/[0.02]">
                     <motion.div
                       className="h-full bg-[var(--success)] rounded-full"
-                      animate={{ width: `${telemetryStats.cpu}%` }}
+                      animate={{ width: `${gatewayMetrics.cpu_usage_percent}%` }}
                       transition={{ duration: 0.5 }}
                     />
+                  </div>
+                  
+                  {/* Live SVG Sparkline Chart */}
+                  <div className="mt-2 h-7 w-full bg-white/[0.01] border border-white/[0.03] rounded overflow-hidden relative">
+                    <svg className="w-full h-full" viewBox={`0 0 ${sparkWidth} ${sparkHeight}`} preserveAspectRatio="none">
+                      <defs>
+                        <linearGradient id="cpuSparkGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="var(--success)" stopOpacity="0.2" />
+                          <stop offset="100%" stopColor="var(--success)" stopOpacity="0" />
+                        </linearGradient>
+                      </defs>
+                      {points.length > 0 && (
+                        <>
+                          <path
+                            d={areaD}
+                            fill="url(#cpuSparkGrad)"
+                          />
+                          <path
+                            d={pathD}
+                            fill="none"
+                            stroke="var(--success)"
+                            strokeWidth="1.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </>
+                      )}
+                    </svg>
+                  </div>
+                </div>
+
+                <div>
+                  <div className="flex justify-between items-center text-[10px] font-bold font-mono uppercase text-[var(--text-secondary)] mb-1">
+                    <span>RAM Utilized</span>
+                    <span className="text-[var(--text-primary)]">{gatewayMetrics.ram_usage_percent.toFixed(1)}%</span>
+                  </div>
+                  <div className="h-1.5 w-full bg-white/[0.04] rounded-full overflow-hidden border border-white/[0.02]">
+                    <motion.div
+                      className="h-full bg-indigo-500 rounded-full"
+                      animate={{ width: `${gatewayMetrics.ram_usage_percent}%` }}
+                      transition={{ duration: 0.5 }}
+                    />
+                  </div>
+                  <div className="text-[8px] font-mono text-[var(--text-dim)] mt-1 text-right">
+                    {gatewayMetrics.used_memory_mb} MB / {gatewayMetrics.total_memory_mb} MB
                   </div>
                 </div>
 
                 <div className="flex justify-between items-center text-[10px] font-bold font-mono uppercase border-t border-white/[0.03] pt-2">
                   <span className="text-[var(--text-secondary)] flex items-center gap-1">
-                    <Network size={10} className="text-sky-400" /> API Latency
+                    <Database size={10} className="text-amber-400" /> DB Pool Conns
                   </span>
-                  <span className="text-sky-400 font-bold">{telemetryStats.latency} ms</span>
+                  <span className="text-amber-400 font-bold">{gatewayMetrics.active_db_connections} active</span>
                 </div>
 
                 <div className="flex justify-between items-center text-[10px] font-bold font-mono uppercase border-t border-white/[0.03] pt-2">
                   <span className="text-[var(--text-secondary)] flex items-center gap-1">
-                    <Database size={10} className="text-amber-400" /> FHIR Broker
+                    <Server size={10} className="text-purple-400" /> Gateway Transport
                   </span>
-                  <span className="text-[var(--success)] font-bold">Synced</span>
-                </div>
-
-                <div className="flex justify-between items-center text-[10px] font-bold font-mono uppercase border-t border-white/[0.03] pt-2">
-                  <span className="text-[var(--text-secondary)] flex items-center gap-1">
-                    <Server size={10} className="text-purple-400" /> SQLite Store
-                  </span>
-                  <span className="text-[var(--text-primary)] font-bold">0.5 MB</span>
+                  <span className="text-purple-400 font-bold">{gatewayMetrics.ipc_mode}</span>
                 </div>
               </div>
             </div>

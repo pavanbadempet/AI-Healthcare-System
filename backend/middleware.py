@@ -157,11 +157,19 @@ class ExceptionMiddleware(BaseHTTPMiddleware):
 
 class RequestTracingMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        request_id = _safe_request_id(request.headers.get(REQUEST_ID_HEADER))
+        header_val = request.headers.get(REQUEST_ID_HEADER) or request.headers.get("X-Correlation-ID") or request.headers.get("x-correlation-id")
+        request_id = _safe_request_id(header_val)
         request.state.request_id = request_id
-        response = await call_next(request)
-        response.headers[REQUEST_ID_HEADER] = request_id
-        return response
+        
+        from backend.logging_config import correlation_id_var
+        token = correlation_id_var.set(request_id)
+        try:
+            response = await call_next(request)
+            response.headers[REQUEST_ID_HEADER] = request_id
+            response.headers["X-Correlation-ID"] = request_id
+            return response
+        finally:
+            correlation_id_var.reset(token)
 
 
 class LoggingMiddleware(BaseHTTPMiddleware):
@@ -214,3 +222,34 @@ class LicenseValidationMiddleware(BaseHTTPMiddleware):
             )
 
         return await call_next(request)
+
+
+class PrometheusMetricsMiddleware(BaseHTTPMiddleware):
+    """Middleware to collect Prometheus metrics for request count and latency."""
+    async def dispatch(self, request: Request, call_next):
+        # Exclude /metrics path to prevent scrape loop pollution
+        if request.url.path == "/metrics":
+            return await call_next(request)
+            
+        start_time = time.time()
+        
+        endpoint = request.url.path
+        if "route" in request.scope and request.scope["route"] is not None:
+            endpoint = request.scope["route"].path
+            
+        try:
+            response = await call_next(request)
+            status_code = str(response.status_code)
+            return response
+        except Exception:
+            status_code = "500"
+            raise
+        finally:
+            duration = time.time() - start_time
+            try:
+                from backend.enterprise_features import REQUEST_COUNT, REQUEST_DURATION
+                REQUEST_COUNT.labels(method=request.method, endpoint=endpoint, status=status_code).inc()
+                REQUEST_DURATION.labels(method=request.method, endpoint=endpoint).observe(duration)
+            except Exception:
+                # Shield middleware execution if Prometheus is disabled or unconfigured
+                pass

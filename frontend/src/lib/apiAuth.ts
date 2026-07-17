@@ -69,3 +69,22 @@ export async function fetchProfile(): Promise<UserProfile> {
 export async function updateProfile(data: Partial<UserProfile>): Promise<UserProfile> {
   return apiFetch('/profile', { method: 'PUT', body: JSON.stringify(data) });
 }
+
+export interface ConsentStatusResponse {
+  accepted: boolean;
+  eula_version: string;
+  current_version: string;
+  accepted_at?: string;
+  requires_reaccept: boolean;
+}
+
+export async function checkConsentStatus(): Promise<ConsentStatusResponse> {
+  return apiFetch('/consent/status');
+}
+
+export async function acceptEula(version: string = '1.0'): Promise<{ status: string; eula_version: string; accepted_at: string }> {
+  return apiFetch('/consent/accept', {
+    method: 'POST',
+    body: JSON.stringify({ eula_version: version })
+  });
+}

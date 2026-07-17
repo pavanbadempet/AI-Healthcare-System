@@ -13,6 +13,18 @@ import pytest
 
 from backend import core_ai
 
+@pytest.fixture(autouse=True)
+def mock_semantic_cache_lookup():
+    """Disable semantic cache hits during core_ai tests by forcing lookup to return None"""
+    with patch.object(core_ai.semantic_cache, "lookup", return_value=None):
+        yield
+
+@pytest.fixture(autouse=True)
+def clear_semantic_cache():
+    """Clear semantic cache before each test to prevent test cross-contamination"""
+    if hasattr(core_ai, "semantic_cache") and core_ai.semantic_cache is not None:
+        core_ai.semantic_cache.clear()
+
 # ── helpers ──────────────────────────────────────────────────────────────────
 
 
@@ -408,6 +420,7 @@ async def test_chat_gemini_returns_empty_when_no_model():
 async def test_generate_uses_ollama_when_available():
     with (
         patch("backend.core_ai._generate_cloud", AsyncMock(return_value=None)),
+        patch("backend.core_ai.has_gemini_api_key", return_value=False),
         patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=["llama3.2"])),
         patch("backend.core_ai._generate_ollama", AsyncMock(return_value="Ollama says: glucose is sugar")),
     ):
@@ -452,6 +465,7 @@ async def test_generate_returns_mock_fallback_when_all_unavailable():
 async def test_chat_uses_ollama_when_available():
     with (
         patch("backend.core_ai._chat_cloud", AsyncMock(return_value=None)),
+        patch("backend.core_ai.has_gemini_api_key", return_value=False),
         patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=["llama3.2"])),
         patch("backend.core_ai._chat_ollama", AsyncMock(return_value="Ollama chat reply")),
     ):
@@ -506,6 +520,7 @@ async def test_chat_stream_yields_ollama_chunks():
 
     with (
         patch("backend.core_ai._stream_cloud", fake_empty_stream),
+        patch("backend.core_ai.has_gemini_api_key", return_value=False),
         patch("backend.core_ai.get_ollama_models", AsyncMock(return_value=["llama3.2"])),
         patch("backend.core_ai._stream_ollama", fake_stream),
     ):

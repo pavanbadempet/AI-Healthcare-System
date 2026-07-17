@@ -15,9 +15,12 @@ from . import (
     audit,
     auth,
     backup_readiness,
+    breach_notification,
+    compliance_check,
     data_quality,
     database,
     incident_response,
+    licensing,
     model_cards,
     models,
     operational_health,
@@ -57,6 +60,119 @@ def get_current_admin(current_user: models.User = Depends(auth.get_current_user)
             detail="Admin privileges required"
         )
     return current_user
+
+
+@router.post("/maintenance", status_code=status.HTTP_200_OK)
+def trigger_system_maintenance(
+    current_admin: models.User = Depends(get_current_admin),
+    db: Session = Depends(database.get_db),
+):
+    """Triggers system database optimization and HIPAA data retention compliance pruning."""
+    from backend.maintenance import run_system_maintenance
+    report = run_system_maintenance(db, executor_id=current_admin.id)
+    return report
+
+
+@router.post("/agents/billing-audit", status_code=status.HTTP_200_OK)
+async def trigger_billing_agent_audit(
+    soap_note: str = Query(..., description="The clinical SOAP note to audit"),
+    current_admin: models.User = Depends(get_current_admin),
+    db: Session = Depends(database.get_db),
+):
+    """Audits a SOAP note using SOTA Clinical Billing Agent to flag claims denial risk."""
+    from backend.agents.billing_agent import ClinicalBillingAgent
+    agent = ClinicalBillingAgent(db)
+    report = await agent.audit_billing_claim(soap_note)
+    return report
+
+
+@router.post("/agents/discharge-summary", status_code=status.HTTP_200_OK)
+async def trigger_discharge_agent_summary(
+    patient_id: int = Query(..., description="The patient ID to generate discharge summary for"),
+    current_admin: models.User = Depends(get_current_admin),
+    db: Session = Depends(database.get_db),
+):
+    """Generates a transition-of-care summary and discharge instructions using SOTA Discharge Coordinator Agent."""
+    from backend.agents.discharge_agent import ClinicalDischargeAgent
+    agent = ClinicalDischargeAgent(db)
+    report = await agent.generate_discharge_plan(patient_id)
+    return report
+
+
+@router.post("/agents/nursing-handoff", status_code=status.HTTP_200_OK)
+async def trigger_nursing_agent_handoff(
+    patient_id: int = Query(..., description="The patient ID to generate shift handoff card for"),
+    current_admin: models.User = Depends(get_current_admin),
+    db: Session = Depends(database.get_db),
+):
+    """Compiles a shift handoff card and task priority list using SOTA Clinical Nursing Agent."""
+    from backend.agents.nursing_agent import ClinicalNursingAgent
+    agent = ClinicalNursingAgent(db)
+    report = await agent.generate_handoff_card(patient_id)
+    return report
+
+
+@router.post("/agents/security-patch", status_code=status.HTTP_200_OK)
+async def trigger_security_patch_agent(
+    dependencies: str = Query("FastAPI, jose, passlib, sqlalchemy", description="The list of system dependencies"),
+    env_config: str = Query("SECRET_KEY: Set, DEBUG: False, CORS_ORIGIN: *", description="The active environment configuration"),
+    current_admin: models.User = Depends(get_current_admin),
+    db: Session = Depends(database.get_db),
+    _license: None = Depends(licensing.enforce_license_tier("enterprise")),
+):
+    """Runs a security posture scan and generates recommended and virtual hotpatches using SOTA Patch Agent."""
+    from backend.agents.patch_agent import ClinicalPatchAgent
+    agent = ClinicalPatchAgent(db)
+    report = await agent.audit_and_apply_patches(dependencies, env_config)
+    return report
+
+
+@router.post("/agents/auto-fix", status_code=status.HTTP_200_OK)
+async def trigger_auto_fixing_agent(
+    error_logs: str = Query("OperationalError: database is locked", description="The active exception/error log signature"),
+    health_signals: str = Query("CPU: 92%, Memory: 85%", description="The current host health signals"),
+    current_admin: models.User = Depends(get_current_admin),
+    db: Session = Depends(database.get_db),
+    _license: None = Depends(licensing.enforce_license_tier("enterprise")),
+):
+    """Executes a diagnostic self-healing session and recovery routine using SOTA Fixing Agent."""
+    from backend.agents.fixing_agent import ClinicalFixingAgent
+    agent = ClinicalFixingAgent(db)
+    report = await agent.diagnose_and_heal(error_logs, health_signals)
+    return report
+
+
+@router.post("/agents/auto-call", status_code=status.HTTP_200_OK)
+async def trigger_auto_calling_agent(
+    alert_details: str = Query("Alarm: SYS_ALARM_TACHY", description="The active vital alarm details"),
+    staff_directory: str = Query("Dr. Sarah Jenkins (+1-555-0199)", description="The on-call medical directory"),
+    current_admin: models.User = Depends(get_current_admin),
+    db: Session = Depends(database.get_db),
+    _license: None = Depends(licensing.enforce_license_tier("enterprise")),
+):
+    """Triggers an emergency calling and notification broadcast routing session using SOTA Calling Agent."""
+    from backend.agents.calling_agent import ClinicalCallingAgent
+    agent = ClinicalCallingAgent(db)
+    report = await agent.route_emergency_call(alert_details, staff_directory)
+    return report
+
+
+@router.post("/agents/wellness-advisory", status_code=status.HTTP_200_OK)
+async def trigger_wellness_agent(
+    patient_data: str = Query("Symptom: Mild fatigue", description="The patient-submitted lifestyle and symptoms details"),
+    current_admin: models.User = Depends(get_current_admin),
+    db: Session = Depends(database.get_db),
+    _license: None = Depends(licensing.enforce_license_tier("enterprise")),
+):
+    """Generates a structured SOTA preventive care and wellness plan using SOTA Wellness Agent."""
+    from backend.agents.wellness_agent import ClinicalWellnessAgent
+    agent = ClinicalWellnessAgent(db)
+    report = await agent.generate_wellness_plan(patient_data)
+    return report
+
+
+
+
 
 
 def _scope_users_to_admin_facility(query, admin: models.User):
@@ -448,6 +564,105 @@ def get_patient_deletion_plan(
     )
     return plan
 
+
+@router.post("/privacy/execute-deletion/{patient_id}")
+def execute_patient_deletion(
+    patient_id: int,
+    db: Session = Depends(database.get_db),
+    admin: models.User = Depends(get_current_admin),
+) -> Dict:
+    """Execute patient deletion propagation in reverse dependency order."""
+    patient = db.query(models.User).filter(
+        models.User.id == patient_id,
+        models.User.role == "patient",
+    ).first()
+    if not patient:
+        raise HTTPException(status_code=404, detail="Patient not found")
+    _ensure_admin_can_access_user(admin, patient)
+    patient_facility_id = patient.facility_id
+    try:
+        result = privacy_operations.execute_patient_deletion(db, patient_id)
+    except privacy_operations.PrivacyOperationNotFound:
+        raise HTTPException(status_code=404, detail="Patient not found") from None
+
+    audit.record_audit_event(
+        db,
+        actor_user_id=admin.id,
+        target_user_id=patient_id,
+        facility_id=patient_facility_id,
+        action="EXECUTE_PATIENT_DELETION",
+        details={
+            "resource_type": "privacy_deletion_execution",
+            "resource_id": patient_id,
+            "deleted_records": result["database"]["total_records_deleted"],
+        },
+    )
+    return result
+
+
+@router.post("/backups/execute")
+def execute_database_backup(
+    db: Session = Depends(database.get_db),
+    admin: models.User = Depends(get_current_admin),
+) -> Dict:
+    try:
+        connection = db.connection().connection
+        raw_conn = getattr(connection, "driver_connection", None) or getattr(connection, "dbapi_connection", None) or getattr(connection, "connection", None)
+        if raw_conn is None:
+            raise AttributeError("Could not find underlying DBAPI connection on SQLAlchemy Connection object")
+        backup_file = backup_readiness.run_sqlite_backup(raw_conn)
+    except Exception as e:
+        db_path = "healthcare.db"
+        if not os.path.exists(db_path):
+            if os.path.exists("backend/healthcare.db"):
+                db_path = "backend/healthcare.db"
+        try:
+            backup_file = backup_readiness.run_sqlite_backup(db_path)
+        except Exception as file_err:
+            raise HTTPException(status_code=500, detail=f"Backup failed: connection error ({str(e)}), file error ({str(file_err)})")
+
+    audit.record_audit_event(
+        db,
+        actor_user_id=admin.id,
+        target_user_id=admin.id,
+        facility_id=admin.facility_id,
+        action="EXECUTE_DATABASE_BACKUP",
+        details={
+            "backup_file": backup_file,
+        },
+    )
+    return {
+        "status": "success",
+        "backup_file": backup_file,
+        "message": "Database backup completed successfully."
+    }
+
+
+@router.post("/retention/execute-cleanup")
+def execute_retention_cleanup(
+    db: Session = Depends(database.get_db),
+    admin: models.User = Depends(get_current_admin),
+) -> Dict:
+    """Execute a data retention cleanup sweep according to policy thresholds."""
+    try:
+        deleted_counts = retention_policy.execute_retention_cleanup(db)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Retention cleanup failed: {str(e)}")
+
+    audit.record_audit_event(
+        db,
+        actor_user_id=admin.id,
+        target_user_id=admin.id,
+        facility_id=admin.facility_id,
+        action="EXECUTE_RETENTION_CLEANUP",
+        details=deleted_counts,
+    )
+    return {
+        "status": "success",
+        "deleted_records": deleted_counts,
+        "message": "Data retention sweep completed successfully."
+    }
+
 @router.get("/users")
 def get_recent_users(
     skip: int = 0,
@@ -667,3 +882,59 @@ def run_federated_simulation(
         )
 
 
+# ---------------------------------------------------------------------------
+# HIPAA Compliance Self-Check
+# ---------------------------------------------------------------------------
+@router.get("/compliance/hipaa")
+def hipaa_compliance_check(
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    """Run HIPAA technical safeguard compliance self-check."""
+    if not auth.is_admin(current_user):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return compliance_check.get_hipaa_compliance_report()
+
+
+# ---------------------------------------------------------------------------
+# Breach Notification Management
+# ---------------------------------------------------------------------------
+@router.get("/breaches")
+def list_breaches(
+    include_resolved: bool = Query(False),
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    """List all security breach incidents."""
+    if not auth.is_admin(current_user):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return {
+        "incidents": breach_notification.breach_manager.list_incidents(include_resolved=include_resolved),
+        "overdue": breach_notification.breach_manager.get_overdue_incidents(),
+    }
+
+
+@router.post("/breaches/report")
+def report_breach(
+    description: str = Query(..., min_length=10),
+    severity: str = Query("medium"),
+    affected_records: int = Query(0, ge=0),
+    phi_involved: bool = Query(False),
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(database.get_db),
+):
+    """Report a new security breach incident."""
+    if not auth.is_admin(current_user):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    try:
+        sev = breach_notification.BreachSeverity(severity)
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid severity: {severity}. Use: low, medium, high, critical")
+    report = breach_notification.breach_manager.report_breach(
+        description=description,
+        reporter=current_user.username,
+        severity=sev,
+        affected_records=affected_records,
+        phi_involved=phi_involved,
+    )
+    return report.to_dict()

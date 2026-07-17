@@ -167,7 +167,13 @@ def test_care_event_resource_fallback():
     assert res["id"] == "ev1"
 
 def test_build_bundle_fallback():
-    res = fhir_module.build_bundle([{"resourceType": "Patient", "id": "1"}], timestamp=datetime(2023, 1, 1, 10, 0, tzinfo=timezone.utc))
+    patient = {
+        "resourceType": "Patient",
+        "id": "1",
+        "name": [{"text": "John Doe"}],
+        "gender": "male"
+    }
+    res = fhir_module.build_bundle([patient], timestamp=datetime(2023, 1, 1, 10, 0, tzinfo=timezone.utc))
     assert res["resourceType"] == "Bundle"
     assert res["type"] == "collection"
 
@@ -176,4 +182,37 @@ def test_audit_event_resource_fallback():
     res = fhir_module.audit_event_resource(audit)
     assert res["resourceType"] == "AuditEvent"
     assert res["id"] == "au1"
+
+
+def test_fhir_validation_errors():
+    # Test invalid patient gender
+    bad_patient = {
+        "resourceType": "Patient",
+        "id": "pat123",
+        "name": [{"text": "Alice"}],
+        "gender": "cyborg"  # invalid
+    }
+    with pytest.raises(fhir_module.FHIRValidationError, match="valid gender code"):
+        fhir_module.validate_fhir_resource(bad_patient)
+
+    # Test missing patient name
+    bad_patient_no_name = {
+        "resourceType": "Patient",
+        "id": "pat123",
+        "gender": "female"
+    }
+    with pytest.raises(fhir_module.FHIRValidationError, match="non-empty name list"):
+        fhir_module.validate_fhir_resource(bad_patient_no_name)
+
+    # Test invalid observation
+    bad_obs = {
+        "resourceType": "Observation",
+        "id": "obs123",
+        "status": "active",  # active is not valid status for Observation in R4
+        "code": {"coding": []},
+        "subject": {"reference": "Patient/pat123"}
+    }
+    with pytest.raises(fhir_module.FHIRValidationError, match="valid status"):
+        fhir_module.validate_fhir_resource(bad_obs)
+
 

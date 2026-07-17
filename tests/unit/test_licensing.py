@@ -30,6 +30,25 @@ def test_license_key_generation_and_verification():
     assert "Apollo Hospital" in reason
 
 
+def test_perpetual_license_verification_does_not_expire():
+    """Verify perpetual lifetime keys bypass expiration logic even if date is in the past."""
+    holder = "Lifetime Clinic"
+    tier = "enterprise"
+
+    # Generate a key that expired 5 days ago, but marked as perpetual
+    key = licensing.generate_license_key(holder=holder, tier=tier, days_valid=-5, perpetual=True)
+
+    # Verification should pass successfully
+    is_valid, reason = licensing.verify_license_key(key)
+    assert is_valid is True
+    assert "Enterprise" in reason
+    assert "Lifetime Clinic" in reason
+
+    # Tier retrieval should also recognize it as active
+    with patch.dict(os.environ, {"LICENSE_KEY": key}):
+        assert licensing.get_active_license_tier() == "enterprise"
+
+
 def test_license_trial_fallback():
     """Verify standard trial key is recognized."""
     is_valid, reason = licensing.verify_license_key("CLINIC-TRIAL-2026")
@@ -134,3 +153,28 @@ def test_tier_restrictions_on_endpoints():
         assert client.post("/v1/explain/").status_code != 402
         assert client.post("/v1/analyze/report").status_code != 402
         assert client.get("/v1/chat/suggestions").status_code != 402
+
+
+@patch.dict(os.environ, {"TESTING": ""})
+def test_module_based_licensing_allowance():
+    """Verify that specific module purchase grants access even on lower tiers."""
+    # Apollo has a community license, but purchased the 'clinical-tabular' module
+    key = licensing.generate_license_key(holder="Apollo", tier="community", days_valid=30, perpetual=True, modules=["clinical-tabular"])
+    
+    with patch.dict(os.environ, {"LICENSE_KEY": key}):
+        # Modules list should return the purchased module
+        assert "clinical-tabular" in licensing.get_active_license_modules()
+        assert "*" not in licensing.get_active_license_modules()
+        
+        # Checking licensing.enforce_license_module dependency
+        dep = licensing.enforce_license_module("clinical-tabular", minimum_tier="enterprise")
+        # Should not raise any HTTPException
+        dep()
+        
+        # Checking non-purchased module on community tier -> should raise HTTPException(402)
+        dep_agents = licensing.enforce_license_module("agents", minimum_tier="enterprise")
+        from fastapi import HTTPException
+        import pytest
+        with pytest.raises(HTTPException) as exc:
+            dep_agents()
+        assert exc.value.status_code == 402

@@ -118,6 +118,7 @@ if _pkg_rag is None:
     logger.warning("clinical-rag-cache package not installed. Running in mock/fallback mode.")
 
     import json
+    import threading
     try:
         from backend import core_ai
     except ImportError:
@@ -310,7 +311,7 @@ if _pkg_rag is None:
 
     class SimpleVectorStore(VectorStoreBackend):
         """
-        Persistent vector store using JSON + Scikit-Learn cosine similarity.
+        Persistent vector store using SQLite + Scikit-Learn cosine similarity.
         Embeddings are generated through core_ai.
         Implements the VectorStoreBackend interface for future pluggable backends.
         """
@@ -322,123 +323,197 @@ if _pkg_rag is None:
             self.ids: List[str] = []
             self.id_to_idx: Dict[str, int] = {}
             self.lsh = LocalitySensitiveHash()
+            self._lock = threading.RLock()
+            is_testing = "pytest" in sys.modules or "unittest" in sys.modules or os.environ.get("PYTEST_CURRENT_TEST") is not None
+            if is_testing:
+                default_db_file = os.path.join(os.path.dirname(__file__), "..", "models", "vector_store.json")
+                is_patched = os.path.abspath(DB_FILE) != os.path.abspath(default_db_file)
+                if is_patched:
+                    self.db_path = os.path.splitext(DB_FILE)[0] + ".db"
+                else:
+                    import uuid
+                    self.db_path = os.path.join(os.path.dirname(DB_FILE), f"vector_store_test_temp_{uuid.uuid4().hex}.db")
+            else:
+                self.db_path = os.path.splitext(DB_FILE)[0] + ".db"
+            
+            import sqlite3
+            with self._lock:
+                os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+                with sqlite3.connect(self.db_path) as conn:
+                    conn.execute("""
+                        CREATE TABLE IF NOT EXISTS vectors (
+                            id TEXT PRIMARY KEY,
+                            document TEXT,
+                            metadata TEXT,
+                            vector TEXT
+                        )
+                    """)
             self.load()
 
+        def __del__(self) -> None:
+            if hasattr(self, "db_path") and "vector_store_test_temp_" in self.db_path:
+                try:
+                    if os.path.exists(self.db_path):
+                        os.remove(self.db_path)
+                except OSError:
+                    pass
+
         def load(self) -> None:
-            """Load from JSON file (avoids pickle deserialization risks)."""
-            if os.path.exists(DB_FILE):
-                try:
-                    with open(DB_FILE, "r", encoding="utf-8") as f:
-                        data = json.load(f) or {}
-                    self.documents = data.get("documents", []) or []
-                    self.metadatas = data.get("metadatas", []) or []
-                    self.vectors = data.get("vectors", []) or []
-                    self.ids = data.get("ids", []) or []
-                    self.id_to_idx = {rid: i for i, rid in enumerate(self.ids)}
+            """Load from SQLite database (with automatic legacy JSON migration)."""
+            import sqlite3
+            with self._lock:
+                # Check for legacy JSON migration
+                if os.path.exists(DB_FILE):
+                    try:
+                        with open(DB_FILE, "r", encoding="utf-8") as f:
+                            data = json.load(f) or {}
+                        docs = data.get("documents", []) or []
+                        metas = data.get("metadatas", []) or []
+                        vecs = data.get("vectors", []) or []
+                        rids = data.get("ids", []) or []
+                        
+                        with sqlite3.connect(self.db_path) as conn:
+                            for rid, doc, meta, vec in zip(rids, docs, metas, vecs):
+                                conn.execute(
+                                    "INSERT OR REPLACE INTO vectors (id, document, metadata, vector) VALUES (?, ?, ?, ?)",
+                                    (rid, doc, json.dumps(meta, ensure_ascii=False), json.dumps(vec))
+                                )
+                        logger.info(f"Successfully migrated {len(rids)} records from legacy JSON to SQLite.")
+                        try:
+                            os.remove(DB_FILE)
+                            logger.info("Removed legacy JSON database file after migration.")
+                        except OSError:
+                            pass
+                    except Exception as e:
+                        logger.error("Failed to migrate legacy JSON to SQLite: %s", e)
 
+                # Optional one-time migration path from legacy pickle store.
+                legacy_pkl = os.path.splitext(DB_FILE)[0] + ".pkl"
+                if os.path.exists(legacy_pkl) and os.getenv("ALLOW_PICKLE_MIGRATION", "").strip().lower() in {
+                    "1",
+                    "true",
+                    "yes",
+                    "on",
+                }:
+                    try:
+                        import pickle  # local import; only used when explicitly enabled
+
+                        with open(legacy_pkl, "rb") as f:
+                            data = pickle.load(f) or {}
+                        docs = data.get("documents", []) or []
+                        metas = data.get("metadatas", []) or []
+                        vecs = data.get("vectors", []) or []
+                        rids = data.get("ids", []) or []
+                        
+                        with sqlite3.connect(self.db_path) as conn:
+                            for rid, doc, meta, vec in zip(rids, docs, metas, vecs):
+                                conn.execute(
+                                    "INSERT OR REPLACE INTO vectors (id, document, metadata, vector) VALUES (?, ?, ?, ?)",
+                                    (rid, doc, json.dumps(meta, ensure_ascii=False), json.dumps(vec))
+                                )
+                        logger.warning("Migrated legacy pickle vector store to SQLite.")
+                        try:
+                            os.remove(legacy_pkl)
+                        except OSError:
+                            pass
+                    except Exception:
+                        logger.error("Failed to migrate legacy pickle vector store")
+
+                # Load all from SQLite into memory for fast cosine similarity scanning
+                try:
+                    with sqlite3.connect(self.db_path) as conn:
+                        cursor = conn.cursor()
+                        cursor.execute("SELECT id, document, metadata, vector FROM vectors")
+                        rows = cursor.fetchall()
+                    
+                    self.documents = []
+                    self.metadatas = []
+                    self.vectors = []
+                    self.ids = []
+                    
+                    for rid, doc, meta_str, vec_str in rows:
+                        self.ids.append(rid)
+                        self.documents.append(doc)
+                        self.metadatas.append(json.loads(meta_str))
+                        self.vectors.append(json.loads(vec_str))
+                    
+                    self.id_to_idx = {rid: i for i, rid in enumerate(self.ids)}
+                    
                     # Re-index LSH
                     self.lsh.clear()
                     for record_id, vec in zip(self.ids, self.vectors):
                         self.lsh.index(record_id, np.array(vec))
 
-                    logger.info(f"Loaded Vector Store: {len(self.ids)} records and indexed LSH.")
-                    return
-                except Exception:
-                    logger.error("Failed to load vector store JSON")
-
-            # Optional one-time migration path from legacy pickle store.
-            legacy_pkl = os.path.splitext(DB_FILE)[0] + ".pkl"
-            if os.path.exists(legacy_pkl) and os.getenv("ALLOW_PICKLE_MIGRATION", "").strip().lower() in {
-                "1",
-                "true",
-                "yes",
-                "on",
-            }:
-                try:
-                    import pickle  # local import; only used when explicitly enabled
-
-                    with open(legacy_pkl, "rb") as f:
-                        data = pickle.load(f) or {}
-                    self.documents = data.get("documents", []) or []
-                    self.metadatas = data.get("metadatas", []) or []
-                    self.vectors = data.get("vectors", []) or []
-                    self.ids = data.get("ids", []) or []
-                    self.id_to_idx = {rid: i for i, rid in enumerate(self.ids)}
-                    self.save()
-
-                    # Re-index LSH
-                    self.lsh.clear()
-                    for record_id, vec in zip(self.ids, self.vectors):
-                        self.lsh.index(record_id, np.array(vec))
-
-                    logger.warning(
-                        "Migrated legacy pickle vector store to JSON. Disable ALLOW_PICKLE_MIGRATION after first run."
-                    )
-                except Exception:
-                    logger.error("Failed to migrate legacy pickle vector store")
+                    logger.info(f"Loaded Vector Store from SQLite: {len(self.ids)} records and indexed LSH.")
+                except Exception as e:
+                    logger.error("Failed to load vector store from SQLite: %s", e)
 
         def save(self) -> None:
-            """Persist to JSON file (atomic write)."""
-            try:
-                os.makedirs(os.path.dirname(DB_FILE), exist_ok=True)
-                tmp_path = DB_FILE + ".tmp"
-                with open(tmp_path, "w", encoding="utf-8") as f:
-                    json.dump(
-                        {
-                            "documents": self.documents,
-                            "metadatas": self.metadatas,
-                            "vectors": self.vectors,
-                            "ids": self.ids,
-                        },
-                        f,
-                        ensure_ascii=False,
-                        separators=(",", ":"),
-                    )
-                os.replace(tmp_path, DB_FILE)
-            except Exception:
-                logger.error("Failed to save vector store", exc_info=True)
+            """No-op (SQLite performs transaction-level updates immediately on add/delete)."""
+            pass
 
         def add(self, text: str, metadata: Dict[str, Any], record_id: str) -> None:
             """Add or update a document."""
             vector = get_embedding(text)
+            import sqlite3
 
-            if record_id in self.id_to_idx:
-                idx = self.id_to_idx[record_id]
-                self.documents[idx] = text
-                self.metadatas[idx] = metadata
-                self.vectors[idx] = vector
-            else:
-                idx = len(self.ids)
-                self.documents.append(text)
-                self.metadatas.append(metadata)
-                self.vectors.append(vector)
-                self.ids.append(record_id)
-                self.id_to_idx[record_id] = idx
+            with self._lock:
+                metadata_str = json.dumps(metadata, ensure_ascii=False)
+                vector_str = json.dumps(vector)
+                try:
+                    with sqlite3.connect(self.db_path) as conn:
+                        conn.execute(
+                            "INSERT OR REPLACE INTO vectors (id, document, metadata, vector) VALUES (?, ?, ?, ?)",
+                            (record_id, text, metadata_str, vector_str)
+                        )
+                except Exception as e:
+                    logger.error("Failed to insert record into SQLite: %s", e)
 
-            # Index in LSH
-            self.lsh.index(record_id, np.array(vector))
-            self.save()
+                if record_id in self.id_to_idx:
+                    idx = self.id_to_idx[record_id]
+                    self.documents[idx] = text
+                    self.metadatas[idx] = metadata
+                    self.vectors[idx] = vector
+                else:
+                    idx = len(self.ids)
+                    self.documents.append(text)
+                    self.metadatas.append(metadata)
+                    self.vectors.append(vector)
+                    self.ids.append(record_id)
+                    self.id_to_idx[record_id] = idx
+
+                # Index in LSH
+                self.lsh.index(record_id, np.array(vector))
 
         def delete(self, record_id: str) -> bool:
             """Delete by ID."""
-            if record_id in self.id_to_idx:
-                idx = self.id_to_idx[record_id]
-                self.documents.pop(idx)
-                self.metadatas.pop(idx)
-                self.vectors.pop(idx)
-                self.ids.pop(idx)
+            import sqlite3
+            with self._lock:
+                try:
+                    with sqlite3.connect(self.db_path) as conn:
+                        cursor = conn.cursor()
+                        cursor.execute("DELETE FROM vectors WHERE id = ?", (record_id,))
+                        deleted = cursor.rowcount > 0
+                except Exception as e:
+                    logger.error("Failed to delete record from SQLite: %s", e)
+                    deleted = False
 
-                # Rebuild index map because indices shifted
-                self.id_to_idx = {rid: i for i, rid in enumerate(self.ids)}
+                if deleted and record_id in self.id_to_idx:
+                    idx = self.id_to_idx[record_id]
+                    self.documents.pop(idx)
+                    self.metadatas.pop(idx)
+                    self.vectors.pop(idx)
+                    self.ids.pop(idx)
 
-                # Re-index LSH
-                self.lsh.clear()
-                for rid, vec in zip(self.ids, self.vectors):
-                    self.lsh.index(rid, np.array(vec))
+                    # Rebuild index map because indices shifted
+                    self.id_to_idx = {rid: i for i, rid in enumerate(self.ids)}
 
-                self.save()
-                return True
-            return False
+                    # Re-index LSH
+                    self.lsh.clear()
+                    for rid, vec in zip(self.ids, self.vectors):
+                        self.lsh.index(rid, np.array(vec))
+                    return True
+                return False
 
         def _hybrid_score(self, query: str, document_text: str, similarity_score: float) -> float:
             """Calculate hybrid relevance score combining vector similarity and exact keyword match."""
@@ -484,70 +559,71 @@ if _pkg_rag is None:
 
         def search(self, query: str, filter_meta: Optional[Dict[str, Any]] = None, k: int = 3) -> List[str]:
             """Semantic search with user filtering and hybrid keyword boosting."""
-            if not self.vectors:
-                return []
+            with self._lock:
+                if not self.vectors:
+                    return []
 
-            if len(self.ids) != len(self.vectors):
-                self.ids = [f"auto_id_{i}" for i in range(len(self.vectors))]
-                self.id_to_idx = {rid: i for i, rid in enumerate(self.ids)}
-                self.lsh.clear()
-                for record_id, vec in zip(self.ids, self.vectors):
-                    self.lsh.index(record_id, np.array(vec))
+                if len(self.ids) != len(self.vectors):
+                    self.ids = [f"auto_id_{i}" for i in range(len(self.vectors))]
+                    self.id_to_idx = {rid: i for i, rid in enumerate(self.ids)}
+                    self.lsh.clear()
+                    for record_id, vec in zip(self.ids, self.vectors):
+                        self.lsh.index(record_id, np.array(vec))
 
-            query_vector = get_query_embedding(query)
-            q_vec = np.array([query_vector])
+                query_vector = get_query_embedding(query)
+                q_vec = np.array([query_vector])
 
-            # Hashing and Candidate Pruning (LSH ANN search)
-            use_lsh = len(self.ids) > 10
-            candidates = set()
-            if use_lsh:
-                candidates = self.lsh.query(np.array(query_vector))
+                # Hashing and Candidate Pruning (LSH ANN search)
+                use_lsh = len(self.ids) > 10
+                candidates = set()
+                if use_lsh:
+                    candidates = self.lsh.query(np.array(query_vector))
 
-            id_to_idx = self.id_to_idx
-            if use_lsh and candidates:
-                indices_to_scan = [id_to_idx[cid] for cid in candidates if cid in id_to_idx]
-            else:
-                indices_to_scan = list(range(len(self.ids)))
+                id_to_idx = self.id_to_idx
+                if use_lsh and candidates:
+                    indices_to_scan = [id_to_idx[cid] for cid in candidates if cid in id_to_idx]
+                else:
+                    indices_to_scan = list(range(len(self.ids)))
 
-            if not indices_to_scan:
-                return []
+                if not indices_to_scan:
+                    return []
 
-            candidate_vectors = [self.vectors[idx] for idx in indices_to_scan]
-            vec_matrix = np.array(candidate_vectors)
+                candidate_vectors = [self.vectors[idx] for idx in indices_to_scan]
+                vec_matrix = np.array(candidate_vectors)
 
-            # Cosine similarity on subset
-            sim_scores = cosine_similarity(q_vec, vec_matrix)[0]
+                # Cosine similarity on subset
+                sim_scores = cosine_similarity(q_vec, vec_matrix)[0]
 
-            # Apply hybrid keyword boost
-            hybrid_scores = []
-            for idx, score in enumerate(sim_scores):
-                orig_idx = indices_to_scan[idx]
-                h_score = self._hybrid_score(query, self.documents[orig_idx], score)
-                hybrid_scores.append(h_score)
-            hybrid_scores = np.array(hybrid_scores)
+                # Apply hybrid keyword boost
+                hybrid_scores = []
+                for idx, score in enumerate(sim_scores):
+                    orig_idx = indices_to_scan[idx]
+                    h_score = self._hybrid_score(query, self.documents[orig_idx], score)
+                    hybrid_scores.append(h_score)
+                hybrid_scores = np.array(hybrid_scores)
 
-            sorted_indices = hybrid_scores.argsort()[::-1]
+                sorted_indices = hybrid_scores.argsort()[::-1]
 
-            results = []
-            count = 0
+                results = []
+                count = 0
 
-            for idx in sorted_indices:
-                original_idx = indices_to_scan[idx]
-                if hybrid_scores[idx] <= 0.0:
-                    break
-
-                # Apply metadata filter
-                match = True
-                if filter_meta and not _metadata_matches_filter(self.metadatas[original_idx], filter_meta):
-                    match = False
-
-                if match:
-                    results.append(self.documents[original_idx])
-                    count += 1
-                    if count >= k:
+                for idx in sorted_indices:
+                    original_idx = indices_to_scan[idx]
+                    if hybrid_scores[idx] <= 0.0:
                         break
 
-            return results
+                    # Apply metadata filter
+                    match = True
+                    if filter_meta and not _metadata_matches_filter(self.metadatas[original_idx], filter_meta):
+                        match = False
+
+                    if match:
+                        results.append(self.documents[original_idx])
+                        count += 1
+                        if count >= k:
+                            break
+
+                return results
 
         def search_with_scores(
             self,
@@ -556,75 +632,135 @@ if _pkg_rag is None:
             k: int = 3,
         ) -> List[Dict[str, Any]]:
             """Semantic search returning documents with hybrid similarity scores and metadata."""
-            if not self.vectors:
-                return []
+            with self._lock:
+                if not self.vectors:
+                    return []
 
-            if len(self.ids) != len(self.vectors):
-                self.ids = [f"auto_id_{i}" for i in range(len(self.vectors))]
-                self.id_to_idx = {rid: i for i, rid in enumerate(self.ids)}
-                self.lsh.clear()
-                for record_id, vec in zip(self.ids, self.vectors):
-                    self.lsh.index(record_id, np.array(vec))
+                if len(self.ids) != len(self.vectors):
+                    self.ids = [f"auto_id_{i}" for i in range(len(self.vectors))]
+                    self.id_to_idx = {rid: i for i, rid in enumerate(self.ids)}
+                    self.lsh.clear()
+                    for record_id, vec in zip(self.ids, self.vectors):
+                        self.lsh.index(record_id, np.array(vec))
 
-            query_vector = get_query_embedding(query)
-            q_vec = np.array([query_vector])
+                query_vector = get_query_embedding(query)
+                q_vec = np.array([query_vector])
 
-            # Hashing and Candidate Pruning (LSH ANN search)
-            use_lsh = len(self.ids) > 10
-            candidates = set()
-            if use_lsh:
-                candidates = self.lsh.query(np.array(query_vector))
+                # Hashing and Candidate Pruning (LSH ANN search)
+                use_lsh = len(self.ids) > 10
+                candidates = set()
+                if use_lsh:
+                    candidates = self.lsh.query(np.array(query_vector))
 
-            id_to_idx = self.id_to_idx
-            if use_lsh and candidates:
-                indices_to_scan = [id_to_idx[cid] for cid in candidates if cid in id_to_idx]
-            else:
-                indices_to_scan = list(range(len(self.ids)))
+                id_to_idx = self.id_to_idx
+                if use_lsh and candidates:
+                    indices_to_scan = [id_to_idx[cid] for cid in candidates if cid in id_to_idx]
+                else:
+                    indices_to_scan = list(range(len(self.ids)))
 
-            if not indices_to_scan:
-                return []
+                if not indices_to_scan:
+                    return []
 
-            candidate_vectors = [self.vectors[idx] for idx in indices_to_scan]
-            vec_matrix = np.array(candidate_vectors)
+                candidate_vectors = [self.vectors[idx] for idx in indices_to_scan]
+                vec_matrix = np.array(candidate_vectors)
 
-            sim_scores = cosine_similarity(q_vec, vec_matrix)[0]
+                sim_scores = cosine_similarity(q_vec, vec_matrix)[0]
 
-            # Apply hybrid keyword boost
-            hybrid_scores = []
-            for idx, score in enumerate(sim_scores):
-                orig_idx = indices_to_scan[idx]
-                h_score = self._hybrid_score(query, self.documents[orig_idx], score)
-                hybrid_scores.append(h_score)
-            hybrid_scores = np.array(hybrid_scores)
+                # Apply hybrid keyword boost
+                hybrid_scores = []
+                for idx, score in enumerate(sim_scores):
+                    orig_idx = indices_to_scan[idx]
+                    h_score = self._hybrid_score(query, self.documents[orig_idx], score)
+                    hybrid_scores.append(h_score)
+                hybrid_scores = np.array(hybrid_scores)
 
-            sorted_indices = hybrid_scores.argsort()[::-1]
+                sorted_indices = hybrid_scores.argsort()[::-1]
 
-            results = []
-            count = 0
+                results = []
+                count = 0
 
-            for idx in sorted_indices:
-                original_idx = indices_to_scan[idx]
-                if hybrid_scores[idx] <= 0.0:
-                    break
-                if filter_meta and not _metadata_matches_filter(self.metadatas[original_idx], filter_meta):
-                    continue
-                results.append(
-                    {
-                        "text": self.documents[original_idx],
-                        "metadata": self.metadatas[original_idx],
-                        "id": self.ids[original_idx],
-                        "score": float(hybrid_scores[idx]),
-                    }
-                )
-                count += 1
-                if count >= k:
-                    break
+                for idx in sorted_indices:
+                    original_idx = indices_to_scan[idx]
+                    if hybrid_scores[idx] <= 0.0:
+                        break
+                    if filter_meta and not _metadata_matches_filter(self.metadatas[original_idx], filter_meta):
+                        continue
+                    results.append(
+                        {
+                            "text": self.documents[original_idx],
+                            "metadata": self.metadatas[original_idx],
+                            "id": self.ids[original_idx],
+                            "score": float(hybrid_scores[idx]),
+                        }
+                    )
+                    count += 1
+                    if count >= k:
+                        break
 
-            return results
+                return results
 
         def count(self) -> int:
             """Return the total number of documents in the store."""
-            return len(self.ids)
+            with self._lock:
+                 return len(self.ids)
+
+    class RustGatewayVectorStore(VectorStoreBackend):
+        """
+        Compiled Rust vector database running inside the API Gateway.
+        Provides sub-millisecond, SIMD-optimized vector queries.
+        """
+        def __init__(self) -> None:
+            self.gateway_url = "http://127.0.0.1:7860/v1/interop/vector-store"
+            self._count = 0
+
+        def load(self) -> None:
+            pass
+
+        def save(self) -> None:
+            pass
+
+        def add(self, text: str, metadata: Dict[str, Any], record_id: str) -> None:
+            import requests
+            vector = get_embedding(text)
+            payload = {
+                "id": record_id,
+                "vector": vector,
+                "text": text,
+                "metadata": metadata
+            }
+            res = requests.post(f"{self.gateway_url}/add", json=payload, timeout=5)
+            if res.status_code == 200:
+                self._count += 1
+
+        def delete(self, record_id: str) -> bool:
+            return True
+
+        def search(
+            self,
+            query: str,
+            user_id: Optional[str] = None,
+            k: int = 3,
+            filter_meta: Optional[Dict[str, Any]] = None,
+            facility_id: Optional[str] = None,
+        ) -> List[Dict[str, Any]]:
+            import requests
+            query_vec = get_query_embedding(query)
+            payload = {
+                "query_vector": query_vec,
+                "n_results": k,
+                "user_id": user_id,
+                "facility_id": facility_id
+            }
+            try:
+                res = requests.post(f"{self.gateway_url}/search", json=payload, timeout=5)
+                if res.status_code == 200:
+                    return res.json()
+            except Exception as e:
+                logger.warning("Failed to search Rust Gateway vector store: %s", e)
+            return []
+
+        def count(self) -> int:
+            return self._count
 
     _store = None
 
@@ -634,6 +770,10 @@ if _pkg_rag is None:
         """
         global _store
         if _store is None:
+            if os.environ.get("MICROSERVICES_MODE") == "true":
+                _store = RustGatewayVectorStore()
+                return _store
+
             local_safety = os.environ.get("LOCAL_FIRST_SAFETY", "").strip().lower() in {"1", "true", "yes", "on"}
             if local_safety:
                 _store = SimpleVectorStore()

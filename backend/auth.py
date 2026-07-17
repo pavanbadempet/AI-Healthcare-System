@@ -83,6 +83,13 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
+def decode_access_token(token: str) -> Optional[dict]:
+    """Helper to decode a JWT access token."""
+    try:
+        return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except Exception:
+        return None
+
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(database.get_db)) -> models.User:
     """
     Dependency to get the current authenticated user from JWT.
@@ -189,21 +196,66 @@ def signup(request: Request, user: schemas.UserCreate, db: Session = Depends(dat
         logger.error("Signup failed due to an internal error")
         raise HTTPException(status_code=500, detail=SIGNUP_FAILURE_DETAIL)
 
+import threading
+
+class LoginBruteForceProtector:
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._failed_attempts = {}  # username -> (count, lockout_until)
+
+    def is_locked_out(self, username: str) -> bool:
+        with self._lock:
+            if username not in self._failed_attempts:
+                return False
+            count, lockout_until = self._failed_attempts[username]
+            if lockout_until:
+                if datetime.now(timezone.utc) < lockout_until:
+                    return True
+                # Lockout expired
+                self._failed_attempts[username] = (0, None)
+            return False
+
+    def record_failure(self, username: str):
+        with self._lock:
+            count, lockout_until = self._failed_attempts.get(username, (0, None))
+            count += 1
+            if count >= 5:
+                lockout_until = datetime.now(timezone.utc) + timedelta(minutes=15)
+            self._failed_attempts[username] = (count, lockout_until)
+
+    def record_success(self, username: str):
+        with self._lock:
+            if username in self._failed_attempts:
+                self._failed_attempts[username] = (0, None)
+
+brute_force_protector = LoginBruteForceProtector()
+
+
 @router.post("/token", response_model=schemas.Token)
 @limiter.limit("5/minute")
 def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), totp_code: Optional[str] = Form(None), db: Session = Depends(database.get_db)) -> Dict[str, str]:
     """
     Authenticate user and return JWT access token.
+    Enforces brute-force lockout threshold (5 consecutive failed attempts).
     """
+    username = form_data.username
+    if brute_force_protector.is_locked_out(username):
+        raise HTTPException(
+            status_code=status.HTTP_423_LOCKED,
+            detail="Account is temporarily locked out due to multiple failed login attempts. Please try again in 15 minutes."
+        )
+
     try:
         user = db.query(models.User).filter(
-            (models.User.username == form_data.username) | (models.User.email == form_data.username),
+            (models.User.username == username) | (models.User.email == username),
             models.User.is_deleted == False
         ).first()
         if not user:
+            brute_force_protector.record_failure(username)
             raise HTTPException(status_code=401, detail="Incorrect username or password")
 
         if not verify_password(form_data.password, user.hashed_password):
+            brute_force_protector.record_failure(username)
             raise HTTPException(status_code=401, detail="Incorrect username or password")
 
         if user.is_totp_enabled:
@@ -211,7 +263,10 @@ def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestFor
                 raise HTTPException(status_code=401, detail="2FA required")
             totp = pyotp.TOTP(user.totp_secret)
             if not totp.verify(totp_code):
+                brute_force_protector.record_failure(username)
                 raise HTTPException(status_code=401, detail="Invalid 2FA code")
+
+        brute_force_protector.record_success(username)
 
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(

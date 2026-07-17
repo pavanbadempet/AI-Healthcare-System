@@ -3,8 +3,9 @@
  * Extracted from Admin.tsx for maintainability.
  */
 import { useState, useEffect } from "react";
-import { Database, Network, Shield, CheckCircle2, ShieldAlert, Info, Loader2, BarChart3 } from "lucide-react";
-import { getAdminDataQuality, getAdminOperationalHealth, type DataQualityReport, type OperationalHealthReport } from "@/lib/api";
+import { Database, Network, Shield, CheckCircle2, ShieldAlert, Info, Loader2, BarChart3, RefreshCw } from "lucide-react";
+import { getAdminDataQuality, getAdminOperationalHealth, triggerMaintenance, type DataQualityReport, type OperationalHealthReport } from "@/lib/api";
+import { toast } from "@/lib/toast";
 
 export default function DataEngineeringPanel({ stats }: { stats: any }) {
   const [dataQuality, setDataQuality] = useState<DataQualityReport | null>(null);
@@ -73,6 +74,50 @@ export default function DataEngineeringPanel({ stats }: { stats: any }) {
             </div>
           </div>
         )}
+      </div>
+
+      {/* SOTA Database Optimization & Retention Control */}
+      <div className="panel p-6">
+        <div className="flex flex-col lg:flex-row justify-between items-start gap-4 mb-6">
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
+              <Shield size={15} className="text-[var(--accent)]" /> System Maintenance & Retention Coordinator
+            </h3>
+            <p className="text-[11px] text-[var(--text-secondary)] font-mono uppercase mt-1">
+              GDPR/HIPAA-compliant retention pruning, data deactivation, and index database optimizations.
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={async () => {
+                try {
+                  const res = await triggerMaintenance();
+                  toast.success(res.message || "Optimization executed successfully!");
+                } catch (err: any) {
+                  toast.error(err.message || "Failed to execute maintenance.");
+                }
+              }}
+              className="btn btn-primary text-xs uppercase font-bold tracking-wide flex items-center gap-2"
+            >
+              <RefreshCw size={12} className="animate-spin" /> Run Optimization & Pruning
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-4 bg-zinc-950/40 border border-[var(--border)] rounded-lg space-y-1">
+            <span className="text-[10px] font-bold text-white uppercase tracking-wider block">Index Rebuilding</span>
+            <p className="text-[10px] text-[var(--text-secondary)] font-mono uppercase">Optimizes B-tree index tables and reclaims unused database storage pages.</p>
+          </div>
+          <div className="p-4 bg-zinc-950/40 border border-[var(--border)] rounded-lg space-y-1">
+            <span className="text-[10px] font-bold text-white uppercase tracking-wider block">GDPR Compliance</span>
+            <p className="text-[10px] text-[var(--text-secondary)] font-mono uppercase">Prunes expired telemetry logs, clinical chat records, and soft-deleted nodes older than 30 days.</p>
+          </div>
+          <div className="p-4 bg-zinc-950/40 border border-[var(--border)] rounded-lg space-y-1">
+            <span className="text-[10px] font-bold text-white uppercase tracking-wider block">Vector DB Compact</span>
+            <p className="text-[10px] text-[var(--text-secondary)] font-mono uppercase">Compacts local vector space indexes, ensuring fast semantic search response times.</p>
+          </div>
+        </div>
       </div>
 
       {/* ETL Engineering Pipeline Flow */}

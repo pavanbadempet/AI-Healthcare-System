@@ -379,3 +379,50 @@ async def telemetry_stream(websocket: WebSocket):
         logger.info("Telemetry client disconnected")
     except Exception:
         logger.error("Telemetry stream error")
+
+
+@router.websocket("/vitals/{patient_id}")
+async def patient_vitals_stream(websocket: WebSocket, patient_id: int):
+    """WebSocket endpoint that streams real-time patient vital sign updates from the DB."""
+    token = (getattr(websocket, "query_params", {}) or {}).get("token")
+    if not token:
+        await websocket.close(code=1008)
+        return
+
+    current_user = None
+    with database.get_db_context() as db:
+        current_user = _user_from_access_token(db, token)
+        if current_user is None:
+            await websocket.close(code=1008)
+            return
+
+    await websocket.accept()
+    logger.info("Patient vitals stream client connected for patient %s", patient_id)
+    try:
+        last_observed_at = None
+        while True:
+            with database.get_db_context() as db:
+                vital = db.query(models.VitalObservation).filter(
+                    models.VitalObservation.patient_id == patient_id
+                ).order_by(models.VitalObservation.observed_at.desc()).first()
+
+                if vital:
+                    observed_str = vital.observed_at.isoformat()
+                    if observed_str != last_observed_at:
+                        last_observed_at = observed_str
+                        payload = {
+                            "heart_rate": vital.heart_rate,
+                            "systolic_bp": vital.systolic_bp,
+                            "diastolic_bp": vital.diastolic_bp,
+                            "spo2": vital.spo2,
+                            "temperature_c": vital.temperature_c,
+                            "blood_glucose": vital.blood_glucose,
+                            "observed_at": observed_str
+                        }
+                        await websocket.send_text(json.dumps(payload))
+            await asyncio.sleep(2)
+    except WebSocketDisconnect:
+        logger.info("Patient vitals stream client disconnected for patient %s", patient_id)
+    except Exception as e:
+        logger.error("Patient vitals stream error for patient %s: %s", patient_id, e)
+

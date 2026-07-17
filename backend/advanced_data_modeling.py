@@ -584,26 +584,31 @@ class HealthcareDataModeler:
 
     def apply_schema_evolution_example(self) -> Dict[str, Any]:
         """Example of schema evolution for patient table"""
-        # Simulate schema change: adding new column
-        [
-            SchemaChange(
-                change_type="ADD_COLUMN",
-                column_name="blood_type",
-                new_data_type="STRING",
-                nullable=True
-            ),
-            SchemaChange(
-                change_type="ADD_COLUMN",
-                column_name="emergency_contact",
-                new_data_type="STRING",
-                nullable=True
-            )
-        ]
+        from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DateType
+        
+        # Determine the evolved schema for patients
+        try:
+            current_schema = self.spark.table("patients").schema
+            evolved_fields = list(current_schema.fields)
+        except Exception:
+            evolved_fields = [
+                StructField("id", IntegerType(), False),
+                StructField("username", StringType(), False),
+                StructField("full_name", StringType(), True),
+                StructField("dob", DateType(), True),
+            ]
+            
+        # Add evolved fields dynamically
+        evolved_fields.append(StructField("blood_type", StringType(), True))
+        evolved_fields.append(StructField("emergency_contact", StringType(), True))
+        
+        evolved_schema = StructType(evolved_fields)
+        evolved_df = self.spark.createDataFrame([], evolved_schema)
 
         # Apply evolution via SchemaManager
         result = self.schema_manager.apply_schema_evolution(
             "patients",
-            self.spark.createDataFrame([], StructType()), # Dummy DF in real usage
+            evolved_df,
             TableFormat.DELTA
         )
         return result

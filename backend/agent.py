@@ -253,10 +253,44 @@ def analyst_node(state: AgentState):
 def profiler_node(state: AgentState):
     """
     Updates the 'psych_profile' in the DB based on the interaction.
-    (In a real app, this runs async after response, here we mock it or update state).
     """
-    # We don't actually write to DB in this turn to avoid latency,
-    # but we acknowledge the memory update potential.
+    user_id = state.get("user_id")
+    if not user_id:
+        return {}
+
+    messages = state.get("messages", [])
+    if not messages:
+        return {}
+
+    # Gather last few messages to summarize memory
+    chat_summary = []
+    for msg in messages[-4:]:
+        role = "User" if msg.type == "human" else "Assistant"
+        chat_summary.append(f"{role}: {msg.content}")
+
+    prompt = (
+        f"Analyze this healthcare conversation and write a very brief 1-sentence summary of the user's primary concern or emotional state to save in long-term clinical memory.\n"
+        f"Conversation:\n" + "\n".join(chat_summary) + "\n\n"
+        "Output ONLY the new 1-sentence summary."
+    )
+
+    try:
+        from backend.database import get_db_context
+        from langchain_core.messages import HumanMessage
+        summary_msg = llm.invoke([HumanMessage(content=prompt)])
+        summary_text = summary_msg.content.strip() if summary_msg else ""
+        
+        if summary_text and len(summary_text) > 5:
+            with get_db_context() as db:
+                user = db.query(models.User).filter(models.User.id == user_id).first()
+                if user:
+                    user.psych_profile = summary_text
+                    db.commit()
+                    logger.info("Updated psych_profile for user %s: %s", user_id, summary_text)
+                    return {"psych_profile": summary_text}
+    except Exception as e:
+        logger.error("Failed to update psych_profile in profiler node: %s", e)
+        
     return {}
 
 def generation_node(state: AgentState):
@@ -308,6 +342,7 @@ workflow.add_node("researcher", research_node)
 workflow.add_node("analyst", analyst_node)
 workflow.add_node("generate", generation_node)
 workflow.add_node("guardrail", guardrail_node)
+workflow.add_node("profiler", profiler_node)
 
 # Edges
 def route_step(state):
@@ -329,6 +364,7 @@ workflow.add_conditional_edges(
 workflow.add_edge("researcher", "generate")
 workflow.add_edge("analyst", "generate")
 workflow.add_edge("guardrail", END)
-workflow.add_edge("generate", END)
+workflow.add_edge("generate", "profiler")
+workflow.add_edge("profiler", END)
 
 medical_agent = workflow.compile()

@@ -105,3 +105,37 @@ def get_readiness() -> dict[str, Any]:
         "secret_values_exposed": False,
         "privacy_note": "Retention readiness reports policy metadata only and does not expose contacts, runbook URLs, legal-hold URLs, secrets, patient identifiers, or clinical data.",
     }
+
+
+def execute_retention_cleanup(db: Session) -> dict[str, int]:
+    """
+    Executes a real retention policy cleanup sweep on the database.
+    Deletes records that exceed the configured retention windows.
+    """
+    import os
+    from datetime import datetime, timezone, timedelta
+    from sqlalchemy.orm import Session
+    from . import models
+
+    deleted_counts = {}
+
+    # 1. Chat Logs Retention
+    chat_days = int(os.getenv("CHAT_LOG_RETENTION_DAYS", "30"))
+    chat_cutoff = datetime.now(timezone.utc) - timedelta(days=chat_days)
+    chat_deleted = db.query(models.ChatLog).filter(models.ChatLog.timestamp < chat_cutoff).delete(synchronize_session=False)
+    deleted_counts["chat_logs"] = chat_deleted
+
+    # 2. Interoperability Exports Retention
+    export_days = int(os.getenv("INTEROPERABILITY_EXPORT_RETENTION_DAYS", "7"))
+    export_cutoff = datetime.now(timezone.utc) - timedelta(days=export_days)
+    export_deleted = db.query(models.InteroperabilityExport).filter(models.InteroperabilityExport.created_at < export_cutoff).delete(synchronize_session=False)
+    deleted_counts["interoperability_exports"] = export_deleted
+
+    # 3. Audit Logs Retention
+    audit_days = int(os.getenv("AUDIT_LOG_RETENTION_DAYS", "90"))
+    audit_cutoff = datetime.now(timezone.utc) - timedelta(days=audit_days)
+    audit_deleted = db.query(models.AuditLog).filter(models.AuditLog.timestamp < audit_cutoff).delete(synchronize_session=False)
+    deleted_counts["audit_logs"] = audit_deleted
+
+    db.commit()
+    return deleted_counts

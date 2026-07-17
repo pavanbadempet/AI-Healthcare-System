@@ -56,3 +56,24 @@ def test_create_access_token_uses_configured_default_expiry(monkeypatch):
     expires_at = datetime.fromtimestamp(claims["exp"], timezone.utc)
 
     assert expires_at <= datetime.now(timezone.utc) + timedelta(minutes=2)
+
+
+def test_brute_force_lockout():
+    username = "locked_user"
+    # Reset state
+    auth.brute_force_protector.record_success(username)
+    assert auth.brute_force_protector.is_locked_out(username) is False
+    
+    # Fail 4 times
+    for _ in range(4):
+        auth.brute_force_protector.record_failure(username)
+    assert auth.brute_force_protector.is_locked_out(username) is False
+    
+    # 5th failure triggers lockout
+    auth.brute_force_protector.record_failure(username)
+    assert auth.brute_force_protector.is_locked_out(username) is True
+    
+    # Success clears it
+    auth.brute_force_protector.record_success(username)
+    assert auth.brute_force_protector.is_locked_out(username) is False
+

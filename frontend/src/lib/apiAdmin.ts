@@ -121,6 +121,14 @@ export async function resolveMonitoringSignal(signalId: number): Promise<Monitor
   return apiFetch(`/monitoring/signals/${signalId}/resolve`, { method: 'PUT' });
 }
 
+export async function submitVitals(vital: Omit<VitalObservation, 'id' | 'created_at' | 'observed_at'> & { observed_at?: string }): Promise<{ vital: VitalObservation, signals: MonitoringSignal[] }> {
+  return apiFetch('/monitoring/vitals', {
+    method: 'POST',
+    body: JSON.stringify(vital),
+  });
+}
+
+
 export interface DiagnosticResult {
   id: number;
   order_id: number;
@@ -392,6 +400,13 @@ export async function getAdminDataQuality(): Promise<DataQualityReport> {
 export async function getAdminOperationalHealth(): Promise<OperationalHealthReport> {
   return apiFetch<OperationalHealthReport>('/admin/operational-health');
 }
+
+export async function triggerMaintenance(): Promise<{ status: string; message: string }> {
+  return apiFetch<{ status: string; message: string }>('/admin/maintenance', {
+    method: 'POST',
+  });
+}
+
 
 export interface AnalyticsReport {
   report_generated_at: string | null;
