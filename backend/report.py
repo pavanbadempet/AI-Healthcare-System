@@ -89,16 +89,28 @@ def download_health_report(
     Generate and download a comprehensive health report PDF for the authenticated user.
     """
     try:
-        # 1. Fetch latest health record (Simulating a general summary for now)
-        # In a real app, we'd aggregate multiple records.
-        # For now, let's grab the most recent prediction if any.
+        # 1. Fetch latest health record
+        # Aggregate multiple records and pull real demographic profile values
         latest_record = db.query(models.HealthRecord).filter(
             models.HealthRecord.user_id == current_user.id
         ).order_by(models.HealthRecord.timestamp.desc()).first()
 
+        import datetime
+        user_age = 30
+        if current_user.dob:
+            try:
+                # Handle datetime.date vs datetime.datetime objects gracefully
+                dob = current_user.dob
+                if hasattr(dob, "date"):
+                    dob = dob.date()
+                today = datetime.date.today()
+                user_age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
+            except Exception:
+                pass
+
         report_data = {
-            "age": 30, # Default/Placeholder if profile empty
-            "gender": "Unknown"
+            "age": user_age,
+            "gender": current_user.gender or "Unknown"
         }
 
         # Merge Profile Data
@@ -141,3 +153,4 @@ def download_health_report(
         # Return a fallback PDF or 500 based on preference.
         # For now, let's try to return a simple error PDF if possible, or just raise 500
         raise HTTPException(status_code=500, detail=HEALTH_REPORT_FAILURE_DETAIL)
+

@@ -730,9 +730,9 @@ export default function PatientEMRView({
                   </div>
                 ) : healthPass ? (
                   <div className="p-5 bg-slate-950/80 border border-slate-900 rounded-2xl flex flex-col sm:flex-row items-center gap-6">
-                    {/* QR mock-code */}
+                    {/* Real generated QR code */}
                     <div className="w-32 h-32 bg-white p-2 rounded-xl flex-shrink-0 flex items-center justify-center">
-                      <QrCode className="w-full h-full text-black" strokeWidth={1.5} />
+                      <img src={healthPass.qr_code_url} alt="Health Pass QR Code" className="w-full h-full object-contain" />
                     </div>
                     
                     {/* Passport detail checklist */}

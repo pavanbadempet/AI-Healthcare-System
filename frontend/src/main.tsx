@@ -24,3 +24,17 @@ if (container) {
     </React.StrictMode>
   );
 }
+
+// Register ClinOS Service Worker for offline-first resilience
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then((registration) => {
+        console.log('ClinOS ServiceWorker registered: ', registration.scope);
+      })
+      .catch((err) => {
+        console.error('ClinOS ServiceWorker registration failed: ', err);
+      });
+  });
+}
+

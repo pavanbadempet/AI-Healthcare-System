@@ -3,7 +3,8 @@ import { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "@/lib/auth";
 import { streamChat, getChatHistory, clearChatHistory, getChatSuggestions, getChatContext, type ChatMessage } from "@/lib/api";
 import { motion, AnimatePresence } from "framer-motion";
-import { Send, Bot, User, Trash2, Zap, Settings2, FileText, Database, ShieldAlert, Cpu, BrainCircuit, Loader2, Info } from "lucide-react";
+import { Send, Bot, User, Trash2, Zap, Settings2, FileText, Database, ShieldAlert, Cpu, BrainCircuit, Loader2, Info, Volume2, VolumeX } from "lucide-react";
+import { useTranslation } from "@/lib/i18n";
 import LazyMarkdown from "@/components/chat/LazyMarkdown";
 import Tooltip from "@/components/layout/Tooltip";
 import { ModelManager } from "@/components/chat/ModelManager";
@@ -32,6 +33,53 @@ export default function ChatCopilotPage() {
     { id: 'patient', label: 'Active Patient Record', icon: User },
     { id: 'guidelines', label: 'Clinical Guidelines', icon: FileText }
   ];
+
+  const { language } = useTranslation();
+  const [playingId, setPlayingId] = useState<string | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const playTTS = async (text: string, msgId: string) => {
+    if (playingId === msgId) {
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      setPlayingId(null);
+      return;
+    }
+    
+    try {
+      setPlayingId(msgId);
+      // Clean text of html tags, markdown characters, etc.
+      const cleanText = text
+        .replace(/<[^>]*>/g, "")
+        .replace(/[\*\_`#]/g, "")
+        .trim();
+        
+      const apiBase = import.meta.env.VITE_PUBLIC_API_URL || "";
+      const response = await fetch(`${apiBase}/v1/audio/tts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: cleanText, lang: language })
+      });
+      
+      if (!response.ok) throw new Error("TTS generation failed");
+      
+      const blob = await response.blob();
+      const audioUrl = URL.createObjectURL(blob);
+      
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
+      audio.onended = () => setPlayingId(null);
+      await audio.play();
+    } catch (e) {
+      console.error("TTS playback failed:", e);
+      setPlayingId(null);
+    }
+  };
 
   const handleWebLLMLoad = async (modelId: string) => {
     if (webllmLoading) return;
@@ -345,10 +393,34 @@ ${contextText}
                         : 'bg-[rgba(24,24,27,0.7)] border-[var(--border-focus)] text-[var(--text-primary)]'
                     }`}>
                       {msg.role === 'assistant' ? (
-                        <div className="prose prose-invert prose-xs max-w-none leading-relaxed font-mono text-[11px]">
-                          <LazyMarkdown>
-                            {msg.content || "..."}
-                          </LazyMarkdown>
+                        <div>
+                          <div className="prose prose-invert prose-xs max-w-none leading-relaxed font-mono text-[11px]">
+                            <LazyMarkdown>
+                              {msg.content || "..."}
+                            </LazyMarkdown>
+                          </div>
+                          {msg.content && (
+                            <div className="flex justify-end mt-2 pt-1.5 border-t border-white/[0.04]">
+                              <button
+                                onClick={() => playTTS(msg.content, String(idx))}
+                                className="px-2 py-1 bg-white/[0.02] hover:bg-white/[0.06] rounded text-[9px] font-mono font-bold uppercase tracking-wider text-[var(--text-secondary)] hover:text-white flex items-center gap-1.5 transition-colors cursor-pointer"
+                                title="Listen to recommendation in your language"
+                              >
+                                {playingId === String(idx) ? (
+
+                                  <>
+                                    <VolumeX size={10} className="text-red-400" />
+                                    <span>Stop</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Volume2 size={10} className="text-[var(--accent)]" />
+                                    <span>Listen</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <p className="whitespace-pre-wrap font-mono text-[11px] leading-relaxed">{msg.content}</p>

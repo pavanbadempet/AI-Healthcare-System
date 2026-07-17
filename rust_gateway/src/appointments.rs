@@ -1,6 +1,6 @@
 use axum::{
     extract::{Path, Query, State},
-    routing::{delete, get, post, put},
+    routing::{delete, get, put},
     Json, Router,
 };
 use chrono::NaiveDateTime;
@@ -114,6 +114,7 @@ async fn create_appointment(
     }
 
     #[derive(sqlx::FromRow)]
+    #[allow(dead_code)]
     struct DoctorInfo {
         id: i64,
         role: String,

@@ -20,22 +20,13 @@ if os.getenv("TESTING", "").strip().lower() in {"1", "true", "yes", "on"}:
 else:
     os.environ["TESTING"] = ""
 
-# Configure Logging with PII Redaction
-import re
+# Configure Structured JSON Logging with PII Redaction
+from backend.logging_config import setup_structured_logging
+setup_structured_logging()
 
 from backend.security_decorators import no_log_zone_async
 
-
-class PIIRedactingFilter(logging.Filter):
-    def filter(self, record):
-        if isinstance(record.msg, str):
-            record.msg = re.sub(r'[\w\.-]+@[\w\.-]+\.\w+', '[EMAIL_REDACTED]', record.msg)
-            record.msg = re.sub(r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b', '[PHONE_REDACTED]', record.msg)
-        return True
-
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
-logger.addFilter(PIIRedactingFilter())
 
 # Configure Rate Limiter
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -86,6 +77,7 @@ from . import (
     care_events,
     chat,
     clinical_intelligence,
+    consent_gate,
     database,
     demo_readiness,
     diagnostics,
@@ -108,6 +100,8 @@ from . import (
     smart_fhir_endpoints,
     streaming_chat,
     telemetry,
+    i18n_audio,
+    fhir_compression,
 )
 from .pdf_service import generate_medical_report
 
@@ -299,6 +293,12 @@ async def lifespan(app: FastAPI):
     except Exception as eb_err:
         startup_diagnostics["event_bus"] = f"failed: {str(eb_err)}"
 
+    logger.info("*" * 60)
+    logger.info(" ClinOS LEGAL & MEDICAL DISCLAIMER ACTIVE")
+    logger.info(" Provided 'AS IS' for Clinical Decision Support only.")
+    logger.info(" Ult Diagnostic Responsibility lies with the Licensed Clinician.")
+    logger.info("*" * 60)
+
     yield
     logger.info("Shutting down...")
 
@@ -340,6 +340,7 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.state.limiter = limiter
 
 app.add_middleware(middleware.RequestTracingMiddleware)
+app.add_middleware(middleware.PrometheusMetricsMiddleware)
 app.add_middleware(middleware.LicenseValidationMiddleware)
 app.add_middleware(middleware.APIVersioningMiddleware)
 
@@ -374,6 +375,9 @@ app.include_router(smart_fhir_endpoints.router, prefix=API_V1_PREFIX)
 app.include_router(fhir_endpoints.router, prefix=API_V1_PREFIX)
 app.include_router(federated_sync.router, prefix=API_V1_PREFIX)
 app.include_router(clinical_intelligence.router, prefix=API_V1_PREFIX)
+app.include_router(consent_gate.router, prefix=API_V1_PREFIX)
+app.include_router(i18n_audio.router, prefix=API_V1_PREFIX)
+app.include_router(fhir_compression.router, prefix=API_V1_PREFIX)
 
 @app.get("/")
 def root():
@@ -503,6 +507,20 @@ async def generate_report(
     except Exception:
         logger.error("Generate report failed")
         raise HTTPException(status_code=500, detail=GENERATE_REPORT_FAILURE_DETAIL)
+
+# --- SOTA Prometheus Monitoring Endpoint ---
+@app.get("/metrics")
+def get_prometheus_metrics():
+    """Exposes structured Prometheus telemetry metrics."""
+    try:
+        from backend.enterprise_features import EnterpriseMetrics
+        metrics_collector = EnterpriseMetrics()
+        metrics_collector.update_system_metrics()
+    except Exception as e:
+        logger.warning("Failed to update system metrics: %s", e)
+
+    from prometheus_client import generate_latest, CONTENT_TYPE_LATEST
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 # --- Static Files (WebLLM AI Copilot page) ---
 _static_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend", "static")

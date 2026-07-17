@@ -47,10 +47,21 @@ class ClinicalScribeAgent(BaseAgent):
             except Exception:
                 pass
 
+        # Map gender string representation safely
+        gender_val = "Other"
+        if patient.gender:
+            norm_gender = str(patient.gender).strip().lower()
+            if norm_gender in ("1", "male", "m"):
+                gender_val = "Male"
+            elif norm_gender in ("0", "female", "f"):
+                gender_val = "Female"
+            else:
+                gender_val = patient.gender.capitalize()
+
         patient_context = (
             f"Patient Name: {patient.full_name or patient.username}\n"
             f"Age: {age}\n"
-            f"Gender: {'Male' if patient.gender == 1 else 'Female' if patient.gender == 0 else 'Other'}\n"
+            f"Gender: {gender_val}\n"
         )
 
         self.log_step("Generate SOAP Note", "Calling Core AI Scribe Engine...")

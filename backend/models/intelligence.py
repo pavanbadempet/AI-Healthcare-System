@@ -40,3 +40,23 @@ class PatientInsight(Base):
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     patient = relationship("User", foreign_keys=[patient_id])
+
+
+class ClinicalAICorrection(Base):
+    """Registry ledger tracking clinical overrides of AI outputs."""
+
+    __tablename__ = "clinical_ai_corrections"
+
+    id = Column(Integer, primary_key=True, index=True)
+    patient_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    clinician_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    function_name = Column(String, nullable=False, index=True)
+    original_ai_output = Column(Text, nullable=False)
+    corrected_output = Column(Text, nullable=True)
+    override_action = Column(String, nullable=False)  # accepted | overridden | ignored
+    override_reason = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    patient = relationship("User", foreign_keys=[patient_id])
+    clinician = relationship("User", foreign_keys=[clinician_id])
+

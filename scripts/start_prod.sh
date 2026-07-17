@@ -42,12 +42,23 @@ fi
 
 # Rust gateway is already built via Docker multi-stage build
 
-if [ -n "$DOPPLER_TOKEN" ]; then
-    echo "Starting Python server with Doppler Secrets Manager on port 8001..."
-    doppler run -- uvicorn backend.main:app --host 0.0.0.0 --port 8001 --workers 4 &
+# Run Python Backend using SOTA IPC Unix Domain Socket on Linux (HF Spaces) and TCP loopback on Windows fallback
+if [[ "$OSTYPE" == "linux-gnu"* ]] || [[ "$OSTYPE" == "darwin"* ]] || [ -f /proc/self/cgroup ]; then
+    if [ -n "$DOPPLER_TOKEN" ]; then
+        echo "Starting Python server with Doppler Secrets Manager on Unix Domain Socket /tmp/healthcare.sock..."
+        doppler run -- uvicorn backend.main:app --uds /tmp/healthcare.sock --workers 4 &
+    else
+        echo "DOPPLER_TOKEN not found. Starting Python server on Unix Domain Socket /tmp/healthcare.sock..."
+        uvicorn backend.main:app --uds /tmp/healthcare.sock --workers 4 &
+    fi
 else
-    echo "DOPPLER_TOKEN not found. Starting Python server with standard environment variables on port 8001..."
-    uvicorn backend.main:app --host 0.0.0.0 --port 8001 --workers 4 &
+    if [ -n "$DOPPLER_TOKEN" ]; then
+        echo "Starting Python server with Doppler Secrets Manager on port 8001..."
+        doppler run -- uvicorn backend.main:app --host 0.0.0.0 --port 8001 --workers 4 &
+    else
+        echo "DOPPLER_TOKEN not found. Starting Python server with standard environment variables on port 8001..."
+        uvicorn backend.main:app --host 0.0.0.0 --port 8001 --workers 4 &
+    fi
 fi
 
 echo "Initializing database to ensure Rust gateway can connect..."

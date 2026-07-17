@@ -484,3 +484,30 @@ def get_procedure_cost_estimate(
         "pricing_model": pricing_model,
         "message": f"Procedure cost estimate compiled for {procedure_type} in {region} under {insurance_provider or 'Self-Pay'}."
     }
+
+
+@router.post("/invoices/{invoice_id}/audit", status_code=200)
+async def audit_invoice_denial_risk(
+    invoice_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    """Audits an invoice's clinical documentation and CPT coding suitability using SOTA Clinical Billing Agent."""
+    _require_billing_or_admin(current_user)
+    invoice = db.query(models.Invoice).filter(models.Invoice.id == invoice_id).first()
+    if not invoice:
+        raise HTTPException(status_code=404, detail="Invoice not found")
+    
+    _ensure_facility_access(current_user, invoice.facility_id)
+
+    # Fetch patient clinical notes/SOAP note
+    soap_note = "Patient presents with symptoms. Vitals show stable status."
+    if invoice.encounter_id:
+        encounter = db.query(models.Encounter).filter(models.Encounter.id == invoice.encounter_id).first()
+        if encounter and encounter.notes:
+            soap_note = encounter.notes
+    
+    from backend.agents.billing_agent import ClinicalBillingAgent
+    agent = ClinicalBillingAgent(db)
+    report = await agent.audit_billing_claim(soap_note)
+    return report

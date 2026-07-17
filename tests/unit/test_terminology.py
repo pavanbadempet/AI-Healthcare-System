@@ -39,3 +39,38 @@ def test_supported_systems_are_phi_safe():
         "http://hl7.org/fhir/sid/icd-10-cm",
     }
     assert all("patient" not in str(system).lower() for system in systems)
+
+
+def test_rxnorm_lookup_and_caching(monkeypatch):
+    # Mock requests to return simulated RxNorm properties
+    class MockResponse:
+        status_code = 200
+        def json(self):
+            return {"idAndName": {"rxcui": "198440", "name": "Acetaminophen 325 MG Oral Tablet"}}
+
+    monkeypatch.setattr("requests.get", lambda *args, **kwargs: MockResponse())
+    
+    # Clean terminology cache
+    import sqlite3
+    if os.path.exists(terminology.CACHE_DB):
+        try:
+            os.remove(terminology.CACHE_DB)
+        except Exception:
+            pass
+
+    concept = terminology.lookup_code("rxnorm", "198440")
+    assert concept is not None
+    assert concept["code"] == "198440"
+    assert concept["display"] == "Acetaminophen 325 MG Oral Tablet"
+    assert concept["category"] == "medication"
+
+    # Subsequent lookup should fetch from cache, not API (monkeypatch to error)
+    def fail_get(*args, **kwargs):
+        raise RuntimeError("API should not be called")
+    monkeypatch.setattr("requests.get", fail_get)
+
+    cached_concept = terminology.lookup_code("rxnorm", "198440")
+    assert cached_concept is not None
+    assert cached_concept["display"] == "Acetaminophen 325 MG Oral Tablet"
+import os
+

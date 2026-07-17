@@ -1,7 +1,7 @@
 use axum::{
-    body::{Body, Bytes},
+    body::Bytes,
     extract::{Request, State},
-    http::{HeaderMap, Method, StatusCode, Uri},
+    http::StatusCode,
     response::{IntoResponse, Response},
     Json,
 };

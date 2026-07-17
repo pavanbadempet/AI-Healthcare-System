@@ -478,3 +478,33 @@ body > * {
     opacity: 0;
   }
 }
+
+/* ──────────────────────────────────────────────────
+   SOTA Rendering Responsiveness & Hardware Acceleration
+   ────────────────────────────────────────────────── */
+
+/* Hardware accelerated transitions */
+.gpu-accelerated {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+  will-change: transform, opacity;
+}
+
+/* Off-screen rendering containment for complex tables/grids */
+.content-visibility-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 500px;
+}
+
+/* Scroll anchoring prevents layout shifts when lazy assets mount */
+.scroll-anchoring-auto {
+  overflow-anchor: auto;
+}
+
+/* Fluid responsive container padding using clamp */
+.responsive-padding {
+  padding-left: clamp(1rem, 5vw, 3rem);
+  padding-right: clamp(1rem, 5vw, 3rem);
+}
+

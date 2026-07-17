@@ -735,6 +735,15 @@ def get_triage_queue(
                 "triage_reason": reason,
                 "observed_at": latest_vital.observed_at.isoformat() if latest_vital.observed_at else None
             })
+        else:
+            triage_queue.append({
+                "patient_id": patient.id,
+                "full_name": patient.full_name or patient.username,
+                "esi_level": 5,
+                "vital_summary": "No telemetry recorded",
+                "triage_reason": "Vitals capture pending; triage assessment required.",
+                "observed_at": None
+            })
 
     # Sort queue: ESI level ascending, then patient ID
     triage_queue.sort(key=lambda x: (x["esi_level"], x["patient_id"]))

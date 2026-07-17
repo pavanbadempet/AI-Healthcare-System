@@ -317,9 +317,14 @@ class TurboVecVectorStore(VectorStoreBackend):
         return len(self._texts)
 
     def load(self) -> None:
-        """Load (or initialise) the turbovec index from ``_index_path``."""
+        """Load (or initialise) the turbovec index from ``_index_path``.
+
+        Raises:
+            ImportError: If the underlying ``turbovec`` module cannot be loaded.
+            IOError: If reading the index file fails.
+        """
+        import turbovec  # Raise ImportError immediately if not installed
         try:
-            import turbovec
             if os.path.exists(self._index_path):
                 # Load existing native index
                 self._index = turbovec.IdMapIndex.load(self._index_path)

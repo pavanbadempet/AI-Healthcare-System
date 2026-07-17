@@ -346,3 +346,21 @@ def get_nursing_metrics(
         "tasks_by_type": tasks_by_type,
         "operations_note": "Nursing metrics support care coordination; clinical accountability remains with licensed staff.",
     }
+
+
+@router.post("/patients/{patient_id}/handoff", status_code=200)
+async def generate_nursing_handoff_card(
+    patient_id: int,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    """Auto-generates a shift-handoff card using SOTA Clinical Nursing Agent."""
+    if current_user.role not in ("nurse", "doctor") and not auth.is_admin(current_user):
+        raise HTTPException(status_code=403, detail="Nurse, doctor, or admin privileges required")
+    patient = _get_patient(db, patient_id)
+    _ensure_facility_access(current_user, patient.facility_id)
+    
+    from backend.agents.nursing_agent import ClinicalNursingAgent
+    agent = ClinicalNursingAgent(db)
+    report = await agent.generate_handoff_card(patient_id)
+    return report

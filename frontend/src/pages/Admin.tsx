@@ -20,7 +20,7 @@ const TAB_CONFIG: { key: AdminTab; label: string; icon: React.ElementType }[] = 
   { key: "hospital", label: "Hospital Setup", icon: Database },
   { key: "audit", label: "Audit Trail", icon: null as any }, // ShieldCheck imported below
   { key: "data-engineering", label: "Data Pipeline & Quality", icon: null as any }, // Network
-  { key: "analytics", label: "Analytics Cockpit", icon: null as any }, // BarChart3
+  { key: "analytics", label: "Analytics Console", icon: null as any }, // BarChart3
 ];
 
 export default function AdminPage() {
@@ -99,7 +99,7 @@ export default function AdminPage() {
           { key: "hospital", label: "Hospital Setup", icon: Database },
           { key: "audit", label: "Audit Trail", icon: () => null },
           { key: "data-engineering", label: "Data Pipeline & Quality", icon: () => null },
-          { key: "analytics", label: "Analytics Cockpit", icon: () => null },
+          { key: "analytics", label: "Analytics Console", icon: () => null },
         ] as const).map((tab) => (
           <button
             key={tab.key}

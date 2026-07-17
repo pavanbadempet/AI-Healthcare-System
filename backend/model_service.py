@@ -233,6 +233,46 @@ def _predict_onnx_probs(entry: ModelEntry, input_data: np.ndarray) -> Tuple[int,
         return pred_label, prob
 
 
+class SimpleMockClassifier:
+    def __init__(self, n_features: int):
+        self.n_features = n_features
+        self.classes_ = np.array([0, 1])
+
+    def predict(self, X):
+        X = np.asarray(X)
+        if X.ndim == 1:
+            X = X.reshape(1, -1)
+        if X.shape[1] != self.n_features:
+            raise ValueError(f"X has {X.shape[1]} features, but model expects {self.n_features}")
+        return np.zeros(X.shape[0], dtype=int)
+
+    def predict_proba(self, X):
+        X = np.asarray(X)
+        if X.ndim == 1:
+            X = X.reshape(1, -1)
+        if X.shape[1] != self.n_features:
+            raise ValueError(f"X has {X.shape[1]} features, but model expects {self.n_features}")
+        return np.tile([0.7, 0.3], (X.shape[0], 1))
+
+
+class SimpleMockScaler:
+    def __init__(self, n_features: int):
+        self.n_features = n_features
+
+    def transform(self, X):
+        if hasattr(X, "to_numpy"):
+            X = X.to_numpy()
+        X = np.asarray(X)
+        if X.ndim == 1:
+            X = X.reshape(1, -1)
+        if X.shape[1] != self.n_features:
+            raise ValueError(f"X has {X.shape[1]} features, but scaler expects {self.n_features}")
+        return X
+
+    def fit_transform(self, X, y=None):
+        return self.transform(X)
+
+
 # ── Model Service ────────────────────────────────────────────────────
 
 class ModelService:
@@ -400,23 +440,27 @@ class ModelService:
             self._initialized = True
 
     def _inject_mocks(self) -> None:
-        """Replace models with MagicMock objects for testing."""
-        from unittest.mock import MagicMock
-        mock_pred = lambda X: np.array([0])
+        """Replace models with structured mock class instances for testing validation."""
+        feature_counts = {
+            "diabetes": 9,
+            "heart": 13,
+            "liver": 10,
+            "kidney": 24,
+            "lungs": 15,
+            "stroke": 7,
+        }
 
         for key in self._entries:
             entry = self._entries[key]
-            entry.model = MagicMock()
-            entry.model.predict.side_effect = mock_pred
-            entry.model.predict_proba.side_effect = lambda X: np.array([[0.7, 0.3]])
+            n_features = feature_counts.get(key, 10)
+            entry.model = SimpleMockClassifier(n_features)
             if entry.scaler_needed:
-                entry.scaler = MagicMock()
-                entry.scaler.transform.side_effect = lambda x: x
+                entry.scaler = SimpleMockScaler(n_features)
             entry.status = ModelStatus.MOCK
             entry.loaded_at = 0.0
 
         self._initialized = True
-        logger.info("TESTING MODE: Injected mock models")
+        logger.info("TESTING MODE: Injected structured mock models")
 
     def _load_real_models(self) -> None:
         """Load real .pkl models from disk concurrently."""
