@@ -1,7 +1,7 @@
 
 # 🏥 AI Healthcare System — Privacy-First Clinical AI & EHR Interoperability Platform
 
-> A production-ready, HIPAA-oriented clinical intelligence platform combining PySpark Data Engineering (Medallion Lakehouse), machine learning diagnostics, a multi-agent RAG chatbot, and full hospital operations.
+> Privacy-first AI Healthcare platform for HIPAA-compliant clinical workflows. Features a stateful LangGraph & MAF multi-agent RAG system, local Ollama LLMs, FastAPI, and React. Integrates PySpark Medallion Lakehouse analytics, HAPI FHIR patient imports, medical diagnostics ML models, and secure EHR hospital operations.
 
 <div align="center">
 
