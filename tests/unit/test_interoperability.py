@@ -491,3 +491,46 @@ def test_doctor_consent_status_returns_404_for_unknown_patient(client, db_sessio
     _set_role(db_session, "interop_doc4", "doctor")
     r = client.get("/interop/doctor/patients/99999/consent-status", headers=h)
     assert r.status_code in (403, 404)  # 403 if doctor not assigned, 404 if patient not found
+
+
+def test_import_fhir_patient_success(client, db_session):
+    from unittest.mock import patch, MagicMock
+    with patch("requests.get") as mock_get:
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json.return_value = {
+            "resourceType": "Patient",
+            "id": "12345",
+            "name": [
+                {
+                    "text": "Alexander Fleming",
+                    "given": ["Alexander"],
+                    "family": "Fleming"
+                }
+            ],
+            "gender": "male",
+            "birthDate": "1945-03-11",
+            "telecom": [
+                {"system": "email", "value": "alexander.fleming@nobel.org"}
+            ]
+        }
+        mock_get.return_value = mock_response
+
+        # Import the patient via POST
+        r = client.post("/v1/fhir/Patient/import/12345")
+        assert r.status_code == 201
+        data = r.json()
+        assert data["status"] == "success"
+        assert data["username"] == "fhir_12345"
+        assert data["full_name"] == "Alexander Fleming"
+        assert data["gender"] == "male"
+        assert data["dob"] == "1945-03-11"
+        assert data["email"] == "alexander.fleming@nobel.org"
+
+        # Verify patient created in local database
+        imported_user = db_session.query(models.User).filter_by(username="fhir_12345").first()
+        assert imported_user is not None
+        assert imported_user.full_name == "Alexander Fleming"
+        assert imported_user.gender == "male"
+        assert imported_user.dob == "1945-03-11"
+
