@@ -38,6 +38,11 @@
   <img src="https://img.shields.io/badge/Ollama-000000?style=for-the-badge&logo=ollama&logoColor=white" alt="Ollama" />
   <img src="https://img.shields.io/badge/FHIR_R4-E73F3E?style=for-the-badge&logo=hl7&logoColor=white" alt="FHIR R4" />
   <img src="https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white" alt="SQLAlchemy" />
+</p>
+<p align="center">
+  <img src="https://img.shields.io/badge/Rust-DEA584?style=for-the-badge&logo=rust&logoColor=white" alt="Rust" />
+  <img src="https://img.shields.io/badge/gRPC-244C5A?style=for-the-badge&logo=grpc&logoColor=white" alt="gRPC" />
+  <img src="https://img.shields.io/badge/SIMD_AVX2-7057ff?style=for-the-badge" alt="SIMD AVX2" />
   <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
   <img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis" />
   <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
@@ -1072,6 +1077,8 @@ MIT License — Copyright © 2026 **Pavan Badempet**, Shiva Prasad Anagondi, Pra
 <div align="center">
 
 ### **If you find this project useful, give it a ⭐ star!**
+
+[![Star History Chart](https://api.star-history.com/svg?repos=pavanbadempet/AI-Healthcare-System&type=Date)](https://star-history.com/#pavanbadempet/AI-Healthcare-System&Date)
 
 </div>
 
