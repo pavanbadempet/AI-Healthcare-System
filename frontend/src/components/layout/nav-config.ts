@@ -265,6 +265,21 @@ export const intelligenceItems: MenuItem[] = [
     gradient: "bg-gradient-to-br from-indigo-950/80 via-indigo-900/20 to-black/60",
     highlights: ["Cost Estimator", "Coverage Diagnostics", "Audits"],
   },
+  {
+    id: "telemetry",
+    title: "System Telemetry",
+    href: "/dashboard#telemetry",
+    icon: Server,
+    desc: "CPU, RAM, database pool & gateway load",
+    longDesc:
+      "Monitor operational health telemetry. View real-time CPU usage, RAM utilization, DB connection pool size, and API gateway unix socket transport statistics.",
+    color: "text-amber-400",
+    bg: "bg-amber-500/10",
+    borderHover: "hover:border-amber-500/60",
+    glow: "drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]",
+    gradient: "bg-gradient-to-br from-amber-950/80 via-amber-900/20 to-black/60",
+    highlights: ["CPU Core Load", "RAM Analytics", "Pool Connections"],
+  },
 ];
 
 export const healthcareSystemItems: MenuItem[] = [

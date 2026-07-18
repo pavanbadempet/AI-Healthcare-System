@@ -386,22 +386,6 @@ export default function TopNav({
             </AnimatePresence>
           </div>
 
-          {/* Telemetry Dropdown */}
-          <TelemetryDropdown />
-
-          {/* Admin Icon */}
-          {user && user.role === "admin" && (
-            <Tooltip content="Clinician Admin Console" position="bottom">
-              <Link
-                to="/admin"
-                onMouseEnter={() => prefetchRoute('/admin')}
-                className="hidden sm:flex p-2 text-[var(--text-secondary)] hover:text-[var(--accent)] border border-transparent hover:border-[var(--border)] hover:bg-white/[0.02] rounded-lg transition-colors"
-                aria-label="Admin panel"
-              >
-                <ShieldCheck size={15} aria-hidden="true" />
-              </Link>
-            </Tooltip>
-          )}
 
           {/* Language Selector Dropdown */}
           <LanguageSelector language={language} setLanguage={setLanguage} />
