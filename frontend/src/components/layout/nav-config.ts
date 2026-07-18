@@ -268,7 +268,7 @@ export const intelligenceItems: MenuItem[] = [
   {
     id: "telemetry",
     title: "System Telemetry",
-    href: "/dashboard#telemetry",
+    href: "/telemetry",
     icon: Server,
     desc: "CPU, RAM, database pool & gateway load",
     longDesc:

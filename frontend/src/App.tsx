@@ -29,6 +29,7 @@ const FederatedLearningPage = lazy(() => import('@/pages/FederatedLearning'));
 const ClinicalIntelligencePage = lazy(() => import('@/pages/ClinicalIntelligence'));
 const CompanionPage = lazy(() => import('@/pages/Companion'));
 const DataEngineeringPage = lazy(() => import('@/pages/DataEngineering'));
+const TelemetryPage = lazy(() => import('@/pages/Telemetry'));
 
 // Layout wrapper that applies authentication guards and TopNav template
 function ProtectedLayout() {
@@ -86,6 +87,7 @@ export default function App() {
                 <Route path="/intelligence" element={<ClinicalIntelligencePage />} />
                 <Route path="/companion" element={<CompanionPage />} />
                 <Route path="/data-engineering" element={<DataEngineeringPage />} />
+                <Route path="/telemetry" element={<TelemetryPage />} />
               </Route>
 
               {/* Fallback redirects to Dashboard */}
