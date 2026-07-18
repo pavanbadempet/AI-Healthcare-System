@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, memo } from "react";
 
 interface LiveECGMonitorProps {
   hr: number;
@@ -6,10 +6,12 @@ interface LiveECGMonitorProps {
   mode?: "ecg" | "spo2" | "resp";
 }
 
-export default function LiveECGMonitor({ hr, status, mode = "ecg" }: LiveECGMonitorProps) {
+const LiveECGMonitor = memo(function LiveECGMonitor({ hr, status, mode = "ecg" }: LiveECGMonitorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number | null>(null);
   const phaseRef = useRef<number>(0);
+  const pointsRef = useRef<number[] | null>(null);
+  const drawIndexRef = useRef<number>(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -48,8 +50,10 @@ export default function LiveECGMonitor({ hr, status, mode = "ecg" }: LiveECGMoni
     }
 
     // Buffer to hold the trace points for scrolling
-    const points: number[] = new Array(width).fill(50);
-    let drawIndex = 0;
+    if (!pointsRef.current) {
+      pointsRef.current = new Array(width).fill(50);
+    }
+    const points = pointsRef.current;
 
     const tick = () => {
       // Calculate speed factor. Respiration runs much slower than ECG/SpO2.
@@ -117,8 +121,9 @@ export default function LiveECGMonitor({ hr, status, mode = "ecg" }: LiveECGMoni
       waveValue += (Math.random() - 0.5) * 0.7;
 
       // Update the scrolling buffer
-      points[drawIndex] = waveValue;
-      drawIndex = (drawIndex + 1) % width;
+      const currentDrawIndex = drawIndexRef.current;
+      points[currentDrawIndex] = waveValue;
+      drawIndexRef.current = (currentDrawIndex + 1) % width;
 
       // Clear canvas
       ctx.clearRect(0, 0, width, height);
@@ -154,7 +159,8 @@ export default function LiveECGMonitor({ hr, status, mode = "ecg" }: LiveECGMoni
       ctx.beginPath();
       // Draw first segment (from sweep index to end of canvas)
       let started = false;
-      for (let i = drawIndex + 3; i < width; i++) {
+      const drawIndexVal = drawIndexRef.current;
+      for (let i = drawIndexVal + 3; i < width; i++) {
         const x = i;
         const y = points[i];
         if (!started) {
@@ -167,7 +173,7 @@ export default function LiveECGMonitor({ hr, status, mode = "ecg" }: LiveECGMoni
 
       // Draw second segment (from start of canvas to sweep index)
       started = false;
-      for (let i = 0; i < drawIndex - 3; i++) {
+      for (let i = 0; i < drawIndexVal - 3; i++) {
         const x = i;
         const y = points[i];
         if (!started) {
@@ -179,10 +185,10 @@ export default function LiveECGMonitor({ hr, status, mode = "ecg" }: LiveECGMoni
       }
       ctx.stroke();
 
-      // Draw the bright glowing sweep cursor head
+      // Draw the glowing sweep cursor head
       if (hasArc) {
         ctx.beginPath();
-        ctx.arc(drawIndex, points[drawIndex], 3.2, 0, 2 * Math.PI);
+        ctx.arc(drawIndexVal, points[drawIndexVal], 3.2, 0, 2 * Math.PI);
         ctx.fillStyle = "#ffffff";
         ctx.shadowBlur = 10;
         ctx.shadowColor = accentColor;
@@ -208,4 +214,7 @@ export default function LiveECGMonitor({ hr, status, mode = "ecg" }: LiveECGMoni
       className="block"
     />
   );
-}
+});
+
+export default LiveECGMonitor;
+
