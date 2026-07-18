@@ -109,7 +109,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.3 }}
-                className="h-full w-full"
+                className="h-full w-full gpu-accelerated"
               >
                 {children}
               </motion.div>
