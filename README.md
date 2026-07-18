@@ -344,8 +344,12 @@ For comprehensive dataset sources, training hyperparameters, and limitations, se
 To guarantee clinical safety and interpretability in production environments, the platform implements calibrated uncertainty estimation and validated clinical formulas.
 
 ### 1. Conformal Prediction & Uncertainty Quantification
-Rather than outputting raw, uncalibrated probabilities, the diagnostic models utilize **inductive conformal prediction** to produce a prediction set $\hat{C}(X)$ containing the true label with a user-defined confidence level $1 - \alpha$ (e.g., $95\%$ confidence):
-$$\hat{C}(X) = \{ y \in \mathcal{Y} : s(X, y) \le q_{1-\alpha} \}$$
+Rather than outputting raw, uncalibrated probabilities, the diagnostic models utilize **inductive conformal prediction** to produce a prediction set $\hat{C}(X)$ containing the true label with a user-defined confidence level $1 - \alpha$ (e.g., 95% confidence):
+
+```math
+\hat{C}(X) = \{ y \in \mathcal{Y} : s(X, y) \le q_{1-\alpha} \}
+```
+
 Where:
 - $s(X, y)$ is the non-conformity score (calculated using calibrated XGBoost margins).
 - $q_{1-\alpha}$ is the $(1-\alpha)(1 + 1/n)$-quantile of calibration non-conformity scores.
@@ -355,14 +359,20 @@ This prevents the clinical system from conveying false confidence on out-of-dist
 The backend integrates standardized clinical equations directly into the patient profile ETL pipeline to compute longitudinal risk metrics:
 
 *   **eGFR (CKD-EPI 2021 Equation):** Calculates kidney filtration rates without race-based coefficients:
-    $$\text{eGFR} = 142 \times \min(S_{cr}/\kappa, 1)^\alpha \times \max(S_{cr}/\kappa, 1)^{-1.200} \times 0.9938^{\text{Age}} \times [1.012 \text{ if Female}]$$
+    ```math
+    \text{eGFR} = 142 \times \min(S_{cr}/\kappa, 1)^\alpha \times \max(S_{cr}/\kappa, 1)^{-1.200} \times 0.9938^{\text{Age}} \times [1.012 \text{ if Female}]
+    ```
     Where $S_{cr}$ is serum creatinine (mg/dL), $\kappa = 0.7$ for females and $0.9$ for males, and $\alpha = -0.241$ for females and $-0.302$ for males.
 
 *   **FIB-4 Index (Liver Fibrosis Prediction):** Combines hepatic enzymes and platelets to screen for advanced fibrosis:
-    $$\text{FIB-4} = \frac{\text{Age (years)} \times \text{AST (U/L)}}{\text{Platelet Count } (10^9/\text{L}) \times \sqrt{\text{ALT (U/L)}}}$$
+    ```math
+    \text{FIB-4} = \frac{\text{Age (years)} \times \text{AST (U/L)}}{\text{Platelet Count } (10^9/\text{L}) \times \sqrt{\text{ALT (U/L)}}}
+    ```
 
 *   **Framingham 10-Year Cardiovascular Risk Score:** Evaluates cardiovascular disease risk using log-linear Cox proportional hazards regressions:
-    $$\ln(\text{Risk}_{10\text{-year}}) = \sum_{i} \beta_i X_i - C_{\text{baseline}}$$
+    ```math
+    \ln(\text{Risk}_{10\text{-year}}) = \sum_{i} \beta_i X_i - C_{\text{baseline}}
+    ```
     Where $X_i$ represents clinical risk factors (Age, Systolic BP, Total Cholesterol, HDL, Smoking Status, Diabetes status).
 
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
