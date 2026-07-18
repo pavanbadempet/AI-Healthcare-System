@@ -304,6 +304,24 @@ export default function DashboardPage() {
     const handleResolve = (e: Event) => {
       const customEvent = e as CustomEvent;
       const { action } = customEvent.detail;
+      
+      // Stabilize Bed 14C to clear the alarm state completely
+      setBeds((prevBeds) =>
+        prevBeds.map((b) => {
+          if (b.bed === "Bed 14C") {
+            return {
+              ...b,
+              status: "Stable",
+              hr: 75,
+              spo2: 98,
+              bp: "120/80",
+              rr: 16
+            };
+          }
+          return b;
+        })
+      );
+
       if (action === "code-blue") {
         setCodeBlueActive((prev) => ({ ...prev, "Bed 14C": true }));
         toast.success("Dispatching Code Blue response team to Bed 14C.");
