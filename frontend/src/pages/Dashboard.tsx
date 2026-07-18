@@ -580,8 +580,10 @@ export default function DashboardPage() {
           <span>UPTIME: 99.999%</span>
           {wsStatus === "connected" ? (
             <span className="flex items-center gap-1 text-[var(--success)] font-semibold"><Wifi size={11} aria-hidden="true" /> WS LIVE</span>
+          ) : wsStatus === "connecting" ? (
+            <span className="flex items-center gap-1 text-amber-400 font-semibold"><Wifi size={11} aria-hidden="true" className="animate-pulse" /> WS CONNECTING</span>
           ) : (
-            <span className="flex items-center gap-1 text-[var(--danger)] font-semibold"><WifiOff size={11} aria-hidden="true" /> WS ERROR</span>
+            <span className="flex items-center gap-1 text-amber-400 font-semibold"><WifiOff size={11} aria-hidden="true" /> SIMULATED</span>
           )}
         </div>
       </div>
@@ -1110,12 +1112,13 @@ export default function DashboardPage() {
 
       {/* Right side alert box floating for Tachycardia */}
       {!telemetryAlarmDismissed && (
-        <div className="fixed bottom-6 right-6 z-40 max-w-sm pointer-events-auto">
+        <div className="fixed bottom-6 right-6 z-40 max-w-xs sm:max-w-sm pointer-events-auto">
           <AnimatePresence>
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              className="panel p-4 rounded-xl border-l-4 border-[var(--danger)] shadow-[0_20px_40px_rgba(0,0,0,0.7)] bg-[var(--bg-card)]/90 backdrop-blur-2xl flex items-start gap-3 relative"
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="panel p-3.5 rounded-xl border-l-4 border-[var(--danger)] shadow-[0_20px_40px_rgba(0,0,0,0.7)] bg-[var(--bg-card)] backdrop-blur-2xl flex items-start gap-2.5 relative"
             >
               <BellRing className="text-[var(--danger)] shrink-0 mt-0.5 animate-pulse" size={16} />
               <div className="flex-1">
