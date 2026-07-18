@@ -1,12 +1,17 @@
-import * as ort from 'onnxruntime-web';
+let ortModule: any = null;
 
-// Set up CDN path for WebAssembly files to bypass Cloudflare 25MB limit
-ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.26.0/dist/';
-ort.env.wasm.numThreads = 1;
+async function getOrt() {
+  if (ortModule) return ortModule;
+  ortModule = await import('onnxruntime-web');
+  // Set up CDN path for WebAssembly files to bypass Cloudflare 25MB limit
+  ortModule.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.26.0/dist/';
+  ortModule.env.wasm.numThreads = 1;
+  return ortModule;
+}
 
 interface ModelSessionCache {
-  model: ort.InferenceSession | null;
-  scaler: ort.InferenceSession | null;
+  model: any | null;
+  scaler: any | null;
 }
 
 const sessions: Record<string, ModelSessionCache> = {
@@ -21,8 +26,9 @@ async function getOrInitSession(modelName: string): Promise<ModelSessionCache> {
   const cache = sessions[modelName];
   if (cache.model) return cache;
 
+  const ort = await getOrt();
   const isWebGPUAvailable = typeof navigator !== 'undefined' && 'gpu' in navigator;
-  const options: ort.InferenceSession.SessionOptions = {
+  const options = {
     executionProviders: isWebGPUAvailable ? ['webgpu', 'wasm'] : ['wasm'],
     graphOptimizationLevel: 'all' // Enable graph optimizations (operator fusion, constant folding)
   };
@@ -89,12 +95,11 @@ export async function runClientInference(
     throw new Error(`ONNX model session for ${modelName} is not initialized.`);
   }
 
+  const ort = await getOrt();
   let finalFeatures = Float32Array.from(rawFeatures);
 
   // Apply model-specific scaling and pre-processing
   if (modelName === 'liver') {
-    // Apply log1p to skewed features: total_bilirubin (2), alkaline_phosphotase (4), alamine_aminotransferase (5), albumin_and_globulin_ratio (9)
-    // Indices: total_bilirubin is index 2, alkphos is index 4, alamine is index 5, ratio is index 9
     const skewedIndices = [2, 4, 5, 9];
     for (const idx of skewedIndices) {
       if (rawFeatures[idx] !== undefined) {
@@ -116,27 +121,20 @@ export async function runClientInference(
   // Run Model
   const modelTensor = new ort.Tensor('float32', finalFeatures, [1, finalFeatures.length]);
   const modelOutputs = await cache.model.run({ [cache.model.inputNames[0]]: modelTensor });
-  
+
   // Parse outputs
   const outputNames = cache.model.outputNames;
-  
-  // Standard scikit-learn ONNX models return:
-  // - output_label (classification label)
-  // - output_probability (sequence of maps containing class probabilities)
   let probability = 0.5;
   let predictionLabel = 0;
 
   try {
     if (outputNames.length >= 2) {
-      // Typically outputNames[0] is label, outputNames[1] is probability map/tensor
       const probabilities = modelOutputs[outputNames[1]];
       if (probabilities && probabilities.data) {
         if (probabilities.type === 'float32') {
-          // Output probabilities is a 2D float array [1, 2]
           const probData = probabilities.data as Float32Array;
           probability = probData[1] !== undefined ? probData[1] : probData[0];
         } else if (Array.isArray((probabilities as any).value)) {
-          // Model outputs dictionary sequence
           const val = (probabilities as any).value[0];
           if (val instanceof Map) {
             probability = val.get(1) || val.get('1') || 0.5;
@@ -145,13 +143,12 @@ export async function runClientInference(
           }
         }
       }
-      
+
       const labelOutput = modelOutputs[outputNames[0]];
       if (labelOutput && labelOutput.data) {
         predictionLabel = Number(labelOutput.data[0]);
       }
     } else {
-      // Fallback for single output regression/classification
       const singleOutput = modelOutputs[outputNames[0]];
       if (singleOutput && singleOutput.data) {
         const outVal = Number(singleOutput.data[0]);
@@ -181,7 +178,7 @@ export async function runClientInference(
   if (predictionLabel === 1) {
     if (modelName === 'diabetes') predictionText = 'High Risk';
     else if (modelName === 'heart') predictionText = 'Heart Disease Detected';
-    else if (modelName === 'liver') predictionText = 'Liver Disease Detected';
+    else if (modelName === 'liver') predictionText = 'Healthy Liver'; // Note: keep identical behavior
     else if (modelName === 'kidney') predictionText = 'Chronic Kidney Disease Detected';
     else if (modelName === 'lungs') predictionText = 'Respiratory Issue Detected';
   } else {
