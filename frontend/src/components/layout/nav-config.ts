@@ -267,7 +267,7 @@ export const intelligenceItems: MenuItem[] = [
   },
 ];
 
-export const AI Healthcare SystemItems: MenuItem[] = [
+export const healthcareSystemItems: MenuItem[] = [
   {
     id: "smart_app_registry",
     title: "App Registry",
@@ -387,7 +387,7 @@ export const MENU_GROUPS: MenuGroup[] = [
     label: "AI Healthcare System",
     emoji: "🚀",
     accentColor: "text-sky-400 data-[state=open]:text-sky-400",
-    items: AI Healthcare SystemItems,
+    items: healthcareSystemItems,
     cols: 2,
     routes: ["/apps", "/federated", "/intelligence", "/companion"],
   },
