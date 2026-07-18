@@ -71,8 +71,31 @@ export default function TopNav({
 
   // Refs
   const navContainerRef = useRef<HTMLDivElement>(null);
+  const notificationsRef = useRef<HTMLDivElement>(null);
   const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Click outside notifications dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        showNotifications &&
+        notificationsRef.current &&
+        !notificationsRef.current.contains(e.target as Node)
+      ) {
+        setShowNotifications(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showNotifications]);
+
+  // Close notifications dropdown when activeMenu (mega menu) is opened
+  useEffect(() => {
+    if (activeMenu) {
+      setShowNotifications(false);
+    }
+  }, [activeMenu]);
 
   // Dynamic menu items and groups computation
   const dynamicOperationsItems = operationsItems.map(item => {
@@ -314,7 +337,7 @@ export default function TopNav({
           <CommandSearch user={user} />
 
           {/* Notification Bell Dropdown */}
-          <div className="relative flex items-center">
+          <div ref={notificationsRef} className="relative flex items-center">
             <Tooltip content={alarm?.active ? "Active Vitals Alarm!" : "Notifications"} position="bottom">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
