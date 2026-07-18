@@ -31,6 +31,8 @@ def test_rust_grpc_server():
         print(e.stdout, file=sys.stderr)
         print("--- CARGO BUILD STDERR ---", file=sys.stderr)
         print(e.stderr, file=sys.stderr)
+        escaped_err = e.stderr.replace('\n', '%0A').replace('\r', '%0D')
+        print(f"::error file=tests/unit/test_rust_grpc.py,line=28,title=Cargo Build Failure::{escaped_err}")
         raise
 
     # Start the Rust gateway server in a background subprocess
