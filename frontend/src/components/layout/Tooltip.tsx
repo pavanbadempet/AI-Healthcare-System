@@ -69,9 +69,6 @@ export default function Tooltip({
       className="relative inline-flex items-center"
       onMouseEnter={() => setVisible(true)}
       onMouseLeave={() => setVisible(false)}
-      onFocus={() => setVisible(true)}
-      onBlur={() => setVisible(false)}
-      title={content}
     >
       {children}
       <AnimatePresence>
