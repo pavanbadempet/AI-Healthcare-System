@@ -394,42 +394,62 @@ export default function DashboardPage() {
     const wsUrl = `ws://127.0.0.1:8000/api/v1/telemetry/vitals/${selectedPatientDbId}?token=${token}`;
     const ws = new WebSocket(wsUrl);
 
+    let lastUpdate = 0;
+    let pendingData: any = null;
+    let throttleTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const applyUpdates = () => {
+      if (!pendingData) return;
+      const data = pendingData;
+      pendingData = null;
+      lastUpdate = Date.now();
+
+      const hr = data.heart_rate || 72;
+      const spo2 = data.spo2 || 98;
+      const bp = `${data.systolic_bp || 120}/${data.diastolic_bp || 80}`;
+      const rr = data.respiratory_rate || 16;
+
+      setSelectedBed((current) => {
+        if (!current) return current;
+        return {
+          ...current,
+          hr,
+          spo2,
+          rr,
+          bp
+        };
+      });
+
+      setBeds((prevBeds) =>
+        prevBeds.map((bed) => {
+          const matchesSelected = 
+            bed.name.toLowerCase().includes(selectedBed?.name?.toLowerCase() || "___nonexistent___");
+          if (matchesSelected) {
+            return {
+              ...bed,
+              hr,
+              spo2,
+              rr,
+              bp
+            };
+          }
+          return bed;
+        })
+      );
+    };
+
     ws.onmessage = (event) => {
       try {
-        const data = JSON.parse(event.data);
-        
-        const hr = data.heart_rate || 72;
-        const spo2 = data.spo2 || 98;
-        const bp = `${data.systolic_bp || 120}/${data.diastolic_bp || 80}`;
-        const rr = data.respiratory_rate || 16;
-        
-        setSelectedBed((current) => {
-          if (!current) return current;
-          return {
-            ...current,
-            hr,
-            spo2,
-            rr,
-            bp
-          };
-        });
-
-        setBeds((prevBeds) =>
-          prevBeds.map((bed) => {
-            const matchesSelected = 
-              bed.name.toLowerCase().includes(selectedBed?.name?.toLowerCase() || "___nonexistent___");
-            if (matchesSelected) {
-              return {
-                ...bed,
-                hr,
-                spo2,
-                rr,
-                bp
-              };
-            }
-            return bed;
-          })
-        );
+        pendingData = JSON.parse(event.data);
+        const timeSinceLast = Date.now() - lastUpdate;
+        if (timeSinceLast >= 500) {
+          applyUpdates();
+        } else if (!throttleTimeout) {
+          throttleTimeout = setTimeout(() => {
+            throttleTimeout = null;
+            applyUpdates();
+          }, 500 - timeSinceLast);
+        }
       } catch (err) {
         console.warn("Failed to parse live vitals WebSocket message:", err);
       }
@@ -441,6 +461,7 @@ export default function DashboardPage() {
 
     return () => {
       ws.close();
+      if (throttleTimeout) clearTimeout(throttleTimeout);
     };
   }, [selectedPatientDbId, selectedBed?.name]);
 
