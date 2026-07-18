@@ -4,14 +4,17 @@ import babel from '@rolldown/plugin-babel';
 import tailwindcss from '@tailwindcss/vite';
 import path from 'path';
 
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [
     react(),
     tailwindcss(),
-    babel({
-      presets: [reactCompilerPreset()],
-    }),
-  ],
+    // React Compiler Babel preset runs only in production builds to keep dev compiles instant via Rust/Oxc
+    command === 'build'
+      ? babel({
+          presets: [reactCompilerPreset()],
+        })
+      : null,
+  ].filter(Boolean),
   envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
   resolve: {
     alias: {
@@ -66,4 +69,4 @@ export default defineConfig({
       },
     },
   },
-});
+}));
