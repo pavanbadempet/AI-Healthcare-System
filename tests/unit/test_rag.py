@@ -105,3 +105,96 @@ def test_rag_facility_scoped_search_excludes_unscoped_legacy_documents(mock_vect
 
     assert rag.search_similar_records(user_id, "Legacy", facility_id="facility_north") == []
     assert len(rag.search_similar_records(user_id, "Legacy")) == 1
+
+
+# --- Merged from test_strict_rag.py ---
+
+def test_store_load_failure():
+    from unittest.mock import patch
+    with patch("os.path.exists", return_value=True), \
+         patch("builtins.open", side_effect=Exception("Corrupt File")):
+        store = rag.SimpleVectorStore()
+        assert len(store.documents) == 0
+
+
+def test_store_save_failure():
+    from unittest.mock import patch
+    store = rag.SimpleVectorStore()
+    store.documents = ["doc1"]
+    with patch("builtins.open", side_effect=Exception("Disk Full")):
+        store.save()
+
+
+def test_store_search_empty():
+    from unittest.mock import patch
+    with patch("os.path.exists", return_value=False):
+        store = rag.SimpleVectorStore()
+        results = store.search("query")
+        assert results == []
+
+
+def test_store_search_logic():
+    from unittest.mock import patch
+    import numpy as np
+    store = rag.SimpleVectorStore()
+    store.vectors = [[1.0, 0.0], [0.0, 1.0]]
+    store.documents = ["Doc A", "Doc B"]
+    store.metadatas = [{"id": 1}, {"id": 2}]
+    with patch("backend.rag.cosine_similarity", return_value=np.array([[0.9, 0.1]])):
+        results = store.search("query")
+        assert results == ["Doc A", "Doc B"]
+
+
+def test_store_search_filter():
+    from unittest.mock import patch
+    import numpy as np
+    store = rag.SimpleVectorStore()
+    store.vectors = [[1,0], [1,0]]
+    store.documents = ["User1 Doc", "User2 Doc"]
+    store.metadatas = [{"user_id": "1"}, {"user_id": "2"}]
+    with patch("backend.rag.cosine_similarity", return_value=np.array([[0.9, 0.9]])):
+        results = store.search("q", filter_meta={"user_id": "1"})
+        assert results == ["User1 Doc"]
+
+
+def test_add_checkup_exception(caplog):
+    from unittest.mock import MagicMock, patch
+    mock_store = MagicMock()
+    sensitive_error = "Store error token=rag-secret patient_name=Sensitive User"
+    mock_store.add.side_effect = Exception(sensitive_error)
+    caplog.set_level("ERROR", logger="backend.rag")
+    with patch("backend.rag.get_vector_store", return_value=mock_store):
+        res = rag.add_checkup_to_db("1", "1", "type", {}, "pred", "date")
+        assert res is False
+    assert sensitive_error not in caplog.text
+    assert "rag-secret" not in caplog.text
+    assert "Sensitive User" not in caplog.text
+
+
+def test_add_interaction_exception(caplog):
+    from unittest.mock import MagicMock, patch
+    mock_store = MagicMock()
+    sensitive_error = "Store error token=rag-secret patient_name=Sensitive User"
+    mock_store.add.side_effect = Exception(sensitive_error)
+    caplog.set_level("ERROR", logger="backend.rag")
+    with patch("backend.rag.get_vector_store", return_value=mock_store):
+        res = rag.add_interaction_to_db("1", "int1", "user", "msg", "date")
+        assert res is False
+    assert sensitive_error not in caplog.text
+    assert "rag-secret" not in caplog.text
+    assert "Sensitive User" not in caplog.text
+
+
+def test_search_similar_records_exception(caplog):
+    from unittest.mock import MagicMock, patch
+    mock_store = MagicMock()
+    sensitive_error = "Search fail token=rag-secret patient_name=Sensitive User"
+    mock_store.search.side_effect = Exception(sensitive_error)
+    caplog.set_level("ERROR", logger="backend.rag")
+    with patch("backend.rag.get_vector_store", return_value=mock_store):
+        res = rag.search_similar_records("1", "q")
+        assert res == []
+    assert sensitive_error not in caplog.text
+    assert "rag-secret" not in caplog.text
+    assert "Sensitive User" not in caplog.text
+

@@ -1,4 +1,4 @@
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import pytest
@@ -313,4 +313,215 @@ def test_clinical_recourse_and_model_provenance(client, db_session):
     assert "clinical_narrative" in data
     # Kidney endpoint currently returns empty narrative stub
     assert data["clinical_narrative"] == ""
+
+
+# --- Merged from test_sota_upgrades_extended.py ---
+
+class TestSemanticCache:
+    """Tests for LLM Semantic Caching in core_ai."""
+
+    @pytest.fixture(autouse=True)
+    def mock_core_ai_generate(self):
+        # Override the module-level autouse mock to let the real generate logic run
+        pass
+
+    @pytest.mark.asyncio
+    @patch("backend.core_ai.has_gemini_api_key")
+    @patch("backend.core_ai.get_ollama_models")
+    @patch("backend.core_ai.embed_text")
+    @patch("backend.core_ai._generate_cloud")
+    @patch("backend.core_ai._generate_gemini")
+    async def test_semantic_cache_generate(self, mock_gemini_gen, mock_gen_cloud, mock_embed, mock_get_ollama, mock_has_key):
+        import os
+        from backend.core_ai import generate, semantic_cache
+
+        # Reset cache
+        semantic_cache.clear()
+
+        # Mock Ollama to be unavailable and Gemini API key to exist to force falling back to Gemini
+        mock_get_ollama.return_value = []
+        mock_has_key.return_value = True
+        mock_gen_cloud.return_value = ""
+
+        # Mock embeddings to be identical
+        mock_embed.return_value = [0.1] * 768
+        mock_gemini_gen.return_value = "Cached narrative text"
+
+        with patch.dict(os.environ, {"SEMANTIC_CACHE_ENABLED": "true"}):
+            # First execution (Cache Miss)
+            res1 = await generate("Tell me about diabetes", system="MedAssistant")
+            assert res1 == "Cached narrative text"
+            assert mock_gemini_gen.call_count == 1
+
+            # Second execution (Cache Hit)
+            res2 = await generate("Tell me about diabetes", system="MedAssistant")
+            assert res2 == "Cached narrative text"
+            # Gemini generation should not be called again
+            assert mock_gemini_gen.call_count == 1
+
+
+class TestAdaptiveConformalPrediction:
+    """Tests for Adaptive Conformal Prediction (ACP) threshold scaling."""
+
+    def test_acp_missingness_scaling(self):
+        from backend.prediction import _calculate_adaptive_conformal_prediction
+        # 1. Base case: no missing features (missingness_ratio = 0.0)
+        # q = 0.8 -> threshold = 1 - 0.8 = 0.2
+        input_list_clean = [1.0] * 10
+        metrics_clean = _calculate_adaptive_conformal_prediction(
+            proba_positive=0.25,
+            conformal_q=0.8,
+            input_list=input_list_clean,
+            raw_pred=0
+        )
+        assert metrics_clean["missingness_ratio"] == 0.0
+        # p0 = 0.75 >= 0.2 (includes 0), p1 = 0.25 >= 0.2 (includes 1) -> set [0, 1]
+        assert metrics_clean["conformal_prediction_set"] == [0, 1]
+
+        # 2. High missingness case: 50% missing (missingness_ratio = 0.5)
+        # q is boosted by 0.5 * 0.5 = 0.25
+        # adjusted_q = 0.8 + 0.2 * 0.25 = 0.85
+        # threshold = 1 - 0.85 = 0.15
+        input_list_sparse = [1.0, None, 1.0, None, 1.0, None, 1.0, None, 1.0, None]
+        metrics_sparse = _calculate_adaptive_conformal_prediction(
+            proba_positive=0.12,
+            conformal_q=0.8,
+            input_list=input_list_sparse,
+            raw_pred=0
+        )
+        assert metrics_sparse["missingness_ratio"] == 0.5
+        assert metrics_sparse["adjusted_thresholds"] > 0.80
+
+
+import backend.explainability
+
+@pytest.mark.skipif(not backend.explainability.SHAP_AVAILABLE, reason="SHAP not installed")
+class TestAttributionDriftMonitoring:
+    """Tests for SHAP feature attribution logging and drift report endpoint."""
+
+    def test_drift_report_and_logging(self, client, db_session):
+        from backend import models
+        # 1. Authenticate user to get admin token
+        client.post("/signup", json={
+            "username": "adminuser",
+            "password": "AdminPassword123!",
+            "email": "admin@test.com",
+            "full_name": "Admin User",
+            "dob": "1990-01-01",
+        })
+        # Set role as admin
+        user = db_session.query(models.User).filter(models.User.username == "adminuser").first()
+        user.role = "admin"
+        db_session.commit()
+
+        r = client.post("/token", data={"username": "adminuser", "password": "AdminPassword123!"})
+        headers = {"Authorization": f"Bearer {r.json()['access_token']}"}
+
+        # 2. Mock model service entry for kidney to log predictions
+        from sklearn.impute import SimpleImputer
+        from backend import prediction as _pred
+
+        dummy_imputer = SimpleImputer()
+        dummy_imputer.fit(np.random.rand(5, 24))
+
+        mock_model = MagicMock()
+        mock_model.predict.return_value = np.array([0])
+        mock_model.predict_proba.return_value = np.array([[0.8, 0.2]])
+
+        model_service._entries["kidney"].model = mock_model
+        model_service._entries["kidney"].imputer = dummy_imputer
+        model_service._entries["kidney"].conformal_q = 0.7
+        _pred.kidney_model = mock_model
+
+        # 3. Request predictions to generate attribution logs
+        payload = {
+            "age": 45.0, "bp": 80.0, "sg": 1.020, "al": 1.0, "su": 0.0,
+            "rbc": 0, "pc": 1, "pcc": 0, "ba": 0, "bgr": 120.0,
+            "bu": 40.0, "sc": 1.2, "sod": 138.0, "pot": 4.5, "hemo": 15.0,
+            "pcv": 45.0, "wc": 8000.0, "rc": 5.0, "htn": 1, "dm": 1,
+            "cad": 0, "appet": 0, "pe": 0, "ane": 0, "gender": 1
+        }
+
+        mock_explainer = MagicMock()
+        mock_explainer.expected_value = 0.5
+        mock_explainer.shap_values.return_value = np.random.rand(1, 24)
+
+        async def mock_generate(*args, **kwargs):
+            return "Clinical analysis mock response: This is a mocked clinical narrative."
+
+        with patch("shap.TreeExplainer", return_value=mock_explainer), \
+             patch("backend.explainability.SHAP_AVAILABLE", True), \
+             patch("backend.core_ai.generate", mock_generate):
+            # Call predict endpoint
+            res = client.post("/predict/kidney", json=payload, headers=headers)
+            assert res.status_code == 200
+
+            # Verify attribution logs were written
+            from backend.models import DbFeatureAttributionLog
+            logs = db_session.query(DbFeatureAttributionLog).all()
+            assert len(logs) > 0
+            assert logs[0].model_name == "kidney"
+            assert "age" in logs[0].attributions
+
+            # 4. Request the admin drift report
+            drift_res = client.get("/admin/attribution-drift", headers=headers)
+            assert drift_res.status_code == 200
+            drift_data = drift_res.json()
+            assert drift_data["status"] == "success"
+            assert "kidney" in drift_data["models"]
+            assert drift_data["models"]["kidney"]["sample_count"] > 0
+            assert drift_data["models"]["kidney"]["drift_score"] is not None
+
+
+class TestSemanticCacheAdminEndpoints:
+    """Tests for the semantic cache admin endpoints."""
+
+    def test_semantic_cache_admin_stats_and_clear(self, client, db_session):
+        from backend import models
+        # 1. Authenticate user to get admin token
+        client.post("/signup", json={
+            "username": "adminuser_cache",
+            "password": "AdminPassword123!",
+            "email": "admin_cache@test.com",
+            "full_name": "Admin Cache User",
+            "dob": "1990-01-01",
+        })
+        # Set role as admin
+        user = db_session.query(models.User).filter(models.User.username == "adminuser_cache").first()
+        user.role = "admin"
+        db_session.commit()
+
+        r = client.post("/token", data={"username": "adminuser_cache", "password": "AdminPassword123!"})
+        headers = {"Authorization": f"Bearer {r.json()['access_token']}"}
+
+        # 2. Get stats (should start empty/cleared)
+        from backend.core_ai import semantic_cache
+        semantic_cache.clear()
+
+        # Let's seed the cache directly for testing the admin report
+        semantic_cache.add("Query 1", [0.1] * 768, "Response 1")
+
+        # 3. Call GET /admin/semantic-cache
+        res = client.get("/admin/semantic-cache", headers=headers)
+        assert res.status_code == 200
+        data = res.json()
+        assert data["status"] == "success"
+        assert "stats" in data
+        assert data["stats"]["size"] == 1
+        assert data["stats"]["hits"] == 0
+        assert data["stats"]["misses"] == 0
+        assert data["stats"]["entries"][0]["query"] == "Query 1"
+
+        # 4. Call DELETE /admin/semantic-cache
+        del_res = client.delete("/admin/semantic-cache", headers=headers)
+        assert del_res.status_code == 200
+        del_data = del_res.json()
+        assert del_data["status"] == "success"
+        assert del_data["message"] == "Semantic cache evicted successfully"
+
+        # 5. Check stats again
+        res_after = client.get("/admin/semantic-cache", headers=headers)
+        assert res_after.status_code == 200
+        data_after = res_after.json()
+
 

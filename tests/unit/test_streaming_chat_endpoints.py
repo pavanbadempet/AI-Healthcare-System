@@ -242,3 +242,56 @@ def test_chat_suggestions_returns_at_most_8(client):
     response = client.get("/chat/suggestions", headers=headers)
     data = response.json()
     assert len(data["suggestions"]) <= 8
+
+
+def test_chat_agent_failure(client, caplog):
+    from unittest.mock import MagicMock, patch
+    headers = _make_user_and_headers(client, "chat_agent_fail")
+    caplog.set_level("ERROR", logger="backend.chat")
+    with patch("backend.chat.agent.medical_agent.invoke", side_effect=Exception("Agent Down with patient context")):
+        resp = client.post("/chat", json={"message": "Hi"}, headers=headers)
+        assert resp.status_code == 200
+        body = resp.json()
+        assert "trouble" in body["response"]
+        assert "Agent Down" not in str(body)
+
+
+def test_chat_db_save_failure(client, caplog):
+    from unittest.mock import MagicMock, patch
+    from backend.database import get_db
+    headers = _make_user_and_headers(client, "chat_db_fail")
+    caplog.set_level("ERROR", logger="backend.chat")
+    
+    mock_db = MagicMock()
+    mock_db.commit.side_effect = Exception("DB Error with patient context")
+    
+    orig_override = app.dependency_overrides.get(get_db)
+    app.dependency_overrides[get_db] = lambda: mock_db
+    try:
+        mock_agent_resp = {"messages": [MagicMock(content="Hello")]}
+        with patch("backend.chat.agent.medical_agent.invoke", return_value=mock_agent_resp):
+            resp = client.post("/chat", json={"message": "Hi"}, headers=headers)
+            assert resp.status_code == 200
+            assert resp.json()["response"].startswith("Hello")
+    finally:
+        if orig_override:
+            app.dependency_overrides[get_db] = orig_override
+        else:
+            del app.dependency_overrides[get_db]
+
+
+def test_chat_response_adds_medical_disclaimer(client):
+    from unittest.mock import MagicMock, patch
+    headers = _make_user_and_headers(client, "chat_disclaimer")
+    mock_agent_resp = {"messages": [MagicMock(content="Hydration may help, but monitor symptoms.")]}
+    with patch("backend.chat.agent.medical_agent.invoke", return_value=mock_agent_resp):
+        resp = client.post("/chat", json={"message": "What should I do?"}, headers=headers)
+    assert resp.status_code == 200
+    assert "Hydration may help" in resp.json()["response"]
+
+
+def test_chat_record_validation(client):
+    headers = _make_user_and_headers(client, "record_val_user")
+    resp = client.delete("/v1/records/999", headers=headers)
+    assert resp.status_code == 404
+

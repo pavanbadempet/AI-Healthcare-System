@@ -132,3 +132,15 @@ def test_report_module_download_uses_generic_filename(db_session):
     content_disposition = response.headers["content-disposition"]
     assert "report_module_filename_user" not in content_disposition
     assert content_disposition == "attachment; filename=Health_Report.pdf"
+
+
+def test_analyze_report_invalid_type(client, db_session):
+    headers = _auth_headers(db_session, "report_invalid_type_user")
+    resp = client.post(
+        "/analyze/report",
+        files={"file": ("test.txt", b"text", "text/plain")},
+        headers=headers
+    )
+    assert resp.status_code == 400
+    assert "Invalid file type" in resp.json()["detail"]
+

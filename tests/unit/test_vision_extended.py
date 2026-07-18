@@ -78,3 +78,17 @@ class TestAnalyzeLabReport:
             result = analyze_lab_report(self.create_test_image())
 
             assert "Could not analyze" in result["summary"]
+
+    def test_analyze_report_api_failure_hides_error_details(self, caplog):
+        sensitive_error = "vision provider failed patient_name=Sensitive User token=vision-secret"
+        caplog.set_level("ERROR", logger="backend.vision_service")
+
+        with patch("backend.vision_service.core_ai.has_gemini_api_key", return_value=True), \
+             patch("backend.vision_service.core_ai.generate_vision_content", side_effect=Exception(sensitive_error)):
+            result = analyze_lab_report(self.create_test_image())
+
+        assert result["extracted_data"] == {}
+        assert "Could not analyze" in result["summary"]
+        assert sensitive_error not in caplog.text
+        assert "Sensitive User" not in caplog.text
+        assert "vision-secret" not in caplog.text
