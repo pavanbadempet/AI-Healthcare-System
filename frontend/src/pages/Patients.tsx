@@ -90,6 +90,7 @@ function registryDisplayForPatient(patient: RegistryPatient) {
 }
 
 interface RegistryPatientWithDisplay extends RegistryPatient {
+  searchIndex: string;
   display: {
     age: number | null;
     diagnosis: string;
@@ -108,21 +109,7 @@ function patientMatchesSearch(
   query: string
 ) {
   if (!query) return true;
-
-  const display = patient.display;
-  const fields = [
-    patient.full_name,
-    patient.username,
-    patient.email,
-    display.mrn,
-    display.diagnosis,
-    display.risk,
-    display.attending,
-    display.unit,
-    patient.latest_status,
-  ];
-
-  return fields.some((field) => field?.toLowerCase().includes(query));
+  return patient.searchIndex.includes(query);
 }
 
 export default function PatientsPage() {
@@ -166,10 +153,26 @@ export default function PatientsPage() {
 
     registryRequest
       .then((patientList) => {
-        const enriched: RegistryPatientWithDisplay[] = patientList.map((p) => ({
-          ...p,
-          display: registryDisplayForPatient(p),
-        }));
+        const enriched: RegistryPatientWithDisplay[] = patientList.map((p) => {
+          const display = registryDisplayForPatient(p);
+          const searchIndex = [
+            p.full_name,
+            p.username,
+            p.email,
+            display.mrn,
+            display.diagnosis,
+            display.risk,
+            display.attending,
+            display.unit,
+            p.latest_status,
+          ].filter(Boolean).map(s => String(s).toLowerCase()).join(" ");
+
+          return {
+            ...p,
+            display,
+            searchIndex,
+          };
+        });
         setPatients(enriched);
         setLastSyncTime(new Date().toLocaleTimeString());
       })

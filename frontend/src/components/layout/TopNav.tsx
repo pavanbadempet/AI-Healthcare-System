@@ -259,7 +259,7 @@ export default function TopNav({
                   handleMouseLeave();
                   setHoveredTab(null);
                 }}
-                className="absolute top-[44px] left-1/2 -translate-x-1/2 pt-2 z-50"
+                className="absolute top-[44px] left-1/2 -translate-x-1/2 pt-2 z-50 gpu-accelerated"
               >
                 {(() => {
                   const group = dynamicMenuGroups.find((g) => g.key === activeMenu);
@@ -371,7 +371,7 @@ export default function TopNav({
                 animate={{ opacity: 0.5 }}
                 exit={{ opacity: 0 }}
                 onClick={() => setGuideOpen(false)}
-                className="fixed inset-0 z-55 bg-black/60 backdrop-blur-sm"
+                className="fixed inset-0 z-55 bg-black/60 backdrop-blur-sm gpu-accelerated"
               />
               
               {/* Drawer Container */}
@@ -380,7 +380,7 @@ export default function TopNav({
                 animate={{ x: 0 }}
                 exit={{ x: "100%" }}
                 transition={{ type: "spring", damping: 25, stiffness: 220 }}
-                className="fixed right-0 top-0 bottom-0 w-[420px] max-w-[95vw] z-55 bg-[var(--bg-secondary)] border-l border-[var(--border)] flex flex-col p-6 overflow-y-auto"
+                className="fixed right-0 top-0 bottom-0 w-[420px] max-w-[95vw] z-55 bg-[var(--bg-secondary)] border-l border-[var(--border)] flex flex-col p-6 overflow-y-auto gpu-accelerated"
                 role="dialog"
                 aria-label="ClinOS Interactive Help Guide"
               >

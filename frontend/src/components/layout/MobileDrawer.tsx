@@ -31,7 +31,7 @@ export default function MobileDrawer({
         animate={{ opacity: 0.5 }}
         exit={{ opacity: 0 }}
         onClick={onClose}
-        className="lg:hidden fixed inset-0 z-40 bg-black"
+        className="lg:hidden fixed inset-0 z-40 bg-black gpu-accelerated"
       />
 
       <motion.div
@@ -39,7 +39,7 @@ export default function MobileDrawer({
         animate={{ x: 0 }}
         exit={{ x: "100%" }}
         transition={{ type: "spring", damping: 25, stiffness: 220 }}
-        className="lg:hidden fixed right-0 top-0 bottom-0 w-80 max-w-[90vw] z-50 bg-[var(--bg-secondary)] border-l border-[var(--border)] flex flex-col pt-6 px-5 pb-6 overflow-y-auto"
+        className="lg:hidden fixed right-0 top-0 bottom-0 w-80 max-w-[90vw] z-50 bg-[var(--bg-secondary)] border-l border-[var(--border)] flex flex-col pt-6 px-5 pb-6 overflow-y-auto gpu-accelerated"
         role="dialog"
         aria-label="Mobile navigation menu"
       >
