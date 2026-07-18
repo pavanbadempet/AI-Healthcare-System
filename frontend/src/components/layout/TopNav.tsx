@@ -48,17 +48,22 @@ export default function TopNav({
   const [alarm, setAlarm] = useState<{ active: boolean; bed?: string; name?: string; hr?: number } | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
 
+  const alarmRef = useRef(alarm);
+  useEffect(() => {
+    alarmRef.current = alarm;
+  }, [alarm]);
+
   useEffect(() => {
     const handleAlarm = (e: Event) => {
       const customEvent = e as CustomEvent;
       const newAlarm = customEvent.detail;
-      setAlarm((prevAlarm) => {
-        // Only auto-open on the transition from inactive to active
-        if (newAlarm?.active && !prevAlarm?.active) {
-          setShowNotifications(true);
-        }
-        return newAlarm;
-      });
+      
+      // Only auto-open on the transition from inactive to active
+      if (newAlarm?.active && !alarmRef.current?.active) {
+        setShowNotifications(true);
+      }
+      
+      setAlarm(newAlarm);
     };
     window.addEventListener("clinical-alarm", handleAlarm);
     return () => window.removeEventListener("clinical-alarm", handleAlarm);
@@ -443,136 +448,137 @@ export default function TopNav({
           </Tooltip>
         </div>
 
-        {/* ─── Mobile Drawer ─── */}
-        <AnimatePresence>
-          {mobileOpen && (
-            <Suspense fallback={null}>
-              <MobileDrawer
-                open={mobileOpen}
-                onClose={() => {
-                  if (setMobileOpen) setMobileOpen(false);
-                }}
-                setCommandMenuOpen={(val) => {
-                  // Integrate with CommandSearch if needed
-                }}
-                dynamicMenuGroups={dynamicMenuGroups}
-                telemetryStats={{ cpu: 12, latency: 22 }}
-                user={user}
-                logout={logout}
-              />
-            </Suspense>
-          )}
-        </AnimatePresence>
-
-        {/* ─── SOTA Interactive Guide Drawer ─── */}
-        <AnimatePresence>
-          {guideOpen && (
-            <>
-              {/* Backdrop */}
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.5 }}
-                exit={{ opacity: 0 }}
-                onClick={() => setGuideOpen(false)}
-                className="fixed inset-0 z-55 bg-black/60 backdrop-blur-sm gpu-accelerated"
-              />
-              
-              {/* Drawer Container */}
-              <motion.div
-                initial={{ x: "100%" }}
-                animate={{ x: 0 }}
-                exit={{ x: "100%" }}
-                transition={{ type: "spring", damping: 25, stiffness: 220 }}
-                className="fixed right-0 top-0 bottom-0 w-[420px] max-w-[95vw] z-55 bg-[var(--bg-secondary)] border-l border-[var(--border)] flex flex-col p-6 overflow-y-auto gpu-accelerated"
-                role="dialog"
-                aria-label="AI Healthcare System Interactive Help Guide"
-              >
-                <div className="flex justify-between items-center border-b border-[var(--border)] pb-4 mb-6">
-                  <div className="flex items-center gap-2">
-                    <BookOpen className="text-[var(--accent)]" size={18} />
-                    <h2 className="text-sm font-bold uppercase tracking-wider text-white">
-                      AI Healthcare System Interactive Guide
-                    </h2>
-                  </div>
-                  <button
-                    onClick={() => setGuideOpen(false)}
-                    className="p-1 text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.04] border border-[var(--border)] rounded cursor-pointer"
-                    aria-label="Close guide"
-                  >
-                    <X size={15} />
-                  </button>
-                </div>
-
-                <div className="space-y-6 flex-1 text-xs leading-relaxed text-[var(--text-secondary)] text-left">
-                  {/* Section 1: AI Clinical Assistants */}
-                  <div className="space-y-3">
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--accent)] block">
-                      1. Autonomous Clinical AI Agents
-                    </span>
-                    <div className="space-y-2.5">
-                      <div className="bg-white/[0.01] border border-white/[0.02] p-3 rounded-lg">
-                        <h4 className="font-bold text-white uppercase tracking-wider mb-1">Billing claim Auditor</h4>
-                        <p>Audits SOAP notes and estimates claim denial risk prior to submission. Access under **Invoices &gt; Audit**.</p>
-                      </div>
-                      <div className="bg-white/[0.01] border border-white/[0.02] p-3 rounded-lg">
-                        <h4 className="font-bold text-white uppercase tracking-wider mb-1">Shift handoff Coordinator</h4>
-                        <p>Aggregates 24h vital observations into shift handoff cards. Access under **Patients &gt; Handoff**.</p>
-                      </div>
-                      <div className="bg-white/[0.01] border border-white/[0.02] p-3 rounded-lg">
-                        <h4 className="font-bold text-white uppercase tracking-wider mb-1">Discharge Planner</h4>
-                        <p>Synthesizes telemetry and care plans into transition summaries. Access under **Patients &gt; Discharge**.</p>
-                      </div>
-                      <div className="bg-white/[0.01] border border-white/[0.02] p-3 rounded-lg">
-                        <h4 className="font-bold text-white uppercase tracking-wider mb-1">Telephony Alert Routing</h4>
-                        <p>Routes urgent telemetry alarms directly to on-call cardiologists via automated voice call scripts.</p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Section 2: Security & Lockout */}
-                  <div className="space-y-2.5">
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--accent-purple)] block">
-                      2. Credential Security & Lockouts
-                    </span>
-                    <div className="flex items-start gap-2 bg-white/[0.01] border border-white/[0.02] p-3 rounded-lg">
-                      <Key className="text-[var(--accent-purple)] shrink-0 mt-0.5" size={14} />
-                      <p>For HIPAA compliance, accounts are locked for 15 minutes after 5 consecutive incorrect passwords. Enforce 2FA in your **Profile Settings**.</p>
-                    </div>
-                  </div>
-
-                  {/* Section 3: Telemetry & Self-Healing */}
-                  <div className="space-y-2.5">
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--success)] block">
-                      3. Self-Healing & Diagnostics
-                    </span>
-                    <div className="flex items-start gap-2 bg-white/[0.01] border border-white/[0.02] p-3 rounded-lg">
-                      <Cpu className="text-[var(--success)] shrink-0 mt-0.5" size={14} />
-                      <p>The **Self-Healing Agent** checks error buffers and auto-executes database index rebuilding and pruning. Run maintenance instantly from the **Data Engineering Console**.</p>
-                    </div>
-                  </div>
-
-                  {/* Section 4: Hotkeys */}
-                  <div className="space-y-2.5">
-                    <span className="text-[10px] font-extrabold uppercase tracking-widest text-cyan-400 block">
-                      4. Navigation Hotkeys
-                    </span>
-                    <div className="bg-zinc-950/60 border border-[var(--border)] p-3 rounded-lg font-mono text-[10px] space-y-1.5 uppercase">
-                      <div className="flex justify-between">
-                        <span>Quick Search Panel</span>
-                        <kbd className="border border-white/[0.08] px-1 rounded bg-white/[0.02]">⌘K</kbd>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Interactive Help Guide</span>
-                        <span>Click Help Circle</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            </>
-          )}
-        </AnimatePresence>
       </header>
+
+      {/* ─── Mobile Drawer ─── */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <Suspense fallback={null}>
+            <MobileDrawer
+              open={mobileOpen}
+              onClose={() => {
+                if (setMobileOpen) setMobileOpen(false);
+              }}
+              setCommandMenuOpen={(val) => {
+                // Integrate with CommandSearch if needed
+              }}
+              dynamicMenuGroups={dynamicMenuGroups}
+              telemetryStats={{ cpu: 12, latency: 22 }}
+              user={user}
+              logout={logout}
+            />
+          </Suspense>
+        )}
+      </AnimatePresence>
+
+      {/* ─── SOTA Interactive Guide Drawer ─── */}
+      <AnimatePresence>
+        {guideOpen && (
+          <>
+            {/* Backdrop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.5 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setGuideOpen(false)}
+              className="fixed inset-0 z-55 bg-black/60 backdrop-blur-sm gpu-accelerated"
+            />
+            
+            {/* Drawer Container */}
+            <motion.div
+              initial={{ x: "100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 220 }}
+              className="fixed right-0 top-0 bottom-0 w-[420px] max-w-[95vw] z-55 bg-[var(--bg-secondary)] border-l border-[var(--border)] flex flex-col p-6 overflow-y-auto gpu-accelerated"
+              role="dialog"
+              aria-label="AI Healthcare System Interactive Help Guide"
+            >
+              <div className="flex justify-between items-center border-b border-[var(--border)] pb-4 mb-6">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="text-[var(--accent)]" size={18} />
+                  <h2 className="text-sm font-bold uppercase tracking-wider text-white">
+                    AI Healthcare System Interactive Guide
+                  </h2>
+                </div>
+                <button
+                  onClick={() => setGuideOpen(false)}
+                  className="p-1 text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.04] border border-[var(--border)] rounded cursor-pointer"
+                  aria-label="Close guide"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+
+              <div className="space-y-6 flex-1 text-xs leading-relaxed text-[var(--text-secondary)] text-left">
+                {/* Section 1: AI Clinical Assistants */}
+                <div className="space-y-3">
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--accent)] block">
+                    1. Autonomous Clinical AI Agents
+                  </span>
+                  <div className="space-y-2.5">
+                    <div className="bg-white/[0.01] border border-white/[0.02] p-3 rounded-lg">
+                      <h4 className="font-bold text-white uppercase tracking-wider mb-1">Billing claim Auditor</h4>
+                      <p>Audits SOAP notes and estimates claim denial risk prior to submission. Access under **Invoices &gt; Audit**.</p>
+                    </div>
+                    <div className="bg-white/[0.01] border border-white/[0.02] p-3 rounded-lg">
+                      <h4 className="font-bold text-white uppercase tracking-wider mb-1">Shift handoff Coordinator</h4>
+                      <p>Aggregates 24h vital observations into shift handoff cards. Access under **Patients &gt; Handoff**.</p>
+                    </div>
+                    <div className="bg-white/[0.01] border border-white/[0.02] p-3 rounded-lg">
+                      <h4 className="font-bold text-white uppercase tracking-wider mb-1">Discharge Planner</h4>
+                      <p>Synthesizes telemetry and care plans into transition summaries. Access under **Patients &gt; Discharge**.</p>
+                    </div>
+                    <div className="bg-white/[0.01] border border-white/[0.02] p-3 rounded-lg">
+                      <h4 className="font-bold text-white uppercase tracking-wider mb-1">Telephony Alert Routing</h4>
+                      <p>Routes urgent telemetry alarms directly to on-call cardiologists via automated voice call scripts.</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Section 2: Security & Lockout */}
+                <div className="space-y-2.5">
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--accent-purple)] block">
+                    2. Credential Security & Lockouts
+                  </span>
+                  <div className="flex items-start gap-2 bg-white/[0.01] border border-white/[0.02] p-3 rounded-lg">
+                    <Key className="text-[var(--accent-purple)] shrink-0 mt-0.5" size={14} />
+                    <p>For HIPAA compliance, accounts are locked for 15 minutes after 5 consecutive incorrect passwords. Enforce 2FA in your **Profile Settings**.</p>
+                  </div>
+                </div>
+
+                {/* Section 3: Telemetry & Self-Healing */}
+                <div className="space-y-2.5">
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--success)] block">
+                    3. Self-Healing & Diagnostics
+                  </span>
+                  <div className="flex items-start gap-2 bg-white/[0.01] border border-white/[0.02] p-3 rounded-lg">
+                    <Cpu className="text-[var(--success)] shrink-0 mt-0.5" size={14} />
+                    <p>The **Self-Healing Agent** checks error buffers and auto-executes database index rebuilding and pruning. Run maintenance instantly from the **Data Engineering Console**.</p>
+                  </div>
+                </div>
+
+                {/* Section 4: Hotkeys */}
+                <div className="space-y-2.5">
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-cyan-400 block">
+                    4. Navigation Hotkeys
+                  </span>
+                  <div className="bg-zinc-950/60 border border-[var(--border)] p-3 rounded-lg font-mono text-[10px] space-y-1.5 uppercase">
+                    <div className="flex justify-between">
+                      <span>Quick Search Panel</span>
+                      <kbd className="border border-white/[0.08] px-1 rounded bg-white/[0.02]">⌘K</kbd>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Interactive Help Guide</span>
+                      <span>Click Help Circle</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </>
   );
 }
