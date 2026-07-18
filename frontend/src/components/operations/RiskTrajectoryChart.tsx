@@ -1,11 +1,11 @@
-import React from "react";
+import React, { memo } from "react";
 import { XAxis, YAxis, Tooltip, AreaChart, Area, ResponsiveContainer } from "recharts";
 
 interface RiskTrajectoryChartProps {
   data: any[];
 }
 
-export default function RiskTrajectoryChart({ data }: RiskTrajectoryChartProps) {
+const RiskTrajectoryChart = memo(function RiskTrajectoryChart({ data }: RiskTrajectoryChartProps) {
   return (
     <ResponsiveContainer width="100%" height="100%">
       <AreaChart data={data} margin={{ top: 10, right: 5, left: -25, bottom: 0 }}>
@@ -56,4 +56,7 @@ export default function RiskTrajectoryChart({ data }: RiskTrajectoryChartProps) 
       </AreaChart>
     </ResponsiveContainer>
   );
-}
+});
+
+export default RiskTrajectoryChart;
+
