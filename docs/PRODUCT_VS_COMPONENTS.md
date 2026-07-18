@@ -1,6 +1,6 @@
-# ClinOS Monetization Strategy: Product vs. Components
+# AI Healthcare System Monetization Strategy: Product vs. Components
 
-This document outlines the two distinct commercial pathways for ClinOS: selling a unified **End-User Product** to medical practitioners vs. selling **Modular Developer Components** to tech founders and IT departments.
+This document outlines the two distinct commercial pathways for AI Healthcare System: selling a unified **End-User Product** to medical practitioners vs. selling **Modular Developer Components** to tech founders and IT departments.
 
 ---
 

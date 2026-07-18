@@ -83,7 +83,7 @@ def evaluate_cardio_risk_service(request_data: Dict[str, Any], db: Session) -> D
             "detail": detail_msg,
             "indicator": "warning",
             "source": {
-                "label": "ClinOS CDS Risk Analyzer",
+                "label": "AI Healthcare System CDS Risk Analyzer",
                 "url": "http://127.0.0.1:8000"
             },
             "suggestions": [

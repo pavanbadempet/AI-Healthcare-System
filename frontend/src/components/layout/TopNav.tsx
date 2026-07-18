@@ -9,7 +9,7 @@ import Tooltip from "./Tooltip";
 import { useTranslation } from "@/lib/i18n";
 import {
   type MenuItem, type MenuGroup,
-  operationsItems, diagnosticsItems, intelligenceItems, clinosItems,
+  operationsItems, diagnosticsItems, intelligenceItems, AI Healthcare SystemItems,
   MENU_GROUPS, getIconStyles, colorKeyFromMenuItem,
   COMMAND_ITEMS,
 } from "./nav-config";
@@ -65,7 +65,7 @@ export default function TopNav({
     return item;
   });
 
-  const dynamicClinosItems = clinosItems.map(item => {
+  const dynamicAI Healthcare SystemItems = AI Healthcare SystemItems.map(item => {
     return item;
   });
 
@@ -98,11 +98,11 @@ export default function TopNav({
       routes: ["/chat", "/about", "/pricing"],
     },
     {
-      key: "clinos",
-      label: language === "es" ? "Sistemas ClinOS" : language === "hi" ? "क्लिओएस" : "ClinOS",
+      key: "AI Healthcare System",
+      label: language === "es" ? "Sistemas AI Healthcare System" : language === "hi" ? "क्लिओएस" : "AI Healthcare System",
       emoji: "🚀",
       accentColor: "text-sky-400 data-[state=open]:text-sky-400",
-      items: dynamicClinosItems,
+      items: dynamicAI Healthcare SystemItems,
       cols: 2,
       routes: ["/apps", "/federated", "/intelligence", "/companion"],
     },
@@ -382,13 +382,13 @@ export default function TopNav({
                 transition={{ type: "spring", damping: 25, stiffness: 220 }}
                 className="fixed right-0 top-0 bottom-0 w-[420px] max-w-[95vw] z-55 bg-[var(--bg-secondary)] border-l border-[var(--border)] flex flex-col p-6 overflow-y-auto gpu-accelerated"
                 role="dialog"
-                aria-label="ClinOS Interactive Help Guide"
+                aria-label="AI Healthcare System Interactive Help Guide"
               >
                 <div className="flex justify-between items-center border-b border-[var(--border)] pb-4 mb-6">
                   <div className="flex items-center gap-2">
                     <BookOpen className="text-[var(--accent)]" size={18} />
                     <h2 className="text-sm font-bold uppercase tracking-wider text-white">
-                      ClinOS Interactive Guide
+                      AI Healthcare System Interactive Guide
                     </h2>
                   </div>
                   <button

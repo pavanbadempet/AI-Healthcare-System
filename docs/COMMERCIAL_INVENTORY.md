@@ -1,6 +1,6 @@
-# ClinOS Commercial Inventory
+# AI Healthcare System Commercial Inventory
 
-This document maps all sellable ClinOS components, sales channels, and delivery models under the **One-Time Purchase / Perpetual Lifetime License** model.
+This document maps all sellable AI Healthcare System components, sales channels, and delivery models under the **One-Time Purchase / Perpetual Lifetime License** model.
 
 ---
 

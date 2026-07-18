@@ -1,4 +1,4 @@
-"""HL7 v2 Ingestion Receiver & Parser for ClinOS Interoperability.
+"""HL7 v2 Ingestion Receiver & Parser for AI Healthcare System Interoperability.
 
 Parses standard HL7 v2 messages (ADT^A08 for Patient Update and ORU^R01 for Observation Result)
 and synchronizes the parsed clinical data into the local database models.

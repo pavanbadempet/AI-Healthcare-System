@@ -15,7 +15,7 @@ class ClinicalWellnessAgent(BaseAgent):
     Generates personalized health recommendations and clinical disclaimers for patient care.
     """
 
-    def __init__(self, db: Session, name: str = "ClinOS Wellness Companion"):
+    def __init__(self, db: Session, name: str = "AI Healthcare System Wellness Companion"):
         super().__init__(name)
         self.db = db
 

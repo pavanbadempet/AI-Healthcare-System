@@ -237,7 +237,7 @@ async def generate_patient_insights(
         patient_id=patient_id,
         insight_type="risk_summary",
         content=json.dumps(insight_content),
-        model_version="clinos-intelligence-v1",
+        model_version="AI Healthcare System-intelligence-v1",
     )
     db.add(db_insight)
     db.commit()

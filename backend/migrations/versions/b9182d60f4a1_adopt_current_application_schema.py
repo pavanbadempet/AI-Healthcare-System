@@ -1,4 +1,4 @@
-"""Add soft-delete fields and ClinOS domain tables.
+"""Add soft-delete fields and AI Healthcare System domain tables.
 
 Revision ID: b9182d60f4a1
 Revises: a43c2f91d7b0
@@ -42,7 +42,7 @@ def _index_names(inspector: sa.Inspector, table_name: str) -> set[str]:
     }
 
 
-def _create_clinos_tables(existing_tables: set[str]) -> None:
+def _create_AI Healthcare System_tables(existing_tables: set[str]) -> None:
     if "smart_apps" not in existing_tables:
         op.create_table(
             "smart_apps",
@@ -282,7 +282,7 @@ def upgrade() -> None:
         if index_name not in _index_names(inspector, table_name):
             op.create_index(index_name, table_name, ["is_deleted"])
 
-    _create_clinos_tables(existing_tables)
+    _create_AI Healthcare System_tables(existing_tables)
 
 
 def downgrade() -> None:

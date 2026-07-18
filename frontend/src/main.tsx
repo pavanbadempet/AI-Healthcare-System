@@ -25,15 +25,15 @@ if (container) {
   );
 }
 
-// Register ClinOS Service Worker for offline-first resilience
+// Register AI Healthcare System Service Worker for offline-first resilience
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
       .then((registration) => {
-        console.log('ClinOS ServiceWorker registered: ', registration.scope);
+        console.log('AI Healthcare System ServiceWorker registered: ', registration.scope);
       })
       .catch((err) => {
-        console.error('ClinOS ServiceWorker registration failed: ', err);
+        console.error('AI Healthcare System ServiceWorker registration failed: ', err);
       });
   });
 }

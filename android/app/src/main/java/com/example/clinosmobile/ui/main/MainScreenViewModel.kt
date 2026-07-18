@@ -1,10 +1,10 @@
-package com.example.clinosmobile.ui.main
+package com.example.AI Healthcare Systemmobile.ui.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.clinosmobile.data.ConnectionState
-import com.example.clinosmobile.data.DataRepository
-import com.example.clinosmobile.ui.main.MainScreenUiState.Success
+import com.example.AI Healthcare Systemmobile.data.ConnectionState
+import com.example.AI Healthcare Systemmobile.data.DataRepository
+import com.example.AI Healthcare Systemmobile.ui.main.MainScreenUiState.Success
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch

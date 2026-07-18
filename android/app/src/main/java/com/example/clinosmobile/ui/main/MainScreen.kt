@@ -1,4 +1,4 @@
-package com.example.clinosmobile.ui.main
+package com.example.AI Healthcare Systemmobile.ui.main
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,8 +23,8 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.NavKey
-import com.example.clinosmobile.data.DefaultDataRepository
-import com.example.clinosmobile.theme.ClinOSMobileTheme
+import com.example.AI Healthcare Systemmobile.data.DefaultDataRepository
+import com.example.AI Healthcare Systemmobile.theme.AI Healthcare SystemMobileTheme
 
 @Composable
 fun MainScreen(
@@ -108,7 +108,7 @@ internal fun MainScreen(
     ) {
       Column {
         Text(
-          text = "ClinOS Mobile",
+          text = "AI Healthcare System Mobile",
           fontSize = 24.sp,
           fontWeight = FontWeight.Bold,
           color = Color(0xFF6366F1)
@@ -523,7 +523,7 @@ internal fun MainScreen(
 @Preview(showBackground = true)
 @Composable
 fun MainScreenPreview() {
-  ClinOSMobileTheme {
+  AI Healthcare SystemMobileTheme {
     MainScreen(listOf("John Doe - Bed 14A (Stable)", "Jane Smith - Bed 12B (Alert)"))
   }
 }

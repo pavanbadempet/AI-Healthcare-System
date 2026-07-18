@@ -9,7 +9,7 @@ export interface OfflineRequest {
   timestamp: number;
 }
 
-const OFFLINE_QUEUE_KEY = "clinos_offline_queue";
+const OFFLINE_QUEUE_KEY = "AI Healthcare System_offline_queue";
 
 // Get all pending requests in localStorage queue
 export function getOfflineQueue(): OfflineRequest[] {

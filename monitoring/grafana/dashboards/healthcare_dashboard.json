@@ -427,7 +427,7 @@
   "style": "dark",
   "tags": [
     "healthcare",
-    "clinos",
+    "AI Healthcare System",
     "gateway"
   ],
   "templates": [],
@@ -437,6 +437,6 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "ClinOS SOTA System Telemetry & Performance Dashboard",
+  "title": "AI Healthcare System SOTA System Telemetry & Performance Dashboard",
   "version": 1
 }

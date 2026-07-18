@@ -2309,7 +2309,7 @@ async def handle_vitals_recorded(payload: dict) -> None:
                     patient_id=patient_id,
                     event_type="DIAGNOSTIC_ALERT",
                     title="Diabetes Risk Flagged",
-                    summary=f"Automated ClinOS intelligence flagged high diabetes risk ({round(diabetes_risk * 100, 1)}%) based on recent vital logs.",
+                    summary=f"Automated AI Healthcare System intelligence flagged high diabetes risk ({round(diabetes_risk * 100, 1)}%) based on recent vital logs.",
                     severity="warning",
                 ))
                 db.commit()
@@ -2355,7 +2355,7 @@ async def handle_vitals_recorded(payload: dict) -> None:
                     patient_id=patient_id,
                     event_type="DIAGNOSTIC_ALERT",
                     title="Cardiovascular Risk Flagged",
-                    summary=f"Automated ClinOS intelligence flagged high cardiovascular risk ({round(heart_risk * 100, 1)}%) based on recent vital logs.",
+                    summary=f"Automated AI Healthcare System intelligence flagged high cardiovascular risk ({round(heart_risk * 100, 1)}%) based on recent vital logs.",
                     severity="critical",
                 ))
                 db.commit()

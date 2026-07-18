@@ -1,4 +1,4 @@
-const CACHE_NAME = "clinos-cache-v1";
+const CACHE_NAME = "AI Healthcare System-cache-v1";
 const ASSETS_TO_CACHE = [
   "/",
   "/index.html",

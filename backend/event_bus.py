@@ -1,4 +1,4 @@
-"""Clinical Event Bus — async pub/sub for ClinOS domain events.
+"""Clinical Event Bus — async pub/sub for AI Healthcare System domain events.
 
 Provides topic-based routing for clinical events (vitals, diagnostics,
 admissions, care events).  Uses in-memory asyncio queues by default and
@@ -102,7 +102,7 @@ class ClinicalEventBus:
         """Publish an event.
 
         In Redis mode the payload is added to a Redis Stream keyed by
-        ``clinos:events:{topic}``.  Otherwise it is enqueued locally.
+        ``AI Healthcare System:events:{topic}``.  Otherwise it is enqueued locally.
 
         Args:
             topic: The event topic string.
@@ -112,7 +112,7 @@ class ClinicalEventBus:
             try:
                 import json
 
-                stream_key = f"clinos:events:{topic}"
+                stream_key = f"AI Healthcare System:events:{topic}"
                 await self._redis.xadd(stream_key, {"payload": json.dumps(payload)})
                 logger.debug("Published to Redis stream '%s'", stream_key)
                 # Also dispatch locally so in-process subscribers still fire.
@@ -177,7 +177,7 @@ class ClinicalEventBus:
         """Background loop reading new entries from Redis Streams."""
         import json
 
-        streams = {f"clinos:events:{t}": "$" for t in ALL_TOPICS}
+        streams = {f"AI Healthcare System:events:{t}": "$" for t in ALL_TOPICS}
 
         try:
             while True:
@@ -189,7 +189,7 @@ class ClinicalEventBus:
                     continue
 
                 for stream_key, messages in results:
-                    topic = stream_key.replace("clinos:events:", "")
+                    topic = stream_key.replace("AI Healthcare System:events:", "")
                     for msg_id, fields in messages:
                         try:
                             payload = json.loads(fields.get("payload", "{}"))

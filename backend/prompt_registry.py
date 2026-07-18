@@ -771,7 +771,7 @@ if _pkg_prompts is None:
                     "{{\n"
                     '  "urgency": "CRITICAL",\n'
                     '  "assigned_contact": "Dr. Sarah Jenkins (Cardiology attending, +1-555-0199)",\n'
-                    '  "call_script": "This is an automated alert from ClinOS. Patient Marcus Thorne in Bed 14C is triggering a Critical Heart Rate Alarm at 118 bpm. Please attend immediately.",\n'
+                    '  "call_script": "This is an automated alert from AI Healthcare System. Patient Marcus Thorne in Bed 14C is triggering a Critical Heart Rate Alarm at 118 bpm. Please attend immediately.",\n'
                     '  "broadcast_success": true\n'
                     "}}\n\n"
                     "Ensure you output ONLY a valid JSON object. Do not include markdown formatting like ```json."
