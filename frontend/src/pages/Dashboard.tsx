@@ -284,6 +284,39 @@ export default function DashboardPage() {
     }
   }, [user]);
 
+  // Dispatch alarm state to window for header notification
+  useEffect(() => {
+    const isAlertActive = !telemetryAlarmDismissed && beds[1].hr > 100;
+    window.dispatchEvent(
+      new CustomEvent("clinical-alarm", {
+        detail: {
+          active: isAlertActive,
+          bed: "Bed 14C",
+          name: "Marcus Thorne",
+          hr: beds[1].hr,
+        },
+      })
+    );
+  }, [telemetryAlarmDismissed, beds]);
+
+  // Listen to response actions from header notification dropdown
+  useEffect(() => {
+    const handleResolve = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const { action } = customEvent.detail;
+      if (action === "code-blue") {
+        setCodeBlueActive((prev) => ({ ...prev, "Bed 14C": true }));
+        toast.success("Dispatching Code Blue response team to Bed 14C.");
+      } else if (action === "dismiss") {
+        toast.info("Awaiting physician confirmation.");
+      }
+      setTelemetryAlarmDismissed(true);
+    };
+
+    window.addEventListener("resolve-alarm", handleResolve);
+    return () => window.removeEventListener("resolve-alarm", handleResolve);
+  }, []);
+
   // Resolve matching DB patient ID
   const selectedPatientDbId = useMemo(() => {
     if (!selectedBed) return null;
@@ -592,46 +625,6 @@ export default function DashboardPage() {
         <div className="flex items-center gap-2 p-3 text-xs font-mono uppercase tracking-wide border border-[var(--warning-border)] bg-[var(--warning-muted)] text-[var(--warning)] rounded animate-pulse" role="alert">
           <AlertTriangle size={14} className="shrink-0" />
           <span>{error}</span>
-        </div>
-      )}
-
-      {/* Emergency Alarm Banner (Non-overlapping, shifts layout) */}
-      {!telemetryAlarmDismissed && (
-        <div className="p-4 mb-6 rounded-xl border border-red-500/30 bg-red-500/10 shadow-[0_4px_20px_rgba(239,68,68,0.15)] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-pulse" role="alert">
-          <div className="flex items-start gap-3">
-            <BellRing className="text-[var(--danger)] shrink-0 mt-0.5 animate-bounce" size={18} />
-            <div>
-              <p className="font-extrabold text-xs text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-2">
-                <span>🚨 EMERGENCY ALARM: VERY HIGH HEART RATE!</span>
-              </p>
-              <p className="text-xs text-[var(--text-secondary)] mt-1 font-mono">
-                Bed 14C: Marcus Thorne is exhibiting abnormal heart rates (HR: {beds[1].hr} BPM).
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto shrink-0">
-            <button 
-              onClick={(e) => { 
-                triggerRipple(e); 
-                setCodeBlueActive(prev => ({ ...prev, "Bed 14C": true }));
-                toast.success("Dispatching Code Blue response team to Bed 14C.");
-                setTelemetryAlarmDismissed(true);
-              }}
-              className="btn btn-danger text-[10px] py-1.5 px-3 uppercase tracking-wider font-bold"
-            >
-              🚨 Send Emergency Team (Code Blue)
-            </button>
-            <button 
-              onClick={(e) => { 
-                triggerRipple(e); 
-                toast.info("Awaiting physician confirmation.");
-                setTelemetryAlarmDismissed(true);
-              }}
-              className="btn btn-secondary text-[10px] py-1.5 px-3 uppercase tracking-wider font-bold"
-            >
-              ❌ Stop Alarm / Dismiss
-            </button>
-          </div>
         </div>
       )}
 

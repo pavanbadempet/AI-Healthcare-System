@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/lib/auth";
 import { prefetchRoute } from "@/lib/prefetch";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ChevronDown, BrainCircuit, ShieldCheck, HelpCircle, BookOpen, Key, AlertTriangle, Cpu, X } from "lucide-react";
+import { Sparkles, ChevronDown, BrainCircuit, ShieldCheck, HelpCircle, BookOpen, Key, AlertTriangle, Cpu, X, Bell, BellRing } from "lucide-react";
 import Tooltip from "./Tooltip";
 import { useTranslation } from "@/lib/i18n";
 import {
@@ -44,6 +44,26 @@ export default function TopNav({
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
+
+  const [alarm, setAlarm] = useState<{ active: boolean; bed?: string; name?: string; hr?: number } | null>(null);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  useEffect(() => {
+    const handleAlarm = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      setAlarm(customEvent.detail);
+      if (customEvent.detail?.active) {
+        setShowNotifications(true);
+      }
+    };
+    window.addEventListener("clinical-alarm", handleAlarm);
+    return () => window.removeEventListener("clinical-alarm", handleAlarm);
+  }, []);
+
+  const resolveAlarm = (action: "code-blue" | "dismiss") => {
+    window.dispatchEvent(new CustomEvent("resolve-alarm", { detail: { action } }));
+    setShowNotifications(false);
+  };
 
   // Refs
   const navContainerRef = useRef<HTMLDivElement>(null);
@@ -288,6 +308,79 @@ export default function TopNav({
 
           {/* Command Search */}
           <CommandSearch user={user} />
+
+          {/* Notification Bell Dropdown */}
+          <div className="relative flex items-center">
+            <Tooltip content={alarm?.active ? "Active Vitals Alarm!" : "Notifications"} position="bottom">
+              <button
+                onClick={() => setShowNotifications(!showNotifications)}
+                className={`relative p-2 rounded-lg border transition-all duration-200 cursor-pointer ${
+                  alarm?.active
+                    ? "bg-red-500/10 border-red-500/30 text-red-500 animate-pulse hover:bg-red-500/20"
+                    : "text-[var(--text-secondary)] hover:text-[var(--accent)] border-transparent hover:border-[var(--border)] hover:bg-white/[0.02]"
+                }`}
+                aria-label="View notifications"
+              >
+                {alarm?.active ? <BellRing size={15} className="animate-bounce" /> : <Bell size={15} />}
+                {alarm?.active && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500 border-2 border-[var(--bg-card)]" />
+                )}
+              </button>
+            </Tooltip>
+
+            {/* Notifications Popover */}
+            <AnimatePresence>
+              {showNotifications && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  transition={{ duration: 0.15 }}
+                  className="absolute right-0 top-11 w-80 p-4 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] backdrop-blur-2xl shadow-[var(--shadow-hard)] z-50 space-y-3"
+                >
+                  <div className="flex items-center justify-between pb-2 border-b border-white/[0.04]">
+                    <span className="text-[11px] font-black tracking-wider uppercase text-[var(--text-primary)]">Notifications</span>
+                    {alarm?.active && (
+                      <span className="px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 text-[8px] font-black tracking-widest uppercase">Critical</span>
+                    )}
+                  </div>
+
+                  {alarm?.active ? (
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-2.5">
+                        <AlertTriangle className="text-red-500 shrink-0 mt-0.5" size={15} />
+                        <div>
+                          <p className="font-extrabold text-[10px] text-red-500 uppercase tracking-wide">Emergency Vitals Alarm</p>
+                          <p className="text-[11px] text-[var(--text-secondary)] mt-1 font-mono leading-relaxed text-left">
+                            {alarm.bed}: {alarm.name} exhibits abnormal heart rate (HR: {alarm.hr} BPM).
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-1.5 pt-2">
+                        <button
+                          onClick={() => resolveAlarm("code-blue")}
+                          className="w-full py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-[9px] font-extrabold tracking-wider uppercase transition-colors cursor-pointer"
+                        >
+                          🚨 Send Emergency Team (Code Blue)
+                        </button>
+                        <button
+                          onClick={() => resolveAlarm("dismiss")}
+                          className="w-full py-1.5 rounded-lg border border-[var(--border)] hover:bg-white/[0.02] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[9px] font-extrabold tracking-wider uppercase transition-colors cursor-pointer"
+                        >
+                          ❌ Dismiss Alarm
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="py-4 text-center text-[10px] text-[var(--text-dim)] uppercase tracking-wider">
+                      No active alerts
+                    </div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
 
           {/* Telemetry Dropdown */}
           <TelemetryDropdown />
