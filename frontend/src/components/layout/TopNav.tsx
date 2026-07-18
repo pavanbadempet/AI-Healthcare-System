@@ -99,7 +99,7 @@ export default function TopNav({
     },
     {
       key: "AI Healthcare System",
-      label: language === "es" ? "Sistemas AI Healthcare System" : language === "hi" ? "क्लिओएस" : "AI Healthcare System",
+      label: language === "es" ? "Sistema AI" : language === "hi" ? "एआई सिस्टम" : "AI System",
       emoji: "🚀",
       accentColor: "text-sky-400 data-[state=open]:text-sky-400",
       items: dynamicHealthcareSystemItems,
