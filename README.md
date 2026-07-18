@@ -73,7 +73,6 @@
 <details open>
 <summary><strong>Click to expand / collapse</strong></summary>
 
-- [🖼 Screenshots & Demo](#-screenshots--demo)
 - [🔑 Commercial Developer Packages](#-commercial-developer-packages-polarsh)
 - [✨ Why Choose AI Healthcare System?](#-why-choose-ai-healthcare-system)
 - [🛠 Technology Stack Architecture](#-technology-stack-architecture)
@@ -109,28 +108,8 @@
 
 </details>
 
----
 
-## 🖼 Screenshots & Demo
 
-> **See the platform in action.** AI Healthcare System ships with a premium dark-mode clinical UI built with React 19, Tailwind CSS, and Framer Motion.
-
-<table>
-  <tr>
-    <td width="50%" align="center">
-      <strong>🏥 Clinical Command Center Dashboard</strong><br/><br/>
-      <img src="docs/assets/screenshot-dashboard.png" alt="AI Healthcare System clinical dashboard showing patient statistics, real-time vitals monitoring chart, active cases tracker, and ML prediction counters in a modern dark-theme React 19 interface" width="100%"/>
-      <br/><em>Real-time patient analytics, vitals monitoring, bed census, and AI prediction counters.</em>
-    </td>
-    <td width="50%" align="center">
-      <strong>🤖 AI-Powered Clinical RAG Chatbot</strong><br/><br/>
-      <img src="docs/assets/screenshot-chat.png" alt="AI Healthcare System RAG chatbot interface showing SHAP explainability feature importance bars, diabetes risk prediction score gauge, and medical AI conversation with clinical context in dark theme" width="100%"/>
-      <br/><em>LangGraph multi-agent chat with SHAP explanations and patient-scoped RAG context.</em>
-    </td>
-  </tr>
-</table>
-
-<img src="docs/assets/divider.svg" alt="AI Healthcare System section divider" width="100%"/>
 
 ## 🔑 Commercial Developer Packages (Polar.sh)
 
