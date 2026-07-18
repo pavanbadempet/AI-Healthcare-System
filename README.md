@@ -1,27 +1,28 @@
 
-# 🏥 AI Healthcare System — Open-Source HIPAA-Compliant Clinical AI & EHR Platform
-
-> **AI Healthcare System** is a production-grade, open-source clinical intelligence platform for building HIPAA-compliant healthcare applications. It combines **5 explainable ML diagnostic models** (XGBoost + SHAP), a **stateful LangGraph & MAF multi-agent RAG chatbot** with local Ollama LLM inference, a **React 19 + FastAPI** full-stack architecture, **HL7 FHIR R4 interoperability**, and a **PySpark Medallion Lakehouse** data pipeline — all deployable offline for maximum patient data privacy.
-
 <div align="center">
 
 <img src="docs/assets/hero-banner.svg" alt="AI Healthcare System - Open-Source HIPAA Clinical Intelligence Platform with React 19, FastAPI, LangGraph, and Ollama local inference" width="100%"/>
 
+<br/>
+
+**Production-grade clinical AI platform — 5 ML diagnostics · Multi-agent RAG chatbot · FHIR R4 · Offline-first privacy**
+
+<br/>
+
 <p>
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml/badge.svg" alt="CI build status" /></a>
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml/badge.svg" alt="CodeQL security analysis" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/pavanbadempet/AI-Healthcare-System?color=22c55e&style=flat-square" alt="AGPL-3.0 license" /></a>
-  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/stargazers"><img src="https://img.shields.io/github/stars/pavanbadempet/AI-Healthcare-System?style=flat-square&color=f59e0b" alt="GitHub stars" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/pavanbadempet/AI-Healthcare-System?color=22c55e&style=flat-square" alt="License" /></a>
+  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/stargazers"><img src="https://img.shields.io/github/stars/pavanbadempet/AI-Healthcare-System?style=flat-square&color=f59e0b" alt="Stars" /></a>
 </p>
 
 <p>
   <img src="https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python" />
   <img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/React_19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 19" />
-  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
   <img src="https://img.shields.io/badge/LangGraph-1C3C3C?style=flat-square&logo=langchain&logoColor=white" alt="LangGraph" />
   <img src="https://img.shields.io/badge/Ollama-000000?style=flat-square&logo=ollama&logoColor=white" alt="Ollama" />
-  <img src="https://img.shields.io/badge/XGBoost-FF3633?style=flat-square&logoColor=white" alt="XGBoost" />
+  <img src="https://img.shields.io/badge/XGBoost-FF3633?style=flat-square" alt="XGBoost" />
   <img src="https://img.shields.io/badge/FHIR_R4-E73F3E?style=flat-square" alt="FHIR R4" />
   <img src="https://img.shields.io/badge/PySpark-E25A1C?style=flat-square&logo=apachespark&logoColor=white" alt="PySpark" />
   <img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
@@ -31,12 +32,12 @@
 
 </div>
 
----
+<!-- SEO: H1 is critical for search engines. The banner serves as the visual title. -->
+<!-- AI Healthcare System — Open-Source HIPAA-Compliant Clinical AI & EHR Platform -->
 
-## 📑 Table of Contents
+<details>
+<summary><strong>📑 Table of Contents</strong></summary>
 
-<details open>
-<summary><strong>Click to expand / collapse</strong></summary>
 
 - [🔑 Commercial Developer Packages](#-commercial-developer-packages-polarsh)
 - [✨ Why Choose AI Healthcare System?](#-why-choose-ai-healthcare-system)
