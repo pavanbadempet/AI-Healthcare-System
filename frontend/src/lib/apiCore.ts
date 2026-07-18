@@ -55,9 +55,10 @@ const CACHE_TTL = 10000; // 10 seconds cache TTL
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
   const method = (options.method || 'GET').toUpperCase();
   const isGet = method === 'GET';
+  const isTest = typeof process !== 'undefined' && process.env.NODE_ENV === 'test';
   const cacheKey = `${path}:${JSON.stringify(options.headers || {})}`;
 
-  if (isGet) {
+  if (isGet && !isTest) {
     const entry = requestCache.get(cacheKey);
     if (entry && Date.now() - entry.timestamp < CACHE_TTL) {
       return entry.data as T;
