@@ -9,7 +9,7 @@ import Tooltip from "./Tooltip";
 import { useTranslation } from "@/lib/i18n";
 import {
   type MenuItem, type MenuGroup,
-  operationsItems, diagnosticsItems, intelligenceItems, AI Healthcare SystemItems,
+  operationsItems, diagnosticsItems, intelligenceItems, healthcareSystemItems,
   MENU_GROUPS, getIconStyles, colorKeyFromMenuItem,
   COMMAND_ITEMS,
 } from "./nav-config";
@@ -65,7 +65,7 @@ export default function TopNav({
     return item;
   });
 
-  const dynamicAI Healthcare SystemItems = AI Healthcare SystemItems.map(item => {
+  const dynamicHealthcareSystemItems = healthcareSystemItems.map(item => {
     return item;
   });
 
@@ -102,7 +102,7 @@ export default function TopNav({
       label: language === "es" ? "Sistemas AI Healthcare System" : language === "hi" ? "क्लिओएस" : "AI Healthcare System",
       emoji: "🚀",
       accentColor: "text-sky-400 data-[state=open]:text-sky-400",
-      items: dynamicAI Healthcare SystemItems,
+      items: dynamicHealthcareSystemItems,
       cols: 2,
       routes: ["/apps", "/federated", "/intelligence", "/companion"],
     },
