@@ -48,8 +48,9 @@ export interface TelemetryData {
 
 export type ConnectionStatus = "connecting" | "connected" | "disconnected" | "error";
 
-const MAX_RECONNECT_DELAY = 30000;
-const INITIAL_RECONNECT_DELAY = 1000;
+const MAX_RECONNECT_DELAY = 60000;
+const INITIAL_RECONNECT_DELAY = 2000;
+const MAX_RECONNECT_ATTEMPTS = 5;
 
 export function useTelemetry() {
   const [data, setData] = useState<TelemetryData | null>(null);
@@ -63,6 +64,12 @@ export function useTelemetry() {
 
     function connect() {
       if (!shouldReconnect) {
+        return;
+      }
+
+      // Give up after MAX_RECONNECT_ATTEMPTS to avoid hammering a non-existent endpoint
+      if (reconnectAttempt.current >= MAX_RECONNECT_ATTEMPTS) {
+        setStatus("disconnected");
         return;
       }
 
@@ -105,6 +112,11 @@ export function useTelemetry() {
           wsRef.current = null;
 
           if (!shouldReconnect) {
+            return;
+          }
+
+          // Stop reconnecting after max attempts
+          if (reconnectAttempt.current >= MAX_RECONNECT_ATTEMPTS) {
             return;
           }
 

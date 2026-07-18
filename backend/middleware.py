@@ -190,7 +190,15 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 
 
 class LicenseValidationMiddleware(BaseHTTPMiddleware):
-    """Verifies that a valid cryptographic license key is provided in self-hosted deployments."""
+    """Verifies that a valid cryptographic license key is provided in self-hosted deployments.
+    
+    Caches validation result for 60 seconds to avoid cryptographic verification on every request.
+    """
+
+    _cache_result: tuple[bool, str] | None = None
+    _cache_key: str = ""
+    _cache_time: float = 0.0
+    _CACHE_TTL = 60.0  # seconds
 
     async def dispatch(self, request: Request, call_next):
         if os.getenv("TESTING") in ("1", "true"):
@@ -213,8 +221,21 @@ class LicenseValidationMiddleware(BaseHTTPMiddleware):
                 content={"detail": "License Key is missing. Please set the LICENSE_KEY environment variable to activate the platform."}
             )
 
-        from . import licensing
-        is_valid, reason = licensing.verify_license_key(license_key)
+        # Use cached result if license key hasn't changed and cache is fresh
+        now = time.time()
+        if (
+            LicenseValidationMiddleware._cache_result is not None
+            and LicenseValidationMiddleware._cache_key == license_key
+            and (now - LicenseValidationMiddleware._cache_time) < LicenseValidationMiddleware._CACHE_TTL
+        ):
+            is_valid, reason = LicenseValidationMiddleware._cache_result
+        else:
+            from . import licensing
+            is_valid, reason = licensing.verify_license_key(license_key)
+            LicenseValidationMiddleware._cache_result = (is_valid, reason)
+            LicenseValidationMiddleware._cache_key = license_key
+            LicenseValidationMiddleware._cache_time = now
+
         if not is_valid:
             return JSONResponse(
                 status_code=402,
@@ -226,6 +247,22 @@ class LicenseValidationMiddleware(BaseHTTPMiddleware):
 
 class PrometheusMetricsMiddleware(BaseHTTPMiddleware):
     """Middleware to collect Prometheus metrics for request count and latency."""
+
+    _request_count = None
+    _request_duration = None
+    _metrics_loaded = False
+
+    @classmethod
+    def _ensure_metrics(cls):
+        if not cls._metrics_loaded:
+            try:
+                from backend.enterprise_features import REQUEST_COUNT, REQUEST_DURATION
+                cls._request_count = REQUEST_COUNT
+                cls._request_duration = REQUEST_DURATION
+            except Exception:
+                pass
+            cls._metrics_loaded = True
+
     async def dispatch(self, request: Request, call_next):
         # Exclude /metrics path to prevent scrape loop pollution
         if request.url.path == "/metrics":
@@ -246,10 +283,12 @@ class PrometheusMetricsMiddleware(BaseHTTPMiddleware):
             raise
         finally:
             duration = time.time() - start_time
+            PrometheusMetricsMiddleware._ensure_metrics()
             try:
-                from backend.enterprise_features import REQUEST_COUNT, REQUEST_DURATION
-                REQUEST_COUNT.labels(method=request.method, endpoint=endpoint, status=status_code).inc()
-                REQUEST_DURATION.labels(method=request.method, endpoint=endpoint).observe(duration)
+                if PrometheusMetricsMiddleware._request_count is not None:
+                    PrometheusMetricsMiddleware._request_count.labels(method=request.method, endpoint=endpoint, status=status_code).inc()
+                if PrometheusMetricsMiddleware._request_duration is not None:
+                    PrometheusMetricsMiddleware._request_duration.labels(method=request.method, endpoint=endpoint).observe(duration)
             except Exception:
                 # Shield middleware execution if Prometheus is disabled or unconfigured
                 pass
