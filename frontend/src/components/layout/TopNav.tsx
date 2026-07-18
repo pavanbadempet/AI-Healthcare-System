@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, ChevronDown, BrainCircuit, ShieldCheck, HelpCircle, BookOpen, Key, AlertTriangle, Cpu, X, Bell, BellRing } from "lucide-react";
 import Tooltip from "./Tooltip";
 import { useTranslation } from "@/lib/i18n";
+import { toast } from "@/lib/toast";
 import {
   type MenuItem, type MenuGroup,
   operationsItems, diagnosticsItems, intelligenceItems, healthcareSystemItems,
@@ -517,20 +518,60 @@ export default function TopNav({
                     1. Autonomous Clinical AI Agents
                   </span>
                   <div className="space-y-2.5">
-                    <div className="bg-white/[0.01] border border-white/[0.02] p-3 rounded-lg">
-                      <h4 className="font-bold text-white uppercase tracking-wider mb-1">Billing claim Auditor</h4>
+                    <div
+                      onClick={() => {
+                        setGuideOpen(false);
+                        navigate("/admin?tab=audit");
+                        toast.info("Auditing active. Click on a SOAP note or claims item to query denial logs.");
+                      }}
+                      className="bg-white/[0.01] hover:bg-white/[0.04] border border-white/[0.02] hover:border-[var(--accent)] p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01] duration-200"
+                    >
+                      <h4 className="font-bold text-white uppercase tracking-wider mb-1 flex items-center justify-between">
+                        <span>Billing claim Auditor</span>
+                        <span className="text-[8px] bg-[var(--accent-muted)] text-[var(--accent)] px-1 rounded">Launch ↗</span>
+                      </h4>
                       <p>Audits SOAP notes and estimates claim denial risk prior to submission. Access under **Invoices &gt; Audit**.</p>
                     </div>
-                    <div className="bg-white/[0.01] border border-white/[0.02] p-3 rounded-lg">
-                      <h4 className="font-bold text-white uppercase tracking-wider mb-1">Shift handoff Coordinator</h4>
+                    <div
+                      onClick={() => {
+                        setGuideOpen(false);
+                        navigate("/patients");
+                        toast.info("Select a patient from the registry to view or compile their active Shift Handoff card.");
+                      }}
+                      className="bg-white/[0.01] hover:bg-white/[0.04] border border-white/[0.02] hover:border-[var(--accent)] p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01] duration-200"
+                    >
+                      <h4 className="font-bold text-white uppercase tracking-wider mb-1 flex items-center justify-between">
+                        <span>Shift handoff Coordinator</span>
+                        <span className="text-[8px] bg-[var(--accent-muted)] text-[var(--accent)] px-1 rounded">Launch ↗</span>
+                      </h4>
                       <p>Aggregates 24h vital observations into shift handoff cards. Access under **Patients &gt; Handoff**.</p>
                     </div>
-                    <div className="bg-white/[0.01] border border-white/[0.02] p-3 rounded-lg">
-                      <h4 className="font-bold text-white uppercase tracking-wider mb-1">Discharge Planner</h4>
+                    <div
+                      onClick={() => {
+                        setGuideOpen(false);
+                        navigate("/patients");
+                        toast.info("Select a patient and click 'Generate Discharge Summary' inside their medical record view.");
+                      }}
+                      className="bg-white/[0.01] hover:bg-white/[0.04] border border-white/[0.02] hover:border-[var(--accent)] p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01] duration-200"
+                    >
+                      <h4 className="font-bold text-white uppercase tracking-wider mb-1 flex items-center justify-between">
+                        <span>Discharge Planner</span>
+                        <span className="text-[8px] bg-[var(--accent-muted)] text-[var(--accent)] px-1 rounded">Launch ↗</span>
+                      </h4>
                       <p>Synthesizes telemetry and care plans into transition summaries. Access under **Patients &gt; Discharge**.</p>
                     </div>
-                    <div className="bg-white/[0.01] border border-white/[0.02] p-3 rounded-lg">
-                      <h4 className="font-bold text-white uppercase tracking-wider mb-1">Telephony Alert Routing</h4>
+                    <div
+                      onClick={() => {
+                        setGuideOpen(false);
+                        navigate("/infrastructure");
+                        toast.info("Check alert logs and configure automated telephony cardiologists route lists.");
+                      }}
+                      className="bg-white/[0.01] hover:bg-white/[0.04] border border-white/[0.02] hover:border-[var(--accent)] p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01] duration-200"
+                    >
+                      <h4 className="font-bold text-white uppercase tracking-wider mb-1 flex items-center justify-between">
+                        <span>Telephony Alert Routing</span>
+                        <span className="text-[8px] bg-[var(--accent-muted)] text-[var(--accent)] px-1 rounded">Launch ↗</span>
+                      </h4>
                       <p>Routes urgent telemetry alarms directly to on-call cardiologists via automated voice call scripts.</p>
                     </div>
                   </div>
@@ -541,9 +582,22 @@ export default function TopNav({
                   <span className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--accent-purple)] block">
                     2. Credential Security & Lockouts
                   </span>
-                  <div className="flex items-start gap-2 bg-white/[0.01] border border-white/[0.02] p-3 rounded-lg">
+                  <div
+                    onClick={() => {
+                      setGuideOpen(false);
+                      navigate("/profile");
+                      toast.info("Configure password constraints, 2FA, and review account lockout parameters.");
+                    }}
+                    className="flex items-start gap-2 bg-white/[0.01] hover:bg-white/[0.04] border border-white/[0.02] hover:border-[var(--accent-purple)] p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01] duration-200"
+                  >
                     <Key className="text-[var(--accent-purple)] shrink-0 mt-0.5" size={14} />
-                    <p>For HIPAA compliance, accounts are locked for 15 minutes after 5 consecutive incorrect passwords. Enforce 2FA in your **Profile Settings**.</p>
+                    <div>
+                      <h4 className="font-bold text-white uppercase tracking-wider mb-1 flex items-center justify-between">
+                        <span>2FA & Profile Lockout</span>
+                        <span className="text-[8px] bg-[var(--accent-purple-muted)] text-[var(--accent-purple)] px-1 rounded">Configure ↗</span>
+                      </h4>
+                      <p>For HIPAA compliance, accounts are locked for 15 minutes after 5 consecutive incorrect passwords. Enforce 2FA in your **Profile Settings**.</p>
+                    </div>
                   </div>
                 </div>
 
@@ -552,9 +606,22 @@ export default function TopNav({
                   <span className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--success)] block">
                     3. Self-Healing & Diagnostics
                   </span>
-                  <div className="flex items-start gap-2 bg-white/[0.01] border border-white/[0.02] p-3 rounded-lg">
+                  <div
+                    onClick={() => {
+                      setGuideOpen(false);
+                      navigate("/admin?tab=data-engineering");
+                      toast.info("Database index optimization and diagnostic self-healing parameters are active.");
+                    }}
+                    className="flex items-start gap-2 bg-white/[0.01] hover:bg-white/[0.04] border border-white/[0.02] hover:border-[var(--success)] p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01] duration-200"
+                  >
                     <Cpu className="text-[var(--success)] shrink-0 mt-0.5" size={14} />
-                    <p>The **Self-Healing Agent** checks error buffers and auto-executes database index rebuilding and pruning. Run maintenance instantly from the **Data Engineering Console**.</p>
+                    <div>
+                      <h4 className="font-bold text-white uppercase tracking-wider mb-1 flex items-center justify-between">
+                        <span>Self-Healing Agent</span>
+                        <span className="text-[8px] bg-[var(--success-muted)] text-[var(--success)] px-1 rounded">Launch ↗</span>
+                      </h4>
+                      <p>The **Self-Healing Agent** checks error buffers and auto-executes database index rebuilding and pruning. Run maintenance instantly from the **Data Engineering Console**.</p>
+                    </div>
                   </div>
                 </div>
 

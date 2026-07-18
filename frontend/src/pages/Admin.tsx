@@ -31,6 +31,15 @@ export default function AdminPage() {
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<AdminTab>("users");
 
+  // Read URL query parameter on load & change
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get("tab") as AdminTab;
+    if (tabParam && ["users", "hospital", "audit", "data-engineering", "analytics"].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [window.location.search]);
+
   useEffect(() => {
     if (user?.role !== "admin") {
       setError("Unauthorized access. Admin privileges required.");
