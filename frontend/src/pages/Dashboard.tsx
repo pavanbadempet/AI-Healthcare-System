@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo, lazy, Suspense } from "react";
+import { useEffect, useState, useMemo, useRef, lazy, Suspense } from "react";
 import { useAuthStore } from "@/lib/auth";
 import { getRecords, getDemoReadiness, getAdminPatients, getDoctorPatients, submitVitals, getDoctorPatientMonitoringSignals, type HealthRecord } from "@/lib/api";
 import { useTelemetry } from "@/lib/useTelemetry";
@@ -284,19 +284,24 @@ export default function DashboardPage() {
     }
   }, [user]);
 
-  // Dispatch alarm state to window for header notification
+  // Dispatch alarm state to window for header notification (only on transitions)
+  const prevAlarmActiveRef = useRef<boolean | null>(null);
   useEffect(() => {
     const isAlertActive = !telemetryAlarmDismissed && beds[1].hr > 100;
-    window.dispatchEvent(
-      new CustomEvent("clinical-alarm", {
-        detail: {
-          active: isAlertActive,
-          bed: "Bed 14C",
-          name: "Marcus Thorne",
-          hr: beds[1].hr,
-        },
-      })
-    );
+    // Only dispatch when alarm state actually changes to avoid cascading re-renders
+    if (prevAlarmActiveRef.current !== isAlertActive) {
+      prevAlarmActiveRef.current = isAlertActive;
+      window.dispatchEvent(
+        new CustomEvent("clinical-alarm", {
+          detail: {
+            active: isAlertActive,
+            bed: "Bed 14C",
+            name: "Marcus Thorne",
+            hr: beds[1].hr,
+          },
+        })
+      );
+    }
   }, [telemetryAlarmDismissed, beds]);
 
   // Listen to response actions from header notification dropdown
@@ -549,7 +554,7 @@ export default function DashboardPage() {
           };
         })
       );
-    }, 2000);
+    }, 4000);
     return () => clearInterval(interval);
   }, []);
 
