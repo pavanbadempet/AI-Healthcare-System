@@ -67,9 +67,11 @@ describe('TopNav Component', () => {
 
     render(<TopNav />);
 
-    // The title spans "AI Healthcare System"
-    expect(screen.getByText(/AI Healthcare/i)).toBeInTheDocument();
-    expect(screen.getByText(/System/i)).toBeInTheDocument();
+    // The title spans "AI Healthcare System" – multiple elements contain
+    // this text (the h1 logo and the nav dropdown button), so use *AllBy*.
+    const matches = screen.getAllByText(/AI Healthcare/i);
+    expect(matches.length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText(/System/i).length).toBeGreaterThanOrEqual(1);
   });
 
   it('renders user information', () => {
