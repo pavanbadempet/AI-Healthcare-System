@@ -149,24 +149,22 @@ export default function TopNav({
         />
 
         {/* ─── Left: Brand Logo ─── */}
-        <Tooltip content="Command Center / Dashboard" position="bottom">
-          <Link
-            to="/dashboard"
-            onMouseEnter={() => prefetchRoute('/dashboard')}
-            className="flex items-center gap-2 shrink-0 group"
-            aria-label="AI Healthcare System - Go to dashboard"
-          >
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--accent)] to-[var(--accent-purple)] flex items-center justify-center text-white shadow-[0_0_12px_rgba(99,102,241,0.25)] group-hover:scale-105 transition-transform duration-200">
-              <Sparkles size={15} aria-hidden="true" />
-            </div>
-            <div className="hidden 2xl:block">
-              <h1 className="text-xs font-bold text-[var(--text-primary)] tracking-wide uppercase">
-                AI Healthcare{" "}
-                <span className="text-[var(--text-secondary)] font-normal">System</span>
-              </h1>
-            </div>
-          </Link>
-        </Tooltip>
+        <Link
+          to="/dashboard"
+          onMouseEnter={() => prefetchRoute('/dashboard')}
+          className="flex items-center gap-2 shrink-0 group"
+          aria-label="ClinOS Dashboard"
+        >
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--accent)] to-[var(--accent-purple)] flex items-center justify-center text-white shadow-[0_0_12px_rgba(99,102,241,0.25)] group-hover:scale-105 transition-transform duration-200">
+            <Sparkles size={15} aria-hidden="true" />
+          </div>
+          <div className="hidden xl:block">
+            <h1 className="text-sm font-black text-[var(--text-primary)] tracking-wider uppercase">
+              Clin<span className="text-[var(--accent)] font-light">OS</span>
+            </h1>
+          </div>
+        </Link>
+
 
         {/* ─── Center: Navigation with Mega Menus ─── */}
         <nav
