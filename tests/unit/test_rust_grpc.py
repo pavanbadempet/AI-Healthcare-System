@@ -24,7 +24,14 @@ def test_rust_grpc_server():
     
     # We do a build to ensure the binary is compiled with gRPC support
     rust_gw_dir = os.path.join(base_dir, "..", "..", "rust_gateway")
-    subprocess.run(compile_cmd, cwd=rust_gw_dir, env=env, check=True)
+    try:
+        subprocess.run(compile_cmd, cwd=rust_gw_dir, env=env, capture_output=True, text=True, check=True)
+    except subprocess.CalledProcessError as e:
+        print("--- CARGO BUILD STDOUT ---", file=sys.stderr)
+        print(e.stdout, file=sys.stderr)
+        print("--- CARGO BUILD STDERR ---", file=sys.stderr)
+        print(e.stderr, file=sys.stderr)
+        raise
 
     # Start the Rust gateway server in a background subprocess
     proc = subprocess.Popen(
