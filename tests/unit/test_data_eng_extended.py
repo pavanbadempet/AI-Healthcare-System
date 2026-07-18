@@ -15,7 +15,8 @@ def mock_dependencies():
     redis_module = types.ModuleType("redis")
 
     class SparkSession:
-        pass
+        class builder:
+            pass
     class SparkDF:
         pass
     class Redis:

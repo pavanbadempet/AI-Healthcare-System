@@ -25,7 +25,8 @@ def _install_lakehouse_stubs(monkeypatch, delta_table_class=None):
     delta_tables = types.ModuleType("delta.tables")
 
     class SparkSession:
-        pass
+        class builder:
+            pass
 
     class SparkDF:
         pass

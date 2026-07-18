@@ -23,7 +23,8 @@ def _load_data_engineering_platform(monkeypatch):
     redis_module = types.ModuleType("redis")
 
     class SparkSession:
-        pass
+        class builder:
+            pass
 
     class SparkDF:
         pass
