@@ -595,6 +595,46 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* Emergency Alarm Banner (Non-overlapping, shifts layout) */}
+      {!telemetryAlarmDismissed && (
+        <div className="p-4 mb-6 rounded-xl border border-red-500/30 bg-red-500/10 shadow-[0_4px_20px_rgba(239,68,68,0.15)] flex flex-col md:flex-row items-start md:items-center justify-between gap-4 animate-pulse" role="alert">
+          <div className="flex items-start gap-3">
+            <BellRing className="text-[var(--danger)] shrink-0 mt-0.5 animate-bounce" size={18} />
+            <div>
+              <p className="font-extrabold text-xs text-[var(--text-primary)] uppercase tracking-wider flex items-center gap-2">
+                <span>🚨 EMERGENCY ALARM: VERY HIGH HEART RATE!</span>
+              </p>
+              <p className="text-xs text-[var(--text-secondary)] mt-1 font-mono">
+                Bed 14C: Marcus Thorne is exhibiting abnormal heart rates (HR: {beds[1].hr} BPM).
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 w-full md:w-auto shrink-0">
+            <button 
+              onClick={(e) => { 
+                triggerRipple(e); 
+                setCodeBlueActive(prev => ({ ...prev, "Bed 14C": true }));
+                toast.success("Dispatching Code Blue response team to Bed 14C.");
+                setTelemetryAlarmDismissed(true);
+              }}
+              className="btn btn-danger text-[10px] py-1.5 px-3 uppercase tracking-wider font-bold"
+            >
+              🚨 Send Emergency Team (Code Blue)
+            </button>
+            <button 
+              onClick={(e) => { 
+                triggerRipple(e); 
+                toast.info("Awaiting physician confirmation.");
+                setTelemetryAlarmDismissed(true);
+              }}
+              className="btn btn-secondary text-[10px] py-1.5 px-3 uppercase tracking-wider font-bold"
+            >
+              ❌ Stop Alarm / Dismiss
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--border)] pb-4">
         <div>
@@ -1110,50 +1150,7 @@ export default function DashboardPage() {
         })}
       </div>
 
-      {/* Right side alert box floating for Tachycardia */}
-      {!telemetryAlarmDismissed && (
-        <div className="fixed bottom-6 right-6 z-40 max-w-xs sm:max-w-sm pointer-events-auto">
-          <AnimatePresence>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="panel p-3.5 rounded-xl border-l-4 border-[var(--danger)] shadow-[0_20px_40px_rgba(0,0,0,0.7)] bg-[var(--bg-card)] backdrop-blur-2xl flex items-start gap-2.5 relative"
-            >
-              <BellRing className="text-[var(--danger)] shrink-0 mt-0.5 animate-pulse" size={16} />
-              <div className="flex-1">
-                <p className="font-bold text-xs text-[var(--text-primary)] uppercase tracking-wide">🚨 EMERGENCY ALARM: Very High Heart Rate!</p>
-                <p className="text-[11px] text-[var(--text-secondary)] mt-1 font-mono">
-                  Bed 14C: Marcus Thorne is exhibiting abnormal heart rates (HR: {beds[1].hr} BPM).
-                </p>
-                <div className="flex flex-col gap-2 mt-3">
-                  <button 
-                    onClick={(e) => { 
-                      triggerRipple(e); 
-                      setCodeBlueActive(prev => ({ ...prev, "Bed 14C": true }));
-                      toast.success("Dispatching Code Blue response team to Bed 14C.");
-                      setTelemetryAlarmDismissed(true);
-                    }}
-                    className="btn btn-danger text-[10px] py-1.5 px-3 uppercase tracking-wider font-bold w-full"
-                  >
-                    🚨 Send Emergency Team (Code Blue)
-                  </button>
-                  <button 
-                    onClick={(e) => { 
-                      triggerRipple(e); 
-                      toast.info("Awaiting physician confirmation.");
-                      setTelemetryAlarmDismissed(true);
-                    }}
-                    className="btn btn-secondary text-[10px] py-1.5 px-3 uppercase tracking-wider font-bold w-full"
-                  >
-                    ❌ Stop Alarm / Dismiss
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      )}
+
 
       {/* Level 2: Recharts Population Risk Trajectory Chart & Live Diagnostic Stream */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
