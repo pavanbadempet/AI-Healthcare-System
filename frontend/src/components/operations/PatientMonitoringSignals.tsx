@@ -1,5 +1,5 @@
 
-import { useCallback, useEffect, useMemo, useState, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef, memo } from "react";
 import { AlertTriangle, CheckCircle2, HeartPulse, RefreshCcw, Activity } from "lucide-react";
 import { useAuthStore } from "@/lib/auth";
 import {
@@ -32,7 +32,7 @@ function formatSignalType(signalType: string) {
     .join(" ");
 }
 
-export default function PatientMonitoringSignals({
+const PatientMonitoringSignals = memo(function PatientMonitoringSignals({
   patientId,
   refreshIntervalMs = 30000,
 }: PatientMonitoringSignalsProps) {
@@ -316,4 +316,6 @@ export default function PatientMonitoringSignals({
       </div>
     </section>
   );
-}
+})
+
+export default PatientMonitoringSignals;

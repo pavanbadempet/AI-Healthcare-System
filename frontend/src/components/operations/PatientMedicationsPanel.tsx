@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useState, FormEvent, memo } from "react";
 import { AlertTriangle, Pill, RefreshCcw, Plus, ShieldAlert, Sparkles, Loader2, CheckCircle2 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth";
 import {
@@ -45,7 +45,7 @@ function sortedPrescriptions(prescriptions: Prescription[]) {
   return [...prescriptions].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 }
 
-export default function PatientMedicationsPanel({
+const PatientMedicationsPanel = memo(function PatientMedicationsPanel({
   patientId,
   refreshIntervalMs = 30000,
 }: PatientMedicationsPanelProps) {
@@ -573,4 +573,6 @@ export default function PatientMedicationsPanel({
       </div>
     </section>
   );
-}
+})
+
+export default PatientMedicationsPanel;
