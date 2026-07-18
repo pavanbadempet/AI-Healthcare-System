@@ -153,14 +153,15 @@ export default function TopNav({
           to="/dashboard"
           onMouseEnter={() => prefetchRoute('/dashboard')}
           className="flex items-center gap-2 shrink-0 group"
-          aria-label="ClinOS Dashboard"
+          aria-label="AI Healthcare System Dashboard"
         >
           <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--accent)] to-[var(--accent-purple)] flex items-center justify-center text-white shadow-[0_0_12px_rgba(99,102,241,0.25)] group-hover:scale-105 transition-transform duration-200">
             <Sparkles size={15} aria-hidden="true" />
           </div>
           <div className="hidden xl:block">
-            <h1 className="text-sm font-black text-[var(--text-primary)] tracking-wider uppercase">
-              Clin<span className="text-[var(--accent)] font-light">OS</span>
+            <h1 className="text-xs font-bold text-[var(--text-primary)] tracking-wide uppercase">
+              AI Healthcare{" "}
+              <span className="text-[var(--text-secondary)] font-normal">System</span>
             </h1>
           </div>
         </Link>
@@ -277,13 +278,13 @@ export default function TopNav({
 
         {/* ─── Right: Actions ─── */}
         <div className="flex items-center gap-2 md:gap-3 shrink-0">
-          {/* SOTA Network Status & Offline Queue Indicator */}
-          <div className="flex items-center gap-1.5 px-2.5 py-1 border border-[var(--border)] bg-white/[0.01] rounded-lg text-[10px] font-extrabold tracking-wider uppercase">
-            <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? "bg-[var(--success)] animate-pulse" : "bg-amber-500 animate-ping"}`} />
-            <span className={isOnline ? "text-[var(--text-secondary)]" : "text-amber-500"}>
-              {isOnline ? "Online" : `Offline (${queueCount})`}
-            </span>
-          </div>
+          {/* Offline Queue Indicator (only visible when offline) */}
+          {!isOnline && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 border border-amber-500/20 bg-amber-500/10 rounded-lg text-[10px] font-extrabold tracking-wider uppercase text-amber-500">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
+              <span>Offline ({queueCount})</span>
+            </div>
+          )}
 
           {/* Command Search */}
           <CommandSearch user={user} />
