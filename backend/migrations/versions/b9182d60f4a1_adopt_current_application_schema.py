@@ -42,7 +42,7 @@ def _index_names(inspector: sa.Inspector, table_name: str) -> set[str]:
     }
 
 
-def _create_AI Healthcare System_tables(existing_tables: set[str]) -> None:
+def _create_database_tables(existing_tables: set[str]) -> None:
     if "smart_apps" not in existing_tables:
         op.create_table(
             "smart_apps",
@@ -282,7 +282,7 @@ def upgrade() -> None:
         if index_name not in _index_names(inspector, table_name):
             op.create_index(index_name, table_name, ["is_deleted"])
 
-    _create_AI Healthcare System_tables(existing_tables)
+    _create_database_tables(existing_tables)
 
 
 def downgrade() -> None:
