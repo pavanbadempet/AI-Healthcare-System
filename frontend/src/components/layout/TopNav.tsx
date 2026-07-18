@@ -51,10 +51,14 @@ export default function TopNav({
   useEffect(() => {
     const handleAlarm = (e: Event) => {
       const customEvent = e as CustomEvent;
-      setAlarm(customEvent.detail);
-      if (customEvent.detail?.active) {
-        setShowNotifications(true);
-      }
+      const newAlarm = customEvent.detail;
+      setAlarm((prevAlarm) => {
+        // Only auto-open on the transition from inactive to active
+        if (newAlarm?.active && !prevAlarm?.active) {
+          setShowNotifications(true);
+        }
+        return newAlarm;
+      });
     };
     window.addEventListener("clinical-alarm", handleAlarm);
     return () => window.removeEventListener("clinical-alarm", handleAlarm);
