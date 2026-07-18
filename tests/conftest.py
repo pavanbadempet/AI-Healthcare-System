@@ -59,8 +59,6 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 
 from backend.prediction import initialize_models
 
-initialize_models()
-
 
 def _is_e2e_item(item: pytest.Item) -> bool:
     path = str(getattr(item, "path", getattr(item, "fspath", ""))).replace("\\", "/")
