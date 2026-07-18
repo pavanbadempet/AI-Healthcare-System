@@ -1,5 +1,5 @@
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, memo } from "react";
 import { Activity, AlertTriangle, Clock3, RefreshCcw, ShieldAlert } from "lucide-react";
 import { useAuthStore } from "@/lib/auth";
 import {
@@ -52,7 +52,7 @@ function severityStyle(severity: string) {
   return severityClass[severity.toLowerCase()] ?? severityClass.info;
 }
 
-export default function PatientCareTimeline({
+const PatientCareTimeline = memo(function PatientCareTimeline({
   patientId,
   limit = 25,
   refreshIntervalMs = 30000,
@@ -216,4 +216,6 @@ export default function PatientCareTimeline({
       </div>
     </section>
   );
-}
+})
+
+export default PatientCareTimeline;

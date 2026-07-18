@@ -1,5 +1,5 @@
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, memo } from "react";
 import { AlertTriangle, FileText, RefreshCcw } from "lucide-react";
 import { useAuthStore } from "@/lib/auth";
 import {
@@ -40,7 +40,7 @@ function resultStatusStyle(result: DiagnosticResult) {
   return "border-[var(--success-border)] bg-[var(--success-muted)] text-[var(--success)]";
 }
 
-export default function PatientDiagnosticResults({
+const PatientDiagnosticResults = memo(function PatientDiagnosticResults({
   patientId,
   refreshIntervalMs = 30000,
 }: PatientDiagnosticResultsProps) {
@@ -163,4 +163,6 @@ export default function PatientDiagnosticResults({
       </div>
     </section>
   );
-}
+})
+
+export default PatientDiagnosticResults;
