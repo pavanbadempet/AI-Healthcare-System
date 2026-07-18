@@ -523,6 +523,32 @@ export default function DashboardPage() {
         ];
   }, [records]);
 
+  const patientDbIdMap = useMemo(() => {
+    const map: Record<string, number> = {};
+    const staticIdMap: Record<string, number> = {
+      "Sarah Jenkins": 2,
+      "Marcus Thorne": 3,
+      "Linda Zhao": 4,
+      "Robert G.": 3,
+      "Emily Watson": 4,
+      "Oscar M.": 5
+    };
+
+    beds.forEach((bed) => {
+      const matchingDbPatient = dbPatients.find(
+        (p: any) =>
+          p.full_name?.toLowerCase().includes(bed.name.toLowerCase()) ||
+          p.username?.toLowerCase().includes(bed.name.toLowerCase()) ||
+          bed.name.toLowerCase().includes(p.full_name?.toLowerCase() || "") ||
+          bed.name.toLowerCase().includes(p.username?.toLowerCase() || "")
+      );
+      const patientDbId = matchingDbPatient?.patient_id || matchingDbPatient?.id;
+      map[bed.name] = patientDbId || staticIdMap[bed.name] || 1;
+    });
+
+    return map;
+  }, [beds, dbPatients]);
+
   const capacityPct = telemetry
     ? Math.round((telemetry.active_census / telemetry.total_capacity) * 100)
     : 84;
@@ -872,23 +898,7 @@ export default function DashboardPage() {
                     {bed.bed}
                   </span>
                   {(() => {
-                    const matchingDbPatient = dbPatients.find(
-                      (p: any) =>
-                        p.full_name?.toLowerCase().includes(bed.name.toLowerCase()) ||
-                        p.username?.toLowerCase().includes(bed.name.toLowerCase()) ||
-                        bed.name.toLowerCase().includes(p.full_name?.toLowerCase() || "") ||
-                        bed.name.toLowerCase().includes(p.username?.toLowerCase() || "")
-                    );
-                    const patientDbId = matchingDbPatient?.patient_id || matchingDbPatient?.id;
-                    const staticIdMap: Record<string, number> = {
-                      "Sarah Jenkins": 2,
-                      "Marcus Thorne": 3,
-                      "Linda Zhao": 4,
-                      "Robert G.": 3,
-                      "Emily Watson": 4,
-                      "Oscar M.": 5
-                    };
-                    const targetId = patientDbId || staticIdMap[bed.name] || 1;
+                    const targetId = patientDbIdMap[bed.name] || 1;
 
                     return (
                       <h4 
