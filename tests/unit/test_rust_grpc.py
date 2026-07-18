@@ -19,7 +19,8 @@ def test_rust_grpc_server():
     # Compile the binary first to ensure it's up to date
     compile_cmd = ["cargo", "build", "--bin", "rust_gateway"]
     env = os.environ.copy()
-    env["PATH"] += ";C:\\Users\\pavan\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Google.Protobuf_Microsoft.Winget.Source_8wekyb3d8bbwe\\bin"
+    if sys.platform == "win32":
+        env["PATH"] += ";C:\\Users\\pavan\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Google.Protobuf_Microsoft.Winget.Source_8wekyb3d8bbwe\\bin"
     
     # We do a build to ensure the binary is compiled with gRPC support
     rust_gw_dir = os.path.join(base_dir, "..", "..", "rust_gateway")
