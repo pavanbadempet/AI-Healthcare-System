@@ -138,7 +138,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                     <h2 className="text-lg font-bold tracking-wide uppercase">End User License Agreement</h2>
                   </div>
                   <p className="text-xs text-slate-400">
-                    You must read and accept the ClinOS terms and clinical disclaimers before continuing. (Version {eulaVersion})
+                    You must read and accept the AI Healthcare System terms and clinical disclaimers before continuing. (Version {eulaVersion})
                   </p>
                 </div>
 
@@ -150,28 +150,28 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
                   <section className="space-y-1">
                     <h3 className="font-bold text-indigo-300">1. CDS Medical Safe Harbor Disclaimer</h3>
                     <p>
-                      ClinOS is a Clinical Decision Support (CDS) tool designed for licensed medical professionals. It is NOT a substitute for professional medical judgment, diagnosis, or treatment. Attending clinicians are solely responsible for verifying and making all medical determinations, care pathways, and treatment actions.
+                      AI Healthcare System is a Clinical Decision Support (CDS) tool designed for licensed medical professionals. It is NOT a substitute for professional medical judgment, diagnosis, or treatment. Attending clinicians are solely responsible for verifying and making all medical determinations, care pathways, and treatment actions.
                     </p>
                   </section>
 
                   <section className="space-y-1">
                     <h3 className="font-bold text-indigo-300">2. "AS IS" Warranty Clause</h3>
                     <p>
-                      ClinOS is provided "AS IS", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and non-infringement. Under no circumstances shall the developers or authors be liable for diagnostic errors, system downtime, database locks, or data loss.
+                      AI Healthcare System is provided "AS IS", without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose, and non-infringement. Under no circumstances shall the developers or authors be liable for diagnostic errors, system downtime, database locks, or data loss.
                     </p>
                   </section>
 
                   <section className="space-y-1">
                     <h3 className="font-bold text-indigo-300">3. Strict Limitation of Liability</h3>
                     <p>
-                      The maximum aggregate liability of ClinOS developers for any claims or damages shall be strictly capped at the total amount paid by the licensee for the active licensing term or software component. We assume zero liability for failures in third-party communications (e.g. vital calling, SMS alert networks).
+                      The maximum aggregate liability of AI Healthcare System developers for any claims or damages shall be strictly capped at the total amount paid by the licensee for the active licensing term or software component. We assume zero liability for failures in third-party communications (e.g. vital calling, SMS alert networks).
                     </p>
                   </section>
 
                   <section className="space-y-1">
                     <h3 className="font-bold text-indigo-300">4. HIPAA Privacy & Audit Trail Logging</h3>
                     <p>
-                      To maintain regulatory compliance, ClinOS logs encrypted, FHIR-compliant AuditEvents tracking all access to Patient Health Information (PHI). We employ automated PII redaction (masking email, SSN, Aadhaar, phone numbers, and credit cards) and symmetric Fernet encryption at rest for sensitive database fields.
+                      To maintain regulatory compliance, AI Healthcare System logs encrypted, FHIR-compliant AuditEvents tracking all access to Patient Health Information (PHI). We employ automated PII redaction (masking email, SSN, Aadhaar, phone numbers, and credit cards) and symmetric Fernet encryption at rest for sensitive database fields.
                     </p>
                   </section>
 

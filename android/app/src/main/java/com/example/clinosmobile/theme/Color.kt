@@ -1,4 +1,4 @@
-package com.example.clinosmobile.theme
+package com.example.AI Healthcare Systemmobile.theme
 
 import androidx.compose.ui.graphics.Color
 

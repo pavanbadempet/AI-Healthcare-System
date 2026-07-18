@@ -1,4 +1,4 @@
-"""FHIR Questionnaire Ingestion Engine for ClinOS Interoperability.
+"""FHIR Questionnaire Ingestion Engine for AI Healthcare System Interoperability.
 
 Ingests standard FHIR QuestionnaireResponse resources, maps them against their
 corresponding Questionnaire definitions, and saves structured observations to the database.

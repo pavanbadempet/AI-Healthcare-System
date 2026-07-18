@@ -1,7 +1,7 @@
-package com.example.clinosmobile.ui.main
+package com.example.AI Healthcare Systemmobile.ui.main
 
-import com.example.clinosmobile.data.ConnectionState
-import com.example.clinosmobile.data.DataRepository
+import com.example.AI Healthcare Systemmobile.data.ConnectionState
+import com.example.AI Healthcare Systemmobile.data.DataRepository
 import junit.framework.TestCase.assertEquals
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow

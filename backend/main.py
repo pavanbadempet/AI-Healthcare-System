@@ -295,7 +295,7 @@ async def lifespan(app: FastAPI):
         startup_diagnostics["event_bus"] = f"failed: {str(eb_err)}"
 
     logger.info("*" * 60)
-    logger.info(" ClinOS LEGAL & MEDICAL DISCLAIMER ACTIVE")
+    logger.info(" AI Healthcare System LEGAL & MEDICAL DISCLAIMER ACTIVE")
     logger.info(" Provided 'AS IS' for Clinical Decision Support only.")
     logger.info(" Ult Diagnostic Responsibility lies with the Licensed Clinician.")
     logger.info("*" * 60)

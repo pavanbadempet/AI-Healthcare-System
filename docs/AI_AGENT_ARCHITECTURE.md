@@ -193,7 +193,7 @@ The existing vector store is enhanced with Singularity Engine patterns:
 
 ## Pillar 3: SOTA Clinical AI Agent Suite
 
-ClinOS includes three dedicated SOTA AI agents specialized in auditing, care transitions, and shift handoffs. They leverage structured prompting and JSON output parsing for high reliability.
+AI Healthcare System includes three dedicated SOTA AI agents specialized in auditing, care transitions, and shift handoffs. They leverage structured prompting and JSON output parsing for high reliability.
 
 ### 3.1 Clinical Billing Agent (`ClinicalBillingAgent`)
 *   **Module**: [billing_agent.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/agents/billing_agent.py)

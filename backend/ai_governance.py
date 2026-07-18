@@ -27,7 +27,7 @@ class AIFunctionRecord:
     audience: str
     regulatory_posture: str  # FDA CDS, EU AI Act High-Risk, Administrative etc.
 
-# SOTA Registry of all active clinical AI components in ClinOS
+# SOTA Registry of all active clinical AI components in AI Healthcare System
 REGISTRY: Dict[str, AIFunctionRecord] = {
     "heart_risk_prediction": AIFunctionRecord(
         name="heart_risk_prediction",

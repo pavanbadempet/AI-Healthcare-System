@@ -331,7 +331,7 @@ export default function ClinicalIntelligence() {
           summary: 'Patient records analyzed. SpO2 and Heart Rate demonstrate stable baselines. Consider monitoring blood pressure levels.',
           vital_summary: 'Heart Rate: 72 bpm, Blood Pressure: 120/80 mmHg, SpO2: 98%'
         },
-        model_version: 'clinos-fallback',
+        model_version: 'AI Healthcare System-fallback',
         created_at: new Date().toISOString()
       });
       setExplainability({
@@ -1407,7 +1407,7 @@ export default function ClinicalIntelligence() {
                 )}
               </div>
 
-              {/* ClinOS Security Compliance */}
+              {/* AI Healthcare System Security Compliance */}
               <div className="p-3 bg-indigo-500/5 border border-indigo-500/15 rounded-2xl flex items-start gap-2.5 flex-shrink-0">
                 <ShieldAlert className="w-4 h-4 text-indigo-400 flex-shrink-0 mt-0.5" />
                 <span className="text-[9px] leading-relaxed text-indigo-300/80 font-mono">

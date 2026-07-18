@@ -267,7 +267,7 @@ export const intelligenceItems: MenuItem[] = [
   },
 ];
 
-export const clinosItems: MenuItem[] = [
+export const AI Healthcare SystemItems: MenuItem[] = [
   {
     id: "smart_app_registry",
     title: "App Registry",
@@ -345,10 +345,10 @@ export const COMMAND_ITEMS = [
   { label: "Pricing & API Billing Details", href: "/pricing", category: "Intelligence", desc: "Hospital pricing plans and usage details", icon: CreditCard },
   { label: "User Profile Settings", href: "/profile", category: "Account", desc: "View your user name, email, and preferences", icon: Settings },
   { label: "Administrative Tools Panel", href: "/admin", category: "Admin", desc: "Doctor credentials, audit logs, and security levels", icon: ShieldCheck },
-  { label: "SMART App Registry", href: "/apps", category: "ClinOS", desc: "Register and launch third-party SMART apps", icon: Plug },
-  { label: "Federated Privacy Mesh", href: "/federated", category: "ClinOS", desc: "Privacy-preserving distributed model sync bridge", icon: ShieldCheck },
-  { label: "Clinical Intelligence Command Center", href: "/intelligence", category: "ClinOS", desc: "Real-time vitals alerts and explainable AI SHAP report", icon: BrainCircuit },
-  { label: "Aura Health Companion", href: "/companion", category: "ClinOS", desc: "Warm symptom tracker, flare diary, and empathetic AI companion", icon: Smile },
+  { label: "SMART App Registry", href: "/apps", category: "AI Healthcare System", desc: "Register and launch third-party SMART apps", icon: Plug },
+  { label: "Federated Privacy Mesh", href: "/federated", category: "AI Healthcare System", desc: "Privacy-preserving distributed model sync bridge", icon: ShieldCheck },
+  { label: "Clinical Intelligence Command Center", href: "/intelligence", category: "AI Healthcare System", desc: "Real-time vitals alerts and explainable AI SHAP report", icon: BrainCircuit },
+  { label: "Aura Health Companion", href: "/companion", category: "AI Healthcare System", desc: "Warm symptom tracker, flare diary, and empathetic AI companion", icon: Smile },
 ];
 
 /* ───────────────────────────────────────────────────
@@ -383,11 +383,11 @@ export const MENU_GROUPS: MenuGroup[] = [
     routes: ["/chat", "/about", "/pricing"],
   },
   {
-    key: "clinos",
-    label: "ClinOS",
+    key: "AI Healthcare System",
+    label: "AI Healthcare System",
     emoji: "🚀",
     accentColor: "text-sky-400 data-[state=open]:text-sky-400",
-    items: clinosItems,
+    items: AI Healthcare SystemItems,
     cols: 2,
     routes: ["/apps", "/federated", "/intelligence", "/companion"],
   },

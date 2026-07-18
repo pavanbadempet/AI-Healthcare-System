@@ -1,12 +1,12 @@
 # SOTA Operations & Playbook Guide
 
-Welcome to the State-of-the-Art (SOTA) Operations Guide for ClinOS. This document outlines the technical administration, clinical AI agents suite, and self-healing telemetry setup of the platform.
+Welcome to the State-of-the-Art (SOTA) Operations Guide for AI Healthcare System. This document outlines the technical administration, clinical AI agents suite, and self-healing telemetry setup of the platform.
 
 ---
 
 ## 1. SOTA Clinical AI Agents Suite
 
-ClinOS deploys six specialized autonomous AI agents to automate clinical reasoning, security patching, self-healing, and emergency telemetry routing.
+AI Healthcare System deploys six specialized autonomous AI agents to automate clinical reasoning, security patching, self-healing, and emergency telemetry routing.
 
 ### A. Clinical Billing Auditor (`ClinicalBillingAgent`)
 *   **Role**: Audits clinical SOAP notes for billing integrity, assigns ICD-10/CPT coding, and predicts claims denial risks.
