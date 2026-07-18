@@ -1,6 +1,6 @@
-# ClinOS Master Architecture & System Runbook
+# AI Healthcare System Master Architecture & System Runbook
 
-This document is the master technical reference and runbook for the **ClinOS Privacy-First Clinical AI & EMR Interoperability Platform**. It details every component, directory, algorithm, configuration, and security control implemented across the system.
+This document is the master technical reference and runbook for the **AI Healthcare System Privacy-First Clinical AI & EMR Interoperability Platform**. It details every component, directory, algorithm, configuration, and security control implemented across the system.
 
 ---
 
