@@ -19,6 +19,9 @@ def test_unmocked_clinical_e2e_flow(client, db_session):
     # Clear secure boot registry to verify TEE secure bootstrap works
     TRUSTED_MODEL_HASHES.clear()
 
+    original_license = os.environ.get("LICENSE_KEY")
+    os.environ["LICENSE_KEY"] = "CLINIC-TRIAL-2026"
+
     # --- 1. SETUP USERS ---
     patient_username = "alice_patient_e2e"
     doctor_username = "bob_doctor_e2e"
@@ -167,6 +170,10 @@ def test_unmocked_clinical_e2e_flow(client, db_session):
         assert len(TRUSTED_MODEL_HASHES["diabetes"]) == 64  # valid SHA-256 hex string
 
     finally:
+        if original_license is not None:
+            os.environ["LICENSE_KEY"] = original_license
+        else:
+            os.environ.pop("LICENSE_KEY", None)
         # Restore test harness state
         if original_testing is not None:
             os.environ["TESTING"] = original_testing
