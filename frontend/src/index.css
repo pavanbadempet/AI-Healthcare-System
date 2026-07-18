@@ -508,3 +508,32 @@ body > * {
   padding-right: clamp(1rem, 5vw, 3rem);
 }
 
+/* Dashboard Pulse & ECG Animations */
+.ecg-line-animate {
+  stroke-dasharray: 1000;
+  stroke-dashoffset: 1000;
+  animation: ecg-dash 5s linear infinite;
+}
+@keyframes ecg-dash {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+.status-pulse-emerald {
+  animation: pulse-emerald 2s infinite;
+}
+@keyframes pulse-emerald {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+.status-pulse-ruby {
+  animation: pulse-ruby 1.5s infinite;
+}
+@keyframes pulse-ruby {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+

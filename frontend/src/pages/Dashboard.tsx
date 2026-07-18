@@ -505,36 +505,6 @@ export default function DashboardPage() {
 
   return (
     <div className="w-full space-y-6 pb-12 selection:bg-[var(--accent)] selection:text-white relative">
-      
-      {/* CSS Styles injection for ECG animations & status pulses */}
-      <style>{`
-        .ecg-line-animate {
-          stroke-dasharray: 1000;
-          stroke-dashoffset: 1000;
-          animation: ecg-dash 5s linear infinite;
-        }
-        @keyframes ecg-dash {
-          to {
-            stroke-dashoffset: 0;
-          }
-        }
-        .status-pulse-emerald {
-          animation: pulse-emerald 2s infinite;
-        }
-        @keyframes pulse-emerald {
-          0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-          70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-        }
-        .status-pulse-ruby {
-          animation: pulse-ruby 1.5s infinite;
-        }
-        @keyframes pulse-ruby {
-          0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-          70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
-          100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        }
-      `}</style>
 
       {/* System ribbon */}
       <div className="glass-card px-4 py-2 flex flex-col md:flex-row md:items-center md:justify-between gap-2 font-mono text-[10px] tracking-wider text-[var(--text-dim)] uppercase" role="status" aria-label="System status bar">
