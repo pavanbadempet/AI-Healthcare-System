@@ -43,8 +43,30 @@ export function redirectToLogin() {
   window.dispatchEvent(new PopStateEvent('popstate'));
 }
 
+// ── In-Memory Request Cache ──────────────────────────────────────
+interface CacheEntry {
+  data: any;
+  timestamp: number;
+}
+const requestCache = new Map<string, CacheEntry>();
+const CACHE_TTL = 10000; // 10 seconds cache TTL
+
 // ── Generic Fetch Wrapper ────────────────────────────────────────
 export async function apiFetch<T>(path: string, options: RequestInit = {}): Promise<T> {
+  const method = (options.method || 'GET').toUpperCase();
+  const isGet = method === 'GET';
+  const cacheKey = `${path}:${JSON.stringify(options.headers || {})}`;
+
+  if (isGet) {
+    const entry = requestCache.get(cacheKey);
+    if (entry && Date.now() - entry.timestamp < CACHE_TTL) {
+      return entry.data as T;
+    }
+  } else {
+    // Invalidate the entire cache on any write mutation (POST, PUT, DELETE)
+    requestCache.clear();
+  }
+
   let res: Response;
   try {
     res = await fetch(`${API_BASE}${path}`, {
@@ -81,5 +103,9 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     throw new Error(errorMessage);
   }
 
-  return res.json();
+  const data = await res.json();
+  if (isGet) {
+    requestCache.set(cacheKey, { data, timestamp: Date.now() });
+  }
+  return data;
 }
