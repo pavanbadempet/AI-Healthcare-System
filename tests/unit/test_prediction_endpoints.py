@@ -199,3 +199,38 @@ def test_predict_organ_health(client, db_session):
     
     response = client.get("/v1/predict/organ_health/123")
     assert response.status_code == 200
+
+
+def test_predict_diabetes_model_unavailable(client):
+    with patch("backend.prediction.diabetes_model", None):
+        resp = client.post("/v1/predict/diabetes", json={
+            "patient_id": 123,
+            "pregnancies": 0,
+            "glucose": 100,
+            "blood_pressure": 120,
+            "skin_thickness": 20,
+            "insulin": 80,
+            "bmi": 25.0,
+            "diabetes_pedigree_function": 0.5,
+            "age": 45
+        })
+        assert resp.status_code == 503
+
+
+def test_predict_diabetes_exception(client):
+    # For testing exception, we mock the underlying run prediction function
+    with patch("backend.prediction._run_model_prediction_scaled", side_effect=Exception("Model Failure")):
+        resp = client.post("/v1/predict/diabetes", json={
+            "patient_id": 123,
+            "pregnancies": 0,
+            "glucose": 100,
+            "blood_pressure": 120,
+            "skin_thickness": 20,
+            "insulin": 80,
+            "bmi": 25.0,
+            "diabetes_pedigree_function": 0.5,
+            "age": 45
+        })
+        assert resp.status_code == 500
+
+

@@ -79,7 +79,33 @@ def pytest_collection_modifyitems(config, items):
     e2e_items = []
     other_items = []
 
+    # Patterns for heavy/slow integration and operations test suites
+    slow_patterns = [
+        "test_fhir_abdm_ml",
+        "test_interoperability",
+        "test_hospital_ops_and_data",
+        "test_readiness_modules",
+        "test_clinical_workflows",
+        "test_data_engineering_platform",
+        "test_data_engineering_modules",
+        "test_training",
+        "test_model_service",
+        "test_turbovec_store",
+        "test_hospital_operations",
+        "test_billing",
+        "test_discharge",
+        "test_nursing",
+        "test_pharmacy",
+        "test_airflow_dags",
+    ]
+
     for item in items:
+        path = str(getattr(item, "path", getattr(item, "fspath", ""))).replace("\\", "/")
+        
+        # Check if the file matches any of the slow patterns
+        if any(pat in path for pat in slow_patterns):
+            item.add_marker(pytest.mark.slow)
+
         if _is_e2e_item(item) or item.get_closest_marker("e2e"):
             item.add_marker(pytest.mark.e2e)
             e2e_items.append(item)
@@ -158,3 +184,14 @@ def reset_gemini_disabled_flag():
         core_ai._gemini_disabled = False
     except ImportError:
         pass
+
+
+def pytest_addoption(parser):
+    parser.addoption(
+        "--run-slow", action="store_true", default=False, help="run slow tests"
+    )
+
+
+def pytest_runtest_setup(item):
+    if "slow" in item.keywords and not item.config.getoption("--run-slow"):
+        pytest.skip("need --run-slow option to run")

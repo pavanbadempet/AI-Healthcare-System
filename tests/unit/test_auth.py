@@ -283,3 +283,60 @@ def test_user_full_details_hides_audit_error_details(client, db_session, caplog)
     assert response.json()["username"] == "full_patient"
     assert sensitive_error not in caplog.text
     assert "secret-db-password" not in caplog.text
+
+
+def test_create_access_token_expiry():
+    from datetime import timedelta
+    import time
+    delta = timedelta(minutes=100)
+    token = auth.create_access_token({"sub": "test"}, expires_delta=delta)
+    decoded = auth.jwt.decode(token, auth.SECRET_KEY, algorithms=[auth.ALGORITHM])
+    assert decoded["exp"] > time.time() + (90 * 60)
+
+
+def test_get_current_user_jwt_error(client):
+    from jose import JWTError
+    with patch("backend.auth.jwt.decode", side_effect=JWTError()):
+        resp = client.get("/profile", headers={"Authorization": "Bearer invalid_token"})
+        assert resp.status_code == 401
+        assert "Could not validate credentials" in resp.json()["detail"]
+
+
+def test_get_current_user_no_sub(client):
+    with patch("backend.auth.jwt.decode", return_value={"other": "data"}):
+        resp = client.get("/profile", headers={"Authorization": "Bearer valid_token"})
+        assert resp.status_code == 401
+
+
+def test_get_current_user_not_found(client, db_session):
+    with patch("backend.auth.jwt.decode", return_value={"sub": "ghost_user"}):
+        with patch.object(db_session, "query") as mock_query:
+            mock_query.return_value.filter.return_value.first.return_value = None
+            resp = client.get("/profile", headers={"Authorization": "Bearer valid_token"})
+            assert resp.status_code == 401
+
+
+def test_signup_db_integrity_error(client):
+    from backend.main import app
+    from backend.database import get_db
+    mock_db = MagicMock()
+    mock_db.query.return_value.filter.return_value.first.return_value = None
+    mock_db.commit.side_effect = Exception("DB Down")
+    
+    orig_override = app.dependency_overrides.get(get_db)
+    app.dependency_overrides[get_db] = lambda: mock_db
+    try:
+        resp = client.post("/signup", json={
+            "username": "crash",
+            "password": "Password123!",
+            "email": "crash@test.com",
+            "full_name": "Crash",
+            "dob": "1990-01-01"
+        })
+        assert resp.status_code == 500
+    finally:
+        if orig_override:
+            app.dependency_overrides[get_db] = orig_override
+        else:
+            del app.dependency_overrides[get_db]
+
