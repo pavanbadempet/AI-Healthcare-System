@@ -10,9 +10,16 @@ export const prefetchRoute = (path: string) => {
   switch (cleanPath) {
     case '/dashboard':
       import('@/pages/Dashboard').catch(() => {});
+      import('@/lib/api').then(({ getDemoReadiness }) => {
+        getDemoReadiness().catch(() => {});
+      }).catch(() => {});
       break;
     case '/patients':
       import('@/pages/Patients').catch(() => {});
+      import('@/lib/api').then(({ getDoctorPatients, getAdminPatients }) => {
+        getDoctorPatients().catch(() => {});
+        getAdminPatients().catch(() => {});
+      }).catch(() => {});
       break;
     case '/chat':
       import('@/pages/Chat').catch(() => {});
@@ -48,6 +55,13 @@ export const prefetchRoute = (path: string) => {
       // Check if it matches a patient detail path: /patients/:id
       if (cleanPath.startsWith('/patients/')) {
         import('@/pages/PatientDetail').catch(() => {});
+        const parts = cleanPath.split('/');
+        const id = parts[parts.length - 1];
+        if (id) {
+          import('@/lib/api').then(({ getDoctorPatientMonitoringSignals }) => {
+            getDoctorPatientMonitoringSignals(parseInt(id, 10)).catch(() => {});
+          }).catch(() => {});
+        }
       } else if (cleanPath.startsWith('/predict/')) {
         import('@/pages/DynamicPredict').catch(() => {});
       }
