@@ -5,64 +5,29 @@
 
 <div align="center">
 
-> **⭐ If you find this architecture or the AI agent integrations useful, please consider giving the repository a Star! It helps others discover this project.**
-
-<br/>
-
-
 <img src="docs/assets/hero-banner.svg" alt="AI Healthcare System - Open-Source HIPAA Clinical Intelligence Platform with React 19, FastAPI, LangGraph, and Ollama local inference" width="100%"/>
 
-<br/>
-
-<p align="center">
-  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml/badge.svg" alt="CI build status badge" /></a>
-  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml/badge.svg" alt="CodeQL security analysis scanner badge" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/github/license/pavanbadempet/AI-Healthcare-System?color=22c55e&style=flat-square" alt="MIT license open-source badge" /></a>
-  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/stargazers"><img src="https://img.shields.io/github/stars/pavanbadempet/AI-Healthcare-System?style=flat-square&color=f59e0b" alt="GitHub stars popularity badge" /></a>
-  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/discussions"><img src="https://img.shields.io/github/discussions/pavanbadempet/AI-Healthcare-System?style=flat-square&color=0969da" alt="GitHub Discussions" /></a>
-  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/contribute"><img src="https://img.shields.io/github/issues/pavanbadempet/AI-Healthcare-System/good%20first%20issue?style=flat-square&label=good%20first%20issues&color=7057ff" alt="Good First Issues" /></a>
+<p>
+  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml/badge.svg" alt="CI build status" /></a>
+  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml/badge.svg" alt="CodeQL security analysis" /></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/pavanbadempet/AI-Healthcare-System?color=22c55e&style=flat-square" alt="AGPL-3.0 license" /></a>
+  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/stargazers"><img src="https://img.shields.io/github/stars/pavanbadempet/AI-Healthcare-System?style=flat-square&color=f59e0b" alt="GitHub stars" /></a>
 </p>
 
-<p align="center">
-  <a href="https://codespaces.new/pavanbadempet/AI-Healthcare-System"><img src="https://github.com/codespaces/badge.svg" alt="Open in GitHub Codespaces" height="38"/></a>
+<p>
+  <img src="https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/React_19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 19" />
+  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/LangGraph-1C3C3C?style=flat-square&logo=langchain&logoColor=white" alt="LangGraph" />
+  <img src="https://img.shields.io/badge/Ollama-000000?style=flat-square&logo=ollama&logoColor=white" alt="Ollama" />
+  <img src="https://img.shields.io/badge/XGBoost-FF3633?style=flat-square&logoColor=white" alt="XGBoost" />
+  <img src="https://img.shields.io/badge/FHIR_R4-E73F3E?style=flat-square" alt="FHIR R4" />
+  <img src="https://img.shields.io/badge/PySpark-E25A1C?style=flat-square&logo=apachespark&logoColor=white" alt="PySpark" />
+  <img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
 </p>
 
-<!-- Tech Stack Badges Row (for-the-badge) -->
-<p align="center">
-  <img src="https://img.shields.io/badge/Python_3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
-  <img src="https://img.shields.io/badge/FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/React_19-61DAFB?style=for-the-badge&logo=react&logoColor=black" alt="React 19" />
-  <img src="https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Tailwind_CSS-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
-  <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />
-</p>
-<p align="center">
-  <img src="https://img.shields.io/badge/XGBoost-FF3633?style=for-the-badge&logo=xgboost&logoColor=white" alt="XGBoost" />
-  <img src="https://img.shields.io/badge/LangGraph-1C3C3C?style=for-the-badge&logo=langchain&logoColor=white" alt="LangGraph" />
-  <img src="https://img.shields.io/badge/Ollama-000000?style=for-the-badge&logo=ollama&logoColor=white" alt="Ollama" />
-  <img src="https://img.shields.io/badge/FHIR_R4-E73F3E?style=for-the-badge&logo=hl7&logoColor=white" alt="FHIR R4" />
-  <img src="https://img.shields.io/badge/SQLAlchemy-D71F00?style=for-the-badge&logo=sqlalchemy&logoColor=white" alt="SQLAlchemy" />
-</p>
-<p align="center">
-  <img src="https://img.shields.io/badge/Rust-DEA584?style=for-the-badge&logo=rust&logoColor=white" alt="Rust" />
-  <img src="https://img.shields.io/badge/gRPC-244C5A?style=for-the-badge&logo=grpc&logoColor=white" alt="gRPC" />
-  <img src="https://img.shields.io/badge/SIMD_AVX2-7057ff?style=for-the-badge" alt="SIMD AVX2" />
-  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white" alt="PostgreSQL" />
-  <img src="https://img.shields.io/badge/Redis-DC382D?style=for-the-badge&logo=redis&logoColor=white" alt="Redis" />
-  <img src="https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
-</p>
-
-> **🤖 AI Agents & LLMs:** See [`docs/repomix-output-pavanbadempet-AI-Healthcare-System.md`](docs/repomix-output-pavanbadempet-AI-Healthcare-System.md) for the complete, AI-friendly context of this repository.
-
-<h3>
-  <a href="#-quick-start"><strong>Quick Start Guide</strong></a> &middot;
-  <a href="#-feature-highlights"><strong>Core Features</strong></a> &middot;
-  <a href="#-core-engineering-guarantees"><strong>System Guarantees</strong></a> &middot;
-  <a href="#-core-technical-architecture"><strong>Architecture Design</strong></a> &middot;
-  <a href="#-model-card-registry"><strong>Model Cards Registry</strong></a> &middot;
-  <a href="#-api-contract-reference"><strong>REST API Contract</strong></a> &middot;
-  <a href="#-aws-enterprise-deployment"><strong>AWS Production Deploy</strong></a>
-</h3>
+<a href="https://codespaces.new/pavanbadempet/AI-Healthcare-System"><img src="https://github.com/codespaces/badge.svg" alt="Open in GitHub Codespaces" height="32"/></a>
 
 </div>
 
