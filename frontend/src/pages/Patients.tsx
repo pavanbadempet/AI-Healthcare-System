@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useDeferredValue } from "react";
 import { Link } from "react-router-dom";
 import { getAdminPatients, getDoctorPatients, type DoctorPatientSummary, type UserProfile } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth";
@@ -118,7 +118,7 @@ export default function PatientsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const deferredSearchQuery = useDeferredValue(searchQuery);
   const [lastSyncTime, setLastSyncTime] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [riskFilter, setRiskFilter] = useState<RiskFilter>("ALL");
@@ -127,15 +127,8 @@ export default function PatientsPage() {
   const itemsPerPage = 15;
 
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedSearchQuery(searchQuery);
-    }, 150);
-    return () => clearTimeout(handler);
-  }, [searchQuery]);
-
-  useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearchQuery, riskFilter]);
+  }, [deferredSearchQuery, riskFilter]);
 
   useEffect(() => {
     setLoading(true);
@@ -198,7 +191,7 @@ export default function PatientsPage() {
     );
   }
 
-  const normalizedSearchQuery = debouncedSearchQuery.trim().toLowerCase();
+  const normalizedSearchQuery = deferredSearchQuery.trim().toLowerCase();
   const filteredPatients = patients.filter((patient) => {
     const matchesRisk = riskFilter === "ALL" || patient.display.risk === riskFilter;
     return matchesRisk && patientMatchesSearch(patient, normalizedSearchQuery);
