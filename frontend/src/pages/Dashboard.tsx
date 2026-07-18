@@ -883,7 +883,7 @@ export default function DashboardPage() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: idx * 0.05 }}
               onClick={() => setExpandedBed(isExpanded ? null : bed.bed)}
-              className={`glass-card rounded-2xl p-5 relative overflow-hidden group transition-colors duration-300 cursor-pointer h-fit ${
+              className={`glass-card rounded-2xl p-5 relative overflow-hidden group transition-colors duration-300 cursor-pointer h-fit content-visibility-auto gpu-accelerated ${
                 isAlert 
                   ? "ring-1 ring-[var(--danger)]/30 bg-[var(--danger-muted)]/40 hover:bg-[var(--danger-muted)]/60" 
                   : isExpanded 

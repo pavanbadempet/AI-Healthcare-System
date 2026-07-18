@@ -345,7 +345,7 @@ export default function PatientsPage() {
       )}
 
       {/* Dense Clinical Table */}
-      <div className="panel overflow-hidden">
+      <div className="panel overflow-hidden content-visibility-auto">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse" aria-label="Patient registry table">
             <thead className="text-[10px] font-bold uppercase tracking-wider bg-[rgba(15,15,17,0.85)] text-[var(--text-dim)] border-b border-[var(--border)]">
