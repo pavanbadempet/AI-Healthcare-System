@@ -91,7 +91,8 @@ async fn main() {
             .tcp_keepalive(Some(std::time::Duration::from_secs(60)))
             .build()
             .expect("Failed to build tuned TCP loopback HTTP client");
-        (client, "http://127.0.0.1:8001".to_string())
+        let backend_url = env::var("PYTHON_BACKEND_URL").unwrap_or_else(|_| "http://127.0.0.1:8000".to_string());
+        (client, backend_url)
     };
 
     let vector_store_state = vector_store::VectorStoreState::default();
