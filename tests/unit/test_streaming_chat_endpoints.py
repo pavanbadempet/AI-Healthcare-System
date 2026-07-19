@@ -16,6 +16,13 @@ from backend.database import Base, get_db
 from backend.main import app
 from backend.prediction import initialize_models
 
+@pytest.fixture(autouse=True)
+def mock_agent_nodes():
+    with patch("backend.agent.supervisor_node", return_value={"next_step": "respond"}), \
+         patch("backend.agent.research_node", return_value={"tavily_results": ""}), \
+         patch("backend.agent.analyst_node", return_value={"analysis_results": ""}):
+        yield
+
 # ── Test DB & client setup ────────────────────────────────────────────────────
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///:memory:"

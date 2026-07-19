@@ -1,6 +1,14 @@
 from unittest.mock import AsyncMock, patch
+import pytest
 
 from backend import auth, models
+
+@pytest.fixture(autouse=True)
+def mock_agent_nodes():
+    with patch("backend.agent.supervisor_node", return_value={"next_step": "respond"}), \
+         patch("backend.agent.research_node", return_value={"tavily_results": ""}), \
+         patch("backend.agent.analyst_node", return_value={"analysis_results": ""}):
+        yield
 
 
 def _create_user(db_session, username: str, role: str) -> models.User:

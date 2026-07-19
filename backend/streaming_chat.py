@@ -108,13 +108,6 @@ async def stream_chat(
         chat_history = [{"role": m.role, "content": m.content} for m in req.history]
         chat_history.append({"role": "user", "content": question})
 
-        # Get system prompt from registry
-        system_prompt = get_prompt("streaming_system").format(
-            context=context[:2500] if len(context) > 2500 else context
-        )
-        if req.language and req.language != "en":
-            system_prompt += f"\n\nIMPORTANT: The user is communicating in the language code '{req.language}'. You must output your entire response translated accurately into this language."
-
         async def stream_generator() -> AsyncGenerator[str, None]:
             """Robust streaming generator with heartbeat and error handling."""
             last_activity = time.time()
@@ -126,7 +119,101 @@ async def stream_chat(
                 yield f"data: {json.dumps({'sources': sources, 'model': final_model, 'status': 'starting'})}\n\n"
                 last_activity = time.time()
 
-                # 2. Stream AI response with heartbeat
+                # 2. Run agentic harness supervisor routing
+                yield f"data: {json.dumps({'status': 'tool_call', 'tool': 'Supervisor Routing', 'details': 'Determining context relevance...'})}\n\n"
+                await asyncio.sleep(0.3)
+
+                from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
+                from .agent import supervisor_node, research_node, analyst_node
+                
+                profile = f"Name: {current_user.full_name or 'N/A'}, Age: {current_user.dob or 'N/A'}, " \
+                          f"Gender: {current_user.gender or 'N/A'}, Height/Weight: {current_user.height}/{current_user.weight}"
+                if current_user.psych_profile:
+                    profile += f"\nLong-Term Clinical Profile: {current_user.psych_profile}"
+
+                from . import rag
+                rag_context = ""
+                try:
+                    memories = rag.advanced_search_similar_records(str(current_user.id), question, n_results=5)
+                    if memories:
+                        rag_context = "\n".join(memories[:3])
+                except Exception:
+                    pass
+
+                langchain_messages = []
+                for m in req.history:
+                    if m.role == "user":
+                        langchain_messages.append(HumanMessage(content=m.content))
+                    else:
+                        langchain_messages.append(AIMessage(content=m.content))
+                langchain_messages.append(HumanMessage(content=question))
+
+                state = {
+                    "messages": langchain_messages,
+                    "user_profile": profile,
+                    "user_id": current_user.id,
+                    "available_reports": context,
+                    "rag_memories": rag_context,
+                    "conversation_count": len(langchain_messages),
+                    "model": final_model
+                }
+
+                route_decision = supervisor_node(state)
+                next_step = route_decision.get("next_step", "respond")
+
+                tavily_results = ""
+                analysis_results = ""
+
+                if next_step == "research":
+                    yield f"data: {json.dumps({'status': 'tool_call', 'tool': 'Web Search (Tavily)', 'details': f'Searching clinical news: {question[:30]}...'})}\n\n"
+                    # Run search in threadpool to avoid blocking event loop
+                    loop = asyncio.get_running_loop()
+                    research_res = await loop.run_in_executor(
+                        None, lambda: research_node(state)
+                    )
+                    tavily_results = research_res.get("tavily_results", "")
+                    yield f"data: {json.dumps({'status': 'tool_call', 'tool': 'Supervisor routing', 'details': 'Injecting medical news context...'})}\n\n"
+                    await asyncio.sleep(0.3)
+                elif next_step == "analyze":
+                    yield f"data: {json.dumps({'status': 'tool_call', 'tool': 'Clinical Analyzer', 'details': 'Scanning scoped EHR patient records...'})}\n\n"
+                    loop = asyncio.get_running_loop()
+                    analyst_res = await loop.run_in_executor(
+                        None, lambda: analyst_node(state)
+                    )
+                    analysis_results = analyst_res.get("analysis_results", "")
+                    yield f"data: {json.dumps({'status': 'tool_call', 'tool': 'Supervisor routing', 'details': 'Injecting patient history context...'})}\n\n"
+                    await asyncio.sleep(0.3)
+                elif next_step == "off_topic":
+                    yield f"data: {json.dumps({'reply': 'I apologize, but I am specialized strictly in Healthcare. I cannot assist with that topic.', 'status': 'complete'})}\n\n"
+                    return
+
+                # Build system prompt from registry
+                from .prompt_registry import get_prompt
+                
+                conv_count = len(langchain_messages)
+                if conv_count <= 2:
+                    engagement_style = "WELCOMING: This is a new or early conversation. Be warm and build rapport."
+                elif conv_count <= 5:
+                    engagement_style = "ENGAGED: User is actively chatting. Reference their previous messages in this session."
+                else:
+                    engagement_style = "DEEP SESSION: Long conversation. Summarize key points discussed and offer next steps."
+
+                system_prompt = get_prompt("chat_system").format(
+                    user_profile=profile,
+                    medical_history=context,
+                    rag_context=rag_context,
+                    analysis_context=analysis_results if analysis_results else "N/A",
+                    web_context=tavily_results if tavily_results else "N/A",
+                    engagement_style=engagement_style,
+                )
+
+                if req.language and req.language != "en":
+                    system_prompt += f"\n\nIMPORTANT: The user is communicating in the language code '{req.language}'. You must output your entire response translated accurately into this language."
+
+                yield f"data: {json.dumps({'status': 'tool_call', 'tool': 'Agent generation', 'details': 'Synthesizing response...'})}\n\n"
+                await asyncio.sleep(0.2)
+
+                # 3. Stream AI response with heartbeat
                 chunk_queue: asyncio.Queue = asyncio.Queue()
 
                 async def ai_stream_consumer():
@@ -146,7 +233,6 @@ async def stream_chat(
                         # Log safe error message, avoiding sensitive detail leakage
                         logger.error("AI stream consumer exception encountered")
                         await chunk_queue.put(("error", STREAM_FAILURE_DETAIL))
-
 
                 stream_task = asyncio.create_task(ai_stream_consumer())
 
