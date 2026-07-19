@@ -29,7 +29,6 @@ from sqlalchemy.orm import Session
 
 from . import auth, core_ai, database, licensing, models
 from .chat_context import build_chat_context, get_suggested_questions
-from .prompt_registry import get_prompt
 from .security_decorators import no_log_zone_async
 
 logger = logging.getLogger(__name__)
@@ -133,9 +132,10 @@ async def stream_chat(
                 yield f"data: {json.dumps({'status': 'tool_call', 'tool': 'Supervisor Routing', 'details': 'Determining context relevance...'})}\n\n"
                 await asyncio.sleep(0.3)
 
-                from langchain_core.messages import SystemMessage, HumanMessage, AIMessage
-                from .agent import supervisor_node, research_node, analyst_node
-                
+                from langchain_core.messages import AIMessage, HumanMessage
+
+                from .agent import analyst_node, research_node, supervisor_node
+
                 profile = f"Name: {current_user.full_name or 'N/A'}, Age: {current_user.dob or 'N/A'}, " \
                           f"Gender: {current_user.gender or 'N/A'}, Height/Weight: {current_user.height}/{current_user.weight}"
                 if current_user.psych_profile:
@@ -199,7 +199,7 @@ async def stream_chat(
 
                 # Build system prompt from registry
                 from .prompt_registry import get_prompt
-                
+
                 conv_count = len(langchain_messages)
                 if conv_count <= 2:
                     engagement_style = "WELCOMING: This is a new or early conversation. Be warm and build rapport."

@@ -191,7 +191,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
 
 class LicenseValidationMiddleware(BaseHTTPMiddleware):
     """Verifies that a valid cryptographic license key is provided in self-hosted deployments.
-    
+
     Caches validation result for 60 seconds to avoid cryptographic verification on every request.
     """
 
