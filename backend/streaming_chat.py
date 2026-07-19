@@ -78,6 +78,16 @@ async def stream_chat(
             yield f"data: {json.dumps({'reply': 'How can I help you with your health today?', 'status': 'complete'})}\n\n"
         return StreamingResponse(empty_gen(), media_type="text/event-stream")
 
+    save_data = bool(current_user.allow_data_collection)
+
+    # Save user message
+    if save_data:
+        try:
+            db.add(models.ChatLog(user_id=current_user.id, role="user", content=question))
+            db.commit()
+        except Exception:
+            logger.error("Failed to save user streaming message")
+
     # Patients are restricted from overriding cloud providers
     is_patient = getattr(current_user, "role", "patient") == "patient"
 
@@ -253,7 +263,14 @@ async def stream_chat(
                             yield f"data: {json.dumps({'error': data, 'status': 'error'})}\n\n"
                             break
                         elif msg_type == "done":
+                            full_reply = "".join(streamed_reply_parts)
                             disclaimer = "\n\n*This is AI-generated information and is not a medical diagnosis. Please consult a qualified healthcare professional for medical decisions.*"
+                            if save_data:
+                                try:
+                                    db.add(models.ChatLog(user_id=current_user.id, role="assistant", content=full_reply + disclaimer))
+                                    db.commit()
+                                except Exception:
+                                    logger.error("Failed to save assistant streaming response")
                             yield f"data: {json.dumps({'reply': disclaimer})}\n\n"
                             yield f"data: {json.dumps({'status': 'complete'})}\n\n"
                             break
