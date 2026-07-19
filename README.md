@@ -79,7 +79,7 @@
 
 ## 🔑 Commercial Developer Packages (Polar.sh)
 
-If you are a B2B SaaS founder or software developer building products that require offline cryptographic licensing or calibrated machine learning pipelines, you can acquire our production-ready standalone packages directly on **Polar.sh** with zero-config delivery:
+If you are a B2B SaaS founder or software developer building products that require offline cryptographic licensing, calibrated machine learning pipelines, ABDM integrations, or optimized LLM semantic caching, you can acquire our production-ready standalone packages directly on **Polar.sh** with zero-config delivery:
 
 <table>
   <tr>
@@ -102,6 +102,28 @@ If you are a B2B SaaS founder or software developer building products that requi
         <li><strong>Deliverable</strong>: Instant access to private repository + package updates.</li>
       </ul>
       <a href="https://buy.polar.sh/polar_cl_02v8Qs0oK1kzY9i7DR6zueACRGXfLd7OCSNLn3IcWJQ"><strong>Get tabular-ml-sdk on Polar &rarr;</strong></a>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>🏥 clinical-fhir-abdm</h3>
+      <p>A comprehensive data mapper and sandbox integration client for HL7 FHIR R4 resources and India's ABDM Consent Manager flows.</p>
+      <ul>
+        <li><strong>Features</strong>: Robust validation schemas for patient demographics, observations, clinical bundles, and consent request/callback lifecycle handlers.</li>
+        <li><strong>Price</strong>: <strong>$15.00</strong> (One-time purchase)</li>
+        <li><strong>Deliverable</strong>: Instant access to private repository + package updates.</li>
+      </ul>
+      <a href="https://polar.sh/shantanam-ai"><strong>Get clinical-fhir-abdm on Polar &rarr;</strong></a>
+    </td>
+    <td width="50%" valign="top">
+      <h3>🧠 clinical-rag-cache</h3>
+      <p>An optimized semantic caching engine and Retrieval-Augmented Generation (RAG) vector store manager for clinical LLM pipelines.</p>
+      <ul>
+        <li><strong>Features</strong>: Cosine similarity-based prompt-completion caching to reduce API costs, document chunking utils, and prompt versioning catalog.</li>
+        <li><strong>Price</strong>: <strong>$15.00</strong> (One-time purchase)</li>
+        <li><strong>Deliverable</strong>: Instant access to private repository + package updates.</li>
+      </ul>
+      <a href="https://polar.sh/shantanam-ai"><strong>Get clinical-rag-cache on Polar &rarr;</strong></a>
     </td>
   </tr>
 </table>
@@ -993,33 +1015,57 @@ The pipeline runs daily data engineering workflows orchestrated via **Apache Air
 
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
-## 📦 clinical-tabular — PyPI Package
+## 📦 Modular Developer SDKs
 
-[![PyPI version](https://badge.fury.io/py/clinical-tabular.svg)](https://pypi.org/project/clinical-tabular/)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![sklearn compatible](https://img.shields.io/badge/sklearn-compatible-orange.svg)](https://scikit-learn.org)
+To keep the core EHR application light and enable high-fidelity code reuse across enterprise healthcare startups, we have modularized the proprietary logic into **four independent developer packages** located in the `packages/` workspace directory:
 
-The reusable ML components from this project are published as a **standalone PyPI package** for the healthcare ML ecosystem:
+---
 
-```bash
-pip install clinical-tabular          # Core (indices, calibration, evaluation)
-pip install clinical-tabular[torch]   # + PyTorch deep learning models
-```
+### 1. 🔑 `fastapi-license-gate`
+A plug-and-play middleware and token verification system for FastAPI applications requiring offline cryptographic license key validation.
 
-**What's included:**
+* **Install**: `pip install fastapi-license-gate`
+* **Core Exports**:
+  - `LicenseValidationMiddleware`: Encrypted session gate.
+  - `validate_license_token`: Cryptographic RSA signature check.
+  - `create_signed_license_token`: Token issuer utility.
+* 👉 [Full documentation & examples &rarr;](packages/fastapi-license-gate/README.md)
 
-| Component | Description |
-|-----------|-------------|
-| `FTTransformerClassifier` | Feature Tokenizer Transformer for tabular classification |
-| `ClinicalTemporalLSTM` | Bidirectional LSTM with temporal attention for longitudinal patient data |
-| `PyTorchTabularMLP` | Tabular MLP with BatchNorm and dropout |
-| `clinical_tabular.indices` | Validated clinical calculators — eGFR (CKD-EPI 2021), FIB-4, Framingham |
-| `clinical_tabular.calibration` | Conformal prediction for calibrated uncertainty quantification |
-| `clinical_tabular.evaluation` | Comprehensive model evaluation (AUC-ROC, sensitivity/specificity) |
+---
 
-All models are **scikit-learn compatible** — works with `Pipeline`, `GridSearchCV`, `cross_val_score`, and `VotingClassifier` out of the box.
+### 2. 📊 `clinical-tabular`
+A production-ready PyTorch/scikit-learn machine learning SDK for tabular clinical data, including calibrated classification pipelines, dataset preprocessing, and conformal prediction bounds.
 
-👉 [Full documentation →](packages/clinical-tabular/README.md) | [PyPI →](https://pypi.org/project/clinical-tabular/)
+* **Install**: `pip install clinical-tabular` (or `pip install clinical-tabular[torch]` for PyTorch model classes)
+* **Core Exports**:
+  - `FTTransformerClassifier`: Tabular Transformer neural network.
+  - `ClinicalTemporalLSTM`: Sequence model for patient demographics.
+  - `conformal.get_conformal_prediction_set`: Calibrated uncertainty intervals.
+  - `indices`: eGFR (CKD-EPI 2021), FIB-4, and Framingham clinical calculators.
+* 👉 [Full documentation & examples &rarr;](packages/clinical-tabular/README.md)
+
+---
+
+### 3. 🏥 `clinical-fhir-abdm`
+A comprehensive data mapping and compliance client for mapping EHR payloads to HL7 FHIR R4 standard structures and managing India's ABDM Digital Health consent flows.
+
+* **Install**: `pip install clinical-fhir-abdm`
+* **Core Exports**:
+  - `abdm.ConsentRequest`: Payload builders for ABDM Sandbox gates.
+  - `fhir.ObservationMapper`: FHIR R4 Demographics, Vitals, and Diagnostic observations.
+* 👉 [Full documentation & examples &rarr;](packages/clinical-fhir-abdm/README.md)
+
+---
+
+### 4. 🧠 `clinical-rag-cache`
+An optimized semantic caching engine and Retrieval-Augmented Generation (RAG) vector store manager for low-latency clinical LLM interactions.
+
+* **Install**: `pip install clinical-rag-cache`
+* **Core Exports**:
+  - `SemanticCache`: Cosine-similarity completion cache.
+  - `SimpleVectorStore`: Lightweight local vector storage interface.
+  - `PromptRegistry`: Unified versioned system prompt template catalog.
+* 👉 [Full documentation & examples &rarr;](packages/clinical-rag-cache/README.md)
 
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
