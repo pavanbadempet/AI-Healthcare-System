@@ -105,7 +105,7 @@ If you are a B2B SaaS founder or software developer building products that requi
         <li><strong>Price</strong>: <strong>$9.00</strong> (Impulse purchase pricing)</li>
         <li><strong>Deliverable</strong>: Instant access to private repository + package updates.</li>
       </ul>
-      <a href="https://buy.polar.sh/polar_cl_02v8Qs0oK1kzY9i7DR6zueACRGXfLd7OCSNLn3IcWJQ"><strong>Get tabular-ml-sdk on Polar &rarr;</strong></a>
+      <a href="https://buy.polar.sh/polar_cl_79vCwy4yXYBK60FBp0AfCznl2S4MFjRxsg0Cr3u4o2s"><strong>Get tabular-ml-sdk on Polar &rarr;</strong></a>
     </td>
   </tr>
   <tr>
@@ -117,7 +117,7 @@ If you are a B2B SaaS founder or software developer building products that requi
         <li><strong>Price</strong>: <strong>$9.00</strong> (Impulse purchase pricing)</li>
         <li><strong>Deliverable</strong>: Instant access to private repository + package updates.</li>
       </ul>
-      <a href="https://polar.sh/shantanam-ai"><strong>Get clinical-fhir-abdm on Polar &rarr;</strong></a>
+      <a href="https://buy.polar.sh/polar_cl_8rtuXzUrBMS4Iquo2RFnfqJfLQCVXlBY33AzH3UFgdm"><strong>Get clinical-fhir-abdm on Polar &rarr;</strong></a>
     </td>
     <td width="50%" valign="top">
       <h3>🧠 clinical-rag-cache</h3>
@@ -127,7 +127,7 @@ If you are a B2B SaaS founder or software developer building products that requi
         <li><strong>Price</strong>: <strong>$9.00</strong> (Impulse purchase pricing)</li>
         <li><strong>Deliverable</strong>: Instant access to private repository + package updates.</li>
       </ul>
-      <a href="https://polar.sh/shantanam-ai"><strong>Get clinical-rag-cache on Polar &rarr;</strong></a>
+      <a href="https://buy.polar.sh/polar_cl_jgyKAdf9G7Pdr3zUdRc1vO8qvJPVypnA84lx043TvPk"><strong>Get clinical-rag-cache on Polar &rarr;</strong></a>
     </td>
   </tr>
 </table>
