@@ -84,7 +84,7 @@ export default function TelemetryPage() {
     fetchGatewayMetrics();
     const interval = setInterval(fetchGatewayMetrics, 5000);
     return () => { cancelled = true; clearInterval(interval); };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // Vitals percentages for circular rings
   const cpuPercent = Math.min(100, Math.max(0, gatewayMetrics.cpu_usage_percent));
