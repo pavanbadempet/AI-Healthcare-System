@@ -102,3 +102,49 @@ def test_smart_token_invalid_app(client, auth_headers):
         "patient_id": 1,
     }, headers=auth_headers)
     assert resp.status_code in (404, 400, 422)
+
+
+def test_smart_token_exchange(client, auth_headers):
+    """Test exchanging an auth_code for a signed SMART access token."""
+    # 1. Register an app
+    resp = client.post("/v1/smart/apps", json={
+        "app_name": "Token Exchanger",
+        "redirect_uri": "http://127.0.0.1:9002/callback",
+        "launch_url": "http://127.0.0.1:9002/launch",
+    }, headers=auth_headers)
+    assert resp.status_code == 201
+    app_data = resp.json()
+    client_id = app_data["client_id"]
+
+    # 2. Register a patient
+    p_resp = client.post("/v1/signup", json={
+        "username": "smart_patient_2",
+        "email": "patient2@test.com",
+        "password": "TestPass123!",
+        "full_name": "Test Patient Two",
+        "dob": "1995-05-05",
+    })
+    assert p_resp.status_code in (200, 201)
+    patient_id = p_resp.json()["id"]
+
+    # 3. Create launch context (yielding auth_code)
+    l_resp = client.post("/v1/smart/launch", json={
+        "app_id": app_data["id"],
+        "patient_id": patient_id,
+    }, headers=auth_headers)
+    assert l_resp.status_code == 200
+    launch_data = l_resp.json()
+    auth_code = launch_data["auth_code"]
+
+    # 4. Exchange code for access token via Form-urlencoded endpoint
+    token_resp = client.post("/v1/smart/token", data={
+        "grant_type": "authorization_code",
+        "code": auth_code,
+        "redirect_uri": "http://127.0.0.1:9002/callback",
+        "client_id": client_id,
+    })
+    assert token_resp.status_code == 200
+    token_data = token_resp.json()
+    assert "access_token" in token_data
+    assert token_data["token_type"] == "Bearer"
+    assert token_data["patient"] == str(patient_id)
