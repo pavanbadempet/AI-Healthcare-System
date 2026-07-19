@@ -83,7 +83,7 @@ If you are a B2B SaaS founder or software developer building products that requi
 
 > [!TIP]
 > 🎁 **ALL-IN-ONE BUILDER BUNDLE**: Get access to all 4 premium repositories for just **$29.00**! Save over 20% compared to individual purchases. Perfect for SaaS founders launching medical/AI products.
-> 👉 [**Get the All-in-One Developer Bundle on Polar &rarr;**](https://polar.sh/shantanam-ai)
+> 👉 [**Get the All-in-One Developer Bundle on Polar &rarr;**](https://buy.polar.sh/polar_cl_jgyKAdf9G7Pdr3zUdRc1vO8qvJPVypnA84lx043TvPk)
 
 <table width="100%">
   <tr>
