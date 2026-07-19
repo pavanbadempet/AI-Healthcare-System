@@ -1,4 +1,4 @@
-package com.example.AI Healthcare Systemmobile.theme
+package com.example.clinosmobile.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle

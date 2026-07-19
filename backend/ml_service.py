@@ -93,5 +93,8 @@ class MLService:
             logger.error("Legacy liver prediction failed")
             return ML_PREDICTION_FAILURE_MESSAGE
 
+    def health_check(self):
+        return model_service.health_check()
+
 ml_service = MLService()
 

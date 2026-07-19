@@ -100,27 +100,6 @@
       "cursor_refs": ["frontend/AGENTS.md"]
     },
     {
-      "id": "frontend_legacy",
-      "scope_path": "frontend_legacy",
-      "copilot_apply_to": "frontend_legacy/**",
-      "copilot_lines": [
-        "Read frontend_legacy/AGENTS.md for legacy Streamlit frontend rules.",
-        "This subtree is reference-only unless the user explicitly asks for legacy frontend changes.",
-        "Use shared API client utilities from frontend_legacy/utils/.",
-        "Default backend URL to http://127.0.0.1:8000 through BACKEND_URL."
-      ],
-      "cursor_rule_file": "04-frontend-legacy.mdc",
-      "cursor_description": "Legacy Streamlit frontend rules",
-      "cursor_globs": ["frontend_legacy/**/*.py"],
-      "cursor_lines": [
-        "Read frontend_legacy/AGENTS.md for legacy Streamlit frontend rules.",
-        "This subtree is reference-only unless the user explicitly asks for legacy frontend changes.",
-        "Use shared API client utilities from frontend_legacy/utils/.",
-        "Default backend URL to http://127.0.0.1:8000 through BACKEND_URL."
-      ],
-      "cursor_refs": ["frontend_legacy/AGENTS.md"]
-    },
-    {
       "id": "tests",
       "scope_path": "tests",
       "copilot_apply_to": "tests/**",
@@ -164,7 +143,6 @@
     "structure": [
       "backend/ - FastAPI app, API routes, AI modules, ML services, database models.",
       "frontend/ - Vite React SPA with src/pages, src/components, src/lib, Vitest unit tests, and Playwright E2E tests.",
-      "frontend_legacy/ - legacy Streamlit UI kept for reference only.",
       "scripts/ - DevX utilities (ai_context.py, sync_agent_adapters.py), DB management.",
       "tests/ - Pytest test suite.",
       "docs/ - Architecture documentation, whitepapers.",

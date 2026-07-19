@@ -555,6 +555,68 @@ export async function fetchFhirAuditEvents(): Promise<any> {
   return apiFetch<any>('/fhir/AuditEvent');
 }
 
+// ── SOTA Clinical AI Agent Suite Triggers ──────────────────────────
+
+export async function triggerBillingAudit(soapNote: string): Promise<any> {
+  return apiFetch<any>(`/admin/agents/billing-audit?soap_note=${encodeURIComponent(soapNote)}`, {
+    method: 'POST',
+  });
+}
+
+export async function triggerMafBillingAudit(soapNote: string): Promise<any> {
+  return apiFetch<any>(`/admin/agents/maf-billing-audit?soap_note=${encodeURIComponent(soapNote)}`, {
+    method: 'POST',
+  });
+}
+
+export async function triggerMafHandoffAudit(soapNote: string): Promise<any> {
+  return apiFetch<any>(`/admin/agents/maf-handoff-audit?soap_note=${encodeURIComponent(soapNote)}`, {
+    method: 'POST',
+  });
+}
+
+export async function triggerLanggraphTriage(symptoms: string, patientId: number): Promise<any> {
+  return apiFetch<any>(`/admin/agents/langgraph-triage?symptoms=${encodeURIComponent(symptoms)}&patient_id=${patientId}`, {
+    method: 'POST',
+  });
+}
+
+export async function triggerDischargeSummary(patientId: number): Promise<any> {
+  return apiFetch<any>(`/admin/agents/discharge-summary?patient_id=${patientId}`, {
+    method: 'POST',
+  });
+}
+
+export async function triggerNursingHandoff(patientId: number): Promise<any> {
+  return apiFetch<any>(`/admin/agents/nursing-handoff?patient_id=${patientId}`, {
+    method: 'POST',
+  });
+}
+
+export async function triggerSecurityPatch(dependencies: string, envConfig: string): Promise<any> {
+  return apiFetch<any>(`/admin/agents/security-patch?dependencies=${encodeURIComponent(dependencies)}&env_config=${encodeURIComponent(envConfig)}`, {
+    method: 'POST',
+  });
+}
+
+export async function triggerAutoFix(errorLogs: string, healthSignals: string): Promise<any> {
+  return apiFetch<any>(`/admin/agents/auto-fix?error_logs=${encodeURIComponent(errorLogs)}&health_signals=${encodeURIComponent(healthSignals)}`, {
+    method: 'POST',
+  });
+}
+
+export async function triggerAutoCall(alertDetails: string, staffDirectory: string): Promise<any> {
+  return apiFetch<any>(`/admin/agents/auto-call?alert_details=${encodeURIComponent(alertDetails)}&staff_directory=${encodeURIComponent(staffDirectory)}`, {
+    method: 'POST',
+  });
+}
+
+export async function triggerWellnessAdvisory(patientData: string): Promise<any> {
+  return apiFetch<any>(`/admin/agents/wellness-advisory?patient_data=${encodeURIComponent(patientData)}`, {
+    method: 'POST',
+  });
+}
+
 
 
 

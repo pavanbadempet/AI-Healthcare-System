@@ -52,7 +52,6 @@
 | --- | --- |
 | [backend/AGENTS.md](backend/AGENTS.md) | Editing backend API, services, or AI modules |
 | [frontend/AGENTS.md](frontend/AGENTS.md) | Editing the Vite React SPA, frontend Vitest tests, or frontend Playwright tests |
-| [frontend_legacy/AGENTS.md](frontend_legacy/AGENTS.md) | Editing the legacy Streamlit frontend |
 | [tests/AGENTS.md](tests/AGENTS.md) | Editing backend pytest test infrastructure |
 
 ## Core Commands

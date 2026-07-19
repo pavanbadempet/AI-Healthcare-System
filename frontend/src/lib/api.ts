@@ -149,6 +149,16 @@ export {
   type DatasetCardDetails,
   type ModelCardDetails,
   type ModelCardsResponse,
+  triggerBillingAudit,
+  triggerMafBillingAudit,
+  triggerMafHandoffAudit,
+  triggerLanggraphTriage,
+  triggerDischargeSummary,
+  triggerNursingHandoff,
+  triggerSecurityPatch,
+  triggerAutoFix,
+  triggerAutoCall,
+  triggerWellnessAdvisory,
 } from './apiAdmin';
 
 

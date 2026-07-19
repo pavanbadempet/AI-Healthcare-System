@@ -12,7 +12,7 @@ services:
       dockerfile: Dockerfile
     container_name: healthcare_api_gateway
     ports:
-      - "8000:8000"
+      - "8000:7860"
     environment:
       - MICROSERVICES_MODE=true
       - PREDICTION_SERVICE_URL=http://prediction-service:8001

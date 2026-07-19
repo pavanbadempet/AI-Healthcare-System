@@ -19,7 +19,7 @@ interface GatewayMetrics {
 export default function TelemetryPage() {
   // Spark/ML stream telemetry
   const { data: sparkData, status: wsStatus } = useTelemetry();
-  
+
   // API Gateway hardware telemetry
   const [gatewayMetrics, setGatewayMetrics] = useState<GatewayMetrics>({
     cpu_usage_percent: 8.5,
@@ -31,6 +31,16 @@ export default function TelemetryPage() {
   });
 
   const [history, setHistory] = useState<{ time: string; cpu: number; ram: number; latency: number }[]>([]);
+
+  // Default fallback data for Spark / ML nodes when stream is loading/offline
+  const defaultTelemetryData = {
+    spark_batch_id: 1042,
+    spark_records_processed: 24,
+    spark_ml_latency_ms: 3.5,
+    ai_nodes_active: 8,
+  };
+
+  const activeTelemetry = sparkData || defaultTelemetryData;
 
   // Fetch gateway metrics with timeout and simulated fallback
   useEffect(() => {
@@ -103,8 +113,29 @@ export default function TelemetryPage() {
   const cpuStrokeDashoffset = circumference - (cpuPercent / 100) * circumference;
   const ramStrokeDashoffset = circumference - (ramPercent / 100) * circumference;
 
+  // Staggered Motion Layout Animation Configs
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.08
+      }
+    }
+  } as const;
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 15 },
+    show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 100, damping: 15 } }
+  } as const;
+
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-8 pb-16 pt-2 select-none">
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="show"
+      className="w-full max-w-6xl mx-auto space-y-8 pb-16 pt-2 select-none"
+    >
       
       {/* Page Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/[0.04] pb-6 relative overflow-hidden">
@@ -130,11 +161,18 @@ export default function TelemetryPage() {
             </span>
           </div>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.02] border border-white/[0.04] text-[10px] font-mono uppercase">
-            <span className="text-[var(--text-dim)]">Spark WS Stream:</span>
-            <span className={`flex items-center gap-1.5 font-bold ${wsStatus === "connected" ? "text-emerald-400" : "text-amber-400"}`}>
-              <span className={`w-1.5 h-1.5 rounded-full ${wsStatus === "connected" ? "bg-emerald-500 animate-ping" : "bg-amber-500"}`} />
-              {wsStatus === "connected" ? "CONNECTED" : "CONNECTING"}
-            </span>
+            <span className="text-[var(--text-dim)]">Datastream:</span>
+            {sparkData ? (
+              <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
+                LIVE STREAM
+              </span>
+            ) : (
+              <span className="flex items-center gap-1.5 text-amber-400 font-bold">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                SIMULATED STATUS
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -143,7 +181,10 @@ export default function TelemetryPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
         {/* CPU Hardware circular gauge */}
-        <div className="panel p-6 bg-white/[0.01] border border-white/[0.04] rounded-2xl flex flex-col items-center justify-between min-h-[220px] relative overflow-hidden group hover:border-[var(--accent)]/30 transition-all duration-300">
+        <motion.div 
+          variants={itemVariants}
+          className="panel p-6 bg-white/[0.01] border border-white/[0.04] rounded-2xl flex flex-col items-center justify-between min-h-[220px] relative overflow-hidden group hover:border-[var(--accent)]/30 transition-all duration-300"
+        >
           <div className="absolute top-2 right-2 p-1 bg-white/[0.02] rounded-lg text-white/20">
             <Cpu size={14} />
           </div>
@@ -184,10 +225,13 @@ export default function TelemetryPage() {
           <div className="text-[9px] font-mono text-[var(--text-secondary)] uppercase bg-white/[0.02] px-3 py-1 rounded-full w-full text-center">
             {gatewayMetrics.ipc_mode}
           </div>
-        </div>
+        </motion.div>
 
         {/* RAM Hardware circular gauge */}
-        <div className="panel p-6 bg-white/[0.01] border border-white/[0.04] rounded-2xl flex flex-col items-center justify-between min-h-[220px] relative overflow-hidden group hover:border-[var(--accent-purple)]/30 transition-all duration-300">
+        <motion.div 
+          variants={itemVariants}
+          className="panel p-6 bg-white/[0.01] border border-white/[0.04] rounded-2xl flex flex-col items-center justify-between min-h-[220px] relative overflow-hidden group hover:border-[var(--accent-purple)]/30 transition-all duration-300"
+        >
           <div className="absolute top-2 right-2 p-1 bg-white/[0.02] rounded-lg text-white/20">
             <HardDrive size={14} />
           </div>
@@ -228,10 +272,13 @@ export default function TelemetryPage() {
           <div className="text-[9px] font-mono text-[var(--text-secondary)] uppercase bg-white/[0.02] px-3 py-1 rounded-full w-full text-center">
             {gatewayMetrics.used_memory_mb} MB / {gatewayMetrics.total_memory_mb} MB USED
           </div>
-        </div>
+        </motion.div>
 
         {/* Database & Pool connections card */}
-        <div className="panel p-6 bg-white/[0.01] border border-white/[0.04] rounded-2xl flex flex-col justify-between min-h-[220px] relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-300">
+        <motion.div 
+          variants={itemVariants}
+          className="panel p-6 bg-white/[0.01] border border-white/[0.04] rounded-2xl flex flex-col justify-between min-h-[220px] relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-300"
+        >
           <div className="absolute top-2 right-2 p-1 bg-white/[0.02] rounded-lg text-white/20">
             <Database size={14} />
           </div>
@@ -262,22 +309,33 @@ export default function TelemetryPage() {
           </div>
 
           <div className="text-[9px] font-mono text-[var(--text-secondary)] uppercase bg-white/[0.02] px-3 py-1 rounded-full w-full text-center">
-            SQLite Database & WAL Journal Active
+            {gatewayMetrics.ipc_mode.includes("Unix")
+              ? "PostgreSQL PgPool Engine Active"
+              : "SQLite Database & WAL Journal Active"}
           </div>
-        </div>
+        </motion.div>
 
       </div>
 
       {/* Spark Stream Analytics Panel */}
-      {sparkData && (
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 p-5 bg-[rgba(20,20,24,0.4)] border border-white/[0.03] rounded-2xl">
+      {activeTelemetry && (
+        <motion.div 
+          variants={itemVariants}
+          className="grid grid-cols-1 lg:grid-cols-4 gap-4 p-5 bg-[rgba(20,20,24,0.4)] border border-white/[0.03] rounded-2xl relative"
+        >
+          {!sparkData && (
+            <div className="absolute top-2 right-2 px-2 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 text-[8px] font-mono text-amber-400 uppercase font-bold">
+              Simulation Mode
+            </div>
+          )}
+
           <div className="p-4 bg-white/[0.01] border border-white/[0.02] rounded-xl flex items-center gap-3">
             <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400">
               <Zap size={16} />
             </div>
             <div>
               <span className="block text-[9px] font-mono text-[var(--text-dim)] uppercase">Spark Stream ID</span>
-              <span className="text-xs font-black text-white uppercase">Batch #{sparkData.spark_batch_id || 482}</span>
+              <span className="text-xs font-black text-white uppercase">Batch #{activeTelemetry.spark_batch_id || 482}</span>
             </div>
           </div>
 
@@ -287,7 +345,7 @@ export default function TelemetryPage() {
             </div>
             <div>
               <span className="block text-[9px] font-mono text-[var(--text-dim)] uppercase">Records Processed</span>
-              <span className="text-xs font-black text-white uppercase">{sparkData.spark_records_processed || 140} recs/sec</span>
+              <span className="text-xs font-black text-white uppercase">{activeTelemetry.spark_records_processed || 140} recs/sec</span>
             </div>
           </div>
 
@@ -297,7 +355,7 @@ export default function TelemetryPage() {
             </div>
             <div>
               <span className="block text-[9px] font-mono text-[var(--text-dim)] uppercase">Spark ML Latency</span>
-              <span className="text-xs font-black text-white uppercase">{sparkData.spark_ml_latency_ms || 4} ms</span>
+              <span className="text-xs font-black text-white uppercase">{activeTelemetry.spark_ml_latency_ms || 4} ms</span>
             </div>
           </div>
 
@@ -307,15 +365,18 @@ export default function TelemetryPage() {
             </div>
             <div>
               <span className="block text-[9px] font-mono text-[var(--text-dim)] uppercase">AI Nodes Active</span>
-              <span className="text-xs font-black text-white uppercase">{sparkData.ai_nodes_active || 3} Core Nodes</span>
+              <span className="text-xs font-black text-white uppercase">{activeTelemetry.ai_nodes_active || 3} Core Nodes</span>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Real-time Hardware History Chart */}
       {history.length > 0 && (
-        <div className="panel p-6 bg-white/[0.01] border border-white/[0.04] rounded-2xl relative overflow-hidden">
+        <motion.div 
+          variants={itemVariants}
+          className="panel p-6 bg-white/[0.01] border border-white/[0.04] rounded-2xl relative overflow-hidden"
+        >
           <div className="absolute top-0 right-0 p-3 text-[8px] font-mono text-[var(--text-dim)] uppercase tracking-wider select-none">
             Live 3s Hardware Polling
           </div>
@@ -385,9 +446,9 @@ export default function TelemetryPage() {
               </AreaChart>
             </ResponsiveContainer>
           </div>
-        </div>
+        </motion.div>
       )}
       
-    </div>
+    </motion.div>
   );
 }

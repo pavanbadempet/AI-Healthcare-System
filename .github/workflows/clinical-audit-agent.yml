@@ -36,7 +36,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         # Install database, API and model loading dependencies
-        pip install requests sqlalchemy python-dotenv httpx pydantic joblib pandas scikit-learn
+        pip install requests sqlalchemy python-dotenv httpx pydantic joblib pandas scikit-learn sqlalchemy-utils cryptography google-generativeai
 
     - name: Run Clinical Audit Agent
       env:

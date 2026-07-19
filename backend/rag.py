@@ -779,7 +779,7 @@ if _pkg_rag is None:
                 _store = SimpleVectorStore()
                 return _store
 
-            qdrant_enabled = True
+            qdrant_enabled = os.environ.get("TESTING") != "1"
             if qdrant_enabled:
                 try:
                     from .qdrant_store import QdrantVectorStore  # noqa: PLC0415

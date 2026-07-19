@@ -1,4 +1,4 @@
-package com.example.AI Healthcare Systemmobile
+package com.example.clinosmobile
 
 import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
