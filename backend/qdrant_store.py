@@ -50,14 +50,23 @@ class QdrantVectorStore(VectorStoreBackend):
     def load(self) -> None:
         """Connect to Qdrant and initialize the collection."""
         try:
-            # Determine execution mode (default to local disk to avoid docker overhead)
-            qdrant_mode = os.environ.get("QDRANT_MODE", "local")
+            # Determine execution mode (default to local disk to avoid docker overhead, unless host is customized)
+            qdrant_mode = os.environ.get("QDRANT_MODE", None)
+            if qdrant_mode is None:
+                if "QDRANT_HOST" in os.environ and os.environ["QDRANT_HOST"] not in ("127.0.0.1", "localhost", ""):
+                    qdrant_mode = "server"
+                else:
+                    qdrant_mode = "local"
+
             if qdrant_mode == "local":
                 qdrant_path = os.path.join(os.path.dirname(__file__), "..", "data", "qdrant_storage")
                 os.makedirs(qdrant_path, exist_ok=True)
                 self.client = QdrantClient(path=qdrant_path)
             else:
-                self.client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT, api_key=QDRANT_API_KEY, timeout=5.0)
+                host = os.environ.get("QDRANT_HOST", "127.0.0.1")
+                port = int(os.environ.get("QDRANT_PORT", "6333"))
+                api_key = os.environ.get("QDRANT_API_KEY", None)
+                self.client = QdrantClient(host=host, port=port, api_key=api_key, timeout=5.0)
 
             # Determine embedding dimension dynamically
             test_emb = get_embedding("test")

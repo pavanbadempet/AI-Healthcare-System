@@ -1,4 +1,4 @@
-package com.example.AI Healthcare Systemmobile.theme
+package com.example.clinosmobile.theme
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -30,7 +30,7 @@ private val LightColorScheme =
   )
 
 @Composable
-fun AI Healthcare SystemMobileTheme(
+fun ClinosMobileTheme(
   darkTheme: Boolean = isSystemInDarkTheme(),
   // Dynamic color is available on Android 12+
   dynamicColor: Boolean = true,

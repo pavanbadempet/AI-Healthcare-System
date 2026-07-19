@@ -6,14 +6,15 @@ import {
 } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth";
 import { motion } from "framer-motion";
-import { Users, Activity, FileText, Database, ShieldAlert } from "lucide-react";
+import { Users, Activity, FileText, Database, ShieldAlert, Cpu } from "lucide-react";
 import HospitalSetupPanel from "@/components/operations/HospitalSetupPanel";
 import UsersPanel from "@/components/admin/UsersPanel";
 import AuditPanel from "@/components/admin/AuditPanel";
 import DataEngineeringPanel from "@/components/admin/DataEngineeringPanel";
 import AnalyticsPanel from "@/components/admin/AnalyticsPanel";
+import AIAgentsPanel from "@/components/admin/AIAgentsPanel";
 
-type AdminTab = "users" | "hospital" | "audit" | "data-engineering" | "analytics";
+type AdminTab = "users" | "hospital" | "audit" | "data-engineering" | "analytics" | "ai-agents";
 
 const TAB_CONFIG: { key: AdminTab; label: string; icon: React.ElementType }[] = [
   { key: "users", label: "Registered Nodes", icon: Users },
@@ -21,6 +22,7 @@ const TAB_CONFIG: { key: AdminTab; label: string; icon: React.ElementType }[] = 
   { key: "audit", label: "Audit Trail", icon: null as any }, // ShieldCheck imported below
   { key: "data-engineering", label: "Data Pipeline & Quality", icon: null as any }, // Network
   { key: "analytics", label: "Analytics Console", icon: null as any }, // BarChart3
+  { key: "ai-agents", label: "AI Agents Control Suite", icon: Cpu },
 ];
 
 export default function AdminPage() {
@@ -35,7 +37,7 @@ export default function AdminPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tabParam = params.get("tab") as AdminTab;
-    if (tabParam && ["users", "hospital", "audit", "data-engineering", "analytics"].includes(tabParam)) {
+    if (tabParam && ["users", "hospital", "audit", "data-engineering", "analytics", "ai-agents"].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [window.location.search]);
@@ -102,13 +104,14 @@ export default function AdminPage() {
       </div>
 
       {/* Tab Selector Switch */}
-      <div className="flex border-b border-[var(--border)] gap-2 pb-px pt-2">
+      <div className="flex border-b border-[var(--border)] gap-2 pb-px pt-2 overflow-x-auto">
         {([
           { key: "users", label: "Registered Nodes", icon: Users },
           { key: "hospital", label: "Hospital Setup", icon: Database },
           { key: "audit", label: "Audit Trail", icon: () => null },
           { key: "data-engineering", label: "Data Pipeline & Quality", icon: () => null },
           { key: "analytics", label: "Analytics Console", icon: () => null },
+          { key: "ai-agents", label: "AI Agents Control Suite", icon: Cpu },
         ] as const).map((tab) => (
           <button
             key={tab.key}
@@ -131,6 +134,7 @@ export default function AdminPage() {
       {activeTab === "audit" && <AuditPanel />}
       {activeTab === "data-engineering" && <DataEngineeringPanel stats={stats} />}
       {activeTab === "analytics" && <AnalyticsPanel />}
+      {activeTab === "ai-agents" && <AIAgentsPanel />}
     </div>
   );
 }

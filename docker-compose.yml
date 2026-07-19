@@ -14,7 +14,7 @@ services:
       dockerfile: Dockerfile
     container_name: healthcare_backend
     ports:
-      - "8000:8000"
+      - "8000:7860"
     env_file:
       - .env
     volumes:
@@ -24,7 +24,7 @@ services:
       - ./models:/app/models
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/healthz"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:7860/healthz_rust"]
       interval: 30s
       timeout: 5s
       retries: 3

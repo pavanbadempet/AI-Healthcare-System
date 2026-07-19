@@ -1,4 +1,4 @@
-package com.example.AI Healthcare Systemmobile.data
+package com.example.clinosmobile.data
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow

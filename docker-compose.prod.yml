@@ -16,7 +16,7 @@ services:
     image: ghcr.io/pavanbadempet/ai-healthcare-system-backend:latest
     container_name: clinic_backend
     ports:
-      - "8000:8000"
+      - "8000:7860"
     environment:
       - DATABASE_URL=sqlite:///app/healthcare.db
       - SECRET_KEY=change_this_to_a_secure_random_key_in_production
@@ -28,7 +28,7 @@ services:
       - ./healthcare.db:/app/healthcare.db
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/healthz"]
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:7860/healthz_rust"]
       interval: 30s
       timeout: 5s
       retries: 3
