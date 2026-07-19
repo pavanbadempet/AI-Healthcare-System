@@ -1,6 +1,6 @@
 # AI Healthcare System - Commercial Product Offerings & Packaging Spec
 
-To successfully position the platform for commercial sales and bypass payment gateway restrictions, the codebase is modularized into four distinct commercial products. This document defines the packaging, target buyer, and monetization strategy for each.
+To successfully position the platform for commercial sales and bypass payment gateway restrictions, the codebase is modularized into four distinct commercial products, leading with a **Wellness & Lifestyle Coaching** model to ensure compliance with Acceptable Use Policies (AUP).
 
 ---
 
@@ -8,51 +8,55 @@ To successfully position the platform for commercial sales and bypass payment ga
 +-----------------------------------------------------------------------------------+
 |                            AI HEALTHCARE SYSTEM                                   |
 +--------------------------+-----------------------------+--------------------------+
-|  1. EMBEDDABLE WIDGETS   |  2. ENTERPRISE EHR PLUGINS  |   3. BACK-OFFICE SAAS    |
-|  - CASA Patient Booking  |  - LangGraph Care Assistant |   - Billing Audit Agent  |
-|  - Telehealth Scribe     |  - FHIR Data Integrator     |   - Consent Gatekeeper   |
+|  1. THE 4 PILLARS COACH  |  2. CLINICAL TRANSCRIPTION  |   3. BACK-OFFICE SAAS    |
+|  - Wellness & Lifestyle  |  - Telehealth Scribe API    |   - Billing Audit Agent  |
+|  - Diet, Sleep, Stress   |  - Audio SOAP Generator     |   - Consent Gatekeeper   |
 +--------------------------+-----------------------------+--------------------------+
 ```
 
 ---
 
-## Product 1: CASA (Conversational Agentic Scheduling Assistant)
-*The Patient Booking & Screening Widget*
+## Product 1: The 4 Pillars Coach (Lifestyle & Wellness Tracker)
+*The Core Public SaaS Offering (100% Payment Processor Safe)*
 
-* **What it does**: A conversational assistant that handles patient appointment booking, resolves scheduling conflicts, matches patients with doctors based on specialization, and runs symptom pre-screening (calculating risk metrics for diabetes and heart disease) during onboarding.
-* **Target Buyer**: Independent Medical Clinics, Dental Practices, Physical Therapy Centers, and Patient Portals.
-* **How it is packaged**: An embeddable Javascript widget (IFrame or Web Component) that clinics paste directly onto their public website homepage.
-* **Monetization Model**: Monthly subscription per clinic location (e.g., $49/month) or a flat fee per booking processed.
-
----
-
-## Product 2: Clinical Care Copilot (SMART on FHIR Plugin)
-*The EHR Doctor Assistant*
-
-* **What it does**: A stateful LangGraph-powered chat assistant that retrieves patient histories, reviews clinical notes, searches real-time research (Tavily), and provides synthesized summaries to help doctors prepare for appointments.
-* **Target Buyer**: Hospitals and Large Healthcare Networks looking to enhance their EHR software.
-* **How it is packaged**: A **SMART on FHIR app** registered in the Epic App Orchard or Cerner App Gallery, launching natively inside the EHR workspace.
-* **Monetization Model**: Enterprise annual license based on the number of active clinicians (e.g., $120/provider/year).
+* **What it does**: A conversational coaching assistant focused strictly on lifestyle habits and the **4 Pillars of Wellness**:
+  1. **Diet**: Habit logging, macro guidance, and meal pattern tracking.
+  2. **Activity**: Movement level logging and sedentary reduction coaching.
+  3. **Sleep**: Tracking rest hours and sleep hygiene recommendations.
+  4. **Stress**: Stress level logging, relaxation techniques, and mindfulness support.
+* **Why it passes AUP**: It provides **wellness, habit-building, and lifestyle coaching**. It explicitly disclaims any clinical diagnosis, medication support, or health decision-support.
+* **Target Buyer**: Gyms, Wellness Studios, Corporate Wellness Programs, and Health-conscious Consumers.
+* **How it is packaged**: An embeddable chat portal widget and web app dashboard.
+* **Monetization Model**: Flat subscription fee (e.g., $19/month per user).
 
 ---
 
-## Product 3: Telehealth Auto-Scribe
-*The Audio-to-SOAP Note Converter*
+## Product 2: Conversational Administrative Scheduler (CASA)
+*The Office Booking & Check-in Assistant*
 
-* **What it does**: Captures audio transcripts from telehealth calls and utilizes the `scribe_agent.py` module to automatically compile structured, formatted HIPAA-compliant clinical notes (S.O.A.P. notes) for medical charts.
-* **Target Buyer**: Telehealth Platforms, Virtual Care Providers, and Mental Health SaaS products.
-* **How it is packaged**: An API Integration (REST API endpoints) that telehealth developers plug into their existing video call interfaces.
-* **Monetization Model**: Usage-based pricing based on minutes of audio transcribed and analyzed (e.g., $0.05 per session minute).
+* **What it does**: Automates office scheduling, clinician calendar booking, facility scope verification, and operational intake logs.
+* **Target Buyer**: Medical clinics and wellness centers.
+* **How it is packaged**: An embeddable booking widget pasted onto clinic portals.
+* **Monetization Model**: Flat fee per booking processed.
 
 ---
 
-## Product 4: ClinicOps Auditor
-*The Operations & Compliance Dashboard*
+## Product 3: Administrative Transcription Scribe
+*Audio-to-Text Documentation Helper*
 
-* **What it does**: Runs autonomous agents in the background to audit clinical operations:
-  - **Billing Agent**: Audits invoices to detect claims denial risks before submission.
-  - **Safety Agent**: Audits EHR accesses against patient privacy consent forms.
-  - **Wellness Agent**: Flags gaps in patient medication compliance.
-* **Target Buyer**: Clinic Administrators, Chief Compliance Officers, and Practice Managers.
-* **How it is packaged**: A standalone administrative Web Dashboard.
-* **Monetization Model**: B2B SaaS Subscription tiered by practice size (e.g., $199/month for up to 10 practitioners).
+* **What it does**: Translates verbal clinician-patient discussions into formatted administrative drafts (structured notes), reducing clerical workload for staff.
+* **Target Buyer**: Telehealth systems and private practices.
+* **How it is packaged**: Backend API integration.
+* **Monetization Model**: Per-minute usage billing.
+
+---
+
+## Product 4: ClinicOps Compliance Auditor
+*Background Operations Inspector*
+
+* **What it does**: Runs background sweeps to ensure back-office clinic compliance:
+  - **Billing Auditor**: Scans claim files for syntax and invoicing rules before submission.
+  - **Safety Auditor**: Scans access logs to check patient consent signatures.
+* **Target Buyer**: Practice Managers.
+* **How it is packaged**: Standalone admin panel.
+* **Monetization Model**: Monthly subscription tiered by practice size.
