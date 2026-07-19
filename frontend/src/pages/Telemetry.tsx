@@ -44,12 +44,19 @@ export default function TelemetryPage() {
       try {
         let apiBase = import.meta.env.NEXT_PUBLIC_API_URL || import.meta.env.VITE_PUBLIC_API_URL;
         if (!apiBase && typeof window !== "undefined") {
-          apiBase = window.location.origin;
+          if (window.location.port === "3000") {
+            apiBase = "http://127.0.0.1:8000";
+          } else {
+            apiBase = window.location.origin;
+          }
         }
         if (!apiBase) {
-          apiBase = "http://127.0.0.1:7860";
+          apiBase = "http://127.0.0.1:8000";
         }
-        const gatewayUrl = apiBase.replace(":8000", ":7860") + "/v1/telemetry/health";
+        const cleanApiBase = apiBase.replace(/\/$/, "");
+        const gatewayUrl = cleanApiBase.includes(":8000")
+          ? cleanApiBase.replace(":8000", ":7860") + "/v1/telemetry/health"
+          : cleanApiBase + "/v1/telemetry/health";
         const response = await fetch(gatewayUrl, { signal: controller.signal });
         if (response.ok) {
           metrics = await response.json();

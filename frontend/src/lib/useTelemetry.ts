@@ -58,30 +58,71 @@ export function useTelemetry() {
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectAttempt = useRef(0);
   const reconnectTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pollingInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     let shouldReconnect = true;
+
+    let apiBase = import.meta.env.NEXT_PUBLIC_API_URL || import.meta.env.VITE_PUBLIC_API_URL;
+    if (!apiBase && typeof window !== "undefined") {
+      if (window.location.port === "3000") {
+        apiBase = "http://127.0.0.1:8000";
+      } else {
+        apiBase = window.location.origin;
+      }
+    }
+    if (!apiBase) {
+      apiBase = "http://127.0.0.1:8000";
+    }
+    const cleanApiBase = apiBase.replace(/\/$/, "");
+    const token = useAuthStore.getState().token;
+
+    async function fetchSnapshot() {
+      try {
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+        const response = await fetch(`${cleanApiBase}/v1/telemetry/snapshot`, { headers });
+        if (response.ok) {
+          const parsed: TelemetryData = await response.json();
+          setData(parsed);
+          setStatus("connected");
+        } else {
+          setStatus("error");
+        }
+      } catch {
+        setStatus("error");
+      }
+    }
+
+    function startPolling() {
+      if (pollingInterval.current) return;
+      fetchSnapshot();
+      pollingInterval.current = setInterval(fetchSnapshot, 4000);
+    }
+
+    function stopPolling() {
+      if (pollingInterval.current) {
+        clearInterval(pollingInterval.current);
+        pollingInterval.current = null;
+      }
+    }
 
     function connect() {
       if (!shouldReconnect) {
         return;
       }
 
-      // Give up after MAX_RECONNECT_ATTEMPTS to avoid hammering a non-existent endpoint
+      // Fallback to HTTP polling if we reach max reconnect attempts to keep UI responsive
       if (reconnectAttempt.current >= MAX_RECONNECT_ATTEMPTS) {
-        setStatus("disconnected");
+        startPolling();
         return;
       }
 
-      const token = useAuthStore.getState().token;
-      let apiBase = import.meta.env.NEXT_PUBLIC_API_URL || import.meta.env.VITE_PUBLIC_API_URL;
-      if (!apiBase && typeof window !== "undefined") {
-        apiBase = window.location.origin;
-      }
-      if (!apiBase) {
-        apiBase = "http://127.0.0.1:8000";
-      }
-      const wsUrl = apiBase.replace(/^http/, "ws") + `/telemetry/stream${token ? `?token=${token}` : ""}`;
+      const wsUrl = cleanApiBase.replace(/^http/, "ws") + `/telemetry/stream${token ? `?token=${token}` : ""}`;
 
       setStatus("connecting");
 
@@ -92,6 +133,7 @@ export function useTelemetry() {
         ws.onopen = () => {
           setStatus("connected");
           reconnectAttempt.current = 0;
+          stopPolling();
         };
 
         ws.onmessage = (event) => {
@@ -108,15 +150,15 @@ export function useTelemetry() {
         };
 
         ws.onclose = () => {
-          setStatus("disconnected");
           wsRef.current = null;
 
           if (!shouldReconnect) {
             return;
           }
 
-          // Stop reconnecting after max attempts
+          // Fallback to HTTP polling if we reached the limit
           if (reconnectAttempt.current >= MAX_RECONNECT_ATTEMPTS) {
+            startPolling();
             return;
           }
 
@@ -132,6 +174,7 @@ export function useTelemetry() {
         };
       } catch {
         setStatus("error");
+        startPolling();
       }
     }
 
@@ -139,6 +182,7 @@ export function useTelemetry() {
 
     return () => {
       shouldReconnect = false;
+      stopPolling();
 
       // Clean up on unmount
       if (reconnectTimer.current) {
