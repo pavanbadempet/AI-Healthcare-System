@@ -11,19 +11,19 @@ import sys
 PACKAGES = {
     "fastapi-license-gate": {
         "path": "packages/fastapi-license-gate",
-        "url": "https://github.com/pavanbadempet/fastapi-license-gate.git",
+        "url": "https://github.com/shantanam-ai/fastapi-license-gate.git",
     },
     "clinical-tabular": {
         "path": "packages/clinical-tabular",
-        "url": "https://github.com/pavanbadempet/clinical-tabular.git",
+        "url": "https://github.com/shantanam-ai/tabular-ml-sdk.git",
     },
     "clinical-fhir-abdm": {
         "path": "packages/clinical-fhir-abdm",
-        "url": "https://github.com/pavanbadempet/clinical-fhir-abdm.git",
+        "url": "https://github.com/shantanam-ai/clinical-fhir-abdm.git",
     },
     "clinical-rag-cache": {
         "path": "packages/clinical-rag-cache",
-        "url": "https://github.com/pavanbadempet/clinical-rag-cache.git",
+        "url": "https://github.com/shantanam-ai/clinical-rag-cache.git",
     },
 }
 
