@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Form
 from sqlalchemy.orm import Session
 
 from . import auth, database, models, schemas
@@ -152,3 +152,75 @@ def launch_smart_app(
     db.commit()
     db.refresh(db_launch)
     return db_launch
+
+
+@router.post("/token")
+def exchange_token(
+    grant_type: str = Form(...),
+    code: str = Form(...),
+    redirect_uri: str = Form(...),
+    client_id: str = Form(...),
+    db: Session = Depends(database.get_db),
+):
+    """Exchange a SMART on FHIR authorization code for a signed JWT access token."""
+    if grant_type != "authorization_code":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Unsupported grant_type. Only authorization_code is supported.",
+        )
+
+    # 1. Lookup the launch context by authorization code
+    launch_context = (
+        db.query(models.SmartLaunchContext)
+        .filter(models.SmartLaunchContext.auth_code == code)
+        .first()
+    )
+    if not launch_context:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid authorization code.",
+        )
+
+    # 2. Check if expired
+    expires_at = launch_context.expires_at
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if datetime.now(timezone.utc) > expires_at:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Authorization code has expired.",
+        )
+
+    # 3. Verify the app client_id matches the launch context's app_id
+    app = db.query(models.SmartApp).filter(models.SmartApp.id == launch_context.app_id).first()
+    if not app or app.client_id != client_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Client ID mismatch or application not found.",
+        )
+
+    # 4. Verify redirect_uri
+    if app.redirect_uri != redirect_uri:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Redirect URI mismatch.",
+        )
+
+    # 5. Generate a signed JWT access token representing the launch context
+    token_data = {
+        "sub": str(launch_context.user_id),
+        "patient": str(launch_context.patient_id),
+        "client_id": client_id,
+        "scope": launch_context.scope,
+        "smart_launch_id": str(launch_context.id),
+    }
+    access_token = auth.create_access_token(token_data, expires_delta=timedelta(hours=1))
+
+    return {
+        "access_token": access_token,
+        "token_type": "Bearer",
+        "expires_in": 3600,
+        "scope": launch_context.scope,
+        "patient": str(launch_context.patient_id),
+        "need_patient_banner": True,
+    }

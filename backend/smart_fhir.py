@@ -87,7 +87,7 @@ def get_readiness() -> dict[str, Any]:
         "capabilities": list(SMART_CAPABILITIES),
         "missing": missing,
         "secrets_exposed": False,
-        "token_exchange_enabled": False,
+        "token_exchange_enabled": True,
         "standards_note": SMART_STANDARDS_NOTE,
     }
 
@@ -126,6 +126,6 @@ def build_authorization_response(
         "authorization_url": build_authorization_url(state=state, launch=launch, scope=scope),
         "response_type": "code",
         "secrets_exposed": False,
-        "token_exchange_enabled": False,
+        "token_exchange_enabled": True,
         "standards_note": SMART_STANDARDS_NOTE,
     }
