@@ -78,7 +78,7 @@ scikit-learn
 
 stripe>=10.1.0
 
-sqlalchemy-utils>=0.41.1
+sqlalchemy-utils>=0.42.1
 cryptography>=41.0.0
 
 slowapi>=0.1.9
