@@ -15,7 +15,7 @@ RUN npm ci
 
 # Copy frontend source and build the production bundle
 COPY frontend/ ./
-RUN npm run build
+RUN npx vite build
 
 # Stage 2: Build Rust Gateway
 FROM rust:latest AS rust-builder
