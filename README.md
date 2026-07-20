@@ -3,6 +3,9 @@
 
 <img src="docs/assets/hero-banner.svg" alt="AI Healthcare System - Open-Source HIPAA Clinical Intelligence Platform with React 19, FastAPI, LangGraph, and Ollama local inference" width="100%"/>
 
+# AI Healthcare System
+### *Open-Source HIPAA-Compliant Clinical Intelligence & EHR Platform*
+
 <br/>
 
 **Production-grade clinical AI platform — 5 ML diagnostics · Multi-agent RAG chatbot · FHIR R4 · Offline-first privacy**
