@@ -71,9 +71,9 @@ def test_smart_readiness_includes_capabilities():
     assert "launch-ehr" in result["capabilities"]
 
 
-def test_smart_readiness_token_exchange_disabled():
+def test_smart_readiness_token_exchange_enabled():
     result = smart_readiness()
-    assert result["token_exchange_enabled"] is False
+    assert result["token_exchange_enabled"] is True
 
 
 def test_smart_readiness_default_scopes(monkeypatch):
@@ -148,7 +148,7 @@ def test_build_authorization_response_has_required_keys(monkeypatch):
     result = build_authorization_response(state="test")
     assert "authorization_url" in result
     assert result["secrets_exposed"] is False
-    assert result["token_exchange_enabled"] is False
+    assert result["token_exchange_enabled"] is True
 
 
 # ── dicomweb.get_readiness ────────────────────────────────────────────────────
