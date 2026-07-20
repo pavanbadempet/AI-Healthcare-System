@@ -78,3 +78,21 @@ python scripts/sync_agent_adapters.py --check
 - **Short outputs**: Keep explanations concise and focused. Avoid verbose code repeats.
 - **Avoid deep recursive scans**: Use targeted file listing on specific directories rather than running recursive file listings or global searches.
 
+## Code Quality, Evolvability & Zero-Friction Rules
+
+To guarantee a **zero learning curve** for new developers and maintain **high code evolvability, readability, and maintainability**:
+
+1. **Zero-Configuration Sandbox Rule**:
+   - All modules, ML tools, and third-party API integrations (e.g. ABDM sandbox, SMART on FHIR, PACS DICOM, Qdrant database) MUST provide local, fully functional zero-configuration fallback pathways. A new contributor must be able to run the entire codebase and test suites locally with standard mocks without requiring license keys, tokens, or custom network setups.
+2. **Modularity & Monolith Avoidance**:
+   - Do not write or extend monolithic source files. If a python script or file exceeds 600 lines of code, refactor it into clean, single-responsibility files (e.g. splitting routers into `routes/`, services into `services/`, and schemas into `schemas/`).
+3. **Type Safety & Structural Readability**:
+   - Implement strict type hints (`typing` module in Python, interfaces and types in TypeScript/React).
+   - Every public function, API route, and data-access class must have explicit Docstrings (detailing parameter definitions, return schemas, and potential exceptions) to support self-documenting code.
+4. **No Absolute Paths**:
+   - Absolute file system URLs (e.g., `file:///c:/...`) are strictly prohibited in documentation, source code, and configuration files. Always use portable, relative paths (e.g. `docs/architecture-decisions.md`).
+5. **No AI Slop Patterns**:
+   - Avoid manual loop thread execution queues or hardcoded prediction override handlers.
+   - Never stage or commit commented-out debug statements, placeholder `pass` blocks, or dead files. Use unit tests (`pytest`, `vitest`) to verify all new features.
+
+
