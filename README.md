@@ -68,6 +68,7 @@
 - [🌐 AWS Enterprise Production Deployment](#-aws-enterprise-production-deployment)
 - [🔄 Data Engineering & MLOps Lakehouse](#-data-engineering--mlops-lakehouse-architecture)
 - [📦 clinical-tabular PyPI Package](#-clinical-tabular--pypi-package)
+- [📦 Commercial Add-On Packages](#-commercial-add-on-packages-polarsh)
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
 
@@ -1061,6 +1062,61 @@ Before submitting a Pull Request, please ensure all local verification checks pa
   </a>
 </p>
 </details>
+
+## 📦 Commercial Add-On Packages (Polar.sh)
+
+If you are a B2B SaaS founder or software developer building products that require offline cryptographic licensing, calibrated machine learning pipelines, ABDM integrations, or optimized LLM semantic caching, you can acquire our production-ready standalone packages directly on **Polar.sh** with zero-config delivery:
+
+> [!TIP]
+> 🎁 **ALL-IN-ONE BUILDER BUNDLE**: Get access to all 4 premium repositories for just **$29.00**! Save over 20% compared to individual purchases. Perfect for SaaS founders launching medical/AI products.
+> 👉 [**Get the All-in-One Developer Bundle on Polar &rarr;**](https://buy.polar.sh/polar_cl_jgyKAdf9G7Pdr3zUdRc1vO8qvJPVypnA84lx043TvPk)
+
+<table width="100%">
+  <tr>
+    <td width="50%" valign="top">
+      <h3>🔑 fastapi-license-gate</h3>
+      <p>A plug-and-play middleware and token verification system for FastAPI apps that need offline, cryptographically signed customer license verification.</p>
+      <ul>
+        <li><strong>Features</strong>: RSA/HS256 signed JWT validation, tier-based access control, local trial validation key map, configurable exact and prefix path exclusions.</li>
+        <li><strong>Price</strong>: <strong>$9.00</strong> (Impulse purchase pricing)</li>
+        <li><strong>Deliverable</strong>: Instant access to private repository + package updates.</li>
+      </ul>
+      <a href="https://buy.polar.sh/polar_cl_w8PFaGf5o3oSKktwAAwTfrixiTuZca6GYKI282MVHAa"><strong>Get fastapi-license-gate on Polar &rarr;</strong></a>
+    </td>
+    <td width="50%" valign="top">
+      <h3>📊 tabular-ml-sdk</h3>
+      <p>A production-ready machine learning SDK for tabular data, featuring calibrated classification pipelines, dataset preprocessing, and confidence bounds.</p>
+      <ul>
+        <li><strong>Features</strong>: Calibrated ML pipelines, SHAP feature importance explainers, Tabular MLP / FT-Transformer architectures, parallelized validation suite.</li>
+        <li><strong>Price</strong>: <strong>$9.00</strong> (Impulse purchase pricing)</li>
+        <li><strong>Deliverable</strong>: Instant access to private repository + package updates.</li>
+      </ul>
+      <a href="https://buy.polar.sh/polar_cl_79vCwy4yXYBK60FBp0AfCznl2S4MFjRxsg0Cr3u4o2s"><strong>Get tabular-ml-sdk on Polar &rarr;</strong></a>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <h3>🏥 clinical-fhir-abdm</h3>
+      <p>A comprehensive data mapper and sandbox integration client for HL7 FHIR R4 resources and India's ABDM Consent Manager flows.</p>
+      <ul>
+        <li><strong>Features</strong>: Robust validation schemas for patient demographics, observations, clinical bundles, and consent request/callback lifecycle handlers.</li>
+        <li><strong>Price</strong>: <strong>$9.00</strong> (Impulse purchase pricing)</li>
+        <li><strong>Deliverable</strong>: Instant access to private repository + package updates.</li>
+      </ul>
+      <a href="https://buy.polar.sh/polar_cl_8rtuXzUrBMS4Iquo2RFnfqJfLQCVXlBY33AzH3UFgdm"><strong>Get clinical-fhir-abdm on Polar &rarr;</strong></a>
+    </td>
+    <td width="50%" valign="top">
+      <h3>🧠 clinical-rag-cache</h3>
+      <p>An optimized semantic caching engine and Retrieval-Augmented Generation (RAG) vector store manager for clinical LLM pipelines.</p>
+      <ul>
+        <li><strong>Features</strong>: Cosine similarity-based prompt-completion caching to reduce API costs, document chunking utils, and prompt versioning catalog.</li>
+        <li><strong>Price</strong>: <strong>$9.00</strong> (Impulse purchase pricing)</li>
+        <li><strong>Deliverable</strong>: Instant access to private repository + package updates.</li>
+      </ul>
+      <a href="https://buy.polar.sh/polar_cl_jgyKAdf9G7Pdr3zUdRc1vO8qvJPVypnA84lx043TvPk"><strong>Get clinical-rag-cache on Polar &rarr;</strong></a>
+    </td>
+  </tr>
+</table>
 
 <img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
 
