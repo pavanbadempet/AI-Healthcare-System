@@ -81,7 +81,7 @@ stripe>=10.1.0
 sqlalchemy-utils>=0.41.1
 cryptography>=41.0.0
 
-slowapi>=0.1.9
+slowapi>=0.1.10
 pyotp>=2.9.0
 qrcode>=7.4.2
 agent-framework>=1.11.0
