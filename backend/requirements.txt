@@ -40,7 +40,7 @@ torch
 google-generativeai>=0.5.2
 langchain-core
 langgraph>=1.2.4
-huggingface_hub>=0.20.0
+huggingface_hub>=1.24.0
 
 # NOTE: RAG uses core_ai-managed embeddings, and Cloudflare Workers AI for cross-encoder reranking
 httpx
