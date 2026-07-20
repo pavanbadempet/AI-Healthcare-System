@@ -28,6 +28,7 @@ RUN apt-get update && apt-get install -y \
     gnupg \
     default-jre-headless \
     protobuf-compiler \
+    python3-dev \
     && curl -sLf --retry 3 https://cli.doppler.com/install.sh | sh \
     && rm -rf /var/lib/apt/lists/*
 
