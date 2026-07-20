@@ -27,7 +27,7 @@ jobs:
           tests/requirements-test.txt
 
     - name: Set up Node.js
-      uses: actions/setup-node@v6
+      uses: actions/setup-node@v7
       with:
         node-version: '20'
         cache: 'npm'
