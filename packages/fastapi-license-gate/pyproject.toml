@@ -1,0 +1,42 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fastapi-license-gate"
+version = "0.1.0"
+description = "Offline cryptographically signed JWT licensing middleware and tier validation for FastAPI B2B deployments"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+authors = [
+    { name = "Pavan Badempet" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Framework :: FastAPI",
+]
+dependencies = [
+    "fastapi>=0.80.0",
+    "PyJWT>=2.0.0",
+    "cryptography>=3.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov",
+    "httpx>=0.24.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/pavanbadempet/AI-Healthcare-System"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/fastapi_license_gate"]
