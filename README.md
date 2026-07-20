@@ -23,6 +23,9 @@ The platform provides native **HL7 FHIR R4** compatibility, 5 calibrated **XGBoo
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml/badge.svg" alt="CodeQL security analysis" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/pavanbadempet/AI-Healthcare-System?color=22c55e&style=flat-square" alt="License" /></a>
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/stargazers"><img src="https://img.shields.io/github/stars/pavanbadempet/AI-Healthcare-System?style=flat-square&color=f59e0b" alt="Stars" /></a>
+  <img src="https://img.shields.io/github/repo-size/pavanbadempet/AI-Healthcare-System?style=flat-square&color=3b82f6" alt="Repo Size" />
+  <img src="https://img.shields.io/github/issues/pavanbadempet/AI-Healthcare-System?style=flat-square&color=ef4444" alt="Open Issues" />
+  <img src="https://img.shields.io/badge/PRs-welcome-10b981?style=flat-square" alt="PRs Welcome" />
 </p>
 
 <p>
@@ -40,6 +43,19 @@ The platform provides native **HL7 FHIR R4** compatibility, 5 calibrated **XGBoo
 <a href="https://codespaces.new/pavanbadempet/AI-Healthcare-System"><img src="https://github.com/codespaces/badge.svg" alt="Open in GitHub Codespaces" height="32"/></a>
 
 </div>
+
+### 🚀 Core Platform Specifications
+
+| Category | Core Specs & Technologies (Search Optimization Keywords) |
+| :--- | :--- |
+| **💡 Core Purpose** | Open-source EHR (Electronic Health Record) & Clinical Decision Support System (CDSS) |
+| **🧠 Generative AI** | LangGraph multi-agent orchestration, local Ollama (Llama 3.2), Google Gemini fallback |
+| **📊 Diagnostics** | 5 XGBoost gradient-boosted diagnostic classifiers, scikit-learn, conformal predictions |
+| **🛡️ Explainable AI** | SHAP feature attributions, counterfactual recourse recommendations, clinical narratives |
+| **📁 EHR Data Interop** | Native HL7 FHIR R4 schema serialization, HAPI FHIR server patient imports |
+| **🔄 Data Platform** | Apache Spark (PySpark), Delta Lake Medallion Architecture (Bronze/Silver/Gold), Airflow |
+| **⚡ High Performance** | Rust gRPC API gateway, in-memory SIMD vector search (turbovec), orjson serialization |
+| **🔐 HIPAA DevSecOps** | Exception PII masking middleware, Docker, AWS EKS (Kubernetes), Terraform IaC |
 
 <!-- SEO: H1 is critical for search engines. The banner serves as the visual title. -->
 <!-- AI Healthcare System — Open-Source HIPAA-Compliant Clinical AI & EHR Platform -->
@@ -78,6 +94,7 @@ The platform provides native **HL7 FHIR R4** compatibility, 5 calibrated **XGBoo
 - [🔄 Data Engineering & MLOps Lakehouse](#-data-engineering--mlops-lakehouse-architecture)
 - [📦 clinical-tabular PyPI Package](#-clinical-tabular--pypi-package)
 - [📦 Commercial Add-On Packages](#-commercial-add-on-packages-polarsh)
+- [🔍 Discovery & AIO Indexing](#-discovery--aio-indexing-search-engine--llm-optimization)
 - [🤝 Contributing](#-contributing)
 - [📄 License](#-license)
 
