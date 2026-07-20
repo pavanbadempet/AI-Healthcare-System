@@ -71,7 +71,7 @@ qdrant-client>=1.7.0
 redis>=5.0.0
 pyspark>=3.5.0
 msgpack>=1.0.5
-great-expectations>=0.18.0
+great-expectations>=1.19.0
 faker>=24.0.0
 scipy>=1.11.0
 scikit-learn
