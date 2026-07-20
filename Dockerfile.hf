@@ -50,7 +50,7 @@ COPY --chown=user backend/requirements.txt $HOME/app/backend/requirements.txt
 COPY --chown=user requirements.txt $HOME/app/
 
 # Install dependencies based on backend requirements and mount build secret for private packages
-RUN --mount=type=secret,id=GH_READ_TOKEN \
+RUN --mount=type=secret,id=GH_READ_TOKEN,uid=1000 \
     pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r backend/requirements.txt && \
     if [ -f /run/secrets/GH_READ_TOKEN ]; then \
