@@ -12,6 +12,12 @@
 
 <br/>
 
+AI Healthcare System is a production-grade, privacy-first **open-source EHR (Electronic Health Record)** and **Clinical Decision Support System (CDSS)**. It is designed for healthcare software developers, startup founders, and medical informatics researchers who need a secure, HIPAA-compliant framework integrating advanced clinical machine learning and generative AI.
+
+The platform provides native **HL7 FHIR R4** compatibility, 5 calibrated **XGBoost diagnostic risk classifiers** with **SHAP explainability**, and a stateful **LangGraph multi-agent RAG (Retrieval-Augmented Generation)** supervisor chatbot that supports complete **offline private inference (via local Ollama Llama 3.2)**. Designed to run on consumer hardware or scale to enterprise high-availability Kubernetes on AWS, it serves as a secure blueprint for digital health innovation.
+
+<br/>
+
 <p>
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml/badge.svg" alt="CI build status" /></a>
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml/badge.svg" alt="CodeQL security analysis" /></a>
