@@ -45,19 +45,25 @@ RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 
 WORKDIR $HOME/app
 
-# Copy requirements and local packages
+# Copy requirements
 COPY --chown=user backend/requirements.txt $HOME/app/backend/requirements.txt
 COPY --chown=user requirements.txt $HOME/app/
-COPY --chown=user packages/ $HOME/app/packages/
 
-# Install dependencies based on backend requirements and local private packages
-RUN pip install --no-cache-dir --upgrade pip && \
+# Install dependencies based on backend requirements and mount build secret for private packages
+RUN --mount=type=secret,id=GH_READ_TOKEN,uid=1000 \
+    pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir -r backend/requirements.txt && \
-    pip install --no-cache-dir \
-        ./packages/fastapi-license-gate \
-        ./packages/clinical-tabular \
-        ./packages/clinical-fhir-abdm \
-        ./packages/clinical-rag-cache
+    if [ -f /run/secrets/GH_READ_TOKEN ]; then \
+        TOKEN=$(cat /run/secrets/GH_READ_TOKEN) && \
+        if [ ! -z "$TOKEN" ]; then \
+            echo "Installing private packages..." && \
+            pip install --no-cache-dir \
+                "git+https://x-access-token:${TOKEN}@github.com/shantanam-ai/fastapi-license-gate.git" \
+                "git+https://x-access-token:${TOKEN}@github.com/shantanam-ai/tabular-ml-sdk.git" \
+                "git+https://x-access-token:${TOKEN}@github.com/shantanam-ai/clinical-fhir-abdm.git" \
+                "git+https://x-access-token:${TOKEN}@github.com/shantanam-ai/clinical-rag-cache.git"; \
+        fi \
+    fi
 
 # Copy source code
 COPY --chown=user . $HOME/app/
