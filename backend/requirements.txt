@@ -38,7 +38,7 @@ torch
 
 # --- AI & LLM ---
 google-generativeai>=0.5.2
-langchain-core
+langchain-core>=1.4.9
 langgraph>=1.2.4
 huggingface_hub>=0.20.0
 
@@ -86,6 +86,6 @@ pyotp>=2.9.0
 qrcode>=7.4.2
 agent-framework>=1.11.0
 langgraph>=0.1.0
-langchain-core>=0.2.0
+langchain-core>=1.4.9>=0.2.0
 
 
