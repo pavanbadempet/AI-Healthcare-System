@@ -118,12 +118,12 @@ The platform is designed with a decoupled, high-performance architecture separat
 
 | Layer | Core Technologies & Frameworks | Key Purpose & Capabilities | Primary Source Reference |
 |:---|:---|:---|:---|
-| **Frontend Surface** | React 19 &bull; TypeScript &bull; Vite &bull; Tailwind CSS &bull; Lucide | Responsive clinician portal, telemedicine console, real-time vitals graphs, chat UI | [frontend/src/](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/frontend/src) |
-| **Gateway & Routers** | FastAPI &bull; Uvicorn &bull; Pydantic v2 &bull; SQLAlchemy &bull; Alembic | High-throughput REST API, 8-layer security middleware, JWT RBAC, DB connection pool | [backend/main.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/main.py) |
-| **Clinical Reasoning** | LangGraph &bull; MAF (Microsoft Agent Framework) &bull; Ollama &bull; Google Gemini API &bull; turbovec | Stateful cyclic graphs, multi-agent sequential workflows, local LLM fallback, vector search indexing | [backend/langgraph_orchestrator.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/langgraph_orchestrator.py) |
-| **XAI & Calibration** | XGBoost &bull; Scikit-Learn &bull; SHAP &bull; Conformal Prediction | 5 diagnostic risk classifiers, SHAP local explanations, prediction uncertainty bounds | [backend/prediction.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/prediction.py) |
-| **Persistence & Cache**| PostgreSQL &bull; SQLite (WAL mode) &bull; Redis Cluster | Multi-tenant EHR schemas, transactional health logs, session/telemetry caching | [backend/database.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/database.py) |
-| **DevOps & MLOps** | Terraform &bull; AWS EKS/RDS &bull; PySpark &bull; Apache Airflow | 3-replica HA K8s scaling, AWS IaC provisioning, telemetry data lakehouse DAGs | [terraform/main.tf](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/terraform/main.tf) |
+| **Frontend Surface** | React 19 &bull; TypeScript &bull; Vite &bull; Tailwind CSS &bull; Lucide | Responsive clinician portal, telemedicine console, real-time vitals graphs, chat UI | [frontend/src/](frontend/src) |
+| **Gateway & Routers** | FastAPI &bull; Uvicorn &bull; Pydantic v2 &bull; SQLAlchemy &bull; Alembic | High-throughput REST API, 8-layer security middleware, JWT RBAC, DB connection pool | [backend/main.py](backend/main.py) |
+| **Clinical Reasoning** | LangGraph &bull; MAF (Microsoft Agent Framework) &bull; Ollama &bull; Google Gemini API &bull; turbovec | Stateful cyclic graphs, multi-agent sequential workflows, local LLM fallback, vector search indexing | [backend/langgraph_orchestrator.py](backend/langgraph_orchestrator.py) |
+| **XAI & Calibration** | XGBoost &bull; Scikit-Learn &bull; SHAP &bull; Conformal Prediction | 5 diagnostic risk classifiers, SHAP local explanations, prediction uncertainty bounds | [backend/prediction.py](backend/prediction.py) |
+| **Persistence & Cache**| PostgreSQL &bull; SQLite (WAL mode) &bull; Redis Cluster | Multi-tenant EHR schemas, transactional health logs, session/telemetry caching | [backend/database.py](backend/database.py) |
+| **DevOps & MLOps** | Terraform &bull; AWS EKS/RDS &bull; PySpark &bull; Apache Airflow | 3-replica HA K8s scaling, AWS IaC provisioning, telemetry data lakehouse DAGs | [terraform/main.tf](terraform/main.tf) |
 
 
 ### 🦀 High-Performance Rust Execution Core
@@ -453,7 +453,7 @@ We built an automated system maintenance pipeline executing database storage rec
 *   **Correlation Tracking**: Implements thread-safe context-propagation to pass correlation IDs (`X-Correlation-ID`) across the Rust Gateway, FastAPI middlewares, and downstream task queues.
 *   **PII Exception Redaction**: Filters all console and file log outputs to automatically scrub sensitive patient email addresses, phone numbers, and PII.
 *   **Prometheus Exporters**: Exposes system metrics (CPU utilization, RAM memory, active PostgreSQL/SQLite connections) and HTTP route latency histograms directly on `/metrics` for scraper systems.
-*   **Grafana Telemetry Dashboard**: Pre-configured SOTA dashboard panels (loaded dynamically from [monitoring/grafana/](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/monitoring/grafana)) visualizing Gateway resources, SQLx pools, and route latency p95 processing boundaries.
+*   **Grafana Telemetry Dashboard**: Pre-configured SOTA dashboard panels (loaded dynamically from [monitoring/grafana/](monitoring/grafana)) visualizing Gateway resources, SQLx pools, and route latency p95 processing boundaries.
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
@@ -536,46 +536,46 @@ The repository contains 34 comprehensive technical guides, runbooks, and bluepri
 <summary><strong>📂 Click to Expand the Documentation Catalog</strong></summary>
 
 ### 1. Core Architecture & Engineering
-*   [AI Agent Architecture](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/AI_AGENT_ARCHITECTURE.md) &mdash; LangGraph multi-agent flow, routing nodes, state schemas, and safety guardrails.
-*   [Architecture Decision Records (ADRs)](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/architecture-decisions.md) &mdash; Detailed engineering trade-offs (ADR-001 to ADR-007) for lakehouse, SCD-2, caching, and streaming.
-*   [Technical Whitepaper](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/TECHNICAL_WHITEPAPER.md) &mdash; Academic overview of XGBoost boosting margins, LangGraph routers, and SIMD performance optimization.
-*   [Research-Backed Gap Analysis](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/RESEARCH_BACKED_BACKEND_GAP_ANALYSIS.md) &mdash; Clinical study comparison, performance gaps, and future roadmap planning.
+*   [AI Agent Architecture](docs/AI_AGENT_ARCHITECTURE.md) &mdash; LangGraph multi-agent flow, routing nodes, state schemas, and safety guardrails.
+*   [Architecture Decision Records (ADRs)](docs/architecture-decisions.md) &mdash; Detailed engineering trade-offs (ADR-001 to ADR-007) for lakehouse, SCD-2, caching, and streaming.
+*   [Technical Whitepaper](docs/TECHNICAL_WHITEPAPER.md) &mdash; Academic overview of XGBoost boosting margins, LangGraph routers, and SIMD performance optimization.
+*   [Research-Backed Gap Analysis](docs/RESEARCH_BACKED_BACKEND_GAP_ANALYSIS.md) &mdash; Clinical study comparison, performance gaps, and future roadmap planning.
 
 ### 2. Clinical & Medical Workflows
-*   [Diagnostics Workflow](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/DIAGNOSTICS_WORKFLOW.md) &mdash; Clinical lab metric intake, inference pipeline, SHAP interpretability plot rendering, and physician validation.
-*   [Nursing Workflow](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/NURSING_WORKFLOW.md) &mdash; Nurse worklist coordinators, vital sign logs, and shift handover data packets.
-*   [Pharmacy Workflow](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/PHARMACY_WORKFLOW.md) &mdash; E-prescription fulfillment, drug-drug interaction validation checks, and automatic reorder thresholds.
-*   [Billing Workflow](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/BILLING_WORKFLOW.md) &mdash; Insurance claims verification, double-entry transactional ledgers, and payment processing loops.
-*   [Discharge Workflow](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/DISCHARGE_WORKFLOW.md) &mdash; Inpatient release checklists, outpatient referral summaries, and automatic FHIR serialization.
-*   [Hospital Operations Core](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/HOSPITAL_OPERATIONS_CORE.md) &mdash; Inpatient/Outpatient (IPD/OPD) coordinate systems, bed allocation logic, and clinic occupancy algorithms.
+*   [Diagnostics Workflow](docs/DIAGNOSTICS_WORKFLOW.md) &mdash; Clinical lab metric intake, inference pipeline, SHAP interpretability plot rendering, and physician validation.
+*   [Nursing Workflow](docs/NURSING_WORKFLOW.md) &mdash; Nurse worklist coordinators, vital sign logs, and shift handover data packets.
+*   [Pharmacy Workflow](docs/PHARMACY_WORKFLOW.md) &mdash; E-prescription fulfillment, drug-drug interaction validation checks, and automatic reorder thresholds.
+*   [Billing Workflow](docs/BILLING_WORKFLOW.md) &mdash; Insurance claims verification, double-entry transactional ledgers, and payment processing loops.
+*   [Discharge Workflow](docs/DISCHARGE_WORKFLOW.md) &mdash; Inpatient release checklists, outpatient referral summaries, and automatic FHIR serialization.
+*   [Hospital Operations Core](docs/HOSPITAL_OPERATIONS_CORE.md) &mdash; Inpatient/Outpatient (IPD/OPD) coordinate systems, bed allocation logic, and clinic occupancy algorithms.
 
 ### 3. Interoperability & Compliance
-*   [Interoperability Exports](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/INTEROPERABILITY_EXPORTS.md) &mdash; HL7 FHIR R4 schema mappings, structural JSON serializers, and ABDM sandbox integrations.
-*   [Prediction Review Audit](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/PREDICTION_REVIEW_AUDIT.md) &mdash; Auditing databases and SQL schemas to track and record doctor overrides of AI predictions.
-*   [Privacy Operations](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/PRIVACY_OPERATIONS.md) &mdash; HIPAA/GDPR sanitization protocols, PII exception interceptors, and error masking rules.
-*   [Retention Policy Readiness](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/RETENTION_POLICY_READINESS.md) &mdash; Data lifecycle strategies satisfying HIPAA's 7-year audit log retention regulations.
+*   [Interoperability Exports](docs/INTEROPERABILITY_EXPORTS.md) &mdash; HL7 FHIR R4 schema mappings, structural JSON serializers, and ABDM sandbox integrations.
+*   [Prediction Review Audit](docs/PREDICTION_REVIEW_AUDIT.md) &mdash; Auditing databases and SQL schemas to track and record doctor overrides of AI predictions.
+*   [Privacy Operations](docs/PRIVACY_OPERATIONS.md) &mdash; HIPAA/GDPR sanitization protocols, PII exception interceptors, and error masking rules.
+*   [Retention Policy Readiness](docs/RETENTION_POLICY_READINESS.md) &mdash; Data lifecycle strategies satisfying HIPAA's 7-year audit log retention regulations.
 
 ### 4. MLOps & Data Infrastructure
-*   [Model and Dataset Cards](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/MODEL_AND_DATASET_CARDS.md) &mdash; Training parameter registries, dataset lineages, performance evaluations, and model limits.
-*   [Model Integrity Report](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/MODEL_INTEGRITY_REPORT.md) &mdash; Statistical validation procedures, concept drift monitors, and calibration graph engines.
-*   [Cloud Retraining Guide](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/CLOUD_RETRAINING_GUIDE.md) &mdash; Serverless model refitting setups offloading neural training onto Kaggle cloud runtimes.
-*   [Telemetry Streaming Guide](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/TELEMETRY_STREAMING_GUIDE.md) &mdash; PySpark structured stream configurations, Delta Lake medallion storage, and Z-Order compaction runs.
-*   [Data Quality and Lineage](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/DATA_QUALITY_AND_LINEAGE.md) &mdash; Lineage trackers, schema validation checkpoints, and openlineage compliance mapping.
+*   [Model and Dataset Cards](docs/MODEL_AND_DATASET_CARDS.md) &mdash; Training parameter registries, dataset lineages, performance evaluations, and model limits.
+*   [Model Integrity Report](docs/MODEL_INTEGRITY_REPORT.md) &mdash; Statistical validation procedures, concept drift monitors, and calibration graph engines.
+*   [Cloud Retraining Guide](docs/CLOUD_RETRAINING_GUIDE.md) &mdash; Serverless model refitting setups offloading neural training onto Kaggle cloud runtimes.
+*   [Telemetry Streaming Guide](docs/TELEMETRY_STREAMING_GUIDE.md) &mdash; PySpark structured stream configurations, Delta Lake medallion storage, and Z-Order compaction runs.
+*   [Data Quality and Lineage](docs/DATA_QUALITY_AND_LINEAGE.md) &mdash; Lineage trackers, schema validation checkpoints, and openlineage compliance mapping.
 
 ### 5. Deployment, Operations & Security
-*   [Performance Benchmarks](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/performance-benchmarks.md) &mdash; Operational SLAs, response latencies, and high-throughput EKS scaling metrics.
-*   [Real-Time Monitoring Patterns](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/REALTIME_MONITORING_AND_PATTERNS.md) &mdash; Prometheus metrics exporters, Grafana dashboard alerts, and WS broadcast architectures.
-*   [Backup and Restore Readiness](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/BACKUP_AND_RESTORE_READINESS.md) &mdash; Disastrous recovery runbooks, Point-in-Time Recovery (PITR) configurations, and replication sets.
-*   [Incident Response Readiness](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/INCIDENT_RESPONSE_READINESS.md) &mdash; Security breach playbooks, reporting procedures, and recovery SLA limits.
-*   [Security Assurance Readiness](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/SECURITY_ASSURANCE_READINESS.md) &mdash; OS hardening playbooks, network firewalls, and credential rotation calendars.
-*   [Security Questionnaire](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/SECURITY_QUESTIONNAIRE.md) &mdash; Comprehensive institutional questionnaire (HECVAT/HIPAA alignment) for hospital IT boards.
+*   [Performance Benchmarks](docs/performance-benchmarks.md) &mdash; Operational SLAs, response latencies, and high-throughput EKS scaling metrics.
+*   [Real-Time Monitoring Patterns](docs/REALTIME_MONITORING_AND_PATTERNS.md) &mdash; Prometheus metrics exporters, Grafana dashboard alerts, and WS broadcast architectures.
+*   [Backup and Restore Readiness](docs/BACKUP_AND_RESTORE_READINESS.md) &mdash; Disastrous recovery runbooks, Point-in-Time Recovery (PITR) configurations, and replication sets.
+*   [Incident Response Readiness](docs/INCIDENT_RESPONSE_READINESS.md) &mdash; Security breach playbooks, reporting procedures, and recovery SLA limits.
+*   [Security Assurance Readiness](docs/SECURITY_ASSURANCE_READINESS.md) &mdash; OS hardening playbooks, network firewalls, and credential rotation calendars.
+*   [Security Questionnaire](docs/SECURITY_QUESTIONNAIRE.md) &mdash; Comprehensive institutional questionnaire (HECVAT/HIPAA alignment) for hospital IT boards.
 
 ### 6. Business & Staging Manuals
-*   [Clinic Pilot Playbook](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/CLINIC_PILOT_PLAYBOOK.md) &mdash; Operational playbook detailing staging setups, doctor onboard training, and offline clinic deployments.
-*   [Master Project Report](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/MASTER_PROJECT_REPORT.md) &mdash; Full executive report mapping development timelines, milestones, and testing reports.
-*   [Sales Readiness (India-First)](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/SALES_READINESS_INDIA_FIRST.md) &mdash; Product-market fit reports targeting Ayushman Bharat Digital Mission (ABDM) and local UHI services.
-*   [Pricing and Packaging](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/PRICING_AND_PACKAGING.md) &mdash; Tier structures, SLA availability agreements, and modular feature pricing models.
-*   [Trust Baseline](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/TRUST_BASELINE.md) &mdash; Framework guarantees governing safety, bias controls, and data protection in clinical settings.
+*   [Clinic Pilot Playbook](docs/CLINIC_PILOT_PLAYBOOK.md) &mdash; Operational playbook detailing staging setups, doctor onboard training, and offline clinic deployments.
+*   [Master Project Report](docs/MASTER_PROJECT_REPORT.md) &mdash; Full executive report mapping development timelines, milestones, and testing reports.
+*   [Sales Readiness (India-First)](docs/SALES_READINESS_INDIA_FIRST.md) &mdash; Product-market fit reports targeting Ayushman Bharat Digital Mission (ABDM) and local UHI services.
+*   [Pricing and Packaging](docs/PRICING_AND_PACKAGING.md) &mdash; Tier structures, SLA availability agreements, and modular feature pricing models.
+*   [Trust Baseline](docs/TRUST_BASELINE.md) &mdash; Framework guarantees governing safety, bias controls, and data protection in clinical settings.
 
 </details>
 
