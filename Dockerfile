@@ -19,7 +19,7 @@ RUN npm run build
 
 # Stage 2: Build Rust Gateway
 FROM rust:latest AS rust-builder
-RUN apt-get update && apt-get install -y protobuf-compiler
+RUN apt-get update && apt-get install -y protobuf-compiler python3-dev
 WORKDIR /build
 
 # Copy rust gateway source and build it
