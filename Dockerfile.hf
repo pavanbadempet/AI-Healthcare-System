@@ -78,7 +78,7 @@ COPY --from=frontend-builder --chown=user /build/dist $HOME/app/frontend/dist
 RUN python backend/download_models.py
 
 # Make startup script executable
-RUN chmod +x scripts/start_prod.sh
+RUN chmod +x $HOME/app/scripts/start_prod.sh
 
 # Expose the specific port Hugging Face Spaces uses
 EXPOSE 7860
