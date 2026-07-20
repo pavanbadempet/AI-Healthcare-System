@@ -72,6 +72,7 @@ jobs:
             exit 1
           fi
           
+          git add --force packages/
           git add .
           git commit -m "Deploy to Hugging Face Space"
           
