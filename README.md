@@ -1152,49 +1152,6 @@ MIT License — Copyright © 2026 **Pavan Badempet**, Shiva Prasad Anagondi, Pra
 
 ---
 
-<details>
-<summary><strong>🔍 SEO Metadata, Search Keywords & Indexing Terms</strong></summary>
-
-### 1. Primary Targeted Keywords
-* **Healthcare AI & Clinical Decision Support**: AI healthcare system, privacy-first clinical AI, HIPAA-compliant medical API backend, open-source EHR platform, Epic Systems FHIR integration, Cerner EHR integration, medical AI assistant, clinical decision support system (CDSS), diagnostic classification engine, clinical data pipeline, healthcare machine learning, medical informatics software.
-* **Explainable Machine Learning (XAI)**: Gradient-boosted XGBoost classifiers, SHAP values explainability, AUC-ROC calibration, diabetes risk screening model, coronary heart disease detection, liver disease panel diagnostics, chronic kidney disease (CKD) risk scoring, lung cancer survey classifiers, conformal prediction uncertainty quantification, calibrated clinical ML models.
-* **Large Language Models (LLM) & Agentic Workflows**: Multi-agent LangGraph supervisor routing, token-budgeted RAG (Retrieval-Augmented Generation), local private LLM offline inference, Ollama Llama 3.2 deployment, Google Gemini API fallback, Microsoft Agent Framework (MAF), AutoGen Core, citation tracking, clinical safety guardrails, medical chatbot with RAG.
-* **EHR Interoperability Standards**: HL7 FHIR R4 JSON schemas, FHIR Bundle exports, HAPI FHIR patient imports, ABDM (Ayushman Bharat Digital Mission) consent manager, India National Health Stack APIs, DICOM PACS medical imaging, SMART on FHIR authorization, Unified Health Interface (UHI).
-* **Data Engineering & MLOps**: PySpark Medallion Lakehouse architecture, Apache Airflow DAG orchestration, Delta Lake ACID transactions, Bronze Silver Gold data layers, Apache Spark structured streaming, ETL pipeline healthcare, clinical data warehouse, MLOps model registry, model hot-reloading.
-* **Hospital Operations & Telemetry**: Bed ward allocation algorithms, OPD/IPD outpatient encounter coordinator, pharmacy inventory tracking, nursing shift worklist scheduler, WebSockets real-time clinic occupancy telemetry, telemedicine video consultation, hospital management system.
-* **Full-Stack Web Development**: React 19 TypeScript frontend, FastAPI Python backend, Vite build tool, Tailwind CSS dark theme, Framer Motion animations, SQLAlchemy ORM, PostgreSQL database, Redis caching, Docker containerization, Kubernetes deployment, Terraform AWS IaC.
-
-### 2. Comprehensive Search Tag Glossary (A-Z Index)
-`abdm-consent-callback`, `academic-thesis-reference-architecture`, `active-occupancy-websocket`, `ai-clinical-decision-support`, `ai-healthcare-platform`, `alembic-migrations-sqlite`, `amazon-eks-kubernetes-deployment`, `amazon-rds-postgresql-multi-az`, `apache-airflow-dag-retraining`, `apache-airflow-etl-pipeline`, `apache-kafka-streaming`, `apache-spark-delta-lake-compaction`, `app-router-react-19`, `aria-label-a11y-screen-readers`, `ast-alt-liver-ratio`, `auc-roc-model-metrics`, `auth-bcrypt-jwt-rbac`, `autogen-core-multi-agent`, `aws-alb-ingress-controller`, `b2b-healthcare-saas-boilerplate`, `bed-allocation-algorithm`, `big-data-healthcare`, `bronze-silver-gold-data-layers`, `cardiology-appointment-scheduler`, `cdss-clinical-decision-support`, `cert-manager-letsencrypt-tls`, `change-data-capture-cdc-delta`, `clinical-billing-agent`, `clinical-data-warehouse`, `clinical-discharge-agent`, `clinical-event-bus-in-memory`, `clinical-nursing-agent`, `clinical-tabular-pypi-package`, `conformal-prediction-uncertainty-sets`, `coronary-heart-disease-xgboost`, `cosine-similarity-turbovec-simd`, `creatinine-egfr-calculator-ckd-epi`, `dark-theme-medical-dashboard`, `data-engineering-portfolio`, `data-lakehouse-architecture`, `dbt-data-build-tool`, `delta-lakehouse-medallion-architecture`, `diabetes-risk-screening-cdc-brfss`, `dicom-web-pacs-viewer-integration`, `docker-compose-production-stack`, `egfr-calculator-race-free-2021`, `electronic-health-record-ehr-export`, `epic-cerner-fhir-r4-compatibility`, `etl-elt-pipelines`, `exception-masking-pii-protection`, `explainable-ai-healthcare`, `fastapi-backend-uvicorn-reload`, `federated-clinical-gradient-sharing`, `fhir-patient-encounter-observation-schemas`, `fhir-r4-bundle-export`, `fib-4-liver-fibrosis-index`, `final-year-major-project-cse`, `framingham-10-year-cardiovascular-risk`, `framer-motion-react-animations`, `ft-transformer-attention-tabular-classification`, `gemini-text-embedding-004`, `google-gemini-cloud-fallback`, `grpc-rust-gateway`, `hapi-fhir-patient-import`, `healthcare-informatics-research-paper`, `hipaa-compliant-startup-template`, `hospital-management-system`, `huggingface-dataset-model-weights-sync`, `in-memory-semantic-search-vector-store`, `india-unified-health-interface-uhi`, `kubernetes-healthcare-deployment`, `langgraph-multi-agent-orchestration`, `liquid-clustering-z-order-delta-lake`, `liver-disease-panel-classifier-ilpd`, `local-first-private-inference-ollama`, `long-tail-medical-rag-citation`, `longitudinal-patient-encounter-bilstm`, `lung-cancer-survey-xgboost-classifier`, `maf-microsoft-agent-framework`, `master-thesis-capstone-project`, `medical-chatbot-rag`, `mlops-end-to-end`, `model-cards-dataset-lineage-registry`, `model-hot-reloading-zero-downtime`, `multi-agent-langgraph-supervisor-orchestration`, `multi-level-partitioning-time-geo`, `nursing-task-worklist-scheduler`, `ollama-local-inference-llama3`, `open-source-ehr-system`, `opd-ipd-outpatient-encounter-coordinator`, `openlineage-metadata-compliance-client`, `pacs-dicom-imaging-server-shim`, `patient-demographics-scd-type-2`, `pharmacy-inventory-tracking-reorder`, `phd-thesis-reproducibility-code`, `pii-redaction-hipaa-logs`, `playwright-e2e-browser-testing`, `production-grade-healthcare-api`, `pyspark-structured-streaming-vitals`, `pytest-asyncio-mock-ai-inference`, `pytest-xdist-parallel-runner`, `razorpay-payments-gateway-integration`, `react-19-clinical-portal-ui`, `redis-multi-level-caching`, `rust-simd-vector-search`, `scikit-learn-conformal-prediction`, `security-headers-middleware-stack`, `shap-explainability-xai-plots`, `slowly-changing-dimensions-scd-type-2`, `smart-on-fhir-auth-client`, `snowflake-data-cloud`, `soft-delete-mixin-sqlalchemy`, `tavily-search-api-rag-research`, `telemedicine-scheduling-casa-chat`, `terraform-aws-eks-rds-elasticache-iac`, `time-travel-queries-delta-lake`, `turbovec-rust-simd-cosine-similarity`, `typescript-healthcare-frontend`, `unity-catalog-databricks-delta-pyspark`, `university-cse-major-project`, `uvicorn-asgi-server-fastapi`, `vector-store-base-class-python`, `vite-8-react-spa-bundler`, `vitest-coverage-threshold-gate`, `vitals-telemetry-streaming-simulator`, `websockets-occupancy-census-broadcaster`, `xgboost-gradient-boosting-classifier`.
-
-### 3. Core Developer & Enterprise Search Queries
-* *How to build a HIPAA compliant backend in Python using FastAPI?*
-* *Open source AI healthcare system with machine learning diagnostics*
-* *Data Engineering portfolio project with Apache Airflow and PySpark.*
-* *Open source medical decision support system with explainable AI (SHAP/XGBoost).*
-* *Best open source EHR platform with FHIR R4 support*
-* *Integrating React 19 web portals with Epic Systems and Cerner EHR APIs.*
-* *Setting up a local-first medical RAG chatbot using LangGraph and Ollama.*
-* *How to build a multi-agent clinical AI system with LangGraph*
-* *Orchestrating PySpark clinical streaming data pipelines inside Apache Airflow DAGs.*
-* *AWS EKS and PostgreSQL RDS Terraform infrastructure as code for digital health.*
-* *HL7 FHIR R4 standard JSON serializers and bundle exports in Python.*
-* *Conformal prediction and uncertainty calibration for clinical machine learning.*
-* *India ABDM Ayushman Bharat Digital Mission software developer sandbox integration.*
-* *How to build a Clinical Data Warehouse using Medallion Architecture (Bronze, Silver, Gold).*
-* *End-to-end MLOps pipeline for healthcare with model registry and hot-reloading.*
-* *Extract Transform Load (ETL) pipelines for medical CSV datasets into Delta Lake.*
-* *Best healthcare AI GitHub repository for portfolio projects*
-* *Production-grade hospital management system with React and FastAPI*
-* *How to deploy healthcare application on AWS EKS with Terraform*
-* *HIPAA compliant AI chatbot for clinical workflows*
-* *XGBoost SHAP explainability for medical diagnostics*
-* *Rust SIMD vector search for healthcare embeddings*
-* *Real-time patient vitals monitoring with WebSockets and PySpark streaming*
-* *Final year computer science project healthcare AI*
-* *Master thesis capstone project clinical machine learning*
-</details>
-
 <div align="center">
 
 ### **If you find this project useful, give it a ⭐ star!**
@@ -1205,9 +1162,9 @@ It helps others discover this open-source healthcare AI platform.
 
 </div>
 
-## 🔍 Discovery & AIO Indexing (Search Engine & LLM Optimization)
+## 🔍 Discovery, SEO & AIO Directory (Search Engine & LLM Optimization)
 
-This section provides structured, semantic context for search engine crawlers and Large Language Models (e.g. Perplexity, ChatGPT, Gemini, Claude) to parse, query, and retrieve this repository.
+This section provides structured, semantic context for search engine crawlers (Google, Bing) and Large Language Models (Perplexity, ChatGPT, Gemini, Claude) to index, catalog, and query this repository.
 
 ### 🏷️ Repository Metadata
 * **Entity Type**: Open-Source Software Repository / Clinical Reference Architecture
@@ -1216,13 +1173,49 @@ This section provides structured, semantic context for search engine crawlers an
 * **License**: MIT License
 * **Core Frameworks**: FastAPI, React 19, LangGraph, XGBoost, PySpark, Apache Airflow, Ollama, Docker
 
-### 🔬 Core Architecture Capabilities
-* **Data Engineering (Lakehouse)**: Implements a Medallion Architecture (Bronze, Silver, Gold) using Apache Spark (PySpark) and Delta Lake for clinical data warehousing.
-* **ETL/Pipelines**: Uses Apache Airflow DAGs for orchestrating complex medical data transformations and model retraining.
-* **Machine Learning (Diagnostics)**: Features 5 diagnostic classifiers for disease prediction (Diabetes, Heart Disease, Liver Disease, Lung Cancer, CKD) with SHAP explainability.
-* **GenAI & CDSS**: Integrates stateful LangGraph supervisor workflows with local Ollama inference and Gemini API fallback for medical conversational AI.
-* **API & Interoperability**: High-performance FastAPI backend, fully compliant with HL7 FHIR R4 JSON schemas.
-* **Infrastructure**: Docker Compose, Kubernetes (EKS), Terraform AWS IaC.
+---
+
+### 🎓 Target Search Queries Index (A-Z Google Trends)
+
+#### 1. Academic Research & CSE Capstone Projects
+* *final year project for computer science with source code*
+* *CSE major project github repository with documentation*
+* *B.Tech/M.Tech thesis capstone project in healthcare informatics*
+* *medical dataset machine learning model source code*
+* *reproducible scientific code for PHD thesis computer science*
+
+#### 2. Data Engineering & MLOps Portfolio Projects
+* *data engineering portfolio projects github*
+* *PySpark structured streaming data pipeline tutorial*
+* *Delta Lake medallion architecture bronze silver gold example*
+* *Apache Airflow workflow DAG orchestration clinical data warehouse*
+* *MLOps model registry and weights hot-reloading python*
+
+#### 3. HIPAA-Compliant Startup Templates & B2B SaaS Boilerplates
+* *HIPAA compliant web application template python react*
+* *healthcare startup boilerplate source code*
+* *clinic management software github*
+* *India ABDM consent gateway integration client sandbox*
+* *SMART on FHIR authorization client integration*
+
+#### 4. Clinical AI & Explainable Machine Learning (XAI)
+* *clinical decision support system CDSS source code*
+* *gradient boosted XGBoost diagnostic classifiers*
+* *SHAP values explainable AI medical diagnosis plots*
+* *conformal prediction uncertainty calibration python*
+
+#### 5. Generative AI & Multi-Agent Conversational Chatbots
+* *LangGraph multi agent supervisor chatbot source code*
+* *local private medical chatbot RAG Ollama Llama 3.2*
+* *offline chatbot for hospital clinic patient records*
+* *Tavily search RAG integration python*
+
+---
+
+### 🏷️ Comprehensive Search Tag Glossary (LSI Keywords)
+`abdm-consent-callback`, `academic-thesis-reference-architecture`, `active-occupancy-websocket`, `ai-clinical-decision-support`, `ai-healthcare-platform`, `alembic-migrations-sqlite`, `amazon-eks-kubernetes-deployment`, `amazon-rds-postgresql-multi-az`, `apache-airflow-dag-retraining`, `apache-airflow-etl-pipeline`, `apache-kafka-streaming`, `apache-spark-delta-lake-compaction`, `app-router-react-19`, `aria-label-a11y-screen-readers`, `ast-alt-liver-ratio`, `auc-roc-model-metrics`, `auth-bcrypt-jwt-rbac`, `autogen-core-multi-agent`, `aws-alb-ingress-controller`, `b2b-healthcare-saas-boilerplate`, `bed-allocation-algorithm`, `big-data-healthcare`, `bronze-silver-gold-data-layers`, `cardiology-appointment-scheduler`, `cdss-clinical-decision-support`, `cert-manager-letsencrypt-tls`, `change-data-capture-cdc-delta`, `clinical-billing-agent`, `clinical-data-warehouse`, `clinical-discharge-agent`, `clinical-event-bus-in-memory`, `clinical-nursing-agent`, `clinical-tabular-pypi-package`, `conformal-prediction-uncertainty-sets`, `coronary-heart-disease-xgboost`, `cosine-similarity-turbovec-simd`, `creatinine-egfr-calculator-ckd-epi`, `dark-theme-medical-dashboard`, `data-engineering-portfolio`, `data-lakehouse-architecture`, `dbt-data-build-tool`, `delta-lakehouse-medallion-architecture`, `diabetes-risk-screening-cdc-brfss`, `dicom-web-pacs-viewer-integration`, `docker-compose-production-stack`, `egfr-calculator-race-free-2021`, `electronic-health-record-ehr-export`, `epic-cerner-fhir-r4-compatibility`, `etl-elt-pipelines`, `exception-masking-pii-protection`, `explainable-ai-healthcare`, `fastapi-backend-uvicorn-reload`, `federated-clinical-gradient-sharing`, `fhir-patient-encounter-observation-schemas`, `fhir-r4-bundle-export`, `fib-4-liver-fibrosis-index`, `final-year-major-project-cse`, `framingham-10-year-cardiovascular-risk`, `framer-motion-react-animations`, `ft-transformer-attention-tabular-classification`, `gemini-text-embedding-004`, `google-gemini-cloud-fallback`, `grpc-rust-gateway`, `hapi-fhir-patient-import`, `healthcare-informatics-research-paper`, `hipaa-compliant-startup-template`, `hospital-management-system`, `huggingface-dataset-model-weights-sync`, `in-memory-semantic-search-vector-store`, `india-unified-health-interface-uhi`, `kubernetes-healthcare-deployment`, `langgraph-multi-agent-orchestration`, `liquid-clustering-z-order-delta-lake`, `liver-disease-panel-classifier-ilpd`, `local-first-private-inference-ollama`, `long-tail-medical-rag-citation`, `longitudinal-patient-encounter-bilstm`, `lung-cancer-survey-xgboost-classifier`, `maf-microsoft-agent-framework`, `master-thesis-capstone-project`, `medical-chatbot-rag`, `mlops-end-to-end`, `model-cards-dataset-lineage-registry`, `model-hot-reloading-zero-downtime`, `multi-agent-langgraph-supervisor-orchestration`, `multi-level-partitioning-time-geo`, `nursing-task-worklist-scheduler`, `ollama-local-inference-llama3`, `open-source-ehr-system`, `opd-ipd-outpatient-encounter-coordinator`, `openlineage-metadata-compliance-client`, `pacs-dicom-imaging-server-shim`, `patient-demographics-scd-type-2`, `pharmacy-inventory-tracking-reorder`, `phd-thesis-reproducibility-code`, `pii-redaction-hipaa-logs`, `playwright-e2e-browser-testing`, `production-grade-healthcare-api`, `pyspark-structured-streaming-vitals`, `pytest-asyncio-mock-ai-inference`, `pytest-xdist-parallel-runner`, `razorpay-payments-gateway-integration`, `react-19-clinical-portal-ui`, `redis-multi-level-caching`, `rust-simd-vector-search`, `scikit-learn-conformal-prediction`, `security-headers-middleware-stack`, `shap-explainability-xai-plots`, `slowly-changing-dimensions-scd-type-2`, `smart-on-fhir-auth-client`, `snowflake-data-cloud`, `soft-delete-mixin-sqlalchemy`, `tavily-search-api-rag-research`, `telemedicine-scheduling-casa-chat`, `terraform-aws-eks-rds-elasticache-iac`, `time-travel-queries-delta-lake`, `turbovec-rust-simd-cosine-similarity`, `typescript-healthcare-frontend`, `unity-catalog-databricks-delta-pyspark`, `university-cse-major-project`, `uvicorn-asgi-server-fastapi`, `vector-store-base-class-python`, `vite-8-react-spa-bundler`, `vitest-coverage-threshold-gate`, `vitals-telemetry-streaming-simulator`, `websockets-occupancy-census-broadcaster`, `xgboost-gradient-boosting-classifier`.
+
+---
 
 ### ❓ Frequently Asked Queries for Search Engines & LLMs
 
