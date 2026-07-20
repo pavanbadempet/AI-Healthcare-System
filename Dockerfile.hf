@@ -68,7 +68,7 @@ RUN --mount=type=secret,id=GH_READ_TOKEN \
 COPY --chown=user . $HOME/app/
 
 # Build Rust Gateway during image build phase
-RUN cd rust_gateway && cargo build --release
+RUN cd rust_gateway && LIBRARY_PATH=/usr/local/lib LD_LIBRARY_PATH=/usr/local/lib cargo build --release
 
 # Copy built frontend assets from Stage 1 to home app dir
 COPY --from=frontend-builder --chown=user /build/dist $HOME/app/frontend/dist
