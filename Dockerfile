@@ -60,6 +60,13 @@ RUN pip install --no-cache-dir --upgrade pip && \
 # Copy source code
 COPY --chown=user . $HOME/app/
 
+# Install local private packages
+RUN pip install --no-cache-dir \
+    ./packages/fastapi-license-gate \
+    ./packages/clinical-tabular \
+    ./packages/clinical-fhir-abdm \
+    ./packages/clinical-rag-cache
+
 # Copy built frontend assets from Stage 1 to home app dir
 COPY --from=frontend-builder --chown=user /build/dist $HOME/app/frontend/dist
 
