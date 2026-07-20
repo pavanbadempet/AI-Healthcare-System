@@ -618,36 +618,62 @@ cp .env.example .env          # Update GOOGLE_API_KEY & JWT SECRET_KEY
 docker compose up --build
 ```
 
-### 3. Local Developer Mode
+### 3. Local Developer Sandbox Setup (5-Step Walkthrough)
 
-#### Setup Backend:
+To get your workspace running locally with mock user and patient records, follow these five steps:
+
+#### 1️⃣ Clone and Install Python Dependencies
 ```bash
 # Clone the repository
 git clone https://github.com/pavanbadempet/AI-Healthcare-System.git
 cd AI-Healthcare-System
 
 # Set up python dependencies
-python -m pip install -r requirements.txt
-cp .env.example .env          # Update secret keys
-
-# Run the REST API
-uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+python -m pip install -r requirements-full.txt
 ```
 
-#### Setup Frontend:
+#### 2️⃣ Configure Environment Variables
+Copy the template `.env.example` file to `.env`:
 ```bash
-# Install React portal dependencies
-npm --prefix frontend install
+cp .env.example .env
+```
+*(Open `.env` in your editor. For local-only sandbox mode, the default values are already pre-configured to use a local SQLite database named `healthcare.db`)*.
 
-# Run the React client development server
-npm --prefix frontend run dev
+#### 3️⃣ Bootstrap Database & Seed Mock Data (Instant Activation)
+Run the clinical integration runner script to automatically create your database schema and seed mock clinicians, appointments, diagnostic logs, and patient records:
+```bash
+python scripts/run_clinical_demo.py
+```
+*(This creates `healthcare.db` and populates active patient profiles so your dashboard isn't empty on first login!)*.
+
+#### 4️⃣ Launch Local Private LLM (Ollama Setup)
+To run fully offline clinical RAG and chatbot queries:
+1. Download and install [Ollama](https://ollama.com/).
+2. Start the Ollama background service and download the default models in your terminal:
+```bash
+ollama pull llama3.2
+ollama pull nomic-embed-text
 ```
 
-| Service | Access URL |
-| :--- | :--- |
-| **Doctor Portal** | [http://127.0.0.1:3000](http://127.0.0.1:3000) |
-| **REST API Server** | [http://127.0.0.1:8000](http://127.0.0.1:8000) |
-| **Interactive API Documentation** | [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) |
+#### 5️⃣ Start Dev Servers (Backend & Frontend)
+Launch the FastAPI server and the React dev compiler:
+
+* **Backend API (Terminal 1)**:
+  ```bash
+  uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+  ```
+* **React Web Portal (Terminal 2)**:
+  ```bash
+  npm --prefix frontend install
+  npm --prefix frontend run dev
+  ```
+
+| Service Portal | Access Endpoint | Credentials (Seed Data) |
+| :--- | :--- | :--- |
+| **Clinician Portal** | [http://127.0.0.1:3000](http://127.0.0.1:3000) | Doctor Login: `admin@clinos.com` / Password: `password123` |
+| **REST API Server** | [http://127.0.0.1:8000](http://127.0.0.1:8000) | OpenAPI JSON specs endpoint |
+| **Swagger API Docs** | [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) | Interactive API sandbox testing |
+
 
 ### 🔄 Zero-Configuration Developer Fallback Modes
 
