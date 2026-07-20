@@ -1,0 +1,46 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "clinical-tabular"
+version = "0.1.1"
+description = "Production-ready tabular & temporal deep learning models for clinical decision support"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.10"
+authors = [
+    { name = "Pavan Badempet" },
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Healthcare Industry",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Medical Science Apps.",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "numpy>=1.24",
+    "scikit-learn>=1.3",
+]
+
+[project.optional-dependencies]
+torch = ["torch>=2.0"]
+eval = ["pandas>=2.0", "matplotlib>=3.8"]
+dev = ["pytest>=8.0", "pytest-cov"]
+all = [
+    "clinical-tabular[torch]",
+    "clinical-tabular[eval]",
+    "clinical-tabular[dev]",
+]
+
+[project.urls]
+Homepage = "https://github.com/pavanbadempet/AI-Healthcare-System"
+Documentation = "https://github.com/pavanbadempet/AI-Healthcare-System/tree/main/packages/clinical-tabular"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/clinical_tabular"]
