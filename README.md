@@ -110,7 +110,7 @@ Existing healthcare software is either outdated, closed-source, or extremely com
 It is designed to run **fully offline and private** (via Ollama) on standard consumer hardware, ensuring patient data remains secure inside your clinic's network, while remaining fully compatible with international interoperability standards like **FHIR R4**.
 
 The codebase is engineered to demonstrate **production-level engineering patterns** required in regulated domains: strict schema compliance, ABDM consent management, pluggable data layers, and automated verification gates.
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 🛠 Technology Stack Architecture
 
@@ -135,7 +135,7 @@ To satisfy low-latency clinical SLAs and secure high throughput under concurrent
 *   **Fast JSON Serialization (`orjson`):** Utilizing a Rust-compiled JSON library to achieve maximum serialization throughput for high-frequency WebSocket vitals and REST API payloads.
 *   **Cryptographic Security (`bcrypt`/`cryptography`):** Employs Rust-compiled hashing backends for secure JWT verification and patient credentials protection.
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 
 ## ⚡ Feature Highlights
@@ -186,7 +186,7 @@ Pytest + coverage, CodeQL SAST, Docker GHCR builds, HuggingFace sync, Dependabot
 
 > **Built for enterprise, built for production.** This is a production-grade clinical intelligence platform demonstrating advanced ML engineering, LLM orchestration, RAG architecture, and DevOps maturity in a single cohesive codebase.
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 📋 Prerequisites & System Requirements
 
@@ -201,7 +201,7 @@ Before running the application, ensure your environment meets the following spec
 | **GPU** | Optional | NVIDIA GPU (8GB+ VRAM) | Acceleration for local Ollama LLMs |
 | **Database** | SQLite (WAL mode) | PostgreSQL 15+ | Auto-configured via `DATABASE_URL` |
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 🆚 Competitive Comparison: Why AI Healthcare System?
 
@@ -216,7 +216,7 @@ Before running the application, ensure your environment meets the following spec
 | **ABDM Digital Health Stack** | ✅ Active Consent Lifecycle & Sandboxing | ❌ Third-party plugins | ❌ None | ❌ Enterprise integration required |
 | **Modern Telemetry Broadcasting**| ✅ Live WebSockets Broadcasts | ❌ None | ❌ None | ❌ Batch reporting only |
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## ⚡ Core Engineering Guarantees
 
@@ -232,7 +232,7 @@ Before running the application, ensure your environment meets the following spec
 * **FHIR R4 Standardization**: Includes strict JSON serializers for Patients, Encounters, Observations, and MedicationRequests, enabling out-of-the-box data exchange with standard EHR systems (Epic, Cerner).
 * **ABDM Consent Interface**: Fully implements consent lifecycle handlers and callbacks aligned with India's ABDM digital health stack.
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 📊 Performance Benchmarks & Targets
 
@@ -250,7 +250,7 @@ These metrics document measured benchmarks under local/Render environments and p
 - **Patient ETL Processing (10M rows)**: `<15 minutes` (Apache Spark optimized pipeline)
 - **Claims Verification (25M rows)**: `<45 minutes` (Spark Columnar Delta Lake compaction)
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 🏗 Core Technical Architecture
 
@@ -311,7 +311,7 @@ graph TD
     EKSNamespace --> Databases
 ```
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 📐 Architecture Decision Records (ADR) Summary
 
@@ -327,7 +327,7 @@ The system design choices are documented in detail within [docs/architecture-dec
 | **ADR-006** | **Multi-Tier Caching** | High check-in concurrency requires sub-100ms response times for patient search. | Demographics cached in Redis. Latency drops to <50ms under heavy load. |
 | **ADR-007** | **Layered Monitoring** | Diverse stakeholders (SREs, Data Engineers, Clinicians) require custom operational dashboards. | 100% visibility over cluster resources, pipeline latency, and SLA logs. |
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 🔬 Model Card Registry
 
@@ -343,7 +343,7 @@ For comprehensive dataset sources, training hyperparameters, and limitations, se
 
 *Note: Evaluation metrics are updated dynamically using the shared evaluation artifact generator. Run the training scripts to regenerate results with fresh datasets.*
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 🧮 Advanced Clinical & Mathematical Foundations
 
@@ -386,7 +386,7 @@ $$
 
 Where $X_i$ represents clinical risk factors (Age, Systolic BP, Total Cholesterol, HDL, Smoking Status, Diabetes status).
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 
 ## 💬 LangGraph Agent Supervisor Flow
@@ -431,7 +431,7 @@ stateDiagram-v2
     Terminated --> [*]
 ```
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 🤖 SOTA Clinical AI Agents & System Telemetry
 
@@ -455,7 +455,7 @@ We built an automated system maintenance pipeline executing database storage rec
 *   **Prometheus Exporters**: Exposes system metrics (CPU utilization, RAM memory, active PostgreSQL/SQLite connections) and HTTP route latency histograms directly on `/metrics` for scraper systems.
 *   **Grafana Telemetry Dashboard**: Pre-configured SOTA dashboard panels (loaded dynamically from [monitoring/grafana/](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/monitoring/grafana)) visualizing Gateway resources, SQLx pools, and route latency p95 processing boundaries.
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 
 ## 📁 Project Structure Tree
@@ -526,7 +526,7 @@ AI-Healthcare-System/
 └── tests/                           # Complete Pytest Testing Suite (~90 files)
 ```
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 📚 Repository Documentation Index
 
@@ -579,7 +579,7 @@ The repository contains 34 comprehensive technical guides, runbooks, and bluepri
 
 </details>
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 
 ## ⚙ Environment Configuration Reference
@@ -598,7 +598,7 @@ Create a `.env` file in the project root based on the table below:
 | `CORS_ORIGINS` | string | `http://127.0.0.1:3000` | Allowed client endpoints for CORS validations. |
 | `RATE_LIMIT_REQUESTS_PER_MINUTE` | int | `60` | Limit count for API rate limit rules. |
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## ⚡ Quick Start
 
@@ -658,7 +658,7 @@ To allow the platform to run seamlessly on developer machines and thin CI/CD env
 *   **Fully-Schema-Compliant FHIR/ABDM fallbacks:** Generates fully validated FHIR R4 Resources (Patient, Observation, MedicationRequest, Invoice, CareEvent, etc.) with local reference resolution and bundle validation, satisfying rigorous automated verification tests out-of-the-box.
 *   **Auto-Initializing Database Schema:** Automatically creates and initializes the SQLite schema (`Base.metadata.create_all`) for all standalone audit runners and tests if a local fallback database is used, guaranteeing that clinical agents can run instantly without manual migrations.
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 📡 Complete REST API Contract
 
@@ -703,7 +703,7 @@ The FastAPI backend exposes the following REST endpoints:
 - `GET /v1/interop/dicomweb/readiness`: Verify DICOM PACS connection status.
 - `GET /v1/interop/smart/readiness`: Verify SMART on FHIR authorization client status.
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 🗄 Database Layer Schema
 
@@ -755,7 +755,7 @@ erDiagram
     users ||--o{ audit_logs : targets
 ```
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 🔐 Security Posture Middleware
 
@@ -771,7 +771,7 @@ AI Healthcare System integrates a 7-layer API middleware stack to ensure enterpr
 | 6 | `ExceptionMiddleware` | Scrubs SQL details & raw traces from errors to block PII leaks |
 | 7 | `LoggingMiddleware` | Logs request duration SLAs & server telemetry |
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 🚀 CI/CD Pipelines Registry
 
@@ -788,7 +788,7 @@ We run 8 structured GitHub Actions workflows for continuous integration and comp
 | **Release Draft** | Push/PR | Automatic changelog drafts compilation. |
 | **Stale Bot** | Scheduled | Auto-flags idle issues. |
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 🧪 Verification & Coverage Suite
 
@@ -802,7 +802,7 @@ python -m pytest tests/ -n auto -v
 npm --prefix frontend run test
 ```
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 🗺 Roadmap & Milestones
 
@@ -816,7 +816,7 @@ npm --prefix frontend run test
 - [ ] **EHR Sync Daemons**: Background sync workers for Epic/Cerner EHR APIs.
 - [ ] **Clinical Voice Assistant**: Telemedicine ambient voice transcribing directly to EHR observations.
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 📖 Research & Acknowledgements
 
@@ -827,7 +827,7 @@ The algorithms, metrics, and standards in this repository are based on foundatio
 - **HL7 FHIR Specification**: Built to comply with HL7 FHIR Release 4 (R4) data structures.
 - **ABDM Specification**: Aligned with the Unified Health Interface (UHI) schema standards.
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## ❓ FAQ
 
@@ -868,9 +868,9 @@ It provides standard endpoints to link Health IDs (ABHA), handle consent callbac
 Yes. Define the `DATABASE_URL=postgresql://user:password@host:5432/dbname` environment variable. The SQLAlchemy database layer automatically scales, handles connection pools, and configures PostgreSQL constraints at startup.
 </details>
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 🚀 Current Live Serverless Deployment Stack
 
@@ -893,7 +893,7 @@ The platform is currently operating continuously in a multi-cloud serverless pro
 * **Application**: Fully automated CI/CD pipeline gating every pull request and push to the `main` branch.
 * **Architecture**: Executes the complete 1,648+ unit test suite using `pytest -n auto`, verifies UI components with `Vitest`, runs End-to-End browser tests with `Playwright`, and checks security vulnerabilities with `CodeQL`.
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 🌐 AWS Enterprise Production Deployment
 
@@ -948,7 +948,7 @@ kubectl create secret generic healthcare-secrets \
 kubectl apply -f k8s/ --namespace healthcare
 ```
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 🔄 Data Engineering & MLOps Lakehouse Architecture
 
@@ -975,7 +975,7 @@ The pipeline runs daily data engineering workflows orchestrated via **Apache Air
 *   **Kaggle API Cloud Retraining:** Programmatically offloads compute-heavy training loops for deep learning models (e.g., `ClinicalTemporalLSTM` and `FTTransformerClassifier`) to Kaggle's serverless GPU runtimes (`scripts/runners/trigger_kaggle_retrain.py`).
 *   **Private Model Registry Sync:** Dynamically pushes and pulls trained model binaries (`.pkl`, `.onnx`) from a secure, private **Hugging Face Hub** dataset registry, avoiding large file bloat in the Git repository while maintaining 100% build reproducibility.
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 📚 Related Resources
 
@@ -986,7 +986,7 @@ The pipeline runs daily data engineering workflows orchestrated via **Apache Air
 - [Ollama download link](https://ollama.com/) — local LLM inference for private AI
 - [FHIR R4 standard specification](https://hl7.org/fhir/R4/) — international healthcare data interoperability standard
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 📦 Modular Developer SDKs
 
@@ -1040,7 +1040,7 @@ An optimized semantic caching engine and Retrieval-Augmented Generation (RAG) ve
   - `PromptRegistry`: Unified versioned system prompt template catalog.
 * 👉 [Full documentation & examples &rarr;](packages/clinical-rag-cache/README.md)
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 🤝 Contributing
 
@@ -1144,7 +1144,7 @@ If you are a B2B SaaS founder or software developer building products that requi
   </tr>
 </table>
 
-<img src="docs/assets/divider.svg" alt="AI Healthcare System visual separator divider line" width="100%"/>
+<img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 📄 License
 
