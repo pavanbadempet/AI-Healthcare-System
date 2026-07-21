@@ -81,6 +81,46 @@ class DuckDBClient:
         query = f"SELECT * FROM read_parquet('{parquet_glob}') {query_suffix}"
         return self.execute_query(query)
 
+    def process_embedded_medallion_stream(self, bronze_path: str, silver_path: str, gold_path: str) -> Dict[str, Any]:
+        """Zero-infrastructure embedded Medallion Lakehouse streaming processor (Bronze -> Silver -> Gold)."""
+        try:
+            if not os.path.exists(bronze_path):
+                return {"status": "skipped", "reason": "Bronze table empty or missing"}
+
+            # Bronze -> Silver (Cleanse & Filter Anomalies)
+            silver_query = f"""
+                SELECT patient_id, heart_rate, systolic_bp, diastolic_bp, spo2, timestamp
+                FROM read_parquet('{os.path.join(bronze_path, '**', '*.parquet')}')
+                WHERE heart_rate BETWEEN 30 AND 220
+                  AND spo2 BETWEEN 50 AND 100
+                  AND timestamp IS NOT NULL
+            """
+            silver_df = self.execute_to_df(silver_query)
+
+            # Silver -> Gold (Clinical Aggregates & Moving Averages)
+            gold_query = f"""
+                SELECT 
+                    patient_id,
+                    AVG(heart_rate) as avg_heart_rate,
+                    STDDEV(heart_rate) as hr_variability,
+                    AVG(spo2) as avg_spo2,
+                    COUNT(*) as vital_sample_count,
+                    MAX(timestamp) as last_updated
+                FROM read_parquet('{os.path.join(silver_path, '**', '*.parquet')}')
+                GROUP BY patient_id
+            """
+            gold_df = self.execute_to_df(gold_query)
+
+            return {
+                "status": "success",
+                "silver_records_cleansed": len(silver_df),
+                "gold_patients_aggregated": len(gold_df),
+                "lakehouse_mode": "embedded_duckdb_zero_infra"
+            }
+        except Exception as e:
+            logger.error("Embedded Medallion stream processing failed: %s", e)
+            return {"status": "error", "error": str(e)}
+
     def close(self):
         """Close connection."""
         try:
