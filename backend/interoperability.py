@@ -1292,3 +1292,37 @@ def get_health_passport(
         "clinical_safety_note": "Digital health passport is for emergency reference and decision support only. Do not rely on it as a substitute for primary record verification."
     }
 
+
+@router.post("/abdm/link", status_code=201)
+def link_abha_address(
+    payload: dict,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    """Links ABHA Health ID and saves e-KYC verification transaction record."""
+    abha = models.AbhaLink(
+        patient_id=current_user.id,
+        abha_address=payload.get("abha_address", f"user{current_user.id}@abdm"),
+        kyc_transaction_id=payload.get("kyc_transaction_id"),
+        consent_purpose=payload.get("consent_purpose", "CARE_MANAGEMENT"),
+        status="active",
+    )
+    db.add(abha)
+    db.commit()
+    db.refresh(abha)
+
+    audit.log_action(
+        db,
+        current_user.id,
+        "LINK_ABHA_ADDRESS",
+        f"Linked ABHA Address {abha.abha_address} with e-KYC transaction {abha.kyc_transaction_id}",
+    )
+
+    return {
+        "status": "success",
+        "link_id": abha.id,
+        "abha_address": abha.abha_address,
+        "message": f"ABHA Address {abha.abha_address} linked successfully in ABDM registry.",
+    }
+
+

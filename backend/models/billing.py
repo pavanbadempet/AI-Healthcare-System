@@ -84,5 +84,19 @@ class BillingPayment(Base):
 
     facility = relationship("HospitalFacility")
     invoice = relationship("Invoice", back_populates="payments")
-    patient = relationship("User", foreign_keys=[patient_id])
     collected_by = relationship("User", foreign_keys=[collected_by_id])
+
+
+class InsuranceClaim(Base):
+    __tablename__ = "insurance_claims"
+
+    id = Column(Integer, primary_key=True, index=True)
+    claim_number = Column(String, unique=True, index=True)
+    patient_name = Column(String)
+    payer_name = Column(String)
+    policy_id = Column(String)
+    claim_amount = Column(Float, default=0)
+    copay_amount = Column(Float, default=0)
+    status = Column(String, default="submitted")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+

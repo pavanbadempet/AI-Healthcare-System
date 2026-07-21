@@ -103,3 +103,20 @@ class Admission(Base, SoftDeleteMixin):
     doctor = relationship("User", foreign_keys=[doctor_id])
     department = relationship("Department")
     bed = relationship("Bed")
+
+
+class DicomStudy(Base):
+    __tablename__ = "dicom_studies"
+
+    id = Column(Integer, primary_key=True, index=True)
+    study_uid = Column(String, unique=True, index=True)
+    patient_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    modality = Column(String, default="CT")
+    target_vault = Column(String, default="PACS-PRIMARY-01")
+    file_name = Column(String)
+    file_size_kb = Column(Integer, default=0)
+    is_preamble_valid = Column(String, default="true")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    patient = relationship("User", foreign_keys=[patient_id])
+

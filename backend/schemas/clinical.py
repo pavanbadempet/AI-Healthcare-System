@@ -35,6 +35,17 @@ class ClinicalOrderResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class CareEventCreate(BaseModel):
+    """Schema for creating a new care event (e.g. code-blue, nurse-call)."""
+    patient_id: Optional[int] = None
+    encounter_id: Optional[int] = None
+    department_id: Optional[int] = None
+    event_type: str
+    title: str
+    summary: Optional[str] = None
+    severity: Optional[str] = "info"
+
+
 class CareEventResponse(BaseModel):
     id: int
     facility_id: Optional[int] = None
@@ -162,6 +173,15 @@ class DiagnosticResultCreate(BaseModel):
     summary: str
     abnormal_flag: Optional[bool] = False
     status: Optional[str] = "final"
+
+
+class DiagnosticUploadCreate(BaseModel):
+    patient_id: int
+    title: str
+    result_type: Optional[str] = "lab"
+    summary: Optional[str] = None
+    abnormal_flag: Optional[int] = 0
+
 
 
 class DiagnosticReviewUpdate(BaseModel):

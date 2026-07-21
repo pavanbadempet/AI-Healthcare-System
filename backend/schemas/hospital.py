@@ -53,6 +53,12 @@ class BedResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class BedStatusUpdate(BaseModel):
+    """Schema for updating a bed's operational status."""
+    status: str
+    current_patient_id: Optional[int] = None
+
+
 class EncounterCreate(BaseModel):
     patient_id: int
     doctor_id: Optional[int] = None

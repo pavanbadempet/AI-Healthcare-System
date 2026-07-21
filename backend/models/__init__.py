@@ -18,7 +18,7 @@ from .appointments import Appointment
 from .auth import User
 
 # Billing domain
-from .billing import BillableService, BillingPayment, Invoice, InvoiceLineItem
+from .billing import BillableService, BillingPayment, Invoice, InvoiceLineItem, InsuranceClaim
 
 # Clinical domain
 from .clinical import (
@@ -46,7 +46,7 @@ from .discharge import DischargeSummary
 from .federated import FederatedSyncAudit, ModelFeedback
 
 # Hospital domain
-from .hospital import Admission, Bed, Department, Encounter, HospitalFacility
+from .hospital import Admission, Bed, Department, DicomStudy, Encounter, HospitalFacility
 
 # Clinical Intelligence domain
 from .intelligence import ClinicalAlert, PatientInsight
@@ -54,6 +54,7 @@ from .intelligence import ClinicalAlert, PatientInsight
 # Interoperability domain
 from .interoperability import (
     ABDMConsentEvent,
+    AbhaLink,
     InteroperabilityConsent,
     InteroperabilityExport,
     InteroperabilityExportProfile,

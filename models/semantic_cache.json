@@ -1,6 +1,6 @@
 [
   {
-    "query": "[{\"role\": \"user\", \"content\": \"hi\"}]",
+    "query": "Hi",
     "embedding": [
       0.0,
       0.0,
@@ -771,7 +771,7 @@
       0.0,
       0.0
     ],
-    "response": "Gemini fallback"
+    "response": "mocked cloud response"
   },
   {
     "query": "What should I do?",

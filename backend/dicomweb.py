@@ -88,3 +88,52 @@ def build_study_metadata_links(
         "pii_exposed": False,
         "standards_note": DICOMWEB_STANDARDS_NOTE,
     }
+
+
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+from . import database, models
+
+router = APIRouter(prefix="/dicomweb", tags=["DICOMweb PACS"])
+
+
+@router.get("/studies")
+def qido_rs_search_studies(
+    StudyInstanceUID: str | None = None,
+    db: Session = Depends(database.get_db),
+):
+    """QIDO-RS standard DICOMweb search endpoint for DICOM studies."""
+    query = db.query(models.DicomStudy)
+    if StudyInstanceUID:
+        query = query.filter(models.DicomStudy.study_uid == StudyInstanceUID)
+    studies = query.all()
+    return [
+        {
+            "0020000D": {"vr": "UI", "Value": [s.study_uid]},
+            "00080060": {"vr": "CS", "Value": [s.modality]},
+            "00080005": {"vr": "CS", "Value": ["ISO_IR 192"]},
+            "00080020": {"vr": "DA", "Value": [s.created_at.strftime("%Y%m%d") if s.created_at else "20260721"]},
+        }
+        for s in studies
+    ]
+
+
+@router.get("/studies/{study_uid}/metadata")
+def wado_rs_retrieve_metadata(
+    study_uid: str,
+    db: Session = Depends(database.get_db),
+):
+    """WADO-RS standard DICOMweb metadata retrieval endpoint for a DICOM study."""
+    study = db.query(models.DicomStudy).filter(models.DicomStudy.study_uid == study_uid).first()
+    if not study:
+        raise HTTPException(status_code=404, detail="DICOM StudyInstanceUID not found in PACS vault")
+    return [
+        {
+            "0020000D": {"vr": "UI", "Value": [study.study_uid]},
+            "00080060": {"vr": "CS", "Value": [study.modality]},
+            "00081030": {"vr": "LO", "Value": [study.file_name]},
+            "00280010": {"vr": "US", "Value": [512]},
+            "00280011": {"vr": "US", "Value": [512]},
+        }
+    ]
+

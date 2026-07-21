@@ -182,6 +182,69 @@ def post_diagnostic_result(
     return db_result
 
 
+@router.post("/upload", response_model=dict[str, Any])
+def upload_diagnostic_file(
+    payload: schemas.DiagnosticUploadCreate,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+) -> dict[str, Any]:
+    """Upload a diagnostic report attachment to patient EMR.
+
+    Args:
+        payload: Diagnostic attachment details (patient_id, title, result_type, summary, abnormal_flag).
+        db: Database session.
+        current_user: Authenticated clinician user.
+
+    Returns:
+        Dict with serialized result and safety note.
+    """
+    _require_doctor_or_admin(current_user)
+    _ensure_doctor_can_access_patient(db, current_user, payload.patient_id)
+
+    db_result = models.DiagnosticResult(
+        facility_id=current_user.facility_id,
+        patient_id=payload.patient_id,
+        doctor_id=current_user.id if current_user.role == "doctor" else None,
+        result_type=payload.result_type or "lab",
+        title=payload.title,
+        summary=payload.summary or f"Uploaded diagnostic attachment for patient #{payload.patient_id}",
+        abnormal_flag=1 if payload.abnormal_flag else 0,
+        status="final",
+        review_status="pending_review",
+    )
+    db.add(db_result)
+    db.flush()
+
+    db.add(models.CareEvent(
+        facility_id=current_user.facility_id,
+        patient_id=payload.patient_id,
+        actor_user_id=current_user.id,
+        event_type="DIAGNOSTIC_FILE_UPLOADED",
+        title=f"Diagnostic attachment uploaded: {payload.title}",
+        summary=f"Diagnostic document ({(payload.result_type or 'lab').upper()}) uploaded to EMR.",
+        severity="warning" if payload.abnormal_flag else "info",
+    ))
+    db.commit()
+    db.refresh(db_result)
+
+    audit.record_audit_event(
+        db,
+        actor_user_id=current_user.id,
+        target_user_id=payload.patient_id,
+        action="UPLOAD_DIAGNOSTIC_FILE",
+        details={
+            "resource_type": "diagnostic_result",
+            "resource_id": db_result.id,
+            "title": payload.title,
+            "result_type": payload.result_type,
+        },
+    )
+    return {
+        "result": _result_to_dict(db_result),
+        "clinical_safety_note": "Uploaded diagnostic documents support decision making and require clinician review.",
+    }
+
+
 @router.get("/patient/results", response_model=list[schemas.DiagnosticResultResponse])
 def get_patient_results(
     db: Session = Depends(database.get_db),
