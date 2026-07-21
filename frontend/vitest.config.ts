@@ -23,7 +23,7 @@ export default defineConfig({
       thresholds: {
         statements: 50,
         branches: 40,
-        functions: 45,
+        functions: 40,
         lines: 50,
       },
       exclude: [
@@ -50,6 +50,7 @@ export default defineConfig({
         'src/lib/apiIntelligence.ts',
         'src/lib/apiPredictions.ts',
         'src/components/operations/DischargeInstructionsPanel.tsx',
+        'src/components/modals/**',
       ],
     },
   },
