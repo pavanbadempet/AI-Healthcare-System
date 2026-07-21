@@ -17,12 +17,18 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
 import redis
-from pyspark.sql import DataFrame as SparkDF
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import avg, col, count, sum
-from pyspark.sql.functions import max as spark_max
-from pyspark.sql.functions import min as spark_min
-from pyspark.sql.types import DateType, FloatType, StringType, StructField, StructType, TimestampType
+try:
+    from pyspark.sql import DataFrame as SparkDF
+    from pyspark.sql import SparkSession
+    from pyspark.sql.functions import avg, col, count, sum
+    from pyspark.sql.functions import max as spark_max
+    from pyspark.sql.functions import min as spark_min
+    from pyspark.sql.types import DateType, FloatType, StringType, StructField, StructType, TimestampType
+    SPARK_AVAILABLE = True
+except Exception:
+    SparkDF = Any  # type: ignore
+    SparkSession = Any  # type: ignore
+    SPARK_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
 PIPELINE_FAILURE_MESSAGE = "Data pipeline failed. Please review operational logs."
@@ -1095,6 +1101,83 @@ def create_spark_session() -> SparkSession:
         .config("spark.sql.inMemoryColumnarStorage.columnBatchSize", "10000") \
         .config("spark.sql.autoBroadcastJoinThreshold", "10MB") \
         .getOrCreate()
+
+# Dynamic Execution Engine Enum
+class DataScaleEngine(Enum):
+    DUCKDB_EMBEDDED = "duckdb_embedded"
+    PYSPARK_DISTRIBUTED = "pyspark_distributed"
+
+
+class AdaptiveDataPlatformRouter:
+    """Scale-aware Data Platform Router.
+    
+    Dynamically routes analytical and Medallion Lakehouse workloads based on dataset volume:
+    - Small/Edge Scale (<50GB / Single Node): DuckDB + Polars (Embedded in-memory, instant response, zero cluster overhead)
+    - Enterprise Large Scale (>50GB / Petabytes / Multi-Node Cluster): Apache PySpark + Delta Lake (Distributed execution)
+    """
+
+    LARGE_SCALE_THRESHOLD_BYTES = 50 * 1024 * 1024 * 1024  # 50 GB threshold
+
+    def __init__(self, preferred_mode: Optional[str] = None):
+        self.preferred_mode = (preferred_mode or os.getenv("SCALE_MODE", "auto")).lower()
+
+    def determine_engine(self, dataset_path_or_bytes: Optional[Any] = None) -> DataScaleEngine:
+        """Determines the appropriate engine based on scale requirements."""
+        if self.preferred_mode == "embedded" or self.preferred_mode == "duckdb":
+            return DataScaleEngine.DUCKDB_EMBEDDED
+        if self.preferred_mode == "distributed" or self.preferred_mode == "pyspark":
+            return DataScaleEngine.PYSPARK_DISTRIBUTED
+
+        # Auto Mode: Check file/directory size if dataset path provided
+        if isinstance(dataset_path_or_bytes, (int, float)):
+            if dataset_path_or_bytes >= self.LARGE_SCALE_THRESHOLD_BYTES:
+                return DataScaleEngine.PYSPARK_DISTRIBUTED
+        elif isinstance(dataset_path_or_bytes, str) and os.path.exists(dataset_path_or_bytes):
+            total_size = 0
+            if os.path.isfile(dataset_path_or_bytes):
+                total_size = os.path.getsize(dataset_path_or_bytes)
+            else:
+                for root, _, files in os.walk(dataset_path_or_bytes):
+                    for f in files:
+                        total_size += os.path.getsize(os.path.join(root, f))
+            if total_size >= self.LARGE_SCALE_THRESHOLD_BYTES:
+                return DataScaleEngine.PYSPARK_DISTRIBUTED
+
+        return DataScaleEngine.DUCKDB_EMBEDDED
+
+    def execute_medallion_pipeline(self, bronze_path: str, silver_path: str, gold_path: str, spark_session: Optional[SparkSession] = None) -> Dict[str, Any]:
+        """Executes Medallion Lakehouse pipeline using the scale-optimal engine."""
+        engine = self.determine_engine(bronze_path)
+        logger.info("Executing Medallion Lakehouse pipeline using engine: %s", engine.value)
+
+        if engine == DataScaleEngine.DUCKDB_EMBEDDED:
+            from .duckdb_client import get_duckdb_client
+            client = get_duckdb_client()
+            res = client.process_embedded_medallion_stream(bronze_path, silver_path, gold_path)
+            res["executed_engine"] = "DuckDB (Embedded Edge Scale)"
+            return res
+        else:
+            # Distributed PySpark Execution
+            if spark_session is None:
+                spark_session = create_spark_session()
+            df_bronze = spark_session.read.format("delta").load(bronze_path)
+            df_silver = df_bronze.filter("heart_rate BETWEEN 30 AND 220 AND spo2 BETWEEN 50 AND 100")
+            df_silver.write.format("delta").mode("append").save(silver_path)
+
+            df_gold = df_silver.groupBy("patient_id").agg(
+                avg("heart_rate").alias("avg_heart_rate"),
+                avg("spo2").alias("avg_spo2"),
+                count("*").alias("vital_sample_count"),
+                spark_max("timestamp").alias("last_updated")
+            )
+            df_gold.write.format("delta").mode("overwrite").save(gold_path)
+
+            return {
+                "status": "success",
+                "gold_records": df_gold.count(),
+                "executed_engine": "Apache PySpark + Delta Lake (Distributed Large Scale)"
+            }
+
 
 # Global pipeline instance
 data_pipeline = None
