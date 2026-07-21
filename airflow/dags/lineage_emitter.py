@@ -313,7 +313,10 @@ class OpenLineageEmitter:
 
     def _persist(self, event: LineageEvent) -> None:
         """Write event to local JSON and optionally to a remote endpoint."""
-        payload = asdict(event)
+        try:
+            payload = asdict(event)
+        except Exception:
+            payload = event.__dict__ if hasattr(event, "__dict__") else str(event)
 
         # --- local file ---
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S_%f")
