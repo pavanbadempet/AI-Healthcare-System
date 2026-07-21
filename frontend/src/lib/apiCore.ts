@@ -24,6 +24,15 @@ const getApiBase = () => {
 };
 export const API_BASE = getApiBase();
 
+export function getWebSocketUrl(path: string): string {
+  const cleanBase = API_BASE.replace(/\/v1$/, '').replace(/\/$/, '');
+  const wsProtocol = cleanBase.startsWith('https') ? 'wss' : 'ws';
+  const cleanHost = cleanBase.replace(/^https?:\/\//, '');
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  return `${wsProtocol}://${cleanHost}${cleanPath}`;
+}
+
+
 // ── Auth Store Access ────────────────────────────────────────────
 let getToken: (() => string | null) | null = null;
 

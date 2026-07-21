@@ -60,6 +60,7 @@ vi.mock('framer-motion', () => {
         },
       }
     ),
+    AnimatePresence: ({ children }: { children?: ReactNode }) => children,
   };
 });
 
@@ -176,6 +177,14 @@ vi.mock('@/lib/api', () => ({
     disclaimer: 'Mock disclaimer',
   })),
   createClinicalOrder: vi.fn(() => Promise.resolve({ id: 99 })),
+}));
+
+vi.mock('@/lib/apiIntelligence', () => ({
+  fetchClinicalTrials: vi.fn(() => Promise.resolve([])),
+  fetchExternalRecords: vi.fn(() => Promise.resolve({ external_records: [] })),
+  fetchHealthPassport: vi.fn(() => Promise.resolve(null)),
+  orderLabKit: vi.fn(() => Promise.resolve({})),
+  fetchLabKits: vi.fn(() => Promise.resolve({ kits: [] })),
 }));
 
 describe('Patient detail identity', () => {

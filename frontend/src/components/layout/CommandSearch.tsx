@@ -2,7 +2,7 @@
  * CommandSearch – Search bar with keyboard navigation and filtered results.
  * Extracted from TopNav.tsx for maintainability.
  */
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useDeferredValue } from "react";
 import { useNavigate } from "react-router-dom";
 import { Search, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,13 +17,14 @@ export default function CommandSearch({ user }: CommandSearchProps) {
   const navigate = useNavigate();
   const [searchFocused, setSearchFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const deferredQuery = useDeferredValue(searchQuery);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
 
   const filteredCommandItems = COMMAND_ITEMS.filter((item) => {
     if (item.category === "Admin" && (!user || user.role !== "admin")) return false;
-    const query = searchQuery.toLowerCase();
+    const query = deferredQuery.toLowerCase();
     return (
       item.label.toLowerCase().includes(query) ||
       item.desc.toLowerCase().includes(query) ||

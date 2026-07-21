@@ -3,13 +3,15 @@
  * Extracted from Admin.tsx for maintainability.
  */
 import { useMemo, useState, useEffect } from "react";
-import { Search, Calendar, Terminal } from "lucide-react";
-import { getAdminAuditLogs, type AuditLogEntry } from "@/lib/api";
+import { Search, Calendar, Terminal, Download, FileSpreadsheet } from "lucide-react";
+import { getAdminAuditLogs, downloadAuditLogsCsv, type AuditLogEntry } from "@/lib/api";
+import { toast } from "@/lib/toast";
 
 export default function AuditPanel() {
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
   const [auditLoading, setAuditLoading] = useState(false);
   const [auditSearch, setAuditSearch] = useState("");
+  const [isExporting, setIsExporting] = useState(false);
 
   useEffect(() => {
     setAuditLoading(true);
@@ -18,6 +20,18 @@ export default function AuditPanel() {
       .catch((err) => console.error("Failed to load audit logs", err))
       .finally(() => setAuditLoading(false));
   }, []);
+
+  const handleExportCsv = async () => {
+    setIsExporting(true);
+    try {
+      await downloadAuditLogsCsv();
+      toast.success("Sanitized HIPAA audit log exported to CSV!");
+    } catch (err) {
+      toast.error("Failed to export audit log CSV.");
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   const filteredAuditLogs = useMemo(() => {
     return auditLogs.filter((log) => {
@@ -39,16 +53,29 @@ export default function AuditPanel() {
           <p className="text-[10px] text-[var(--text-dim)] font-mono uppercase mt-0.5">Sanitized HIPAA Compliance Access Logs</p>
         </div>
         
-        {/* Search Input */}
-        <div className="relative w-full sm:w-64">
-          <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-dim)]" />
-          <input
-            type="text"
-            placeholder="Search audit trail..."
-            value={auditSearch}
-            onChange={(e) => setAuditSearch(e.target.value)}
-            className="input-clinical pl-9 text-xs py-1.5 w-full"
-          />
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          {/* Export CSV Button */}
+          <button
+            type="button"
+            onClick={handleExportCsv}
+            disabled={isExporting}
+            className="btn bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold uppercase py-1.5 px-3 rounded flex items-center gap-1.5 transition-all shrink-0 disabled:opacity-50"
+          >
+            <FileSpreadsheet size={13} />
+            {isExporting ? "Exporting..." : "Export CSV"}
+          </button>
+
+          {/* Search Input */}
+          <div className="relative w-full sm:w-64">
+            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--text-dim)]" />
+            <input
+              type="text"
+              placeholder="Search audit trail..."
+              value={auditSearch}
+              onChange={(e) => setAuditSearch(e.target.value)}
+              className="input-clinical pl-9 text-xs py-1.5 w-full"
+            />
+          </div>
         </div>
       </div>
 

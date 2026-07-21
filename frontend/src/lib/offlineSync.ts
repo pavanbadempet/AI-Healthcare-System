@@ -94,7 +94,7 @@ export function useNetworkStatus() {
     // Periodically update queue count in case it changes
     const interval = setInterval(() => {
       setQueueCount(getOfflineQueue().length);
-    }, 2000);
+    }, 30_000);
 
     return () => {
       window.removeEventListener("online", updateStatus);

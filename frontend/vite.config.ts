@@ -8,12 +8,10 @@ export default defineConfig(({ command }) => ({
   plugins: [
     react(),
     tailwindcss(),
-    // React Compiler Babel preset runs only in production builds to keep dev compiles instant via Rust/Oxc
-    command === 'build'
-      ? babel({
-          presets: [reactCompilerPreset()],
-        })
-      : null,
+    // React Compiler Babel preset for automatic memoization in both dev and production
+    babel({
+      presets: [reactCompilerPreset()],
+    }),
   ].filter(Boolean),
   envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
   resolve: {
@@ -26,6 +24,9 @@ export default defineConfig(({ command }) => ({
     port: 3000,
   },
   build: {
+    target: 'esnext',                // drop dead-browser polyfills for smaller output
+    cssMinify: 'lightningcss',       // faster CSS minification
+    reportCompressedSize: false,     // skip gzip analysis for faster builds
     rollupOptions: {
       output: {
         manualChunks(id: string) {
@@ -70,3 +71,4 @@ export default defineConfig(({ command }) => ({
     },
   },
 }));
+

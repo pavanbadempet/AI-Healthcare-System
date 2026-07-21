@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Server, Database, Activity, Network, ShieldCheck, HardDrive, Cpu, Terminal, ArrowRightLeft } from "lucide-react";
 import { useAuthStore } from "@/lib/auth";
+import { getWebSocketUrl, API_BASE } from "@/lib/api";
+import { InfrastructureFailoverModal } from "@/components/modals/InfrastructureFailoverModal";
 
 // Mock stable starting telemetry
 const INITIAL_SERVERS = [
@@ -28,47 +30,124 @@ export default function InfrastructurePage() {
   const [mounted, setMounted] = useState(false);
   const [servers, setServers] = useState(INITIAL_SERVERS);
   const [logs, setLogs] = useState<{ id: string; time: string; msg: string }[]>([]);
+  const [showFailoverModal, setShowFailoverModal] = useState(false);
 
 
   useEffect(() => {
     setMounted(true);
+    let pollingInterval: ReturnType<typeof setInterval> | null = null;
+    let wsConnected = false;
     
     // Connect to backend telemetry stream
     const token = useAuthStore.getState().token;
-    const wsUrl = `ws://127.0.0.1:8000/api/v1/telemetry/stream?token=${token}`;
-    const ws = new WebSocket(wsUrl);
-    
-    ws.onmessage = (event) => {
+    const wsUrl = getWebSocketUrl("/v1/telemetry/stream") + (token ? `?token=${token}` : "");
+    let ws: WebSocket | null = null;
+
+    async function fetchFallbackMetrics() {
       try {
-        const data = JSON.parse(event.data);
-        
-        // Update servers with real metrics
-        if (data.cpu_percent !== undefined && data.ram_percent !== undefined) {
-           setServers((current) =>
-             current.map((srv) => ({
-               ...srv,
-               // If it's the main AI worker, use the real machine CPU, else simulate variations of it
-               cpu: srv.name.includes("AI") ? data.cpu_percent : Math.max(5, Math.min(95, data.cpu_percent + (Math.random() * 20 - 10))),
-               ram: srv.name.includes("AI") ? data.ram_percent : Math.max(10, Math.min(95, data.ram_percent + (Math.random() * 20 - 10))),
-             }))
-           );
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
         }
-        
-        // Update HL7 logs from the backend real queue
-        if (data.hl7_logs && Array.isArray(data.hl7_logs) && data.hl7_logs.length > 0) {
-           setLogs(data.hl7_logs.slice(0, 8));
+        const response = await fetch(`${API_BASE}/telemetry/snapshot`, { headers });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.cpu_percent !== undefined && data.ram_percent !== undefined) {
+             setServers((current) =>
+               current.map((srv) => ({
+                 ...srv,
+                 cpu: srv.name.includes("AI") ? data.cpu_percent : Math.max(5, Math.min(95, data.cpu_percent + (Math.random() * 20 - 10))),
+                 ram: srv.name.includes("AI") ? data.ram_percent : Math.max(10, Math.min(95, data.ram_percent + (Math.random() * 20 - 10))),
+               }))
+             );
+          }
+          if (data.hl7_logs && Array.isArray(data.hl7_logs) && data.hl7_logs.length > 0) {
+             setLogs(data.hl7_logs.slice(0, 8));
+          }
+        } else {
+          runLocalMockFluctuations();
         }
-      } catch (err) {
-        console.error("Telemetry parse error", err);
+      } catch {
+        runLocalMockFluctuations();
       }
-    };
-    
-    ws.onerror = () => {
-      console.warn("WebSocket telemetry disconnected, falling back to mock");
-    };
+    }
+
+    function runLocalMockFluctuations() {
+       setServers((current) =>
+         current.map((srv) => ({
+           ...srv,
+           cpu: Math.max(5, Math.min(95, srv.cpu + Math.floor(Math.random() * 6 - 3))),
+           ram: Math.max(10, Math.min(95, srv.ram + Math.floor(Math.random() * 4 - 2))),
+         }))
+       );
+    }
+
+    function startPolling() {
+      if (pollingInterval) return;
+      void fetchFallbackMetrics();
+      pollingInterval = setInterval(fetchFallbackMetrics, 5000);
+    }
+
+    function stopPolling() {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+        pollingInterval = null;
+      }
+    }
+
+    try {
+      ws = new WebSocket(wsUrl);
+      
+      ws.onopen = () => {
+        wsConnected = true;
+        stopPolling();
+      };
+      
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          
+          // Update servers with real metrics
+          if (data.cpu_percent !== undefined && data.ram_percent !== undefined) {
+             setServers((current) =>
+               current.map((srv) => ({
+                  ...srv,
+                  // If it's the main AI worker, use the real machine CPU, else simulate variations of it
+                  cpu: srv.name.includes("AI") ? data.cpu_percent : Math.max(5, Math.min(95, data.cpu_percent + (Math.random() * 20 - 10))),
+                  ram: srv.name.includes("AI") ? data.ram_percent : Math.max(10, Math.min(95, data.ram_percent + (Math.random() * 20 - 10))),
+               }))
+             );
+          }
+          
+          // Update HL7 logs from the backend real queue
+          if (data.hl7_logs && Array.isArray(data.hl7_logs) && data.hl7_logs.length > 0) {
+             setLogs(data.hl7_logs.slice(0, 8));
+          }
+        } catch (err) {
+          console.error("Telemetry parse error", err);
+        }
+      };
+      
+      ws.onerror = () => {
+        console.warn("WebSocket telemetry disconnected, falling back to mock");
+        startPolling();
+      };
+
+      ws.onclose = () => {
+        wsConnected = false;
+        startPolling();
+      };
+    } catch {
+      startPolling();
+    }
 
     return () => {
-      ws.close();
+      if (ws) {
+        ws.close();
+      }
+      stopPolling();
     };
   }, []);
 
@@ -108,6 +187,12 @@ export default function InfrastructurePage() {
           </div>
           
           <div className="flex gap-3">
+            <button
+              onClick={() => setShowFailoverModal(true)}
+              className="btn bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs uppercase tracking-wider font-mono cursor-pointer flex items-center gap-1.5 rounded-xl shadow-lg shadow-amber-600/20"
+            >
+              <ArrowRightLeft size={13} aria-hidden="true" /> Simulate VIP Failover
+            </button>
             <button className="btn btn-secondary text-xs uppercase tracking-wider font-mono cursor-pointer" aria-label="Open secure shell terminal">
               <Terminal size={12} aria-hidden="true" /> Open Secure Shell
             </button>
@@ -284,6 +369,14 @@ export default function InfrastructurePage() {
 
         </div>
       </div>
+
+      <AnimatePresence>
+        {showFailoverModal && (
+          <InfrastructureFailoverModal
+            onClose={() => setShowFailoverModal(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -12,6 +12,8 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useAuthStore } from "./auth";
+import { getWebSocketUrl } from "./apiCore";
+
 
 export interface DepartmentLoad {
   dept: string;
@@ -122,9 +124,7 @@ export function useTelemetry() {
         return;
       }
 
-      const wsUrl = cleanApiBase.replace(/^http/, "ws") + `/telemetry/stream${token ? `?token=${token}` : ""}`;
-
-      setStatus("connecting");
+      const wsUrl = getWebSocketUrl("/v1/telemetry/stream") + (token ? `?token=${token}` : "");
 
       try {
         const ws = new WebSocket(wsUrl);
@@ -147,10 +147,12 @@ export function useTelemetry() {
 
         ws.onerror = () => {
           setStatus("error");
+          startPolling();
         };
 
         ws.onclose = () => {
           wsRef.current = null;
+          startPolling(); // Fallback immediately if connection is closed
 
           if (!shouldReconnect) {
             return;
@@ -158,7 +160,6 @@ export function useTelemetry() {
 
           // Fallback to HTTP polling if we reached the limit
           if (reconnectAttempt.current >= MAX_RECONNECT_ATTEMPTS) {
-            startPolling();
             return;
           }
 
@@ -178,7 +179,12 @@ export function useTelemetry() {
       }
     }
 
-    connect();
+    // Fetch snapshot immediately on mount to ensure instant load, then attempt connection
+    fetchSnapshot().then(() => {
+      if (shouldReconnect) {
+        connect();
+      }
+    });
 
     return () => {
       shouldReconnect = false;

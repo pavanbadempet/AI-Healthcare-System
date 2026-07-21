@@ -1,7 +1,7 @@
 /**
  * AI Healthcare System — Admin, Monitoring, Diagnostics, Pharmacy, Billing Metrics API
  */
-import { apiFetch } from './apiCore';
+import { apiFetch, API_BASE, authHeaders } from './apiCore';
 import type { UserProfile } from './apiAuth';
 
 export interface AuditLogEntry {
@@ -24,6 +24,22 @@ export async function getAdminUsers(): Promise<UserProfile[]> {
 
 export async function getAdminAuditLogs(): Promise<AuditLogEntry[]> {
   return apiFetch('/admin/audit-logs');
+}
+
+export async function downloadAuditLogsCsv(): Promise<void> {
+  const response = await fetch(`${API_BASE}/admin/audit-logs/export`, {
+    headers: authHeaders(),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to export audit logs');
+  }
+  const blob = await response.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `audit_logs_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 export async function getAdminPatients(): Promise<UserProfile[]> {
@@ -173,6 +189,19 @@ export async function reviewDiagnosticResult(
 ): Promise<DiagnosticResult> {
   return apiFetch(`/diagnostics/results/${resultId}/review`, { method: 'PUT', body: JSON.stringify(data) });
 }
+
+export interface DiagnosticUploadPayload {
+  patient_id: number;
+  title: string;
+  result_type?: string;
+  summary?: string;
+  abnormal_flag?: number;
+}
+
+export async function uploadDiagnosticFile(data: DiagnosticUploadPayload): Promise<{ result: DiagnosticResult; clinical_safety_note?: string }> {
+  return apiFetch('/diagnostics/upload', { method: 'POST', body: JSON.stringify(data) });
+}
+
 
 export interface DiagnosticsAdminMetrics {
   total_results?: number;

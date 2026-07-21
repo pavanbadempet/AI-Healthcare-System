@@ -2,7 +2,7 @@
  * CommandPalette — Ctrl+K / ⌘K modal for quick navigation.
  * Lazy-loaded to keep it out of the critical rendering path.
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useDeferredValue } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/lib/auth";
 import { motion, AnimatePresence } from "framer-motion";
@@ -18,6 +18,7 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [searchQuery, setSearchQuery] = useState("");
+  const deferredQuery = useDeferredValue(searchQuery);
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   // Reset on open/close
@@ -31,7 +32,7 @@ export default function CommandPalette({ open, onClose }: CommandPaletteProps) {
   // Filter items
   const filteredCommandItems = COMMAND_ITEMS.filter((item) => {
     if (item.category === "Admin" && (!user || user.role !== "admin")) return false;
-    const query = searchQuery.toLowerCase();
+    const query = deferredQuery.toLowerCase();
     return (
       item.label.toLowerCase().includes(query) ||
       item.desc.toLowerCase().includes(query) ||

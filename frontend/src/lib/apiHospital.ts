@@ -168,3 +168,43 @@ export async function getAdminPatientCareEventFeed(patientId: number, limit = 25
 export async function getPatientCareEventFeed(limit = 25): Promise<CareEventFeed> {
   return apiFetch(`/events/patient/feed?limit=${limit}`);
 }
+
+
+// ── Care Event Dispatch ──
+
+export interface CareEventDispatchPayload {
+  patient_id?: number | null;
+  encounter_id?: number | null;
+  department_id?: number | null;
+  event_type: string;
+  title: string;
+  summary?: string | null;
+  severity?: string;
+}
+
+export interface CareEventDispatchResponse {
+  event: CareEvent;
+  clinical_safety_note: string;
+}
+
+/**
+ * Persist a clinical care event (code-blue, nurse-call, etc.) to the backend.
+ */
+export async function dispatchCareEvent(data: CareEventDispatchPayload): Promise<CareEventDispatchResponse> {
+  return apiFetch('/events/dispatch', { method: 'POST', body: JSON.stringify(data) });
+}
+
+
+// ── Bed Status Transition ──
+
+export interface BedStatusUpdatePayload {
+  status: string;
+  current_patient_id?: number | null;
+}
+
+/**
+ * Transition a bed's operational status (e.g. occupied → cleaning on discharge).
+ */
+export async function updateBedStatus(bedId: number, data: BedStatusUpdatePayload): Promise<Bed> {
+  return apiFetch(`/hospital/beds/${bedId}/status`, { method: 'PATCH', body: JSON.stringify(data) });
+}
