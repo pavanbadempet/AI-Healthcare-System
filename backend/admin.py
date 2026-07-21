@@ -6,8 +6,11 @@ Endpoints for system administration, analytics, and user management.
 import csv
 import io
 import json
+import logging
 import os
 from typing import Dict, Optional
+
+logger = logging.getLogger(__name__)
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy.orm import Session
