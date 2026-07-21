@@ -1,0 +1,30 @@
+# Apache Airflow Production Helm Values Manifest for Kubernetes / AWS EKS
+# Deploy via: helm repo add airflow-helm https://airflow-helm.github.io/charts && helm install airflow airflow-helm/airflow -f k8s/airflow_helm_values.yaml
+
+airflow:
+  executor: "CeleryExecutor"
+  fernetKey: "eW91cl9mZXJuZXRfa2V5X2d1YXJhbnRlZWRfc2VjdXJlXzMyX2J5dGVz="
+
+web:
+  replicas: 2
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1000m"
+      memory: "2Gi"
+
+scheduler:
+  replicas: 2
+  resources:
+    requests:
+      cpu: "1000m"
+      memory: "2Gi"
+
+workers:
+  replicas: 3
+  autoscale:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
