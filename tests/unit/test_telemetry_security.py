@@ -113,6 +113,7 @@ def test_telemetry_stream_rejects_invalid_token(client):
 
 
 def test_telemetry_stream_rejects_non_admin_token(client, db_session):
+    models.Base.metadata.create_all(bind=db_session.get_bind())
     patient = _create_user(db_session, "telemetry_stream_patient", "patient")
     token = auth.create_access_token({"sub": patient.username})
 
