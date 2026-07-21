@@ -18,7 +18,7 @@ from .appointments import Appointment
 from .auth import User
 
 # Billing domain
-from .billing import BillableService, BillingPayment, Invoice, InvoiceLineItem, InsuranceClaim
+from .billing import BillableService, BillingPayment, InsuranceClaim, Invoice, InvoiceLineItem
 
 # Clinical domain
 from .clinical import (
@@ -88,6 +88,7 @@ __all__ = [
     "Bed",
     "Encounter",
     "Admission",
+    "DicomStudy",
     # Clinical
     "ClinicalOrder",
     "CareEvent",
@@ -105,15 +106,17 @@ __all__ = [
     "Invoice",
     "InvoiceLineItem",
     "BillingPayment",
+    "InsuranceClaim",
     # Discharge
     "DischargeSummary",
     # Nursing
     "NursingTask",
     # Interoperability
+    "InteroperabilityExport",
+    "InteroperabilityExportProfile",
     "InteroperabilityConsent",
     "ABDMConsentEvent",
-    "InteroperabilityExportProfile",
-    "InteroperabilityExport",
+    "AbhaLink",
     # Data Governance
     "DbSchemaContract",
     "DbContractViolation",

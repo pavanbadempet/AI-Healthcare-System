@@ -107,7 +107,6 @@ export function useIdleCallback(
     const id = schedule(callback);
     const cancel = window.cancelIdleCallback ?? clearTimeout;
     return () => cancel(id);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, deps);
 }
 
