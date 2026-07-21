@@ -16,6 +16,8 @@ import { useMaterialRipple } from '@/lib/ripple';
 import Tooltip from "@/components/layout/Tooltip";
 import { toast } from '@/lib/toast';
 
+import { FederatedNodeOrchestratorModal } from "@/components/modals/FederatedNodeOrchestratorModal";
+
 export default function FederatedLearning() {
   const { triggerRipple } = useMaterialRipple();
   const [stats, setStats] = useState<FederatedStats | null>(null);
@@ -25,6 +27,7 @@ export default function FederatedLearning() {
   const [selectedModel, setSelectedModel] = useState('heart_disease');
   const [epsilon, setEpsilon] = useState(1.0);
   const [error, setError] = useState<string | null>(null);
+  const [showNodeOrchestrator, setShowNodeOrchestrator] = useState(false);
 
   // Phase 7 Federated Simulator States
   const [simEpochs, setSimEpochs] = useState(10);
@@ -146,14 +149,23 @@ export default function FederatedLearning() {
           </p>
         </div>
 
-        <button
-          onClick={(e) => { triggerRipple(e); loadData(); }}
-          disabled={loading}
-          className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-850 active:bg-slate-800 text-slate-300 font-medium rounded-xl border border-slate-800 transition-colors"
-        >
-          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
-          <span>Refresh stats</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowNodeOrchestrator(true)}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs uppercase rounded-xl transition-all shadow-lg shadow-purple-600/20 cursor-pointer"
+          >
+            <Shield className="w-4 h-4" />
+            <span>Configure Nodes & DP</span>
+          </button>
+          <button
+            onClick={(e) => { triggerRipple(e); loadData(); }}
+            disabled={loading}
+            className="flex items-center justify-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-850 active:bg-slate-800 text-slate-300 font-medium rounded-xl border border-slate-800 transition-colors"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span>Refresh stats</span>
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -531,6 +543,15 @@ export default function FederatedLearning() {
           </p>
         </div>
       </div>
+
+      <AnimatePresence>
+        {showNodeOrchestrator && (
+          <FederatedNodeOrchestratorModal
+            onClose={() => setShowNodeOrchestrator(false)}
+            onConfigSaved={() => loadData()}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

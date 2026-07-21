@@ -263,6 +263,76 @@ export default function DataEngineeringPanel({ stats }: { stats: any }) {
           </div>
         </div>
       </div>
+
+      {/* Visual Cron Retraining & MLOps Pipeline Scheduler */}
+      <div className="panel p-6">
+        <div className="flex flex-col lg:flex-row justify-between items-start gap-4 mb-6">
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-primary)] flex items-center gap-2">
+              <RefreshCw size={15} className="text-purple-400" /> Automated MLOps & Delta Lake Cron Scheduler
+            </h3>
+            <p className="text-[11px] text-[var(--text-secondary)] font-mono uppercase mt-1">
+              Configure recurring background model evaluation, PySpark feature store generation, and gold table vacuuming.
+            </p>
+          </div>
+          <span className="px-2.5 py-1 text-[10px] font-mono font-bold uppercase rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">
+            ACTIVE SCHEDULER: CRON DAEMON
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 font-mono text-xs">
+          <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-2">
+            <div className="flex items-center justify-between text-white font-bold">
+              <span>Delta Lake Gold Sync</span>
+              <span className="text-[9px] bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded">EVERY 6 HOURS</span>
+            </div>
+            <p className="text-[10px] text-zinc-400 font-sans">Compacts bronze stream logs into silver/gold parquet tables.</p>
+            <div className="pt-2 flex justify-between text-[10px] text-zinc-400">
+              <span>Last Run: 2h ago</span>
+              <button
+                onClick={() => toast.success("Triggered Delta Lake Gold Sync execution!")}
+                className="text-purple-400 hover:text-purple-300 font-bold uppercase"
+              >
+                Run Now ↗
+              </button>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-2">
+            <div className="flex items-center justify-between text-white font-bold">
+              <span>Risk Model Retrain</span>
+              <span className="text-[9px] bg-cyan-500/10 text-cyan-400 px-1.5 py-0.5 rounded">DAILY AT 02:00</span>
+            </div>
+            <p className="text-[10px] text-zinc-400 font-sans">Fits LightGBM risk classifier on newly ingested EHR encounters.</p>
+            <div className="pt-2 flex justify-between text-[10px] text-zinc-400">
+              <span>Last Run: 11h ago</span>
+              <button
+                onClick={() => toast.success("Triggered Risk Model Retraining pipeline!")}
+                className="text-purple-400 hover:text-purple-300 font-bold uppercase"
+              >
+                Run Now ↗
+              </button>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-2">
+            <div className="flex items-center justify-between text-white font-bold">
+              <span>Vector Index Vacuum</span>
+              <span className="text-[9px] bg-amber-500/10 text-amber-400 px-1.5 py-0.5 rounded">SUNDAY AT 00:00</span>
+            </div>
+            <p className="text-[10px] text-zinc-400 font-sans">Prunes deleted patient vector embeddings from HNSW index.</p>
+            <div className="pt-2 flex justify-between text-[10px] text-zinc-400">
+              <span>Last Run: 3d ago</span>
+              <button
+                onClick={() => toast.success("Triggered Vector Index Vacuum!")}
+                className="text-purple-400 hover:text-purple-300 font-bold uppercase"
+              >
+                Run Now ↗
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

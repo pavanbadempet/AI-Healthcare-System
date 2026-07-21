@@ -1,5 +1,6 @@
-import { use, useEffect, useState } from "react";
+import { use, useEffect, useState, lazy, Suspense } from "react";
 import { useAuthStore } from "@/lib/auth";
+import { motion, AnimatePresence } from "framer-motion";
 import PacsViewer from "@/components/operations/PacsViewer";
 import { 
   exportDoctorPatientFhirBundle, 
@@ -15,15 +16,8 @@ import {
 import { fetchClinicalTrials, fetchExternalRecords, fetchHealthPassport, orderLabKit, fetchLabKits } from "@/lib/apiIntelligence";
 import { notifyPatientCareEventsUpdated } from "@/lib/patientCareEvents";
 import { toast } from '@/lib/toast';
-import { ChevronLeft, FileDigit, BrainCircuit, Loader2, ShieldAlert, RefreshCw, HeartPulse, Info, Check, Plus, Sparkles, QrCode, Globe , Activity} from "lucide-react";
-import {
-  Radar,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  ResponsiveContainer,
-} from "recharts";
+import { ChevronLeft, FileDigit, BrainCircuit, Loader2, ShieldAlert, RefreshCw, HeartPulse, Info, Check, Plus, Sparkles, QrCode, Globe, Activity, ShieldCheck } from "lucide-react";
+const LazyRadarChart = lazy(() => import("@/components/operations/LazyRadarChart"));
 import { Link } from "react-router-dom";
 import PatientCareActions from "@/components/operations/PatientCareActions";
 import PatientCareTimeline from "@/components/operations/PatientCareTimeline";
@@ -32,6 +26,9 @@ import PatientDiagnosticsReview from "@/components/operations/PatientDiagnostics
 import PatientMedicationsPanel from "@/components/operations/PatientMedicationsPanel";
 import PatientMonitoringSignals from "@/components/operations/PatientMonitoringSignals";
 import Tooltip from "@/components/layout/Tooltip";
+import { HomeDiagnosticKitModal } from "@/components/modals/HomeDiagnosticKitModal";
+import { AbdmHealthIdModal } from "@/components/modals/AbdmHealthIdModal";
+import { DicomUploadModal } from "@/components/modals/DicomUploadModal";
 
 interface PatientIdentity {
   fullName: string;
@@ -113,6 +110,9 @@ export default function PatientEMRView({
   const [recordAccessError, setRecordAccessError] = useState("");
   const [exportMessage, setExportMessage] = useState("");
   const [exportError, setExportError] = useState("");
+  const [showHomeKitModal, setShowHomeKitModal] = useState(false);
+  const [showAbdmModal, setShowAbdmModal] = useState(false);
+  const [showDicomUploadModal, setShowDicomUploadModal] = useState(false);
   const [exportingBundle, setExportingBundle] = useState(false);
   const [aiReviewMessage, setAiReviewMessage] = useState("");
 
@@ -184,22 +184,9 @@ export default function PatientEMRView({
     }
   };
 
-  const handleOrderKit = async (e: React.FormEvent) => {
+  const handleOrderKit = (e: React.FormEvent) => {
     e.preventDefault();
-    setOrderingKit(true);
-    try {
-      await orderLabKit({
-        patient_id: patientId,
-        kit_type: kitType,
-        shipping_address: shippingAddress
-      });
-      await loadLabKits();
-      toast.success("Home diagnostic kit ordered successfully!");
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setOrderingKit(false);
-    }
+    setShowHomeKitModal(true);
   };
 
   useEffect(() => {
@@ -444,7 +431,12 @@ export default function PatientEMRView({
   }
 
   return (
-    <div className="w-full min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans selection:bg-[var(--accent)] selection:text-white pb-20">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+      className="w-full min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] font-sans selection:bg-[var(--accent)] selection:text-white pb-20"
+    >
       {/* Top Status Bar */}
       <div className="w-full bg-[var(--warning-muted)] border-b border-[var(--warning)]/20 px-4 py-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between text-[10px] font-bold font-mono tracking-wider text-[var(--warning)] uppercase" role="status" aria-label="Patient safety context">
         <div className="flex flex-wrap gap-x-4 gap-y-1">
@@ -963,6 +955,12 @@ export default function PatientEMRView({
                   )}
 
                   <div className="flex flex-wrap items-center gap-3 pt-1">
+                    <button
+                      onClick={() => setShowAbdmModal(true)}
+                      className="btn bg-orange-600 hover:bg-orange-500 text-white font-bold text-[10px] uppercase tracking-wider flex items-center gap-1.5 cursor-pointer py-1.5 px-3 rounded-xl shadow-lg shadow-orange-600/20"
+                    >
+                      <ShieldCheck size={11} /> ABDM ABHA Health ID
+                    </button>
                     <button 
                       onClick={handleRecalculateOrganHealth}
                       disabled={organHealthLoading}
@@ -986,34 +984,18 @@ export default function PatientEMRView({
 
                 {/* Radar Chart (Recharts) */}
                 <div className="w-full lg:w-[320px] h-[220px] shrink-0 bg-black/25 rounded-2xl border border-white/[0.04] p-3 relative flex items-center justify-center mx-auto lg:mx-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RadarChart cx="50%" cy="50%" outerRadius="75%" data={[
-                      { subject: "Cardio", A: Math.round(organHealth.organ_risks.heart.risk_probability * 100), fullMark: 100 },
-                      { subject: "Respir", A: Math.round(organHealth.organ_risks.lungs.risk_probability * 100), fullMark: 100 },
-                      { subject: "Renal", A: Math.round(organHealth.organ_risks.kidney.risk_probability * 100), fullMark: 100 },
-                      { subject: "Metab", A: Math.round(organHealth.organ_risks.diabetes.risk_probability * 100), fullMark: 100 },
-                      { subject: "Hepat", A: Math.round(organHealth.organ_risks.liver.risk_probability * 100), fullMark: 100 },
-                    ]}>
-                      <PolarGrid stroke="rgba(255,255,255,0.06)" />
-                      <PolarAngleAxis 
-                        dataKey="subject" 
-                        tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 8, fontFamily: "monospace" }} 
-                      />
-                      <PolarRadiusAxis 
-                        angle={30} 
-                        domain={[0, 100]} 
-                        tick={{ fill: "rgba(255,255,255,0.2)", fontSize: 6 }} 
-                        stroke="transparent"
-                      />
-                      <Radar
-                        name={organHealth.patient_name}
-                        dataKey="A"
-                        stroke="var(--accent)"
-                        fill="var(--accent)"
-                        fillOpacity={0.25}
-                      />
-                    </RadarChart>
-                  </ResponsiveContainer>
+                  <Suspense fallback={<div className="w-full h-full flex items-center justify-center text-[var(--text-dim)] text-xs">Loading chart…</div>}>
+                    <LazyRadarChart
+                      seriesName={organHealth.patient_name}
+                      data={[
+                        { subject: "Cardio", A: Math.round(organHealth.organ_risks.heart.risk_probability * 100), fullMark: 100 },
+                        { subject: "Respir", A: Math.round(organHealth.organ_risks.lungs.risk_probability * 100), fullMark: 100 },
+                        { subject: "Renal", A: Math.round(organHealth.organ_risks.kidney.risk_probability * 100), fullMark: 100 },
+                        { subject: "Metab", A: Math.round(organHealth.organ_risks.diabetes.risk_probability * 100), fullMark: 100 },
+                        { subject: "Hepat", A: Math.round(organHealth.organ_risks.liver.risk_probability * 100), fullMark: 100 },
+                      ]}
+                    />
+                  </Suspense>
                 </div>
 
               </div>
@@ -1314,7 +1296,16 @@ export default function PatientEMRView({
             <div className="panel flex flex-col h-[350px]" role="region" aria-label="PACS DICOM viewer">
               <div className="px-4 py-2 border-b border-[var(--border)] flex justify-between items-center bg-[rgba(15,15,17,0.5)]">
                 <h3 className="section-label">PACS Study Viewer</h3>
-                <span className="text-[9px] bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[var(--success)] font-mono uppercase">ONLINE</span>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setShowDicomUploadModal(true)}
+                    className="text-[9px] bg-indigo-600 hover:bg-indigo-500 text-white font-bold font-mono px-2 py-0.5 rounded cursor-pointer transition-colors uppercase"
+                  >
+                    + Upload DICOM
+                  </button>
+                  <span className="text-[9px] bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[var(--success)] font-mono uppercase">ONLINE</span>
+                </div>
               </div>
               <div className="flex-1 relative bg-black flex items-center justify-center overflow-hidden">
                 <PacsViewer 
@@ -1335,6 +1326,34 @@ export default function PatientEMRView({
           </div>
         </div>
       </div>
-    </div>
+
+      <AnimatePresence>
+        {showHomeKitModal && (
+          <HomeDiagnosticKitModal
+            patientId={patientId}
+            patientName={patientIdentity?.fullName || "Marcus Thorne"}
+            onClose={() => setShowHomeKitModal(false)}
+            onOrderSuccess={() => {
+              setShowHomeKitModal(false);
+              loadLabKits();
+            }}
+          />
+        )}
+        {showAbdmModal && (
+          <AbdmHealthIdModal
+            patientId={patientId}
+            patientName={patientIdentity?.fullName || "Marcus Thorne"}
+            onClose={() => setShowAbdmModal(false)}
+          />
+        )}
+        {showDicomUploadModal && (
+          <DicomUploadModal
+            mrn={mrn}
+            patientName={patientIdentity?.fullName || "Marcus Thorne"}
+            onClose={() => setShowDicomUploadModal(false)}
+          />
+        )}
+      </AnimatePresence>
+    </motion.div>
   );
 }

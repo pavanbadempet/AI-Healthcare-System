@@ -1,13 +1,15 @@
 
-import { useCallback, useEffect, useMemo, useState, memo } from "react";
-import { AlertTriangle, CheckCircle2, ClipboardCheck, RefreshCcw } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState, memo, useRef } from "react";
+import { AlertTriangle, CheckCircle2, ClipboardCheck, RefreshCcw, Upload, FileUp, Sparkles, Plus, X, Check } from "lucide-react";
 import { useAuthStore } from "@/lib/auth";
 import {
   getDoctorPatientDiagnosticResults,
   reviewDiagnosticResult,
+  uploadDiagnosticFile,
   type DiagnosticResult,
 } from "@/lib/api";
 import { notifyPatientCareEventsUpdated } from "@/lib/patientCareEvents";
+import { toast } from "@/lib/toast";
 
 interface PatientDiagnosticsReviewProps {
   patientId: number;
@@ -43,6 +45,18 @@ const PatientDiagnosticsReview = memo(function PatientDiagnosticsReview({
   const [refreshing, setRefreshing] = useState(false);
   const [reviewingResultId, setReviewingResultId] = useState<number | null>(null);
   const [error, setError] = useState("");
+
+  // Diagnostic Upload Dropzone State
+  const [showUpload, setShowUpload] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
+  const [selectedFileName, setSelectedFileName] = useState("");
+  const [uploadTitle, setUploadTitle] = useState("");
+  const [uploadType, setUploadType] = useState("lab");
+  const [uploadSummary, setUploadSummary] = useState("");
+  const [uploadAbnormal, setUploadAbnormal] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
 
   const canReviewDiagnostics = user?.role === "doctor";
 
@@ -114,6 +128,74 @@ const PatientDiagnosticsReview = memo(function PatientDiagnosticsReview({
     }
   }
 
+  const handleDrag = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const processFile = (file: File) => {
+    setSelectedFileName(file.name);
+    if (!uploadTitle) {
+      const cleanName = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+      setUploadTitle(cleanName.charAt(0).toUpperCase() + cleanName.slice(1));
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      processFile(e.dataTransfer.files[0]);
+    }
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      processFile(e.target.files[0]);
+    }
+  };
+
+  const handleUploadSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!uploadTitle.trim()) {
+      toast.error("Please enter a title for the diagnostic attachment.");
+      return;
+    }
+
+    setIsUploading(true);
+    setError("");
+
+    try {
+      await uploadDiagnosticFile({
+        patient_id: patientId,
+        title: uploadTitle.trim(),
+        result_type: uploadType,
+        summary: uploadSummary.trim() || undefined,
+        abnormal_flag: uploadAbnormal ? 1 : 0,
+      });
+
+      toast.success(`Diagnostic report '${uploadTitle}' uploaded successfully!`);
+      setUploadTitle("");
+      setUploadSummary("");
+      setSelectedFileName("");
+      setUploadAbnormal(false);
+      setShowUpload(false);
+      notifyPatientCareEventsUpdated(patientId);
+      await loadResults(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upload diagnostic attachment");
+      toast.error("Upload failed. Please check patient context.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   if (!canReviewDiagnostics) return null;
 
   return (
@@ -128,17 +210,123 @@ const PatientDiagnosticsReview = memo(function PatientDiagnosticsReview({
             {safetyNote}
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => void loadResults(true)}
-          disabled={refreshing}
-          className="btn btn-secondary text-xs flex items-center justify-center gap-1 cursor-pointer"
-          aria-label="Refresh diagnostic results"
-        >
-          <RefreshCcw size={13} className={refreshing ? "animate-spin" : ""} aria-hidden="true" />
-          Sync Reports
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setShowUpload(!showUpload)}
+            className="btn bg-indigo-600 hover:bg-indigo-500 text-white text-xs flex items-center gap-1.5 px-3 py-1.5 rounded font-bold uppercase transition-all shadow-md"
+          >
+            {showUpload ? <X size={13} /> : <FileUp size={13} />}
+            {showUpload ? "Close Upload" : "Upload Report"}
+          </button>
+          <button
+            type="button"
+            onClick={() => void loadResults(true)}
+            disabled={refreshing}
+            className="btn btn-secondary text-xs flex items-center justify-center gap-1 cursor-pointer"
+            aria-label="Refresh diagnostic results"
+          >
+            <RefreshCcw size={13} className={refreshing ? "animate-spin" : ""} aria-hidden="true" />
+            Sync Reports
+          </button>
+        </div>
       </div>
+
+      {/* Diagnostic File Upload Dropzone Panel */}
+      {showUpload && (
+        <form onSubmit={handleUploadSubmit} className="p-4 bg-slate-950/70 border-b border-white/10 space-y-3 font-mono">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-1.5">
+              <Sparkles size={14} /> Diagnostic Attachment Dropzone
+            </span>
+            <span className="text-[10px] text-zinc-400 uppercase">PDF, DICOM, LAB PNG/JPEG</span>
+          </div>
+
+          <div
+            onDragEnter={handleDrag}
+            onDragLeave={handleDrag}
+            onDragOver={handleDrag}
+            onDrop={handleDrop}
+            onClick={() => fileInputRef.current?.click()}
+            className={`border-2 border-dashed rounded-xl p-5 text-center cursor-pointer transition-all ${
+              dragActive ? "border-indigo-400 bg-indigo-500/10" : "border-white/10 hover:border-indigo-500/50 bg-white/[0.01]"
+            }`}
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleFileChange}
+              accept=".pdf,.png,.jpg,.jpeg,.dcm"
+              className="hidden"
+            />
+            <Upload size={22} className="mx-auto text-indigo-400 mb-1.5" />
+            {selectedFileName ? (
+              <p className="text-xs font-bold text-emerald-400">Attached: {selectedFileName}</p>
+            ) : (
+              <p className="text-xs text-zinc-300">
+                Drag & drop diagnostic report file here, or <span className="text-indigo-400 underline">browse</span>
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+            <div>
+              <label className="text-[10px] text-zinc-400 uppercase block mb-1">Report Title *</label>
+              <input
+                type="text"
+                required
+                value={uploadTitle}
+                onChange={(e) => setUploadTitle(e.target.value)}
+                placeholder="e.g. Chest X-Ray 2-View, Lipid Panel"
+                className="w-full bg-white/[0.03] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
+              />
+            </div>
+            <div>
+              <label className="text-[10px] text-zinc-400 uppercase block mb-1">Result Category</label>
+              <select
+                value={uploadType}
+                onChange={(e) => setUploadType(e.target.value)}
+                className="w-full bg-white/[0.03] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono"
+              >
+                <option value="lab" className="bg-zinc-900">Lab Result</option>
+                <option value="radiology" className="bg-zinc-900">Radiology / Imaging</option>
+                <option value="diagnostic" className="bg-zinc-900">Diagnostic Study</option>
+              </select>
+            </div>
+          </div>
+
+          <div>
+            <label className="text-[10px] text-zinc-400 uppercase block mb-1">Clinical Summary / Observations</label>
+            <textarea
+              rows={2}
+              value={uploadSummary}
+              onChange={(e) => setUploadSummary(e.target.value)}
+              placeholder="Clinical observations, lab values, or radiologist impression..."
+              className="w-full bg-white/[0.03] border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white focus:outline-none focus:border-indigo-500 font-mono resize-none"
+            />
+          </div>
+
+          <div className="flex items-center justify-between pt-1">
+            <label className="flex items-center gap-2 cursor-pointer text-xs text-zinc-300">
+              <input
+                type="checkbox"
+                checked={uploadAbnormal}
+                onChange={(e) => setUploadAbnormal(e.target.checked)}
+                className="rounded border-zinc-700 bg-zinc-900 text-amber-500 focus:ring-0"
+              />
+              <span className="text-[11px] text-amber-400 font-bold uppercase">Mark as Abnormal Flag</span>
+            </label>
+
+            <button
+              type="submit"
+              disabled={isUploading}
+              className="btn bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs uppercase px-4 py-2 rounded-lg flex items-center gap-1.5 disabled:opacity-50"
+            >
+              <FileUp size={14} /> {isUploading ? "Uploading..." : "Upload Diagnostic Report"}
+            </button>
+          </div>
+        </form>
+      )}
 
       <div className="p-4 space-y-4">
         <div className="flex justify-between items-center text-[10px] font-mono uppercase text-[var(--text-dim)] pb-2 border-b border-[var(--border)]">

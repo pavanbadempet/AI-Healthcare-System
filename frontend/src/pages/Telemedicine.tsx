@@ -30,8 +30,12 @@ import {
   MicOff, 
   AlertTriangle, 
   Sparkles,
-  Info
+  Info,
+  Save,
+  X
 } from "lucide-react";
+import { SpeechToTextModal } from "@/components/modals/SpeechToTextModal";
+import { toast } from "@/lib/toast";
 
 export default function TelemedicinePage() {
   const { user } = useAuthStore();
@@ -65,12 +69,14 @@ export default function TelemedicinePage() {
 
   // Audio mode simulation
   const [isAudioMode, setIsAudioMode] = useState(false);
+  const [showSpeechModal, setShowSpeechModal] = useState(false);
   const [audioWaves, setAudioWaves] = useState<number[]>([10, 20, 15, 30, 25, 40, 10, 5, 20, 30, 25, 10]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const audioIntervalRef = useRef<any>(null);
   const recognitionRef = useRef<any>(null);
   const [activeVideoApt, setActiveVideoApt] = useState<number | null>(null);
+  const [viewingIntakeApt, setViewingIntakeApt] = useState<Appointment | null>(null);
 
   // Specialist matching recommendations (Itch 7)
   const [recommendedSpecialties, setRecommendedSpecialties] = useState<any[]>([]);
@@ -337,8 +343,15 @@ export default function TelemedicinePage() {
             </h1>
             <p className="text-xs text-[var(--text-secondary)] font-mono uppercase tracking-wide mt-1">Private virtual consults and remote observations.</p>
           </div>
-          
           <div className="flex gap-2">
+            <button 
+              onClick={() => setShowSpeechModal(true)}
+              className="btn bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-rose-600/20"
+              aria-label="Open Real-Time Speech-to-Text Ambient Dictation"
+            >
+              <Mic size={13} aria-hidden="true" />
+              Speech Dictation Transcriber
+            </button>
             <button 
               onClick={() => setIsAudioMode(!isAudioMode)}
               className={`btn text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all duration-300 ${
@@ -618,7 +631,11 @@ export default function TelemedicinePage() {
                         
                         <div className="flex flex-col gap-2 w-full sm:w-auto">
                           <div className="flex items-center gap-2 self-end">
-                            <button className="btn btn-secondary text-[11px] py-1 px-3 flex items-center gap-1 cursor-pointer" aria-label={`View intake for encounter ${apt.id}`}>
+                            <button
+                              onClick={() => setViewingIntakeApt(apt)}
+                              className="btn btn-secondary text-[11px] py-1 px-3 flex items-center gap-1 cursor-pointer"
+                              aria-label={`View intake for encounter ${apt.id}`}
+                            >
                               <FileText size={12} aria-hidden="true" /> Record
                             </button>
                             {activeVideoApt !== apt.id && (
@@ -633,18 +650,64 @@ export default function TelemedicinePage() {
                         </div>
                       </div>
                       {activeVideoApt === apt.id && (
-                        <div className="w-full h-[500px] mt-4 rounded-xl overflow-hidden border border-[var(--border)] relative bg-black">
-                          <iframe
-                            src={`https://meet.jit.si/ai-health-${apt.id}`}
-                            allow="camera; microphone; fullscreen; display-capture; autoplay"
-                            className="w-full h-full border-0"
-                          ></iframe>
-                          <button 
-                            onClick={() => setActiveVideoApt(null)}
-                            className="absolute bottom-4 right-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold text-sm z-10"
-                          >
-                            End Call
-                          </button>
+                        <div className="w-full h-[540px] mt-4 rounded-xl overflow-hidden border border-[var(--border)] relative bg-black flex flex-col md:flex-row">
+                          <div className="flex-1 h-full relative">
+                            <iframe
+                              src={`https://meet.jit.si/ai-health-${apt.id}`}
+                              allow="camera; microphone; fullscreen; display-capture; autoplay"
+                              className="w-full h-full border-0"
+                            ></iframe>
+                            <button 
+                              onClick={() => setActiveVideoApt(null)}
+                              className="absolute bottom-4 left-4 bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold text-xs z-10 uppercase font-mono tracking-wider shadow-lg"
+                            >
+                              End Video Call
+                            </button>
+                          </div>
+
+                          {/* In-Call EHR Workspace Panel */}
+                          <div className="w-full md:w-[380px] bg-[#0c0d12] border-l border-[var(--border)] p-4 flex flex-col space-y-3 font-sans text-xs overflow-y-auto">
+                            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+                              <span className="font-bold text-white uppercase text-[11px] tracking-wider flex items-center gap-1.5">
+                                <FileText size={13} className="text-cyan-400" /> In-Call Clinical Notes
+                              </span>
+                              <span className="text-[9px] font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">LIVE ENCOUNTER</span>
+                            </div>
+
+                            <div className="p-2.5 rounded-lg bg-white/[0.02] border border-white/5 font-mono text-[10px] space-y-1">
+                              <div className="text-zinc-400 uppercase font-bold">Patient Baseline Vitals</div>
+                              <div className="flex justify-between text-white font-bold">
+                                <span>BP: 124/82</span>
+                                <span>HR: 78 bpm</span>
+                                <span>SpO2: 98%</span>
+                              </div>
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="text-[9px] text-zinc-400 font-mono uppercase font-bold block">Subjective / Objective Findings</label>
+                              <textarea
+                                rows={3}
+                                placeholder="Type real-time encounter notes..."
+                                className="w-full bg-white/[0.03] border border-white/10 rounded-lg p-2 text-white font-mono text-[11px] focus:outline-none focus:border-cyan-500 resize-none"
+                              />
+                            </div>
+
+                            <div className="space-y-1">
+                              <label className="text-[9px] text-zinc-400 font-mono uppercase font-bold block">Assessment & e-Prescription</label>
+                              <textarea
+                                rows={3}
+                                placeholder="Diagnosis and Rx orders..."
+                                className="w-full bg-white/[0.03] border border-white/10 rounded-lg p-2 text-white font-mono text-[11px] focus:outline-none focus:border-cyan-500 resize-none"
+                              />
+                            </div>
+
+                            <button
+                              onClick={() => toast.success(`In-call encounter record & Rx saved for Encounter #${apt.id}!`)}
+                              className="btn bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-[10px] uppercase py-2.5 px-3 rounded-lg flex items-center justify-center gap-1.5 transition-all shadow-md shadow-cyan-600/15"
+                            >
+                              <Save size={12} /> Save Live Clinical Record
+                            </button>
+                          </div>
                         </div>
                       )}
                       </div>
@@ -797,6 +860,69 @@ export default function TelemedicinePage() {
           </div>
         </div>
       </div>
+
+      {/* Intake Notes & EMR Encounter Modal */}
+      <AnimatePresence>
+        {viewingIntakeApt && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="bg-[#0b0c10] border border-white/10 rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl p-6 font-mono space-y-4"
+            >
+              <div className="flex items-center justify-between border-b border-white/10 pb-3">
+                <div className="flex items-center gap-2">
+                  <FileText className="text-cyan-400" size={18} />
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                    Telehealth Intake Record #{viewingIntakeApt.id}
+                  </h3>
+                </div>
+                <button
+                  onClick={() => setViewingIntakeApt(null)}
+                  className="text-zinc-400 hover:text-white p-1 rounded hover:bg-white/5"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+
+              <div className="space-y-3 text-xs">
+                <div className="p-3.5 bg-white/[0.02] border border-white/5 rounded-xl space-y-1">
+                  <span className="text-[10px] text-zinc-400 uppercase block font-bold">Attending Clinician</span>
+                  <p className="text-white font-bold">DR. {viewingIntakeApt.doctor?.name.toUpperCase()} ({viewingIntakeApt.doctor?.specialization.toUpperCase()})</p>
+                </div>
+
+                <div className="p-3.5 bg-white/[0.02] border border-white/5 rounded-xl space-y-1">
+                  <span className="text-[10px] text-zinc-400 uppercase block font-bold">Scheduled Encounter Time</span>
+                  <p className="text-cyan-300 font-bold">{new Date(viewingIntakeApt.appointment_date).toLocaleString()}</p>
+                </div>
+
+                <div className="p-3.5 bg-white/[0.02] border border-white/5 rounded-xl space-y-1.5">
+                  <span className="text-[10px] text-zinc-400 uppercase block font-bold">Patient Intake Notes & Telehealth Symptoms</span>
+                  <p className="text-zinc-200 leading-relaxed font-sans text-xs">
+                    {viewingIntakeApt.notes || "Standard telehealth consultation intake notes registered."}
+                  </p>
+                </div>
+              </div>
+
+              <div className="pt-2 flex justify-end">
+                <button
+                  onClick={() => setViewingIntakeApt(null)}
+                  className="btn btn-secondary text-xs font-bold uppercase px-4 py-2"
+                >
+                  Close Record
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+        {showSpeechModal && (
+          <SpeechToTextModal
+            patientName={user?.full_name || "Marcus Thorne"}
+            onClose={() => setShowSpeechModal(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

@@ -8,10 +8,12 @@ import {
   getDepartments, 
   createAdmission, 
   createEncounter,
+  dispatchCareEvent,
   type DoctorPatientSummary,
   type Bed,
   type Department
 } from "@/lib/api";
+import { toast } from "@/lib/toast";
 import { fetchTriageQueue } from "@/lib/apiIntelligence";
 import Tooltip from "@/components/layout/Tooltip";
 
@@ -34,6 +36,9 @@ export default function CapacityPage() {
 
   const [triageQueue, setTriageQueue] = useState<any[]>([]);
   const [loadingTriage, setLoadingTriage] = useState(false);
+  const [inspectBed, setInspectBed] = useState<{ unit: string; bedCode: string; status: "occupied" | "cleaning" | "open" } | null>(null);
+  const [transferringBed, setTransferringBed] = useState<{ unit: string; bedCode: string } | null>(null);
+  const [targetBedCode, setTargetBedCode] = useState("ICU-02");
 
   const loadTriageQueue = async () => {
     setLoadingTriage(true);
@@ -73,6 +78,14 @@ export default function CapacityPage() {
       setModalError(err.message || "Failed to load assignment data.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleBedClick = (unit: string, bedCode: string, status: "occupied" | "cleaning" | "open") => {
+    if (status === "open") {
+      openAssignmentModal();
+    } else {
+      setInspectBed({ unit, bedCode, status });
     }
   };
 
@@ -280,22 +293,25 @@ export default function CapacityPage() {
                           else cellType = "open";
 
                           const prefix = unit.unit.substring(0, 1);
+                          const bedCode = `${prefix}${String(i + 1).padStart(2, "0")}`;
                           return (
                             <motion.div
                               key={i}
                               initial={{ opacity: 0, scale: 0.95 }}
                               animate={{ opacity: 1, scale: 1 }}
                               transition={{ delay: i * 0.005 }}
-                              className={`h-8 rounded border flex items-center justify-center text-[10px] font-mono font-bold select-none ${
+                              onClick={() => handleBedClick(unit.unit, bedCode, cellType)}
+                              className={`h-8 rounded border flex items-center justify-center text-[10px] font-mono font-bold select-none cursor-pointer transition-all hover:scale-110 hover:z-10 shadow-sm ${
                                 cellType === "occupied"
-                                  ? "bg-[var(--danger-muted)] border-[var(--danger-border)] text-[var(--danger)]"
+                                  ? "bg-[var(--danger-muted)] border-[var(--danger-border)] text-[var(--danger)] hover:border-red-400"
                                   : cellType === "cleaning"
-                                  ? "bg-[var(--warning-muted)] border-[var(--warning-border)] text-[var(--warning)]"
-                                  : "bg-[var(--success-muted)] border-[var(--success-border)] text-[var(--success)]"
+                                  ? "bg-[var(--warning-muted)] border-[var(--warning-border)] text-[var(--warning)] hover:border-amber-400"
+                                  : "bg-[var(--success-muted)] border-[var(--success-border)] text-[var(--success)] hover:border-emerald-400"
                               }`}
-                              aria-label={`Bed ${prefix}${String(i + 1).padStart(2, "0")}: ${cellType}`}
+                              aria-label={`Bed ${bedCode}: ${cellType}`}
+                              title={`Click to inspect Bed ${bedCode} (${cellType.toUpperCase()})`}
                             >
-                              {prefix}{String(i + 1).padStart(2, "0")}
+                              {bedCode}
                             </motion.div>
                           );
                         })}
@@ -550,6 +566,195 @@ export default function CapacityPage() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Bed Inspector Modal */}
+      <AnimatePresence>
+        {inspectBed && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2 }}
+              className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl flex flex-col font-sans"
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="inspect-title"
+            >
+              <div className="bg-zinc-950/80 border-b border-zinc-850 px-4 py-3 flex justify-between items-center">
+                <h2 id="inspect-title" className="text-sm font-bold text-zinc-100 uppercase tracking-wider flex items-center gap-2">
+                  <BedDouble size={14} className="text-indigo-400" />
+                  Bed {inspectBed.bedCode} — {inspectBed.unit}
+                </h2>
+                <button 
+                  onClick={() => setInspectBed(null)}
+                  className="text-zinc-400 hover:text-zinc-100 transition-colors p-1 rounded-md hover:bg-zinc-800"
+                  aria-label="Close inspector"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-4">
+                <div className="flex items-center justify-between p-3 rounded-lg border bg-zinc-950/50 border-zinc-800">
+                  <span className="text-xs font-mono uppercase text-zinc-400">Unit Status</span>
+                  <span className={`text-xs font-mono font-bold uppercase px-2 py-0.5 rounded border ${
+                    inspectBed.status === "occupied"
+                      ? "bg-red-950/60 border-red-800 text-red-400"
+                      : inspectBed.status === "cleaning"
+                      ? "bg-amber-950/60 border-amber-800 text-amber-400"
+                      : "bg-emerald-950/60 border-emerald-800 text-emerald-400"
+                  }`}>
+                    {inspectBed.status}
+                  </span>
+                </div>
+
+                <div className="space-y-2 text-xs font-mono bg-zinc-950/30 p-3 rounded-lg border border-zinc-800/60">
+                  <div className="flex justify-between text-zinc-300">
+                    <span className="text-zinc-500">Unit Location:</span>
+                    <span>{inspectBed.unit}</span>
+                  </div>
+                  <div className="flex justify-between text-zinc-300">
+                    <span className="text-zinc-500">Bed Identification:</span>
+                    <span>{inspectBed.bedCode}</span>
+                  </div>
+                  <div className="flex justify-between text-zinc-300">
+                    <span className="text-zinc-500">Monitoring Sensor:</span>
+                    <span className="text-emerald-400">Node telemetry link ACTIVE</span>
+                  </div>
+                  {inspectBed.status === "occupied" && (
+                    <div className="flex justify-between text-zinc-300 pt-1 border-t border-zinc-800">
+                      <span className="text-zinc-500">Assigned Patient:</span>
+                      <span className="text-indigo-400 font-bold">MRN-{inspectBed.bedCode}-PATIENT</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2 justify-end pt-2 border-t border-zinc-850">
+                  <button
+                    onClick={() => setInspectBed(null)}
+                    className="px-4 py-2 rounded text-xs font-bold uppercase tracking-wider bg-zinc-800 text-zinc-300 hover:bg-zinc-750 hover:text-zinc-100 transition-all"
+                  >
+                    Close
+                  </button>
+                  {inspectBed.status === "open" ? (
+                    <button
+                      onClick={() => {
+                        setInspectBed(null);
+                        openAssignmentModal();
+                      }}
+                      className="px-4 py-2 rounded text-xs font-bold uppercase tracking-wider bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-lg shadow-indigo-600/10"
+                    >
+                      Assign Patient
+                    </button>
+                  ) : (
+                    <>
+                      {inspectBed.status === "occupied" && (
+                        <button
+                          onClick={() => {
+                            dispatchCareEvent({
+                              event_type: "discharge-initiated",
+                              title: `Discharge initiated for bed ${inspectBed.bedCode}`,
+                              summary: `Patient in bed ${inspectBed.bedCode} (${inspectBed.unit}) marked for discharge. Bed transitioning to cleaning status.`,
+                              severity: "info",
+                            }).catch(() => {});
+                            toast.success(`Bed ${inspectBed.bedCode} discharged — now in cleaning status.`);
+                            setInspectBed(null);
+                          }}
+                          className="px-4 py-2 rounded text-xs font-bold uppercase tracking-wider bg-amber-600 hover:bg-amber-500 text-white transition-all"
+                        >
+                          Discharge Patient
+                        </button>
+                      )}
+                      <button
+                        onClick={() => {
+                          const bed = inspectBed;
+                          setInspectBed(null);
+                          if (bed) {
+                            setTransferringBed({ unit: bed.unit, bedCode: bed.bedCode });
+                          } else {
+                            openAssignmentModal();
+                          }
+                        }}
+                        className="px-4 py-2 rounded text-xs font-bold uppercase tracking-wider bg-indigo-600 hover:bg-indigo-500 text-white transition-all"
+                      >
+                        Transfer / Reassign
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Direct Bed-to-Bed Transfer Dialog */}
+      {transferringBed && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 font-sans">
+          <div className="bg-[#0b0c10] border border-white/10 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono font-bold text-xs">
+                  ⇄
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">Bed Transfer Request</h3>
+                  <p className="text-[10px] text-zinc-400 font-mono">Source Bed: {transferringBed.bedCode} ({transferringBed.unit})</p>
+                </div>
+              </div>
+              <button onClick={() => setTransferringBed(null)} className="text-zinc-400 hover:text-white p-1">
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3 font-mono text-xs">
+              <div>
+                <label className="text-[10px] text-zinc-400 font-bold uppercase block mb-1">Select Target Destination Bed</label>
+                <select
+                  value={targetBedCode}
+                  onChange={(e) => setTargetBedCode(e.target.value)}
+                  className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-white font-bold focus:outline-none focus:border-indigo-500"
+                >
+                  <option value="ICU-02">ICU Bed 02 (ICU Wing • Open)</option>
+                  <option value="ICU-05">ICU Bed 05 (ICU Wing • Open)</option>
+                  <option value="WAR-08">Ward Bed 08 (General Ward • Open)</option>
+                  <option value="WAR-12">Ward Bed 12 (General Ward • Open)</option>
+                  <option value="SURG-04">Surgical Bed 04 (Post-Op • Open)</option>
+                </select>
+              </div>
+
+              <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-[11px] text-indigo-300 font-sans">
+                Transferring will automatically update patient bed assignment and change source bed ({transferringBed.bedCode}) to <strong className="text-amber-300 uppercase font-mono">cleaning</strong> status.
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2 border-t border-white/10 font-sans">
+              <button
+                onClick={() => setTransferringBed(null)}
+                className="px-4 py-2 rounded text-xs font-bold uppercase tracking-wider bg-zinc-800 text-zinc-300 hover:bg-zinc-750 hover:text-zinc-100 transition-all cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  dispatchCareEvent({
+                    event_type: "bed-transfer",
+                    title: `Patient transfer from ${transferringBed.bedCode} to ${targetBedCode}`,
+                    summary: `Patient transferred from source bed ${transferringBed.bedCode} (${transferringBed.unit}) to target bed ${targetBedCode}.`,
+                    severity: "info",
+                  }).catch(() => {});
+                  toast.success(`Patient transferred from ${transferringBed.bedCode} to ${targetBedCode}!`);
+                  setTransferringBed(null);
+                }}
+                className="px-4 py-2 rounded text-xs font-bold uppercase tracking-wider bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-lg shadow-indigo-600/10 cursor-pointer"
+              >
+                Confirm Transfer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

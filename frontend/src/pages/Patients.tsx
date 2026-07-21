@@ -4,6 +4,7 @@ import { getAdminPatients, getDoctorPatients, type DoctorPatientSummary, type Us
 import { useAuthStore } from "@/lib/auth";
 import { motion } from "framer-motion";
 import { Users, Search, Filter, ShieldAlert, Activity, AlertTriangle, ChevronRight, Stethoscope } from "lucide-react";
+import { prefetchRoute } from "@/lib/prefetch";
 
 const VERIFIED_RISK_LEVELS = ["LOW", "MODERATE", "HIGH", "CRITICAL"] as const;
 const RISK_FILTERS = ["ALL", "REVIEW", ...VERIFIED_RISK_LEVELS] as const;
@@ -326,6 +327,7 @@ export default function PatientsPage() {
                     </div>
                     <Link
                       to={`/patients/${patient.id}?intent=admission`}
+                      onMouseEnter={() => prefetchRoute(`/patients/${patient.id}`)}
                       aria-label={`Start admission for ${patientLabel}`}
                       className="btn btn-primary text-xs py-1.5 px-3 flex items-center justify-center gap-1"
                     >
@@ -428,7 +430,10 @@ export default function PatientsPage() {
 
                       {/* Actions */}
                       <td className="px-4 py-3 text-right align-middle">
-                        <Link to={`/patients/${p.id}`}>
+                        <Link 
+                          to={`/patients/${p.id}`}
+                          onMouseEnter={() => prefetchRoute(`/patients/${p.id}`)}
+                        >
                           <button className="p-1 bg-[rgba(255,255,255,0.03)] border border-[var(--border)] hover:bg-[var(--accent)] hover:border-[var(--accent)] hover:text-white transition-colors rounded cursor-pointer" aria-label={`View record for ${p.full_name || p.username}`}>
                             <ChevronRight size={14} aria-hidden="true" />
                           </button>

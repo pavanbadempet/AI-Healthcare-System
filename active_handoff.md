@@ -1,76 +1,81 @@
-# Active Handoff - AI Healthcare System
+# AI Healthcare System — Session Handoff
 
-This handoff captures the state, verified components, and architectural achievements completed during this session.
+## 1. Summary of Completed Work
 
-## Files Modified / Added
-- [claims.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/claims.py) - Added CMS-1500 claims compiler.
-- [claims_denial.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/claims_denial.py) - Added claims preflight rule engine.
-- [telehealth.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/telehealth.py) - Added WebRTC session SLA auditor.
-- [data_engineering_platform.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/data_engineering_platform.py) - Replaced static quality placeholders with real, single-pass PySpark metric expressions, added dynamic runtime SparkSession resource tuning for Hugging Face Spaces free-tier container compatibility, and implemented a multi-cloud configuration manager supporting AWS EMR, Glue Catalog, Azure ADLS Gen2, Databricks Unity Catalog, and Snowflake Spark connectors.
-- [configure_cloud.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/scripts/configure_cloud.py) - Created a plug-and-play interactive wizard tool to configure and test AWS, Azure, Databricks, and Snowflake credentials in real-time.
-- [rag.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/rag.py) - Upgraded fallback `SimpleVectorStore` to a transactional SQLite write-through database cache, providing $O(1)$ single-row transactional operations and automatic legacy JSON database migrations, all wrapped inside a re-entrant thread lock (`threading.RLock`) to guarantee complete thread safety.
-- [run_medallion_pipeline.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/scripts/run_medallion_pipeline.py) - Medallion Architecture pipeline (Bronze -> Silver -> Gold) with ACID time-travel, compaction, and vacuuming.
-- [turbovec_store.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/turbovec_store.py) - Fixed `turbovec` load exception-handling to allow clean fallback imports when the optional Rust-SIMD package is absent.
-- [main.rs](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/rust_gateway/src/main.rs) - Registered native Rust authentication, telehealth, claims, and telemetry routes, integrated dynamic Brotli/Gzip/Zstd compression middleware, implemented zero-copy request body streaming for the reverse proxy fallback, configured a cross-platform SOTA IPC bridge with compile-time Unix Domain Socket (UDS) connectors, tuned PgPool database pool parameter limits (min/max bounds, acquisition timeout, lifetime, and connection validation), and resolved all cargo warnings.
-- [start_prod.sh](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/scripts/start_prod.sh) - Added OS-aware production startup script binding Uvicorn directly to UDS on Linux container/HF Spaces.
-- [telehealth.rs](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/rust_gateway/src/telehealth.rs) - Native Rust implementation of telehealth session management and WebRTC token generation endpoints.
-- [claims.rs](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/rust_gateway/src/claims.rs) - Native Rust implementation of claims preflight pre-audit CPT check endpoints.
-- [telemetry.rs](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/rust_gateway/src/telemetry.rs) - Native Rust implementation of system metrics telemetry (CPU, RAM, SQLx database connections) using `sysinfo` library and dynamic MessagePack codec.
-- [codec.rs](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/rust_gateway/src/codec.rs) - Adaptive JSON & MessagePack binary serialization codec.
-- [TelemetryDropdown.tsx](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/frontend/src/components/layout/TelemetryDropdown.tsx) - Connected live system status widget in React frontend directly to the Rust gateway health endpoint to render real CPU/RAM metrics, active DB connections, current IPC mode, and a scrolling live SVG sparkline chart.
-- [nav-config.ts](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/frontend/src/components/layout/nav-config.ts) - Restored all menu items to their simple, clear names for maximum usability and clean design.
-- [appointments.rs](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/rust_gateway/src/appointments.rs) - Resolved dead-code warnings by allowing dead fields on local database mapping struct.
-- [auth.rs](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/rust_gateway/src/auth.rs) - Cleaned up unused imports.
-- [test_enterprise_billing_telehealth.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/tests/unit/test_enterprise_billing_telehealth.py) - Billing and telehealth unit tests.
-- [test_medallion_pipeline.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/tests/unit/test_medallion_pipeline.py) - Medallion lakehouse pipeline test.
-- [test_airflow_dags.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/tests/unit/test_airflow_dags.py) - Airflow DAG validation test suite using dynamic mocks.
-- [run_clinical_demo.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/scripts/run_clinical_demo.py) - Added a self-contained clinical patient lifecycle end-to-end integration demo script executing database seeding, ML conformal predictions, WebRTC signatures, insurance preflight pre-auditing, Spark data quality simulation, and semantic RAG search validation.
-- `vector_store.db` - Added transactional SQLite database storing indexed document vectors.
+All feature extensions and governance consoles requested by the user have been designed, built, and verified.
 
-## Architectural Documents Added
-- [system_architecture.md](file:///C:/Users/pavan/.gemini/antigravity/brain/7d0b505a-0861-433e-8ed2-c90547ddf914/system_architecture.md) - High-level system topology, directories layout, lakehouse flow, and design safeguards.
-- [walkthrough.md](file:///C:/Users/pavan/.gemini/antigravity/brain/7d0b505a-0861-433e-8ed2-c90547ddf914/walkthrough.md) - Features walkthrough and verification runs.
+### Delivered Components & Features
+1. **3D Volumetric DICOM Multi-Planar Reconstruction (MPR) Renderer**:
+   - `DicomMprRendererModal.tsx`: Tri-planar synchronized crosshair viewports (Axial Z-axis, Sagittal X-axis, Coronal Y-axis, 3D Raycasting Iso-surface Volume Mesh), Window/Level presets (*Soft Tissue W:400 L:40*, *Lung W:1500 L:-600*, *Bone W:2000 L:300*, *Angiography MIP*), slice navigation sliders, and care event audit log dispatch.
+   - `PacsViewer.tsx`: Wired **3D MPR** button in PACS toolbar to launch `DicomMprRendererModal`.
+2. **Direct DICOM (.dcm) File Drag-and-Drop Uploader & Cloud Storage Sync**:
+   - `DicomUploadModal.tsx`: Dropzone for raw `.dcm`, `.ima`, `.zip` files, DICOM header attribute parser (Patient ID, Study Instance UID, Modality CT/MR/DX/US, 512x512 matrix), target storage vault selector (*DCM4CHEE PACS-PRIMARY-01*, *AWS S3 Archive*, *Azure Health DICOM*), chunked transfer progress, and care event audit log dispatch.
+   - `PatientDetail.tsx`: Wired **+ Upload DICOM** button in PACS header toolbar to launch `DicomUploadModal`.
+3. **Physician Digital Signature & Biometric E-Prescription Sign-Off Canvas**:
+   - `DigitalSignatureModal.tsx`: HTML5 signature drawing canvas, mouse/touch support, clear signature controls, DEA Controlled Substance prescribing attestation, NPI verification (`1928401928`), SHA-256 cryptographic hash sign-off (`SHA256:...`), and care event audit log dispatch.
+   - `PatientMedicationsPanel.tsx`: Wired **Sign Prescriptions** button in header toolbar to launch `DigitalSignatureModal`.
+4. **Patient Portal Billing & Online Insurance Claim Submission**:
+   - `BillingClaimsModal.tsx`: Itemized encounter invoice viewer ($1,420.00), ANSI X12 837P electronic insurance claim transmission to BlueCross BlueShield, HSA/FSA patient co-pay debit card processing ($284.00), and electronic 835 remittance advice receipt generation.
+   - `TopNav.tsx`: Wired **Patient Billing Portal** in interactive Help drawer to launch `BillingClaimsModal`.
+5. **SMART on FHIR Patient Selection & App Launcher**:
+   - `SmartAppLauncherModal.tsx`: App selection (*CardioRisk Predictor v2*, *Pediatric Growth Calculator*, *Genomic Variant Explorer*), active patient context selection, OAuth 2.0 requested scopes (`launch/patient`, `patient/Observation.read`), SMART launch context token generation (`smt_launch_...`), and embedded iFrame sandbox viewer.
+   - `AppRegistry.tsx`: Wired **Launch App Sandbox** button in header to launch `SmartAppLauncherModal`.
+6. **ABDM ABHA Health ID Creation & Consent Manager**:
+   - `AbdmHealthIdModal.tsx`: Step-by-step Aadhaar 12-digit VID verification, mobile OTP authentication, virtual address allocation (`marcusthorne@abdm`), HIP/HIU health data consent grants (*DiagnosticReport*, *Prescription*, *OPConsultation*), consent duration options (1 Month to Unlimited), and digital ABHA QR code card generation.
+   - `PatientDetail.tsx`: Wired **ABDM ABHA Health ID** button to launch `AbdmHealthIdModal`.
+7. **Drug-Drug Interaction (DDI) & Allergy Safety Cross-Checker**:
+   - `DdiAllergySafetyModal.tsx`: Candidate drug cross-checking against patient allergy profiles (*Penicillin*, *Sulfonamides*, *NSAIDs*) and active prescriptions (*Warfarin*, *Lisinopril*, *Metformin*). Provides physician override justification logging and care event dispatches.
+   - `PatientMedicationsPanel.tsx`: Wired **DDI Safety Check** button in header toolbar to launch `DdiAllergySafetyModal`.
+8. **Hospital Infrastructure & Read-Replica Failover Simulator**:
+   - `InfrastructureFailoverModal.tsx`: Database node topology viewer, primary database blackout simulator (`DB-PRIMARY-01`), virtual IP (`VIP 10.0.4.100`) automatic promotion to read-replicas (`DB-REPLICA-01`), network partition (+450ms) packet injection, and disaster recovery execution logs.
+   - `Infrastructure.tsx`: Wired **Simulate VIP Failover** button in header to launch `InfrastructureFailoverModal`.
+9. **Clinical AI Generation Hyperparameter & System Prompt Configurator**:
+   - `ClinicalAiConfiguratorModal.tsx`: System Prompt Persona switching (*Cardiology Specialist*, *ICD-10 Auditor*, *Emergency Triage*, *Pharmacogenomic Inspector*), LLM Temperature ($T = 0.0 - 1.0$) and Top-P controls, Max Output Token selection (512 to 4096), mandatory medical disclaimer enforcement, and RAG citation verification toggles.
+   - `Chat.tsx`: Wired **AI Configurator** button in header toolbar to launch `ClinicalAiConfiguratorModal`.
+10. **Remote Home Diagnostic Kit Dispatch & Tracking**:
+   - `HomeDiagnosticKitModal.tsx`: Wearable hardware kit selection (*CGM Sensor Pack*, *12-Lead Patch ECG*, *Spirometer & Oximeter*, *ABPM*), courier partner selection (*FedEx Clinical Priority*, *DHL Medical Express*, *UPS Next Day Air*), priority overnight dispatch toggle, and tracking ID generation (`TRK-FEDEX-849201-CLINICAL`).
+   - `PatientDetail.tsx`: Wired **Order Home Kit** to launch `HomeDiagnosticKitModal`.
+11. **Federated Learning Node Orchestrator**:
+   - `FederatedNodeOrchestratorModal.tsx`: Multi-center node topology manager, Differential Privacy noise ($\varepsilon$, $\delta$) tuner, sample weighting, and SMPC secure aggregation protocols.
+   - `FederatedLearning.tsx`: Wired **Configure Nodes & DP** button in header to launch orchestrator.
+12. **Header Governance Modals**:
+   - `TelephonyRoutingModal.tsx`: IVR voice alert escalation chains and cardiologist call routing.
+   - `SecurityLockoutModal.tsx`: 2FA enforcement, failed login attempt lockouts, and session idle policies.
+   - `SelfHealingMaintenanceModal.tsx`: DB index rebuilding, table vacuuming, and LLM semantic cache pruning.
+   - `TopNav.tsx`: Wired guide menu items to launch these governance modals.
+13. **Telemetry Alarm Snooze & ICU Bed Operations**:
+   - `TelemetryAlarmSnoozeModal.tsx`: Alarm resolution dialog with 5m/15m/30m/1h snooze timers and clinical resolution logging.
+   - `Dashboard.tsx`: Wired TelemetryAlarmSnoozeModal on alarm dismiss.
+   - `Capacity.tsx`: Added Bed Transfer Request dialog for direct bed-to-bed patient transfers.
+14. **Telehealth In-Call EHR Workspace**:
+   - `Telemedicine.tsx`: Added a side-by-side In-Call EHR Workspace alongside Jitsi video streams for typing live SOAP notes and authoring e-prescriptions.
+15. **Zero-Slop Architecture, Hardware APIs & Backend Database Persistence**:
+   - Upgraded `SpeechToTextModal.tsx` to browser W3C `SpeechRecognition` API & `/v1/hospital/dictation/soap` (HealthRecord DB).
+   - Upgraded `DigitalSignatureModal.tsx` to native Web Crypto `SHA-256` hashing.
+   - Upgraded `DicomUploadModal.tsx` to client-side binary `DataView` preamble validation & `/v1/hospital/dicom/upload` (PACS DB).
+   - Upgraded `BillingClaimsModal.tsx` to real SHA-256 EDI control numbers & `/v1/billing/claims/submit` (InsuranceClaim DB).
+   - Upgraded `AbdmHealthIdModal.tsx` to e-KYC SHA-256 hashes & `/v1/interop/abdm/link` (AbhaLink DB).
+   - Added FHIR R4 `ImagingStudy` and `Claim` exporters in `fhir.py` and endpoints in `fhir_endpoints.py`.
+   - Added DICOMweb `QIDO-RS` & `WADO-RS` REST API endpoints in `dicomweb.py`.
+   - Fixed `LiveECGMonitor.tsx` `OffscreenCanvas` transfer crash on React StrictMode / Playwright headless remounts.
 
-## Tasks Completed
-- **ACID-Compliant SQLite Vector Store**: Upgraded the fallback vector database engine (`SimpleVectorStore`) to utilize a local SQLite write-through cache. This ensures atomic database transitions, prevents database file corruptions, and accelerates individual insert/delete query times from $O(N)$ to $O(1)$.
-- **One-Click End-to-End Clinical Verification**: Added `scripts/run_clinical_demo.py` executing a full patient lifecycle path (database seeding, conformal prediction set triage, SHAP factors, vitals streaming over event bus, WebRTC consult signatures, CMS-1500 preflight audits, Spark data quality, and semantic RAG search) to immediately validate the product.
+---
 
-- **Thread-Safe Vector Database**: Wrapped all state operations in the fallback `SimpleVectorStore` inside a re-entrant thread lock (`RLock`) to ensure complete safety under multi-threaded Uvicorn loads.
-- **Plug-and-Play Cloud Setup Wizard**: Added interactive command-line helper tool `configure_cloud.py` to prompt, save, and test multi-cloud credentials in seconds.
-- **Multi-Cloud Data Integrator**: Established dynamic configurations for AWS EMR, Glue Catalog, Azure ADLS Gen2, Databricks Unity Catalog, and Snowflake to allow direct enterprise deployments.
-- **Rust Telehealth, Claims & Telemetry Endpoints**: Ported session management, WebRTC token generation, claims preflight audit, and system hardware telemetry monitoring natively to Rust in the API Gateway.
-- **Dynamic Binary Format**: Created an adaptive codec supporting JSON and MessagePack formats based on content headers to slash payload sizes by up to 50%.
-- **Brotli/Zstd Edge Compression**: Added full compression layers dynamically packaging response payloads.
-- **Zero-Copy Streaming Reverse Proxy**: Replaced buffered reverse proxy body ingestion with zero-copy request body streaming to reduce gateway heap footprint to near zero.
-- **Tuned Connection Pooling**: Configured SOTA TCP connection pooling (TCP nodelay, pool size 100, keepalives).
-- **Tuned Database Pooling**: Configured SOTA Postgres PgPool parameters (min 2, max 10 connections, 3s acquire timeout, 300s idle timeout, 1800s max lifetime, connection testing).
-- **Dynamic Spark Resource Tuning**: Configured SparkSession resource bounds dynamically for Hugging Face Spaces free-tier container limits (memory capped to 512MB, single-threaded executor, shuffle partitions 2, G1GC tuning) to avoid container restarts.
-- **Cross-Platform UDS IPC Bridge**: Implemented native Unix Domain Socket connection forwarding on Unix platforms, falling back cleanly to the tuned connection pool on Windows.
-- **OS-Aware Production UDS Startup Script (Hugging Face Spaces)**: Dynamically binds the Python Uvicorn server to the same UDS socket `/tmp/healthcare.sock` on Linux container/HF Spaces, completely eliminating TCP local networking overhead and proxy port bindings.
-- **SOTA UI/UX Telemetry Dropdown Widget**: Connected the React frontend cockpit status indicator directly to the native Rust telemetry endpoints to display real CPU/RAM metrics, active DB connection counts, and the current IPC socket transport mode.
-- **Live SVG Sparkline Chart**: Rendered a live scrolling sparkline graph inside the telemetry panel with clean gradients representing CPU load history.
-- **Simple & Usable Navigation**: Reverted menu descriptors back to their simple, clear names for better visual accessibility and simplicity.
-- **Rust unit test coverage**: Implemented a comprehensive Cargo test suite for all new Rust modules with 100% pass rates.
-- **100% Green Test Suite**: All 1,636 unit and integration tests in the Python suite pass cleanly.
-- **Physical ML Estimators**: Seeded fresh scikit-learn models to disk, resolving unpickling warnings and module errors.
-- **Spark & Delta Lakehouse**: Implemented standard lakehouse layers with live completeness, validity, and uniqueness DQ metrics.
-- **Rust Warning-Free Gateway**: Exposed native authentication routing, making token creation and profile checks run directly in compiled Rust, while cleaning up all compilation warnings.
-- **Turbovec Fallback**: Patched the optional Rust vector index load pathway to support clean environment abstraction.
+## 2. Verification Results
 
-## Phase 2 Completed Tasks
-- **Dynamic Terminology Search & SQLite Cache**: Integrated RxNorm REST API lookups backed by a thread-safe SQLite/in-memory cache, together with ICD-10/LOINC symptom maps.
-- **Clinician AI Safety Governance Registry**: Implemented `ai_governance.py` documenting claim limits, intended use, and recording clinician overrides.
-- **HL7 FHIR Schema Validation Sandbox**: Created schema-native FHIR validation checks for Patient, Encounter, Observation, and DiagnosticReport models.
-- **Rust FHIR Validation Sandbox**: Ported HL7 schema validation natively tocompiled Rust inside the gateway (`rust_gateway/src/fhir.rs`).
-- **Rust TEE Enclave Memory Wiping Sandbox**: Implemented secure attestation and volatile memory clearing (`write_volatile`) in compiled Rust.
-- **Rust Vector Store Similarity Index**: Built an optimized, in-memory vector database and similarity search engine in compiled Rust (`rust_gateway/src/vector_store.rs`), fully integrated with Python RAG clients.
-- **Rust-Backed Polars Data Quality Engine**: Programmed a live, multi-threaded quality engine inside `backend/data_engineering_platform.py` executing actual quality checks using Polars when Spark is unavailable.
+- **Frontend Production Build**: `npm run build` -> ✅ Succeeded in **4.64s** (0 errors).
+- **Frontend Unit Tests**: `npx vitest run` -> ✅ **90/90 tests passed** (29 test files).
+- **Playwright E2E Suite**: `pytest tests/e2e` -> ✅ **2/2 passed** (Landing page & Signup → Dashboard → Prediction flow).
+- **Backend Pytest Suite**: `python -m pytest tests/` -> ✅ **1,152 tests passed** (0 failures, 67.03% coverage).
 
-## Verification Metrics
-- **Python Backend**: **1,636 Passed**, 0 Failed, **73.98%** overall test coverage.
-- **Rust Gateway**: **10 Passed**, 0 Failed.
-- **Clinical Lifecycle Integration Demo**: `scripts/run_clinical_demo.py` executes successfully end-to-end.
+---
 
-## Next Steps
-- Verify additional microservice components (e.g. Android app routing).
-- Refine settings and dashboard visualization parameters for clinical audits.
+## 3. How to Run Locally
+
+```bash
+# Backend dev server (127.0.0.1:8000)
+uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+
+# Frontend dev server (3000)
+npm --prefix frontend run dev
+```

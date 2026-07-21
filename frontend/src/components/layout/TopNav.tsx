@@ -4,7 +4,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/lib/auth";
 import { prefetchRoute } from "@/lib/prefetch";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ChevronDown, BrainCircuit, ShieldCheck, HelpCircle, BookOpen, Key, AlertTriangle, Cpu, X, Bell, BellRing } from "lucide-react";
+import { Sparkles, ChevronDown, BrainCircuit, ShieldCheck, HelpCircle, BookOpen, Key, AlertTriangle, Cpu, X, Bell, BellRing, CreditCard } from "lucide-react";
 import Tooltip from "./Tooltip";
 import { useTranslation } from "@/lib/i18n";
 import { toast } from "@/lib/toast";
@@ -22,6 +22,13 @@ import ProfileDropdown from "./ProfileDropdown";
 import { useNetworkStatus } from "@/lib/offlineSync";
 
 const MobileDrawer = lazy(() => import("@/components/layout/MobileDrawer"));
+const ShiftHandoffModal = lazy(() => import("@/components/modals/ShiftHandoffModal").then(m => ({ default: m.ShiftHandoffModal })));
+const SoapDenialAuditModal = lazy(() => import("@/components/modals/SoapDenialAuditModal").then(m => ({ default: m.SoapDenialAuditModal })));
+const DischargeSummaryModal = lazy(() => import("@/components/modals/DischargeSummaryModal").then(m => ({ default: m.DischargeSummaryModal })));
+const TelephonyRoutingModal = lazy(() => import("@/components/modals/TelephonyRoutingModal").then(m => ({ default: m.TelephonyRoutingModal })));
+const SecurityLockoutModal = lazy(() => import("@/components/modals/SecurityLockoutModal").then(m => ({ default: m.SecurityLockoutModal })));
+const SelfHealingMaintenanceModal = lazy(() => import("@/components/modals/SelfHealingMaintenanceModal").then(m => ({ default: m.SelfHealingMaintenanceModal })));
+const BillingClaimsModal = lazy(() => import("@/components/modals/BillingClaimsModal").then(m => ({ default: m.BillingClaimsModal })));
 
 /* ═══════════════════════════════════════════════════
    TopNav Component
@@ -45,6 +52,13 @@ export default function TopNav({
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [showHandoffModal, setShowHandoffModal] = useState(false);
+  const [showSoapAuditModal, setShowSoapAuditModal] = useState(false);
+  const [showDischargeModal, setShowDischargeModal] = useState(false);
+  const [showTelephonyModal, setShowTelephonyModal] = useState(false);
+  const [showSecurityModal, setShowSecurityModal] = useState(false);
+  const [showHealingModal, setShowHealingModal] = useState(false);
+  const [showBillingModal, setShowBillingModal] = useState(false);
 
   const [alarm, setAlarm] = useState<{ active: boolean; bed?: string; name?: string; hr?: number } | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -521,8 +535,7 @@ export default function TopNav({
                     <div
                       onClick={() => {
                         setGuideOpen(false);
-                        navigate("/admin?tab=audit");
-                        toast.info("Auditing active. Click on a SOAP note or claims item to query denial logs.");
+                        setShowSoapAuditModal(true);
                       }}
                       className="bg-white/[0.01] hover:bg-white/[0.04] border border-white/[0.02] hover:border-[var(--accent)] p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01] duration-200"
                     >
@@ -535,8 +548,7 @@ export default function TopNav({
                     <div
                       onClick={() => {
                         setGuideOpen(false);
-                        navigate("/patients");
-                        toast.info("Select a patient from the registry to view or compile their active Shift Handoff card.");
+                        setShowHandoffModal(true);
                       }}
                       className="bg-white/[0.01] hover:bg-white/[0.04] border border-white/[0.02] hover:border-[var(--accent)] p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01] duration-200"
                     >
@@ -549,8 +561,7 @@ export default function TopNav({
                     <div
                       onClick={() => {
                         setGuideOpen(false);
-                        navigate("/patients");
-                        toast.info("Select a patient and click 'Generate Discharge Summary' inside their medical record view.");
+                        setShowDischargeModal(true);
                       }}
                       className="bg-white/[0.01] hover:bg-white/[0.04] border border-white/[0.02] hover:border-[var(--accent)] p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01] duration-200"
                     >
@@ -563,8 +574,7 @@ export default function TopNav({
                     <div
                       onClick={() => {
                         setGuideOpen(false);
-                        navigate("/infrastructure");
-                        toast.info("Check alert logs and configure automated telephony cardiologists route lists.");
+                        setShowTelephonyModal(true);
                       }}
                       className="bg-white/[0.01] hover:bg-white/[0.04] border border-white/[0.02] hover:border-[var(--accent)] p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01] duration-200"
                     >
@@ -585,8 +595,7 @@ export default function TopNav({
                   <div
                     onClick={() => {
                       setGuideOpen(false);
-                      navigate("/profile");
-                      toast.info("Configure password constraints, 2FA, and review account lockout parameters.");
+                      setShowSecurityModal(true);
                     }}
                     className="flex items-start gap-2 bg-white/[0.01] hover:bg-white/[0.04] border border-white/[0.02] hover:border-[var(--accent-purple)] p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01] duration-200"
                   >
@@ -609,8 +618,7 @@ export default function TopNav({
                   <div
                     onClick={() => {
                       setGuideOpen(false);
-                      navigate("/admin?tab=data-engineering");
-                      toast.info("Database index optimization and diagnostic self-healing parameters are active.");
+                      setShowHealingModal(true);
                     }}
                     className="flex items-start gap-2 bg-white/[0.01] hover:bg-white/[0.04] border border-white/[0.02] hover:border-[var(--success)] p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01] duration-200"
                   >
@@ -625,7 +633,28 @@ export default function TopNav({
                   </div>
                 </div>
 
-                {/* Section 4: Hotkeys */}
+                {/* Section 4: Billing & 837P Claims */}
+                <div className="space-y-2.5">
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-400 block">
+                    4. Patient Billing & Claims
+                  </span>
+                  <div
+                    onClick={() => {
+                      setGuideOpen(false);
+                      setShowBillingModal(true);
+                    }}
+                    className="flex items-start gap-2 bg-white/[0.01] hover:bg-white/[0.04] border border-white/[0.02] hover:border-emerald-500 p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01] duration-200"
+                  >
+                    <CreditCard className="text-emerald-400 shrink-0 mt-0.5" size={14} />
+                    <div>
+                      <h4 className="font-bold text-white uppercase tracking-wider mb-1 flex items-center justify-between">
+                        <span>Patient Billing Portal</span>
+                        <span className="text-[8px] bg-emerald-500/20 text-emerald-400 px-1 rounded">Open ↗</span>
+                      </h4>
+                      <p>View itemized encounter invoices, submit electronic ANSI 837P insurance claims, and process HSA/FSA patient co-pay payments online.</p>
+                    </div>
+                  </div>
+                </div>
                 <div className="space-y-2.5">
                   <span className="text-[10px] font-extrabold uppercase tracking-widest text-cyan-400 block">
                     4. Navigation Hotkeys
@@ -646,6 +675,33 @@ export default function TopNav({
           </>
         )}
       </AnimatePresence>
+
+      {/* ── Clinical Action Modals ── */}
+      <Suspense fallback={null}>
+        <AnimatePresence>
+          {showHandoffModal && (
+            <ShiftHandoffModal onClose={() => setShowHandoffModal(false)} />
+          )}
+          {showSoapAuditModal && (
+            <SoapDenialAuditModal onClose={() => setShowSoapAuditModal(false)} />
+          )}
+          {showDischargeModal && (
+            <DischargeSummaryModal onClose={() => setShowDischargeModal(false)} />
+          )}
+          {showTelephonyModal && (
+            <TelephonyRoutingModal onClose={() => setShowTelephonyModal(false)} />
+          )}
+          {showSecurityModal && (
+            <SecurityLockoutModal onClose={() => setShowSecurityModal(false)} />
+          )}
+          {showHealingModal && (
+            <SelfHealingMaintenanceModal onClose={() => setShowHealingModal(false)} />
+          )}
+          {showBillingModal && (
+            <BillingClaimsModal onClose={() => setShowBillingModal(false)} />
+          )}
+        </AnimatePresence>
+      </Suspense>
     </>
   );
 }

@@ -9,6 +9,9 @@ import {
 } from "@/lib/api";
 import { checkPrescribingSafety, fetchGenericSubstitution, fetchMedicationPricing } from "@/lib/apiIntelligence";
 import { apiFetch } from "@/lib/apiCore";
+import { motion, AnimatePresence } from "framer-motion";
+import { DdiAllergySafetyModal } from "@/components/modals/DdiAllergySafetyModal";
+import { DigitalSignatureModal } from "@/components/modals/DigitalSignatureModal";
 
 interface PatientMedicationsPanelProps {
   patientId: number;
@@ -70,6 +73,8 @@ const PatientMedicationsPanel = memo(function PatientMedicationsPanel({
   const [safetyAlerts, setSafetyAlerts] = useState<any[]>([]);
   const [checkingSafety, setCheckingSafety] = useState(false);
   const [overrideJustification, setOverrideJustification] = useState("");
+  const [showDdiModal, setShowDdiModal] = useState(false);
+  const [showSignatureModal, setShowSignatureModal] = useState(false);
 
   // Alternatives and Pricing compare state
   const [genericAlternative, setGenericAlternative] = useState<any>(null);
@@ -248,6 +253,26 @@ const PatientMedicationsPanel = memo(function PatientMedicationsPanel({
             >
               <Plus size={13} aria-hidden="true" />
               {showPrescribeForm ? "Cancel Form" : "Prescribe"}
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => setShowDdiModal(true)}
+            className="btn bg-red-600 hover:bg-red-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-red-600/20"
+            aria-label="Open DDI & Allergy Safety Cross-Checker"
+          >
+            <ShieldAlert size={13} aria-hidden="true" />
+            DDI Safety Check
+          </button>
+          {user?.role === "doctor" && (
+            <button
+              type="button"
+              onClick={() => setShowSignatureModal(true)}
+              className="btn bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer shadow-lg shadow-sky-600/20"
+              aria-label="Open Digital Signature & Attestation Canvas"
+            >
+              <CheckCircle2 size={13} aria-hidden="true" />
+              Sign Prescriptions
             </button>
           )}
           <button
@@ -571,6 +596,25 @@ const PatientMedicationsPanel = memo(function PatientMedicationsPanel({
           </div>
         )}
       </div>
+
+      <AnimatePresence>
+        {showDdiModal && (
+          <DdiAllergySafetyModal
+            patientId={patientId}
+            onClose={() => setShowDdiModal(false)}
+            onSafetyApproved={() => {
+              setShowDdiModal(false);
+              loadPrescriptions(true);
+            }}
+          />
+        )}
+        {showSignatureModal && (
+          <DigitalSignatureModal
+            physicianName={user?.full_name || "Dr. Sarah Jenkins, MD"}
+            onClose={() => setShowSignatureModal(false)}
+          />
+        )}
+      </AnimatePresence>
     </section>
   );
 })

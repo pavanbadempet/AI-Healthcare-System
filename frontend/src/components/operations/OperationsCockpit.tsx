@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, memo } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -190,7 +190,7 @@ function adminMetricCards(data: AdminOperationsCockpitData) {
   ];
 }
 
-export default function OperationsCockpit() {
+const OperationsCockpit = memo(function OperationsCockpit() {
   const { user } = useAuthStore();
   const [adminData, setAdminData] = useState<AdminOperationsCockpitData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -394,4 +394,6 @@ export default function OperationsCockpit() {
       </div>
     </section>
   );
-}
+});
+
+export default OperationsCockpit;

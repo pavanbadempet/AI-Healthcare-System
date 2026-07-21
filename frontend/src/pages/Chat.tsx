@@ -8,6 +8,7 @@ import { useTranslation } from "@/lib/i18n";
 import LazyMarkdown from "@/components/chat/LazyMarkdown";
 import Tooltip from "@/components/layout/Tooltip";
 import { ModelManager } from "@/components/chat/ModelManager";
+import { ClinicalAiConfiguratorModal } from "@/components/modals/ClinicalAiConfiguratorModal";
 import * as webllm from "@/lib/webllm";
 import { semanticCache } from "@/lib/semanticCache";
 
@@ -23,6 +24,7 @@ export default function ChatCopilotPage() {
   const [ragScope, setRagScope] = useState("patient");
   const [showSettings, setShowSettings] = useState(false);
   const [showModelManager, setShowModelManager] = useState(false);
+  const [showAiConfiguratorModal, setShowAiConfiguratorModal] = useState(false);
   const [currentOllamaModel, setCurrentOllamaModel] = useState("llama3.2");
   const [currentWebLLMModel, setCurrentWebLLMModel] = useState<string | null>(() => webllm.getActiveModel());
   const [webllmActive, setWebllmActive] = useState(() => webllm.isLoaded());
@@ -319,6 +321,15 @@ ${contextText}
                   <Trash2 size={13} aria-hidden="true" />
                 </button>
               </Tooltip>
+              <Tooltip content="Configure Clinical LLM Hyperparameters & System Prompts" position="bottom">
+                <button 
+                  onClick={() => setShowAiConfiguratorModal(true)}
+                  className={`p-1.5 border rounded transition-colors cursor-pointer text-purple-400 hover:text-purple-300 bg-purple-500/10 border-purple-500/20`}
+                  aria-label="Open clinical AI hyperparameter configurator"
+                >
+                  <Zap size={13} aria-hidden="true" />
+                </button>
+              </Tooltip>
               <Tooltip content="Manage AI Models (WebGPU / Ollama)" position="bottom">
                 <button 
                   onClick={() => setShowModelManager(true)}
@@ -604,6 +615,14 @@ ${contextText}
           webllmProgress={webllmProgress}
         />
       )}
+
+      <AnimatePresence>
+        {showAiConfiguratorModal && (
+          <ClinicalAiConfiguratorModal
+            onClose={() => setShowAiConfiguratorModal(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

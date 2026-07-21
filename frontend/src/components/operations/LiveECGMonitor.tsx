@@ -166,6 +166,8 @@ const LiveECGMonitor = memo(function LiveECGMonitor({ hr, status, mode = "ecg" }
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const workerRef = useRef<Worker | null>(null);
   const isWorkerModeRef = useRef<boolean>(false);
+  /** Tracks whether canvas control was transferred to OffscreenCanvas (irreversible). */
+  const transferredRef = useRef<boolean>(false);
 
   // Fallback refs for main-thread loop
   const animationRef = useRef<number | null>(null);
@@ -178,6 +180,10 @@ const LiveECGMonitor = memo(function LiveECGMonitor({ hr, status, mode = "ecg" }
     const canvas = canvasRef.current;
     if (!canvas) return;
 
+    // If canvas was already transferred (e.g. React StrictMode / HMR remount),
+    // skip — the canvas element is permanently in "transferred" state.
+    if (transferredRef.current) return;
+
     // Detect OffscreenCanvas support (guard for browsers, JSDOM, or automated tests)
     const supportsOffscreen = typeof canvas.transferControlToOffscreen === "function";
 
@@ -188,6 +194,7 @@ const LiveECGMonitor = memo(function LiveECGMonitor({ hr, status, mode = "ecg" }
         const worker = new Worker(workerUrl);
         workerRef.current = worker;
         isWorkerModeRef.current = true;
+        transferredRef.current = true;
 
         const dpr = window.devicePixelRatio || 1;
         const width = 400;
@@ -208,6 +215,7 @@ const LiveECGMonitor = memo(function LiveECGMonitor({ hr, status, mode = "ecg" }
           URL.revokeObjectURL(workerUrl);
           workerRef.current = null;
           isWorkerModeRef.current = false;
+          // NOTE: transferredRef stays true — canvas is permanently transferred
         };
       } catch (err) {
         console.warn("Failed to initialize OffscreenCanvas worker, falling back to main thread:", err);
@@ -230,7 +238,8 @@ const LiveECGMonitor = memo(function LiveECGMonitor({ hr, status, mode = "ecg" }
 
   // Main thread fallback loop (Only runs if OffscreenCanvas is not active)
   useEffect(() => {
-    if (isWorkerModeRef.current) return;
+    // Skip if worker mode is active OR if canvas was transferred (even if worker was cleaned up)
+    if (isWorkerModeRef.current || transferredRef.current) return;
 
     const canvas = canvasRef.current;
     if (!canvas) return;

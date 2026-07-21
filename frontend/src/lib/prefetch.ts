@@ -51,6 +51,24 @@ export const prefetchRoute = (path: string) => {
     case '/about':
       import('@/pages/About').catch(() => {});
       break;
+    case '/apps':
+      import('@/pages/AppRegistry').catch(() => {});
+      break;
+    case '/federated':
+      import('@/pages/FederatedLearning').catch(() => {});
+      break;
+    case '/intelligence':
+      import('@/pages/ClinicalIntelligence').catch(() => {});
+      break;
+    case '/companion':
+      import('@/pages/Companion').catch(() => {});
+      break;
+    case '/data-engineering':
+      import('@/pages/DataEngineering').catch(() => {});
+      break;
+    case '/telemetry':
+      import('@/pages/Telemetry').catch(() => {});
+      break;
     default:
       // Check if it matches a patient detail path: /patients/:id
       if (cleanPath.startsWith('/patients/')) {

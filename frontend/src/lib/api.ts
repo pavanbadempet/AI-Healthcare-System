@@ -16,7 +16,7 @@
  */
 
 // ── Core ─────────────────────────────────────────────────────────
-export { API_BASE, setTokenGetter, authHeaders, apiFetch } from './apiCore';
+export { API_BASE, setTokenGetter, authHeaders, apiFetch, getWebSocketUrl } from './apiCore';
 
 // ── Auth & Profile ──────────────────────────────────────────────
 export {
@@ -72,6 +72,8 @@ export {
   getDoctorPatientCareEventFeed,
   getAdminPatientCareEventFeed,
   getPatientCareEventFeed,
+  dispatchCareEvent,
+  updateBedStatus,
   type Department,
   type DepartmentCreate,
   type Bed,
@@ -84,6 +86,9 @@ export {
   type ClinicalOrder,
   type CareEvent,
   type CareEventFeed,
+  type CareEventDispatchPayload,
+  type CareEventDispatchResponse,
+  type BedStatusUpdatePayload,
 } from './apiHospital';
 
 // ── Admin ───────────────────────────────────────────────────────
@@ -91,6 +96,7 @@ export {
   getAdminStats,
   getAdminUsers,
   getAdminAuditLogs,
+  downloadAuditLogsCsv,
   getAdminPatients,
   getAdminPatient,
   getDoctorPatients,
@@ -101,6 +107,7 @@ export {
   getDoctorPatientDiagnosticResults,
   getPatientDiagnosticResults,
   reviewDiagnosticResult,
+  uploadDiagnosticFile,
   getDoctorPatientPrescriptions,
   getPatientPrescriptions,
   getAdminDataQuality,
@@ -126,6 +133,7 @@ export {
   type DiagnosticResult,
   type DoctorPatientDiagnosticResults,
   type DiagnosticReviewUpdate,
+  type DiagnosticUploadPayload,
   type DiagnosticsAdminMetrics,
   type PharmacyAdminMetrics,
   type PrescriptionItem,

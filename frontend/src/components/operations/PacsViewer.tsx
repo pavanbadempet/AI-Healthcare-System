@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, MouseEvent as ReactMouseEvent } from 'react';
-import { ZoomIn, Sun, Contrast, RotateCcw, Download, Crosshair, ArrowUpDown } from 'lucide-react';
+import { ZoomIn, Sun, Contrast, RotateCcw, Download, Crosshair, ArrowUpDown, Layers } from 'lucide-react';
 import { useMaterialRipple } from '@/lib/ripple';
+import { DicomMprRendererModal } from '@/components/modals/DicomMprRendererModal';
 
 interface PacsViewerProps {
   mrn: string;
@@ -32,6 +33,7 @@ export default function PacsViewer({
   const [windowWidth, setWindowWidth] = useState(256); // Contrast
   const [inverted, setInverted] = useState(false);
   const [sliceIndex, setSliceIndex] = useState(42);
+  const [showMprModal, setShowMprModal] = useState(false);
   const maxSlices = 120;
 
   // Interaction state
@@ -252,6 +254,14 @@ export default function PacsViewer({
         </div>
         
         <div className="flex items-center gap-2">
+           <button
+             className="p-2 rounded text-purple-400 hover:bg-zinc-800 transition-colors flex items-center gap-1 text-xs font-mono font-bold"
+             onClick={(e) => { triggerRipple(e); setShowMprModal(true); }}
+             title="Open 3D Multi-Planar Reconstruction"
+           >
+             <Layers size={18} />
+             <span>3D MPR</span>
+           </button>
            <button className="p-2 rounded text-zinc-400 hover:bg-zinc-800 transition-colors" title="Download DICOM">
              <Download size={18} />
            </button>
@@ -307,6 +317,14 @@ export default function PacsViewer({
            />
         </div>
       </div>
+
+      {showMprModal && (
+        <DicomMprRendererModal
+          patientName={patientName}
+          mrn={mrn}
+          onClose={() => setShowMprModal(false)}
+        />
+      )}
     </div>
   );
 }

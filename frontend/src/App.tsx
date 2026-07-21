@@ -1,5 +1,6 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet, useParams, useSearchParams } from 'react-router-dom';
+import { LazyMotion, domAnimation } from 'framer-motion';
 import AuthGuard from '@/components/layout/AuthGuard';
 import PageLoader from '@/components/layout/PageLoader';
 import ErrorBoundary from '@/components/layout/ErrorBoundary';
@@ -58,45 +59,47 @@ export default function App() {
   return (
     <ErrorBoundary>
       <LanguageProvider>
-        <BrowserRouter>
-          <Suspense fallback={<PageLoader />}>
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/signup" element={<SignupPage />} />
-              <Route path="/reset-password" element={<ResetPasswordPage />} />
+        <LazyMotion features={domAnimation} strict>
+          <BrowserRouter>
+            <Suspense fallback={<PageLoader />}>
+              <Routes>
+                {/* Public Routes */}
+                <Route path="/login" element={<LoginPage />} />
+                <Route path="/signup" element={<SignupPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-              {/* Protected Dashboard & Operations Routes */}
-              <Route element={<ProtectedLayout />}>
-                <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/patients" element={<PatientsPage />} />
-                <Route path="/patients/:id" element={<PatientDetailPageWrapper />} />
-                <Route path="/chat" element={<ChatPage />} />
-                <Route path="/telemedicine" element={<TelemedicinePage />} />
-                <Route path="/predict" element={<PredictPage />} />
-                <Route path="/predict/unified" element={<UnifiedHubPage />} />
-                <Route path="/predict/:modelType" element={<DynamicPredictPage />} />
-                <Route path="/infrastructure" element={<InfrastructurePage />} />
-                <Route path="/capacity" element={<CapacityPage />} />
-                <Route path="/admin" element={<AdminPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/pricing" element={<PricingPage />} />
-                <Route path="/about" element={<AboutPage />} />
-                <Route path="/apps" element={<AppRegistryPage />} />
-                <Route path="/federated" element={<FederatedLearningPage />} />
-                <Route path="/intelligence" element={<ClinicalIntelligencePage />} />
-                <Route path="/companion" element={<CompanionPage />} />
-                <Route path="/data-engineering" element={<DataEngineeringPage />} />
-                <Route path="/telemetry" element={<TelemetryPage />} />
-              </Route>
+                {/* Protected Dashboard & Operations Routes */}
+                <Route element={<ProtectedLayout />}>
+                  <Route path="/dashboard" element={<DashboardPage />} />
+                  <Route path="/patients" element={<PatientsPage />} />
+                  <Route path="/patients/:id" element={<PatientDetailPageWrapper />} />
+                  <Route path="/chat" element={<ChatPage />} />
+                  <Route path="/telemedicine" element={<TelemedicinePage />} />
+                  <Route path="/predict" element={<PredictPage />} />
+                  <Route path="/predict/unified" element={<UnifiedHubPage />} />
+                  <Route path="/predict/:modelType" element={<DynamicPredictPage />} />
+                  <Route path="/infrastructure" element={<InfrastructurePage />} />
+                  <Route path="/capacity" element={<CapacityPage />} />
+                  <Route path="/admin" element={<AdminPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/pricing" element={<PricingPage />} />
+                  <Route path="/about" element={<AboutPage />} />
+                  <Route path="/apps" element={<AppRegistryPage />} />
+                  <Route path="/federated" element={<FederatedLearningPage />} />
+                  <Route path="/intelligence" element={<ClinicalIntelligencePage />} />
+                  <Route path="/companion" element={<CompanionPage />} />
+                  <Route path="/data-engineering" element={<DataEngineeringPage />} />
+                  <Route path="/telemetry" element={<TelemetryPage />} />
+                </Route>
 
-              {/* Fallback redirects to Dashboard */}
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
-            </Routes>
-          </Suspense>
-          <ToastContainer />
-        </BrowserRouter>
+                {/* Fallback redirects to Dashboard */}
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              </Routes>
+            </Suspense>
+            <ToastContainer />
+          </BrowserRouter>
+        </LazyMotion>
       </LanguageProvider>
     </ErrorBoundary>
   );

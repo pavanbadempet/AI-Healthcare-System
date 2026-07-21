@@ -7,7 +7,9 @@ import {
 import {
   fetchSmartApps, registerSmartApp, deleteSmartApp, launchSmartApp, type SmartApp
 } from '@/lib/apiSmart';
+import { getDoctorPatients, type DoctorPatientSummary } from '@/lib/api';
 import SmartAppSandbox from '@/components/smart/SmartAppSandbox';
+import { SmartAppLauncherModal } from '@/components/modals/SmartAppLauncherModal';
 import { toast } from '@/lib/toast';
 
 export default function AppRegistry() {
@@ -28,16 +30,22 @@ export default function AppRegistry() {
   // Launch Modal state
   const [launchingApp, setLaunchingApp] = useState<SmartApp | null>(null);
   const [patientId, setPatientId] = useState('');
+  const [patientOptions, setPatientOptions] = useState<DoctorPatientSummary[]>([]);
   const [launchToken, setLaunchToken] = useState<string | null>(null);
   const [launchUrlWithToken, setLaunchUrlWithToken] = useState<string | null>(null);
+  const [showSmartLauncherModal, setShowSmartLauncherModal] = useState(false);
 
-  // Load registered apps
+  // Load registered apps & patients
   const loadApps = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await fetchSmartApps();
-      setApps(data);
+      const [appsData, patientsData] = await Promise.all([
+        fetchSmartApps(),
+        getDoctorPatients().catch(() => [])
+      ]);
+      setApps(appsData);
+      setPatientOptions(patientsData);
     } catch (err: any) {
       setError(err.message || 'Failed to load SMART applications');
     } finally {
@@ -124,13 +132,22 @@ export default function AppRegistry() {
           </p>
         </div>
 
-        <button
-          onClick={() => setShowRegModal(true)}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white font-medium rounded-xl shadow-lg shadow-sky-500/25 transition-all hover:scale-[1.02]"
-        >
-          <Plus className="w-5 h-5" />
-          <span>Register SMART App</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setShowSmartLauncherModal(true)}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs uppercase rounded-xl shadow-lg shadow-cyan-600/25 transition-all cursor-pointer"
+          >
+            <Play className="w-4 h-4" />
+            <span>Launch App Sandbox</span>
+          </button>
+          <button
+            onClick={() => setShowRegModal(true)}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-sky-500 hover:bg-sky-600 active:bg-sky-700 text-white font-medium rounded-xl shadow-lg shadow-sky-500/25 transition-all hover:scale-[1.02] cursor-pointer"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Register SMART App</span>
+          </button>
+        </div>
       </div>
 
       {/* Search & Stats */}
@@ -374,16 +391,32 @@ export default function AppRegistry() {
                   The app will be granted access to the specified patient record via scope-guarded FHIR tokens.
                 </p>
 
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-slate-400 uppercase">Target Patient ID</label>
-                  <input
-                    type="number"
-                    required
-                    placeholder="Enter Patient ID (e.g. 1)"
-                    value={patientId}
-                    onChange={(e) => setPatientId(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-emerald-500"
-                  />
+                <div className="space-y-1 font-mono">
+                  <label className="text-xs font-semibold text-slate-400 uppercase font-sans">Select Patient Context *</label>
+                  {patientOptions.length > 0 ? (
+                    <select
+                      required
+                      value={patientId}
+                      onChange={(e) => setPatientId(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-mono"
+                    >
+                      <option value="">-- Choose Patient Record --</option>
+                      {patientOptions.map((p) => (
+                        <option key={p.patient_id} value={p.patient_id} className="bg-slate-900 text-white">
+                          {p.full_name || p.username} (MRN #{p.patient_id}) — Status: {p.latest_status || "Active"}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <input
+                      type="number"
+                      required
+                      placeholder="Enter Patient ID (e.g. 1)"
+                      value={patientId}
+                      onChange={(e) => setPatientId(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-emerald-500 font-mono"
+                    />
+                  )}
                 </div>
 
                 <div className="flex gap-3 justify-end pt-4">
@@ -419,6 +452,14 @@ export default function AppRegistry() {
           }}
         />
       )}
+
+      <AnimatePresence>
+        {showSmartLauncherModal && (
+          <SmartAppLauncherModal
+            onClose={() => setShowSmartLauncherModal(false)}
+          />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

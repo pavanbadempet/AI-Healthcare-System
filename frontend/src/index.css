@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+/* Fonts loaded via index.html <link> — no CSS @import needed */
 @import "tailwindcss";
 
 @theme {
@@ -281,7 +281,8 @@ body > * {
     background: rgba(6, 6, 12, 0.45);
     border: 1px solid rgba(255, 255, 255, 0.04);
     border-radius: var(--radius);
-    backdrop-filter: blur(32px);
+    backdrop-filter: blur(16px);
+    contain: layout style paint;
     transition: border-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
     box-shadow: 0 4px 30px rgba(0, 0, 0, 0.35), inset 0 1px 1px rgba(255, 255, 255, 0.02);
   }
@@ -297,7 +298,8 @@ body > * {
     border: 1px solid rgba(255, 255, 255, 0.035);
     border-radius: var(--radius);
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.015);
-    backdrop-filter: blur(32px);
+    backdrop-filter: blur(16px);
+    contain: layout style paint;
     overflow: hidden;
   }
 
@@ -480,6 +482,29 @@ body > * {
 }
 
 /* ──────────────────────────────────────────────────
+   View Transitions API — Silky Page Morphing
+   ────────────────────────────────────────────────── */
+@view-transition {
+  navigation: auto;
+}
+
+::view-transition-old(root) {
+  animation: vt-fade-out 120ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+::view-transition-new(root) {
+  animation: vt-fade-in 200ms cubic-bezier(0.16, 1, 0.3, 1) 60ms both;
+}
+
+@keyframes vt-fade-out {
+  from { opacity: 1; filter: blur(0); }
+  to   { opacity: 0; filter: blur(2px); }
+}
+@keyframes vt-fade-in {
+  from { opacity: 0; filter: blur(2px); }
+  to   { opacity: 1; filter: blur(0); }
+}
+
+/* ──────────────────────────────────────────────────
    SOTA Rendering Responsiveness & Hardware Acceleration
    ────────────────────────────────────────────────── */
 
@@ -521,19 +546,19 @@ body > * {
 }
 .status-pulse-emerald {
   animation: pulse-emerald 2s infinite;
+  will-change: opacity;
 }
 @keyframes pulse-emerald {
-  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
-  70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
 }
 .status-pulse-ruby {
   animation: pulse-ruby 1.5s infinite;
+  will-change: opacity;
 }
 @keyframes pulse-ruby {
-  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
-  70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
 }
 
 
