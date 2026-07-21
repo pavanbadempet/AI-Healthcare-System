@@ -52,10 +52,12 @@ The platform provides native **HL7 FHIR R4** compatibility, 5 calibrated **XGBoo
 | **🧠 Generative AI** | LangGraph multi-agent orchestration, local Ollama (Llama 3.2), Google Gemini fallback |
 | **📊 Diagnostics** | 5 XGBoost gradient-boosted diagnostic classifiers, scikit-learn, conformal predictions |
 | **🛡️ Explainable AI** | SHAP feature attributions, counterfactual recourse recommendations, clinical narratives |
-| **📁 EHR Data Interop** | Native HL7 FHIR R4 schema serialization, HAPI FHIR server patient imports |
+| **📁 EHR Data Interop** | HL7 FHIR R4 JSON bundles, DICOMweb (QIDO-RS/WADO-RS), ABDM ABHA Health ID, SMART on FHIR |
+| **🖼️ PACS Imaging** | 3D Volumetric DICOM MPR (Axial, Sagittal, Coronal, 3D Mesh), DICOM Uploader |
+| **💳 Revenue & Security**| ANSI X12 837P insurance claims, HSA/FSA card processing, Web Crypto SHA-256 e-prescribing |
 | **🔄 Data Platform** | Apache Spark (PySpark), Delta Lake Medallion Architecture (Bronze/Silver/Gold), Airflow |
 | **⚡ High Performance** | Rust gRPC API gateway, in-memory SIMD vector search (turbovec), orjson serialization |
-| **🔐 HIPAA DevSecOps** | Exception PII masking middleware, Docker, AWS EKS (Kubernetes), Terraform IaC |
+| **🔐 HIPAA DevSecOps** | Code quality linter, PII exception masking, Docker, AWS EKS (Kubernetes), Terraform IaC |
 
 <!-- SEO: H1 is critical for search engines. The banner serves as the visual title. -->
 <!-- AI Healthcare System — Open-Source HIPAA-Compliant Clinical AI & EHR Platform -->
@@ -821,10 +823,13 @@ We run 8 structured GitHub Actions workflows for continuous integration and comp
 All tests must pass in CI before merging. We enforce a strict **50% code coverage gate** for pull request approvals.
 
 ```bash
-# Run the complete backend test suite with coverage (1,648+ tests)
+# Run the automated code quality linter
+python scripts/code_quality_linter.py
+
+# Run the complete backend test suite with coverage (1,149+ tests)
 python -m pytest tests/ -n auto -v
 
-# Run the frontend unit tests (90+ Vitest tests)
+# Run the frontend unit tests (90 Vitest tests)
 npm --prefix frontend run test
 ```
 
@@ -834,13 +839,13 @@ npm --prefix frontend run test
 
 - [x] **Core ML Engine**: 5 XGBoost diagnostic classifiers + SHAP explanations.
 - [x] **Multi-Agent RAG**: LangGraph supervisor routing + Ollama fallback gate.
-- [x] **FHIR Interoperability**: FHIR R4 JSON bundle exports + active consent layer.
-- [x] **Enterprise Telemetry**: WebSocket real-time occupancy and CPU metrics broadcaster.
+- [x] **FHIR Interoperability & ABDM**: FHIR R4 bundle exports + ABDM ABHA consent lifecycle + SMART on FHIR app launcher.
+- [x] **3D Volumetric DICOM & PACS Viewer**: Web-native tri-planar DICOM rendering (Axial, Sagittal, Coronal, 3D Mesh) + DICOMweb QIDO-RS/WADO-RS API.
+- [x] **Digital Signature & Voice Dictation**: Web Crypto SHA-256 e-prescribing sign-offs + W3C SpeechRecognition SOAP dictation.
+- [x] **Billing & EDI Claims**: ANSI X12 837P electronic claim submissions & HSA/FSA patient co-pay card processing.
+- [x] **Federated Node Orchestration**: Multi-center node topology manager with differential privacy noise ($\varepsilon$, $\delta$) tuning.
+- [x] **Enterprise Telemetry & Failover**: WebSocket metrics broadcaster + Virtual IP (VIP) read-replica database failover simulator.
 - [x] **AWS IaC Scripts**: Terraform manifests for AWS EKS, PostgreSQL RDS, ElastiCache.
-- [ ] **Federated Clinical Training**: Secure gradient sharing across localized clinics.
-- [ ] **DICOM Viewer Integration**: Web-native PACS DICOM medical imaging rendering.
-- [ ] **EHR Sync Daemons**: Background sync workers for Epic/Cerner EHR APIs.
-- [ ] **Clinical Voice Assistant**: Telemedicine ambient voice transcribing directly to EHR observations.
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
