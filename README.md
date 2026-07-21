@@ -32,10 +32,12 @@ The platform provides native **HL7 FHIR R4** compatibility, 5 calibrated **XGBoo
   <img src="https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python" />
   <img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/React_19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 19" />
+  <img src="https://img.shields.io/badge/3D_DICOM_PACS-0052CC?style=flat-square" alt="3D DICOM PACS" />
+  <img src="https://img.shields.io/badge/FHIR_R4-E73F3E?style=flat-square" alt="FHIR R4" />
+  <img src="https://img.shields.io/badge/ABDM_ABHA-1565C0?style=flat-square" alt="ABDM ABHA" />
+  <img src="https://img.shields.io/badge/SMART_on_FHIR-ff6b00?style=flat-square" alt="SMART on FHIR" />
   <img src="https://img.shields.io/badge/LangGraph-1C3C3C?style=flat-square&logo=langchain&logoColor=white" alt="LangGraph" />
   <img src="https://img.shields.io/badge/Ollama-000000?style=flat-square&logo=ollama&logoColor=white" alt="Ollama" />
-  <img src="https://img.shields.io/badge/XGBoost-FF3633?style=flat-square" alt="XGBoost" />
-  <img src="https://img.shields.io/badge/FHIR_R4-E73F3E?style=flat-square" alt="FHIR R4" />
   <img src="https://img.shields.io/badge/PySpark-E25A1C?style=flat-square&logo=apachespark&logoColor=white" alt="PySpark" />
   <img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
 </p>
