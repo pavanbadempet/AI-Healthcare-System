@@ -460,6 +460,40 @@ class HealthcareDeltaManager:
             logger.error("Failed to optimize table")
             raise
 
+class DeltaLockCoordinator:
+    """Optimistic Concurrency Lock Handler for Delta Lake Maintenance.
+    
+    Prevents lock contention between background OPTIMIZE/Z-ORDER maintenance runs
+    and high-frequency PySpark/DuckDB streaming writes using exponential backoff retries.
+    """
+
+    def __init__(self, max_retries: int = 5, backoff_base_seconds: float = 1.0):
+        self.max_retries = max_retries
+        self.backoff_base_seconds = backoff_base_seconds
+
+    def execute_with_lock_retry(self, operation_fn, *args, **kwargs) -> Any:
+        """Executes a Delta operation with non-blocking retry on concurrent write conflict."""
+        import time
+        last_error = None
+        for attempt in range(1, self.max_retries + 1):
+            try:
+                return operation_fn(*args, **kwargs)
+            except Exception as e:
+                last_error = e
+                err_str = str(e).lower()
+                if "concurrentappendexception" in err_str or "concurrenttransactionexception" in err_str or "lock" in err_str:
+                    wait_time = self.backoff_base_seconds * (2 ** (attempt - 1))
+                    logger.warning(
+                        "Delta write lock conflict detected (attempt %d/%d). Retrying in %.2fs...",
+                        attempt, self.max_retries, wait_time
+                    )
+                    time.sleep(wait_time)
+                else:
+                    raise e
+        logger.error("Delta operation lock retry exhausted after %d attempts: %s", self.max_retries, last_error)
+        raise last_error
+
+
 # Initialize Delta manager
 def get_delta_manager(spark: Optional[SparkSession] = None) -> HealthcareDeltaManager:
     """Get or create Delta Lake manager instance"""
