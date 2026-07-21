@@ -3,11 +3,13 @@ Admin Dashboard Logic
 =====================
 Endpoints for system administration, analytics, and user management.
 """
+import csv
+import io
 import json
 import os
 from typing import Dict, Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, Response, status
 from sqlalchemy.orm import Session
 
 from . import (
@@ -316,9 +318,8 @@ def get_admin_stats(
         cached_stats = cache.get(cache_key)
         if cached_stats is not None:
             return cached_stats
-    except Exception:
-        # Import logger at runtime if needed, but admin.py already has a logger defined at module level
-        pass
+    except Exception as exc:
+        logger.debug("Cache fetch exception in get_dashboard_stats: %s", exc)
 
     user_query = _scope_users_to_admin_facility(db.query(models.User), admin)
     user_ids = [user_id for (user_id,) in user_query.with_entities(models.User.id).all()]
@@ -339,8 +340,8 @@ def get_admin_stats(
 
     try:
         cache.set(cache_key, stats, ttl=3600)
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("Cache store exception in get_dashboard_stats: %s", exc)
 
     return stats
 
@@ -368,6 +369,52 @@ def get_audit_logs(
         .all()
     )
     return [audit.audit_log_to_response(entry) for entry in entries]
+
+
+@router.get("/audit-logs/export")
+def export_audit_logs_csv(
+    action: Optional[str] = None,
+    target_user_id: Optional[int] = None,
+    db: Session = Depends(database.get_db),
+    admin: models.User = Depends(get_current_admin),
+) -> Response:
+    """Export facility audit log entries in PHI-safe CSV format."""
+    _ensure_admin_can_filter_target_user(db, admin, target_user_id)
+    query = _scope_audit_logs_to_admin_facility(db.query(models.AuditLog), admin)
+    if action:
+        query = query.filter(models.AuditLog.action == action)
+    if target_user_id is not None:
+        query = query.filter(models.AuditLog.target_user_id == target_user_id)
+
+    entries = (
+        query.order_by(models.AuditLog.timestamp.desc(), models.AuditLog.id.desc())
+        .limit(1000)
+        .all()
+    )
+
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "Timestamp", "Actor User ID", "Target User ID", "Facility ID", "Action", "IP Address", "Details"])
+
+    for entry in entries:
+        resp = audit.audit_log_to_response(entry)
+        writer.writerow([
+            resp.get("id"),
+            resp.get("timestamp"),
+            resp.get("actor_user_id"),
+            resp.get("target_user_id"),
+            resp.get("facility_id"),
+            resp.get("action"),
+            resp.get("ip_address"),
+            json.dumps(resp.get("details", {})),
+        ])
+
+    csv_data = output.getvalue()
+    return Response(
+        content=csv_data,
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=audit_logs_export.csv"},
+    )
 
 
 @router.get("/ai-functions")

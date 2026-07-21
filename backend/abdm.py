@@ -583,8 +583,8 @@ def verify_gateway_signature(signature_header: str | None, payload_bytes: bytes)
         payload = auth.decode_access_token(token)
         if payload and "sub" in payload:
             return True
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.debug("Internal JWT token decode bypass fallback: %s", exc)
 
     settings = get_settings()
 
