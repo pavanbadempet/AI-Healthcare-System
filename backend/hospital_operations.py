@@ -252,6 +252,57 @@ def list_beds(
     return query.order_by(models.Bed.bed_number.asc()).all()
 
 
+VALID_BED_STATUSES = {"available", "occupied", "maintenance", "cleaning"}
+
+
+@router.patch("/beds/{bed_id}/status", response_model=schemas.BedResponse)
+def update_bed_status(
+    bed_id: int,
+    payload: schemas.BedStatusUpdate,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    """Transition a bed's operational status (e.g. discharge: occupied → cleaning).
+
+    Args:
+        bed_id: The database ID of the bed to update.
+        payload: The new status and optional patient assignment.
+        db: Database session from dependency injection.
+        current_user: The authenticated user performing the update.
+
+    Returns:
+        The updated bed record.
+
+    Raises:
+        HTTPException: If the bed is not found, status is invalid, or access is denied.
+    """
+    _require_doctor_or_admin(current_user)
+    bed = db.query(models.Bed).filter(models.Bed.id == bed_id).first()
+    if not bed:
+        raise HTTPException(status_code=404, detail="Bed not found")
+    _ensure_facility_access(current_user, bed.facility_id)
+
+    if payload.status not in VALID_BED_STATUSES:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid bed status '{payload.status}'. Must be one of: {sorted(VALID_BED_STATUSES)}",
+        )
+
+    bed.status = payload.status
+    bed.current_patient_id = payload.current_patient_id
+    db.commit()
+    db.refresh(bed)
+    audit.record_audit_event(
+        db,
+        actor_user_id=current_user.id,
+        target_user_id=payload.current_patient_id,
+        facility_id=bed.facility_id,
+        action="UPDATE_BED_STATUS",
+        details={"resource_type": "bed", "resource_id": bed.id, "new_status": payload.status},
+    )
+    return bed
+
+
 @router.post("/encounters", response_model=schemas.EncounterResponse)
 def create_encounter(
     encounter: schemas.EncounterCreate,
@@ -754,3 +805,81 @@ def get_triage_queue(
         "critical_count": sum(1 for p in triage_queue if p["esi_level"] <= 2),
         "clinical_safety_note": "ESI triage scores are automated clinical decision-support aids; clinicians perform final physical triage evaluations."
     }
+
+
+@router.post("/dicom/upload", status_code=201)
+def upload_dicom_study(
+    payload: dict,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    """Stores DICOM study metadata in PACS database."""
+    study = models.DicomStudy(
+        study_uid=payload.get("study_uid", f"1.2.840.113619.2.55.3.{datetime.now().timestamp()}"),
+        patient_id=current_user.id,
+        modality=payload.get("modality", "CT"),
+        target_vault=payload.get("target_vault", "PACS-PRIMARY-01"),
+        file_name=payload.get("file_name", "study.dcm"),
+        file_size_kb=int(payload.get("file_size_kb", 0)),
+        is_preamble_valid=str(payload.get("is_preamble_valid", True)).lower(),
+    )
+    db.add(study)
+    db.commit()
+    db.refresh(study)
+
+    audit.log_action(
+        db,
+        current_user.id,
+        "UPLOAD_DICOM_STUDY",
+        f"Stored DICOM study {study.study_uid} ({study.modality}) in PACS vault {study.target_vault}",
+    )
+
+    return {
+        "status": "success",
+        "study_id": study.id,
+        "study_uid": study.study_uid,
+        "message": f"DICOM study {study.study_uid} successfully stored in PACS database.",
+    }
+
+
+@router.post("/dictation/soap", status_code=200)
+async def process_soap_dictation(
+    payload: dict,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    """Processes raw speech transcript with LLM into a structured SOAP note and persists it to HealthRecord DB."""
+    transcript = payload.get("transcript", "")
+    if not transcript:
+        raise HTTPException(status_code=400, detail="Transcript is required")
+
+    from .clinical_notes import compile_clinical_note
+    result = await compile_clinical_note(transcript, format_type="SOAP")
+
+    # Persist as HealthRecord in database
+    record = models.HealthRecord(
+        patient_id=current_user.id,
+        record_type="SOAP Note",
+        data={
+            "transcript": transcript,
+            "note_markdown": result.get("note_markdown", ""),
+            "coded_diagnoses": result.get("coded_diagnoses", []),
+        },
+    )
+    db.add(record)
+    db.commit()
+    db.refresh(record)
+
+    audit.log_action(
+        db,
+        current_user.id,
+        "CREATE_SOAP_NOTE",
+        f"Compiled and saved SOAP note (HealthRecord #{record.id}) from voice dictation",
+    )
+
+    return {
+        "status": "success",
+        "record_id": record.id,
+        "soap": result,
+    }
+

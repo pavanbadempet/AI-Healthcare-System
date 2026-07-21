@@ -429,3 +429,36 @@ def import_fhir_patient(
     }
 
 
+@router.get("/ImagingStudy", response_model=Dict[str, Any])
+def search_imaging_studies(
+    patient: int | None = Query(None, description="Patient ID to filter by"),
+    token_data: Dict[str, Any] = Depends(validate_fhir_token),
+    db: Session = Depends(database.get_db),
+) -> Dict[str, Any]:
+    """FHIR R4 search for ImagingStudy resources."""
+    from . import fhir
+    query = db.query(models.DicomStudy)
+    target_patient = patient or token_data.get("patient_id")
+    if target_patient:
+        query = query.filter(models.DicomStudy.patient_id == target_patient)
+
+    studies = query.all()
+    resources = [fhir.imaging_study_resource(s, s.patient_id or 1) for s in studies]
+    return fhir.build_bundle(resources)
+
+
+@router.get("/Claim", response_model=Dict[str, Any])
+def search_claims(
+    patient: int | None = Query(None, description="Patient ID to filter by"),
+    token_data: Dict[str, Any] = Depends(validate_fhir_token),
+    db: Session = Depends(database.get_db),
+) -> Dict[str, Any]:
+    """FHIR R4 search for Claim resources."""
+    from . import fhir
+    query = db.query(models.InsuranceClaim)
+    claims = query.all()
+    resources = [fhir.claim_resource(c, 1) for c in claims]
+    return fhir.build_bundle(resources)
+
+
+

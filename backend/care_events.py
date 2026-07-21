@@ -13,6 +13,54 @@ from .facility_scope import users_share_facility_context
 router = APIRouter(prefix="/events", tags=["Care Events"])
 CARE_EVENT_FACILITY_ACCESS_DETAIL = "Care event resource is outside the user's facility"
 
+ALLOWED_EVENT_TYPES = {
+    "code-blue", "nurse-call", "rapid-response",
+    "fall-alert", "medication-alert", "discharge-initiated",
+}
+
+
+@router.post("/dispatch", response_model=dict[str, Any])
+def dispatch_care_event(
+    payload: schemas.CareEventCreate,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+) -> dict[str, Any]:
+    """Persist a clinical care event (code-blue, nurse-call, etc.) to the database.
+
+    Args:
+        payload: The care event details including event_type, title, and optional severity.
+        db: Database session from dependency injection.
+        current_user: The authenticated user dispatching the event.
+
+    Returns:
+        A dict containing the serialized event and a clinical safety note.
+    """
+    if payload.event_type not in ALLOWED_EVENT_TYPES:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Invalid event_type '{payload.event_type}'. Must be one of: {sorted(ALLOWED_EVENT_TYPES)}",
+        )
+
+    event = models.CareEvent(
+        facility_id=current_user.facility_id,
+        patient_id=payload.patient_id,
+        actor_user_id=current_user.id,
+        encounter_id=payload.encounter_id,
+        department_id=payload.department_id,
+        event_type=payload.event_type,
+        title=payload.title,
+        summary=payload.summary,
+        severity=payload.severity or "info",
+    )
+    db.add(event)
+    db.commit()
+    db.refresh(event)
+    return {
+        "event": _serialize_event(event),
+        "clinical_safety_note": "Care events are operational records and do not replace clinician review.",
+    }
+
+
 
 def _require_admin(current_user: models.User) -> None:
     if not auth.is_admin(current_user):

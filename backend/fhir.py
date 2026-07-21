@@ -284,6 +284,33 @@ def medication_request_resource(prescription: Any, patient_id: int | str) -> dic
         "encounter": {"reference": f"Encounter/{getattr(prescription, 'encounter_id', '')}"} if getattr(prescription, "encounter_id", None) else None,
     })
 
+def imaging_study_resource(dicom_study: Any, patient_id: int | str) -> dict[str, Any]:
+    """Converts DicomStudy ORM model to FHIR R4 ImagingStudy resource."""
+    return _remove_none({
+        "resourceType": "ImagingStudy",
+        "id": _string_id(getattr(dicom_study, "id", "demo-dicom")),
+        "status": "available",
+        "subject": {"reference": f"Patient/{patient_id}"},
+        "identifier": [{"system": "urn:dicom:uid", "value": getattr(dicom_study, "study_uid", "")}],
+        "modality": [{"coding": [{"system": "http://dicom.nema.org/resources/ontology/DCM", "code": getattr(dicom_study, "modality", "CT")}]}],
+        "description": getattr(dicom_study, "file_name", "DICOM Image Study"),
+        "started": fhir_datetime(getattr(dicom_study, "created_at", None)),
+    })
+
+def claim_resource(insurance_claim: Any, patient_id: int | str) -> dict[str, Any]:
+    """Converts InsuranceClaim ORM model to FHIR R4 Claim resource."""
+    return _remove_none({
+        "resourceType": "Claim",
+        "id": _string_id(getattr(insurance_claim, "id", "demo-claim")),
+        "status": getattr(insurance_claim, "status", "active") or "active",
+        "type": {"coding": [{"system": "http://terminology.hl7.org/CodeSystem/claim-type", "code": "institutional"}]},
+        "use": "claim",
+        "patient": {"reference": f"Patient/{patient_id}"},
+        "created": fhir_datetime(getattr(insurance_claim, "created_at", None)),
+        "identifier": [{"system": "urn:ansi:x12:837p", "value": getattr(insurance_claim, "claim_number", "")}],
+        "total": {"value": float(getattr(insurance_claim, "claim_amount", 0.0)), "currency": "USD"},
+    })
+
 def invoice_resource(invoice: Any, patient_id: int | str) -> dict[str, Any]:
     if os.environ.get("MICROSERVICES_MODE") == "true":
         return _call_fhir_invoice(invoice, patient_id)

@@ -42,12 +42,14 @@ from .billing import (  # noqa: F401
 
 # Clinical domain
 from .clinical import (  # noqa: F401
+    CareEventCreate,
     CareEventResponse,
     ClinicalOrderCreate,
     ClinicalOrderResponse,
     DiagnosticResultCreate,
     DiagnosticResultResponse,
     DiagnosticReviewUpdate,
+    DiagnosticUploadCreate,
     MonitoringSignalResponse,
     PatientTimelineResponse,
     VitalObservationCreate,
@@ -76,6 +78,7 @@ from .hospital import (  # noqa: F401
     AdmissionResponse,
     BedCreate,
     BedResponse,
+    BedStatusUpdate,
     DepartmentCreate,
     DepartmentResponse,
     EncounterCreate,

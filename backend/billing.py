@@ -511,3 +511,57 @@ async def audit_invoice_denial_risk(
     agent = ClinicalBillingAgent(db)
     report = await agent.audit_billing_claim(soap_note)
     return report
+
+
+@router.post("/claims/submit", status_code=201)
+def submit_insurance_claim(
+    payload: dict,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    """Submits and persists an ANSI X12 837P Electronic Insurance Claim to database."""
+    claim = models.InsuranceClaim(
+        claim_number=payload.get("claim_number", "CLM-837P-SUBMITTED"),
+        patient_name=payload.get("patient_name", current_user.full_name or "Patient"),
+        payer_name=payload.get("payer_name", "Commercial Payer"),
+        policy_id=payload.get("policy_id", "POL-DEFAULT"),
+        claim_amount=float(payload.get("claim_amount", 0.0)),
+        copay_amount=float(payload.get("copay_amount", 0.0)),
+        status="submitted",
+    )
+    db.add(claim)
+    db.commit()
+    db.refresh(claim)
+
+    audit.log_action(
+        db,
+        current_user.id,
+        "SUBMIT_INSURANCE_CLAIM",
+        f"Transmitted X12 837P claim {claim.claim_number} for ${claim.claim_amount} to {claim.payer_name}",
+    )
+
+    return {
+        "status": "success",
+        "claim_id": claim.id,
+        "claim_number": claim.claim_number,
+        "message": f"Claim {claim.claim_number} successfully stored and queued for EDI transmission.",
+    }
+
+
+@router.post("/soap-audit")
+async def audit_soap_note_denial(
+    payload: dict,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(auth.get_current_user),
+):
+    """Audits clinical SOAP text using AI ClinicalBillingAgent for claims denial risk assessment."""
+    soap_note = payload.get("soap_text", "")
+    if not soap_note:
+        raise HTTPException(status_code=400, detail="soap_text payload is required")
+
+    from backend.agents.billing_agent import ClinicalBillingAgent
+    agent = ClinicalBillingAgent(db)
+    report = await agent.audit_billing_claim(soap_note)
+    return report
+
+

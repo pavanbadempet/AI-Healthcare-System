@@ -97,3 +97,18 @@ class InteroperabilityExport(Base):
     requested_by = relationship("User", foreign_keys=[requested_by_id])
     consent = relationship("InteroperabilityConsent")
     profile = relationship("InteroperabilityExportProfile")
+
+
+class AbhaLink(Base):
+    __tablename__ = "abha_links"
+
+    id = Column(Integer, primary_key=True, index=True)
+    patient_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    abha_address = Column(String, unique=True, index=True)
+    kyc_transaction_id = Column(String, nullable=True)
+    consent_purpose = Column(String, default="CARE_MANAGEMENT")
+    status = Column(String, default="active")
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    patient = relationship("User", foreign_keys=[patient_id])
+
