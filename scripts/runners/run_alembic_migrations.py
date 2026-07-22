@@ -8,7 +8,7 @@ supporting PostgreSQL and SQLite schemas without table locks or data loss.
 import logging
 import os
 import sys
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 
