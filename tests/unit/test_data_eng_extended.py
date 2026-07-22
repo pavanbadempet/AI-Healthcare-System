@@ -1,4 +1,5 @@
 import importlib
+import requests
 import sys
 import types
 import asyncio
@@ -8,6 +9,16 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 def mock_dependencies():
+    for mod in [
+        "backend.data_engineering_platform",
+        "pyspark",
+        "pyspark.sql",
+        "pyspark.sql.functions",
+        "pyspark.sql.types",
+        "redis",
+    ]:
+        sys.modules.pop(mod, None)
+
     pyspark = types.ModuleType("pyspark")
     pyspark_sql = types.ModuleType("pyspark.sql")
     pyspark_functions = types.ModuleType("pyspark.sql.functions")
@@ -49,30 +60,20 @@ def mock_dependencies():
 
 mock_dependencies()
 
-from backend.data_engineering_platform import (
-    HealthcareDataPipeline,
-    PIPELINE_FAILURE_MESSAGE,
-    DataQualityMetrics,
-)
+dep_module = importlib.import_module("backend.data_engineering_platform")
+HealthcareDataPipeline = dep_module.HealthcareDataPipeline
+PIPELINE_FAILURE_MESSAGE = dep_module.PIPELINE_FAILURE_MESSAGE
+DataQualityMetrics = dep_module.DataQualityMetrics
 
-class MockSparkSession:
-    def __init__(self):
-        self.read = MockSparkReader()
-        self.readStream = MockSparkReader()
-    def createDataFrame(self, data):
-        return MockDataFrame()
-
-class MockSparkReader:
+class MockSparkWriter:
     def format(self, fmt):
-        return self
-    def option(self, key, value):
         return self
     def options(self, **kwargs):
         return self
-    def load(self):
-        return MockDataFrame()
-    def json(self, path):
-        return MockDataFrame()
+    def mode(self, m):
+        return self
+    def save(self):
+        pass
 
 class MockDataFrame:
     def __init__(self, count_val=10):
@@ -100,20 +101,28 @@ class MockDataFrame:
         mock_row = MagicMock()
         mock_row.asDict.return_value = {"completeness": 0.99, "count": 100}
         
-        # Make the returned object have collect() method that returns [mock_row]
         result = MagicMock()
         result.collect.return_value = [mock_row]
         return result
 
-class MockSparkWriter:
+class MockSparkReader:
     def format(self, fmt):
+        return self
+    def option(self, key, value):
         return self
     def options(self, **kwargs):
         return self
-    def mode(self, m):
-        return self
-    def save(self):
-        pass
+    def load(self):
+        return MockDataFrame()
+    def json(self, path):
+        return MockDataFrame()
+
+class MockSparkSession:
+    def __init__(self):
+        self.read = MockSparkReader()
+        self.readStream = MockSparkReader()
+    def createDataFrame(self, data):
+        return MockDataFrame()
 
 @pytest.fixture
 def data_pipeline():

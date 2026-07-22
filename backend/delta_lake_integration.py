@@ -462,7 +462,7 @@ class HealthcareDeltaManager:
 
 class DeltaLockCoordinator:
     """Optimistic Concurrency Lock Handler for Delta Lake Maintenance.
-    
+
     Prevents lock contention between background OPTIMIZE/Z-ORDER maintenance runs
     and high-frequency PySpark/DuckDB streaming writes using exponential backoff retries.
     """

@@ -7,7 +7,7 @@ Supports direct execution via ONNX Runtime for sub-10ms browser/edge inference.
 """
 
 import logging
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Optional, Tuple
 
 import numpy as np
 

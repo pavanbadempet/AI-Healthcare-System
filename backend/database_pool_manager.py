@@ -7,11 +7,7 @@ handling >50,000 req/sec across multi-hospital enterprise deployments with zero 
 
 import logging
 import os
-from typing import Any, Dict, Optional
-
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.pool import QueuePool
+from typing import Any, Dict
 
 logger = logging.getLogger(__name__)
 
