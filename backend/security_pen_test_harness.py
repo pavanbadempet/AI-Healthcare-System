@@ -7,7 +7,7 @@ JWT secret rotation checks, and SOC 2 Type II technical control verification.
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
 

@@ -7,6 +7,7 @@ AI components: ML models for data quality and predictions
 import asyncio
 import json
 import logging
+import os
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -17,6 +18,7 @@ from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
 import redis
+
 try:
     from pyspark.sql import DataFrame as SparkDF
     from pyspark.sql import SparkSession
@@ -1110,7 +1112,7 @@ class DataScaleEngine(Enum):
 
 class AdaptiveDataPlatformRouter:
     """Scale-aware Data Platform Router.
-    
+
     Dynamically routes analytical and Medallion Lakehouse workloads based on dataset volume:
     - Small/Edge Scale (<50GB / Single Node): DuckDB + Polars (Embedded in-memory, instant response, zero cluster overhead)
     - Enterprise Large Scale (>50GB / Petabytes / Multi-Node Cluster): Apache PySpark + Delta Lake (Distributed execution)

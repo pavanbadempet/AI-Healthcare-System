@@ -99,7 +99,7 @@ class DuckDBClient:
 
             # Silver -> Gold (Clinical Aggregates & Moving Averages)
             gold_query = f"""
-                SELECT 
+                SELECT
                     patient_id,
                     AVG(heart_rate) as avg_heart_rate,
                     STDDEV(heart_rate) as hr_variability,

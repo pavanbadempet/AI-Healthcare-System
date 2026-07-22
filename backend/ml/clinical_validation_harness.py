@@ -8,7 +8,7 @@ benchmarks (Sensitivity >= 90%, AUROC >= 0.88, Brier Calibration Score <= 0.12).
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 import numpy as np
 

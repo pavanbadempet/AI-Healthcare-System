@@ -204,7 +204,7 @@ class ClinicalEventBus:
 
 class KafkaKinesisStreamBuffer:
     """High-throughput Kafka / AWS Kinesis Stream Buffer Adapter for zero-backpressure ICU vitals streaming.
-    
+
     Dynamically routes high-frequency telemetry events (>100k events/sec) through Apache Kafka or AWS Kinesis
     when KAFKA_BOOTSTRAP_SERVERS or KINESIS_STREAM_NAME is set, with graceful fallback to Redis Streams / In-Memory queues.
     """
@@ -216,7 +216,6 @@ class KafkaKinesisStreamBuffer:
 
     async def publish_buffered_event(self, topic: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Publishes streaming event into high-throughput ingestion buffer."""
-        import json
         if self.buffer_mode == "kafka":
             logger.info("Published streaming event to Kafka topic [%s]: %s", topic, payload.get("patient_id"))
             return {"status": "buffered", "engine": "Apache Kafka", "topic": topic}

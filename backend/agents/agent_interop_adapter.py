@@ -7,7 +7,7 @@ across LangGraph, AutoGen, CrewAI, and Model Context Protocol (MCP) standards.
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Optional
 
 logger = logging.getLogger(__name__)
 

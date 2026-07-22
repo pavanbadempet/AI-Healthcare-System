@@ -6,9 +6,8 @@ guaranteeing patient health data is stored exclusively in designated geographic 
 """
 
 import logging
-import os
 from dataclasses import dataclass
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List
 
 logger = logging.getLogger(__name__)
 

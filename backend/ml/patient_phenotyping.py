@@ -8,7 +8,7 @@ robust, medically meaningful clinical sub-phenotypes across patient populations.
 
 import logging
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 
