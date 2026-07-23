@@ -118,6 +118,8 @@ def check_current(token: str):
 
 
 def main():
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description="GitHub SEO Optimizer")
     parser.add_argument("--token", help="GitHub personal access token")
     parser.add_argument("--check", action="store_true", help="Check current state only")
