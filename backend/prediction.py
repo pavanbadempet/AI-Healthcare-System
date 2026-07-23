@@ -37,7 +37,16 @@ router = APIRouter()
 # External modules that import initialize_models from prediction.py
 # will continue to work. The canonical source is model_service.
 def initialize_models():
-    """Delegates to model_service.initialize() and syncs module-level model attrs."""
+    """Delegate model initialization to model_service and sync module-level attributes.
+
+    Loads all trained ML models (diabetes, heart, liver, kidney, lungs) and
+    their associated scalers via ``model_service.initialize()``, then copies
+    references to module-level variables so that legacy code and tests can
+    access them directly (e.g. ``backend.prediction.diabetes_model``).
+
+    Returns:
+        None
+    """
     try:
         import torch
         torch.set_num_threads(1)
@@ -60,7 +69,20 @@ def initialize_models():
 
 
 def _attest_model_in_enclave(enclave, model_name: str):
-    """Resolve the model file path and cryptographically attest it in the enclave."""
+    """Resolve the model file path and cryptographically attest it in the enclave.
+
+    Looks up the serialized model file (.pkl or .onnx) on disk for the given
+    model name and registers it with the Trusted Execution Environment (TEE)
+    enclave for cryptographic attestation. Falls back to a manual attestation
+    flag if no model binary exists.
+
+    Args:
+        enclave (ConfidentialEnclave): The TEE enclave instance to attest against.
+        model_name (str): The logical model name (e.g. ``"heart"``, ``"kidney"``).
+
+    Returns:
+        None
+    """
     model_dir = os.path.dirname(os.path.abspath(__file__))
     file_name = f"{model_name}_model.pkl"
     if model_name == "heart":
@@ -79,7 +101,32 @@ def _attest_model_in_enclave(enclave, model_name: str):
         enclave._attested = True
 
 def _run_model_prediction_scaled(model_name: str, input_list: list, X=None):
-    """Run prediction using pickle if available, otherwise ONNX. Supports scaled input."""
+    """Run a disease-risk prediction using the best available model backend.
+
+    Attempts prediction using the pickle (.pkl) model first, falling back to
+    ONNX runtime if available. All inference is executed inside a
+    ``ConfidentialEnclave`` for cryptographic attestation. In testing mode,
+    mocked module-level model objects are prioritized.
+
+    Args:
+        model_name (str): The logical model name (e.g. ``"diabetes"``,
+            ``"heart"``, ``"liver"``, ``"kidney"``, ``"lungs"``).
+        input_list (list): Raw (unscaled) feature values for the patient.
+        X (array-like, optional): Pre-scaled input array. When provided, this
+            is used instead of ``input_list`` for models that require scaling.
+            Defaults to ``None``.
+
+    Returns:
+        tuple: A 4-element tuple of ``(raw, confidence, risk_level, proba)``
+            where:
+            - *raw* (int): Binary prediction (1 = disease detected, 0 = healthy).
+            - *confidence* (float or None): Model confidence percentage.
+            - *risk_level* (str): Human-readable risk category.
+            - *proba* (list[float]): Class probabilities ``[p_negative, p_positive]``.
+
+    Raises:
+        ValueError: If the specified model is not found or has no usable backend.
+    """
     import sys
 
     import numpy as np
@@ -164,7 +211,20 @@ def _run_model_prediction_scaled(model_name: str, input_list: list, X=None):
         raise ValueError(f"No usable model for {model_name}")
 
 def load_pkl(filenames):
-    """Backward-compatible pickle loader used by legacy tests and scripts."""
+    """Load a serialized model from disk using joblib.
+
+    Iterates through the provided filenames, looking for each in the backend
+    directory. Returns the first model that loads successfully. This is a
+    backward-compatible helper used by legacy tests and scripts.
+
+    Args:
+        filenames (list[str]): An ordered list of candidate model filenames
+            to search for (e.g. ``["diabetes_model.pkl"]``).
+
+    Returns:
+        object or None: The deserialized model object, or ``None`` if no file
+            was found or loading failed.
+    """
     model_dir = os.path.dirname(os.path.abspath(__file__))
     for f_name in filenames:
         path = os.path.join(model_dir, f_name)
@@ -180,7 +240,20 @@ def load_pkl(filenames):
 
 
 def _get_confidence(model, input_data):
-    """Backward-compatible confidence helper."""
+    """Extract the prediction confidence from a trained model.
+
+    Thin backward-compatible wrapper around
+    ``model_service._extract_confidence``.
+
+    Args:
+        model: The trained scikit-learn compatible model object.
+        input_data (array-like): The feature vector(s) to evaluate.
+
+    Returns:
+        tuple: A 2-element tuple of ``(confidence, risk_level)`` where
+            *confidence* is a float percentage and *risk_level* is a
+            human-readable string.
+    """
     return _extract_confidence(model, input_data)
 
 
@@ -308,7 +381,25 @@ def _log_attributions_to_db_background(
     attributions_dict: dict,
     raw_pred: int
 ):
-    """Logs SHAP attributions to the database asynchronously in a background thread."""
+    """Persist SHAP feature attributions to the database in a background thread.
+
+    Creates a new ``DbFeatureAttributionLog`` record containing the model
+    identity, input features, SHAP attribution values, and prediction outcome.
+    Designed to be dispatched via ``BackgroundTasks`` so that the main request
+    is not blocked by the database write.
+
+    Args:
+        model_name (str): The logical model name (e.g. ``"diabetes"``).
+        model_version (str): Semantic version of the model that produced the
+            prediction.
+        features_dict (dict): Mapping of feature names to their input values.
+        attributions_dict (dict): Mapping of feature names to their SHAP
+            attribution values.
+        raw_pred (int): The raw binary prediction (0 or 1).
+
+    Returns:
+        None
+    """
     from .database import SessionLocal
     from .models import DbFeatureAttributionLog
     db_session = SessionLocal()
@@ -492,8 +583,19 @@ async def _generate_patient_explanation(
 
 
 def _get_triage_recommendation(prediction_val: int, conformal_set: list) -> str:
-    """
-    Translates conformal prediction sets and raw predictions into actionable clinician guidance.
+    """Translate a conformal prediction set into an actionable triage recommendation.
+
+    Maps the combination of the binary prediction and the conformal prediction
+    set (which may include class 0, class 1, both, or neither) to one of four
+    clinician-facing guidance strings.
+
+    Args:
+        prediction_val (int): The raw binary prediction (1 = disease, 0 = healthy).
+        conformal_set (list[int]): The conformal prediction set at the chosen
+            significance level, e.g. ``[0]``, ``[1]``, ``[0, 1]``, or ``[]``.
+
+    Returns:
+        str: A short clinician-facing triage recommendation string.
     """
     if conformal_set == [1]:
         return "Urgent Action: Patient exhibits strong canonical markers. Initiate standard treatment protocols."
@@ -794,7 +896,23 @@ from . import models as db_models
 
 @router.post("/admin/reload_models")
 def reload_models(current_user: db_models.User = Depends(auth.get_current_user)):
-    """Force reload of all models from disk (Zero-Downtime Update). Admin only."""
+    """Force-reload all ML models from disk (zero-downtime update).
+
+    Admin-only endpoint that delegates to ``model_service.reload()`` to
+    re-read all serialized model files from the backend directory without
+    restarting the server process.
+
+    Args:
+        current_user (db_models.User): The authenticated user (injected by
+            dependency). Must have admin privileges.
+
+    Returns:
+        dict: A status dictionary indicating which models were successfully
+            reloaded.
+
+    Raises:
+        HTTPException: 403 if the caller is not an admin.
+    """
     if not auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="Admin privileges required")
     status = model_service.reload()
@@ -803,7 +921,21 @@ def reload_models(current_user: db_models.User = Depends(auth.get_current_user))
 
 @router.get("/admin/models/health")
 def models_health_check(current_user: db_models.User = Depends(auth.get_current_user)):
-    """Detailed health check for all ML models. Admin only."""
+    """Return a detailed health check report for all registered ML models.
+
+    Admin-only endpoint that queries each model entry in the model service
+    registry and reports its load status, version, and availability.
+
+    Args:
+        current_user (db_models.User): The authenticated user (injected by
+            dependency). Must have admin privileges.
+
+    Returns:
+        dict: A per-model health status report.
+
+    Raises:
+        HTTPException: 403 if the caller is not an admin.
+    """
     if not auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="Admin privileges required")
     return model_service.health_check()
@@ -820,6 +952,22 @@ PREDICTION_REVIEW_CATEGORIES = {
 
 
 def _prediction_patient(db: Session, patient_id: int) -> db_models.User:
+    """Fetch a patient record by ID, raising 404 if not found.
+
+    Queries the database for a ``User`` with the given ID whose role is
+    ``"patient"``. Used by prediction endpoints to validate that the
+    target patient exists before proceeding.
+
+    Args:
+        db (Session): An active SQLAlchemy database session.
+        patient_id (int): The primary-key ID of the patient to look up.
+
+    Returns:
+        db_models.User: The patient's ``User`` database record.
+
+    Raises:
+        HTTPException: 404 error if no patient with the given ID exists.
+    """
     patient = db.query(db_models.User).filter(
         db_models.User.id == patient_id,
         db_models.User.role == "patient",
@@ -830,6 +978,21 @@ def _prediction_patient(db: Session, patient_id: int) -> db_models.User:
 
 
 def _doctor_assigned_to_prediction_patient(db: Session, doctor_id: int, patient_id: int) -> bool:
+    """Check whether a doctor has a clinical relationship with a patient.
+
+    Verifies that the doctor and patient share a facility context, and that
+    the doctor is linked to the patient through at least one encounter,
+    admission, clinical order, or appointment.
+
+    Args:
+        db (Session): An active SQLAlchemy database session.
+        doctor_id (int): The primary-key ID of the doctor.
+        patient_id (int): The primary-key ID of the patient.
+
+    Returns:
+        bool: ``True`` if the doctor is assigned to the patient, ``False``
+            otherwise.
+    """
     if not users_share_facility_context(db, doctor_id, patient_id):
         return False
     if db.query(db_models.Encounter).filter(
@@ -855,6 +1018,24 @@ def _doctor_assigned_to_prediction_patient(db: Session, doctor_id: int, patient_
 
 
 def _ensure_prediction_review_access(db: Session, current_user: db_models.User, patient_id: int) -> None:
+    """Guard access to prediction review endpoints.
+
+    Allows admins unrestricted access. For non-admin users, enforces that
+    the caller is a doctor with an existing clinical relationship to the
+    specified patient.
+
+    Args:
+        db (Session): An active SQLAlchemy database session.
+        current_user (db_models.User): The authenticated user making the request.
+        patient_id (int): The primary-key ID of the patient whose prediction
+            is being reviewed.
+
+    Returns:
+        None
+
+    Raises:
+        HTTPException: 403 error if the user lacks sufficient privileges.
+    """
     if auth.is_admin(current_user):
         return
     if current_user.role != "doctor":
@@ -869,6 +1050,28 @@ def record_prediction_review(
     db: Session = Depends(database.get_db),
     current_user: db_models.User = Depends(auth.get_current_user),
 ) -> Dict[str, Any]:
+    """Record a clinician's review decision on an AI prediction.
+
+    Captures the doctor's clinical judgment (accepted, overridden, or ignored)
+    about a specific AI prediction, along with the clinical use category.
+    Creates an audit trail entry for regulatory compliance.
+
+    Args:
+        payload (schemas.PredictionReviewCreate): The review payload containing
+            patient ID, decision, prediction type, and optional notes.
+        db (Session): Active SQLAlchemy database session (injected by
+            dependency).
+        current_user (db_models.User): The authenticated user (injected by
+            dependency).
+
+    Returns:
+        Dict[str, Any]: Confirmation dict with review details and the
+            associated audit event ID.
+
+    Raises:
+        HTTPException: 400 for invalid decision/type/category values;
+            403 if the user lacks access; 404 if the patient is not found.
+    """
     decision = payload.decision.strip().lower()
     prediction_type = payload.prediction_type.strip().lower()
     use_category = (payload.clinical_use_category or "clinician_review").strip().lower()
@@ -909,6 +1112,19 @@ def record_prediction_review(
 # --- Helper Functions for Big Data Mapping ---
 
 def _raise_prediction_failure(model_name: str) -> None:
+    """Log and raise a standardized 500 error for a failed prediction.
+
+    Args:
+        model_name (str): Human-readable name of the model that failed
+            (e.g. ``"Kidney"``, ``"Heart"``).
+
+    Returns:
+        None
+
+    Raises:
+        HTTPException: Always raises a 500 error with the standard
+            ``PREDICTION_FAILURE_DETAIL`` message.
+    """
     logger.error("%s prediction failed", model_name)
     raise HTTPException(status_code=500, detail=PREDICTION_FAILURE_DETAIL)
 
@@ -921,6 +1137,33 @@ async def predict_kidney(
     _current_user: db_models.User = Depends(auth.get_current_user),
     db: Session = Depends(database.get_db),
 ) -> Dict[str, Any]:
+    """Predict chronic kidney disease risk from patient clinical markers.
+
+    Accepts 24 renal and hematological features, imputes missing values using
+    a MICE imputer when available, scales the input, and runs the XGBoost
+    kidney model inside a confidential enclave. Returns the prediction along
+    with eGFR clinical indices, conformal prediction uncertainty, SHAP-based
+    risk factors, and counterfactual clinical recourse.
+
+    Args:
+        data (schemas.KidneyInput): Patient renal panel and demographic data.
+        background_tasks (BackgroundTasks): FastAPI background task queue for
+            asynchronous SHAP attribution logging.
+        _current_user (db_models.User): The authenticated user (injected by
+            dependency).
+        db (Session): Active SQLAlchemy database session (injected by
+            dependency).
+
+    Returns:
+        Dict[str, Any]: Prediction result containing keys ``prediction``,
+            ``raw``, ``confidence``, ``risk_level``, ``disclaimer``,
+            ``clinical_indices``, ``model_metadata``, ``clinical_narrative``,
+            ``attributions``, and ``patient_explanation``.
+
+    Raises:
+        HTTPException: 503 if the kidney model is not loaded; 500 on
+            prediction failure.
+    """
     _pred = sys.modules[__name__]
     if (os.getenv("TESTING") == "1" and _pred.kidney_model is None) or (os.getenv("TESTING") != "1" and not model_service.is_available("kidney")):
         raise HTTPException(status_code=503, detail="Kidney Model not trained/loaded.")
@@ -1034,6 +1277,33 @@ async def predict_lungs(
     _current_user: db_models.User = Depends(auth.get_current_user),
     db: Session = Depends(database.get_db),
 ) -> Dict[str, Any]:
+    """Predict respiratory disease risk from patient symptom and lifestyle data.
+
+    Accepts 15 respiratory and behavioral features, imputes missing values,
+    scales the input, and runs the XGBoost lungs model inside a confidential
+    enclave. Returns the prediction along with conformal prediction
+    uncertainty, SHAP-based risk factors, and counterfactual clinical recourse.
+
+    Args:
+        data (schemas.LungInput): Patient respiratory symptoms and lifestyle
+            indicators.
+        background_tasks (BackgroundTasks): FastAPI background task queue for
+            asynchronous SHAP attribution logging.
+        _current_user (db_models.User): The authenticated user (injected by
+            dependency).
+        db (Session): Active SQLAlchemy database session (injected by
+            dependency).
+
+    Returns:
+        Dict[str, Any]: Prediction result containing keys ``prediction``,
+            ``raw``, ``confidence``, ``risk_level``, ``disclaimer``,
+            ``clinical_indices``, ``model_metadata``, ``clinical_narrative``,
+            ``attributions``, and ``patient_explanation``.
+
+    Raises:
+        HTTPException: 503 if the lungs model is not loaded; 500 on
+            prediction failure.
+    """
     _pred = sys.modules[__name__]
     if (os.getenv("TESTING") == "1" and _pred.lungs_model is None) or (os.getenv("TESTING") != "1" and not model_service.is_available("lungs")):
         raise HTTPException(status_code=503, detail="Lung Model not trained/loaded.")
@@ -1140,6 +1410,32 @@ async def predict_stroke(
     _current_user: db_models.User = Depends(auth.get_current_user),
     db: Session = Depends(database.get_db),
 ) -> Dict[str, Any]:
+    """Predict stroke risk from patient demographics and comorbidities.
+
+    Accepts 7 features (gender, age, hypertension, heart disease, smoking,
+    BMI, glucose), runs the stroke model, and returns the prediction along
+    with conformal prediction uncertainty, SHAP-based risk factors, and
+    counterfactual clinical recourse.
+
+    Args:
+        data (schemas.StrokeInput): Patient demographics and comorbidity flags.
+        background_tasks (BackgroundTasks): FastAPI background task queue for
+            asynchronous SHAP attribution logging.
+        _current_user (db_models.User): The authenticated user (injected by
+            dependency).
+        db (Session): Active SQLAlchemy database session (injected by
+            dependency).
+
+    Returns:
+        Dict[str, Any]: Prediction result containing keys ``prediction``,
+            ``raw``, ``confidence``, ``risk_level``, ``disclaimer``,
+            ``clinical_indices``, ``model_metadata``, ``clinical_narrative``,
+            ``attributions``, and ``patient_explanation``.
+
+    Raises:
+        HTTPException: 503 if the stroke model is not available; 500 on
+            prediction failure.
+    """
     if not model_service.is_available("stroke"):
         raise HTTPException(status_code=503, detail="Stroke Model not available.")
     try:
@@ -1229,6 +1525,34 @@ async def predict_diabetes(
     _current_user: db_models.User = Depends(auth.get_current_user),
     db: Session = Depends(database.get_db),
 ) -> Dict[str, Any]:
+    """Predict diabetes risk from patient metabolic and lifestyle data.
+
+    Accepts 9 features including hypertension status, cholesterol, BMI,
+    smoking history, and physical activity level. Imputes missing values
+    using a MICE imputer when available, runs the XGBoost diabetes model
+    inside a confidential enclave, and returns the prediction along with
+    conformal prediction uncertainty, SHAP-based risk factors, and
+    counterfactual clinical recourse.
+
+    Args:
+        data (schemas.DiabetesInput): Patient metabolic and lifestyle data.
+        background_tasks (BackgroundTasks): FastAPI background task queue for
+            asynchronous SHAP attribution logging.
+        _current_user (db_models.User): The authenticated user (injected by
+            dependency).
+        db (Session): Active SQLAlchemy database session (injected by
+            dependency).
+
+    Returns:
+        Dict[str, Any]: Prediction result containing keys ``prediction``,
+            ``raw``, ``confidence``, ``risk_level``, ``disclaimer``,
+            ``clinical_indices``, ``model_metadata``, ``clinical_narrative``,
+            ``attributions``, and ``patient_explanation``.
+
+    Raises:
+        HTTPException: 503 if the diabetes model is not available; 500 on
+            prediction failure.
+    """
     _pred = sys.modules[__name__]
     if (os.getenv("TESTING") == "1" and _pred.diabetes_model is None) or (os.getenv("TESTING") != "1" and not model_service.is_available("diabetes")):
         raise HTTPException(status_code=503, detail="Diabetes Model not available")
@@ -1326,6 +1650,33 @@ async def predict_heart(
     _current_user: db_models.User = Depends(auth.get_current_user),
     db: Session = Depends(database.get_db),
 ) -> Dict[str, Any]:
+    """Predict heart disease risk from patient cardiac features.
+
+    Accepts 13 features (age, sex, chest pain type, resting blood pressure,
+    cholesterol, etc.), imputes missing values, runs the XGBoost heart model
+    inside a confidential enclave, and returns the prediction along with
+    Framingham risk score, conformal prediction uncertainty, SHAP-based risk
+    factors, and counterfactual clinical recourse.
+
+    Args:
+        data (schemas.HeartInput): Patient cardiac features and demographics.
+        background_tasks (BackgroundTasks): FastAPI background task queue for
+            asynchronous SHAP attribution logging.
+        _current_user (db_models.User): The authenticated user (injected by
+            dependency).
+        db (Session): Active SQLAlchemy database session (injected by
+            dependency).
+
+    Returns:
+        Dict[str, Any]: Prediction result containing keys ``prediction``,
+            ``raw``, ``confidence``, ``risk_level``, ``disclaimer``,
+            ``clinical_indices``, ``model_metadata``, ``clinical_narrative``,
+            ``attributions``, and ``patient_explanation``.
+
+    Raises:
+        HTTPException: 503 if the heart model is not available; 500 on
+            prediction failure.
+    """
     _pred = sys.modules[__name__]
     if (os.getenv("TESTING") == "1" and _pred.heart_model is None) or (os.getenv("TESTING") != "1" and not model_service.is_available("heart")):
         raise HTTPException(status_code=503, detail="Heart Model not available")
@@ -1439,6 +1790,34 @@ async def predict_liver(
     _current_user: db_models.User = Depends(auth.get_current_user),
     db: Session = Depends(database.get_db),
 ) -> Dict[str, Any]:
+    """Predict liver disease risk from patient hepatic panel data.
+
+    Accepts 10 features including bilirubin levels, aminotransferases,
+    protein levels, and albumin ratios. Applies log1p transformations to
+    skewed features, scales the input, and runs the XGBoost liver model
+    inside a confidential enclave. Returns the prediction along with FIB-4
+    fibrosis index, conformal prediction uncertainty, SHAP-based risk
+    factors, and counterfactual clinical recourse.
+
+    Args:
+        data (schemas.LiverInput): Patient hepatic panel and demographic data.
+        background_tasks (BackgroundTasks): FastAPI background task queue for
+            asynchronous SHAP attribution logging.
+        _current_user (db_models.User): The authenticated user (injected by
+            dependency).
+        db (Session): Active SQLAlchemy database session (injected by
+            dependency).
+
+    Returns:
+        Dict[str, Any]: Prediction result containing keys ``prediction``,
+            ``raw``, ``confidence``, ``risk_level``, ``disclaimer``,
+            ``clinical_indices``, ``model_metadata``, ``clinical_narrative``,
+            ``attributions``, and ``patient_explanation``.
+
+    Raises:
+        HTTPException: 503 if the liver model is not loaded; 500 on
+            prediction failure.
+    """
     _pred = sys.modules[__name__]
     if (os.getenv("TESTING") == "1" and _pred.liver_model is None) or (os.getenv("TESTING") != "1" and not model_service.is_available("liver")):
         raise HTTPException(status_code=503, detail="Liver Model or Scaler not available")
@@ -1758,6 +2137,25 @@ async def get_patient_explanation_endpoint(
     data: ExplanationRequest,
     _current_user: db_models.User = Depends(auth.get_current_user),
 ):
+    """Generate a patient-friendly text explanation for a prediction result.
+
+    Accepts a model name and prediction metadata, then delegates to the
+    internal LLM-based explanation generator to produce an empathetic,
+    layperson-friendly interpretation of the SHAP attribution results.
+
+    Args:
+        model_name (str): The disease model name (e.g. ``"diabetes"``).
+        data (ExplanationRequest): Prediction result and SHAP attributions.
+        _current_user (db_models.User): The authenticated user (injected by
+            dependency).
+
+    Returns:
+        Dict[str, str]: A dictionary with a single key
+            ``"patient_explanation"`` containing the generated text.
+
+    Raises:
+        HTTPException: 500 if explanation generation fails.
+    """
     try:
         explanation = await _generate_patient_explanation(
             model_name=model_name,
@@ -1778,6 +2176,24 @@ def explain_diabetes(
     data: schemas.DiabetesInput,
     _current_user: db_models.User = Depends(auth.get_current_user),
 ):
+    """Generate SHAP-based feature explanations for a diabetes prediction.
+
+    Re-runs the diabetes model on the provided input and computes SHAP
+    values to explain which features contributed most to the prediction.
+
+    Args:
+        data (schemas.DiabetesInput): Patient metabolic and lifestyle data.
+        _current_user (db_models.User): The authenticated user (injected by
+            dependency).
+
+    Returns:
+        dict: SHAP explanation containing feature names and their attribution
+            values.
+
+    Raises:
+        HTTPException: 503 if the model is unavailable; 500 if explanation
+            generation fails.
+    """
     _pred = sys.modules[__name__]
     if _pred.diabetes_model is None:
         raise HTTPException(status_code=503, detail="Model unavailable")
@@ -1799,6 +2215,24 @@ def explain_heart(
     data: schemas.HeartInput,
     _current_user: db_models.User = Depends(auth.get_current_user),
 ):
+    """Generate SHAP-based feature explanations for a heart disease prediction.
+
+    Re-runs the heart model on the provided input and computes SHAP values
+    to explain which features contributed most to the prediction.
+
+    Args:
+        data (schemas.HeartInput): Patient cardiac features and demographics.
+        _current_user (db_models.User): The authenticated user (injected by
+            dependency).
+
+    Returns:
+        dict: SHAP explanation containing feature names and their attribution
+            values.
+
+    Raises:
+        HTTPException: 503 if the model is unavailable; 500 if explanation
+            generation fails.
+    """
     _pred = sys.modules[__name__]
     if _pred.heart_model is None:
         raise HTTPException(status_code=503, detail="Model unavailable")
@@ -1821,6 +2255,24 @@ def explain_liver(
     data: schemas.LiverInput,
     _current_user: db_models.User = Depends(auth.get_current_user),
 ):
+    """Generate SHAP-based feature explanations for a liver disease prediction.
+
+    Re-runs the liver model on the provided input (with log1p transforms
+    and scaling) and computes SHAP values to explain feature contributions.
+
+    Args:
+        data (schemas.LiverInput): Patient hepatic panel and demographic data.
+        _current_user (db_models.User): The authenticated user (injected by
+            dependency).
+
+    Returns:
+        dict: SHAP explanation containing feature names and their attribution
+            values.
+
+    Raises:
+        HTTPException: 503 if the model or scaler is unavailable; 500 if
+            explanation generation fails.
+    """
     _pred = sys.modules[__name__]
     if _pred.liver_model is None or _pred.liver_scaler is None:
         raise HTTPException(status_code=503, detail="Model unavailable")
@@ -2250,8 +2702,19 @@ async def get_advisory_board(
 
 
 async def handle_vitals_recorded(payload: dict) -> None:
-    """Auto-run heart/diabetes classifiers when new vitals arrive.
-    If risk probability > 0.6, commit a DIAGNOSTIC_ALERT CareEvent to the DB.
+    """Auto-run heart and diabetes classifiers when new vitals arrive.
+
+    Subscribes to ``VITALS_RECORDED`` events and evaluates the patient's
+    risk using both the diabetes and heart models. If the predicted risk
+    probability exceeds 0.6 for either model, a ``DIAGNOSTIC_ALERT``
+    ``CareEvent`` is committed to the database.
+
+    Args:
+        payload (dict): Event payload containing at minimum ``patient_id``,
+            and optionally ``systolic_bp`` and ``heart_rate``.
+
+    Returns:
+        None
     """
     patient_id = payload.get("patient_id")
     if not patient_id:
@@ -2397,6 +2860,27 @@ async def commit_scribe_soap(
     current_user: db_models.User = Depends(auth.get_current_user),
     db: Session = Depends(database.get_db),
 ):
+    """Commit a structured SOAP note with prescriptions and billing to the EHR.
+
+    Persists the ambient-scribe-generated clinical note as a ``CareEvent``,
+    creates ``Prescription`` and ``PrescriptionItem`` records for each
+    medication, and generates an ``Invoice`` with line items for billing.
+
+    Args:
+        req (ScribeCommitRequest): The structured SOAP note payload including
+            subjective, objective, assessment, plan, ICD-10 codes, billing
+            codes, prescriptions, and billing items.
+        current_user (db_models.User): The authenticated user (injected by
+            dependency).
+        db (Session): Active SQLAlchemy database session (injected by
+            dependency).
+
+    Returns:
+        dict: A success confirmation message.
+
+    Raises:
+        HTTPException: 404 if the patient is not found.
+    """
     import json
     patient = db.query(db_models.User).filter(db_models.User.id == req.patient_id, db_models.User.role == "patient").first()
     if not patient:
@@ -2484,6 +2968,27 @@ async def generate_scribe_soap(
     current_user: db_models.User = Depends(auth.get_current_user),
     db: Session = Depends(database.get_db),
 ):
+    """Generate a SOAP note from an ambient clinical transcript.
+
+    Uses the ``ClinicalScribeAgent`` to process a free-text consultation
+    transcript and produce a structured SOAP note with ICD-10 codes,
+    billing codes, and prescription suggestions.
+
+    Args:
+        patient_id (int): The primary-key ID of the patient.
+        req (ScribeRequest): The raw transcript text.
+        current_user (db_models.User): The authenticated user (injected by
+            dependency).
+        db (Session): Active SQLAlchemy database session (injected by
+            dependency).
+
+    Returns:
+        dict: The structured SOAP note and extracted clinical data.
+
+    Raises:
+        HTTPException: 400 if SOAP generation fails; 403 if the user lacks
+            access to this patient.
+    """
     _ensure_prediction_review_access(db, current_user, patient_id)
     from backend.agents.scribe_agent import ClinicalScribeAgent
     agent = ClinicalScribeAgent(db)
@@ -2499,6 +3004,27 @@ async def match_clinical_trials(
     current_user: db_models.User = Depends(auth.get_current_user),
     db: Session = Depends(database.get_db),
 ):
+    """Match a patient against available clinical trials.
+
+    Retrieves the patient's demographics, vitals, and ML risk predictions,
+    then uses an LLM to screen the patient against a curated registry of
+    clinical trials. Returns eligibility assessments and match percentages.
+
+    Args:
+        patient_id (int): The primary-key ID of the patient.
+        current_user (db_models.User): The authenticated user (injected by
+            dependency).
+        db (Session): Active SQLAlchemy database session (injected by
+            dependency).
+
+    Returns:
+        dict: A dictionary with a ``matches`` key containing trial
+            eligibility assessments.
+
+    Raises:
+        HTTPException: 403 if the user lacks access; 404 if the patient
+            is not found.
+    """
     import json
     from datetime import datetime
 
@@ -2597,6 +3123,18 @@ async def match_clinical_trials(
 
 
 def _run_diabetes_proba(features: dict) -> float:
+    """Compute diabetes risk probability from a feature dictionary.
+
+    Internal helper used by the counterfactual recourse endpoint to
+    evaluate modified patient profiles against the diabetes model.
+
+    Args:
+        features (dict): A dictionary of patient features keyed by name
+            (e.g. ``"bmi"``, ``"hypertension"``, ``"age"``).
+
+    Returns:
+        float: The predicted probability of diabetes (0.0 to 1.0).
+    """
     from .model_service import get_age_bucket
 
     _pred = sys.modules[__name__]
@@ -2632,6 +3170,18 @@ def _run_diabetes_proba(features: dict) -> float:
 
 
 def _run_heart_proba(features: dict) -> float:
+    """Compute heart disease risk probability from a feature dictionary.
+
+    Internal helper used by the counterfactual recourse endpoint to
+    evaluate modified patient profiles against the heart model.
+
+    Args:
+        features (dict): A dictionary of patient features keyed by name
+            (e.g. ``"age"``, ``"trestbps"``, ``"chol"``).
+
+    Returns:
+        float: The predicted probability of heart disease (0.0 to 1.0).
+    """
     _pred = sys.modules[__name__]
 
     input_list = [
@@ -2674,6 +3224,29 @@ async def counterfactual_recourse(
     current_user: db_models.User = Depends(auth.get_current_user),
     db: Session = Depends(database.get_db),
 ):
+    """Compute step-wise counterfactual recourse for a patient's risk profile.
+
+    Iteratively modifies controllable lifestyle features (e.g. smoking,
+    BMI, cholesterol) to find the minimum set of changes that would bring
+    the patient's predicted risk below the 0.5 threshold.
+
+    Args:
+        patient_id (int): The primary-key ID of the patient.
+        req (CounterfactualRequest): The target model name and current
+            feature values.
+        current_user (db_models.User): The authenticated user (injected by
+            dependency).
+        db (Session): Active SQLAlchemy database session (injected by
+            dependency).
+
+    Returns:
+        dict: A dictionary with ``baseline_risk``, ``optimized_risk``,
+            ``recourse_recommendation``, and ``changes_applied``.
+
+    Raises:
+        HTTPException: 400 if the target model is not supported; 403 if
+            the user lacks access.
+    """
     _ensure_prediction_review_access(db, current_user, patient_id)
 
     target = req.target_model.lower()
@@ -2793,6 +3366,28 @@ async def get_clinical_consensus(
     current_user: db_models.User = Depends(auth.get_current_user),
     db: Session = Depends(database.get_db),
 ):
+    """Generate a clinical consensus report comparing ML predictions to vitals.
+
+    Identifies discrepancies between the patient's recorded vital signs
+    and their ML-predicted risk levels (e.g. high glucose but low predicted
+    diabetes risk). Uses an LLM to synthesize a second-opinion diagnostic
+    consensus report with recommended follow-up tests.
+
+    Args:
+        patient_id (int): The primary-key ID of the patient.
+        current_user (db_models.User): The authenticated user (injected by
+            dependency).
+        db (Session): Active SQLAlchemy database session (injected by
+            dependency).
+
+    Returns:
+        dict: A consensus report with ``consensus_level``, ``summary``,
+            ``detailed_audit``, and ``recommended_tests``.
+
+    Raises:
+        HTTPException: 403 if the user lacks access; 404 if the patient
+            is not found.
+    """
     import json
     _ensure_prediction_review_access(db, current_user, patient_id)
 
@@ -2883,7 +3478,15 @@ async def get_clinical_consensus(
 
 
 def register_prediction_event_handlers() -> None:
-    """Subscribe prediction event handlers to the event bus."""
+    """Subscribe prediction event handlers to the application event bus.
+
+    Registers ``handle_vitals_recorded`` as a listener for
+    ``VITALS_RECORDED`` events so that new vital sign recordings
+    automatically trigger heart and diabetes risk screening.
+
+    Returns:
+        None
+    """
     from backend.event_bus import event_bus
     event_bus.subscribe("VITALS_RECORDED", handle_vitals_recorded)
 
