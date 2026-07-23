@@ -21,9 +21,11 @@ The platform provides native **HL7 FHIR R4** compatibility, 5 calibrated **XGBoo
 <p>
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml/badge.svg" alt="CI build status" /></a>
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml/badge.svg" alt="CodeQL security analysis" /></a>
+  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions"><img src="https://img.shields.io/badge/Autonomous_AI_Fleet-5_Agents_Active-7c3aed?style=flat-square&logo=githubactions&logoColor=white" alt="Autonomous AI Fleet" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/pavanbadempet/AI-Healthcare-System?color=22c55e&style=flat-square" alt="License" /></a>
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/stargazers"><img src="https://img.shields.io/github/stars/pavanbadempet/AI-Healthcare-System?style=flat-square&color=f59e0b" alt="Stars" /></a>
   <a href="https://star-history.com/#pavanbadempet/AI-Healthcare-System&Date"><img src="https://img.shields.io/badge/Star_History-📈-8b5cf6?style=flat-square" alt="Star History" /></a>
+  <a href="CITATION.cff"><img src="https://img.shields.io/badge/Cite_This_Repo-APA_/_BibTeX-2563eb?style=flat-square" alt="Cite This Repo" /></a>
   <img src="https://img.shields.io/github/repo-size/pavanbadempet/AI-Healthcare-System?style=flat-square&color=3b82f6" alt="Repo Size" />
   <img src="https://img.shields.io/github/issues/pavanbadempet/AI-Healthcare-System?style=flat-square&color=ef4444" alt="Open Issues" />
   <img src="https://img.shields.io/badge/PRs-welcome-10b981?style=flat-square" alt="PRs Welcome" />
