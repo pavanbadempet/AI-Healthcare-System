@@ -1,17 +1,18 @@
 {
-  "short_name": "ClinicalAI",
-  "name": "AI Healthcare System",
-  "description": "Privacy-First Clinical Intelligence & EHR Interoperability Platform",
+  "short_name": "Clinical AI",
+  "name": "AI Healthcare System — Clinical Intelligence Platform",
+  "description": "HIPAA-oriented clinical intelligence and decision support system.",
   "icons": [
     {
       "src": "/file.svg",
       "type": "image/svg+xml",
-      "sizes": "any"
+      "sizes": "512x512 192x192 any"
     }
   ],
   "start_url": "/",
   "background_color": "#090a0f",
   "theme_color": "#090a0f",
   "display": "standalone",
-  "orientation": "portrait"
+  "orientation": "any",
+  "categories": ["medical", "health", "productivity"]
 }
