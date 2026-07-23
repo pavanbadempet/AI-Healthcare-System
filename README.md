@@ -942,7 +942,7 @@ The platform is currently operating continuously in a multi-cloud serverless pro
 
 ### 4. GitHub Actions (CI/CD Pipeline Orchestration)
 * **Application**: Fully automated CI/CD pipeline gating every pull request and push to the `main` branch.
-* **Architecture**: Executes the complete 1,648+ unit test suite using `pytest -n auto`, verifies UI components with `Vitest`, runs End-to-End browser tests with `Playwright`, and checks security vulnerabilities with `CodeQL`.
+* **Architecture**: Executes the complete 1,639+ unit test suite using `pytest -n auto`, verifies UI components with `Vitest`, runs End-to-End browser tests with `Playwright`, and checks security vulnerabilities with `CodeQL`.
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
@@ -1113,7 +1113,7 @@ Before submitting a Pull Request, please ensure all local verification checks pa
    ruff format .
    ruff check . --fix
    ```
-2. **Test Coverage Verification:** Run all 1,648+ unit/integration tests and verify coverage is above 50%:
+2. **Test Coverage Verification:** Run all 1,639+ unit/integration tests and verify coverage is above 50%:
    ```bash
    python -m pytest tests/ -n auto -v
    ```
