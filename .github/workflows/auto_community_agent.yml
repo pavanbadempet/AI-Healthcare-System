@@ -5,6 +5,7 @@ on:
     types: [created]
   issues:
     types: [opened]
+  workflow_dispatch:
 
 permissions:
   contents: read
