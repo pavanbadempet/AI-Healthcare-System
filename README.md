@@ -461,7 +461,16 @@ We built an automated system maintenance pipeline executing database storage rec
 *   **Correlation Tracking**: Implements thread-safe context-propagation to pass correlation IDs (`X-Correlation-ID`) across the Rust Gateway, FastAPI middlewares, and downstream task queues.
 *   **PII Exception Redaction**: Filters all console and file log outputs to automatically scrub sensitive patient email addresses, phone numbers, and PII.
 *   **Prometheus Exporters**: Exposes system metrics (CPU utilization, RAM memory, active PostgreSQL/SQLite connections) and HTTP route latency histograms directly on `/metrics` for scraper systems.
-*   **Grafana Telemetry Dashboard**: Pre-configured SOTA dashboard panels (loaded dynamically from [monitoring/grafana/](monitoring/grafana)) visualizing Gateway resources, SQLx pools, and route latency p95 processing boundaries.
+### 4. Autonomous 24/7 GitHub Actions AI Fleet
+The repository features 5 dedicated autonomous AI agents running on GitHub Actions to maintain search engine optimization, pull request code reviews, community contributor triage, and AI search indexing:
+
+| Agent Name | Trigger Event | Primary Capabilities | Workflow Source |
+| :--- | :--- | :--- | :--- |
+| **SOTA GitHub SEO Agent** | Every 3 days (`cron`) | Syncs 20 high-volume search topics & Google meta-description. | [.github/workflows/github_seo_agent.yml](.github/workflows/github_seo_agent.yml) |
+| **Community Triage Agent** | Issue comments / open | Auto-detects contributor requests ("can I work on this"), assigns issues & posts guides. | [.github/workflows/auto_community_agent.yml](.github/workflows/auto_community_agent.yml) |
+| **SOTA AI PR Reviewer Agent** | Pull Requests | Runs Cloudflare Workers AI (Llama-4 Scout) & Gemini AI code reviews on incoming diffs. | [.github/workflows/pr_review_agent.yml](.github/workflows/pr_review_agent.yml) |
+| **Release AI Summarizer Agent** | Release publish | Converts commit logs into rich AI release announcements for Google indexing. | [.github/workflows/release_summarizer_agent.yml](.github/workflows/release_summarizer_agent.yml) |
+| **Doc & AIO Indexer Agent** | Push to `main` | Generates search-engine index at `docs/API_CONTRACT_INDEX.md` for AI search engines. | [.github/workflows/docs_indexer_agent.yml](.github/workflows/docs_indexer_agent.yml) |
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
@@ -470,8 +479,13 @@ We built an automated system maintenance pipeline executing database storage rec
 
 ```
 AI-Healthcare-System/
-├── .github/workflows/               # CI/CD Workflows
-│   ├── ci.yml                       # Runs full unit/integration pytest & frontend Vitest suite
+├── .github/workflows/               # CI/CD & Autonomous Agent Workflows
+│   ├── github_seo_agent.yml         # 20 SEO Search Topics & Meta-Description Sync Agent
+│   ├── auto_community_agent.yml     # Issue Assignment & Contributor Onboarding Agent
+│   ├── pr_review_agent.yml          # Cloudflare Llama-4 Scout AI PR Reviewer Agent
+│   ├── release_summarizer_agent.yml # AI Release Announcement Generator Agent
+│   ├── docs_indexer_agent.yml       # LLM API Search Indexer Agent (`docs/API_CONTRACT_INDEX.md`)
+│   ├── ci.yml                       # Runs full unit/integration pytest & Vitest suite
 │   ├── codeql.yml                   # SAST vulnerability analysis scanner
 │   ├── docker-publish.yml           # Builds and publishes production images to GHCR
 │   └── keep-alive.yml               # Render container anti-spin down ping scheduler
