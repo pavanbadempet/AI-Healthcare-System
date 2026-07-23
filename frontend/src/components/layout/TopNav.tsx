@@ -192,6 +192,31 @@ export default function TopNav({
     setActiveMenu(menuKey);
   };
 
+  useEffect(() => {
+    const toggleTheme = () => {
+      const root = document.documentElement;
+      const currentTheme = root.getAttribute("data-theme");
+
+      if (currentTheme === "light") {
+        root.setAttribute("data-theme", "dark");
+      } else {
+        root.setAttribute("data-theme", "light");
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const isCtrlK = event.ctrlKey && event.key.toLowerCase() === ("k");
+      const isCmdShiftD = event.metaKey && event.shiftKey && event.key.toLowerCase() === ("d");
+      if (isCtrlK || isCmdShiftD) {
+        event.preventDefault();
+        toggleTheme();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
+
   const handleMouseLeave = () => {
     hoverTimeoutRef.current = setTimeout(() => {
       setActiveMenu(null);
