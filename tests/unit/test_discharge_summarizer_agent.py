@@ -6,7 +6,7 @@ import pytest
 from backend.agents.discharge_summarizer_agent import DischargeSummarizerAgent, discharge_summarizer
 
 
-def test_generate_discharge_summary():
+def test_generate_discharge_summary_agent():
     res = discharge_summarizer.generate_discharge_summary(
         patient_id=42,
         patient_name="John Doe",
