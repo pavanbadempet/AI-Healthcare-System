@@ -450,3 +450,24 @@ def get_lab_kits(
         "total_kits": len(kits_list),
         "clinical_safety_note": "At-home diagnostic test kits support remote patient monitoring; clinical decisions are made upon physician review of uploaded lab reports."
     }
+
+
+@router.post("/ecg/analyze")
+def analyze_ecg_telemetry(
+    req: dict[str, Any],
+    current_user: models.User = Depends(auth.get_current_user),
+) -> dict[str, Any]:
+    """Analyzes raw ECG signal waveform using SOTA Pan-Tompkins DSP algorithm."""
+    from dataclasses import asdict
+
+    from .telemetry_dsp import analyze_ecg_signal
+
+    signal = req.get("signal", [])
+    sampling_rate = float(req.get("sampling_rate", 250.0))
+
+    if not signal or not isinstance(signal, list):
+        raise HTTPException(status_code=400, detail="Must provide non-empty signal array")
+
+    result = analyze_ecg_signal(signal, sampling_rate)
+    return asdict(result)
+

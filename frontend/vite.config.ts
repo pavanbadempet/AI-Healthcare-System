@@ -66,6 +66,10 @@ export default defineConfig(({ command }) => ({
               id.includes('node_modules/unist-')) {
             return 'vendor-markdown';
           }
+          // Lucide icons — UI icon set, long-lived cache
+          if (id.includes('node_modules/lucide-react/')) {
+            return 'vendor-icons';
+          }
         },
       },
     },

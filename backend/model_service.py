@@ -75,6 +75,7 @@ class PredictionResult:
     confidence: Optional[float] = None
     risk_level: Optional[str] = None
     disclaimer: str = ""
+    conformal_interval: Optional[Dict[str, Any]] = None
 
 
 MEDICAL_DISCLAIMER = (
@@ -489,6 +490,12 @@ class ModelService:
                 # Try loading ONNX model first
                 try:
                     import onnxruntime as ort
+                    ort_opts = ort.SessionOptions()
+                    ort_opts.intra_op_num_threads = 1
+                    ort_opts.inter_op_num_threads = 1
+                    ort_opts.execution_mode = ort.ExecutionMode.ORT_SEQUENTIAL
+                    ort_opts.enable_cpu_mem_arena = True
+
                     onnx_name = model_pkl[0].replace(".pkl", ".onnx")
                     onnx_path = os.path.join(self._model_dir, onnx_name)
                     meta_path = onnx_path.replace(".onnx", ".meta.json")
@@ -503,18 +510,18 @@ class ModelService:
                                 for name in meta["estimators"]:
                                     est_onnx_name = f"{base_name}_{name}.onnx"
                                     est_onnx_path = os.path.join(self._model_dir, est_onnx_name)
-                                    entry.onnx_estimators[name] = ort.InferenceSession(est_onnx_path)
+                                    entry.onnx_estimators[name] = ort.InferenceSession(est_onnx_path, sess_options=ort_opts)
                                 entry.onnx_weights = meta.get("weights")
                                 entry.is_voting = True
                         else:
-                            entry.onnx_session = ort.InferenceSession(onnx_path)
+                            entry.onnx_session = ort.InferenceSession(onnx_path, sess_options=ort_opts)
                             entry.is_voting = False
 
                         if scaler_pkl:
                             scaler_onnx_name = scaler_pkl[0].replace(".pkl", ".onnx")
                             scaler_onnx_path = os.path.join(self._model_dir, scaler_onnx_name)
                             if os.path.exists(scaler_onnx_path):
-                                entry.scaler_onnx_session = ort.InferenceSession(scaler_onnx_path)
+                                entry.scaler_onnx_session = ort.InferenceSession(scaler_onnx_path, sess_options=ort_opts)
 
                         # Load pickle model alongside ONNX to support explainability (SHAP) and legacy prediction checks
                         loaded_obj = self._load_pkl(model_pkl)

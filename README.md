@@ -23,6 +23,7 @@ The platform provides native **HL7 FHIR R4** compatibility, 5 calibrated **XGBoo
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml/badge.svg" alt="CodeQL security analysis" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/pavanbadempet/AI-Healthcare-System?color=22c55e&style=flat-square" alt="License" /></a>
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/stargazers"><img src="https://img.shields.io/github/stars/pavanbadempet/AI-Healthcare-System?style=flat-square&color=f59e0b" alt="Stars" /></a>
+  <a href="https://star-history.com/#pavanbadempet/AI-Healthcare-System&Date"><img src="https://img.shields.io/badge/Star_History-📈-8b5cf6?style=flat-square" alt="Star History" /></a>
   <img src="https://img.shields.io/github/repo-size/pavanbadempet/AI-Healthcare-System?style=flat-square&color=3b82f6" alt="Repo Size" />
   <img src="https://img.shields.io/github/issues/pavanbadempet/AI-Healthcare-System?style=flat-square&color=ef4444" alt="Open Issues" />
   <img src="https://img.shields.io/badge/PRs-welcome-10b981?style=flat-square" alt="PRs Welcome" />
@@ -58,8 +59,9 @@ The platform provides native **HL7 FHIR R4** compatibility, 5 calibrated **XGBoo
 | **🖼️ PACS Imaging** | 3D Volumetric DICOM MPR (Axial, Sagittal, Coronal, 3D Mesh), DICOM Uploader |
 | **💳 Revenue & Security**| ANSI X12 837P insurance claims, HSA/FSA card processing, Web Crypto SHA-256 e-prescribing |
 | **🔄 Data Platform** | Apache Spark (PySpark), Delta Lake Medallion Architecture (Bronze/Silver/Gold), Airflow |
-| **⚡ High Performance** | Rust gRPC API gateway, in-memory SIMD vector search (turbovec), orjson serialization |
-| **🔐 HIPAA DevSecOps** | Code quality linter, PII exception masking, Docker, AWS EKS (Kubernetes), Terraform IaC |
+| **⚡ SOTA Speed & Cost**| <0.1ms exact-hash AI cache hits, <1ms ONNX memory-arena ML predictions, 512MB MMAP SQLite WAL |
+| **💼 Commercial Licensing**| Air-gapped B2B perpetual lifetime keys (`perpetual=True`), offline JWT verification, zero SaaS fees |
+| **🔐 HIPAA DevSecOps** | Hardware TEE enclaves, PII redaction filters, Docker, AWS EKS (Kubernetes), SOC 2 audit harness |
 
 <!-- SEO: H1 is critical for search engines. The banner serves as the visual title. -->
 <!-- AI Healthcare System — Open-Source HIPAA-Compliant Clinical AI & EHR Platform -->

@@ -31,9 +31,14 @@ class DuckDBClient:
 
         try:
             self.conn = duckdb.connect(self.db_path)
-            # Load required extensions (parquet support is built-in, but we can load others)
+            # Load required extensions and configure resource limits
             self.conn.execute("INSTALL parquet; LOAD parquet;")
-            logger.info("Initialized DuckDB connection to %s", self.db_path)
+            try:
+                self.conn.execute("SET memory_limit='512MB';")
+                self.conn.execute("SET threads=4;")
+            except Exception:
+                pass
+            logger.info("Initialized DuckDB connection to %s with 512MB memory limit", self.db_path)
         except Exception as e:
             logger.error("Failed to initialize DuckDB: %s", e)
             # Fallback to in-memory

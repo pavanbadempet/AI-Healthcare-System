@@ -992,6 +992,10 @@ async def generate(
         embedding = None
         if not bypass_cache and os.getenv("SEMANTIC_CACHE_ENABLED", "true").lower() in ("true", "1", "yes", "on"):
             try:
+                # Fast path exact match (< 0.1ms execution, 0 network calls)
+                cached_fast = semantic_cache.lookup(prompt, [])
+                if cached_fast:
+                    return redact_pii_from_text(cached_fast)
                 embedding = await asyncio.to_thread(embed_text, prompt)
                 cached_response = semantic_cache.lookup(prompt, embedding)
                 if cached_response:

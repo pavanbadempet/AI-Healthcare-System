@@ -1,37 +1,19 @@
 cff-version: 1.2.0
-message: "If you reference this reference architecture in your academic research, PhD/Master's theses, or final year capstone projects, please cite it as below."
+message: "If you use AI Healthcare System in your research or clinical informatics projects, please cite it as below."
 authors:
-  - family-names: "Badempet"
-    given-names: "Pavan"
+  - family-names: Badempet
+    given-names: Pavan
     orcid: "https://orcid.org/0000-0000-0000-0000"
-title: "AI Healthcare System: Open-Source Privacy-First Clinical AI, 3D DICOM PACS, & EHR Interoperability Platform"
-version: "1.0.0"
-date-released: "2026-07-17"
-repository-code: "https://github.com/pavanbadempet/AI-Healthcare-System"
+title: "AI Healthcare System: Open-Source Privacy-First Clinical Intelligence & EHR Interoperability Platform"
+version: 1.0.0
+date-released: 2026-07-22
 url: "https://github.com/pavanbadempet/AI-Healthcare-System"
-license: "MIT"
-abstract: "A production-grade, privacy-first open-source Electronic Health Record (EHR) and Clinical Decision Support System (CDSS) built on React 19, FastAPI, and PySpark. Integrates 5 calibrated XGBoost diagnostic classifiers with SHAP explainability, stateful LangGraph multi-agent RAG supervisor with local Ollama inference, 3D Volumetric DICOM Multi-Planar Reconstruction (MPR) PACS rendering, ABDM ABHA Health ID consent lifecycle management, SMART on FHIR app sandboxing, and ANSI X12 837P insurance billing."
+repository-code: "https://github.com/pavanbadempet/AI-Healthcare-System"
 keywords:
-  - "healthcare ai"
-  - "clinical decision support"
-  - "ehr interoperability"
-  - "fhir r4"
-  - "dicomweb"
-  - "dicom-mpr"
-  - "abdm-health-id"
-  - "smart-on-fhir"
-  - "rust api gateway"
-  - "multi-agent systems"
-  - "mlops"
-  - "explainable ai"
-  - "shap explainability"
-  - "conformal prediction"
-  - "pyspark data engineering"
-  - "delta lake medallion"
-  - "langgraph supervisor"
-  - "ollama local inference"
-  - "hipaa compliant template"
-  - "digital health boilerplate"
-  - "clinical risk prediction"
-  - "fastapi"
-  - "react-19"
+  - clinical decision support
+  - healthcare AI
+  - FHIR R4
+  - LangGraph RAG
+  - XGBoost diagnostics
+  - DICOM PACS
+abstract: "A production-grade, privacy-first open-source Electronic Health Record (EHR) and Clinical Decision Support System (CDSS) combining calibrated XGBoost diagnostic models, SHAP explainability, multi-agent LangGraph RAG, and native HL7 FHIR R4 interoperability."

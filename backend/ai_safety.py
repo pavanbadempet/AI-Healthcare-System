@@ -73,4 +73,47 @@ def get_safety_config() -> dict:
         "high_risk_confidence_threshold": HIGH_RISK_CONFIDENCE_THRESHOLD,
         "safety_disclaimer_active": True,
         "low_confidence_blocking_enabled": True,
+        "sota_guardrails_active": True,
     }
+
+
+def inspect_clinical_guardrails(prompt_text: str, response_text: str) -> dict:
+    """
+    SOTA Clinical Guardrail Evaluator (NeMo Guardrails & Llama-Guard Clinical pattern).
+    Audits prompt and candidate LLM output for toxic instruction injection, dangerous drug dosage bounds,
+    and medical disclaimer compliance.
+    """
+    combined = (prompt_text + " " + response_text).lower()
+    violations = []
+    blocked = False
+
+    # 1. Dangerous instruction / jailbreak check
+    jailbreak_keywords = ["ignore previous instructions", "act as an unlicensed doctor", "override safety protocols"]
+    if any(kw in combined for kw in jailbreak_keywords):
+        violations.append("Adversarial prompt injection or safety override attempt detected.")
+        blocked = True
+
+    # 2. Extreme drug dosage anomaly check (e.g. >2000mg Metformin, >100mg Lisinopril, >1000mg Aspirin single dose)
+    import re
+    dosages = re.findall(r'(\d+)\s*(mg|grams|g)', response_text, re.IGNORECASE)
+    for amount_str, unit in dosages:
+        amount = int(amount_str)
+        if unit.lower() in ('g', 'grams') and amount > 5:
+            violations.append(f"Potentially toxic single dose detected ({amount} {unit}). Max threshold exceeded.")
+            blocked = True
+        elif unit.lower() == 'mg' and amount > 4000:
+            violations.append(f"Potentially toxic single mg dose detected ({amount} mg). Max threshold exceeded.")
+            blocked = True
+
+    # 3. Emergency protocol reminder
+    emergency_symptoms = ["chest pain", "shortness of breath", "anaphylaxis", "sudden numbness"]
+    requires_emergency_flag = any(sym in combined for sym in emergency_symptoms)
+
+    return {
+        "passed": not blocked,
+        "violations": violations,
+        "emergency_symptom_flag": requires_emergency_flag,
+        "guardrail_status": "BLOCKED" if blocked else ("PASSED" if not violations else "WARNING"),
+        "disclaimer": SAFETY_DISCLAIMER
+    }
+

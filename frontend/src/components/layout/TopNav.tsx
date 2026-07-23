@@ -29,6 +29,7 @@ const TelephonyRoutingModal = lazy(() => import("@/components/modals/TelephonyRo
 const SecurityLockoutModal = lazy(() => import("@/components/modals/SecurityLockoutModal").then(m => ({ default: m.SecurityLockoutModal })));
 const SelfHealingMaintenanceModal = lazy(() => import("@/components/modals/SelfHealingMaintenanceModal").then(m => ({ default: m.SelfHealingMaintenanceModal })));
 const BillingClaimsModal = lazy(() => import("@/components/modals/BillingClaimsModal").then(m => ({ default: m.BillingClaimsModal })));
+const OnboardingGuideModal = lazy(() => import("@/components/modals/OnboardingGuideModal").then(m => ({ default: m.OnboardingGuideModal })));
 
 /* ═══════════════════════════════════════════════════
    TopNav Component
@@ -52,12 +53,14 @@ export default function TopNav({
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [hoveredTab, setHoveredTab] = useState<string | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   const [showHandoffModal, setShowHandoffModal] = useState(false);
   const [showSoapAuditModal, setShowSoapAuditModal] = useState(false);
   const [showDischargeModal, setShowDischargeModal] = useState(false);
   const [showTelephonyModal, setShowTelephonyModal] = useState(false);
   const [showSecurityModal, setShowSecurityModal] = useState(false);
   const [showHealingModal, setShowHealingModal] = useState(false);
+
   const [showBillingModal, setShowBillingModal] = useState(false);
 
   const [alarm, setAlarm] = useState<{ active: boolean; bed?: string; name?: string; hr?: number } | null>(null);
@@ -433,16 +436,17 @@ export default function TopNav({
           {/* Language Selector Dropdown */}
           <LanguageSelector language={language} setLanguage={setLanguage} />
 
-          {/* SOTA Interactive Guide Toggle */}
-          <Tooltip content="Interactive User Guide" position="bottom">
+          {/* SOTA Interactive Zero-Learning-Curve Guide Toggle */}
+          <Tooltip content="Zero-Learning-Curve Interactive Guide" position="bottom">
             <button
-              onClick={() => setGuideOpen(true)}
-              className="p-2 text-[var(--text-secondary)] hover:text-[var(--accent)] border border-transparent hover:border-[var(--border)] hover:bg-white/[0.02] rounded-lg transition-colors cursor-pointer flex items-center justify-center"
-              aria-label="Open Interactive Guide"
+              onClick={() => setShowOnboardingModal(true)}
+              className="p-2 text-blue-500 hover:text-blue-400 border border-blue-500/20 hover:border-blue-500/40 bg-blue-500/10 rounded-lg transition-colors cursor-pointer flex items-center justify-center"
+              aria-label="Open Interactive Onboarding Guide"
             >
-              <HelpCircle size={15} aria-hidden="true" />
+              <Sparkles size={15} className="animate-pulse text-yellow-400" aria-hidden="true" />
             </button>
           </Tooltip>
+
 
           {/* User Profile Dropdown */}
           {user && (
@@ -700,8 +704,12 @@ export default function TopNav({
           {showBillingModal && (
             <BillingClaimsModal onClose={() => setShowBillingModal(false)} />
           )}
+          {showOnboardingModal && (
+            <OnboardingGuideModal isOpen={showOnboardingModal} onClose={() => setShowOnboardingModal(false)} />
+          )}
         </AnimatePresence>
       </Suspense>
     </>
+
   );
 }
