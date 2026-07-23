@@ -64,18 +64,33 @@ def run_seo_audit(token: str):
     # 1. Update Repository Description & Homepage
     r_patch = requests.patch(API_URL, headers=headers, json={"description": OPTIMIZED_DESCRIPTION})
     if r_patch.status_code == 200:
-        print("✅ Repository SEO description verified & updated.")
+        print("✅ Repository SEO description verified & updated via REST API.")
     else:
-        print(f"⚠️ Failed to update description: {r_patch.status_code} {r_patch.text}")
+        # Fallback to gh CLI subprocess
+        import subprocess
+        cmd = ["gh", "repo", "edit", f"{OWNER}/{REPO}", "--description", OPTIMIZED_DESCRIPTION]
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        if res.returncode == 0:
+            print("✅ Repository SEO description verified & updated via gh CLI.")
+        else:
+            print(f"⚠️ Description update status: {res.stderr.strip() or r_patch.text[:100]}")
 
     # 2. Update 20 High-Ranking GitHub Topics
     topics_url = f"{API_URL}/topics"
     headers_mercy = {**headers, "Accept": "application/vnd.github.mercy-preview+json"}
     r_topics = requests.put(topics_url, headers=headers_mercy, json={"names": SEO_TOPICS})
     if r_topics.status_code == 200:
-        print(f"✅ Verified {len(SEO_TOPICS)} high-ranking SEO topic tags on GitHub.")
+        print(f"✅ Verified {len(SEO_TOPICS)} high-ranking SEO topic tags on GitHub via REST API.")
     else:
-        print(f"⚠️ Failed to update topics: {r_topics.status_code} {r_topics.text}")
+        # Fallback to gh CLI subprocess
+        import subprocess
+        topic_str = ",".join(SEO_TOPICS)
+        cmd = ["gh", "repo", "edit", f"{OWNER}/{REPO}", "--add-topic", topic_str]
+        res = subprocess.run(cmd, capture_output=True, text=True)
+        if res.returncode == 0:
+            print(f"✅ Verified {len(SEO_TOPICS)} high-ranking SEO topic tags on GitHub via gh CLI.")
+        else:
+            print(f"⚠️ Topics update status: {res.stderr.strip() or r_topics.text[:100]}")
 
     # 3. Audit open 'good first issue' contributor magnets
     issues_url = f"{API_URL}/issues?labels=good%20first%20issue&state=open"
