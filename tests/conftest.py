@@ -91,7 +91,7 @@ def pytest_collection_modifyitems(config, items):
         "test_turbovec_store",
         "test_hospital_operations",
         "test_billing",
-        "test_discharge",
+        "test_discharge.py",
         "test_nursing",
         "test_pharmacy",
         "test_airflow_dags",

@@ -1,0 +1,84 @@
+{
+  "resourceType": "Bundle",
+  "type": "transaction",
+  "timestamp": "2026-07-23T18:27:35.452935+00:00",
+  "entry": [
+    {
+      "fullUrl": "urn:uuid:patient-101",
+      "resource": {
+        "resourceType": "Patient",
+        "id": "101",
+        "name": [
+          {
+            "use": "official",
+            "family": "Doe",
+            "given": [
+              "Jane"
+            ]
+          }
+        ],
+        "gender": "female",
+        "birthDate": "1980-05-14"
+      },
+      "request": {
+        "method": "POST",
+        "url": "Patient"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:obs-101-bp",
+      "resource": {
+        "resourceType": "Observation",
+        "status": "final",
+        "code": {
+          "coding": [
+            {
+              "system": "http://loinc.org",
+              "code": "85354-9",
+              "display": "Blood pressure panel"
+            }
+          ]
+        },
+        "subject": {
+          "reference": "Patient/101"
+        },
+        "component": [
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "http://loinc.org",
+                  "code": "8480-6",
+                  "display": "Systolic BP"
+                }
+              ]
+            },
+            "valueQuantity": {
+              "value": 120,
+              "unit": "mmHg"
+            }
+          },
+          {
+            "code": {
+              "coding": [
+                {
+                  "system": "http://loinc.org",
+                  "code": "8462-4",
+                  "display": "Diastolic BP"
+                }
+              ]
+            },
+            "valueQuantity": {
+              "value": 80,
+              "unit": "mmHg"
+            }
+          }
+        ]
+      },
+      "request": {
+        "method": "POST",
+        "url": "Observation"
+      }
+    }
+  ]
+}
