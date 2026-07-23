@@ -10,7 +10,6 @@ permissions:
   contents: read
   issues: write
   repository-projects: write
-  administration: write
 
 jobs:
   seo_optimization:
