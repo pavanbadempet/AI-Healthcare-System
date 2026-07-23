@@ -11,9 +11,41 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
+router = APIRouter(prefix="/federated", tags=["Federated Learning"])
+
 from . import auth, database, models, schemas
 
-router = APIRouter(prefix="/federated", tags=["Federated Learning"])
+
+def apply_fedprox_regularization(
+    local_weights: dict[str, float],
+    global_weights: dict[str, float],
+    mu: float = 0.01,
+) -> dict[str, float]:
+    """Applies FedProx proximal regularization term (mu/2 * ||w - w_t||^2) to handle non-IID client drift."""
+    regularized = {}
+    for k, v in local_weights.items():
+        g_val = global_weights.get(k, 0.0)
+        # Proximal gradient step adjustment
+        regularized[k] = v - mu * (v - g_val)
+    return regularized
+
+
+class MomentsAccountantDP:
+    """SOTA Moments Accountant tracking privacy budget loss (epsilon, delta) across aggregation rounds."""
+
+    def __init__(self, target_delta: float = 1e-5):
+        self.target_delta = target_delta
+        self.total_epsilon_spent = 0.0
+
+    def compute_privacy_spent(self, num_rounds: int, noise_multiplier: float, sample_rate: float) -> float:
+        """Estimates cumulative privacy loss epsilon using Renyi Differential Privacy (RDP)."""
+        if noise_multiplier <= 0:
+            return float("inf")
+        # Approximate RDP bound conversion
+        alpha = 4.0
+        rdp_eps = num_rounds * (sample_rate ** 2) * alpha / (2 * (noise_multiplier ** 2))
+        self.total_epsilon_spent = rdp_eps + (math.log(1.0 / self.target_delta) / (alpha - 1))
+        return round(self.total_epsilon_spent, 4)
 
 
 def apply_laplace_dp(

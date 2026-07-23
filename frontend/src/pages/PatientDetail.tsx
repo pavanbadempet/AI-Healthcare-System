@@ -26,9 +26,9 @@ import PatientDiagnosticsReview from "@/components/operations/PatientDiagnostics
 import PatientMedicationsPanel from "@/components/operations/PatientMedicationsPanel";
 import PatientMonitoringSignals from "@/components/operations/PatientMonitoringSignals";
 import Tooltip from "@/components/layout/Tooltip";
-import { HomeDiagnosticKitModal } from "@/components/modals/HomeDiagnosticKitModal";
-import { AbdmHealthIdModal } from "@/components/modals/AbdmHealthIdModal";
-import { DicomUploadModal } from "@/components/modals/DicomUploadModal";
+const HomeDiagnosticKitModal = lazy(() => import("@/components/modals/HomeDiagnosticKitModal").then(m => ({ default: m.HomeDiagnosticKitModal })));
+const AbdmHealthIdModal = lazy(() => import("@/components/modals/AbdmHealthIdModal").then(m => ({ default: m.AbdmHealthIdModal })));
+const DicomUploadModal = lazy(() => import("@/components/modals/DicomUploadModal").then(m => ({ default: m.DicomUploadModal })));
 
 interface PatientIdentity {
   fullName: string;
@@ -1327,33 +1327,35 @@ export default function PatientEMRView({
         </div>
       </div>
 
-      <AnimatePresence>
-        {showHomeKitModal && (
-          <HomeDiagnosticKitModal
-            patientId={patientId}
-            patientName={patientIdentity?.fullName || "Marcus Thorne"}
-            onClose={() => setShowHomeKitModal(false)}
-            onOrderSuccess={() => {
-              setShowHomeKitModal(false);
-              loadLabKits();
-            }}
-          />
-        )}
-        {showAbdmModal && (
-          <AbdmHealthIdModal
-            patientId={patientId}
-            patientName={patientIdentity?.fullName || "Marcus Thorne"}
-            onClose={() => setShowAbdmModal(false)}
-          />
-        )}
-        {showDicomUploadModal && (
-          <DicomUploadModal
-            mrn={mrn}
-            patientName={patientIdentity?.fullName || "Marcus Thorne"}
-            onClose={() => setShowDicomUploadModal(false)}
-          />
-        )}
-      </AnimatePresence>
+      <Suspense fallback={null}>
+        <AnimatePresence>
+          {showHomeKitModal && (
+            <HomeDiagnosticKitModal
+              patientId={patientId}
+              patientName={patientIdentity?.fullName || "Marcus Thorne"}
+              onClose={() => setShowHomeKitModal(false)}
+              onOrderSuccess={() => {
+                setShowHomeKitModal(false);
+                loadLabKits();
+              }}
+            />
+          )}
+          {showAbdmModal && (
+            <AbdmHealthIdModal
+              patientId={patientId}
+              patientName={patientIdentity?.fullName || "Marcus Thorne"}
+              onClose={() => setShowAbdmModal(false)}
+            />
+          )}
+          {showDicomUploadModal && (
+            <DicomUploadModal
+              mrn={mrn}
+              patientName={patientIdentity?.fullName || "Marcus Thorne"}
+              onClose={() => setShowDicomUploadModal(false)}
+            />
+          )}
+        </AnimatePresence>
+      </Suspense>
     </motion.div>
   );
 }

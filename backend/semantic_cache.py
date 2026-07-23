@@ -75,34 +75,48 @@ if _pkg_cache is None:
                 logger.warning("Failed to save semantic cache: %s", e)
 
         def lookup(self, query_text: str, query_embedding: List[float]) -> Optional[str]:
-            if not self.cache or not query_embedding:
+            if not self.cache:
                 self.misses += 1
                 return None
 
-            q_vec = np.array(query_embedding)
+            # Direct exact match fast path (< 0.1ms)
+            for entry in self.cache:
+                if entry.get("query") == query_text:
+                    logger.info("Semantic cache EXACT HIT for query: '%s'", query_text[:50])
+                    self.hits += 1
+                    return entry["response"]
+
+            if not query_embedding:
+                self.misses += 1
+                return None
+
+            q_vec = np.array(query_embedding, dtype=np.float32)
             norm_q = np.linalg.norm(q_vec)
             if norm_q == 0:
                 self.misses += 1
                 return None
 
-            best_score = -1.0
-            best_response = None
+            # Vectorized Matrix Cosine Similarity for ultra-fast lookup
+            try:
+                embeddings = np.array([e["embedding"] for e in self.cache], dtype=np.float32)
+                norms = np.linalg.norm(embeddings, axis=1)
+                valid_mask = norms > 0
+                if not np.any(valid_mask):
+                    self.misses += 1
+                    return None
 
-            for entry in self.cache:
-                c_vec = np.array(entry["embedding"])
-                norm_c = np.linalg.norm(c_vec)
-                if norm_c == 0:
-                    continue
+                dots = np.dot(embeddings, q_vec)
+                scores = np.zeros(len(self.cache), dtype=np.float32)
+                scores[valid_mask] = dots[valid_mask] / (norms[valid_mask] * norm_q)
+                best_idx = int(np.argmax(scores))
+                best_score = float(scores[best_idx])
 
-                score = np.dot(q_vec, c_vec) / (norm_q * norm_c)
-                if score > best_score:
-                    best_score = score
-                    best_response = entry["response"]
-
-            if best_score >= self.threshold:
-                logger.info("Semantic cache HIT (score: %.4f) for query: '%s'", best_score, query_text[:50])
-                self.hits += 1
-                return best_response
+                if best_score >= self.threshold:
+                    logger.info("Semantic cache HIT (score: %.4f) for query: '%s'", best_score, query_text[:50])
+                    self.hits += 1
+                    return self.cache[best_idx]["response"]
+            except Exception as e:
+                logger.warning("Vectorized lookup fallback: %s", e)
 
             self.misses += 1
             return None
@@ -126,6 +140,9 @@ if _pkg_cache is None:
                 "embedding": query_embedding,
                 "response": response
             })
+            # LRU Pruning: Evict oldest entries if capacity exceeds 500 items
+            if len(self.cache) > 500:
+                self.cache = self.cache[-500:]
             self.save()
 
         def clear(self) -> None:

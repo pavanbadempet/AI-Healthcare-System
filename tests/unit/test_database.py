@@ -72,12 +72,14 @@ class TestSetSqlitePragma:
 
         set_sqlite_pragma(mock_connection, None)
 
-        assert mock_cursor.execute.call_count == 6
+        assert mock_cursor.execute.call_count == 8
         mock_cursor.execute.assert_any_call("PRAGMA journal_mode=WAL")
         mock_cursor.execute.assert_any_call("PRAGMA synchronous=NORMAL")
         mock_cursor.execute.assert_any_call("PRAGMA cache_size=-64000")
         mock_cursor.execute.assert_any_call("PRAGMA temp_store=MEMORY")
-        mock_cursor.execute.assert_any_call("PRAGMA mmap_size=268435456")
+        mock_cursor.execute.assert_any_call("PRAGMA mmap_size=536870912")
+        mock_cursor.execute.assert_any_call("PRAGMA journal_size_limit=67108864")
+        mock_cursor.execute.assert_any_call("PRAGMA busy_timeout=5000")
         mock_cursor.execute.assert_any_call("PRAGMA foreign_keys=ON")
         mock_cursor.close.assert_called_once()
 
@@ -101,10 +103,9 @@ class TestDatabaseUrl:
             assert database._load_database_url() == "sqlite:///:memory:"
 
     def test_database_url_required_outside_testing(self):
-        """Test production startup fails fast instead of using a hardcoded DB path."""
+        """Test production startup defaults to local SQLite WAL per Zero-Configuration Sandbox Rule."""
         with patch.dict("os.environ", {}, clear=True):
-            with pytest.raises(RuntimeError, match="DATABASE_URL"):
-                database._load_database_url()
+            assert "sqlite:///" in database._load_database_url()
 
 
 class TestDatabaseEngine:
