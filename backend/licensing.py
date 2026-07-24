@@ -99,9 +99,10 @@ def get_active_license_tier() -> str:
     Returns 'none' if no valid license key is configured.
     """
     import os
-    license_key = os.getenv("LICENSE_KEY", "CLINIC-TRIAL-2026").strip()
+    raw_key = os.getenv("LICENSE_KEY")
+    license_key = "CLINIC-TRIAL-2026" if raw_key is None else raw_key.strip()
     if not license_key:
-        license_key = "CLINIC-TRIAL-2026"
+        return "none"
 
     if license_key in TRIAL_KEYS:
         details = TRIAL_KEYS[license_key]
@@ -132,9 +133,10 @@ def get_active_license_tier() -> str:
 def get_active_license_modules() -> list:
     """Retrieve the list of allowed modules from the active license key."""
     import os
-    license_key = os.getenv("LICENSE_KEY", "CLINIC-TRIAL-2026").strip()
+    raw_key = os.getenv("LICENSE_KEY")
+    license_key = "CLINIC-TRIAL-2026" if raw_key is None else raw_key.strip()
     if not license_key:
-        license_key = "CLINIC-TRIAL-2026"
+        return []
 
     if license_key in TRIAL_KEYS:
         return ["*"]
