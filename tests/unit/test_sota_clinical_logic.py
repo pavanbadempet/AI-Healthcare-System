@@ -2,8 +2,14 @@
 Unit tests for SOTA Clinical Logic Engine (backend/sota_clinical_logic.py).
 """
 
-import pytest
-from backend.sota_clinical_logic import bitmask_logic, TrigramSymptomMatcher, RISK_HYPERTENSION, RISK_DIABETES, RISK_CKD, RISK_HEART_DISEASE
+from backend.sota_clinical_logic import (
+    RISK_CKD,
+    RISK_DIABETES,
+    RISK_HEART_DISEASE,
+    RISK_HYPERTENSION,
+    TrigramSymptomMatcher,
+    bitmask_logic,
+)
 
 
 def test_bitmask_composite_risk_evaluation():

@@ -2,8 +2,7 @@
 Unit tests for SOTA Algorithms Engine (backend/sota_algorithms.py).
 """
 
-import pytest
-from backend.sota_algorithms import HyperLogLogCounter, MinHashDeduplicator, ConsistentHashRing
+from backend.sota_algorithms import ConsistentHashRing, HyperLogLogCounter, MinHashDeduplicator
 
 
 def test_hyperloglog_counter():

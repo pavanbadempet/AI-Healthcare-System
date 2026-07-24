@@ -2,7 +2,6 @@
 Unit tests for SOTA Data Structures Engine (backend/sota_data_structures.py).
 """
 
-import pytest
 from backend.sota_data_structures import BloomFilter, CircularRingBuffer, RadixPrefixTrie
 
 

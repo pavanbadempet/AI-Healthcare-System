@@ -6,11 +6,10 @@ Unit tests for SOTA Architecture Upgrades:
 - ONNX C++ Inference Compiler (onnx_compiler.py)
 """
 
-import pytest
+from backend.binary_transport import MessagePackResponse, pack_binary_payload, unpack_binary_payload
+from backend.onnx_compiler import onnx_compiler
 from backend.sota_analytics import simd_analytics
 from backend.sota_vector_engine import SOTAVectorEngine
-from backend.binary_transport import pack_binary_payload, unpack_binary_payload, MessagePackResponse
-from backend.onnx_compiler import onnx_compiler
 
 
 def test_simd_analytics_bed_occupancy():

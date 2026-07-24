@@ -2,7 +2,6 @@
 Unit tests for SOTA Library Registry (backend/sota_libraries.py).
 """
 
-import pytest
 from backend.sota_libraries import sota_library_registry
 
 
