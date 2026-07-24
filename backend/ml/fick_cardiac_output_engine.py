@@ -23,8 +23,10 @@ class FickCardiacOutputEngine:
         # Cao2 = 1.34 * Hb * (SaO2 / 100)
         # Cvo2 = 1.34 * Hb * (SvO2 / 100)
         # CO (L/min) = (VO2 / 10) / (Cao2 - Cvo2)
-        av_o2_diff = (1.34 * hemoglobin_g_dL * (arterial_sat_sao2_percent - mixed_venous_sat_svo2_percent)) / 100.0
-        cardiac_output_L_min = round(oxygen_consumption_vo2_mL_min / (av_o2_diff * 10.0), 2)
+        av_o2_diff = (1.34 * max(hemoglobin_g_dL, 0.1) * (arterial_sat_sao2_percent - mixed_venous_sat_svo2_percent)) / 100.0
+        safe_av_o2_diff = max(av_o2_diff, 0.01)
+
+        cardiac_output_L_min = round(oxygen_consumption_vo2_mL_min / (safe_av_o2_diff * 10.0), 2)
 
         # SVR (dynes*sec/cm5) = 80 * (MAP - CVP) / CO
         svr_dynes = round((80.0 * (mean_arterial_pressure_mmHg - central_venous_pressure_mmHg)) / max(cardiac_output_L_min, 0.1), 0)
