@@ -1,10 +1,10 @@
 
 import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
-import { createPaymentOrder, verifyPayment } from "@/lib/api";
+import { createPaymentOrder, verifyPayment, fetchLicensingStatus, activateLicenseKey, type LicensingStatus } from "@/lib/api";
 import { fetchProcedureCostEstimate } from "@/lib/apiIntelligence";
 import { motion } from "framer-motion";
-import { Check, Star, Shield, Zap, AlertCircle } from "lucide-react";
+import { Check, Star, Shield, Zap, AlertCircle, Key, CheckCircle2, Lock, Building2, Sparkles } from "lucide-react";
 import { useAuthStore } from "@/lib/auth";
 import { toast } from "@/lib/toast";
 
@@ -46,6 +46,46 @@ export default function PricingPage() {
   const [error, setError] = useState("");
   const { user } = useAuthStore();
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // B2B Enterprise Licensing States
+  const [licenseStatus, setLicenseStatus] = useState<LicensingStatus | null>(null);
+  const [licenseInput, setLicenseInput] = useState("");
+  const [loadingLicense, setLoadingLicense] = useState(false);
+  const [licenseError, setLicenseError] = useState("");
+
+  const loadLicenseStatus = async () => {
+    try {
+      const status = await fetchLicensingStatus();
+      setLicenseStatus(status);
+    } catch (err) {
+      console.error("Failed to load license status:", err);
+    }
+  };
+
+  useEffect(() => {
+    loadLicenseStatus();
+  }, []);
+
+  const handleActivateLicense = async (e?: React.FormEvent, keyToUse?: string) => {
+    if (e) e.preventDefault();
+    const key = keyToUse || licenseInput.trim();
+    if (!key) {
+      setLicenseError("Please enter a valid B2B license key");
+      return;
+    }
+    setLoadingLicense(true);
+    setLicenseError("");
+    try {
+      const updatedStatus = await activateLicenseKey(key);
+      setLicenseStatus(updatedStatus);
+      toast.success(`License Activated! Platform tier upgraded to ${updatedStatus.tier.toUpperCase()}`);
+      setLicenseInput("");
+    } catch (err: any) {
+      setLicenseError(err.message || "Failed to activate license key");
+    } finally {
+      setLoadingLicense(false);
+    }
+  };
 
   useEffect(() => {
     const sessionId = searchParams.get("session_id");
@@ -221,6 +261,87 @@ export default function PricingPage() {
             </button>
           </motion.div>
         ))}
+      </div>
+
+      {/* Proprietary B2B Enterprise License Activation Enclave */}
+      <div className="mt-12 max-w-2xl mx-auto">
+        <div className="panel p-6 space-y-5 bg-gradient-to-br from-indigo-950/40 via-zinc-900/60 to-purple-950/40 border border-indigo-500/30 rounded-2xl shadow-xl">
+          <div className="flex justify-between items-start pb-3 border-b border-indigo-500/20">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400">
+                <Key size={18} />
+              </div>
+              <div>
+                <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                  B2B Enterprise License Enclave
+                  <span className="text-[9px] bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 px-2 py-0.5 rounded-full font-mono">
+                    PROPRIETARY TIER
+                  </span>
+                </h2>
+                <p className="text-[11px] text-zinc-400 font-mono">Activate cryptographic B2B JWT clinic keys to unlock offline ML nodes & enterprise FHIR integrations.</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Active License Status Pill */}
+          {licenseStatus && (
+            <div className="p-3 rounded-xl bg-zinc-950/80 border border-zinc-800 flex items-center justify-between font-mono text-xs">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={15} className={licenseStatus.is_valid ? "text-emerald-400" : "text-amber-400"} />
+                <div>
+                  <span className="text-zinc-400">Active Tier: </span>
+                  <strong className="text-indigo-300 font-bold uppercase">{licenseStatus.tier}</strong>
+                  <span className="text-zinc-500 text-[10px] ml-2">({licenseStatus.details})</span>
+                </div>
+              </div>
+              <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded font-mono">
+                {licenseStatus.active_key}
+              </span>
+            </div>
+          )}
+
+          {/* Activate Form */}
+          <form onSubmit={handleActivateLicense} className="space-y-3 font-sans">
+            <div>
+              <label className="text-[10px] text-zinc-400 font-bold uppercase font-mono block mb-1">
+                Input Cryptographic B2B License Key (JWT / Trial Code)
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={licenseInput}
+                  onChange={(e) => setLicenseInput(e.target.value)}
+                  placeholder="e.g. CLINIC-TRIAL-2026 or eyJhbGciOiJIUzI1Ni..."
+                  className="input-clinical font-mono text-xs flex-1 bg-zinc-950 border-zinc-800 text-zinc-100 placeholder-zinc-600 focus:border-indigo-500"
+                />
+                <button
+                  type="submit"
+                  disabled={loadingLicense}
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded text-xs font-bold uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer shadow-lg shadow-indigo-600/10 flex items-center gap-1.5 shrink-0"
+                >
+                  {loadingLicense ? "Validating..." : "Activate Key"}
+                </button>
+              </div>
+            </div>
+
+            {licenseError && (
+              <p className="text-xs font-mono text-red-400 bg-red-950/40 border border-red-800/60 p-2.5 rounded-lg flex items-center gap-1.5">
+                <AlertCircle size={14} /> {licenseError}
+              </p>
+            )}
+
+            <div className="flex justify-between items-center pt-2 text-[10px] font-mono text-zinc-400 border-t border-white/5">
+              <span>Default Out-of-the-box key: <code className="text-emerald-400 bg-emerald-950/40 px-1.5 py-0.5 rounded">CLINIC-TRIAL-2026</code></span>
+              <button
+                type="button"
+                onClick={() => handleActivateLicense(undefined, "CLINIC-TRIAL-2026")}
+                className="text-indigo-400 hover:text-indigo-300 underline cursor-pointer"
+              >
+                1-Click Apply Trial Key
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
 
       {/* Procedure Cost Estimator Section (Itch 9) */}
