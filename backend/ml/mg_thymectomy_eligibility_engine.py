@@ -1,52 +1,49 @@
 """
-Myasthenia Gravis (MG) Thymectomy Eligibility Engine
-====================================================
-Evaluates MGTX trial criteria (AChR+ non-thymomatous gMG, age 18-65, duration < 5 years, MGFA II-IV)
-and presence of Thymoma on CT/MRI to recommend transsternal or robotic video-assisted thymectomy (RATS).
+Myasthenia Gravis Thymoma & Thymectomy Surgical Eligibility Engine
+====================================================================
+Evaluates MGTX trial surgical eligibility for thymectomy: Mandatory for all Thymoma-associated MG (Masaoka I-IV)
+and recommended for non-thymomatous AChR+ generalized MG (Age 18-65, disease duration < 5 years).
 """
 
 from typing import Dict
 
 
 class MgThymectomyEligibilityEngine:
-    """Evaluates thymectomy indication (MGTX trial criteria or Thymoma) in Myasthenia Gravis."""
+    """Evaluates thymectomy surgical indication according to MGTX trial guidelines."""
 
     def evaluate_thymectomy_eligibility(
         self,
+        thymoma_present_on_ct_mri: bool = False,
         achr_antibody_positive: bool = True,
-        thymoma_present_on_imaging: bool = False,
-        age_years: int = 35,
-        disease_duration_years: float = 2.0,
-        mgfa_class: str = "CLASS_II_MODERATE",  # CLASS_I_OCULAR, CLASS_II, CLASS_III, CLASS_IV, CLASS_V
+        generalized_mg_symptoms: bool = True,  # Class II-IV gMG
+        patient_age_years: int = 35,  # MGTX range 18 to 65
+        disease_duration_years: float = 2.5,  # MGTX <= 5 years
     ) -> Dict[str, any]:
+        mandatory_for_thymoma = thymoma_present_on_ct_mri
+
         mgtx_eligible = (
-            achr_antibody_positive
-            and not thymoma_present_on_imaging
-            and 18 <= age_years <= 65
+            not thymoma_present_on_ct_mri
+            and achr_antibody_positive
+            and generalized_mg_symptoms
+            and (18 <= patient_age_years <= 65)
             and disease_duration_years <= 5.0
-            and mgfa_class in ["CLASS_II_MODERATE", "CLASS_III_SEVERE", "CLASS_IV_VERY_SEVERE"]
         )
 
-        thymoma_indication = thymoma_present_on_imaging
+        thymectomy_indicated = mandatory_for_thymoma or mgtx_eligible
 
-        surgery_indicated = mgtx_eligible or thymoma_indication
+        surgical_approach = "EXTENDED_TRANSTERNAAL_OR_ROBOTIC_MINIMALLY_INVASIVE_THYMECTOMY"
 
-        surgical_approach = "ROBOTIC_THYMECTOMY_RATS_OR_VATS"
-        if thymoma_indication:
-            surgical_approach = "EXTENDED_TRANSSTERNAL_THYMECTOMY"
-
-        recommendation = "Thymectomy NOT indicated (Pure ocular MGFA Class I, seronegative non-thymomatous MG, or age > 65); continue medical immunosuppression"
-        if surgery_indicated:
-            if thymoma_indication:
-                recommendation = "THYMOMA DETECTED ON CHEST CT: Perform complete surgical thymectomy (extended transsternal approach) regardless of MG antibody status to prevent local tumor invasion"
-            else:
-                recommendation = f"ELIGIBLE FOR MGTX THYMECTOMY (AChR+ gMG, Age {age_years}, Duration {disease_duration_years}y): Recommend {surgical_approach} to increase rate of clinical remission and reduce corticosteroid requirements"
+        recommendation = "Thymectomy not routinely indicated (ocular MG only, MuSK+ MG without thymoma, age > 65 without thymoma, or duration > 5 years)"
+        if mandatory_for_thymoma:
+            recommendation = f"MANDATORY THYMECTOMY FOR THYMOMA (Masaoka stage I-IV resection): Perform surgical resection of mediastinal mass ({surgical_approach}) regardless of age or disease duration to treat thymoma and improve MG control"
+        elif mgtx_eligible:
+            recommendation = f"THYMECTOMY RECOMMENDED (MGTX Trial Criteria: AChR+ gMG, Age {patient_age_years}, Duration {disease_duration_years} yrs): Perform extended thymectomy ({surgical_approach}) to increase complete stable remission rate and reduce required prednisone dose"
 
         return {
-            "mgtx_trial_eligible": mgtx_eligible,
-            "thymoma_indication": thymoma_indication,
-            "thymectomy_indicated": surgery_indicated,
-            "recommended_surgical_approach": surgical_approach if surgery_indicated else "NONE",
+            "mandatory_for_thymoma": mandatory_for_thymoma,
+            "mgtx_eligible": mgtx_eligible,
+            "thymectomy_indicated": thymectomy_indicated,
+            "surgical_approach": surgical_approach if thymectomy_indicated else "NONE",
             "clinical_recommendation": recommendation,
             "status": "EVALUATION_COMPLETE",
         }
