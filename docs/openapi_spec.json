@@ -1,0 +1,34 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "AI Healthcare System API",
+    "version": "2.0.0",
+    "description": "State-of-the-Art Enterprise AI Clinical System OpenAPI 3.0 Contract Specification."
+  },
+  "paths": {
+    "/v1/predict/{model_name}": {
+      "post": {
+        "summary": "Run ML diagnostic prediction",
+        "parameters": [
+          {
+            "name": "model_name",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": { "description": "Diagnostic prediction result with SHAP confidence score." }
+        }
+      }
+    },
+    "/v1/ai/generate": {
+      "post": {
+        "summary": "AI Medical Reasoning & RAG Generation",
+        "responses": {
+          "200": { "description": "LLM response with clinical disclaimer." }
+        }
+      }
+    }
+  }
+}

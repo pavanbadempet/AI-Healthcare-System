@@ -1,0 +1,21 @@
+{
+  "info": {
+    "name": "AI Healthcare System API Collection",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "ML Predictions",
+      "item": [
+        {
+          "name": "Diabetes Prediction",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "http://127.0.0.1:8000/v1/predict/diabetes", "protocol": "http", "host": ["127", "0", "0", "1"], "port": "8000", "path": ["v1", "predict", "diabetes"] }
+          }
+        }
+      ]
+    }
+  ]
+}
