@@ -582,6 +582,46 @@ async def generate_report(
         logger.error("Generate report failed")
         raise HTTPException(status_code=500, detail=GENERATE_REPORT_FAILURE_DETAIL)
 
+# --- B2B Licensing & Platform Activation Endpoints ---
+class LicenseActivationPayload(BaseModel):
+    license_key: str
+
+@app.get("/v1/licensing/status")
+def get_licensing_status():
+    """Retrieve active platform licensing status, tier, and module grants."""
+    from backend import licensing
+    raw_key = os.getenv("LICENSE_KEY")
+    key = "CLINIC-TRIAL-2026" if raw_key is None else raw_key.strip()
+    tier = licensing.get_active_license_tier()
+    is_valid, holder_reason = licensing.verify_license_key(key)
+    modules = licensing.get_active_license_modules()
+    return {
+        "active_key": key[:12] + "..." if len(key) > 12 else key,
+        "is_valid": is_valid,
+        "tier": tier,
+        "details": holder_reason,
+        "modules": modules,
+        "perpetual": tier == "enterprise" and "Trial" not in holder_reason
+    }
+
+@app.post("/v1/licensing/activate")
+def activate_license_key(payload: LicenseActivationPayload):
+    """Validate and activate a B2B enterprise license key."""
+    from backend import licensing
+    clean_key = payload.license_key.strip()
+    is_valid, reason = licensing.verify_license_key(clean_key)
+    if not is_valid:
+        raise HTTPException(status_code=400, detail=f"License activation failed: {reason}")
+
+    os.environ["LICENSE_KEY"] = clean_key
+    tier = licensing.get_active_license_tier()
+    return {
+        "status": "activated",
+        "tier": tier,
+        "details": reason,
+        "modules": licensing.get_active_license_modules()
+    }
+
 # --- SOTA Prometheus Monitoring Endpoint ---
 @app.get("/metrics")
 def get_prometheus_metrics():

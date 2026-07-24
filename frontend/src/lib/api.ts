@@ -174,6 +174,8 @@ export {
 export {
   createPaymentOrder,
   verifyPayment,
+  fetchLicensingStatus,
+  activateLicenseKey,
   getAppointments,
   bookAppointment,
   getDoctors,
@@ -181,6 +183,7 @@ export {
   streamCASA,
   type PaymentOrder,
   type PaymentVerification,
+  type LicensingStatus,
   type Appointment,
   type CASAMessage,
   type CASAChatResponse,

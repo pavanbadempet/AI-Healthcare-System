@@ -27,6 +27,27 @@ export async function verifyPayment(data: { gateway: string; razorpay_order_id?:
   return apiFetch('/payments/verify', { method: 'POST', body: JSON.stringify(data) });
 }
 
+// ── B2B Licensing ────────────────────────────────────────────────
+export interface LicensingStatus {
+  active_key: string;
+  is_valid: boolean;
+  tier: string;
+  details: string;
+  modules: string[];
+  perpetual: boolean;
+}
+
+export async function fetchLicensingStatus(): Promise<LicensingStatus> {
+  return apiFetch('/v1/licensing/status');
+}
+
+export async function activateLicenseKey(licenseKey: string): Promise<LicensingStatus> {
+  return apiFetch('/v1/licensing/activate', {
+    method: 'POST',
+    body: JSON.stringify({ license_key: licenseKey }),
+  });
+}
+
 // ── Telemedicine ─────────────────────────────────────────────────
 export interface Appointment {
   id: number;
