@@ -57,3 +57,9 @@ class SecurityPenTestHarness:
 
 # Singleton harness instance
 security_harness = SecurityPenTestHarness()
+
+
+def run_security_compliance_audit(sample_log: str = "") -> Dict[str, any]:
+    """Helper entry point for running a quick security compliance audit."""
+    return security_harness.audit_pii_log_redaction(sample_log)
+
