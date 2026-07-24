@@ -95,7 +95,7 @@ export default function DataEngineering() {
                 <p className="text-[10px] text-[var(--text-dim)] uppercase tracking-wider font-mono">Engine Status</p>
                 {telemetry?.is_real_stream ? (
                   <p className="text-sm font-bold text-[var(--success)] flex items-center gap-2 mt-0.5">
-                    <span className="w-2 h-2 rounded-full bg-[var(--success)] animate-pulse" /> Real PySpark Active
+                    <span className="w-2 h-2 rounded-full bg-[var(--success)] animate-pulse" /> Real-Time Data Pipeline Active
                   </p>
                 ) : (
                   <p className="text-sm font-bold text-[var(--warning)] flex items-center gap-2 mt-0.5">
