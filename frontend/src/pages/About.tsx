@@ -194,7 +194,7 @@ export default function AboutPage() {
                 <h3 className="text-sm font-bold uppercase tracking-wider text-[var(--text-primary)]">Decoupled Architecture</h3>
               </div>
               <p className="text-xs leading-relaxed text-[var(--text-secondary)] font-mono uppercase">
-                The UI layer runs inside an optimized Next.js App Router context, strictly interfacing with the database via standard FastAPI gateways. This ensures frontend presentation components remain unaffected by backend analytics pipeline modifications or machine learning model training operations.
+                The frontend presentation layer is built as a high-performance React SPA with Vite, strictly interfacing with the database via standard FastAPI gateways. This ensures frontend presentation components remain unaffected by backend analytics pipeline modifications or machine learning model training operations.
               </p>
             </div>
           </motion.div>
