@@ -5,7 +5,7 @@ Analyzes diagnostic imaging metadata, Hounsfield Unit statistics, and clinical i
 to produce preliminary radiology impression reports (Chest X-Ray, CT, MRI).
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 
 class RadiologyPreReaderAgent:

@@ -1,9 +1,9 @@
 import os
 import sqlite3
-import pytest
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timedelta, timezone
 
 from backend import models
+
 
 def get_admin_token(client, db):
     admin = db.query(models.User).filter_by(username="test_admin").first()
@@ -37,7 +37,7 @@ def test_admin_compliance_backup(client, db_session):
     data = response.json()
     assert data["status"] == "success"
     assert "backup_file" in data
-    
+
     backup_file = data["backup_file"]
     assert os.path.exists(backup_file)
     assert os.path.getsize(backup_file) > 0

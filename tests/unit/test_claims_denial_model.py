@@ -2,8 +2,7 @@
 Unit tests for Medical Claims Denial Risk AI Predictor
 """
 
-import pytest
-from backend.ml.claims_denial_risk_model import ClaimsDenialRiskModel, claims_denial_model
+from backend.ml.claims_denial_risk_model import claims_denial_model
 
 
 def test_predict_claim_denial_risk_low():

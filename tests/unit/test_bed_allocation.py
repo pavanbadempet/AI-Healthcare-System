@@ -2,8 +2,7 @@
 Unit tests for Bed Allocation Optimizer
 """
 
-import pytest
-from backend.ml.bed_allocation_optimizer import BedAllocationOptimizer, bed_optimizer
+from backend.ml.bed_allocation_optimizer import bed_optimizer
 
 
 def test_allocate_patient_bed_success():

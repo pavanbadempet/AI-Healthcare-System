@@ -55,7 +55,7 @@ class PrescribingSafetyAgent:
                 warnings.append({
                     "type": "RENAL_DOSAGE_ADJUSTMENT",
                     "severity": "WARNING",
-                    "message": f"eGFR between 30-45 mL/min/1.73m²: Max recommended Metformin dose is 500mg/day.",
+                    "message": "eGFR between 30-45 mL/min/1.73m²: Max recommended Metformin dose is 500mg/day.",
                 })
 
         # 2. Drug-Drug Interaction Checks

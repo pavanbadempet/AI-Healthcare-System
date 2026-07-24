@@ -160,21 +160,21 @@ def test_module_based_licensing_allowance():
     """Verify that specific module purchase grants access even on lower tiers."""
     # Apollo has a community license, but purchased the 'clinical-tabular' module
     key = licensing.generate_license_key(holder="Apollo", tier="community", days_valid=30, perpetual=True, modules=["clinical-tabular"])
-    
+
     with patch.dict(os.environ, {"LICENSE_KEY": key}):
         # Modules list should return the purchased module
         assert "clinical-tabular" in licensing.get_active_license_modules()
         assert "*" not in licensing.get_active_license_modules()
-        
+
         # Checking licensing.enforce_license_module dependency
         dep = licensing.enforce_license_module("clinical-tabular", minimum_tier="enterprise")
         # Should not raise any HTTPException
         dep()
-        
+
         # Checking non-purchased module on community tier -> should raise HTTPException(402)
         dep_agents = licensing.enforce_license_module("agents", minimum_tier="enterprise")
-        from fastapi import HTTPException
         import pytest
+        from fastapi import HTTPException
         with pytest.raises(HTTPException) as exc:
             dep_agents()
         assert exc.value.status_code == 402

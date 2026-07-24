@@ -99,7 +99,7 @@ def pytest_collection_modifyitems(config, items):
 
     for item in items:
         path = str(getattr(item, "path", getattr(item, "fspath", ""))).replace("\\", "/")
-        
+
         # Check if the file matches any of the slow patterns
         if any(pat in path for pat in slow_patterns):
             item.add_marker(pytest.mark.slow)

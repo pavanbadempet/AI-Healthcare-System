@@ -6,10 +6,7 @@ Converts raw doctor-patient consultation transcripts into structured SOAP notes
 Integrated with local LLM (Ollama) and core AI fallback.
 """
 
-import json
-import re
-import sys
-from typing import Dict, List, Optional
+from typing import Dict
 
 
 class AmbientScribeAgent:

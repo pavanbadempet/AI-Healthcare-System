@@ -1,22 +1,22 @@
-import pytest
 import time
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
+
+import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from backend.audit_log import clear_audit_logs, get_logged_audit_events, log_clinical_access_event
+from backend.cds_hooks import evaluate_cardio_risk_service, get_cds_services_registry
 from backend.database import Base
 from backend.models.auth import User
 from backend.models.clinical import VitalObservation
-
-from backend.cds_hooks import get_cds_services_registry, evaluate_cardio_risk_service
 from backend.subscriptions import (
-    register_fhir_subscription,
     clear_subscriptions,
+    dispatch_observation_notifications,
     get_active_subscriptions,
-    dispatch_observation_notifications
+    register_fhir_subscription,
 )
-from backend.audit_log import log_clinical_access_event, clear_audit_logs, get_logged_audit_events
 
 # ── DB fixture ────────────────────────────────────────────────────────────────
 
@@ -126,17 +126,17 @@ def test_fhir_subscription_trigger():
     # 3. Trigger notification dispatch - Match (We pass heart rate)
     with patch("requests.post") as mock_post:
         mock_post.return_value = MagicMock(status_code=200)
-        
+
         dispatched = dispatch_observation_notifications(
             patient_id=202,
             observation_id=11,
             vitals_dict={"heart_rate": 105.0, "systolic_bp": 142.0}
         )
         assert dispatched == 1
-        
+
         # Let background thread execute
         time.sleep(0.1)
-        
+
         # Verify webhook POST payload format
         mock_post.assert_called_once()
         args, kwargs = mock_post.call_args

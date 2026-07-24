@@ -2,8 +2,7 @@
 Unit tests for Prescribing Safety Agent
 """
 
-import pytest
-from backend.agents.prescribing_safety_agent import PrescribingSafetyAgent, prescribing_safety_agent
+from backend.agents.prescribing_safety_agent import prescribing_safety_agent
 
 
 def test_evaluate_prescription_safe():

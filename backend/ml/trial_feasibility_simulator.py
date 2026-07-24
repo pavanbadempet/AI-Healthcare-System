@@ -4,7 +4,7 @@ Clinical Trial Protocol Feasibility Simulator
 Simulates patient recruitment rates, dropouts, and statistical power for trial designs.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict
 
 
 class ClinicalTrialFeasibilitySimulator:

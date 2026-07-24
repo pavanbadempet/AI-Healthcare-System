@@ -1,4 +1,3 @@
-import pytest
 from backend.database_pool_manager import EnterpriseDatabasePoolManager, get_db_pool_status
 
 

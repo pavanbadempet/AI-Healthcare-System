@@ -2,8 +2,7 @@
 Unit tests for Trial Feasibility Simulator
 """
 
-import pytest
-from backend.ml.trial_feasibility_simulator import ClinicalTrialFeasibilitySimulator, trial_feasibility_simulator
+from backend.ml.trial_feasibility_simulator import trial_feasibility_simulator
 
 
 def test_simulate_trial_feasibility_success():

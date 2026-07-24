@@ -1,8 +1,9 @@
 import os
 import shutil
 import subprocess
-import time
 import sys
+import time
+
 import grpc
 import pytest
 
@@ -11,6 +12,7 @@ base_dir = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, base_dir)
 
 import interop_pb2
+
 
 def test_rust_grpc_server():
     # Skip if cargo is not installed
@@ -27,7 +29,7 @@ def test_rust_grpc_server():
     env = os.environ.copy()
     if sys.platform == "win32":
         env["PATH"] += ";C:\\Users\\pavan\\AppData\\Local\\Microsoft\\WinGet\\Packages\\Google.Protobuf_Microsoft.Winget.Source_8wekyb3d8bbwe\\bin"
-    
+
     # We do a build to ensure the binary is compiled with gRPC support
     rust_gw_dir = os.path.join(base_dir, "..", "..", "rust_gateway")
     try:

@@ -16,6 +16,7 @@ from backend.database import Base, get_db
 from backend.main import app
 from backend.prediction import initialize_models
 
+
 @pytest.fixture(autouse=True)
 def mock_agent_nodes():
     with patch("backend.agent.supervisor_node", return_value={"next_step": "respond"}), \
@@ -252,7 +253,7 @@ def test_chat_suggestions_returns_at_most_8(client):
 
 
 def test_chat_agent_failure(client, caplog):
-    from unittest.mock import MagicMock, patch
+    from unittest.mock import patch
     headers = _make_user_and_headers(client, "chat_agent_fail")
     caplog.set_level("ERROR", logger="backend.chat")
     with patch("backend.chat.agent.medical_agent.invoke", side_effect=Exception("Agent Down with patient context")):
@@ -265,13 +266,14 @@ def test_chat_agent_failure(client, caplog):
 
 def test_chat_db_save_failure(client, caplog):
     from unittest.mock import MagicMock, patch
+
     from backend.database import get_db
     headers = _make_user_and_headers(client, "chat_db_fail")
     caplog.set_level("ERROR", logger="backend.chat")
-    
+
     mock_db = MagicMock()
     mock_db.commit.side_effect = Exception("DB Error with patient context")
-    
+
     orig_override = app.dependency_overrides.get(get_db)
     app.dependency_overrides[get_db] = lambda: mock_db
     try:

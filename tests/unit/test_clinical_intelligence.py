@@ -1,9 +1,10 @@
-import pytest
 from unittest.mock import AsyncMock, patch
 
-from backend.clinical_notes import compile_clinical_note
+import pytest
+
 from backend.assessments import score_assessment, to_fhir_observation
 from backend.care_plans import generate_care_plan
+from backend.clinical_notes import compile_clinical_note
 
 # ── SOAP/DAP Notes Compiler Tests ───────────────────────────────────────────
 
@@ -16,13 +17,13 @@ async def test_compile_clinical_note_soap():
         "**Assessment**: Suspected early signs of diabetes.\n"
         "**Plan**: Order HbA1c screening."
     )
-    
+
     with patch("backend.clinical_notes.chat", AsyncMock(return_value=mock_chat_response)) as mock_chat:
         result = await compile_clinical_note(
             transcript="Doctor: Tell me what's wrong. Patient: I've been feeling very tired lately, maybe diabetes?",
             format_type="SOAP"
         )
-        
+
         mock_chat.assert_called_once()
         assert result["format"] == "SOAP"
         assert "Clinical SOAP Note" in result["note_markdown"]
@@ -42,13 +43,13 @@ async def test_compile_clinical_note_dap():
         "**Assessment**: Kidney function markers should be monitored.\n"
         "**Plan**: Order renal panel."
     )
-    
+
     with patch("backend.clinical_notes.chat", AsyncMock(return_value=mock_chat_response)):
         result = await compile_clinical_note(
             transcript="Patient has high blood pressure and worries about kidney health.",
             format_type="DAP"
         )
-        
+
         assert result["format"] == "DAP"
         detected = result["coded_diagnoses"]
         assert len(detected) == 1
@@ -84,7 +85,7 @@ def test_score_assessment_validation_errors():
     # Invalid length
     with pytest.raises(ValueError, match="Expected exactly 9 responses"):
         score_assessment([1, 2, 3], questionnaire_type="PHQ-9")
-        
+
     # Invalid range values
     with pytest.raises(ValueError, match="between 0 and 3"):
         score_assessment([0, 0, 4, 0, 0, 0, 0, 0, 0], questionnaire_type="PHQ-9")
@@ -110,7 +111,7 @@ def test_generate_care_plan_kidney():
     assert "CKD" in plan["title"] or "Kidney" in plan["title"]
     assert len(plan["goal"]) == 2
     assert plan["goal"][0]["lifecycleStatus"] == "active"
-    
+
     # Check specific kidney activities
     activities = [act["reference"]["display"] for act in plan["activity"]]
     assert "Nephrotoxic Agent Avoidance" in activities

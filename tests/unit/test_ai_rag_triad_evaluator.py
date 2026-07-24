@@ -1,4 +1,3 @@
-import pytest
 from backend.ai_rag_triad_evaluator import RAGTriadEvaluator, run_rag_triad_eval
 
 

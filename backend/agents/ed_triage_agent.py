@@ -5,7 +5,7 @@ Calculates Emergency Severity Index (ESI Level 1-5) based on patient acuity,
 vital sign stability, high-risk flags, and projected resource needs.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict
 
 
 class EmergencyTriageAgent:

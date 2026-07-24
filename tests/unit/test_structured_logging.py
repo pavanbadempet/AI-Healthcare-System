@@ -1,17 +1,17 @@
+import io
 import json
 import logging
-import io
-import pytest
+
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from backend.logging_config import (
-    setup_structured_logging,
-    correlation_id_var,
+    PIIRedactingFilter,
     StructuredJSONFormatter,
-    PIIRedactingFilter
+    correlation_id_var,
 )
 from backend.middleware import RequestTracingMiddleware
+
 
 def test_json_logging_format_and_redaction():
     # 1. Capture logger outputs
@@ -19,7 +19,7 @@ def test_json_logging_format_and_redaction():
     handler = logging.StreamHandler(log_capture)
     handler.setFormatter(StructuredJSONFormatter())
     handler.addFilter(PIIRedactingFilter())
-    
+
     test_logger = logging.getLogger("test_structured_logger")
     test_logger.addHandler(handler)
     test_logger.setLevel(logging.INFO)
@@ -29,7 +29,7 @@ def test_json_logging_format_and_redaction():
     test_logger.info("Structured logging test")
     log_line = log_capture.getvalue().strip()
     assert log_line.startswith("{") and log_line.endswith("}")
-    
+
     log_data = json.loads(log_line)
     assert log_data["message"] == "Structured logging test"
     assert log_data["level"] == "INFO"
@@ -39,11 +39,11 @@ def test_json_logging_format_and_redaction():
     # 3. Log sensitive message (PII Redaction check)
     log_capture.seek(0)
     log_capture.truncate(0)
-    
+
     test_logger.info("Contact patient John at john.doe@example.com or 123-456-7890.")
     redacted_line = log_capture.getvalue().strip()
     redacted_data = json.loads(redacted_line)
-    
+
     assert "[EMAIL_REDACTED]" in redacted_data["message"]
     assert "[PHONE_REDACTED]" in redacted_data["message"]
     assert "john.doe@example.com" not in redacted_data["message"]
@@ -56,16 +56,16 @@ def test_correlation_id_context_propagation():
         log_capture = io.StringIO()
         handler = logging.StreamHandler(log_capture)
         handler.setFormatter(StructuredJSONFormatter())
-        
+
         test_logger = logging.getLogger("test_correlation_logger")
         test_logger.addHandler(handler)
         test_logger.setLevel(logging.INFO)
         test_logger.propagate = False
-        
+
         test_logger.info("Testing correlation propagation")
         log_line = log_capture.getvalue().strip()
         log_data = json.loads(log_line)
-        
+
         assert log_data["correlation_id"] == "test-correlation-12345"
     finally:
         correlation_id_var.reset(token)
@@ -74,13 +74,13 @@ def test_request_tracing_middleware_headers():
     # Setup test FastAPI app with RequestTracingMiddleware
     app = FastAPI()
     app.add_middleware(RequestTracingMiddleware)
-    
+
     @app.get("/test-trace")
     def dummy_route():
         return {"status": "ok"}
-        
+
     client = TestClient(app)
-    
+
     # Request without correlation header (should generate one)
     res = client.get("/test-trace")
     assert res.status_code == 200

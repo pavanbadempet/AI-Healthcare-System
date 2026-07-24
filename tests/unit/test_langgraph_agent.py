@@ -1,7 +1,10 @@
-import pytest
 from unittest.mock import patch
+
+import pytest
 from sqlalchemy.orm import Session
+
 from backend.models.auth import User
+
 
 @pytest.mark.anyio
 @patch("backend.core_ai.chat")

@@ -2,8 +2,7 @@
 Unit tests for Radiology Pre-Reader Agent
 """
 
-import pytest
-from backend.agents.radiology_prereader_agent import RadiologyPreReaderAgent, radiology_prereader_agent
+from backend.agents.radiology_prereader_agent import radiology_prereader_agent
 
 
 def test_generate_pre_read_impression_stat():

@@ -3,6 +3,7 @@ Unit tests for Dynamic Clinical Feature Scaler.
 """
 
 import numpy as np
+
 from backend.dynamic_scaler import DynamicClinicalScaler, scale_features_dynamically
 
 

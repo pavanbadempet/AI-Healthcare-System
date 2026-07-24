@@ -5,7 +5,7 @@ Predicts 5-year chronic kidney disease (CKD stage 1-5) and diabetes HbA1c progre
 curves based on historical lab trends over multi-year encounter records.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 
 class DiseaseProgressionPredictor:

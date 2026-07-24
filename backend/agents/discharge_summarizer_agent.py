@@ -6,7 +6,7 @@ red-flag warning signs, and follow-up care plans into structured clinical summar
 """
 
 from datetime import datetime, timezone
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 
 class DischargeSummarizerAgent:

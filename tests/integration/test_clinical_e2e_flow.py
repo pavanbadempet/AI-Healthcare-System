@@ -1,10 +1,10 @@
 import os
-import sys
-from datetime import datetime, timedelta, timezone
+from datetime import datetime
+
 from backend import models
-from backend.database import get_db
 from backend.model_service import model_service
-from backend.tee_enclave import ConfidentialEnclave, TRUSTED_MODEL_HASHES
+from backend.tee_enclave import TRUSTED_MODEL_HASHES
+
 
 def test_unmocked_clinical_e2e_flow(client, db_session):
     """
@@ -51,7 +51,7 @@ def test_unmocked_clinical_e2e_flow(client, db_session):
     doctor_id = doctor_res.json()["id"]
 
     # Assign doctor role
-    db_patient = db_session.query(models.User).filter_by(id=patient_id).first()
+    db_session.query(models.User).filter_by(id=patient_id).first()
     db_doctor = db_session.query(models.User).filter_by(id=doctor_id).first()
     db_doctor.role = "doctor"
     db_doctor.specialization = "Cardiologist"
@@ -110,9 +110,9 @@ def test_unmocked_clinical_e2e_flow(client, db_session):
     )
     assert bundle_res.status_code == 200
     bundle_data = bundle_res.json()["bundle"]
-    
+
     assert bundle_data["resourceType"] == "Bundle"
-    
+
     # Verify patient details are dynamically loaded from SQL EMR
     patient_entry = next(e for e in bundle_data["entry"] if e["resource"]["resourceType"] == "Patient")
     assert patient_entry["resource"]["name"][0]["text"] == "Alice Patient E2E"
@@ -133,8 +133,8 @@ def test_unmocked_clinical_e2e_flow(client, db_session):
 
     try:
         # Re-initialize model service to load actual models from disk and sync globals
-        from backend.prediction import initialize_models
         import backend.prediction as pred
+        from backend.prediction import initialize_models
         model_service._initialized = False
         initialize_models()
         # Set prediction.diabetes_model to None to force _run_model_prediction_scaled
@@ -160,11 +160,11 @@ def test_unmocked_clinical_e2e_flow(client, db_session):
         )
         assert prediction_res.status_code == 200
         pred_json = prediction_res.json()
-        
+
         # Verify prediction outcomes
         assert pred_json["prediction"] in ["Diabetes Detected", "Healthy Profile", "Low Risk", "High Risk"]
         assert "confidence" in pred_json
-        
+
         # Verify that TEE enclave attestation was run and registered the model hash
         assert "diabetes" in TRUSTED_MODEL_HASHES
         assert len(TRUSTED_MODEL_HASHES["diabetes"]) == 64  # valid SHA-256 hex string

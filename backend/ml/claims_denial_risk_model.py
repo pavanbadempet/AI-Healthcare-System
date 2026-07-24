@@ -5,7 +5,7 @@ Analyzes insurance claim parameters (ANSI X12 837P fields, CPT/ICD-10 code combi
 prior authorization status) to compute pre-submission claim refusal probabilities.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 
 class ClaimsDenialRiskModel:

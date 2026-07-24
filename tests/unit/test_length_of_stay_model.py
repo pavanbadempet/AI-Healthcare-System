@@ -2,8 +2,7 @@
 Unit tests for Length of Stay Predictor Model
 """
 
-import pytest
-from backend.ml.length_of_stay_model import LengthOfStayModel, los_model
+from backend.ml.length_of_stay_model import los_model
 
 
 def test_predict_length_of_stay_low():

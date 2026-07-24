@@ -2,8 +2,8 @@
 Unit tests for SOTA Enterprise Infrastructure Adapters.
 """
 
-from backend.qdrant_vector_store import QdrantVectorStore
 from backend.database import apply_postgres_rls_policy, set_session_tenant_context
+from backend.qdrant_vector_store import QdrantVectorStore
 from backend.smart_fhir import verify_smart_launch_jwt
 
 

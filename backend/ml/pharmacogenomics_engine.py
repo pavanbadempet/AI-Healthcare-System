@@ -5,7 +5,7 @@ Evaluates patient genotype variants (CYP2D6, CYP2C19, TPMT, HLA-B*5701) against
 FDA CPIC PGx guidelines to flag poor/ultrafast metabolizer risks and dosing changes.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict
 
 PGX_GENE_RULES = {
     ("clopidogrel", "CYP2C19"): {

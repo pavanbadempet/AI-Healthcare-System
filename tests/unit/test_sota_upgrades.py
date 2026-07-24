@@ -333,6 +333,7 @@ class TestSemanticCache:
     @patch("backend.core_ai._generate_gemini")
     async def test_semantic_cache_generate(self, mock_gemini_gen, mock_gen_cloud, mock_embed, mock_get_ollama, mock_has_key):
         import os
+
         from backend.core_ai import generate, semantic_cache
 
         # Reset cache
@@ -395,6 +396,7 @@ class TestAdaptiveConformalPrediction:
 
 import backend.explainability
 
+
 @pytest.mark.skipif(not backend.explainability.SHAP_AVAILABLE, reason="SHAP not installed")
 class TestAttributionDriftMonitoring:
     """Tests for SHAP feature attribution logging and drift report endpoint."""
@@ -419,6 +421,7 @@ class TestAttributionDriftMonitoring:
 
         # 2. Mock model service entry for kidney to log predictions
         from sklearn.impute import SimpleImputer
+
         from backend import prediction as _pred
 
         dummy_imputer = SimpleImputer()
@@ -522,6 +525,6 @@ class TestSemanticCacheAdminEndpoints:
         # 5. Check stats again
         res_after = client.get("/admin/semantic-cache", headers=headers)
         assert res_after.status_code == 200
-        data_after = res_after.json()
+        res_after.json()
 
 

@@ -2,8 +2,7 @@
 Unit tests for Longitudinal Disease Progression Predictor
 """
 
-import pytest
-from backend.ml.disease_progression_predictor import DiseaseProgressionPredictor, progression_predictor
+from backend.ml.disease_progression_predictor import progression_predictor
 
 
 def test_predict_ckd_progression_stable():

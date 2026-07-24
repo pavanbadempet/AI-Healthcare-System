@@ -2,8 +2,7 @@
 Unit tests for Cryptographic Audit Hash Chain Verifier
 """
 
-import pytest
-from backend.security_audit_verifier import AuditHashChainVerifier, audit_verifier
+from backend.security_audit_verifier import audit_verifier
 
 
 def test_verify_hash_chain_valid():

@@ -95,12 +95,12 @@ def test_event_bus_does_not_log_redis_credentials(caplog):
 
     import sys
     from unittest.mock import MagicMock
-    
+
     try:
-        import redis.asyncio
+        import redis.asyncio  # noqa: F401
     except ImportError:
         pass
-        
+
     if "redis.asyncio" not in sys.modules:
         sys.modules["redis.asyncio"] = MagicMock()
 

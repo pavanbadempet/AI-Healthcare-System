@@ -5,7 +5,7 @@ Compiles clinical indication notes, lab results, failed conservative therapies,
 and insurance payer criteria into pre-formatted Prior Authorization packages.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 
 class PriorAuthorizationAgent:

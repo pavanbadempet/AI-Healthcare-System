@@ -5,7 +5,7 @@ Predicts inpatient length of stay (days) and discharge readiness scores based on
 admission acuity, age, Charlson comorbidity index, and initial vital sign stability.
 """
 
-from typing import Dict, Optional
+from typing import Dict
 
 
 class LengthOfStayModel:

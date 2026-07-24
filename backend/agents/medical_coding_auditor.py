@@ -5,7 +5,7 @@ Audits clinical documentation text against assigned billing codes to detect
 unbundling, upcoding, and missing secondary diagnosis codes.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 
 class MedicalCodingAuditorAgent:

@@ -2,6 +2,7 @@ import os
 import shutil
 import sys
 
+
 def test_rust_pyo3():
     if sys.platform == "win32":
         src_name = "rust_gateway_ffi.dll"

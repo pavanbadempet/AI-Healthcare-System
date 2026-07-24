@@ -135,6 +135,7 @@ def test_store_search_empty():
 
 def test_store_search_logic():
     from unittest.mock import patch
+
     import numpy as np
     store = rag.SimpleVectorStore()
     store.vectors = [[1.0, 0.0], [0.0, 1.0]]
@@ -147,6 +148,7 @@ def test_store_search_logic():
 
 def test_store_search_filter():
     from unittest.mock import patch
+
     import numpy as np
     store = rag.SimpleVectorStore()
     store.vectors = [[1,0], [1,0]]

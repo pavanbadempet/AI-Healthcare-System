@@ -6,7 +6,7 @@ and non-repudiation for HIPAA regulatory compliance.
 """
 
 import hashlib
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 
 class AuditHashChainVerifier:

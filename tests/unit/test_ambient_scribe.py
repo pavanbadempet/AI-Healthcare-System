@@ -2,8 +2,7 @@
 Unit tests for AI Ambient Medical Scribe Agent
 """
 
-import pytest
-from backend.agents.ambient_scribe import AmbientScribeAgent, ambient_scribe
+from backend.agents.ambient_scribe import ambient_scribe
 
 SAMPLE_TRANSCRIPT = """
 Patient reports high blood pressure and persistent headache for 3 days.

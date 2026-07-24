@@ -2,8 +2,7 @@
 Unit tests for Security Pen-Test Harness
 """
 
-import pytest
-from backend.security_pen_test_harness import SecurityPenTestHarness, security_harness
+from backend.security_pen_test_harness import security_harness
 
 
 def test_audit_string_sanitization():

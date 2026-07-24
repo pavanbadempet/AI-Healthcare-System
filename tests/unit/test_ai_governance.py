@@ -2,9 +2,9 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+from backend import ai_governance, models
 from backend.database import Base
-from backend import ai_governance
-from backend import models
+
 
 # In-memory database for testing
 @pytest.fixture(name="db_session")

@@ -1,4 +1,3 @@
-import pytest
 from backend.acid_saga_coordinator import DualEngineSagaCoordinator, SagaStep, run_sample_saga_transaction
 
 

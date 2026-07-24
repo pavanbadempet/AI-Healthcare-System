@@ -2,8 +2,7 @@
 Unit tests for Emergency Department ED Triage Agent
 """
 
-import pytest
-from backend.agents.ed_triage_agent import EmergencyTriageAgent, ed_triage_agent
+from backend.agents.ed_triage_agent import ed_triage_agent
 
 
 def test_evaluate_esi_level_1():
