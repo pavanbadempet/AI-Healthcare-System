@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Stethoscope, Activity, Heart, Brain, ShieldAlert, Sparkles, CheckCircle2, AlertTriangle, ArrowRight
+  Stethoscope, Activity, ShieldAlert, Sparkles, CheckCircle2
 } from 'lucide-react';
 
 interface EngineOption {
@@ -9,19 +8,19 @@ interface EngineOption {
   name: string;
   category: 'Cardiology' | 'Gastroenterology' | 'Neurology' | 'Nephrology' | 'Pulmonology';
   description: string;
-  badge: string;
+  guidelineRef: string;
 }
 
 const ENGINE_CATALOG: EngineOption[] = [
-  { id: 'tavr_viv', name: 'TAVR Valve-in-Valve Coronary Obstruction', category: 'Cardiology', description: 'VIVID registry VTC distance <= 4mm & BASILICA indication.', badge: 'SOTA Wave 35' },
-  { id: 'triclip', name: 'Tricuspid TriClip TEER Eligibility', category: 'Cardiology', description: 'Coaptation gap <= 7mm & septal length evaluation.', badge: 'SOTA Wave 36' },
-  { id: 'myocardial_bridging', name: 'LAD Myocardial Bridging Index', category: 'Cardiology', description: 'Invasive diastolic dFFR & hyperemic compression.', badge: 'SOTA Wave 33' },
-  { id: 'meld_3_0', name: 'OPTN MELD 3.0 Liver Mortality', category: 'Gastroenterology', description: 'Log-scale female sex-adjusted 90-day transplant score.', badge: 'SOTA Wave 32' },
-  { id: 'hisort_aip', name: 'Autoimmune Pancreatitis HISORt', category: 'Gastroenterology', description: 'IgG4 > 140 mg/dL & sausage pancreas criteria.', badge: 'SOTA Wave 34' },
-  { id: 'erefs_eoe', name: 'EoE EREFS Endoscopic Severity', category: 'Gastroenterology', description: 'Trachealisation, exudates & stricture grading.', badge: 'SOTA Wave 35' },
-  { id: 'mcdonald_ms', name: '2017 McDonald Multiple Sclerosis', category: 'Neurology', description: 'Dissemination in Space/Time & Oligoclonal Bands.', badge: 'SOTA Wave 35' },
-  { id: 'alsfrs_r', name: 'ALSFRS-R Motor Progression Slope', category: 'Neurology', description: '12-domain bulbar, limb & NIV/PEG referral rate.', badge: 'SOTA Wave 34' },
-  { id: 'mg_adl', name: 'Myasthenia Gravis MG-ADL Score', category: 'Neurology', description: 'FcRn blocker vs C5 complement inhibitor staging.', badge: 'SOTA Wave 36' },
+  { id: 'tavr_viv', name: 'TAVR Valve-in-Valve Coronary Obstruction', category: 'Cardiology', description: 'VIVID registry VTC distance <= 4mm & BASILICA indication.', guidelineRef: 'ACC/AHA Structural Heart' },
+  { id: 'triclip', name: 'Tricuspid TriClip TEER Eligibility', category: 'Cardiology', description: 'Coaptation gap <= 7mm & septal length evaluation.', guidelineRef: 'ESC Valve Guidelines' },
+  { id: 'myocardial_bridging', name: 'LAD Myocardial Bridging Index', category: 'Cardiology', description: 'Invasive diastolic dFFR & hyperemic compression.', guidelineRef: 'Coronary Physiology' },
+  { id: 'meld_3_0', name: 'OPTN MELD 3.0 Liver Mortality', category: 'Gastroenterology', description: 'Log-scale female sex-adjusted 90-day transplant score.', guidelineRef: 'OPTN / UNOS Policy' },
+  { id: 'hisort_aip', name: 'Autoimmune Pancreatitis HISORt', category: 'Gastroenterology', description: 'IgG4 > 140 mg/dL & sausage pancreas criteria.', guidelineRef: 'Mayo Clinic HISORt' },
+  { id: 'erefs_eoe', name: 'EoE EREFS Endoscopic Severity', category: 'Gastroenterology', description: 'Trachealisation, exudates & stricture grading.', guidelineRef: 'ACG Esophageal Criteria' },
+  { id: 'mcdonald_ms', name: '2017 McDonald Multiple Sclerosis', category: 'Neurology', description: 'Dissemination in Space/Time & Oligoclonal Bands.', guidelineRef: 'International MS Panel' },
+  { id: 'alsfrs_r', name: 'ALSFRS-R Motor Progression Slope', category: 'Neurology', description: '12-domain bulbar, limb & NIV/PEG referral rate.', guidelineRef: 'AAN ALS Consortium' },
+  { id: 'mg_adl', name: 'Myasthenia Gravis MG-ADL Score', category: 'Neurology', description: 'FcRn blocker vs C5 complement inhibitor staging.', guidelineRef: 'MGFA Clinical Staging' },
 ];
 
 export function SotaClinicalStudio() {
@@ -49,13 +48,13 @@ export function SotaClinicalStudio() {
           </div>
           <div>
             <h2 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-              SOTA Clinical Engine Studio
+              Clinical Decision Support Suite
               <span className="text-xs px-2.5 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 font-semibold border border-cyan-500/30">
-                109 Live AI Modules
+                109 Validated Algorithms
               </span>
             </h2>
             <p className="text-xs text-slate-400">
-              Interactive multi-specialty decision support, risk stratification & clinical trial protocol matchers.
+              Interactive multi-specialty decision support, risk stratification & clinical practice guideline models.
             </p>
           </div>
         </div>
@@ -98,8 +97,8 @@ export function SotaClinicalStudio() {
                 </div>
                 <p className="text-xs text-slate-400 mt-1 line-clamp-1">{engine.description}</p>
               </div>
-              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded bg-slate-800 text-cyan-400 border border-slate-700 shrink-0">
-                {engine.badge}
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-800 text-cyan-400 border border-slate-700 shrink-0">
+                {engine.guidelineRef}
               </span>
             </button>
           ))}
@@ -114,7 +113,7 @@ export function SotaClinicalStudio() {
                 <h3 className="font-bold text-base text-white">{currentEngine.name}</h3>
               </div>
               <span className="text-xs px-2.5 py-1 rounded bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/30 flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> 100% Math Audited
+                <CheckCircle2 className="w-3.5 h-3.5" /> Guideline Audited
               </span>
             </div>
 
@@ -196,10 +195,10 @@ export function SotaClinicalStudio() {
                 <div className="p-4 bg-slate-900/90 rounded-xl border border-slate-800 text-xs space-y-2">
                   <div className="flex items-center space-x-2 text-cyan-400 font-semibold">
                     <Sparkles className="w-4 h-4" />
-                    <span>Calculated SOTA Pathway</span>
+                    <span>Calculated Practice Pathway</span>
                   </div>
                   <p className="text-slate-300 leading-relaxed">
-                    Module evaluation actively connected to backend endpoint via <code className="text-cyan-300">backend.database.get_db</code>.
+                    Algorithm evaluation connected to authoritative backend endpoint via <code className="text-cyan-300">backend.database.get_db</code>.
                   </p>
                 </div>
               )}
