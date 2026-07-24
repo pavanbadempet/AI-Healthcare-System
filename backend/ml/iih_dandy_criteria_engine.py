@@ -1,47 +1,61 @@
 """
-Idiopathic Intracranial Hypertension (IIH) Dandy Criteria Evaluator
-====================================================================
-Evaluates Modified Dandy Criteria (LP opening pressure > 25 cm H2O, normal CSF, papilledema,
-and normal MRI/MRV venous sinus imaging) for IIH diagnosis.
+Idiopathic Intracranial Hypertension (IIH) Dandy Criteria & Papilledema Engine
+==============================================================================
+Evaluates Modified Dandy Criteria: Lumbar puncture opening pressure (>= 250 mm H2O),
+Frisén Papilledema Grade (0-5), MRV transverse sinus stenosis, and visual field MD (dB)
+to guide Acetazolamide (1000-4000 mg/day) vs Venous Sinus Stenting vs ONSF surgery.
 """
 
 from typing import Dict
 
 
 class IihDandyCriteriaEngine:
-    """Evaluates Modified Dandy Criteria for Idiopathic Intracranial Hypertension (Pseudotumor Cerebri)."""
+    """Evaluates Idiopathic Intracranial Hypertension (IIH) Dandy criteria and papilledema."""
 
     def evaluate_iih_dandy_criteria(
         self,
-        lumbar_puncture_opening_pressure_cm_h2o: float,
-        normal_csf_composition_and_cytology: bool,
-        papilledema_present_on_fundoscopy: bool,
-        normal_mri_brain_no_mass_lesion: bool,
-        mrv_venous_sinus_thrombosis_excluded: bool,
+        lp_opening_pressure_mm_h2o: float,
+        frisen_papilledema_grade: int,  # 0 to 5
+        visual_field_mean_deviation_db: float,  # e.g., -2.0 to -15.0 dB
+        csf_composition_normal: bool = True,
+        mri_mrv_no_mass_or_venous_thrombosis: bool = True,
+        transverse_sinus_stenosis_present: bool = False,
+        adult_patient: bool = True,
     ) -> Dict[str, any]:
-        dandy_criteria_met = (
-            lumbar_puncture_opening_pressure_cm_h2o > 25.0
-            and normal_csf_composition_and_cytology
-            and papilledema_present_on_fundoscopy
-            and normal_mri_brain_no_mass_lesion
-            and mrv_venous_sinus_thrombosis_excluded
-        )
+        pressure_cutoff = 250.0 if adult_patient else 280.0
+        elevated_icp = lp_opening_pressure_mm_h2o >= pressure_cutoff
 
-        diagnosis = "IDIOPATHIC_INTRACRANIAL_HYPERTENSION" if dandy_criteria_met else "OTHER_INTRACRANIAL_PATHOLOGY"
+        dandy_criteria_met = elevated_icp and csf_composition_normal and mri_mrv_no_mass_or_venous_thrombosis
 
-        recommendation = "Criteria not fully met; investigate venous sinus thrombosis, intracranial mass, or meningeal infection"
+        fulminant_iih = frisen_papilledema_grade >= 4 or visual_field_mean_deviation_db <= -7.0
+
+        recommended_treatment = "WEIGHT_LOSS_AND_CONSERVATIVE_MONITORING"
         if dandy_criteria_met:
-            recommendation = "Modified Dandy Criteria Met: Initiate Acetazolamide 500mg BID, weight loss program, & serial automated visual field testing"
+            if fulminant_iih:
+                if transverse_sinus_stenosis_present:
+                    recommended_treatment = "TRANSVERSE_SINUS_STENTING_OR_OPTIC_NERVE_SHEATH_FENESTRATION"
+                else:
+                    recommended_treatment = "EMERGENT_OPTIC_NERVE_SHEATH_FENESTRATION_ONSF_OR_VP_SHUNT"
+            else:
+                recommended_treatment = "HIGH_DOSE_ACETAZOLAMIDE_1000_TO_4000MG_DAILY_AND_WEIGHT_MANAGEMENT"
+
+        recommendation = "Criteria for IIH not met; investigate alternative intracranial or ocular pathology"
+        if dandy_criteria_met:
+            if fulminant_iih:
+                recommendation = f"CRITICAL FULMINANT IIH (LP Pressure {lp_opening_pressure_mm_h2o} mm H2O, Frisén Grade {frisen_papilledema_grade}): Threat of irreversible vision loss; urgent surgical intervention indicated ({recommended_treatment})"
+            else:
+                recommendation = f"Confirmed IIH (LP Pressure {lp_opening_pressure_mm_h2o} mm H2O, Frisén Grade {frisen_papilledema_grade}): Initiate Acetazolamide titration up to 4,000 mg/day + GLP-1 receptor agonist weight reduction protocol"
 
         return {
-            "lp_opening_pressure_cm_h2o": lumbar_puncture_opening_pressure_cm_h2o,
-            "modified_dandy_criteria_met": dandy_criteria_met,
-            "iih_diagnosis": diagnosis,
-            "acetazolamide_and_weight_loss_indicated": dandy_criteria_met,
+            "lp_opening_pressure_mm_h2o": lp_opening_pressure_mm_h2o,
+            "frisen_papilledema_grade": frisen_papilledema_grade,
+            "dandy_criteria_met": dandy_criteria_met,
+            "fulminant_iih_vision_threat": fulminant_iih,
+            "recommended_treatment": recommended_treatment,
             "clinical_recommendation": recommendation,
             "status": "EVALUATION_COMPLETE",
         }
 
 
 # Singleton engine instance
-iih_dandy_engine = IihDandyCriteriaEngine()
+iih_engine = IihDandyCriteriaEngine()
