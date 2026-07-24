@@ -23,9 +23,10 @@ class HcmRiskScdModel:
         age_years: int,
     ) -> Dict[str, any]:
         # ESC HCM Risk-SCD prognostic index calculation model
+        wt = min(max_lv_wall_thickness_mm, 30.0)
         prognostic_index = (
-            0.154 * max_lv_wall_thickness_mm
-            - 0.008 * (max_lv_wall_thickness_mm ** 2)
+            0.154 * wt
+            - 0.002 * (wt ** 2)
             + 0.045 * left_atrial_diameter_mm
             + 0.004 * max_lvot_gradient_mmHg
             + 0.769 * (1 if family_history_scd else 0)
