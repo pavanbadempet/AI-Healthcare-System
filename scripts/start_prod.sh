@@ -36,25 +36,31 @@ elif [ -n "$ENABLE_PYSPARK_STREAMING" ]; then
     python scripts/runners/run_telemetry_streaming.py &
 fi
 
-# Try starting Rust Gateway in background if binary exists
+# Try starting Rust Gateway if binary exists
 RUST_BINARY="./rust_gateway/target/release/rust_gateway"
 if [ -f "$RUST_BINARY" ]; then
     echo "Rust Gateway binary found. Attempting to start on socket /tmp/healthcare.sock..."
     uvicorn backend.main:app --uds /tmp/healthcare.sock --workers 4 &
     cd rust_gateway
-    ./target/release/rust_gateway &
+    if [ -n "$DOPPLER_TOKEN" ]; then
+        doppler run -- ./target/release/rust_gateway &
+    else
+        ./target/release/rust_gateway &
+    fi
     RUST_PID=$!
     cd ..
     sleep 2
     if kill -0 $RUST_PID 2>/dev/null; then
-        echo "Rust Gateway running on PID $RUST_PID. Monitoring..."
+        echo "Rust Gateway running on PID $RUST_PID on port $PORT. Holding PID 1..."
+        wait $RUST_PID
+        echo "Rust Gateway process terminated. Falling back to direct Uvicorn..."
     else
-        echo "Rust Gateway exited or failed. Falling back to direct Uvicorn on port $PORT..."
+        echo "Rust Gateway failed to run. Falling back to direct Uvicorn on port $PORT..."
     fi
 fi
 
 # Primary/Fallback: Direct Uvicorn on $PORT serving FastAPI + React SPA
-echo "Launching FastAPI Uvicorn Application on port $PORT..."
+echo "Launching FastAPI Uvicorn Application directly on port $PORT..."
 if [ -n "$DOPPLER_TOKEN" ]; then
     exec doppler run -- uvicorn backend.main:app --host 0.0.0.0 --port "$PORT" --workers 4
 else

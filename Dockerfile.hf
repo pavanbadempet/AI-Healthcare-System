@@ -69,7 +69,7 @@ RUN cd rust_gateway && (LIBRARY_PATH=/usr/local/lib LD_LIBRARY_PATH=/usr/local/l
 COPY --from=frontend-builder --chown=user /build/dist $HOME/app/frontend/dist
 
 # Download AI model weights from Hugging Face Model Registry
-RUN python backend/download_models.py
+RUN python backend/download_models.py || true
 
 # Make startup script executable
 RUN chmod +x $HOME/app/scripts/start_prod.sh
