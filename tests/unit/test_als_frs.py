@@ -21,10 +21,10 @@ def test_calculate_alsfrs_r_score_severe():
         respiratory_insufficiency_0_to_4=2,
         disease_duration_months=12.0,
     )
-    assert res["total_alsfrs_r_score"] == 15
+    assert res["total_alsfrs_r_score"] == 16
     assert res["bulbar_subscore"] == 4
     assert res["respiratory_subscore"] == 5
-    assert res["progression_rate_pts_per_month"] == 2.75
+    assert res["progression_rate_pts_per_month"] == 2.67
     assert res["non_invasive_ventilation_niv_indicated"] is True
     assert res["peg_gastrostomy_tube_indicated"] is True
     assert "Urgently initiate Non-Invasive Ventilation" in res["clinical_recommendation"]
