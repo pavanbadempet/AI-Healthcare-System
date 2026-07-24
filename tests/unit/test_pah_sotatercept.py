@@ -1,31 +1,27 @@
 """
-Unit tests for PAH Sotatercept Eligibility Engine
+Unit tests for PAH Sotatercept Activin Engine
 """
 
-from backend.ml.pah_sotatercept_eligibility_engine import sotatercept_engine
+from backend.ml.pah_sotatercept_activin_engine import sotatercept_engine
 
 
 def test_evaluate_sotatercept_eligible():
     res = sotatercept_engine.evaluate_sotatercept_eligibility(
-        who_group=1,
-        pulmonary_vascular_resistance_wood_units=6.5,
-        who_functional_class=3,
-        on_background_dual_or_triple_pah_therapy=True,
+        who_group_1_pah_confirmed=True,
+        on_background_era_pde5i_prostacyclin=True,
         hemoglobin_g_dL=13.5,
-        platelet_count_per_uL=180000.0,
-        patient_weight_kg=70.0,
+        platelet_count_per_uL=150000.0,
     )
-    assert res["eligible_for_sotatercept"] is True
-    assert res["initial_dose_mg"] == 21.0
-    assert res["target_maintenance_dose_mg"] == 49.0
+    assert res["sotatercept_indicated"] is True
+    assert "SOTATERCEPT_0.3_MG_KG" in res["recommended_starting_dose"]
     assert "ELIGIBLE FOR SOTATERCEPT" in res["clinical_recommendation"]
 
 
-def test_evaluate_sotatercept_high_hb_ineligible():
+def test_evaluate_sotatercept_polycythemia_hold():
     res = sotatercept_engine.evaluate_sotatercept_eligibility(
-        who_group=1,
-        pulmonary_vascular_resistance_wood_units=6.5,
-        who_functional_class=3,
-        hemoglobin_g_dL=17.2,
+        who_group_1_pah_confirmed=True,
+        on_background_era_pde5i_prostacyclin=True,
+        hemoglobin_g_dL=16.8,  # Polycythemia
     )
-    assert res["eligible_for_sotatercept"] is False
+    assert res["safety_clearance"] is False
+    assert res["sotatercept_indicated"] is False
