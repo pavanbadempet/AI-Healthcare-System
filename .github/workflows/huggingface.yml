@@ -45,6 +45,7 @@ jobs:
           echo "colorFrom: blue" >> HF_README.md
           echo "colorTo: green" >> HF_README.md
           echo "sdk: docker" >> HF_README.md
+          echo "app_port: 7860" >> HF_README.md
           echo "pinned: false" >> HF_README.md
           echo "---" >> HF_README.md
           echo "" >> HF_README.md
