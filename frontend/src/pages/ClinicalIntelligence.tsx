@@ -15,6 +15,7 @@ import {
 import { Mic, Save, Sliders, ClipboardCopy, TrendingDown, RefreshCcw } from 'lucide-react';
 import Tooltip from "@/components/layout/Tooltip";
 import { toast } from '@/lib/toast';
+import { SotaClinicalStudio } from '@/components/SotaClinicalStudio';
 
 const MEDICAL_DISCLAIMER =
   'This AI-generated insight is for informational purposes only. Consult a qualified clinician for diagnosis, treatment, or emergencies.';
@@ -447,6 +448,11 @@ export default function ClinicalIntelligence() {
           <span className="text-xs font-semibold text-slate-400 uppercase pl-2">Patient Profile:</span>
           <CIProfileSelect value={patientId} onSelect={(id) => handlePatientChange(id)} />
         </div>
+      </div>
+
+      {/* SOTA Clinical AI Engine Studio */}
+      <div className="mb-8">
+        <SotaClinicalStudio />
       </div>
 
       {/* Tabs Navigation */}
