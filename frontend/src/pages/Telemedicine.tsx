@@ -602,8 +602,19 @@ export default function TelemedicinePage() {
               
               <div className="divide-y divide-[var(--border)]" role="list" aria-label="Active telemedicine encounters">
                 {loading ? (
-                  <div className="p-4 text-xs font-mono text-[var(--text-dim)] uppercase tracking-wider">
-                    Loading records...
+                  <div className="p-4 space-y-3">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="p-4 rounded-lg bg-white/[0.02] border border-white/[0.04] flex items-center justify-between animate-pulse">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-white/[0.05] rounded-md" />
+                          <div className="space-y-2">
+                            <div className="w-32 h-3.5 bg-white/[0.08] rounded" />
+                            <div className="w-48 h-2.5 bg-white/[0.04] rounded" />
+                          </div>
+                        </div>
+                        <div className="w-20 h-7 bg-white/[0.05] rounded-md" />
+                      </div>
+                    ))}
                   </div>
                 ) : activeAppts.length > 0 ? (
                   activeAppts.map(apt => {
