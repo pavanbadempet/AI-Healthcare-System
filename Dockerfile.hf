@@ -15,7 +15,8 @@ RUN npm ci
 
 # Copy frontend source and build the production bundle
 COPY frontend/ ./
-RUN npx vite build
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+RUN npm run build
 
 # Stage 2: Final image with Python backend and frontend assets
 FROM python:3.12-slim
