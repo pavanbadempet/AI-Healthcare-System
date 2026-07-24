@@ -450,7 +450,7 @@ export default function ClinicalIntelligence() {
         </div>
       </div>
 
-      {/* SOTA Clinical AI Engine Studio */}
+      {/* Clinical Decision Support Suite */}
       <div className="mb-8">
         <SotaClinicalStudio />
       </div>
