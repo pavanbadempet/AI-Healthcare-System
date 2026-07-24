@@ -74,7 +74,7 @@ COPY --from=frontend-builder --chown=user /build/dist $HOME/app/frontend/dist
 COPY --from=rust-builder --chown=user /build/rust_gateway/target/release/rust_gateway $HOME/app/rust_gateway/target/release/rust_gateway
 
 # Download AI model weights from Hugging Face Model Registry
-RUN python backend/download_models.py
+RUN python backend/download_models.py || true
 
 # Make startup script executable
 RUN chmod +x scripts/start_prod.sh
