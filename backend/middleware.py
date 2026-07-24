@@ -214,9 +214,13 @@ class LicenseValidationMiddleware(BaseHTTPMiddleware):
         ):
             return await call_next(request)
 
-        license_key = os.getenv("LICENSE_KEY", "CLINIC-TRIAL-2026").strip()
+        raw_key = os.getenv("LICENSE_KEY")
+        license_key = "CLINIC-TRIAL-2026" if raw_key is None else raw_key.strip()
         if not license_key:
-            license_key = "CLINIC-TRIAL-2026"
+            return JSONResponse(
+                status_code=402,
+                content={"detail": "License Key is missing. Please set the LICENSE_KEY environment variable to activate the platform."}
+            )
 
         # Use cached result if license key hasn't changed and cache is fresh
         now = time.time()
