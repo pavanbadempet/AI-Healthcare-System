@@ -15,7 +15,8 @@ RUN npm ci
 
 # Copy frontend source and build the production bundle
 COPY frontend/ ./
-RUN npx vite build
+ENV NODE_OPTIONS="--max-old-space-size=4096"
+RUN npm run build
 
 # Stage 2: Build Rust Gateway
 FROM rust:latest AS rust-builder
