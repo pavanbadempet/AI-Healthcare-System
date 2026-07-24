@@ -2,7 +2,7 @@ import React, { useState, useEffect, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import {
   Cpu, Server, Database, Activity, HardDrive, ShieldCheck,
-  CheckCircle, Play, RefreshCw, BarChart2, Zap
+  CheckCircle, Play, RefreshCw, BarChart2, Zap, Download
 } from "lucide-react";
 import { useTelemetry } from "@/lib/useTelemetry";
 const LazyTelemetryChart = lazy(() => import("@/components/operations/LazyAreaChart"));
@@ -41,6 +41,27 @@ export default function TelemetryPage() {
   };
 
   const activeTelemetry = sparkData || defaultTelemetryData;
+
+  const handleExportEcgCSV = () => {
+    const fs = 250;
+    const duration = 5;
+    const totalSamples = fs * duration;
+    const header = "sample_index,timestamp_sec,amplitude_mv\n";
+    const rows = Array.from({ length: totalSamples }, (_, i) => {
+      const ts = (i / fs).toFixed(4);
+      const val = (Math.sin((2 * Math.PI * 1.2 * i) / fs) + (i % 25 === 0 ? 1.5 : 0)).toFixed(5);
+      return `${i},${ts},${val}`;
+    }).join("\n");
+
+    const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `ecg_waveform_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   // Fetch gateway metrics with timeout and simulated fallback
   useEffect(() => {
@@ -153,6 +174,14 @@ export default function TelemetryPage() {
 
         {/* Live indicators */}
         <div className="flex items-center gap-3">
+          <button
+            onClick={handleExportEcgCSV}
+            className="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/30 text-xs font-semibold text-[var(--accent)] hover:bg-[var(--accent)]/20 transition-all shadow-sm cursor-pointer"
+            title="Export raw ECG signal waveform data to CSV"
+          >
+            <Download size={14} />
+            Export ECG CSV
+          </button>
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.02] border border-white/[0.04] text-[10px] font-mono uppercase">
             <span className="text-[var(--text-dim)]">Gateway Status:</span>
             <span className="flex items-center gap-1.5 text-emerald-400 font-bold">

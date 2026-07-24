@@ -58,6 +58,14 @@ def test_clinical_guardrails():
     assert res_blocked["passed"] is False
 
 
+def test_export_ecg_waveform_to_csv():
+    from backend.telemetry_dsp import export_ecg_waveform_to_csv
+    signal = np.array([0.1, 0.5, 1.2, 0.3])
+    csv_str = export_ecg_waveform_to_csv(signal, sampling_rate=250.0)
+    assert "sample_index,timestamp_sec,amplitude_mv" in csv_str
+    assert "0,0.0,0.1" in csv_str
+
+
 def test_hu_calibration():
     res = calibrate_hounsfield_units({"pixel_values": [0, 1024, 2048], "rescale_slope": 1.0, "rescale_intercept": -1024.0})
     assert res["calibrated_hu"] == [-1024, 0, 1024]
