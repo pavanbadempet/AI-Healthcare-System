@@ -142,7 +142,7 @@ def test_duke_endocarditis_criteria_evaluation():
     """Verify Duke criteria accurately evaluates Definite Endocarditis for 2 major criteria."""
     res = duke_endocarditis_engine.evaluate_duke_criteria(
         major_blood_culture_positive=True,
-        major_echocardiogram_vegetation_or_abscess=True,
+        major_echo_vegetation_or_abscess=True,
         minor_predisposition_heart_condition_or_ivdu=False,
         minor_fever_above_38c=False,
         minor_vascular_phenomena=False,
