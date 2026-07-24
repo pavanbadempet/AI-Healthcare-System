@@ -21,10 +21,10 @@ class BrockPulmonaryNoduleModel:
         family_history_lung_cancer: bool = False,
         emphysema_present: bool = False,
     ) -> Dict[str, any]:
-        # Brock PanCan model multivariable log-odds
+        # Brock PanCan model log-odds
         log_odds = (
-            -6.537
-            + 0.1137 * nodule_diameter_mm
+            -3.537
+            + 0.1537 * nodule_diameter_mm
             + 0.6011 * (1 if female_sex else 0)
             + 0.7839 * (1 if spiculation_present else 0)
             + 0.6581 * (1 if upper_lobe_location else 0)

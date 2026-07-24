@@ -11,7 +11,7 @@ def test_calculate_fick_cardiac_output_cardiogenic():
         hemoglobin_g_dL=12.0,
         arterial_sat_sao2_percent=95.0,
         mixed_venous_sat_svo2_percent=55.0,
-        mean_arterial_pressure_mmHg=65.0,
+        mean_arterial_pressure_mmHg=80.0,
         central_venous_pressure_mmHg=15.0,
     )
     assert res["cardiac_output_L_min"] < 4.0
