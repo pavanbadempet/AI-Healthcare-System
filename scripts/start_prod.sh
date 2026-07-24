@@ -1,72 +1,62 @@
 #!/bin/bash
 # ==============================================================================
-# AI HEALTHCARE SYSTEM — STARTUP SCRIPT
-# ==============================================================================
-# Runs uvicorn with Doppler secrets injection if DOPPLER_TOKEN is configured.
-# Falls back to standard environment variables if DOPPLER_TOKEN is absent.
+# AI HEALTHCARE SYSTEM — FAILSAFE PRODUCTION STARTUP SCRIPT
 # ==============================================================================
 
-# Download models on-demand before starting the server
-# Hugging Face Spaces automatically injects a Postgres DATABASE_URL if the add-on is enabled.
-# Since the Rust gateway is compiled specifically for SQLite, we must override it here.
-# NOTE: SQLAlchemy and SQLx have different URI formats for SQLite!
-# If DOPPLER_TOKEN is NOT set, and DATABASE_URL is missing, we use the Neon DB by default.
+PORT="${PORT:-7860}"
+echo "Starting AI Healthcare System on port $PORT..."
+
+# Normalize environment variables
 if [ -z "$DOPPLER_TOKEN" ] && [ -z "$DATABASE_URL" ]; then
-    echo "WARNING: DOPPLER_TOKEN and DATABASE_URL are not set. Using local SQLite database."
+    echo "DOPPLER_TOKEN and DATABASE_URL not set. Defaulting to local SQLite database."
     export SQLALCHEMY_URL="sqlite:///./healthcare.db"
     export SQLX_URL="sqlite://healthcare.db"
     export DATABASE_URL=$SQLALCHEMY_URL
 elif [ -n "$DATABASE_URL" ]; then
-    # Normalize DATABASE_URL for Postgres/SQLAlchemy if provided via standard env var
     export SQLALCHEMY_URL=$DATABASE_URL
     export SQLX_URL=$DATABASE_URL
 fi
 
-# Download models on-demand before starting the server
+# Download models on-demand if needed
 echo "Checking model weights..."
-python backend/download_models.py
+python backend/download_models.py || true
 
+# Initialize database schema
+echo "Initializing database schema..."
+python -c "from backend.database import engine; from backend.models import Base; Base.metadata.create_all(bind=engine)" || true
+
+# Start PySpark or Vitals streaming if configured
 if [ -n "$UPSTASH_KAFKA_SERVERS" ]; then
-    echo "UPSTASH_KAFKA_SERVERS detected. Starting PySpark real-time streaming architecture..."
-    # 1. Start the Kafka Producer (hospital monitors) in the background
+    echo "UPSTASH_KAFKA_SERVERS detected. Starting PySpark Kafka streaming..."
     python scripts/runners/simulate_vitals_stream.py --kafka --kafka-servers "$UPSTASH_KAFKA_SERVERS" &
-    # 2. Start the PySpark Consumer (Data Engineering pipeline) in the background
     python scripts/runners/run_telemetry_streaming.py --kafka --kafka-servers "$UPSTASH_KAFKA_SERVERS" &
 elif [ -n "$ENABLE_PYSPARK_STREAMING" ]; then
-    echo "ENABLE_PYSPARK_STREAMING detected. Starting PySpark local filesystem streaming architecture..."
-    # 1. Start the JSON File Producer (hospital monitors) in the background
+    echo "ENABLE_PYSPARK_STREAMING detected. Starting local PySpark streaming..."
     python scripts/runners/simulate_vitals_stream.py &
-    # 2. Start the PySpark Consumer (Data Engineering pipeline) in the background
     python scripts/runners/run_telemetry_streaming.py &
 fi
 
-# Rust gateway is already built via Docker multi-stage build
-
-# Run Python Backend using SOTA IPC Unix Domain Socket on Linux (HF Spaces) and TCP loopback on Windows fallback
-if [[ "$OSTYPE" == "linux-gnu"* ]] || [[ "$OSTYPE" == "darwin"* ]] || [ -f /proc/self/cgroup ]; then
-    if [ -n "$DOPPLER_TOKEN" ]; then
-        echo "Starting Python server with Doppler Secrets Manager on Unix Domain Socket /tmp/healthcare.sock..."
-        doppler run -- uvicorn backend.main:app --uds /tmp/healthcare.sock --workers 4 &
+# Try starting Rust Gateway in background if binary exists
+RUST_BINARY="./rust_gateway/target/release/rust_gateway"
+if [ -f "$RUST_BINARY" ]; then
+    echo "Rust Gateway binary found. Attempting to start on socket /tmp/healthcare.sock..."
+    uvicorn backend.main:app --uds /tmp/healthcare.sock --workers 4 &
+    cd rust_gateway
+    ./target/release/rust_gateway &
+    RUST_PID=$!
+    cd ..
+    sleep 2
+    if kill -0 $RUST_PID 2>/dev/null; then
+        echo "Rust Gateway running on PID $RUST_PID. Monitoring..."
     else
-        echo "DOPPLER_TOKEN not found. Starting Python server on Unix Domain Socket /tmp/healthcare.sock..."
-        uvicorn backend.main:app --uds /tmp/healthcare.sock --workers 4 &
+        echo "Rust Gateway exited or failed. Falling back to direct Uvicorn on port $PORT..."
     fi
+fi
+
+# Primary/Fallback: Direct Uvicorn on $PORT serving FastAPI + React SPA
+echo "Launching FastAPI Uvicorn Application on port $PORT..."
+if [ -n "$DOPPLER_TOKEN" ]; then
+    exec doppler run -- uvicorn backend.main:app --host 0.0.0.0 --port "$PORT" --workers 4
 else
-    if [ -n "$DOPPLER_TOKEN" ]; then
-        echo "Starting Python server with Doppler Secrets Manager on port 8001..."
-        doppler run -- uvicorn backend.main:app --host 0.0.0.0 --port 8001 --workers 4 &
-    else
-        echo "DOPPLER_TOKEN not found. Starting Python server with standard environment variables on port 8001..."
-        uvicorn backend.main:app --host 0.0.0.0 --port 8001 --workers 4 &
-    fi
+    exec uvicorn backend.main:app --host 0.0.0.0 --port "$PORT" --workers 4
 fi
-
-echo "Initializing database to ensure Rust gateway can connect..."
-if [ -n "$DOPPLER_TOKEN" ]; then doppler run -- python -c "from backend.database import engine; from backend.models import Base; Base.metadata.create_all(bind=engine)"; else python -c "from backend.database import engine; from backend.models import Base; Base.metadata.create_all(bind=engine)"; fi
-
-echo "Starting Rust Gateway on port 7860..."
-if [ -n "$SQLX_URL" ]; then
-    export DATABASE_URL=$SQLX_URL
-fi
-cd rust_gateway
-if [ -n "$DOPPLER_TOKEN" ]; then doppler run -- ./target/release/rust_gateway; else ./target/release/rust_gateway; fi
