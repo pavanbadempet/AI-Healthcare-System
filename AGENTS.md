@@ -44,6 +44,7 @@
 - Add backend runtime dependencies to `backend/requirements.txt`. Keep root `requirements.txt` as the thin include file, and update `requirements-full.txt` only when the dependency is needed for full local/ML/data-pipeline development.
 - Tests must not depend on external API keys; mock all AI/embedding calls.
 - Always run pytest using `pytest-xdist` parallelization (i.e. `-n auto` flag) to optimize test run times.
+- Follow strict Conventional Commit standards as documented in `docs/COMMIT_CONVENTIONS.md`. Never include theatrical buzzwords (e.g. SOTA), internal session wave numbers, or past-tense verbs in commit messages.
 - Before claiming completion, run the narrowest relevant tests or checks and report any that were skipped.
 
 ## Scoped Instructions
