@@ -143,11 +143,11 @@ def test_duke_endocarditis_criteria_evaluation():
     res = duke_endocarditis_engine.evaluate_duke_criteria(
         major_blood_culture_positive=True,
         major_echo_vegetation_or_abscess=True,
-        minor_predisposition_heart_condition_or_ivdu=False,
-        minor_fever_above_38c=False,
+        minor_predisposing_heart_condition=False,
+        minor_fever_over_38C=False,
         minor_vascular_phenomena=False,
         minor_immunologic_phenomena=False,
         minor_microbiologic_evidence=False,
     )
-    assert res["duke_classification"] == "DEFINITE_INFECTIVE_ENDOCARDITIS"
-    assert res["empiric_bactericidal_antibiotics_indicated"] is True
+    assert res["duke_classification"] == "DEFINITE_ENDOCARDITIS"
+    assert "Cardiology" in res["clinical_recommendation"]
