@@ -6,10 +6,7 @@ and genomic risk alleles (e.g., APOE4, TCF7L2, BRCA1, LPL) to quantitative polyg
 Completely local, privacy-first, zero external API dependency.
 """
 
-import io
-import re
-import sys
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List
 
 # Key Clinical Variant Polygenic Risk Map (rsID -> Disease Risk Impact)
 CLINICAL_VARIANT_CATALOG: Dict[str, Dict[str, any]] = {

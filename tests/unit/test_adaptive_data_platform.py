@@ -1,4 +1,3 @@
-import pytest
 from backend.data_engineering_platform import AdaptiveDataPlatformRouter, DataScaleEngine
 
 

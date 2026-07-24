@@ -2,8 +2,7 @@
 Unit tests for Clinical Referral Router Agent
 """
 
-import pytest
-from backend.agents.referral_router_agent import ClinicalReferralRouterAgent, referral_router_agent
+from backend.agents.referral_router_agent import referral_router_agent
 
 
 def test_route_referral_nephrology():

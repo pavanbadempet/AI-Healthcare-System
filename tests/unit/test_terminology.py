@@ -49,9 +49,8 @@ def test_rxnorm_lookup_and_caching(monkeypatch):
             return {"idAndName": {"rxcui": "198440", "name": "Acetaminophen 325 MG Oral Tablet"}}
 
     monkeypatch.setattr("requests.get", lambda *args, **kwargs: MockResponse())
-    
+
     # Clean terminology cache
-    import sqlite3
     if os.path.exists(terminology.CACHE_DB):
         try:
             os.remove(terminology.CACHE_DB)

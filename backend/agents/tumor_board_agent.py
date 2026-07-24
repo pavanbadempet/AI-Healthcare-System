@@ -5,7 +5,7 @@ Synthesizes oncology staging (TNM), pathology reports, genomic alterations (EGFR
 and NCCN clinical guidelines into multi-disciplinary tumor board presentation cards.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 
 class TumorBoardAgent:

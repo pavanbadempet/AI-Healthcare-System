@@ -2,8 +2,7 @@
 Unit tests for Clinical Discharge Summarizer Agent
 """
 
-import pytest
-from backend.agents.discharge_summarizer_agent import DischargeSummarizerAgent, discharge_summarizer
+from backend.agents.discharge_summarizer_agent import discharge_summarizer
 
 
 def test_generate_discharge_summary_agent():

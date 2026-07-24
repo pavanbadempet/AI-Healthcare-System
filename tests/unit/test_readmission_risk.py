@@ -2,8 +2,7 @@
 Unit tests for 30-Day Readmission Risk Engine
 """
 
-import pytest
-from backend.ml.patient_readmission_risk import ReadmissionRiskEngine, readmission_engine
+from backend.ml.patient_readmission_risk import readmission_engine
 
 
 def test_calculate_readmission_risk_low():

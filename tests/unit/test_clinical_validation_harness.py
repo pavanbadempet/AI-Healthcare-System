@@ -1,4 +1,3 @@
-import pytest
 from backend.ml.clinical_validation_harness import MultiCenterClinicalValidator, evaluate_clinical_readiness
 
 

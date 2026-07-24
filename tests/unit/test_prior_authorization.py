@@ -2,8 +2,7 @@
 Unit tests for Prior Authorization Agent
 """
 
-import pytest
-from backend.agents.prior_authorization_agent import PriorAuthorizationAgent, prior_auth_agent
+from backend.agents.prior_authorization_agent import prior_auth_agent
 
 
 def test_generate_prior_auth_package_ready():

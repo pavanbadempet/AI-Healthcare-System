@@ -2,8 +2,7 @@
 Unit tests for Clinical Trial Matching Agent
 """
 
-import pytest
-from backend.agents.trial_matching_agent import ClinicalTrialMatchingAgent, trial_matching_agent
+from backend.agents.trial_matching_agent import trial_matching_agent
 
 
 def test_match_patient_to_trials():

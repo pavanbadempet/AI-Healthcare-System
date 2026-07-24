@@ -1,4 +1,5 @@
 from unittest.mock import MagicMock
+
 import numpy as np
 import pytest
 from fastapi.testclient import TestClient
@@ -61,7 +62,7 @@ def mock_predict_for_model(model_name):
     model_service._entries[model_name].model = mock_model
     setattr(model_service._entries[model_name], "model_version", "1.0.0-test")
     setattr(model_service._entries[model_name], "training_timestamp", "2026-06-18T12:00:00")
-    
+
     from backend import prediction as _pred
     setattr(_pred, f"{model_name}_model", mock_model)
 
@@ -69,7 +70,7 @@ def test_diabetes_prediction(client, db_session):
     mock_predict_for_model("diabetes")
     payload = {
         "gender": 1, "age": 45, "hypertension": 1, "heart_disease": 0,
-        "smoking_history": 0, "bmi": 28.5, "high_chol": 1, 
+        "smoking_history": 0, "bmi": 28.5, "high_chol": 1,
         "physical_activity": 1, "general_health": 3
     }
     response = client.post("/predict/diabetes", json=payload, headers=get_auth_headers(client, "diabuser"))
@@ -133,7 +134,7 @@ def test_multi_organ_prediction(client, db_session):
     mock_predict_for_model("liver")
     mock_predict_for_model("stroke")
     mock_predict_for_model("kidney")
-    
+
     payload = {
         "gender": 1, "age": 55, "smoking": 1, "physical_activity": 1,
         "alcohol": 1, "general_health": 3, "bmi": 28.5, "glucose": 150.0,
@@ -154,7 +155,7 @@ def test_multi_organ_prediction(client, db_session):
         "coughing": 2, "shortness_of_breath": 2, "swallowing_difficulty": 1,
         "chest_pain": 2
     }
-    
+
     response = client.post("/predict/multi-organ", json=payload, headers=get_auth_headers(client, "multiuser"))
     assert response.status_code == 200
     data = response.json()

@@ -1,4 +1,3 @@
-import pytest
 from backend.privacy_sovereignty_router import GlobalDataSovereigntyRouter, run_data_sovereignty_check
 
 

@@ -1,4 +1,3 @@
-import pytest
 from backend.agents.agent_interop_adapter import UniversalAgentInteropAdapter, run_agent_interop_pipeline
 
 

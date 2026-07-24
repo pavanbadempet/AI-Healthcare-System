@@ -2,8 +2,7 @@
 Unit tests for Tumor Board Agent
 """
 
-import pytest
-from backend.agents.tumor_board_agent import TumorBoardAgent, tumor_board_agent
+from backend.agents.tumor_board_agent import tumor_board_agent
 
 
 def test_generate_tumor_board_summary():

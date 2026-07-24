@@ -1,4 +1,3 @@
-import pytest
 from backend.claims import CMS1500Claim
 from backend.claims_denial import analyse_denial_risk
 from backend.telehealth import TelehealthSession
@@ -20,9 +19,9 @@ def test_claims_preflight_passed():
         ],
         place_of_service="11"
     )
-    
+
     assert claim.calculate_total_charge() == 150.00
-    
+
     analysis = analyse_denial_risk(claim)
     assert analysis["denial_risk"] == "LOW"
     assert analysis["passed_preflight"] is True
@@ -43,7 +42,7 @@ def test_claims_denial_medium_risk_mismatch():
             {"cpt": "50200", "charge": 800.00, "date": "2026-07-16", "units": 1, "diagnosis_pointer": [1]}
         ]
     )
-    
+
     analysis = analyse_denial_risk(claim)
     assert analysis["denial_risk"] == "MEDIUM"
     assert analysis["passed_preflight"] is False
@@ -63,7 +62,7 @@ def test_claims_denial_high_risk_missing_npi():
             {"cpt": "93000", "charge": 150.00, "date": "2026-07-16"}
         ]
     )
-    
+
     analysis = analyse_denial_risk(claim)
     assert analysis["denial_risk"] == "HIGH"
     assert analysis["passed_preflight"] is False
@@ -79,27 +78,27 @@ def test_telehealth_session_flow():
         provider_id="provider-88",
         room_name="Consult-Room-99"
     )
-    
+
     assert session.status == "scheduled"
-    
+
     session.start_session()
     assert session.status == "active"
     assert session.started_at is not None
-    
+
     # Verify WebRTC signaling tokens
     token_info = session.generate_webrtc_token(user_id="patient-44", role="patient")
     assert token_info["room_name"] == "Consult-Room-99"
     assert token_info["role"] == "patient"
     assert token_info["token_type"] == "Bearer WebRTC-Signaling"
     assert token_info["access_token"].startswith("jwt-webrtc-")
-    
+
     # Audit call stats
     quality = session.audit_quality_metrics(packet_loss=0.2, latency_ms=45.0)
     assert quality["quality_rating"] == "EXCELLENT"
-    
+
     quality_poor = session.audit_quality_metrics(packet_loss=6.5, latency_ms=300.0)
     assert quality_poor["quality_rating"] == "POOR"
-    
+
     session.end_session(duration_minutes=42.5)
     assert session.status == "completed"
     assert session.duration_minutes == 42.5
@@ -119,7 +118,7 @@ def test_claims_denial_telemedicine_modifier_missing():
         ],
         place_of_service="02"
     )
-    
+
     analysis = analyse_denial_risk(claim)
     assert analysis["denial_risk"] == "MEDIUM"
     assert analysis["passed_preflight"] is False

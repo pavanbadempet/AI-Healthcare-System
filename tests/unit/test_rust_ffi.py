@@ -2,6 +2,7 @@ import ctypes
 import os
 import sys
 
+
 def test_rust_ffi():
     if sys.platform == "win32":
         lib_name = "rust_gateway_ffi.dll"

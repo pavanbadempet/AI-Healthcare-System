@@ -2,8 +2,7 @@
 Unit tests for Multi-Omics & Genomic Variant Risk Pipeline
 """
 
-import pytest
-from backend.ml.genomics_variant_pipeline import GenomicRiskEngine, genomics_engine
+from backend.ml.genomics_variant_pipeline import genomics_engine
 
 SAMPLE_VCF_DATA = """##fileformat=VCFv4.2
 #CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO

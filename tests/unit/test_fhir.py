@@ -1,20 +1,23 @@
-from unittest.mock import patch, MagicMock
+from datetime import date, datetime, timezone
+from unittest.mock import MagicMock, patch
+
 import pytest
 import requests
-from datetime import datetime, timezone, date
 from fastapi import HTTPException
+
 import backend.fhir as fhir_module
 from backend.fhir import (
-    _call_fhir_patient,
-    _call_fhir_encounter,
-    _call_fhir_observation,
-    _call_fhir_diagnostic_report,
-    _call_fhir_medication_request,
-    _call_fhir_invoice,
-    _call_fhir_care_event,
+    _call_fhir_audit_event,
     _call_fhir_build_bundle,
-    _call_fhir_audit_event
+    _call_fhir_care_event,
+    _call_fhir_diagnostic_report,
+    _call_fhir_encounter,
+    _call_fhir_invoice,
+    _call_fhir_medication_request,
+    _call_fhir_observation,
+    _call_fhir_patient,
 )
+
 
 class MockModel:
     def __init__(self, **kwargs):

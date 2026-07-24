@@ -187,7 +187,7 @@ def test_login_hides_unexpected_error_details(caplog):
 
     from starlette.requests import Request
     mock_request = MagicMock(spec=Request)
-    
+
     with pytest.raises(HTTPException) as exc_info:
         auth.login_for_access_token(request=mock_request, form_data=form, db=mock_db)
 
@@ -286,8 +286,8 @@ def test_user_full_details_hides_audit_error_details(client, db_session, caplog)
 
 
 def test_create_access_token_expiry():
-    from datetime import timedelta
     import time
+    from datetime import timedelta
     delta = timedelta(minutes=100)
     token = auth.create_access_token({"sub": "test"}, expires_delta=delta)
     decoded = auth.jwt.decode(token, auth.SECRET_KEY, algorithms=[auth.ALGORITHM])
@@ -317,12 +317,12 @@ def test_get_current_user_not_found(client, db_session):
 
 
 def test_signup_db_integrity_error(client):
-    from backend.main import app
     from backend.database import get_db
+    from backend.main import app
     mock_db = MagicMock()
     mock_db.query.return_value.filter.return_value.first.return_value = None
     mock_db.commit.side_effect = Exception("DB Down")
-    
+
     orig_override = app.dependency_overrides.get(get_db)
     app.dependency_overrides[get_db] = lambda: mock_db
     try:

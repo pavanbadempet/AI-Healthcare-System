@@ -13,6 +13,7 @@ import pytest
 
 from backend import core_ai
 
+
 @pytest.fixture(autouse=True)
 def mock_semantic_cache_lookup():
     """Disable semantic cache hits during core_ai tests by forcing lookup to return None"""

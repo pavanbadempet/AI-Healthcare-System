@@ -6,7 +6,7 @@ Calculates 30-day hospital readmission risk probabilities based on the LACE inde
 and vital sign trend volatility.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 
 class ReadmissionRiskEngine:

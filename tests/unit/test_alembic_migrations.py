@@ -1,4 +1,3 @@
-import pytest
 from scripts.runners.run_alembic_migrations import AlembicMigrationRunner, run_database_migrations
 
 

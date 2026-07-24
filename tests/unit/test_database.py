@@ -4,7 +4,6 @@ Tests the database connection, session management, and WAL mode.
 """
 from unittest.mock import MagicMock, patch
 
-import pytest
 from sqlalchemy.orm import Session
 
 from backend import database

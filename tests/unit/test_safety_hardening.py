@@ -8,8 +8,6 @@ import os
 from datetime import datetime, timezone
 from unittest.mock import patch
 
-import pytest
-
 # ---------------------------------------------------------------------------
 # 1. PHI Encryption
 # ---------------------------------------------------------------------------
@@ -20,6 +18,7 @@ class TestPHIEncryption:
             os.environ.pop("PHI_ENCRYPTION_KEY", None)
             # Re-import to re-initialize
             import importlib
+
             from backend import phi_encryption
             importlib.reload(phi_encryption)
 
@@ -33,6 +32,7 @@ class TestPHIEncryption:
         key = Fernet.generate_key().decode()
         with patch.dict(os.environ, {"PHI_ENCRYPTION_KEY": key, "TESTING": "1"}):
             import importlib
+
             from backend import phi_encryption
             importlib.reload(phi_encryption)
 
@@ -161,6 +161,7 @@ class TestBreachNotification:
 
     def test_overdue_detection(self):
         from datetime import timedelta
+
         from backend.breach_notification import BreachNotificationManager, BreachReport
         mgr = BreachNotificationManager()
         report = BreachReport(
@@ -286,6 +287,7 @@ class TestLicenseSecretHardening:
     def test_uses_env_secret_when_set(self):
         with patch.dict(os.environ, {"LICENSE_SIGNING_SECRET": "my-prod-secret", "TESTING": "1"}):
             import importlib
+
             from backend import licensing
             importlib.reload(licensing)
             assert licensing.LICENSE_SECRET == "my-prod-secret"
@@ -296,6 +298,7 @@ class TestLicenseSecretHardening:
         with patch.dict(os.environ, {"TESTING": "1"}, clear=False):
             os.environ.pop("LICENSE_SIGNING_SECRET", None)
             import importlib
+
             from backend import licensing
             importlib.reload(licensing)
             assert licensing.LICENSE_SECRET == licensing._DEFAULT_LICENSE_SECRET
@@ -346,6 +349,7 @@ class TestConsentGate:
     def test_has_valid_consent_returns_false_for_no_records(self):
         """has_valid_consent should return False when no consent exists."""
         from unittest.mock import MagicMock
+
         from backend.consent_gate import has_valid_consent
         mock_db = MagicMock()
         mock_db.query.return_value.filter.return_value.order_by.return_value.first.return_value = None

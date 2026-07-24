@@ -1,7 +1,9 @@
 from unittest.mock import AsyncMock, patch
+
 import pytest
 
 from backend import auth, models
+
 
 @pytest.fixture(autouse=True)
 def mock_agent_nodes():

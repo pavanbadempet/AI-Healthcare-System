@@ -1,5 +1,5 @@
 import numpy as np
-import pytest
+
 from backend.ml.dicom_3d_segmentation import VolumetricUNet3DEngine, run_3d_dicom_segmentation
 
 

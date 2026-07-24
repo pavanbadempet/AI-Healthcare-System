@@ -1,9 +1,12 @@
-import pytest
 from unittest.mock import patch
-from backend.main import app
+
+import pytest
+
 from backend.auth import get_current_user
+from backend.main import app
 from backend.models.auth import User
 from backend.models.clinical import VitalObservation
+
 
 def mock_get_current_user():
     return User(id=1, email="doctor@example.com", role="doctor")
@@ -17,14 +20,14 @@ def override_auth():
 @pytest.fixture(autouse=True)
 def mock_prediction_dependencies():
     with patch("backend.prediction._prediction_patient") as mock_patient, \
-         patch("backend.prediction._ensure_prediction_review_access") as mock_access, \
+         patch("backend.prediction._ensure_prediction_review_access"), \
          patch("backend.prediction.users_share_facility_context") as mock_facility, \
          patch("backend.prediction._run_model_prediction_scaled") as mock_predict, \
-         patch("backend.prediction._run_diabetes_proba") as mock_diab_proba, \
-         patch("backend.prediction._run_heart_proba") as mock_heart_proba, \
+         patch("backend.prediction._run_diabetes_proba"), \
+         patch("backend.prediction._run_heart_proba"), \
          patch("backend.prediction._get_triage_recommendation") as mock_triage, \
          patch("backend.prediction._get_top_risk_factors") as mock_risk:
-         
+
         mock_patient.return_value.id = 123
         mock_patient.return_value.gender = "male"
         mock_patient.return_value.dob = "1980-01-01"
@@ -184,7 +187,7 @@ def test_predict_organ_health(client, db_session):
     patient = User(id=123, email="patient@example.com", role="patient")
     db_session.add(patient)
     db_session.commit()
-    
+
     vital = VitalObservation(
         patient_id=123,
         heart_rate=75.0,
@@ -196,7 +199,7 @@ def test_predict_organ_health(client, db_session):
     )
     db_session.add(vital)
     db_session.commit()
-    
+
     response = client.get("/v1/predict/organ_health/123")
     assert response.status_code == 200
 

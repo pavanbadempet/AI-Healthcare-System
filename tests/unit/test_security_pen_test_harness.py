@@ -1,4 +1,3 @@
-import pytest
 from backend.security_pen_test_harness import SecurityPenTestHarness, run_security_compliance_audit
 
 

@@ -1,16 +1,18 @@
+from unittest.mock import patch
+
 import pytest
-from unittest.mock import patch, AsyncMock
 from sqlalchemy.orm import Session
 
-from backend.models.auth import User
-from backend.models.clinical import VitalObservation
 from backend.agents.billing_agent import ClinicalBillingAgent
+from backend.agents.calling_agent import ClinicalCallingAgent
 from backend.agents.discharge_agent import ClinicalDischargeAgent
+from backend.agents.fixing_agent import ClinicalFixingAgent
 from backend.agents.nursing_agent import ClinicalNursingAgent
 from backend.agents.patch_agent import ClinicalPatchAgent
-from backend.agents.fixing_agent import ClinicalFixingAgent
-from backend.agents.calling_agent import ClinicalCallingAgent
 from backend.agents.wellness_agent import ClinicalWellnessAgent
+from backend.models.auth import User
+from backend.models.clinical import VitalObservation
+
 
 @pytest.mark.anyio
 @patch("backend.agents.billing_agent.generate")
@@ -22,10 +24,10 @@ async def test_clinical_billing_agent(mock_generate, db_session: Session):
         '"warnings": [], '
         '"recommendations": ["Ensure documentation of chest pain severity."]}'
     )
-    
+
     agent = ClinicalBillingAgent(db_session)
     report = await agent.audit_billing_claim("Patient presents with chest pain and history of diabetes.")
-    
+
     assert report["data"]["denial_risk"] == "LOW"
     assert "I25.1" in report["data"]["icd10_codes"]
     assert "93000" in report["data"]["cpt_codes"]
@@ -40,7 +42,7 @@ async def test_clinical_discharge_agent(mock_generate, db_session: Session):
         '"patient_instructions": "Take medication on time.", '
         '"follow_up_appointments": "Follow up with PCP in 1 week."}'
     )
-    
+
     # Seed a patient
     patient = User(
         username="discharge_patient",
@@ -51,10 +53,10 @@ async def test_clinical_discharge_agent(mock_generate, db_session: Session):
     )
     db_session.add(patient)
     db_session.commit()
-    
+
     agent = ClinicalDischargeAgent(db_session)
     report = await agent.generate_discharge_plan(patient.id)
-    
+
     assert report["data"]["discharge_summary"] == "Patient discharged stable."
     assert "Limit heavy lifting" in report["data"]["transition_plan"]
     assert report["data"]["follow_up_appointments"] == "Follow up with PCP in 1 week."
@@ -68,12 +70,12 @@ async def test_clinical_nursing_agent(mock_generate, db_session: Session):
         '"monitoring_frequency": "Q4h", '
         '"safety_concerns": ["Fall risk"]}'
     )
-    
+
     # Seed a patient and vitals
     patient = User(username="nursing_patient", role="patient")
     db_session.add(patient)
     db_session.commit()
-    
+
     vital = VitalObservation(
         patient_id=patient.id,
         heart_rate=72,
@@ -83,10 +85,10 @@ async def test_clinical_nursing_agent(mock_generate, db_session: Session):
     )
     db_session.add(vital)
     db_session.commit()
-    
+
     agent = ClinicalNursingAgent(db_session)
     report = await agent.generate_handoff_card(patient.id)
-    
+
     assert report["data"]["handoff_summary"] == "Stable overnight."
     assert "Check blood sugar" in report["data"]["priority_tasks"]
     assert report["data"]["monitoring_frequency"] == "Q4h"
@@ -95,11 +97,11 @@ def test_admin_agent_endpoints_unauthorized(client):
     # Billing
     resp = client.post("/v1/admin/agents/billing-audit?soap_note=test")
     assert resp.status_code == 401
-    
+
     # Discharge
     resp = client.post("/v1/admin/agents/discharge-summary?patient_id=1")
     assert resp.status_code == 401
-    
+
     # Nursing
     resp = client.post("/v1/admin/agents/nursing-handoff?patient_id=1")
     assert resp.status_code == 401
@@ -135,7 +137,7 @@ def test_admin_agent_endpoints_authorized(mock_billing, mock_discharge, mock_nur
     mock_fix.return_value = '{"faults_detected": [], "healing_actions": [], "status": "restored"}'
     mock_call.return_value = '{"urgency": "CRITICAL", "assigned_contact": "Dr. Sarah", "call_script": "Alert", "broadcast_success": true}'
     mock_well.return_value = '{"wellness_plan": [], "disclaimer": "Advice", "symptom_urgency": "low"}'
-    
+
     # Create admin
     from backend.auth import get_password_hash
     admin_user = User(
@@ -145,15 +147,15 @@ def test_admin_agent_endpoints_authorized(mock_billing, mock_discharge, mock_nur
         email="agent_admin@example.com"
     )
     db_session.add(admin_user)
-    
+
     # Create patient for endpoints
     patient = User(username="endpoint_patient", role="patient")
     db_session.add(patient)
     db_session.commit()
-    
+
     # Capture patient ID locally to avoid DetachedInstanceError
     patient_id = patient.id
-    
+
     auth_resp = client.post(
         "/v1/token",
         data={"username": "agent_admin", "password": "adminpass"}
@@ -161,7 +163,7 @@ def test_admin_agent_endpoints_authorized(mock_billing, mock_discharge, mock_nur
     assert auth_resp.status_code == 200
     token = auth_resp.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
-    
+
     # 1. Billing audit
     resp = client.post(
         "/v1/admin/agents/billing-audit?soap_note=Patient+presents+with+fever.",
@@ -169,7 +171,7 @@ def test_admin_agent_endpoints_authorized(mock_billing, mock_discharge, mock_nur
     )
     assert resp.status_code == 200
     assert "data" in resp.json()
-    
+
     # 2. Discharge summary
     resp = client.post(
         f"/v1/admin/agents/discharge-summary?patient_id={patient_id}",
@@ -177,7 +179,7 @@ def test_admin_agent_endpoints_authorized(mock_billing, mock_discharge, mock_nur
     )
     assert resp.status_code == 200
     assert "data" in resp.json()
-    
+
     # 3. Nursing handoff
     resp = client.post(
         f"/v1/admin/agents/nursing-handoff?patient_id={patient_id}",
@@ -226,7 +228,7 @@ def test_sota_agents_domain_routes(mock_billing, mock_discharge, mock_nursing, c
     mock_billing.return_value = '{"icd10_codes": [], "cpt_codes": [], "denial_risk": "LOW", "warnings": [], "recommendations": []}'
     mock_discharge.return_value = '{"discharge_summary": "Discharged", "transition_plan": [], "patient_instructions": "", "follow_up_appointments": ""}'
     mock_nursing.return_value = '{"handoff_summary": "Handoff", "priority_tasks": [], "monitoring_frequency": "", "safety_concerns": []}'
-    
+
     # Create admin user
     from backend.auth import get_password_hash
     admin_user = User(
@@ -236,14 +238,14 @@ def test_sota_agents_domain_routes(mock_billing, mock_discharge, mock_nursing, c
         email="domain_admin@example.com"
     )
     db_session.add(admin_user)
-    
+
     # Create patient
     patient = User(username="domain_patient", role="patient")
     db_session.add(patient)
     db_session.commit()
-    
+
     patient_id = patient.id
-    
+
     # Create invoice for billing audit
     from backend.models.billing import Invoice
     invoice = Invoice(
@@ -258,7 +260,7 @@ def test_sota_agents_domain_routes(mock_billing, mock_discharge, mock_nursing, c
     db_session.add(invoice)
     db_session.commit()
     invoice_id = invoice.id
-    
+
     # Generate token
     auth_resp = client.post(
         "/v1/token",
@@ -267,7 +269,7 @@ def test_sota_agents_domain_routes(mock_billing, mock_discharge, mock_nursing, c
     assert auth_resp.status_code == 200
     token = auth_resp.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
-    
+
     # 1. Billing invoice audit
     resp = client.post(
         f"/v1/billing/invoices/{invoice_id}/audit",
@@ -275,7 +277,7 @@ def test_sota_agents_domain_routes(mock_billing, mock_discharge, mock_nursing, c
     )
     assert resp.status_code == 200
     assert "data" in resp.json()
-    
+
     # 2. Discharge summary generation
     resp = client.post(
         f"/v1/discharge/summaries/generate/{patient_id}",
@@ -283,7 +285,7 @@ def test_sota_agents_domain_routes(mock_billing, mock_discharge, mock_nursing, c
     )
     assert resp.status_code == 200
     assert "data" in resp.json()
-    
+
     # 3. Nursing handoff generation
     resp = client.post(
         f"/v1/nursing/patients/{patient_id}/handoff",
@@ -302,10 +304,10 @@ async def test_clinical_patch_agent(mock_generate, db_session: Session):
         '"recommended_patches": ["Upgrade python-jose to 3.3.0"], '
         '"hotpatches_applied": ["Applied jose JWT signature validation fix"]}'
     )
-    
+
     agent = ClinicalPatchAgent(db_session)
     report = await agent.audit_and_apply_patches("jose==3.2.0", "SECRET_KEY: Set")
-    
+
     assert report["status"] == "completed"
     assert report["report"]["posture_score"] == 80
     assert "Outdated jose library" in report["report"]["vulnerabilities"]
@@ -324,10 +326,10 @@ async def test_clinical_fixing_agent(mock_generate, db_session: Session):
         '"healing_actions": ["Run VACUUM optimization", "Clear thread locks"], '
         '"status": "restored"}'
     )
-    
+
     agent = ClinicalFixingAgent(db_session)
     report = await agent.diagnose_and_heal("OperationalError: database is locked", "CPU: 12%")
-    
+
     assert report["status"] == "completed"
     assert report["report"]["status"] == "restored"
     assert "database is locked" in report["report"]["faults_detected"]
@@ -346,10 +348,10 @@ async def test_clinical_calling_agent(mock_generate, db_session: Session):
         '"call_script": "This is an automated alert.", '
         '"broadcast_success": true}'
     )
-    
+
     agent = ClinicalCallingAgent(db_session)
     report = await agent.route_emergency_call("Alarm: SYS_ALARM_TACHY", "Dr. Sarah Jenkins")
-    
+
     assert report["status"] == "completed"
     assert report["report"]["urgency"] == "CRITICAL"
     assert report["report"]["assigned_contact"] == "Dr. Sarah Jenkins"
@@ -366,10 +368,10 @@ async def test_clinical_wellness_agent(mock_generate, db_session: Session):
         '"disclaimer": "Medical Disclaimer: Consult clinical experts.", '
         '"symptom_urgency": "low"}'
     )
-    
+
     agent = ClinicalWellnessAgent(db_session)
     report = await agent.generate_wellness_plan("Sedentary lifestyle and fatigue")
-    
+
     assert report["status"] == "completed"
     assert report["report"]["symptom_urgency"] == "low"
     assert "Medical Disclaimer: Consult clinical experts." in report["report"]["disclaimer"]

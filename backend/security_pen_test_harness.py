@@ -7,8 +7,7 @@ Zero external dependencies; completely self-contained.
 """
 
 import re
-import sys
-from typing import Dict, List
+from typing import Dict, Tuple
 
 
 class SecurityPenTestHarness:

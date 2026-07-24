@@ -1,4 +1,3 @@
-import pytest
 from backend.ml.patient_phenotyping import ClinicalPhenotypingEngine, run_patient_phenotyping_pipeline
 
 

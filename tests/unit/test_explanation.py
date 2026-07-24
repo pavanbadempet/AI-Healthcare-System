@@ -79,8 +79,9 @@ async def test_explain_prediction_ai_failure():
 
 def test_explain_success(client, db_session):
     from unittest.mock import AsyncMock, patch
-    from backend import models, auth
-    
+
+    from backend import auth, models
+
     # Create user in DB to allow JWT verification
     user = models.User(
         username="explain_test",
@@ -115,8 +116,9 @@ def test_explain_success(client, db_session):
 
 def test_explain_model_unavailable(client, db_session):
     from unittest.mock import AsyncMock, patch
-    from backend import models, auth
-    
+
+    from backend import auth, models
+
     user = models.User(
         username="explain_test_unavailable",
         email="explain_test_unavailable@example.com",

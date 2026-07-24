@@ -494,7 +494,7 @@ def test_doctor_consent_status_returns_404_for_unknown_patient(client, db_sessio
 
 
 def test_import_fhir_patient_success(client, db_session):
-    from unittest.mock import patch, MagicMock
+    from unittest.mock import MagicMock, patch
     with patch("requests.get") as mock_get:
         mock_response = MagicMock()
         mock_response.status_code = 200

@@ -1,7 +1,8 @@
+import importlib
 import os
 import sys
 import types
-import importlib
+
 
 def setup_airflow_mocks():
     """Mock the entire apache-airflow library dynamically to validate DAGs without installation"""

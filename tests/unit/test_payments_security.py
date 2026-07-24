@@ -10,7 +10,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
-from backend import payments
 from backend.database import Base, get_db
 from backend.main import app
 from backend.prediction import initialize_models
@@ -61,7 +60,7 @@ def client(db_session):
 
 def test_verify_payment_rejects_order_for_different_user(client, db_session):
     headers = _auth(client, "user_one")
-    
+
     # We pretend the stripe session metadata belongs to user_id "999" (not current_user)
     mock_session = MagicMock()
     mock_session.payment_status = "paid"
@@ -81,10 +80,10 @@ def test_verify_payment_rejects_order_for_different_user(client, db_session):
 def test_create_order_hides_gateway_error_details(client):
     headers = _auth(client)
     sensitive_err = "Internal Razorpay Error token=secret"
-    
+
     mock_client = MagicMock()
     mock_client.order.create.side_effect = Exception(sensitive_err)
-    
+
     with patch("backend.payments.ACTIVE_GATEWAY", "razorpay"), \
          patch("backend.payments.razorpay_client", mock_client), \
          patch("backend.payments._testing_enabled", return_value=False):
@@ -96,7 +95,7 @@ def test_create_order_hides_gateway_error_details(client):
 def test_verify_payment_hides_gateway_error_details(client):
     headers = _auth(client)
     sensitive_err = "Internal Stripe Error token=secret"
-    
+
     with patch("backend.payments.ACTIVE_GATEWAY", "stripe"), \
          patch("backend.payments.stripe.api_key", "sk_live_123"), \
          patch("backend.payments.stripe.checkout.Session.retrieve", side_effect=Exception(sensitive_err)):

@@ -2,8 +2,7 @@
 Unit tests for Pharmacogenomics Engine
 """
 
-import pytest
-from backend.ml.pharmacogenomics_engine import PharmacogenomicsEngine, pgx_engine
+from backend.ml.pharmacogenomics_engine import pgx_engine
 
 
 def test_evaluate_pgx_dosing_alert():

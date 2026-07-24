@@ -2,8 +2,7 @@
 Unit tests for Pharmacy Inventory Optimizer
 """
 
-import pytest
-from backend.ml.pharmacy_inventory_optimizer import PharmacyInventoryOptimizer, pharmacy_optimizer
+from backend.ml.pharmacy_inventory_optimizer import pharmacy_optimizer
 
 
 def test_evaluate_medication_stock_reorder():

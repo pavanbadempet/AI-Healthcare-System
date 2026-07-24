@@ -2,8 +2,7 @@
 Unit tests for Nursing Handoff Agent
 """
 
-import pytest
-from backend.agents.nursing_handoff_agent import NursingHandoffAgent, nursing_handoff_agent
+from backend.agents.nursing_handoff_agent import nursing_handoff_agent
 
 
 def test_generate_sbar_handoff():

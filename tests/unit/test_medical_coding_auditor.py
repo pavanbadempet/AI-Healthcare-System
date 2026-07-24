@@ -2,8 +2,7 @@
 Unit tests for Medical Coding Auditor Agent
 """
 
-import pytest
-from backend.agents.medical_coding_auditor import MedicalCodingAuditorAgent, coding_auditor_agent
+from backend.agents.medical_coding_auditor import coding_auditor_agent
 
 
 def test_audit_coding_accuracy_passed():

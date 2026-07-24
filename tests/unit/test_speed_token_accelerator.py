@@ -1,4 +1,3 @@
-import pytest
 from backend.speed_token_accelerator import HighSpeedTokenAccelerator, run_token_speed_benchmark
 
 

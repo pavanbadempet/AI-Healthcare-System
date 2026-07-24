@@ -5,7 +5,7 @@ Predicts medication consumption rates, safety stock reorder thresholds,
 and expiration risk alerts across hospital pharmacy stock.
 """
 
-from typing import Dict, List, Optional
+from typing import Dict, Optional
 
 
 class PharmacyInventoryOptimizer:

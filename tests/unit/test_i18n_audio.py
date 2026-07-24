@@ -1,6 +1,6 @@
 """Unit tests for the backend Text-to-Speech (TTS) module."""
-import pytest
 from fastapi.testclient import TestClient
+
 from backend.main import app
 
 client = TestClient(app)

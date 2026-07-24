@@ -116,7 +116,7 @@ def test_create_order_returns_503_when_no_gateway(client):
 
 def test_verify_payment_returns_success_and_upgrades_tier(client, db_session):
     headers = _auth(client, "verify_user")
-    
+
     with patch("backend.payments.ACTIVE_GATEWAY", "razorpay"), \
          patch("backend.payments._testing_enabled", return_value=True), \
          patch("backend.payments.RAZORPAY_KEY_ID", "rzp_test_placeholder"), \
@@ -137,7 +137,7 @@ def test_verify_payment_returns_400_on_bad_signature(client):
     headers = _auth(client, "sig_user")
     mock_client = MagicMock()
     mock_client.utility.verify_payment_signature.side_effect = payments.razorpay.errors.SignatureVerificationError("bad", "bad")
-    
+
     with patch("backend.payments.ACTIVE_GATEWAY", "razorpay"), \
          patch("backend.payments._testing_enabled", return_value=False), \
          patch("backend.payments.RAZORPAY_KEY_ID", "real_key"), \

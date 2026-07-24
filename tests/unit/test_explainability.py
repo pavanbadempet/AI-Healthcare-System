@@ -5,6 +5,7 @@ Tests SHAP value generation for model explanations.
 from unittest.mock import MagicMock, patch
 
 import pytest
+
 pytest.importorskip("shap")
 
 import numpy as np

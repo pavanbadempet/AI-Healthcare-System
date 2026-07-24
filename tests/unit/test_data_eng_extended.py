@@ -1,12 +1,10 @@
 import importlib
-import requests
 import sys
 import types
-import asyncio
-import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
+
 
 def mock_dependencies():
     for mod in [
@@ -49,7 +47,7 @@ def mock_dependencies():
         setattr(pyspark_functions, name, _function_stub)
     for name in ["StructType", "StructField", "StringType", "FloatType", "DateType", "TimestampType"]:
         setattr(pyspark_types, name, _SparkType)
-    
+
     redis_module.Redis = Redis
 
     sys.modules["pyspark"] = pyspark
@@ -81,26 +79,26 @@ class MockDataFrame:
         self.columns = ["patient_id", "value"]
         self.schema = MagicMock()
         self.schema.fields = [MagicMock(name="patient_id")]
-    
+
     def count(self):
         return self._count
-    
+
     def select(self, *cols, **kwargs):
         return self
-        
+
     def dropDuplicates(self):
         return self
-        
+
     def fillna(self, value):
         return self
-        
+
     def write(self):
         return MockSparkWriter()
-        
+
     def agg(self, *args, **kwargs):
         mock_row = MagicMock()
         mock_row.asDict.return_value = {"completeness": 0.99, "count": 100}
-        
+
         result = MagicMock()
         result.collect.return_value = [mock_row]
         return result
@@ -156,13 +154,13 @@ async def test_extract_api(data_pipeline):
         mock_resp1 = MagicMock()
         mock_resp1.status_code = 200
         mock_resp1.json.return_value = [{"id": 1}, {"id": 2}]
-        
+
         mock_resp2 = MagicMock()
         mock_resp2.status_code = 200
         mock_resp2.json.return_value = []
-        
+
         mock_get.side_effect = [mock_resp1, mock_resp2]
-        
+
         result = await data_pipeline._extract_from_api(config)
         assert "dataframe" in result
         assert result["record_count"] == 2

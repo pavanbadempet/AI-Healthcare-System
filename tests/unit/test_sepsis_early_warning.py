@@ -2,8 +2,7 @@
 Unit tests for Sepsis Early Warning Engine
 """
 
-import pytest
-from backend.ml.sepsis_early_warning import SepsisEarlyWarningEngine, sepsis_engine
+from backend.ml.sepsis_early_warning import sepsis_engine
 
 
 def test_evaluate_sepsis_risk_low():
