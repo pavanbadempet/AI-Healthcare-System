@@ -208,7 +208,7 @@ class LicenseValidationMiddleware(BaseHTTPMiddleware):
         # Exclude infrastructure, docs, authentication, and health checks
         # So users can always access docs, sign in, or fetch tokens to activate.
         if (
-            path in ["/", "/healthz", "/docs", "/openapi.json", "/redoc", "/v1/signup", "/v1/token", "/v1/forgot-password", "/v1/reset-password"]
+            path in ["/", "/healthz", "/docs", "/openapi.json", "/redoc", "/v1/signup", "/v1/token", "/v1/forgot-password", "/v1/reset-password", "/v1/licensing/status", "/v1/licensing/activate"]
             or path.startswith("/assets")
             or path.startswith("/static")
         ):
