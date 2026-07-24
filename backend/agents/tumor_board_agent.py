@@ -33,7 +33,7 @@ class TumorBoardAgent:
         )
 
         has_actionable_target = any(
-            v.lower() in ["mutated", "positive", "amplified"] for v in genomic_biomarkers.values()
+            any(kw in v.lower() for kw in ["mutated", "positive", "amplified"]) for v in genomic_biomarkers.values()
         )
 
         return {
