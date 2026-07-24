@@ -7,6 +7,7 @@ PORT="${PORT:-7860}"
 echo "Starting AI Healthcare System on port $PORT..."
 
 # Normalize environment variables
+export LICENSE_KEY="${LICENSE_KEY:-CLINIC-TRIAL-2026}"
 if [ -z "$DOPPLER_TOKEN" ] && [ -z "$DATABASE_URL" ]; then
     echo "DOPPLER_TOKEN and DATABASE_URL not set. Defaulting to local SQLite database."
     export SQLALCHEMY_URL="sqlite:///./healthcare.db"
