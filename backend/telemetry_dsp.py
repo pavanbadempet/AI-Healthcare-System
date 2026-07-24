@@ -191,3 +191,13 @@ def analyze_ecg_signal(signal: List[float], sampling_rate: float = 250.0) -> Ecg
         confidence_score=confidence,
         recommendation=recommendation
     )
+
+
+def export_ecg_waveform_to_csv(signal: np.ndarray, sampling_rate: float = 250.0) -> str:
+    """Generates a CSV string of timestamped raw ECG voltage waveform values."""
+    csv_lines = ["sample_index,timestamp_sec,amplitude_mv"]
+    for i, val in enumerate(signal):
+        ts = round(i / sampling_rate, 4)
+        csv_lines.append(f"{i},{ts},{round(float(val), 5)}")
+    return "\n".join(csv_lines)
+
