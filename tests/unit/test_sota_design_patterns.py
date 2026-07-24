@@ -2,9 +2,11 @@
 Unit tests for Advanced SOTA Behavioral Design Patterns (backend/sota_patterns.py).
 """
 
-import pytest
 import asyncio
-from backend.sota_patterns import CircuitBreaker, CircuitState, BulkheadIsolation, CQRSReadCache
+
+import pytest
+
+from backend.sota_patterns import BulkheadIsolation, CircuitBreaker, CircuitState, CQRSReadCache
 
 
 def test_circuit_breaker_normal_operation():

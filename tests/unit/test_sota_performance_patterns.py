@@ -2,9 +2,11 @@
 Unit tests for SOTA Performance Design Patterns (backend/performance.py).
 """
 
-import pytest
 import asyncio
-from backend.performance import fast_json_dumps, fast_json_loads, gather_concurrent_tasks, IndexedLookupCache
+
+import pytest
+
+from backend.performance import IndexedLookupCache, fast_json_dumps, fast_json_loads, gather_concurrent_tasks
 
 
 def test_fast_json_dumps_and_loads():

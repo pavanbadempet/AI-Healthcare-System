@@ -2,13 +2,12 @@
 Unit tests for SOTA Low Level Design (backend/sota_lld.py).
 """
 
-import pytest
 from backend.sota_lld import (
-    MedicalCodeFlyweightFactory,
     CardiacRiskStrategy,
+    FHIRPatientConverter,
+    MedicalCodeFlyweightFactory,
     MetabolicRiskStrategy,
     PatientTriageContext,
-    FHIRPatientConverter,
 )
 
 
