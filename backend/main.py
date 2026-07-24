@@ -184,6 +184,77 @@ def create_default_admin():
             logger.error("Failed to seed admin")
 
 
+def seed_hospital_operations_data():
+    """Seeds default facility, departments, and beds if the database has none."""
+    with database.get_db_context() as session:
+        try:
+            facility = session.query(models.HospitalFacility).first()
+            if not facility:
+                facility = models.HospitalFacility(
+                    name="Central General Hospital",
+                    facility_type="hospital",
+                    country="US",
+                    region="North America",
+                    status="active"
+                )
+                session.add(facility)
+                session.commit()
+                session.refresh(facility)
+
+            existing_depts = session.query(models.Department).count()
+            if existing_depts == 0:
+                dept_list = [
+                    ("Intensive Care Unit (ICU-A)", "IPD", "Building A - 3rd Floor"),
+                    ("Med-Surg Ward 4B", "IPD", "Building B - 4th Floor"),
+                    ("Cardiac Care Unit", "IPD", "Building A - 2nd Floor"),
+                    ("Pediatric Ward", "IPD", "Building C - 1st Floor"),
+                    ("Emergency Department", "Emergency", "Building A - Ground Floor"),
+                ]
+                for name, dtype, loc in dept_list:
+                    dept = models.Department(
+                        facility_id=facility.id,
+                        name=name,
+                        department_type=dtype,
+                        location=loc,
+                        status="active"
+                    )
+                    session.add(dept)
+                session.commit()
+
+            existing_beds = session.query(models.Bed).count()
+            if existing_beds == 0:
+                icu_dept = session.query(models.Department).filter(models.Department.name.like("%ICU%")).first()
+                med_dept = session.query(models.Department).filter(models.Department.name.like("%Med-Surg%")).first()
+                car_dept = session.query(models.Department).filter(models.Department.name.like("%Cardiac%")).first()
+                ped_dept = session.query(models.Department).filter(models.Department.name.like("%Pediatric%")).first()
+
+                dept_map = [
+                    (icu_dept, "ICU", 20),
+                    (med_dept, "MED", 40),
+                    (car_dept, "CAR", 16),
+                    (ped_dept, "PED", 24),
+                ]
+                for dept_obj, prefix, count in dept_map:
+                    if not dept_obj:
+                        continue
+                    for i in range(1, count + 1):
+                        status = "occupied" if i <= int(count * 0.8) else ("cleaning" if i == int(count * 0.8) + 1 else "available")
+                        bed_code = f"{prefix}-{i:02d}"
+                        bed = models.Bed(
+                            facility_id=facility.id,
+                            department_id=dept_obj.id,
+                            bed_number=bed_code,
+                            ward=dept_obj.name,
+                            status=status
+                        )
+                        session.add(bed)
+                session.commit()
+                logger.info("Default hospital facility, departments, and beds seeded.")
+        except Exception as seed_err:
+            session.rollback()
+            logger.warning("Hospital operations seeding failed: %s", seed_err)
+
+
 startup_diagnostics = {}
 
 
@@ -270,6 +341,7 @@ async def lifespan(app: FastAPI):
     # Seeding
     try:
         create_default_admin()
+        seed_hospital_operations_data()
         startup_diagnostics["seeding"] = "success"
     except Exception as seed_err:
         startup_diagnostics["seeding"] = f"failed: {str(seed_err)}"
