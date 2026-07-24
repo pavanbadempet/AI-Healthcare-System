@@ -2,7 +2,7 @@
 Unit tests for Homomorphic Encryption Engine
 """
 
-from backend.security.homomorphic_encryption_engine import homomorphic_engine
+from backend.homomorphic_encryption_engine import homomorphic_engine
 
 
 def test_encrypt_and_evaluate():
