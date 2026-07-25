@@ -2,7 +2,7 @@
  * AI Healthcare System — Auth Store (Zustand)
  */
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { setTokenGetter, type UserProfile } from './api';
 
 interface AuthState {
@@ -14,6 +14,25 @@ interface AuthState {
   isAuthenticated: () => boolean;
 }
 
+const memoryStore = new Map<string, string>();
+
+const safeStorage = createJSONStorage(() => {
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      // Test storage access
+      window.localStorage.getItem('test');
+      return window.localStorage;
+    }
+  } catch {
+    // Storage restricted (e.g. iframe partitioning)
+  }
+  return {
+    getItem: (key: string) => memoryStore.get(key) ?? null,
+    setItem: (key: string, value: string) => memoryStore.set(key, value),
+    removeItem: (key: string) => memoryStore.delete(key),
+  };
+});
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
@@ -24,7 +43,10 @@ export const useAuthStore = create<AuthState>()(
       logout: () => set({ token: null, user: null }),
       isAuthenticated: () => !!get().token,
     }),
-    { name: 'healthcare-auth' }
+    {
+      name: 'healthcare-auth',
+      storage: safeStorage,
+    }
   )
 );
 

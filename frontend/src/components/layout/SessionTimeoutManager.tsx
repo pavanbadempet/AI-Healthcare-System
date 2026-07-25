@@ -4,8 +4,9 @@ import { useAuthStore } from "@/lib/auth";
 import { motion, AnimatePresence } from "framer-motion";
 import { ShieldAlert, Clock, LogOut, RefreshCw } from "lucide-react";
 
-const TIMEOUT_MS = 365 * 24 * 60 * 60 * 1000; // 1 year (Effectively Disabled)
-const WARNING_MS = 30 * 1000; // 30 seconds
+const TIMEOUT_MS = 12 * 60 * 60 * 1000; // 12 Hours Clinical Session Timeout
+const WARNING_MS = 30 * 1000; // 30 seconds warning period
+const MAX_SAFE_TIMEOUT = 2147483647; // 32-bit signed integer limit for JS setTimeout
 
 export default function SessionTimeoutManager({ children }: { children: React.ReactNode }) {
   const { token, logout } = useAuthStore();
@@ -30,10 +31,12 @@ export default function SessionTimeoutManager({ children }: { children: React.Re
     setShowWarning(false);
     setSecondsLeft(30);
 
-    // Set new timer to trigger warning
+    const delay = Math.min(Math.max(TIMEOUT_MS - WARNING_MS, 1000), MAX_SAFE_TIMEOUT);
+
+    // Set new timer to trigger warning safely without JS integer overflow
     inactivityTimerRef.current = setTimeout(() => {
       triggerWarning();
-    }, TIMEOUT_MS - WARNING_MS);
+    }, delay);
   };
 
   // Trigger the 30-second warning countdown
