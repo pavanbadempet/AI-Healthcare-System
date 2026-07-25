@@ -218,6 +218,27 @@ export default function TopNav({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  // Mousemove distance tracking: auto-close menu when cursor moves away from nav & menu bounds
+  useEffect(() => {
+    if (!activeMenu) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!navContainerRef.current) return;
+      const rect = navContainerRef.current.getBoundingClientRect();
+      const buffer = 40; // 40px buffer around header nav & mega menu bounds
+      const isOutsideX = e.clientX < rect.left - buffer || e.clientX > rect.right + buffer;
+      const isOutsideY = e.clientY < rect.top - buffer || e.clientY > rect.top + 550; // covers nav + mega menu height
+
+      if (isOutsideX || isOutsideY) {
+        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+        closeAllMenus();
+      }
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
+  }, [activeMenu]);
+
   const handleMouseEnter = (menuKey: string) => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
     setActiveMenu(menuKey);
@@ -251,26 +272,11 @@ export default function TopNav({
   const handleMouseLeave = () => {
     hoverTimeoutRef.current = setTimeout(() => {
       setActiveMenu(null);
-    }, 200);
+    }, 150);
   };
 
   return (
     <>
-      {/* Mega menu backdrop overlay to dismiss menu on click outside */}
-      <AnimatePresence>
-        {activeMenu && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
-            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
-            onClick={closeAllMenus}
-            onTouchStart={closeAllMenus}
-            aria-hidden="true"
-          />
-        )}
-      </AnimatePresence>
       <header
         className="fixed top-2.5 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] md:w-[calc(100%-3rem)] max-w-[1550px] h-14 z-50 flex items-center px-4 md:px-6 justify-between border border-[var(--border)] bg-[var(--bg-card)] backdrop-blur-2xl rounded-2xl shadow-[var(--shadow-soft)] transition-all duration-300 hover:border-[var(--border-focus)] hover:shadow-[0_4px_30px_rgba(95,95,247,0.08)]"
         role="banner"
