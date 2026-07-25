@@ -178,17 +178,45 @@ export default function TopNav({
     },
   ];
 
-  // Click outside handler for menu
+  const closeAllMenus = () => {
+    setActiveMenu(null);
+    setHoveredTab(null);
+  };
+
+  // Reset menu on route change
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    closeAllMenus();
+  }, [pathname]);
+
+  // Click / touch outside handler for menu
+  useEffect(() => {
+    const handleClickOutside = (event: Event) => {
       const target = event.target as Node;
       if (activeMenu && navContainerRef.current && !navContainerRef.current.contains(target)) {
-        setActiveMenu(null);
+        closeAllMenus();
       }
     };
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    document.addEventListener("pointerdown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+      document.removeEventListener("pointerdown", handleClickOutside);
+    };
   }, [activeMenu]);
+
+  // Escape key handler to close menu
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        closeAllMenus();
+        setShowNotifications(false);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const handleMouseEnter = (menuKey: string) => {
     if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
@@ -226,13 +254,23 @@ export default function TopNav({
     }, 200);
   };
 
-  const closeAllMenus = () => {
-    setActiveMenu(null);
-    setHoveredTab(null);
-  };
-
   return (
     <>
+      {/* Mega menu backdrop overlay to dismiss menu on click outside */}
+      <AnimatePresence>
+        {activeMenu && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15 }}
+            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-[2px]"
+            onClick={closeAllMenus}
+            onTouchStart={closeAllMenus}
+            aria-hidden="true"
+          />
+        )}
+      </AnimatePresence>
       <header
         className="fixed top-2.5 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] md:w-[calc(100%-3rem)] max-w-[1550px] h-14 z-50 flex items-center px-4 md:px-6 justify-between border border-[var(--border)] bg-[var(--bg-card)] backdrop-blur-2xl rounded-2xl shadow-[var(--shadow-soft)] transition-all duration-300 hover:border-[var(--border-focus)] hover:shadow-[0_4px_30px_rgba(95,95,247,0.08)]"
         role="banner"

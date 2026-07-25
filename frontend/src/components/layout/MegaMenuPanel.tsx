@@ -4,7 +4,7 @@
  */
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, X } from "lucide-react";
 import { prefetchRoute } from "@/lib/prefetch";
 import type { MenuItem } from "./nav-config";
 
@@ -44,6 +44,21 @@ const MegaMenuPanel: React.FC<{
     >
       {/* Subtle inner glow */}
       <div className="absolute inset-0 bg-gradient-to-b from-white/[0.02] to-transparent pointer-events-none" />
+
+      {/* Explicit Close Button */}
+      {onNavigate && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onNavigate();
+          }}
+          className="absolute top-3 right-3 p-1.5 rounded-lg bg-white/[0.06] border border-white/10 text-white/60 hover:text-white hover:bg-white/15 transition-all z-30 cursor-pointer flex items-center justify-center"
+          aria-label="Close menu"
+          title="Close menu (Esc)"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      )}
 
       {/* ─── Left: Dynamic Hero Feature ─── */}
       <div className="row-span-4 relative group/hero">
