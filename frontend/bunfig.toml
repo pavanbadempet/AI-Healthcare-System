@@ -1,2 +1,9 @@
 [test]
 preload = ["./bun.setup.ts"]
+
+[install]
+exact = true
+cache = true
+
+[build]
+target = "browser"

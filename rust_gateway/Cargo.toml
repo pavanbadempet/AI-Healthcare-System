@@ -36,3 +36,10 @@ mimalloc = "*"
 [build-dependencies]
 tonic-build = "0.12"
 prost-build = "0.13"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
