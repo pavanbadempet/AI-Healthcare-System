@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'bun:test';
 import { SOTAUXSpeedLayerEngine } from '../sotaUxSpeedLayer';
 
 describe('SOTAUXSpeedLayerEngine', () => {
@@ -6,7 +6,7 @@ describe('SOTAUXSpeedLayerEngine', () => {
     const engine = new SOTAUXSpeedLayerEngine();
     const skeleton = engine.generateSkeletonState(8);
 
-    assert.isTrue(skeleton.isLoading);
+    expect(skeleton.isLoading).toBe(true);
     expect(skeleton.itemCount).toBe(8);
     expect(skeleton.shimmerClass).toContain('animate-pulse');
   });

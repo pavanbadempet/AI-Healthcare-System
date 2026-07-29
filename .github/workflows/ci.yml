@@ -26,21 +26,22 @@ jobs:
           requirements.txt
           tests/requirements-test.txt
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v6
+    - name: Set up Bun
+      uses: oven-sh/setup-bun@v2
       with:
-        node-version: '20'
-        cache: 'npm'
-        cache-dependency-path: 'frontend/package-lock.json'
+        bun-version: latest
 
     - name: Install Frontend Dependencies
-      run: npm --prefix frontend ci
+      working-directory: frontend
+      run: bun install
 
     - name: Lint React Frontend
-      run: npm --prefix frontend run lint
+      working-directory: frontend
+      run: bun run lint
 
     - name: Build React Frontend
-      run: npm --prefix frontend run build
+      working-directory: frontend
+      run: bun run build
 
     - name: Check agent adapter sync
       run: python scripts/sync_agent_adapters.py --check
@@ -59,13 +60,13 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ~/.cache/ms-playwright
-        key: playwright-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}
+        key: playwright-${{ runner.os }}-${{ hashFiles('frontend/bun.lockb') }}
         restore-keys: |
           playwright-${{ runner.os }}-
 
     - name: Install Playwright Browsers
       run: |
-        npx --prefix frontend playwright install chromium --with-deps
+        bunx --bun playwright install chromium --with-deps
         playwright install chromium
 
 
@@ -88,9 +89,9 @@ jobs:
 
     - name: Run Frontend Unit Tests with Coverage
       working-directory: frontend
-      run: npm run test -- --coverage
+      run: bun test --coverage
 
     - name: Run Frontend E2E Playwright Tests
       working-directory: frontend
-      run: npm run test:e2e
+      run: bun run test:e2e
 

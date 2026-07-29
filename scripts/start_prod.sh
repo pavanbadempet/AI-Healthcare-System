@@ -37,33 +37,29 @@ elif [ -n "$ENABLE_PYSPARK_STREAMING" ]; then
     python scripts/runners/run_telemetry_streaming.py &
 fi
 
-# Try starting Rust Gateway if binary exists
-RUST_BINARY="./rust_gateway/target/release/rust_gateway"
-if [ -f "$RUST_BINARY" ]; then
-    echo "Rust Gateway binary found. Attempting to start on socket /tmp/healthcare.sock..."
+# Primary: Rust Gateway (PID 1)
+echo "Starting FastAPI Uvicorn as a background worker on socket /tmp/healthcare.sock..."
+if [ -n "$DOPPLER_TOKEN" ]; then
+    doppler run -- uvicorn backend.main:app --uds /tmp/healthcare.sock --workers 4 &
+else
     uvicorn backend.main:app --uds /tmp/healthcare.sock --workers 4 &
-    cd rust_gateway
+fi
+
+echo "Launching Rust Gateway as PRIMARY PID 1 on port $PORT..."
+RUST_BINARY="./rust_gateway/target/release/rust_gateway"
+if [ ! -f "$RUST_BINARY" ]; then
+    echo "CRITICAL: Rust Gateway binary not found! Falling back to Uvicorn on port $PORT..."
+    kill %1
     if [ -n "$DOPPLER_TOKEN" ]; then
-        doppler run -- ./target/release/rust_gateway &
+        exec doppler run -- uvicorn backend.main:app --host 0.0.0.0 --port "$PORT" --workers 4
     else
-        ./target/release/rust_gateway &
-    fi
-    RUST_PID=$!
-    cd ..
-    sleep 2
-    if kill -0 $RUST_PID 2>/dev/null; then
-        echo "Rust Gateway running on PID $RUST_PID on port $PORT. Holding PID 1..."
-        wait $RUST_PID
-        echo "Rust Gateway process terminated. Falling back to direct Uvicorn..."
-    else
-        echo "Rust Gateway failed to run. Falling back to direct Uvicorn on port $PORT..."
+        exec uvicorn backend.main:app --host 0.0.0.0 --port "$PORT" --workers 4
     fi
 fi
 
-# Primary/Fallback: Direct Uvicorn on $PORT serving FastAPI + React SPA
-echo "Launching FastAPI Uvicorn Application directly on port $PORT..."
+cd rust_gateway
 if [ -n "$DOPPLER_TOKEN" ]; then
-    exec doppler run -- uvicorn backend.main:app --host 0.0.0.0 --port "$PORT" --workers 4
+    exec doppler run -- ./target/release/rust_gateway
 else
-    exec uvicorn backend.main:app --host 0.0.0.0 --port "$PORT" --workers 4
+    exec ./target/release/rust_gateway
 fi
