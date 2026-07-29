@@ -4,6 +4,7 @@ echo      Stopping Old Processes...
 echo ========================================
 taskkill /F /IM python.exe /T >nul 2>&1
 taskkill /F /IM node.exe /T >nul 2>&1
+taskkill /F /IM bun.exe /T >nul 2>&1
 echo Done.
 
 echo.
@@ -27,5 +28,5 @@ echo ========================================
 echo      Starting Healthcare Frontend...
 echo ========================================
 cd /d frontend
-npm run dev -- -H 127.0.0.1 -p 3000
+bun run dev -- --host 127.0.0.1 --port 3000
 pause

@@ -14,7 +14,7 @@ echo Waiting for backend (Model Loading)...
 timeout /t 15 /nobreak >nul
 
 echo [3/3] Launching Client Dashboard...
-start "Healthcare Interface" cmd /c "cd /d frontend && npm run build && npm run start -- -p 3000"
+start "Healthcare Interface" cmd /c "cd /d frontend && bun run build && bun run start"
 
 echo.
 echo ---------------------------------------------------

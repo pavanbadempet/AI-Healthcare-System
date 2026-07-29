@@ -2,13 +2,13 @@
 # AI Healthcare System — Frontend Dockerfile (Multi-Stage Vite)
 # ============================================================
 # Stage 1: Build static assets
-FROM node:20-alpine AS builder
+FROM oven/bun:alpine AS builder
 
 WORKDIR /app
 
 # Install dependencies (cached layer)
-COPY package.json package-lock.json ./
-RUN npm ci
+COPY package.json bun.lock ./
+RUN bun install
 
 # Copy source and build
 COPY . .
@@ -17,7 +17,7 @@ ARG VITE_PUBLIC_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 ENV VITE_PUBLIC_API_URL=$VITE_PUBLIC_API_URL
 
-RUN npm run build
+RUN bun run build
 
 # --- Stage 2: Production Nginx Server ---
 FROM nginx:stable-alpine AS runner

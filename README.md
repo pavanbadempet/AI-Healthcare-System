@@ -686,8 +686,8 @@ Launch the FastAPI server and the React dev compiler:
   ```
 * **React Web Portal (Terminal 2)**:
   ```bash
-  npm --prefix frontend install
-  npm --prefix frontend run dev
+  bun --cwd frontend install
+  bun --cwd frontend run dev
   ```
 
 | Service Portal | Access Endpoint | Credentials (Seed Data) |
@@ -850,7 +850,7 @@ python scripts/code_quality_linter.py
 python -m pytest tests/ -n auto -v
 
 # Run the frontend unit tests (90 Vitest tests)
-npm --prefix frontend run test
+bun --cwd frontend test
 ```
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
@@ -1101,7 +1101,7 @@ Read [CONTRIBUTING.md](CONTRIBUTING.md) and [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT
 
 ```bash
 python -m pytest tests/ -n auto -v
-npm --prefix frontend run test
+bun --cwd frontend test
 ```
 
 ### 📋 Pre-Release Validation Checklist
@@ -1119,7 +1119,7 @@ Before submitting a Pull Request, please ensure all local verification checks pa
    ```
 3. **Frontend Compilation:** Verify the React production build succeeds without TypeScript errors:
    ```bash
-   npm --prefix frontend run build
+   bun --cwd frontend run build
    ```
 4. **Console Dashboard Run:** Ensure the terminal TUI dashboard runs without exceptions:
    ```bash

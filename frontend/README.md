@@ -15,13 +15,14 @@ Built as a client-side Single Page Application (SPA), it communicates with the F
 ## ⚡ Tech Stack
 
 * **Core Framework**: React 19 (Client-side SPA)
-* **Build Tooling**: Vite 8 & TypeScript 6
+* **Runtime & Package Manager**: Bun 1.3+ & TypeScript 6
+* **Build Tooling**: Vite 8 & Bun ultra-fast runtime
 * **Styling**: Tailwind CSS v4 (Vanilla CSS variables integration)
 * **Routing**: React Router DOM v7 (Lazy-loaded routes)
 * **State Management**: Zustand (Lightweight, decoupled store pattern)
 * **Data Fetching**: TanStack Query v5 (React Query)
 * **Visualizations & Charts**: Recharts (High-contrast monochromatic styling)
-* **Unit Testing**: Vitest (JSDOM environment with coverage)
+* **Unit Testing**: Bun Test (`bun:test` runner with happy-dom environment)
 * **E2E Testing**: Playwright (Headless Chromium browser testing)
 
 ---
@@ -31,7 +32,7 @@ Built as a client-side Single Page Application (SPA), it communicates with the F
 ```
 frontend/
 ├── src/
-│   ├── __tests__/             # Vitest Unit & Component Tests
+│   ├── __tests__/             # Bun Unit & Component Tests
 │   ├── components/            # Reusable UI Components
 │   │   ├── layout/            # Navigation, Sidebar, Top bar, Theme Toggle
 │   │   ├── operations/        # Specialized clinical widgets (ECG, Vitals, SOAP)
@@ -51,8 +52,9 @@ frontend/
 ├── tests/                     # Playwright E2E Browser Spec tests
 │   ├── functional.spec.ts     # Core flows (Signup -> Dashboard -> Telemedicine)
 │   └── visual.spec.ts         # Visual regression & high-contrast theme tests
+├── bunfig.toml                # Bun test pre-loader configuration
+├── bun.setup.ts               # Bun happy-dom & testing-library setup
 ├── playwright.config.ts       # Playwright E2E configuration
-├── vitest.config.ts           # Vitest unit test configuration
 └── package.json               # Package manifests & run scripts
 ```
 
@@ -71,23 +73,23 @@ VITE_PUBLIC_API_URL=http://127.0.0.1:8000
 
 ## 🛠️ Local Development
 
-Ensure you have **Node.js 20.x** or higher installed.
+Ensure you have **Bun 1.3+** installed.
 
 ### 1. Install Dependencies
 ```bash
-npm install
+bun install
 ```
 
 ### 2. Run local development server
 ```bash
-npm run dev
+bun run dev
 ```
 The application will serve locally at [http://127.0.0.1:3000](http://127.0.0.1:3000).
 
 ### 3. Compile Production Bundle
 Builds the static assets with full TypeScript validation and optimization:
 ```bash
-npm run build
+bun run build
 ```
 
 ---
@@ -95,13 +97,13 @@ npm run build
 ## 🧪 Verification & Testing Suite
 
 ### 1. Run Unit & Component Tests
-Executed via **Vitest** in a `jsdom` environment. Employs v8 coverage tools.
+Executed via **Bun Test** in a `happy-dom` environment.
 ```bash
 # Run tests once
-npm run test
+bun test
 
 # Run tests in watch mode
-npm run test:watch
+bun test --watch
 ```
 
 ### 2. Run End-to-End (E2E) Browser Tests
@@ -110,16 +112,16 @@ Playwright automates real browser sessions to verify user registration, login tr
 Before running E2E tests, ensure the backend API server is running on port `8000`:
 ```bash
 # Run headless browser tests
-npm run test:e2e
+bun run test:e2e
 
 # Run tests in UI mode (interactive)
-npx playwright test --ui
+bunx playwright test --ui
 ```
 
 ### 3. Run Linter
 Validates code styling rules:
 ```bash
-npm run lint
+bun run lint
 ```
 
 ---
