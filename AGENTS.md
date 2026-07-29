@@ -62,8 +62,8 @@
 uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
 python -m pytest tests/ -n auto -v
 
-# Frontend (Vite SPA)
-npm --prefix frontend run dev
+# Frontend (Bun React SPA)
+bun --cwd frontend run dev
 
 # DevX
 python scripts/ai_context.py
