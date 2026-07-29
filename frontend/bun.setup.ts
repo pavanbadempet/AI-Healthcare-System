@@ -1,11 +1,9 @@
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
 
-if (typeof window === 'undefined') {
-  GlobalRegistrator.register();
-}
+GlobalRegistrator.register();
 
-import * as matchers from '@testing-library/jest-dom/matchers';
-import { expect, mock } from 'bun:test';
+const matchers = await import('@testing-library/jest-dom/matchers');
+const { expect, mock } = await import('bun:test');
 
 expect.extend(matchers as any);
 
@@ -15,11 +13,26 @@ const vi = {
   stubEnv: (key: string, val: string) => { process.env[key] = val; },
   clearAllMocks: () => {},
   resetAllMocks: () => {},
-  mock: () => {},
+  mock: (moduleName: string, factory: () => any) => {
+    mock.module(moduleName, factory);
+  },
 };
+
+const fetchMock = vi.fn();
+(globalThis as any).fetch = fetchMock;
+(globalThis as any).fetchMock = fetchMock;
 
 (globalThis as any).vi = vi;
 (globalThis as any).jest = vi;
+
+mock.module('@/lib/i18n', () => ({
+  useTranslation: () => ({
+    t: (key: string) => key,
+    language: 'en',
+    setLanguage: () => {},
+  }),
+  LanguageProvider: ({ children }: any) => children,
+}));
 
 process.env.VITE_PUBLIC_API_URL = 'http://127.0.0.1:8000';
 
