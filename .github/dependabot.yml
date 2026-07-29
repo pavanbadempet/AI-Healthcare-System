@@ -37,8 +37,8 @@ updates:
         update-types:
           - "patch"
 
-  # npm — frontend dependencies
-  - package-ecosystem: "npm"
+  # bun — frontend dependencies
+  - package-ecosystem: "bun"
     directory: "/frontend"
     schedule:
       interval: "weekly"

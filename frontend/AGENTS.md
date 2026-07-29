@@ -24,18 +24,18 @@ This frontend is a client-side React SPA powered by Vite 6, Tailwind CSS v4, and
 - Prediction, AI chat, report-analysis, and other patient-facing medical AI views must show a medical disclaimer and recommend consulting a qualified clinician for diagnosis, treatment, or emergencies.
 - Do not put patient names, DOBs, health records, or other PII into tests, fixtures, logs, screenshots, or snapshots.
 - Keep API helpers in `frontend/src/lib/api.ts`; do not scatter raw backend URL construction through pages/components.
-- Prefer `npm --prefix frontend run dev` for local dev (serves at `http://127.0.0.1:3000`).
+- Prefer `bun --cwd frontend run dev` for local dev (serves at `http://127.0.0.1:3000`).
 
 ## Checks
 
 ```bash
 # Linting
-npm --prefix frontend run lint
+bun --cwd frontend run lint
 
-# Vitest Unit Tests
-npm --prefix frontend run test
+# Bun Unit Tests
+bun --cwd frontend test
 
 # Production Build
-npm --prefix frontend run build
+bun --cwd frontend run build
 ```
 <!-- END:vite-agent-rules -->

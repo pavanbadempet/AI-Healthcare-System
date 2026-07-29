@@ -2,8 +2,8 @@
   "name": "AI Healthcare System Dev Env",
   "image": "mcr.microsoft.com/devcontainers/python:1-3.11-bookworm",
   "features": {
-    "ghcr.io/devcontainers/features/node:1": {
-      "version": "lts"
+    "ghcr.io/devcontainers/features/bun:1": {
+      "version": "latest"
     },
     "ghcr.io/devcontainers/features/rust:1": {
       "version": "latest"
@@ -25,7 +25,7 @@
       ]
     }
   },
-  "updateContentCommand": "pip3 install -r backend/requirements.txt && npm --prefix frontend install && cd rust_gateway && cargo build",
+  "updateContentCommand": "pip3 install -r backend/requirements.txt && bun --cwd frontend install && cd rust_gateway && cargo build",
   "portsAttributes": {
     "3000": {
       "label": "React Vite Frontend",

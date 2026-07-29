@@ -6,17 +6,16 @@
 # =======================================================
 
 # Stage 1: Build Frontend React SPA
-FROM node:20-alpine AS frontend-builder
+FROM oven/bun:alpine AS frontend-builder
 WORKDIR /build
 
 # Copy frontend package list and install dependencies
-COPY frontend/package*.json ./
-RUN npm ci
+COPY frontend/package.json frontend/bun.lock ./
+RUN bun install
 
 # Copy frontend source and build the production bundle
 COPY frontend/ ./
-ENV NODE_OPTIONS="--max-old-space-size=4096"
-RUN npm run build
+RUN bun run build
 
 # Stage 2: Build Rust Gateway
 FROM rust:latest AS rust-builder
