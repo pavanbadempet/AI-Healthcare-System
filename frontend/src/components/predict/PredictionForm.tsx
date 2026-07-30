@@ -4,6 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Activity, AlertTriangle, FileText, CheckCircle2, ChevronDown, Cpu, Sparkles } from "lucide-react";
 import { fetchPatientExplanation, type PredictionResult } from "@/lib/api";
 import Tooltip from "../layout/Tooltip";
+import LazyMarkdown from "../chat/LazyMarkdown";
 
 interface Field {
   name: string;
@@ -928,9 +929,9 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
                             </div>
                           </div>
                         ) : (
-                          <p className="text-[var(--text-primary)] leading-relaxed bg-[rgba(255,255,255,0.01)] border border-[var(--border)] p-3 rounded text-[10px] font-mono normal-case">
-                            {result.patient_explanation}
-                          </p>
+                          <div className="text-[var(--text-primary)] leading-relaxed bg-[rgba(255,255,255,0.01)] border border-[var(--border)] p-3.5 rounded text-xs font-sans normal-case space-y-2.5 [&_h3]:text-xs [&_h3]:font-bold [&_h3]:text-[var(--accent)] [&_h3]:mt-3 [&_h3]:mb-1 [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:space-y-1.5 [&_li]:text-[var(--text-secondary)] [&_hr]:border-[var(--border)]/60 [&_hr]:my-3 [&_strong]:text-[var(--text-primary)] [&_strong]:font-semibold">
+                            <LazyMarkdown>{result.patient_explanation || ""}</LazyMarkdown>
+                          </div>
                         )}
                       </div>
                     )}
