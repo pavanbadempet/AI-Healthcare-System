@@ -33,14 +33,16 @@ The platform provides native **HL7 FHIR R4** compatibility, 5 calibrated **XGBoo
 
 <p>
   <img src="https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/Bun-000000?style=flat-square&logo=bun&logoColor=white" alt="Bun" />
+  <img src="https://img.shields.io/badge/Rust_Gateway-000000?style=flat-square&logo=rust&logoColor=white" alt="Rust Gateway" />
   <img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/React_19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 19" />
+  <img src="https://img.shields.io/badge/Cloudflare_Workers_AI-F38020?style=flat-square&logo=cloudflare&logoColor=white" alt="Cloudflare Workers AI" />
   <img src="https://img.shields.io/badge/3D_DICOM_PACS-0052CC?style=flat-square" alt="3D DICOM PACS" />
   <img src="https://img.shields.io/badge/FHIR_R4-E73F3E?style=flat-square" alt="FHIR R4" />
   <img src="https://img.shields.io/badge/ABDM_ABHA-1565C0?style=flat-square" alt="ABDM ABHA" />
   <img src="https://img.shields.io/badge/SMART_on_FHIR-ff6b00?style=flat-square" alt="SMART on FHIR" />
   <img src="https://img.shields.io/badge/LangGraph-1C3C3C?style=flat-square&logo=langchain&logoColor=white" alt="LangGraph" />
-  <img src="https://img.shields.io/badge/Ollama-000000?style=flat-square&logo=ollama&logoColor=white" alt="Ollama" />
   <img src="https://img.shields.io/badge/PySpark-E25A1C?style=flat-square&logo=apachespark&logoColor=white" alt="PySpark" />
   <img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
 </p>
@@ -54,14 +56,14 @@ The platform provides native **HL7 FHIR R4** compatibility, 5 calibrated **XGBoo
 | Category | Core Specs & Technologies (Search Optimization Keywords) |
 | :--- | :--- |
 | **💡 Core Purpose** | Open-source EHR (Electronic Health Record) & Clinical Decision Support System (CDSS) |
-| **🧠 Generative AI** | LangGraph multi-agent orchestration, local Ollama (Llama 3.2), Google Gemini fallback |
+| **🧠 Generative AI** | Cloudflare Workers AI (Llama 3.1 8B FP8), Groq LPU (500 tok/s), WebGPU Edge Inference, Ollama, Gemini |
 | **📊 Diagnostics** | 5 XGBoost gradient-boosted diagnostic classifiers, scikit-learn, conformal predictions |
-| **🛡️ Explainable AI** | SHAP feature attributions, counterfactual recourse recommendations, clinical narratives |
+| **🛡️ Explainable AI** | SHAP feature attributions, counterfactual recourse recommendations, LazyMarkdown clinical reports |
 | **📁 EHR Data Interop** | HL7 FHIR R4 JSON bundles, DICOMweb (QIDO-RS/WADO-RS), ABDM ABHA Health ID, SMART on FHIR |
 | **🖼️ PACS Imaging** | 3D Volumetric DICOM MPR (Axial, Sagittal, Coronal, 3D Mesh), DICOM Uploader |
 | **💳 Revenue & Security**| ANSI X12 837P insurance claims, HSA/FSA card processing, Web Crypto SHA-256 e-prescribing |
 | **🔄 Data Platform** | Apache Spark (PySpark), Delta Lake Medallion Architecture (Bronze/Silver/Gold), Airflow |
-| **⚡ SOTA Speed & Cost**| <0.1ms exact-hash AI cache hits, <1ms ONNX memory-arena ML predictions, 512MB MMAP SQLite WAL |
+| **⚡ SOTA Speed & Cost**| Rust Gateway PID 1 proxy, C-accelerated `ORJSONResponse` (<1ms), <0.1ms AI cache hits, 100% Bun native toolchain |
 | **💼 Commercial Licensing**| Air-gapped B2B perpetual lifetime keys (`perpetual=True`), offline JWT verification, zero SaaS fees |
 | **🔐 HIPAA DevSecOps** | Hardware TEE enclaves, PII redaction filters, Docker, AWS EKS (Kubernetes), SOC 2 audit harness |
 
@@ -928,21 +930,25 @@ Yes. Define the `DATABASE_URL=postgresql://user:password@host:5432/dbname` envir
 The platform is currently operating continuously in a multi-cloud serverless production environment. This live topology utilizes 4 major PaaS/SaaS systems interconnected securely:
 
 ### 1. Hugging Face Spaces (Primary Hosting)
-* **Application**: The core `FastAPI` backend, the `Vite/React` frontend portal, and the local `Ollama` LLM models.
-* **Architecture**: Deployed via the custom `Dockerfile.hf` which spins up a secure Docker space.
+* **Application**: The core `FastAPI` backend with C-accelerated `ORJSONResponse`, the `Vite/React` Bun SPA, Cloudflare Workers AI default LLM engine, and optional local `Ollama` models.
+* **Architecture**: Deployed via the custom `Dockerfile.hf` spinning up a compiled **Rust Gateway (`rust_gateway`)** PID 1 process that proxies Unix domain socket (`/tmp/healthcare.sock`) traffic to Uvicorn workers. Includes self-healing SQLite database persistence (`/data/healthcare.db`).
 * **Security**: Operates securely under a non-root user (`uid 1000`) and uses environment secrets for external database routing.
 
-### 2. Neon (Serverless PostgreSQL)
+### 2. Cloudflare Workers AI (Primary Default LLM)
+* **Application**: Real-time generative AI engine powering the Clinical Copilot Chat Console and Empathetic Layperson Narrative synthesis.
+* **Architecture**: Powered by Llama 3.1 8B FP8 running on Cloudflare's edge network (`ai-healthcare-model.pavan9b.workers.dev`), delivering sub-second response times with zero cold start latency.
+
+### 3. Neon (Serverless PostgreSQL)
 * **Application**: The primary transactional SQL database for hospital operations.
 * **Architecture**: Serverless PostgreSQL branch providing instantaneous auto-scaling, scale-to-zero capabilities, and point-in-time recovery for critical clinical records.
 
-### 3. Render (Microservices PaaS)
+### 4. Render (Microservices PaaS)
 * **Application**: The `healthcare-keygen-server` handling enterprise license generation and LemonSqueezy payment webhook events.
 * **Architecture**: Continuously deployed directly from the GitHub repository via the `render.yaml` infrastructure-as-code specification.
 
-### 4. GitHub Actions (CI/CD Pipeline Orchestration)
+### 5. GitHub Actions (CI/CD Pipeline Orchestration)
 * **Application**: Fully automated CI/CD pipeline gating every pull request and push to the `main` branch.
-* **Architecture**: Executes the complete 1,639+ unit test suite using `pytest -n auto`, verifies UI components with `Vitest`, runs End-to-End browser tests with `Playwright`, and checks security vulnerabilities with `CodeQL`.
+* **Architecture**: Executes the complete 1,642+ unit test suite using `pytest -n auto`, verifies UI components with `Bun test`, runs End-to-End browser tests with `Playwright`, and checks security vulnerabilities with `CodeQL`.
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
