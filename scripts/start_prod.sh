@@ -28,13 +28,13 @@ python -c "from backend.database import engine; from backend.models import Base;
 
 # Start PySpark or Vitals streaming if configured
 if [ -n "$UPSTASH_KAFKA_SERVERS" ]; then
-    echo "UPSTASH_KAFKA_SERVERS detected. Starting PySpark Kafka streaming..."
-    python scripts/runners/simulate_vitals_stream.py --kafka --kafka-servers "$UPSTASH_KAFKA_SERVERS" &
-    python scripts/runners/run_telemetry_streaming.py --kafka --kafka-servers "$UPSTASH_KAFKA_SERVERS" &
-elif [ -n "$ENABLE_PYSPARK_STREAMING" ]; then
-    echo "ENABLE_PYSPARK_STREAMING detected. Starting local PySpark streaming..."
-    python scripts/runners/simulate_vitals_stream.py &
-    python scripts/runners/run_telemetry_streaming.py &
+    echo "UPSTASH_KAFKA_SERVERS detected. Starting PySpark Kafka streaming in background..."
+    python scripts/runners/simulate_vitals_stream.py --kafka --kafka-servers "$UPSTASH_KAFKA_SERVERS" > /dev/null 2>&1 &
+    python scripts/runners/run_telemetry_streaming.py --kafka --kafka-servers "$UPSTASH_KAFKA_SERVERS" > /dev/null 2>&1 &
+elif [ "$ENABLE_PYSPARK_STREAMING" = "true" ] || [ "$ENABLE_PYSPARK_STREAMING" = "1" ]; then
+    echo "ENABLE_PYSPARK_STREAMING detected. Starting local PySpark streaming in background..."
+    python scripts/runners/simulate_vitals_stream.py > /dev/null 2>&1 &
+    python scripts/runners/run_telemetry_streaming.py > /dev/null 2>&1 &
 fi
 
 WORKERS="${WEB_CONCURRENCY:-1}"
