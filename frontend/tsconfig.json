@@ -15,7 +15,7 @@
     "paths": {
       "@/*": ["./src/*"]
     },
-    "types": ["node"]
+    "types": ["bun", "node"]
   },
   "include": [
     "src/**/*.ts",
@@ -28,6 +28,6 @@
     "src/__tests__",
     "**/*.test.ts",
     "**/*.test.tsx",
-    "vitest.setup.ts"
+    "bun.setup.ts"
   ]
 }

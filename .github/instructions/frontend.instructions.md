@@ -7,4 +7,4 @@ applyTo: "frontend/**"
 - Routes are client-side via React Router DOM; page components live in frontend/src/pages/.
 - Use VITE_PUBLIC_API_URL or fallback to http://127.0.0.1:8000 for backend URLs.
 - Include medical disclaimers in prediction, chat, report-analysis, and other patient-facing medical AI views.
-- Vitest unit tests live in frontend/src/__tests__; Playwright E2E tests live in frontend/tests.
+- Bun unit tests live in frontend/src/__tests__; Playwright E2E tests live in frontend/tests.
