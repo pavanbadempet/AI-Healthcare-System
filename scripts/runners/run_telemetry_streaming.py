@@ -12,7 +12,10 @@ import os
 import pickle
 import sys
 import time
+import warnings
 from datetime import datetime, timezone
+
+warnings.filterwarnings("ignore", category=UserWarning)
 
 # Ensure project root is in python path
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -158,7 +161,7 @@ def predict_lung_risk(avg_spo2, avg_resp_rate):
 
             df = pd.DataFrame([input_list], columns=feature_names)
             if lungs_scaler is not None:
-                X = lungs_scaler.transform(df)
+                X = lungs_scaler.transform(df.values)
             else:
                 X = df.values
 
@@ -512,7 +515,7 @@ def process_batch(df, batch_id):
                 ]
                 df_lung = pd.DataFrame(lung_inputs, columns=feature_names)
                 if lungs_scaler is not None:
-                    X_lung = lungs_scaler.transform(df_lung)
+                    X_lung = lungs_scaler.transform(df_lung.values)
                 else:
                     X_lung = df_lung.values
                 lung_probs = lungs_model.predict_proba(X_lung)[:, 1]
