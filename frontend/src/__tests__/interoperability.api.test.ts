@@ -21,7 +21,7 @@ describe('interoperability API helpers', () => {
       json: async () => payload,
     });
 
-    await expect(exportDoctorPatientFhirBundle(42)).resolves.toEqual(payload);
+    expect(await exportDoctorPatientFhirBundle(42)).toEqual(payload);
 
     expect(fetchMock).toHaveBeenCalledWith(
       'http://127.0.0.1:8000/v1/interop/doctor/patients/42/fhir-bundle',

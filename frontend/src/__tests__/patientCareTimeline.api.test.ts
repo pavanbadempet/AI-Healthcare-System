@@ -73,9 +73,9 @@ describe('patient care timeline API adapter', () => {
       .mockReturnValueOnce(mockJsonResponse(adminFeed))
       .mockReturnValueOnce(mockJsonResponse(patientFeed));
 
-    await expect(getDoctorPatientCareEventFeed(42, 25)).resolves.toEqual(doctorFeed);
-    await expect(getAdminPatientCareEventFeed(42, 25)).resolves.toEqual(adminFeed);
-    await expect(getPatientCareEventFeed(10)).resolves.toEqual(patientFeed);
+    expect(await getDoctorPatientCareEventFeed(42, 25)).toEqual(doctorFeed);
+    expect(await getAdminPatientCareEventFeed(42, 25)).toEqual(adminFeed);
+    expect(await getPatientCareEventFeed(10)).toEqual(patientFeed);
 
     expect(fetchMock.mock.calls).toEqual([
       [

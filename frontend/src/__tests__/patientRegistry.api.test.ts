@@ -32,7 +32,7 @@ describe('patient registry API adapter', () => {
     ];
     fetchMock.mockReturnValueOnce(mockJsonResponse(panel));
 
-    await expect(getDoctorPatients()).resolves.toEqual(panel);
+    expect(await getDoctorPatients()).toEqual(panel);
 
     expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8000/v1/hospital/doctor/patients', {
       headers: {
@@ -55,7 +55,7 @@ describe('patient registry API adapter', () => {
     };
     fetchMock.mockReturnValueOnce(mockJsonResponse(profile));
 
-    await expect(getAdminPatient(42)).resolves.toEqual(profile);
+    expect(await getAdminPatient(42)).toEqual(profile);
 
     expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8000/v1/admin/patients/42', {
       headers: {
@@ -77,7 +77,7 @@ describe('patient registry API adapter', () => {
     ];
     fetchMock.mockReturnValueOnce(mockJsonResponse(patients));
 
-    await expect(getAdminPatients()).resolves.toEqual(patients);
+    expect(await getAdminPatients()).toEqual(patients);
 
     expect(fetchMock).toHaveBeenCalledWith('http://127.0.0.1:8000/v1/admin/patients', {
       headers: {
