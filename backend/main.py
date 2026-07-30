@@ -338,20 +338,24 @@ async def lifespan(app: FastAPI):
         startup_diagnostics["fallback_engine"] = str(database.engine)
 
     try:
-        # run_migrations()
         models.Base.metadata.create_all(bind=database.engine)
         startup_diagnostics["schema_creation"] = "success"
     except Exception as err:
-        logger.warning("File-based SQLite creation/migration failed: %s. Falling back to in-memory SQLite.", err)
+        logger.warning("Primary database schema creation failed: %s. Falling back to local SQLite WAL.", err)
         startup_diagnostics["schema_creation"] = f"failed: {str(err)}"
-        database.fallback_to_memory()
-        startup_diagnostics["fallback_memory_engine"] = str(database.engine)
+        database.fallback_to_sqlite()
+        restore_sqlite_backup()
         try:
-            # run_migrations()
             models.Base.metadata.create_all(bind=database.engine)
-            startup_diagnostics["schema_creation_fallback"] = "success"
-        except Exception as err2:
-            startup_diagnostics["schema_creation_fallback"] = f"failed: {str(err2)}"
+            startup_diagnostics["schema_creation_sqlite"] = "success"
+        except Exception as err_sqlite:
+            logger.warning("File-based SQLite creation failed: %s. Falling back to in-memory SQLite.", err_sqlite)
+            database.fallback_to_memory()
+            try:
+                models.Base.metadata.create_all(bind=database.engine)
+                startup_diagnostics["schema_creation_memory"] = "success"
+            except Exception as err_mem:
+                startup_diagnostics["schema_creation_memory"] = f"failed: {str(err_mem)}"
 
     # Seeding
     try:
@@ -359,7 +363,15 @@ async def lifespan(app: FastAPI):
         seed_hospital_operations_data()
         startup_diagnostics["seeding"] = "success"
     except Exception as seed_err:
-        startup_diagnostics["seeding"] = f"failed: {str(seed_err)}"
+        logger.warning("Primary database seeding failed: %s. Retrying seed on local fallback database...", seed_err)
+        database.fallback_to_sqlite()
+        try:
+            models.Base.metadata.create_all(bind=database.engine)
+            create_default_admin()
+            seed_hospital_operations_data()
+            startup_diagnostics["seeding"] = "success_fallback"
+        except Exception as seed_fallback_err:
+            startup_diagnostics["seeding"] = f"failed: {str(seed_fallback_err)}"
 
     logger.info("Loading AI models...")
     try:
