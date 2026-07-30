@@ -38,28 +38,39 @@ elif [ "$ENABLE_PYSPARK_STREAMING" = "true" ] || [ "$ENABLE_PYSPARK_STREAMING" =
 fi
 
 WORKERS="${WEB_CONCURRENCY:-1}"
-RUST_BINARY="./rust_gateway/target/release/rust_gateway"
 
-if [ -f "$RUST_BINARY" ]; then
-    echo "Starting FastAPI Uvicorn as a background worker on socket /tmp/healthcare.sock with $WORKERS worker(s)..."
-    if [ -n "$DOPPLER_TOKEN" ]; then
-        doppler run -- uvicorn backend.main:app --uds /tmp/healthcare.sock --workers "$WORKERS" &
-    else
-        uvicorn backend.main:app --uds /tmp/healthcare.sock --workers "$WORKERS" &
-    fi
+if [ "$ENABLE_RUST_GATEWAY" = "true" ] || [ "$ENABLE_RUST_GATEWAY" = "1" ]; then
+    RUST_BINARY="./rust_gateway/target/release/rust_gateway"
+    if [ -f "$RUST_BINARY" ]; then
+        echo "Starting FastAPI Uvicorn background worker on socket /tmp/healthcare.sock..."
+        if [ -n "$DOPPLER_TOKEN" ]; then
+            doppler run -- uvicorn backend.main:app --uds /tmp/healthcare.sock --workers "$WORKERS" &
+        else
+            uvicorn backend.main:app --uds /tmp/healthcare.sock --workers "$WORKERS" &
+        fi
 
-    echo "Launching Rust Gateway as PRIMARY PID 1 on port $PORT..."
-    cd rust_gateway
-    if [ -n "$DOPPLER_TOKEN" ]; then
-        exec doppler run -- ./target/release/rust_gateway
-    else
-        exec ./target/release/rust_gateway
+        echo "Waiting for Uvicorn domain socket /tmp/healthcare.sock to be ready..."
+        for i in {1..30}; do
+            if [ -S "/tmp/healthcare.sock" ]; then
+                echo "Domain socket ready."
+                break
+            fi
+            sleep 1
+        done
+
+        echo "Launching Rust Gateway as PRIMARY PID 1 on port $PORT..."
+        cd rust_gateway
+        if [ -n "$DOPPLER_TOKEN" ]; then
+            exec doppler run -- ./target/release/rust_gateway
+        else
+            exec ./target/release/rust_gateway
+        fi
     fi
+fi
+
+echo "Running FastAPI Uvicorn directly as PRIMARY PID 1 on port $PORT with $WORKERS worker(s)..."
+if [ -n "$DOPPLER_TOKEN" ]; then
+    exec doppler run -- uvicorn backend.main:app --host 0.0.0.0 --port "$PORT" --workers "$WORKERS"
 else
-    echo "Rust Gateway binary not found. Running FastAPI Uvicorn directly on port $PORT with $WORKERS worker(s)..."
-    if [ -n "$DOPPLER_TOKEN" ]; then
-        exec doppler run -- uvicorn backend.main:app --host 0.0.0.0 --port "$PORT" --workers "$WORKERS"
-    else
-        exec uvicorn backend.main:app --host 0.0.0.0 --port "$PORT" --workers "$WORKERS"
-    fi
+    exec uvicorn backend.main:app --host 0.0.0.0 --port "$PORT" --workers "$WORKERS"
 fi
