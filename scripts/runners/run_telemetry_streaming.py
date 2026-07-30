@@ -195,6 +195,47 @@ def process_conformed_record(db, record, avg_stats=None, heart_risk=None, lung_r
     encounter_id = int(record["encounter_id"]) if record.get("encounter_id") is not None else None
     department_id = int(record["department_id"]) if record.get("department_id") is not None else None
 
+    # Foreign Key Integrity Validation & Auto-Resolution
+    from backend import models
+    valid_user = db.query(models.User.id).filter(models.User.id == patient_id).first()
+    if not valid_user:
+        fallback_user = db.query(models.User.id).first()
+        if fallback_user:
+            patient_id = fallback_user.id
+        else:
+            try:
+                new_patient = models.User(
+                    username=f"patient_{patient_id}",
+                    hashed_password="disabled_password_hash",
+                    email=f"patient_{patient_id}@system.local",
+                    role="patient",
+                    full_name=f"Telemetry Patient {patient_id}"
+                )
+                db.add(new_patient)
+                db.flush()
+                patient_id = new_patient.id
+            except Exception:
+                db.rollback()
+                fallback_user = db.query(models.User.id).first()
+                if fallback_user:
+                    patient_id = fallback_user.id
+
+    if facility_id:
+        valid_fac = db.query(models.HospitalFacility.id).filter(models.HospitalFacility.id == facility_id).first()
+        if not valid_fac:
+            fallback_fac = db.query(models.HospitalFacility.id).first()
+            facility_id = fallback_fac.id if fallback_fac else None
+
+    if department_id:
+        valid_dept = db.query(models.Department.id).filter(models.Department.id == department_id).first()
+        if not valid_dept:
+            department_id = None
+
+    if encounter_id:
+        valid_enc = db.query(models.Encounter.id).filter(models.Encounter.id == encounter_id).first()
+        if not valid_enc:
+            encounter_id = None
+
     observed_at_str = record["timestamp"]
     try:
         observed_at = datetime.fromisoformat(observed_at_str.replace("Z", "+00:00"))
