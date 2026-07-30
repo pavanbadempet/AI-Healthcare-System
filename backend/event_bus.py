@@ -184,6 +184,12 @@ class ClinicalEventBus:
                 try:
                     results = await self._redis.xread(streams, block=5000, count=50)
                 except Exception as exc:
+                    exc_str = str(exc).lower()
+                    if "limit exceeded" in exc_str or "max requests" in exc_str or "quota" in exc_str:
+                        logger.warning("Upstash Redis quota exceeded (%s). Automatically falling back to in-memory EventBus.", exc)
+                        self._use_redis = False
+                        asyncio.create_task(self._inmemory_consumer_loop())
+                        break
                     logger.warning("Redis xread error: %s. Retrying in 5s.", exc)
                     await asyncio.sleep(5)
                     continue
