@@ -146,8 +146,9 @@ def run_migrations():
 
         command.upgrade(alembic_cfg, "head")
         logger.info("Migrations completed successfully.")
-    except Exception:
-        logger.warning("Migration check failed")
+    except Exception as mig_err:
+        logger.warning("Migration check failed: %s. Ensuring database schema via metadata.create_all...", mig_err)
+        models.Base.metadata.create_all(bind=database.engine)
 
 
 # --- Seeding ---
@@ -180,9 +181,9 @@ def create_default_admin():
                 logger.info("Default admin created from configured bootstrap credentials.")
             else:
                 logger.info("Admin account already exists.")
-        except Exception:
+        except Exception as seed_err:
             session.rollback()
-            logger.error("Failed to seed admin")
+            logger.error("Failed to seed admin: %s", seed_err)
 
 
 def seed_hospital_operations_data():
