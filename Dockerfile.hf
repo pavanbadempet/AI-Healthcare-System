@@ -10,7 +10,7 @@ FROM oven/bun:alpine AS frontend-builder
 WORKDIR /build
 
 # Copy frontend package list and install dependencies
-COPY frontend/package*.json ./
+COPY frontend/package.json frontend/bun.lock ./
 RUN bun install
 
 # Copy frontend source and build the production bundle
