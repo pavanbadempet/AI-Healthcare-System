@@ -38,10 +38,10 @@ elif [ "$ENABLE_PYSPARK_STREAMING" = "true" ] || [ "$ENABLE_PYSPARK_STREAMING" =
 fi
 
 WORKERS="${WEB_CONCURRENCY:-1}"
+RUST_BINARY="./rust_gateway/target/release/rust_gateway"
+ENABLE_RUST_GATEWAY="${ENABLE_RUST_GATEWAY:-1}"
 
-if [ "$ENABLE_RUST_GATEWAY" = "true" ] || [ "$ENABLE_RUST_GATEWAY" = "1" ]; then
-    RUST_BINARY="./rust_gateway/target/release/rust_gateway"
-    if [ -f "$RUST_BINARY" ]; then
+if [ -f "$RUST_BINARY" ] && [ "$ENABLE_RUST_GATEWAY" != "0" ]; then
         echo "Starting FastAPI Uvicorn background worker on socket /tmp/healthcare.sock..."
         if [ -n "$DOPPLER_TOKEN" ]; then
             doppler run -- uvicorn backend.main:app --uds /tmp/healthcare.sock --workers "$WORKERS" &
@@ -65,7 +65,6 @@ if [ "$ENABLE_RUST_GATEWAY" = "true" ] || [ "$ENABLE_RUST_GATEWAY" = "1" ]; then
         else
             exec ./target/release/rust_gateway
         fi
-    fi
 fi
 
 echo "Running FastAPI Uvicorn directly as PRIMARY PID 1 on port $PORT with $WORKERS worker(s)..."
