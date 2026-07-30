@@ -160,18 +160,24 @@ def create_default_admin():
         logger.info("Default admin seeding skipped; bootstrap credentials are not configured.")
         return
 
+    admin_email = os.getenv("DEFAULT_ADMIN_EMAIL") or f"{default_username}@system.local"
+
     with database.get_db_context() as session:
         try:
-            # Check if any admin exists
-            admin = session.query(models.User).filter(models.User.role == "admin").first()
-            if not admin:
-                logger.warning("No admin found. Creating configured bootstrap admin user...")
+            # Check if username, email, or admin role already exists
+            existing_user = session.query(models.User).filter(
+                (models.User.username == default_username) |
+                (models.User.email == admin_email) |
+                (models.User.role == "admin")
+            ).first()
 
+            if not existing_user:
+                logger.warning("No admin user found. Creating configured bootstrap admin user...")
                 hashed_pw = auth.get_password_hash(default_password)
                 default_admin = models.User(
                     username=default_username,
                     hashed_password=hashed_pw,
-                    email=os.getenv("DEFAULT_ADMIN_EMAIL", ""),
+                    email=admin_email,
                     role="admin",
                     full_name=os.getenv("DEFAULT_ADMIN_FULL_NAME", "System Administrator"),
                     allow_data_collection=0
@@ -180,10 +186,10 @@ def create_default_admin():
                 session.commit()
                 logger.info("Default admin created from configured bootstrap credentials.")
             else:
-                logger.info("Admin account already exists.")
+                logger.info("Admin or matching bootstrap account already exists (%s).", existing_user.username)
         except Exception as seed_err:
             session.rollback()
-            logger.error("Failed to seed admin: %s", seed_err)
+            logger.warning("Default admin seeding skipped due to existing constraint: %s", seed_err)
 
 
 def seed_hospital_operations_data():
