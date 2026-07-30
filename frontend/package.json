@@ -32,8 +32,8 @@
     "build": "bun --bun tsc && bun --bun vite build",
     "start": "bun --bun vite preview",
     "lint": "eslint",
-    "test": "bun test",
-    "test:watch": "bun test --watch",
+    "test": "bunx vitest run",
+    "test:watch": "bunx vitest",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -68,12 +68,14 @@
     "@typescript-eslint/eslint-plugin": "^8.61.0",
     "@typescript-eslint/parser": "^8.61.0",
     "@vitejs/plugin-react": "^6.0.2",
+    "@vitest/coverage-v8": "4.1.10",
     "babel-plugin-react-compiler": "^1.0.0",
     "eslint": "^10",
-    "jsdom": "^29.1.1",
+    "jsdom": "30.0.1",
     "tailwindcss": "^4.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^6",
-    "vite": "^8.0.16"
+    "vite": "^8.0.16",
+    "vitest": "4.1.10"
   }
 }
