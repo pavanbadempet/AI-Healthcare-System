@@ -37,12 +37,12 @@ elif [ -n "$ENABLE_PYSPARK_STREAMING" ]; then
     python scripts/runners/run_telemetry_streaming.py &
 fi
 
-# Primary: Rust Gateway (PID 1)
-echo "Starting FastAPI Uvicorn as a background worker on socket /tmp/healthcare.sock..."
+WORKERS="${WEB_CONCURRENCY:-1}"
+echo "Starting FastAPI Uvicorn as a background worker on socket /tmp/healthcare.sock with $WORKERS worker(s)..."
 if [ -n "$DOPPLER_TOKEN" ]; then
-    doppler run -- uvicorn backend.main:app --uds /tmp/healthcare.sock --workers 4 &
+    doppler run -- uvicorn backend.main:app --uds /tmp/healthcare.sock --workers "$WORKERS" &
 else
-    uvicorn backend.main:app --uds /tmp/healthcare.sock --workers 4 &
+    uvicorn backend.main:app --uds /tmp/healthcare.sock --workers "$WORKERS" &
 fi
 
 echo "Launching Rust Gateway as PRIMARY PID 1 on port $PORT..."
@@ -51,9 +51,9 @@ if [ ! -f "$RUST_BINARY" ]; then
     echo "CRITICAL: Rust Gateway binary not found! Falling back to Uvicorn on port $PORT..."
     kill %1
     if [ -n "$DOPPLER_TOKEN" ]; then
-        exec doppler run -- uvicorn backend.main:app --host 0.0.0.0 --port "$PORT" --workers 4
+        exec doppler run -- uvicorn backend.main:app --host 0.0.0.0 --port "$PORT" --workers "$WORKERS"
     else
-        exec uvicorn backend.main:app --host 0.0.0.0 --port "$PORT" --workers 4
+        exec uvicorn backend.main:app --host 0.0.0.0 --port "$PORT" --workers "$WORKERS"
     fi
 fi
 
