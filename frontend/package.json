@@ -32,8 +32,8 @@
     "build": "bun --bun tsc && bun --bun vite build",
     "start": "bun --bun vite preview",
     "lint": "eslint",
-    "test": "bunx vitest run",
-    "test:watch": "bunx vitest",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
     "test:e2e": "playwright test"
   },
   "dependencies": {
