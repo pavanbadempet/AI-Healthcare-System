@@ -66,6 +66,8 @@ _MODEL_CACHE_TTL = 30  # seconds
 async def get_ollama_models() -> list[str]:
     """List available Ollama models (cached with TTL)."""
     import time as _time
+    if (os.getenv("SPACE_ID") or os.getenv("SPACES_ID")) and "127.0.0.1" in OLLAMA_BASE_URL:
+        return []
     cache_key = OLLAMA_BASE_URL
     now = _time.monotonic()
     if cache_key in _model_cache:
@@ -73,7 +75,7 @@ async def get_ollama_models() -> list[str]:
         if now - ts < _MODEL_CACHE_TTL:
             return cached
     try:
-        async with httpx.AsyncClient(timeout=5) as client:
+        async with httpx.AsyncClient(timeout=1.0) as client:
             r = await client.get(f"{OLLAMA_BASE_URL}/api/tags")
             if r.status_code == 200:
                 models = [m["name"] for m in r.json().get("models", [])]
@@ -87,8 +89,10 @@ async def get_ollama_models() -> list[str]:
 
 async def list_ollama_model_details() -> list[dict]:
     """List downloaded Ollama model metadata."""
+    if (os.getenv("SPACE_ID") or os.getenv("SPACES_ID")) and "127.0.0.1" in OLLAMA_BASE_URL:
+        return []
     try:
-        async with httpx.AsyncClient(timeout=5) as client:
+        async with httpx.AsyncClient(timeout=1.0) as client:
             r = await client.get(f"{OLLAMA_BASE_URL}/api/tags")
             if r.status_code == 200:
                 return r.json().get("models", [])
@@ -99,8 +103,10 @@ async def list_ollama_model_details() -> list[dict]:
 
 async def is_ollama_running() -> bool:
     """Check whether the Ollama API is reachable."""
+    if (os.getenv("SPACE_ID") or os.getenv("SPACES_ID")) and "127.0.0.1" in OLLAMA_BASE_URL:
+        return False
     try:
-        async with httpx.AsyncClient(timeout=5) as client:
+        async with httpx.AsyncClient(timeout=1.0) as client:
             r = await client.get(f"{OLLAMA_BASE_URL}/api/tags")
             return r.status_code == 200
     except Exception:
