@@ -219,14 +219,16 @@ def seed_hospital_operations_data():
                     ("Emergency Department", "Emergency", "Building A - Ground Floor"),
                 ]
                 for name, dtype, loc in dept_list:
-                    dept = models.Department(
-                        facility_id=facility.id,
-                        name=name,
-                        department_type=dtype,
-                        location=loc,
-                        status="active"
-                    )
-                    session.add(dept)
+                    existing_d = session.query(models.Department).filter(models.Department.name == name).first()
+                    if not existing_d:
+                        dept = models.Department(
+                            facility_id=facility.id,
+                            name=name,
+                            department_type=dtype,
+                            location=loc,
+                            status="active"
+                        )
+                        session.add(dept)
                 session.commit()
 
             existing_beds = session.query(models.Bed).count()
@@ -246,16 +248,21 @@ def seed_hospital_operations_data():
                     if not dept_obj:
                         continue
                     for i in range(1, count + 1):
-                        status = "occupied" if i <= int(count * 0.8) else ("cleaning" if i == int(count * 0.8) + 1 else "available")
                         bed_code = f"{prefix}-{i:02d}"
-                        bed = models.Bed(
-                            facility_id=facility.id,
-                            department_id=dept_obj.id,
-                            bed_number=bed_code,
-                            ward=dept_obj.name,
-                            status=status
-                        )
-                        session.add(bed)
+                        existing_b = session.query(models.Bed).filter(
+                            models.Bed.facility_id == facility.id,
+                            models.Bed.bed_number == bed_code
+                        ).first()
+                        if not existing_b:
+                            status = "occupied" if i <= int(count * 0.8) else ("cleaning" if i == int(count * 0.8) + 1 else "available")
+                            bed = models.Bed(
+                                facility_id=facility.id,
+                                department_id=dept_obj.id,
+                                bed_number=bed_code,
+                                ward=dept_obj.name,
+                                status=status
+                            )
+                            session.add(bed)
                 session.commit()
                 logger.info("Default hospital facility, departments, and beds seeded.")
         except Exception as seed_err:
