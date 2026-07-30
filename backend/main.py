@@ -417,7 +417,13 @@ async def lifespan(app: FastAPI):
         logger.warning("Failed to backup database to Supabase: %s", e)
 
 
-app = FastAPI(title="AI Healthcare API", default_response_class=JSONResponse, lifespan=lifespan)
+try:
+    from fastapi.responses import ORJSONResponse
+    fast_json_response = ORJSONResponse
+except ImportError:
+    fast_json_response = JSONResponse
+
+app = FastAPI(title="AI Healthcare API", default_response_class=fast_json_response, lifespan=lifespan)
 
 # --- API Versioning ---
 API_V1_PREFIX = "/v1"
