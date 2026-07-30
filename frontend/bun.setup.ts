@@ -1,29 +1,32 @@
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
-
 GlobalRegistrator.register();
 
-const matchers = await import('@testing-library/jest-dom/matchers');
-const { expect, mock } = await import('bun:test');
+import '@testing-library/jest-dom';
+import { mock } from 'bun:test';
+import React from 'react';
 
-expect.extend(matchers as any);
-
-const vi = {
-  fn: (impl?: any) => mock(impl || (() => {})),
-  spyOn: (obj: any, method: string) => mock(),
-  stubEnv: (key: string, val: string) => { process.env[key] = val; },
-  clearAllMocks: () => {},
-  resetAllMocks: () => {},
-  mock: (moduleName: string, factory: () => any) => {
-    mock.module(moduleName, factory);
-  },
-};
-
-const fetchMock = vi.fn();
+const fetchMock = mock(() => Promise.resolve({ ok: true, json: () => Promise.resolve({}) }));
 (globalThis as any).fetch = fetchMock;
 (globalThis as any).fetchMock = fetchMock;
 
-(globalThis as any).vi = vi;
-(globalThis as any).jest = vi;
+(globalThis as any).vi = {
+  fn: (impl?: any) => mock(impl || (() => Promise.resolve({}))),
+  spyOn: () => mock(),
+  stubEnv: (key: string, val: string) => { process.env[key] = val; },
+  clearAllMocks: () => {},
+  resetAllMocks: () => {},
+  mock: (mod: string, factory: () => any) => mock.module(mod, factory),
+};
+(globalThis as any).jest = (globalThis as any).vi;
+
+mock.module('react-router-dom', () => ({
+  useNavigate: () => (() => {}),
+  useLocation: () => ({ pathname: '/', search: '', hash: '', state: null }),
+  useParams: () => ({}),
+  useSearchParams: () => [new URLSearchParams(), () => {}],
+  Link: ({ children, to, ...props }: any) => React.createElement('a', { href: typeof to === 'string' ? to : '#', ...props }, children),
+  NavLink: ({ children, to, ...props }: any) => React.createElement('a', { href: typeof to === 'string' ? to : '#', ...props }, children),
+}));
 
 mock.module('@/lib/i18n', () => ({
   useTranslation: () => ({
@@ -40,22 +43,22 @@ const CanvasElement = (globalThis as any).HTMLCanvasElement || (globalThis as an
 if (CanvasElement && CanvasElement.prototype) {
   Object.defineProperty(CanvasElement.prototype, 'getContext', {
     configurable: true,
-    value: vi.fn(() => ({
-      clearRect: vi.fn(),
-      fillRect: vi.fn(),
-      strokeRect: vi.fn(),
-      beginPath: vi.fn(),
-      moveTo: vi.fn(),
-      lineTo: vi.fn(),
-      stroke: vi.fn(),
-      fill: vi.fn(),
-      arc: vi.fn(),
-      closePath: vi.fn(),
-      fillText: vi.fn(),
-      measureText: vi.fn(() => ({ width: 0 })),
-      createLinearGradient: vi.fn(() => ({
-        addColorStop: vi.fn()
-      }))
+    value: mock(() => ({
+      clearRect: () => {},
+      fillRect: () => {},
+      strokeRect: () => {},
+      beginPath: () => {},
+      moveTo: () => {},
+      lineTo: () => {},
+      stroke: () => {},
+      fill: () => {},
+      arc: () => {},
+      closePath: () => {},
+      fillText: () => {},
+      measureText: () => ({ width: 0 }),
+      createLinearGradient: () => ({
+        addColorStop: () => {}
+      })
     }))
   });
 }
