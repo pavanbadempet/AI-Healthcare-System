@@ -63,6 +63,7 @@ RUN pip install --no-cache-dir --upgrade pip && \
 COPY --chown=user . $HOME/app/
 
 # Build Rust Gateway during image build phase
+ENV PYO3_PYTHON=/usr/local/bin/python
 RUN cd rust_gateway && (LIBRARY_PATH=/usr/local/lib LD_LIBRARY_PATH=/usr/local/lib cargo build --release || true)
 
 # Copy built frontend assets from Stage 1 to home app dir
