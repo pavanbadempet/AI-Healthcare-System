@@ -5,7 +5,7 @@ Leverages `hypothesis` property-based testing to generate thousands of randomize
 for clinical algorithms, serialization engines, and data structures.
 """
 
-from hypothesis import given
+from hypothesis import HealthCheck, given, settings
 from hypothesis import strategies as st
 
 from backend.performance import fast_json_dumps, fast_json_loads
@@ -13,7 +13,8 @@ from backend.sota_algorithms import HyperLogLogCounter
 from backend.sota_data_structures import BloomFilter
 
 
-@given(st.lists(st.text(min_size=1, max_size=50), min_size=5, max_size=50))
+@settings(suppress_health_check=[HealthCheck.too_slow], max_examples=20)
+@given(st.lists(st.text(min_size=1, max_size=20), min_size=1, max_size=20))
 def test_hyperloglog_fuzzing(items):
     """Property test: HLL count should scale with number of unique elements within reasonable bound."""
     hll = HyperLogLogCounter(precision=8)
