@@ -65,8 +65,9 @@ jobs:
           playwright-${{ runner.os }}-
 
     - name: Install Playwright Browsers
+      working-directory: frontend
       run: |
-        bunx playwright install chromium --with-deps
+        npx playwright install chromium --with-deps
 
 
     - name: Generate Placeholder Models
