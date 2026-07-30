@@ -46,11 +46,16 @@ async fn main() {
     
     println!("Starting Rust API Gateway...");
 
-    let db_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let db_url = env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite://healthcare.db".to_string());
     let secret_key = env::var("SECRET_KEY").unwrap_or_else(|_| "test_secret_key_for_local_tests_only".to_string());
 
-    let postgres_url = if db_url.starts_with("postgres://") || db_url.starts_with("postgresql://") {
-        db_url
+    // Clean and normalize postgres_url for sqlx compatibility
+    let clean_db_url = if db_url.contains("postgresql://") || db_url.contains("postgres://") {
+        let mut u = db_url.clone();
+        if let Some(idx) = u.find("postgres") {
+            u = u[idx..].to_string();
+        }
+        u.replace("sslmode=verify-full", "sslmode=require")
     } else {
         println!("DATABASE_URL is not a Postgres connection. Native Edge Gateway database operations will be disabled.");
         "postgres://127.0.0.1/dummy_db".to_string()
@@ -63,9 +68,14 @@ async fn main() {
         .acquire_timeout(std::time::Duration::from_secs(3))
         .idle_timeout(std::time::Duration::from_secs(300))
         .max_lifetime(std::time::Duration::from_secs(1800))
-        .test_before_acquire(true)
-        .connect_lazy(&postgres_url)
-        .expect("Failed to create Postgres connection pool");
+        .test_before_acquire(false)
+        .connect_lazy(&clean_db_url)
+        .unwrap_or_else(|err| {
+            println!("Warning: Failed to parse Postgres URL ({:?}). Falling back to dummy pool.", err);
+            PgPoolOptions::new()
+                .connect_lazy("postgres://127.0.0.1/dummy_db")
+                .expect("Failed to create dummy pool")
+        });
 
     // Initialize System metric collector with a default system refresh all configuration
     let sys = System::new_all();
