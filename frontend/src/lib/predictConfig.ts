@@ -152,6 +152,26 @@ export const PREDICT_CONFIGS: Record<string, ModelConfig> = {
           { date: "2025-07-01", type: "Echocardiogram", findings: "No major vessel blockages (0). Normal LV function.", data: { age: 63, sex: 1, cp: 3, trestbps: 145, chol: 233, fbs: 1, restecg: 0, thalach: 150, exang: 0, oldpeak: 2.3, slope: 0, ca: 0, thal: 1 } }
         ],
         data: { age: 63, sex: 1, cp: 3, trestbps: 145, chol: 233, fbs: 1, restecg: 0, thalach: 150, exang: 0, oldpeak: 2.3, slope: 0, ca: 0, thal: 1 }
+      },
+      {
+        name: "Elena R., 42F",
+        description: "Low Risk Baseline. Athletic 42-year-old female with normal ECG, optimal BP, and high max heart rate.",
+        records: [
+          { date: "2023-05-10", type: "Annual Physical", findings: "Active runner. BP 115/75, HR 62. Excellent cardiorespiratory fitness.", data: { age: 40, sex: 0, cp: 1, trestbps: 112, chol: 178, fbs: 0, restecg: 0, thalach: 175, exang: 0, oldpeak: 0.0, slope: 0, ca: 0, thal: 1 } },
+          { date: "2024-06-18", type: "Preventive Screening", findings: "Lipid panel optimal. Resting ECG normal.", data: { age: 41, sex: 0, cp: 1, trestbps: 115, chol: 180, fbs: 0, restecg: 0, thalach: 172, exang: 0, oldpeak: 0.0, slope: 0, ca: 0, thal: 1 } },
+          { date: "2025-04-12", type: "Follow-up", findings: "Asymptomatic. No cardiac risk factors present.", data: { age: 42, sex: 0, cp: 1, trestbps: 118, chol: 185, fbs: 0, restecg: 0, thalach: 170, exang: 0, oldpeak: 0.0, slope: 0, ca: 0, thal: 1 } }
+        ],
+        data: { age: 42, sex: 0, cp: 1, trestbps: 118, chol: 185, fbs: 0, restecg: 0, thalach: 170, exang: 0, oldpeak: 0.0, slope: 0, ca: 0, thal: 1 }
+      },
+      {
+        name: "David S., 58M",
+        description: "High Risk Cardiac Case. Severe typical angina, hypertension (170 mmHg), ST depression 3.2mm, and 3 major vessels involved.",
+        records: [
+          { date: "2023-08-14", type: "Cardiology Consult", findings: "Hypertensive crisis (165/100). Complains of exertional chest pressure.", data: { age: 56, sex: 1, cp: 0, trestbps: 165, chol: 275, fbs: 1, restecg: 2, thalach: 105, exang: 1, oldpeak: 2.0, slope: 1, ca: 2, thal: 3 } },
+          { date: "2024-11-20", type: "Coronary Angiogram", findings: "Triple vessel disease confirmed (3 major vessels colored). ST slope downsloping.", data: { age: 57, sex: 1, cp: 0, trestbps: 170, chol: 288, fbs: 1, restecg: 2, thalach: 98, exang: 1, oldpeak: 3.2, slope: 2, ca: 3, thal: 3 } },
+          { date: "2025-07-15", type: "Pre-op Assessment", findings: "High risk of acute myocardial infarction. Scheduled for CABG.", data: { age: 58, sex: 1, cp: 0, trestbps: 170, chol: 295, fbs: 1, restecg: 2, thalach: 95, exang: 1, oldpeak: 3.5, slope: 2, ca: 3, thal: 3 } }
+        ],
+        data: { age: 58, sex: 1, cp: 0, trestbps: 170, chol: 295, fbs: 1, restecg: 2, thalach: 95, exang: 1, oldpeak: 3.5, slope: 2, ca: 3, thal: 3 }
       }
     ]
   },
