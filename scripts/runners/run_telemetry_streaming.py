@@ -548,7 +548,6 @@ def process_batch(df, batch_id):
     except Exception as e:
         db.rollback()
         logger.error(f"Failed to process micro-batch {batch_id}: {e}")
-        raise e
     finally:
         db.close()
 
