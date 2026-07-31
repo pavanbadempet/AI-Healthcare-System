@@ -1,4 +1,3 @@
-import { describe, expect, it } from 'bun:test';
 import { SOTAUXSpeedLayerEngine } from '../sotaUxSpeedLayer';
 
 describe('SOTAUXSpeedLayerEngine', () => {

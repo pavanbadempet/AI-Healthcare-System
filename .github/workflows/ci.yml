@@ -89,7 +89,7 @@ jobs:
 
     - name: Run Frontend Unit Tests
       working-directory: frontend
-      run: bun test
+      run: bun run test
 
     - name: Run Frontend E2E Playwright Tests
       working-directory: frontend

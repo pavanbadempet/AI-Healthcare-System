@@ -1,25 +1,14 @@
 import { GlobalRegistrator } from '@happy-dom/global-registrator';
-GlobalRegistrator.register();
+
+if (typeof window === 'undefined') {
+  GlobalRegistrator.register();
+}
 
 import '@testing-library/jest-dom';
-import { mock } from 'bun:test';
+import { vi } from 'vitest';
 import React from 'react';
 
-const fetchMock = mock(() => Promise.resolve({ ok: true, json: () => Promise.resolve({}) }));
-(globalThis as any).fetch = fetchMock;
-(globalThis as any).fetchMock = fetchMock;
-
-(globalThis as any).vi = {
-  fn: (impl?: any) => mock(impl || (() => Promise.resolve({}))),
-  spyOn: () => mock(),
-  stubEnv: (key: string, val: string) => { process.env[key] = val; },
-  clearAllMocks: () => {},
-  resetAllMocks: () => {},
-  mock: (mod: string, factory: () => any) => mock.module(mod, factory),
-};
-(globalThis as any).jest = (globalThis as any).vi;
-
-mock.module('react-router-dom', () => ({
+vi.mock('react-router-dom', () => ({
   useNavigate: () => (() => {}),
   useLocation: () => ({ pathname: '/', search: '', hash: '', state: null }),
   useParams: () => ({}),
@@ -28,7 +17,7 @@ mock.module('react-router-dom', () => ({
   NavLink: ({ children, to, ...props }: any) => React.createElement('a', { href: typeof to === 'string' ? to : '#', ...props }, children),
 }));
 
-mock.module('@/lib/i18n', () => ({
+vi.mock('@/lib/i18n', () => ({
   useTranslation: () => ({
     t: (key: string) => key,
     language: 'en',
@@ -43,7 +32,7 @@ const CanvasElement = (globalThis as any).HTMLCanvasElement || (globalThis as an
 if (CanvasElement && CanvasElement.prototype) {
   Object.defineProperty(CanvasElement.prototype, 'getContext', {
     configurable: true,
-    value: mock(() => ({
+    value: () => ({
       clearRect: () => {},
       fillRect: () => {},
       strokeRect: () => {},
@@ -59,6 +48,6 @@ if (CanvasElement && CanvasElement.prototype) {
       createLinearGradient: () => ({
         addColorStop: () => {}
       })
-    }))
+    })
   });
 }
