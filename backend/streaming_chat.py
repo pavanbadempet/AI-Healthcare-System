@@ -129,6 +129,7 @@ async def stream_chat(
                 last_activity = time.time()
 
                 from langchain_core.messages import AIMessage, HumanMessage
+
                 from .prompt_registry import get_prompt
 
                 profile = f"Name: {current_user.full_name or 'N/A'}, Age: {current_user.dob or 'N/A'}, " \
@@ -148,8 +149,8 @@ async def stream_chat(
                 if not is_greeting:
                     yield f"data: {json.dumps({'status': 'tool_call', 'tool': 'Supervisor Routing', 'details': 'Determining context relevance...'})}\n\n"
 
-                    from .agent import analyst_node, research_node, supervisor_node
                     from . import rag
+                    from .agent import analyst_node, research_node, supervisor_node
 
                     try:
                         memories = rag.advanced_search_similar_records(str(current_user.id), question, n_results=5)
