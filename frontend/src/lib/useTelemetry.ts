@@ -103,7 +103,7 @@ export function useTelemetry() {
     function startPolling() {
       if (pollingInterval.current) return;
       fetchSnapshot();
-      pollingInterval.current = setInterval(fetchSnapshot, 4000);
+      pollingInterval.current = setInterval(fetchSnapshot, 8000);
     }
 
     function stopPolling() {
@@ -127,6 +127,11 @@ export function useTelemetry() {
       const wsUrl = getWebSocketUrl("/v1/telemetry/stream") + (token ? `?token=${token}` : "");
 
       try {
+        if (wsRef.current) {
+          try { wsRef.current.close(); } catch {}
+          wsRef.current = null;
+        }
+
         const ws = new WebSocket(wsUrl);
         wsRef.current = ws;
 
@@ -147,21 +152,22 @@ export function useTelemetry() {
 
         ws.onerror = () => {
           setStatus("error");
-          startPolling();
         };
 
         ws.onclose = () => {
           wsRef.current = null;
-          startPolling(); // Fallback immediately if connection is closed
 
           if (!shouldReconnect) {
+            stopPolling();
             return;
           }
 
-          // Fallback to HTTP polling if we reached the limit
           if (reconnectAttempt.current >= MAX_RECONNECT_ATTEMPTS) {
+            startPolling();
             return;
           }
+
+          startPolling();
 
           const delay = Math.min(
             INITIAL_RECONNECT_DELAY * Math.pow(2, reconnectAttempt.current),
@@ -170,7 +176,9 @@ export function useTelemetry() {
           reconnectAttempt.current += 1;
 
           reconnectTimer.current = setTimeout(() => {
-            connect();
+            if (shouldReconnect) {
+              connect();
+            }
           }, delay);
         };
       } catch {
