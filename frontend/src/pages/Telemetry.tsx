@@ -120,7 +120,7 @@ export default function TelemetryPage() {
     }
 
     fetchGatewayMetrics();
-    const interval = setInterval(fetchGatewayMetrics, 5000);
+    const interval = setInterval(fetchGatewayMetrics, 12000);
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
 

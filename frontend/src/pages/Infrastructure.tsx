@@ -87,7 +87,7 @@ export default function InfrastructurePage() {
     function startPolling() {
       if (pollingInterval) return;
       void fetchFallbackMetrics();
-      pollingInterval = setInterval(fetchFallbackMetrics, 5000);
+      pollingInterval = setInterval(fetchFallbackMetrics, 15000);
     }
 
     function stopPolling() {
