@@ -41,6 +41,8 @@ jobs:
 
     - name: Build React Frontend
       working-directory: frontend
+      env:
+        VITE_PUBLIC_API_URL: "http://127.0.0.1:8000"
       run: bun run build
 
     - name: Check agent adapter sync
