@@ -18,7 +18,7 @@ const getApiBase = () => {
   if (envVal) return `${envVal.replace(/\/$/, '')}/v1`;
   if (import.meta.env.DEV) return 'http://127.0.0.1:8000/v1';
   if (typeof window !== 'undefined') {
-    if (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost') {
+    if (window.location.port === '3000' && (window.location.hostname === '127.0.0.1' || window.location.hostname === 'localhost')) {
       return `${window.location.protocol}//${window.location.hostname}:8000/v1`;
     }
     return `${window.location.origin}/v1`;
