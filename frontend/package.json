@@ -30,7 +30,7 @@
   "scripts": {
     "dev": "bun --bun vite --host 127.0.0.1 --port 3000",
     "build": "bun --bun tsc && bun --bun vite build",
-    "start": "bun --bun vite preview",
+    "start": "bun --bun vite preview --host 127.0.0.1 --port 3000",
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "bun test --watch",
