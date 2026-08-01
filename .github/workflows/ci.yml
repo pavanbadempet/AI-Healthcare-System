@@ -85,7 +85,7 @@ jobs:
 
     - name: Run Backend Tests (Unit, Integration)
       run: |
-        pytest tests/ --ignore=tests/e2e --cov=backend --cov-report=term-missing --run-slow
+        pytest tests/ --ignore=tests/e2e -n auto --cov=backend --cov-report=term-missing --run-slow
 
     - name: Run Frontend Unit Tests
       working-directory: frontend
