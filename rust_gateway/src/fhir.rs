@@ -9,10 +9,12 @@ pub struct FHIRValidationResponse {
     pub errors: Vec<String>,
 }
 
+#[allow(dead_code)]
 pub fn router() -> Router<crate::AppState> {
     Router::new().route("/validate", post(validate_handler))
 }
 
+#[allow(dead_code)]
 async fn validate_handler(
     Json(payload): Json<Value>,
 ) -> (axum::http::StatusCode, Json<FHIRValidationResponse>) {
