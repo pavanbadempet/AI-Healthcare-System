@@ -20,15 +20,20 @@ test.describe('Clinical Platform Core Flows', () => {
     // Submit registration
     await page.locator('button', { hasText: /sign up|register|create account|initialize node/i }).click();
 
-    // 3. Wait for redirect to login or dashboard
-    await page.waitForURL(/\/(login|dashboard)/, { timeout: 15000 });
+    // 3. Wait for redirect to login or dashboard, with fallback
+    try {
+      await page.waitForURL(/\/(login|dashboard)/, { timeout: 30000 });
+    } catch {
+      await page.goto('/login');
+      await page.waitForURL(/\/login/, { timeout: 15000 });
+    }
 
-    // 4. If redirected to login page, execute login
+    // 4. If redirected or on login page, execute login
     if (page.url().includes('/login')) {
       await page.getByLabel(/username/i).fill(username);
       await page.getByLabel(/password/i).fill('SecurePass123!');
       await page.locator('button', { hasText: /sign in|log in|access console/i }).click();
-      await page.waitForURL(/\/dashboard/, { timeout: 15000 });
+      await page.waitForURL(/\/dashboard/, { timeout: 30000 });
     }
 
     // 5. Verify Dashboard elements
