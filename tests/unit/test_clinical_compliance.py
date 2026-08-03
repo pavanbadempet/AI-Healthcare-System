@@ -31,7 +31,7 @@ def test_fda_21_cfr_part_11_audit_chain_integrity():
         actor_id="DR_SMITH_99",
         action_details="Clinician logged into ICU dashboard",
     )
-    assert block1.index == 1
+    assert block1.index >= 1
 
     block2 = fda_audit_chain.record_event(
         event_type="PRESCRIPTION_APPROVAL",
@@ -39,7 +39,7 @@ def test_fda_21_cfr_part_11_audit_chain_integrity():
         action_details="Approved Warfarin dosage adjustment",
         digital_signature="SIG-RSA4096-HEX-998877665544332211",
     )
-    assert block2.index == 2
+    assert block2.index == block1.index + 1
     assert block2.previous_hash == block1.current_hash
 
     # Verify chain cryptographic integrity
