@@ -122,8 +122,10 @@ class FDAAuditChain:
         new_index = prev_block.index + 1
         ts = time.time()
 
-        raw_payload = f"{new_index}:{event_type}:{actor_id}:{action_details}:{prev_block.current_hash}:{ts}"
-        curr_hash = hashlib.sha256(raw_payload.encode("utf-8")).hexdigest()
+        from backend.sota_rust_engine_layer import sota_rust_engine_layer_engine
+        curr_hash = sota_rust_engine_layer_engine.generate_audit_hash_rust(
+            new_index, event_type, actor_id, action_details, prev_block.current_hash
+        )
 
         block = AuditLogBlock(
             index=new_index,
@@ -133,6 +135,7 @@ class FDAAuditChain:
             previous_hash=prev_block.current_hash,
             current_hash=curr_hash,
             timestamp=ts,
+
             digital_signature=digital_signature,
         )
         self._chain.append(block)
