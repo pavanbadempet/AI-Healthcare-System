@@ -50,7 +50,7 @@ class SparkConnectManager:
     def __init__(self, config: Optional[SparkConnectConfig] = None) -> None:
         self.config = config or SparkConnectConfig()
 
-    def get_session((self) -> Any:
+    def get_session(self) -> Any:
         """Create or return a Spark 4.x Connect remote session."""
         if not HAS_PYSPARK:
             return None
