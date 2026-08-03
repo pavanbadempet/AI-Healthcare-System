@@ -1162,25 +1162,35 @@ class AdaptiveDataPlatformRouter:
             res["executed_engine"] = "DuckDB (Embedded Edge Scale)"
             return res
         else:
-            # Distributed PySpark Execution
+            # Distributed Declarative PySpark Execution via MedFlow
             if spark_session is None:
                 spark_session = create_spark_session()
-            df_bronze = spark_session.read.format("delta").load(bronze_path)
-            df_silver = df_bronze.filter("heart_rate BETWEEN 30 AND 220 AND spo2 BETWEEN 50 AND 100")
-            df_silver.write.format("delta").mode("append").save(silver_path)
 
-            df_gold = df_silver.groupBy("patient_id").agg(
+            from backend.data_platform.lakeflow import MedFlowPipeline
+
+            pipe = MedFlowPipeline("medallion_lakehouse_pipeline", spark=spark_session)
+            pipe.add_source("bronze_source", lambda: spark_session.read.format("delta").load(bronze_path))
+            pipe.add_transform("silver_filter", lambda df: df.filter("heart_rate BETWEEN 30 AND 220 AND spo2 BETWEEN 50 AND 100"))
+            pipe.add_transform("silver_write", lambda df: (df.write.format("delta").mode("append").save(silver_path), df)[1])
+            pipe.add_transform("gold_aggregate", lambda df: df.groupBy("patient_id").agg(
                 avg("heart_rate").alias("avg_heart_rate"),
                 avg("spo2").alias("avg_spo2"),
                 count("*").alias("vital_sample_count"),
                 spark_max("timestamp").alias("last_updated")
-            )
-            df_gold.write.format("delta").mode("overwrite").save(gold_path)
+            ))
+
+            def _gold_sink(df):
+                df.write.format("delta").mode("overwrite").save(gold_path)
+                return df.count()
+
+            pipe.add_sink("gold_write_sink", _gold_sink)
+            run_result = pipe.execute()
 
             return {
-                "status": "success",
-                "gold_records": df_gold.count(),
-                "executed_engine": "Apache PySpark + Delta Lake (Distributed Large Scale)"
+                "status": "success" if run_result.status == "COMPLETED" else "failed",
+                "gold_records": run_result.total_records_processed,
+                "executed_engine": "MedFlow Declarative PySpark + Delta Lake (Distributed Large Scale)",
+                "pipeline_run": run_result.model_dump(),
             }
 
 
