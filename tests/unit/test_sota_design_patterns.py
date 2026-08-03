@@ -1,60 +1,51 @@
 """
-Unit tests for Advanced SOTA Behavioral Design Patterns (backend/sota_patterns.py).
+Unit tests for SOTA Software Design Patterns (Circuit Breaker, Outbox, Saga Orchestrator).
 """
 
-import asyncio
-
 import pytest
+from backend.sota_design_patterns import CircuitBreaker, CircuitState, outbox_engine, SagaOrchestrator, SagaStep
 
-from backend.sota_patterns import BulkheadIsolation, CircuitBreaker, CircuitState, CQRSReadCache
+def test_circuit_breaker_resilience():
+    cb = CircuitBreaker(failure_threshold=2, recovery_timeout_sec=1.0)
+    
+    def failing_func():
+        raise ValueError("Service unavailable")
 
-
-def test_circuit_breaker_normal_operation():
-    cb = CircuitBreaker(failure_threshold=3)
-    res = cb.call(lambda x: x * 2, 5)
-    assert res == 10
+    with pytest.raises(ValueError):
+        cb.execute(failing_func)
     assert cb.state == CircuitState.CLOSED
 
-
-def test_circuit_breaker_tripping():
-    cb = CircuitBreaker(failure_threshold=2, recovery_timeout_seconds=60.0)
-
-    def failing_func():
-        raise ValueError("API Error")
-
     with pytest.raises(ValueError):
-        cb.call(failing_func)
-
-    with pytest.raises(ValueError):
-        cb.call(failing_func)
-
+        cb.execute(failing_func)
     assert cb.state == CircuitState.OPEN
 
-    with pytest.raises(RuntimeError) as exc_info:
-        cb.call(failing_func)
-    assert "CircuitBreaker is OPEN" in str(exc_info.value)
+    with pytest.raises(RuntimeError):
+        cb.execute(failing_func)
 
+def test_transactional_outbox_pattern():
+    msg = outbox_engine.stage_event("PATIENT_ADMISSION", "P-99", {"ward": "Cardiology"})
+    assert msg.processed is False
+    count = outbox_engine.dispatch_pending_events()
+    assert count >= 1
+    assert msg.processed is True
 
-@pytest.mark.asyncio
-async def test_bulkhead_isolation():
-    bulkhead = BulkheadIsolation(max_concurrent=2)
+def test_saga_orchestrator_successful_flow():
+    state = {"step1": False, "step2": False}
+    saga = SagaOrchestrator()
+    saga.add_step(SagaStep(lambda: state.update({"step1": True}) or True, lambda: state.update({"step1": False}), "Step1"))
+    saga.add_step(SagaStep(lambda: state.update({"step2": True}) or True, lambda: state.update({"step2": False}), "Step2"))
+    
+    res = saga.execute_saga()
+    assert res is True
+    assert state["step1"] is True
+    assert state["step2"] is True
 
-    async def dummy_work(val):
-        await asyncio.sleep(0.01)
-        return val * 10
+def test_saga_orchestrator_compensation_rollback():
+    rollback_history = []
+    saga = SagaOrchestrator()
+    saga.add_step(SagaStep(lambda: True, lambda: rollback_history.append("RollbackStep1"), "Step1"))
+    saga.add_step(SagaStep(lambda: False, lambda: rollback_history.append("RollbackStep2"), "Step2 Fails"))
 
-    res = await bulkhead.execute(dummy_work, 4)
-    assert res == 40
-
-
-def test_cqrs_read_cache():
-    cache = CQRSReadCache()
-    cache.update_read_model("patient_123", {"name": "Alice", "status": "admitted"})
-
-    record = cache.query_read_model("patient_123")
-    assert record["name"] == "Alice"
-    assert record["status"] == "admitted"
-    assert "_updated_at" in record
-
-    cache.invalidate("patient_123")
-    assert cache.query_read_model("patient_123") is None
+    res = saga.execute_saga()
+    assert res is False
+    assert "RollbackStep1" in rollback_history
