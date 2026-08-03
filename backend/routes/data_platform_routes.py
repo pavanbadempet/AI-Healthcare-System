@@ -279,3 +279,42 @@ def get_agent_data_lineage() -> Dict[str, Any]:
     from backend.agents.agent_governance_engine import agent_governance_engine
     chain = agent_governance_engine.get_lineage_chain()
     return {"total_nodes": len(chain), "lineage_graph": chain}
+
+
+@router.post("/agents/mesh/consensus-debate")
+def run_agent_consensus_debate(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Run Multi-Agent Consensus Debate Protocol across peer specialist agents."""
+    from backend.agents.ultimate_agent_mesh import ultimate_agent_mesh
+    case_id = payload.get("case_id", "CASE-DEBATE-01")
+    case_data = payload.get("case_data", {"amount": 12000, "cpt_codes": ["CPT-99211"], "qsofa_score": 3})
+    agents = payload.get("participating_agents", ["AGENT-FRAUD-DETECTION", "AGENT-ICU-SEPSIS", "AGENT-PHARM-SAFETY"])
+    res = ultimate_agent_mesh.debate_protocol.run_debate(case_id, case_data, agents)
+    return res.model_dump()
+
+
+@router.post("/agents/mesh/execute-react-goal")
+def execute_react_reflexion_goal(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Execute ReAct (Reasoning + Acting) loop with Reflexion self-correction."""
+    from backend.agents.ultimate_agent_mesh import ultimate_agent_mesh
+    goal = payload.get("goal", "Analyze patient FHIR bundle and verify medication safety")
+    plan = payload.get("plan", [
+        {"tool_name": "query_fhir", "tool_kwargs": {"patient_id": "P-100"}},
+        {"tool_name": "redact_phi", "tool_kwargs": {"text": "Patient John Doe EHR"}},
+    ])
+    results = ultimate_agent_mesh.react_loop.execute_react_cycle(goal, plan)
+    return {"goal": goal, "total_steps": len(results), "step_results": [r.model_dump() for r in results]}
+
+
+@router.post("/agents/mesh/dag-orchestrate")
+def orchestrate_dag_plan(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Build and execute hierarchical DAG (Directed Acyclic Graph) task plan."""
+    from backend.agents.ultimate_agent_mesh import ultimate_agent_mesh
+    goal = payload.get("goal", "Comprehensive Emergency Admission Workflow")
+    tasks = payload.get("tasks", [
+        {"task_id": "T1", "description": "Triage Patient Risk", "capability": "TRIAGE", "depends_on": []},
+        {"task_id": "T2", "description": "Verify Pharmacy Dosage", "capability": "PHARMACY", "depends_on": ["T1"]},
+        {"task_id": "T3", "description": "Prior Auth Check", "capability": "PRIOR_AUTH", "depends_on": ["T1"]},
+    ])
+    plan = ultimate_agent_mesh.dag_orchestrator.build_dag_plan(goal, tasks)
+    res = ultimate_agent_mesh.dag_orchestrator.execute_dag_plan(plan)
+    return res.model_dump()
