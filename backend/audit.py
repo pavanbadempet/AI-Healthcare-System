@@ -58,7 +58,9 @@ def _is_sensitive_key(key: str) -> bool:
 
 
 def _sanitize_text(value: str) -> str:
-    sanitized = _SECRET_ASSIGNMENT_RE.sub(r"\1=[redacted-secret]", value)
+    from .sota_rust_engine_layer import sota_rust_engine_layer_engine
+    sanitized = sota_rust_engine_layer_engine.redact_phi_text_rust(value)
+    sanitized = _SECRET_ASSIGNMENT_RE.sub(r"\1=[redacted-secret]", sanitized)
     sanitized = _EMAIL_RE.sub("[redacted-email]", sanitized)
     sanitized = _DOB_RE.sub("[redacted-date]", sanitized)
     sanitized = _PHONE_RE.sub("[redacted-phone]", sanitized)
@@ -66,6 +68,7 @@ def _sanitize_text(value: str) -> str:
     if len(sanitized) > MAX_AUDIT_DETAIL_LENGTH:
         sanitized = sanitized[:MAX_AUDIT_DETAIL_LENGTH] + "...[truncated]"
     return sanitized
+
 
 
 def _sanitize_value(value: Any) -> Any:
