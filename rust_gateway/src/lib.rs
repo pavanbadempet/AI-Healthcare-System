@@ -13,6 +13,8 @@ mod phi_redactor;
 mod ecg_dsp;
 mod dicom_slicer;
 mod auth_crypto;
+mod billing_audit;
+mod federated_aggregator;
 
 // Define stub AppState to satisfy fhir module router bindings when compiled as FFI lib
 #[derive(Clone)]
@@ -71,6 +73,11 @@ pub extern "C" fn attest_enclave_ffi(
 // =====================================================================
 
 #[pyfunction]
+fn aggregate_fedavg_py(gradients: Vec<Vec<f64>>, weights: Vec<f64>) -> PyResult<Vec<f64>> {
+    Ok(federated_aggregator::aggregate_fedavg_gradients(&gradients, &weights))
+}
+
+#[pyfunction]
 fn hash_password_py(password: &str) -> PyResult<String> {
     auth_crypto::hash_password_rust(password).map_err(|e| pyo3::exceptions::PyValueError::new_err(e))
 }
@@ -106,6 +113,7 @@ fn attest_enclave_py(model_name: &str, model_bytes: Vec<u8>) -> PyResult<bool> {
 
 #[pymodule]
 fn rust_gateway_ffi(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(aggregate_fedavg_py, m)?)?;
     m.add_function(wrap_pyfunction!(hash_password_py, m)?)?;
     m.add_function(wrap_pyfunction!(verify_password_py, m)?)?;
     m.add_function(wrap_pyfunction!(redact_phi_py, m)?)?;

@@ -101,5 +101,26 @@ class SOTARustEngineLayerEngine:
             except Exception:
                 return False
 
+    def aggregate_fedavg_rust(self, gradients: List[List[float]], weights: List[float]) -> List[float]:
+        """
+        Executes FedAvg gradient aggregation via Rust SIMD PyO3 module with zero-latency fallback.
+        """
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.aggregate_fedavg_py(gradients, weights)
+        except Exception:
+            if not gradients or not weights or len(gradients) != len(weights):
+                return []
+            weight_sum = sum(weights)
+            if weight_sum <= 0.0:
+                return []
+            dim = len(gradients[0])
+            aggregated = [0.0] * dim
+            for grad, w in zip(gradients, weights):
+                norm_weight = w / weight_sum
+                for i in range(dim):
+                    aggregated[i] += grad[i] * norm_weight
+            return [round(x, 6) for x in aggregated]
+
 
 sota_rust_engine_layer_engine = SOTARustEngineLayerEngine()

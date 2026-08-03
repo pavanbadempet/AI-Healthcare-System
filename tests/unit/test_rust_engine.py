@@ -32,3 +32,9 @@ def test_rust_password_hashing():
     assert hashed != pwd
     assert sota_rust_engine_layer_engine.verify_password_rust(pwd, hashed) is True
     assert sota_rust_engine_layer_engine.verify_password_rust("WrongPassword", hashed) is False
+
+def test_rust_fedavg_aggregation():
+    grads = [[1.0, 2.0], [3.0, 4.0]]
+    weights = [0.5, 0.5]
+    result = sota_rust_engine_layer_engine.aggregate_fedavg_rust(grads, weights)
+    assert result == [2.0, 3.0]

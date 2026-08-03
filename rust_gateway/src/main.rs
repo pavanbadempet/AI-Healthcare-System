@@ -33,6 +33,8 @@ mod phi_redactor;
 mod ecg_dsp;
 mod dicom_slicer;
 mod auth_crypto;
+mod billing_audit;
+mod federated_aggregator;
 
 #[derive(Clone)]
 pub struct AppState {
