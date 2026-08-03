@@ -1097,8 +1097,11 @@ def create_spark_session() -> SparkSession:
         .config("spark.sql.adaptive.enabled", "true") \
         .config("spark.sql.adaptive.coalescePartitions.enabled", "true") \
         .config("spark.sql.adaptive.skewJoin.enabled", "true") \
-        .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer") \
+        .config("spark.sql.ansi.enabled", "true") \
+        .config("spark.sql.execution.pythonUDF.arrow.enabled", "true") \
         .config("spark.sql.execution.arrow.pyspark.enabled", "true") \
+        .config("spark.sql.json.enableVariantType", "true") \
+        .config("spark.serializer", "org.apache.spark.serializer.KryoSerializer") \
         .config("spark.sql.inMemoryColumnarStorage.compressed", "true") \
         .config("spark.sql.inMemoryColumnarStorage.columnBatchSize", "10000") \
         .config("spark.sql.autoBroadcastJoinThreshold", "10MB") \
