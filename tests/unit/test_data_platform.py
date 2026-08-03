@@ -1,9 +1,9 @@
 """
-Unit tests for the Unified Data + AI Platform (Databricks-style):
+Unit tests for the Unified Clinical Data + AI Platform:
 - Open Table Format (ACID, time-travel, MERGE)
-- Unity Data Catalog & Governance
+- Clinical Data Catalog & Governance
 - Lakehouse SQL Engine
-- Lakeflow ETL Pipeline Orchestrator
+- MedFlow ETL Pipeline Orchestrator
 - Agentic BI Engine
 - Data & AI Apps Runtime
 """
@@ -12,11 +12,11 @@ from backend.data_platform.open_table_format import (
     OpenTableFormatEngine, TableSchema,
 )
 from backend.data_platform.data_catalog import (
-    UnityDataCatalog, CatalogAsset, AssetType, DataClassification,
+    ClinicalDataCatalog, CatalogAsset, AssetType, DataClassification,
     ColumnMetadata, AccessPolicy,
 )
 from backend.data_platform.lakehouse_sql import LakehouseSQLEngine
-from backend.data_platform.lakeflow import LakeflowOrchestrator
+from backend.data_platform.lakeflow import MedFlowOrchestrator
 from backend.data_platform.agentic_bi import AgenticBIEngine
 from backend.data_platform.data_apps import DataAIAppsRuntime, AppStatus
 
@@ -72,10 +72,10 @@ def test_open_table_delete_and_history():
     assert len(tbl.history()) == 2
 
 
-# ── Unity Data Catalog ─────────────────────────────────────────────
+# ── Clinical Data Catalog ──────────────────────────────────────────
 
-def test_unity_catalog_register_and_search():
-    catalog = UnityDataCatalog()
+def test_clinical_catalog_register_and_search():
+    catalog = ClinicalDataCatalog()
     asset = CatalogAsset(
         catalog="healthcare", schema_name="clinical", name="vitals",
         asset_type=AssetType.TABLE, description="Patient vital signs",
@@ -94,8 +94,8 @@ def test_unity_catalog_register_and_search():
     assert results[0].fully_qualified_name == "healthcare.clinical.vitals"
 
 
-def test_unity_catalog_access_policies():
-    catalog = UnityDataCatalog()
+def test_clinical_catalog_access_policies():
+    catalog = ClinicalDataCatalog()
     asset = CatalogAsset(
         catalog="healthcare", schema_name="clinical", name="labs",
         asset_type=AssetType.TABLE,
@@ -117,7 +117,6 @@ def test_unity_catalog_access_policies():
 
 def test_lakehouse_sql_select_and_where():
     from backend.data_platform.open_table_format import open_table_engine, TableSchema as TS
-    # Create a table in the global engine for SQL to query
     schema = TS(columns={"id": "str", "dept": "str", "score": "int"})
     if "sql_test" not in open_table_engine.list_tables():
         tbl = open_table_engine.create_table("sql_test", schema)
@@ -135,10 +134,10 @@ def test_lakehouse_sql_select_and_where():
     assert count_res.rows[0]["count"] == 3
 
 
-# ── Lakeflow Pipeline ─────────────────────────────────────────────
+# ── MedFlow Pipeline ─────────────────────────────────────────────
 
-def test_lakeflow_pipeline_end_to_end():
-    orch = LakeflowOrchestrator()
+def test_medflow_pipeline_end_to_end():
+    orch = MedFlowOrchestrator()
     pipe = orch.create_pipeline("vitals_etl")
     sink_data: list = []
 

@@ -1,5 +1,5 @@
 """
-Lakehouse Open Table Format — Delta-Lake-style ACID Transactional Clinical Tables.
+Open Table Format — ACID Transactional Clinical Tables.
 
 Provides:
 - Versioned, append-only transaction log (write-ahead log)
@@ -35,7 +35,7 @@ class TransactionLogEntry(BaseModel):
 
 class LakehouseTable:
     """
-    A single ACID-compliant lakehouse table with Delta-style transaction log.
+    A single ACID-compliant lakehouse table with write-ahead transaction log.
 
     Supports time-travel reads, schema enforcement, and MERGE/UPSERT semantics.
     """
@@ -122,7 +122,7 @@ class LakehouseTable:
 class OpenTableFormatEngine:
     """
     Manages multiple lakehouse tables with a unified namespace.
-    Delta Lake (open-source) / Apache Iceberg compatible.
+    Standard open specification compatible.
     """
 
     def __init__(self) -> None:

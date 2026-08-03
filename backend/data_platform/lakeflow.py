@@ -156,8 +156,3 @@ class MedFlowOrchestrator:
 
 
 medflow_orchestrator = MedFlowOrchestrator()
-
-# Backward-compatible aliases
-LakeflowPipeline = MedFlowPipeline
-LakeflowOrchestrator = MedFlowOrchestrator
-lakeflow_orchestrator = medflow_orchestrator

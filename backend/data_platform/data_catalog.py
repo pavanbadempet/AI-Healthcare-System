@@ -1,5 +1,5 @@
 """
-Unity-Style Data Catalog & Governance — Clinical Data Discovery & Access Control.
+Clinical Data Catalog & Governance — Data Discovery & Access Control.
 
 Provides:
 - Hierarchical namespace: Catalog → Schema → Table/Model/Function
@@ -75,9 +75,9 @@ class AccessPolicy(BaseModel):
     grant_type: str = "SELECT"
 
 
-class UnityDataCatalog:
+class ClinicalDataCatalog:
     """
-    Unity Catalog-style metadata store (Apache-licensed open standard).
+    Enterprise-grade Metadata Catalog Store.
 
     Three-level namespace (catalog.schema.table) with column-level
     governance, data classification, and search.
@@ -145,4 +145,4 @@ class UnityDataCatalog:
         return len(self._assets)
 
 
-unity_data_catalog = UnityDataCatalog()
+clinical_data_catalog = ClinicalDataCatalog()
