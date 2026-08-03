@@ -148,11 +148,14 @@ class FDAAuditChain:
             prev = self._chain[i - 1]
             if curr.previous_hash != prev.current_hash:
                 return False
-            raw = f"{curr.index}:{curr.event_type}:{curr.actor_id}:{curr.action_details}:{curr.previous_hash}:{curr.timestamp}"
-            recomputed = hashlib.sha256(raw.encode("utf-8")).hexdigest()
+            from backend.sota_rust_engine_layer import sota_rust_engine_layer_engine
+            recomputed = sota_rust_engine_layer_engine.generate_audit_hash_rust(
+                curr.index, curr.event_type, curr.actor_id, curr.action_details, curr.previous_hash
+            )
             if curr.current_hash != recomputed:
                 return False
         return True
+
 
     @property
     def total_events(self) -> int:
