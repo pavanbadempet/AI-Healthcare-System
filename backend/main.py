@@ -472,7 +472,7 @@ app.include_router(interoperability.router, prefix=API_V1_PREFIX)
 app.include_router(payments.router, prefix=API_V1_PREFIX)
 app.include_router(telemetry.router, prefix=f"{API_V1_PREFIX}/telemetry", tags=["Telemetry"])
 app.include_router(telemetry.router, prefix="/telemetry", tags=["Telemetry"])
-from . import appointments, dicomweb, ollama_routes
+from . import appointments, dicomweb, ollama_routes, abdm_sandbox
 
 app.include_router(appointments.router, prefix=API_V1_PREFIX, tags=["Appointments"])
 app.include_router(dicomweb.router, prefix=API_V1_PREFIX)
@@ -485,6 +485,7 @@ app.include_router(clinical_intelligence.router, prefix=API_V1_PREFIX)
 app.include_router(consent_gate.router, prefix=API_V1_PREFIX)
 app.include_router(i18n_audio.router, prefix=API_V1_PREFIX)
 app.include_router(fhir_compression.router, prefix=API_V1_PREFIX)
+app.include_router(abdm_sandbox.router, prefix=API_V1_PREFIX, tags=["ABDM Sandbox"])
 
 @app.get("/")
 def root():
