@@ -64,5 +64,17 @@ class SOTARustEngineLayerEngine:
             gender_factor = 1.012 if is_female else 1.0
             return 142.0 * min_part * max_part * (0.9938 ** age) * gender_factor
 
+    def redact_phi_text_rust(self, text: str) -> str:
+        """
+        Redacts SSNs and Emails via Rust PyO3 regex engine with instant Python fallback.
+        """
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.redact_phi_py(text)
+        except Exception:
+            import re
+            text_ssn = re.sub(r"\b\d{3}-\d{2}-\d{4}\b", "[REDACTED-SSN]", text)
+            return re.sub(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b", "[REDACTED-EMAIL]", text_ssn)
+
 
 sota_rust_engine_layer_engine = SOTARustEngineLayerEngine()

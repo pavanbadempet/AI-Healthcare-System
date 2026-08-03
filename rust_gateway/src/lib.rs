@@ -9,6 +9,8 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 mod fhir;
 mod tee_enclave;
 mod clinical_calculator;
+mod phi_redactor;
+mod ecg_dsp;
 
 // Define stub AppState to satisfy fhir module router bindings when compiled as FFI lib
 #[derive(Clone)]
@@ -67,6 +69,11 @@ pub extern "C" fn attest_enclave_ffi(
 // =====================================================================
 
 #[pyfunction]
+fn redact_phi_py(text: &str) -> PyResult<String> {
+    Ok(phi_redactor::redact_phi_text(text))
+}
+
+#[pyfunction]
 fn calculate_egfr_py(serum_creatinine: f64, age: f64, is_female: bool) -> PyResult<f64> {
     Ok(clinical_calculator::calculate_egfr_ckd_epi(serum_creatinine, age, is_female))
 }
@@ -87,6 +94,7 @@ fn attest_enclave_py(model_name: &str, model_bytes: Vec<u8>) -> PyResult<bool> {
 
 #[pymodule]
 fn rust_gateway_ffi(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(redact_phi_py, m)?)?;
     m.add_function(wrap_pyfunction!(calculate_egfr_py, m)?)?;
     m.add_function(wrap_pyfunction!(validate_fhir_patient_py, m)?)?;
     m.add_function(wrap_pyfunction!(attest_enclave_py, m)?)?;

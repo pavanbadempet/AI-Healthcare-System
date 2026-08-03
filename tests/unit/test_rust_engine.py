@@ -17,3 +17,11 @@ def test_rust_engine_egfr_calculation():
     egfr = sota_rust_engine_layer_engine.compute_rust_egfr(0.9, 45, is_female=True)
     assert egfr > 80.0
     assert egfr < 120.0
+
+def test_rust_phi_redaction():
+    text = "Patient SSN is 123-45-6789 and contact is john.doe@hospital.org"
+    redacted = sota_rust_engine_layer_engine.redact_phi_text_rust(text)
+    assert "123-45-6789" not in redacted
+    assert "john.doe@hospital.org" not in redacted
+    assert "[REDACTED-SSN]" in redacted
+    assert "[REDACTED-EMAIL]" in redacted
