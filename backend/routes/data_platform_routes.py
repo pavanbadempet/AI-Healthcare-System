@@ -252,3 +252,30 @@ def evaluate_rpm_adherence(rpm_telemetry: Dict[str, Any]) -> Dict[str, Any]:
     from backend.agents.clinical_research_rpm_agents import agent_rpm_adherence
     res = agent_rpm_adherence.evaluate_rpm(rpm_telemetry)
     return res.model_dump()
+
+
+@router.post("/agents/governed-execute")
+def execute_governed_agent(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Execute agent action under full FDA audit logging, lineage tracking, & auto-resolution."""
+    from backend.agents.agent_governance_engine import agent_governance_engine
+    from backend.agents.hospital_operations_agents import agent_sepsis_deterioration
+    
+    agent_id = payload.get("agent_id", "AGENT-ICU-SEPSIS")
+    action_name = payload.get("action_name", "evaluate_sepsis_risk")
+    input_data = payload.get("input_data", {"respiratory_rate": 25, "systolic_bp": 90, "gcs_score": 13})
+    
+    res = agent_governance_engine.execute_governed_action(
+        agent_id=agent_id,
+        action_name=action_name,
+        input_data=input_data,
+        agent_func=lambda data: agent_sepsis_deterioration.evaluate_sepsis_risk(data).model_dump(),
+    )
+    return res.model_dump()
+
+
+@router.get("/agents/lineage")
+def get_agent_data_lineage() -> Dict[str, Any]:
+    """Retrieve full agent data lineage provenance graph."""
+    from backend.agents.agent_governance_engine import agent_governance_engine
+    chain = agent_governance_engine.get_lineage_chain()
+    return {"total_nodes": len(chain), "lineage_graph": chain}
