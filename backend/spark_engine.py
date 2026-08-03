@@ -51,24 +51,28 @@ class SparkConnectManager:
         self.config = config or SparkConnectConfig()
 
     def get_session(self) -> Any:
-        """Create or return a Spark 4.x Connect remote session."""
+        """Create or return a Spark 4.x Connect remote session with zero-config fallback."""
         if not HAS_PYSPARK:
             return None
 
-        builder = SparkSession.builder.appName(self.config.app_name)
+        # Only attempt remote connect if explicitly enabled via environment variable
+        connect_uri = os.getenv("SPARK_CONNECT_MODE_URL")
 
-        # Apply Spark 4.x Connect URI if specified
-        connect_uri = os.getenv("SPARK_CONNECT_MODE_URL", self.config.connection_string)
-        if connect_uri:
-            builder = builder.remote(connect_uri)
+        try:
+            builder = SparkSession.builder.appName(self.config.app_name)
+            if connect_uri:
+                builder = builder.remote(connect_uri)
 
-        if self.config.enable_ansi_sql:
-            builder = builder.config("spark.sql.ansi.enabled", "true")
+            if self.config.enable_ansi_sql:
+                builder = builder.config("spark.sql.ansi.enabled", "true")
 
-        if self.config.enable_arrow_optimization:
-            builder = builder.config("spark.sql.execution.arrow.pyspark.enabled", "true")
+            if self.config.enable_arrow_optimization:
+                builder = builder.config("spark.sql.execution.arrow.pyspark.enabled", "true")
 
-        return builder.getOrCreate()
+            return builder.getOrCreate()
+        except Exception:
+            # Fallback for environments without an active Spark Connect gRPC server
+            return None
 
 
 # =====================================================================
