@@ -103,16 +103,18 @@ class SCDType2Tracker:
 # 3. Differential Privacy & k-Anonymity Pattern
 # =====================================================================
 
+import math
+
 class DifferentialPrivacyEngine:
     @staticmethod
-    def apply_laplace_noise(true_value: float, epsilon: f64 = 1.0) -> float:
+    def apply_laplace_noise(true_value: float, epsilon: float = 1.0) -> float:
         """Applies Laplace noise to aggregate metrics guaranteeing differential privacy."""
         if epsilon <= 0:
             return true_value
         scale = 1.0 / epsilon
-        u = random.uniform(-0.5, 0.5)
-        # Inverse CDF of Laplace distribution
-        noise = -scale * (1.0 if u >= 0 else -1.0) * (1.0 - 2.0 * abs(u)).log1p() if abs(u) < 0.5 else 0.0
+        u = random.uniform(-0.49, 0.49)
+        # Inverse CDF of Laplace distribution using math.log
+        noise = -scale * (1.0 if u >= 0 else -1.0) * math.log(1.0 - 2.0 * abs(u))
         return round(true_value + noise, 2)
 
 # Singletons
