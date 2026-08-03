@@ -111,6 +111,49 @@ fn attest_enclave_py(model_name: &str, model_bytes: Vec<u8>) -> PyResult<bool> {
     Ok(enclave.attest_model(model_name, &model_bytes))
 }
 
+#[pyfunction]
+fn evaluate_sepsis_qsofa_py(respiratory_rate: f64, systolic_bp: f64, gcs_score: f64) -> PyResult<(i32, String)> {
+    let mut score = 0;
+    if respiratory_rate >= 22.0 { score += 1; }
+    if systolic_bp <= 100.0 { score += 1; }
+    if gcs_score < 15.0 { score += 1; }
+
+    let risk = if score >= 2 {
+        "SEPTIC_SHOCK_WARNING"
+    } else if score == 1 {
+        "ELEVATED"
+    } else {
+        "NORMAL"
+    };
+    Ok((score, risk.to_string()))
+}
+
+#[pyfunction]
+fn detect_fraud_score_py(amount: f64, cpt_code: &str, is_duplicate: bool) -> PyResult<(f64, String)> {
+    let mut score = 0.0;
+    if is_duplicate { score += 0.5; }
+    if amount > 10000.0 && cpt_code.contains("CPT-99211") { score += 0.35; }
+
+    let score_final = score.min(1.0);
+    let risk = if score_final >= 0.7 {
+        "CRITICAL"
+    } else if score_final >= 0.4 {
+        "HIGH"
+    } else {
+        "LOW"
+    };
+    Ok((score_final, risk.to_string()))
+}
+
+#[pyfunction]
+fn calculate_cosine_similarity_py(vec_a: Vec<f64>, vec_b: Vec<f64>) -> PyResult<f64> {
+    let dot: f64 = vec_a.iter().zip(vec_b.iter()).map(|(a, b)| a * b).sum();
+    let norm_a: f64 = vec_a.iter().map(|a| a * a).sum::<f64>().sqrt();
+    let norm_b: f64 = vec_b.iter().map(|b| b * b).sum::<f64>().sqrt();
+    let sim = if norm_a > 0.0 && norm_b > 0.0 { dot / (norm_a * norm_b) } else { 0.0 };
+    Ok(sim)
+}
+
 #[pymodule]
 fn rust_gateway_ffi(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(aggregate_fedavg_py, m)?)?;
@@ -120,5 +163,8 @@ fn rust_gateway_ffi(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(calculate_egfr_py, m)?)?;
     m.add_function(wrap_pyfunction!(validate_fhir_patient_py, m)?)?;
     m.add_function(wrap_pyfunction!(attest_enclave_py, m)?)?;
+    m.add_function(wrap_pyfunction!(evaluate_sepsis_qsofa_py, m)?)?;
+    m.add_function(wrap_pyfunction!(detect_fraud_score_py, m)?)?;
+    m.add_function(wrap_pyfunction!(calculate_cosine_similarity_py, m)?)?;
     Ok(())
 }

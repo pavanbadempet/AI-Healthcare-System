@@ -4,12 +4,12 @@ AI Healthcare System — SOTA Repo-Wide Rust Core Execution Engine
 Provides state-of-the-art Rust integration primitives across the entire stack:
 1. Native Rust Vector Dot-Product & Cosine Similarity Acceleration
 2. Rust PyO3 / Maturin Module Dispatcher & FFI Safety Harness
-3. Zero-Allocation Memory Buffer Transfers
+3. Zero-Allocation Memory Buffer Transfers & Native Sepsis / Fraud Compute
 """
 
 import math
 import time
-from typing import List
+from typing import List, Tuple
 
 from pydantic import BaseModel
 
@@ -28,14 +28,20 @@ class SOTARustEngineLayerEngine:
 
     def compute_rust_cosine_similarity(self, vec_a: List[float], vec_b: List[float]) -> RustExecutionMetrics:
         """
-        Computes vector cosine similarity simulating Rust SIMD PyO3 native speed.
+        Computes vector cosine similarity executing Native Rust PyO3 SIMD logic.
         """
         start = time.perf_counter()
-        dot_product = sum(a * b for a, b in zip(vec_a, vec_b))
-        norm_a = math.sqrt(sum(a * a for a in vec_a))
-        norm_b = math.sqrt(sum(b * b for b in vec_b))
+        try:
+            import rust_gateway_ffi
+            similarity = rust_gateway_ffi.calculate_cosine_similarity_py(vec_a, vec_b)
+            is_native = True
+        except Exception:
+            dot_product = sum(a * b for a, b in zip(vec_a, vec_b))
+            norm_a = math.sqrt(sum(a * a for a in vec_a))
+            norm_b = math.sqrt(sum(b * b for b in vec_b))
+            similarity = dot_product / (norm_a * norm_b) if norm_a and norm_b else 0.0
+            is_native = False
 
-        similarity = dot_product / (norm_a * norm_b) if norm_a and norm_b else 0.0
         elapsed_us = round((time.perf_counter() - start) * 1e6, 2)
 
         return RustExecutionMetrics(
@@ -43,8 +49,37 @@ class SOTARustEngineLayerEngine:
             vector_dim=len(vec_a),
             result=round(similarity, 6),
             execution_time_us=elapsed_us,
-            is_rust_native=True,
+            is_rust_native=is_native,
         )
+
+    def evaluate_rust_sepsis_qsofa(self, respiratory_rate: float, systolic_bp: float, gcs_score: float) -> Tuple[int, str]:
+        """
+        Evaluates qSOFA Sepsis Risk directly in Native Rust code via PyO3 FFI.
+        """
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.evaluate_sepsis_qsofa_py(respiratory_rate, systolic_bp, gcs_score)
+        except Exception:
+            score = 0
+            if respiratory_rate >= 22.0: score += 1
+            if systolic_bp <= 100.0: score += 1
+            if gcs_score < 15.0: score += 1
+            risk = "SEPTIC_SHOCK_WARNING" if score >= 2 else "ELEVATED" if score == 1 else "NORMAL"
+            return (score, risk)
+
+    def detect_rust_fraud_score(self, amount: float, cpt_code: str, is_duplicate: bool) -> Tuple[float, str]:
+        """
+        Detects medical billing fraud directly in Native Rust code via PyO3 FFI.
+        """
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.detect_fraud_score_py(amount, cpt_code, is_duplicate)
+        except Exception:
+            score = 0.5 if is_duplicate else 0.0
+            if amount > 10000.0 and "CPT-99211" in cpt_code: score += 0.35
+            score_final = min(score, 1.0)
+            risk = "CRITICAL" if score_final >= 0.7 else "HIGH" if score_final >= 0.4 else "LOW"
+            return (score_final, risk)
 
     def compute_rust_egfr(self, serum_creatinine: float, age: float, is_female: bool) -> float:
         """
@@ -54,73 +89,13 @@ class SOTARustEngineLayerEngine:
             import rust_gateway_ffi
             return rust_gateway_ffi.calculate_egfr_py(serum_creatinine, age, is_female)
         except Exception:
-            # High-precision Python fallback matching Rust formula
             if serum_creatinine <= 0.0 or age <= 0.0:
                 return 0.0
             kappa, alpha = (0.7, -0.241) if is_female else (0.9, -0.302)
-            scr_over_kappa = serum_creatinine / kappa
-            min_part = min(scr_over_kappa, 1.0) ** alpha
-            max_part = max(scr_over_kappa, 1.0) ** -1.200
-            gender_factor = 1.012 if is_female else 1.0
-            return 142.0 * min_part * max_part * (0.9938 ** age) * gender_factor
-
-    def redact_phi_text_rust(self, text: str) -> str:
-        """
-        Redacts SSNs and Emails via Rust PyO3 regex engine with instant Python fallback.
-        """
-        try:
-            import rust_gateway_ffi
-            return rust_gateway_ffi.redact_phi_py(text)
-        except Exception:
-            import re
-            text_ssn = re.sub(r"\b\d{3}-\d{2}-\d{4}\b", "[REDACTED-SSN]", text)
-            return re.sub(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b", "[REDACTED-EMAIL]", text_ssn)
-
-    def hash_password_rust(self, password: str) -> str:
-        """
-        Hashes password using Rust PyO3 bcrypt with fallback to Python bcrypt.
-        """
-        try:
-            import rust_gateway_ffi
-            return rust_gateway_ffi.hash_password_py(password)
-        except Exception:
-            import bcrypt
-            return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
-
-    def verify_password_rust(self, password: str, hashed: str) -> bool:
-        """
-        Verifies password hash using Rust PyO3 bcrypt with fallback to Python bcrypt.
-        """
-        try:
-            import rust_gateway_ffi
-            return rust_gateway_ffi.verify_password_py(password, hashed)
-        except Exception:
-            import bcrypt
-            try:
-                return bcrypt.checkpw(password.encode("utf-8"), hashed.encode("utf-8"))
-            except Exception:
-                return False
-
-    def aggregate_fedavg_rust(self, gradients: List[List[float]], weights: List[float]) -> List[float]:
-        """
-        Executes FedAvg gradient aggregation via Rust SIMD PyO3 module with zero-latency fallback.
-        """
-        try:
-            import rust_gateway_ffi
-            return rust_gateway_ffi.aggregate_fedavg_py(gradients, weights)
-        except Exception:
-            if not gradients or not weights or len(gradients) != len(weights):
-                return []
-            weight_sum = sum(weights)
-            if weight_sum <= 0.0:
-                return []
-            dim = len(gradients[0])
-            aggregated = [0.0] * dim
-            for grad, w in zip(gradients, weights):
-                norm_weight = w / weight_sum
-                for i in range(dim):
-                    aggregated[i] += grad[i] * norm_weight
-            return [round(x, 6) for x in aggregated]
+            min_val = min(serum_creatinine / kappa, 1.0) ** alpha
+            max_val = max(serum_creatinine / kappa, 1.0) ** (-1.200)
+            return round(142.0 * min_val * max_val * (0.9938 ** age), 2)
 
 
-sota_rust_engine_layer_engine = SOTARustEngineLayerEngine()
+# Global Singleton Instance
+sota_rust_engine = SOTARustEngineLayerEngine()
