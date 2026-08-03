@@ -3,7 +3,7 @@ Unit tests for eBPF Kernel Socket Filter and Autonomous Clinical Multi-Agent Swa
 """
 
 from backend.ebpf_kernel_filter import ebpf_engine, EBPFPacketHeader
-from backend.clinical_agent_swarm import clinical_swarm_engine, ClinicalSwarmInput
+from backend.clinical_agent_swarm import clinical_agent_swarm_engine, ClinicalSwarmInput
 
 def test_ebpf_kernel_filter_evaluation():
     # 1. Valid packet on port 8000
@@ -26,7 +26,7 @@ def test_clinical_agent_swarm_orchestration():
         vitals={"bp": "150/95", "hr": 110, "spo2": 92},
         current_medications=["Warfarin", "Aspirin"]
     )
-    result = clinical_swarm_engine.process_patient(swarm_input)
+    result = clinical_agent_swarm_engine.process_patient(swarm_input)
     assert result.triage_level == "EMERGENCY_LEVEL_1"
     assert len(result.agent_assessments) == 3
     assert len(result.contraindications_flagged) > 0
