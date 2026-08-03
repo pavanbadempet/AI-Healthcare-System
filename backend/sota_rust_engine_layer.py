@@ -188,6 +188,19 @@ class SOTARustEngineLayerEngine:
             if is_inform_care: return "CLASS_II_MODERATE"
             return "CLASS_I_LOW"
 
+    def generate_audit_hash_rust(self, index: int, event_type: str, actor_id: str, action_details: str, previous_hash: str) -> str:
+        """
+        Generates SHA-256 Part 11 audit block hash via Native Rust PyO3.
+        """
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.generate_audit_hash_py(index, event_type, actor_id, action_details, previous_hash)
+        except Exception:
+            import hashlib
+            payload = f"{index}:{event_type}:{actor_id}:{action_details}:{previous_hash}"
+            return hashlib.sha256(payload.encode("utf-8")).hexdigest()
+
+
 
 # Global Singleton Instance
 sota_rust_engine_layer_engine = SOTARustEngineLayerEngine()

@@ -2,6 +2,7 @@ use std::ffi::CStr;
 use std::os::raw::c_char;
 use pyo3::prelude::*;
 use pyo3::wrap_pyfunction;
+use sha2::{Digest, Sha256};
 
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
@@ -201,6 +202,16 @@ fn classify_samd_risk_py(is_critical: bool, is_drive_management: bool, is_inform
     }
 }
 
+#[pyfunction]
+fn generate_audit_hash_py(index: i64, event_type: &str, actor_id: &str, details: &str, prev_hash: &str) -> PyResult<String> {
+    let payload = format!("{}:{}:{}:{}:{}", index, event_type, actor_id, details, prev_hash);
+    let mut hasher = Sha256::new();
+    hasher.update(payload.as_bytes());
+    let result = hasher.finalize();
+    let hex_str = result.iter().map(|b| format!("{:02x}", b)).collect::<Vec<String>>().join("");
+    Ok(hex_str)
+}
+
 #[pymodule]
 fn rust_gateway_ffi(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(aggregate_fedavg_py, m)?)?;
@@ -217,5 +228,6 @@ fn rust_gateway_ffi(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(score_diabetes_risk_py, m)?)?;
     m.add_function(wrap_pyfunction!(score_heart_risk_py, m)?)?;
     m.add_function(wrap_pyfunction!(classify_samd_risk_py, m)?)?;
+    m.add_function(wrap_pyfunction!(generate_audit_hash_py, m)?)?;
     Ok(())
 }
