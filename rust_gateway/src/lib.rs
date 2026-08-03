@@ -130,11 +130,12 @@ fn evaluate_sepsis_qsofa_py(respiratory_rate: f64, systolic_bp: f64, gcs_score: 
 
 #[pyfunction]
 fn detect_fraud_score_py(amount: f64, cpt_code: &str, is_duplicate: bool) -> PyResult<(f64, String)> {
-    let mut score = 0.0;
+    let mut score: f64 = 0.0;
     if is_duplicate { score += 0.5; }
     if amount > 10000.0 && cpt_code.contains("CPT-99211") { score += 0.35; }
 
-    let score_final = score.min(1.0);
+    let score_final = score.min(1.0f64);
+
     let risk = if score_final >= 0.7 {
         "CRITICAL"
     } else if score_final >= 0.4 {

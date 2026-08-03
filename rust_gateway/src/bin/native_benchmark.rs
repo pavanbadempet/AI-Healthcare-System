@@ -25,13 +25,16 @@ fn main() {
 
     // 2. Native Rust CKD-EPI 2021 eGFR Calculation
     let start = Instant::now();
-    let scr = 1.2;
-    let age = 55.0;
+    let scr: f64 = 1.2;
+    let age: f64 = 55.0;
     let is_female = false;
-    let kappa = if is_female { 0.7 } else { 0.9 };
-    let alpha = if is_female { -0.241 } else { -0.302 };
-    let min_val = (scr / kappa).min(1.0).powf(alpha);
-    let max_val = (scr / kappa).max(1.0).powf(-1.200);
+    let kappa: f64 = if is_female { 0.7 } else { 0.9 };
+    let alpha: f64 = if is_female { -0.241 } else { -0.302 };
+    let ratio: f64 = scr / kappa;
+    let min_val = ratio.min(1.0).powf(alpha);
+    let max_val = ratio.max(1.0).powf(-1.200);
+
+
     let egfr = 142.0 * min_val * max_val * 0.9938f64.powf(age);
     let dur_egfr = start.elapsed();
 
