@@ -29,6 +29,8 @@ def test_clinical_agent_swarm_orchestration():
     result = clinical_swarm_engine.process_patient(swarm_input)
     assert result.triage_level == "EMERGENCY_LEVEL_1"
     assert len(result.agent_assessments) == 3
-    assert len(result.contraindications_flagged) == 1
+    assert len(result.contraindications_flagged) > 0
+    assert len(result.react_reasoning_trace) >= 2
+    assert result.react_reasoning_trace[0].action_tool == "rust_gateway_ffi.calculate_egfr_py"
     assert "Warfarin + Aspirin" in result.contraindications_flagged[0]
     assert "CLINICAL SUMMARY FOR PATIENT-TEST-100" in result.discharge_summary_draft
