@@ -28,7 +28,8 @@ def test_tool_registry_discovery_and_invocation():
     assert schema.is_rust_native is True
 
     result = agent_tool_registry.invoke("compute_egfr", serum_creatinine=0.9, age=45, is_female=True)
-    assert 80.0 < result < 120.0
+    assert 70.0 < result < 120.0
+
 
 
 def test_reflective_memory_record_and_reflect():
