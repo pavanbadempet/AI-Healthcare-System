@@ -12,10 +12,11 @@ Implements Enterprise Agent Governance:
 import time
 import uuid
 from typing import Any, Callable, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
-from backend.clinical_compliance.fda_samd_compliance import fda_audit_chain, hipaa_data_minimizer
 from backend.agents.reflective_memory import agent_reflective_memory
+from backend.clinical_compliance.fda_samd_compliance import fda_audit_chain, hipaa_data_minimizer
 
 
 class LineageNode(BaseModel):

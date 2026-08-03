@@ -4,6 +4,7 @@ Unit tests for Rust Native Execution Engine and Clinical Score Calculator.
 
 from backend.sota_rust_engine_layer import sota_rust_engine_layer_engine
 
+
 def test_rust_engine_cosine_similarity():
     vec_a = [1.0, 2.0, 3.0]
     vec_b = [1.0, 2.0, 3.0]

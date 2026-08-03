@@ -8,13 +8,13 @@ Unit tests for Spark 4.x Enterprise Engine:
 """
 
 from backend.spark_engine import (
-    spark_connect_manager,
-    spark4_variant_handler,
-    spark4_data_source,
-    vectorized_pyarrow_engine,
-    spark4_streaming_manager,
     SparkConnectConfig,
     StreamingStateConfig,
+    spark4_data_source,
+    spark4_streaming_manager,
+    spark4_variant_handler,
+    spark_connect_manager,
+    vectorized_pyarrow_engine,
 )
 
 

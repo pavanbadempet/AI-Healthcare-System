@@ -2,8 +2,9 @@
 Unit tests for eBPF Kernel Socket Filter and Autonomous Clinical Multi-Agent Swarm.
 """
 
-from backend.ebpf_kernel_filter import ebpf_engine, EBPFPacketHeader
-from backend.clinical_agent_swarm import clinical_agent_swarm_engine, ClinicalSwarmInput
+from backend.clinical_agent_swarm import ClinicalSwarmInput, clinical_agent_swarm_engine
+from backend.ebpf_kernel_filter import EBPFPacketHeader, ebpf_engine
+
 
 def test_ebpf_kernel_filter_evaluation():
     # 1. Valid packet on port 8000

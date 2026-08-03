@@ -5,11 +5,12 @@ Unit tests for Clinical Research & Remote Patient Monitoring AI Agents:
 """
 
 from fastapi.testclient import TestClient
-from backend.main import app
+
 from backend.agents.clinical_research_rpm_agents import (
-    agent_trial_matching,
     agent_rpm_adherence,
+    agent_trial_matching,
 )
+from backend.main import app
 
 client = TestClient(app)
 

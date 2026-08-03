@@ -8,10 +8,8 @@ Runs on GitHub Actions (schedule + workflow_dispatch).
 3. Keeps README metrics, PyPI package links, and star history badges in 100% sync.
 """
 
-import json
 import os
 import sys
-from typing import Dict, List
 
 try:
     import requests

@@ -472,7 +472,7 @@ app.include_router(interoperability.router, prefix=API_V1_PREFIX)
 app.include_router(payments.router, prefix=API_V1_PREFIX)
 app.include_router(telemetry.router, prefix=f"{API_V1_PREFIX}/telemetry", tags=["Telemetry"])
 app.include_router(telemetry.router, prefix="/telemetry", tags=["Telemetry"])
-from . import appointments, dicomweb, ollama_routes, abdm_sandbox
+from . import abdm_sandbox, appointments, dicomweb, ollama_routes
 
 app.include_router(appointments.router, prefix=API_V1_PREFIX, tags=["Appointments"])
 app.include_router(dicomweb.router, prefix=API_V1_PREFIX)
@@ -488,6 +488,7 @@ app.include_router(fhir_compression.router, prefix=API_V1_PREFIX)
 app.include_router(abdm_sandbox.router, prefix=API_V1_PREFIX, tags=["ABDM Sandbox"])
 
 from backend.routes.data_platform_routes import router as data_platform_router
+
 app.include_router(data_platform_router)
 
 @app.get("/")

@@ -3,8 +3,9 @@ Unit & API integration tests for Unified Data + AI Platform & Multi-Agent Superv
 """
 
 from fastapi.testclient import TestClient
+
+from backend.data_platform.open_table_format import TableSchema, open_table_engine
 from backend.main import app
-from backend.data_platform.open_table_format import open_table_engine, TableSchema
 
 client = TestClient(app)
 

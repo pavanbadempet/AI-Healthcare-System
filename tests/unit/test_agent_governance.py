@@ -4,8 +4,9 @@ Lineage Provenance, & Auto-Resolution Engine.
 """
 
 from fastapi.testclient import TestClient
-from backend.main import app
+
 from backend.agents.agent_governance_engine import agent_governance_engine
+from backend.main import app
 
 client = TestClient(app)
 

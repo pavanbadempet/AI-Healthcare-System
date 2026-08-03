@@ -11,7 +11,8 @@ Implements core cloud-native microservice software design patterns:
 import time
 import uuid
 from enum import Enum
-from typing import Dict, Any, List, Callable, Optional
+from typing import Any, Callable, Dict, List
+
 from pydantic import BaseModel, Field
 
 # =====================================================================

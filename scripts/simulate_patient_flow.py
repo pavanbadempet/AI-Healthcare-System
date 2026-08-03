@@ -45,7 +45,7 @@ def run_patient_flow_simulation(hours: int = 24, total_beds: int = 100) -> dict:
 
 def main():
     res = run_patient_flow_simulation()
-    print(f"✅ Hospital Patient Flow Simulation Complete:")
+    print("✅ Hospital Patient Flow Simulation Complete:")
     print(f"   ED Arrivals: {res['total_ed_arrivals']} | Discharges: {res['total_discharges']}")
     print(f"   Peak Occupancy Pct: {res['final_occupancy_pct']}%")
 

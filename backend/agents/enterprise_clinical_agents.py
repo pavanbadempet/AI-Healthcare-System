@@ -8,17 +8,17 @@ Implements specialized AI Agents:
 4. Agent Future Forecast — Forecasts ED surge, ICU bed demand, readmission risk, & trajectory
 """
 
-import time
 import uuid
-from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
+from typing import Any, Dict, List
 
-from backend.agents.tool_registry import agent_tool_registry
+from pydantic import BaseModel
+
 from backend.agents.reflective_memory import agent_reflective_memory
 from backend.agents.supervisor_orchestrator import (
-    supervisor_router, AgentCapability, RegisteredAgent,
+    AgentCapability,
+    RegisteredAgent,
+    supervisor_router,
 )
-
 
 # =====================================================================
 # 1. Agent Fraud Detection

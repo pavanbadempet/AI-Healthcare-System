@@ -8,10 +8,11 @@ Implements core data engineering patterns:
 4. Differential Privacy (k-Anonymity & Laplace Noise Injection)
 """
 
-import uuid
 import random
+import uuid
 from datetime import datetime, timezone
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
 # =====================================================================
@@ -104,6 +105,7 @@ class SCDType2Tracker:
 # =====================================================================
 
 import math
+
 
 class DifferentialPrivacyEngine:
     @staticmethod

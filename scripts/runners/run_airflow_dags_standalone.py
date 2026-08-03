@@ -12,6 +12,7 @@ import logging
 import os
 import sys
 
+
 # Dynamic import hook for all airflow.* submodules
 class AirflowImportHook:
     def find_spec(self, fullname, path, target=None):

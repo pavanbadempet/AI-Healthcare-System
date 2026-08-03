@@ -7,16 +7,17 @@ Implements high-value, essential operational agents:
 3. Agent Surgical OR — Operating room turnover, scheduling, and sterilization prep optimizer
 """
 
-import time
 import uuid
-from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
+from typing import Any, Dict, List
+
+from pydantic import BaseModel
 
 from backend.agents.reflective_memory import agent_reflective_memory
 from backend.agents.supervisor_orchestrator import (
-    supervisor_router, AgentCapability, RegisteredAgent,
+    AgentCapability,
+    RegisteredAgent,
+    supervisor_router,
 )
-
 
 # =====================================================================
 # 1. Agent Prior Authorization (Insurance Pre-Approval Automation)

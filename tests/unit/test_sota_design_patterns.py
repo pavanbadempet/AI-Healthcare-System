@@ -3,11 +3,13 @@ Unit tests for SOTA Software Design Patterns (Circuit Breaker, Outbox, Saga Orch
 """
 
 import pytest
-from backend.sota_design_patterns import CircuitBreaker, CircuitState, outbox_engine, SagaOrchestrator, SagaStep
+
+from backend.sota_design_patterns import CircuitBreaker, CircuitState, SagaOrchestrator, SagaStep, outbox_engine
+
 
 def test_circuit_breaker_resilience():
     cb = CircuitBreaker(failure_threshold=2, recovery_timeout_sec=1.0)
-    
+
     def failing_func():
         raise ValueError("Service unavailable")
 
@@ -34,7 +36,7 @@ def test_saga_orchestrator_successful_flow():
     saga = SagaOrchestrator()
     saga.add_step(SagaStep(lambda: state.update({"step1": True}) or True, lambda: state.update({"step1": False}), "Step1"))
     saga.add_step(SagaStep(lambda: state.update({"step2": True}) or True, lambda: state.update({"step2": False}), "Step2"))
-    
+
     res = saga.execute_saga()
     assert res is True
     assert state["step1"] is True

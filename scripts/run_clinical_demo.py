@@ -19,8 +19,8 @@ os.environ["DATABASE_URL"] = "sqlite:///healthcare.db"
 os.environ["MICROSERVICES_MODE"] = "false"
 
 import time
-from datetime import datetime
 from dataclasses import dataclass
+from datetime import datetime
 
 # Try to import pyspark, if missing, dynamically stub it to keep the script running on standard machines
 try:
@@ -65,28 +65,27 @@ except ImportError:
     sys.modules["pyspark.sql"] = pyspark_sql
     sys.modules["pyspark.sql.functions"] = pyspark_functions
     sys.modules["pyspark.sql.types"] = pyspark_types
-    
+
     HAS_PYSPARK = False
 
 # Import framework dependencies
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from backend.database import Base, engine, SessionLocal
-from backend import models  # Registers all domain models on Base.metadata
-from backend.models.auth import User
-from backend.model_service import model_service
-from backend.prediction import (
-    _calculate_adaptive_conformal_prediction,
-    _get_triage_recommendation,
-    _get_top_risk_factors
-)
-from backend.features import HEART_FEATURES
-from backend.event_bus import event_bus
-from backend.telehealth import TelehealthSession
 from backend.claims import CMS1500Claim
 from backend.claims_denial import analyse_denial_risk
-from backend.rag import add_checkup_to_db, advanced_search_similar_records
 from backend.data_engineering_platform import create_spark_session, get_data_pipeline
+from backend.database import Base, SessionLocal, engine
+from backend.event_bus import event_bus
+from backend.features import HEART_FEATURES
+from backend.model_service import model_service
+from backend.models.auth import User
+from backend.prediction import (
+    _calculate_adaptive_conformal_prediction,
+    _get_top_risk_factors,
+    _get_triage_recommendation,
+)
+from backend.rag import add_checkup_to_db, advanced_search_similar_records
+from backend.telehealth import TelehealthSession
 
 # Bootstrap SQLite database tables
 Base.metadata.create_all(bind=engine)
@@ -149,7 +148,7 @@ def main():
     print_banner("2. AI CONFORMAL HEART RISK PREDICTION & SHAP ANALYSIS")
     print("Initializing Scikit-Learn models on disk...")
     model_service.initialize()
-    
+
     # Mock inputs matching BRFSS dimensions
     @dataclass
     class HeartInputStub:
@@ -170,11 +169,11 @@ def main():
     input_data = HeartInputStub()
     print("Executing heart risk screening model...")
     prediction_res = model_service.predict_heart(input_data)
-    
+
     print(f"\nPrediction Outcome: {BOLD}{prediction_res.prediction}{RESET}")
     print(f"Probability Confidence: {BOLD}{prediction_res.confidence}%{RESET}")
     print(f"Risk Level Designation: {BOLD}{prediction_res.risk_level}{RESET}")
-    
+
     # Run Conformal Prediction set bounds
     # Simulate a calibration quantile of 0.85
     print("\nCalculating Adaptive Conformal Uncertainty Bounds...")
@@ -200,15 +199,15 @@ def main():
     # Step 3: Real-Time Telemetry Event Bus Streaming
     # ------------------------------------------------------------------
     print_banner("3. REAL-TIME TELEMETRY EVENT BUS STREAMING")
-    
+
     # Define an async event listener
     async def on_vitals_recorded(payload: dict):
         print(f"{YELLOW}[EventBus Handler] Received VITALS_RECORDED event for patient ID: {payload['patient_id']}{RESET}")
         print(f"  --> Heart Rate: {payload['hr']} bpm, SpO2: {payload['spo2']}%")
-        
+
     print("Subscribing clinical listener to VITALS_RECORDED topic...")
     event_bus.subscribe("VITALS_RECORDED", on_vitals_recorded)
-    
+
     print("Publishing telemetry payload to stream...")
     import asyncio
     asyncio.run(event_bus.publish("VITALS_RECORDED", {
@@ -233,7 +232,7 @@ def main():
     session.start_session()
     print(f"{GREEN}[OK] Created session room: {session.room_name}{RESET}")
     print(f"  Signaling Status: {session.status}")
-    
+
     print("\nGenerating cryptographically signed WebRTC session token for doctor...")
     token_res = session.generate_webrtc_token(
         user_id="doc_5",
@@ -260,7 +259,7 @@ def main():
         ]
     )
     print(f"{GREEN}[OK] Compiled Claim (NPI: {claim.provider_npi}, CPTs: {[p['cpt'] for p in claim.procedures]}){RESET}")
-    
+
     print("\nRunning preflight claims denial risk evaluator...")
     audit_res = analyse_denial_risk(claim)
     print(f"Risk Assessment: {BOLD}{audit_res['denial_risk']}{RESET}")
@@ -273,21 +272,21 @@ def main():
     print_banner("6. DELTA LAKE MEDALLION INGESTION & SPARK DATA QUALITY")
     if not HAS_PYSPARK:
         print(f"{YELLOW}Note: PySpark is not installed on this machine. Running in SOTA Simulation Mode.{RESET}")
-        
+
     print("Bootstrapping optimized Spark session...")
     spark = create_spark_session()
-    
+
     # Seed raw patient list
     raw_data = [
         ("demo_p1", "patient.1@clinos.org", "male", "1990-01-01", "O+"),
         ("demo_p2", "patient.2@clinos.org", "female", "1985-06-15", "A-"),
         ("demo_p3", None, "M", "invalid-date", "B+"),  # Corrupt record
     ]
-    
+
     if HAS_PYSPARK:
         df_raw = spark.createDataFrame(raw_data, ["username", "email", "gender", "dob", "blood_type"])
         print(f"Ingested {df_raw.count()} raw records to Bronze layer.")
-        
+
         # Run pipeline checks
         db_sess = SessionLocal()
         try:
@@ -302,10 +301,11 @@ def main():
             db_sess.close()
         spark.stop()
     else:
-        print(f"Ingested 3 raw records to Bronze layer.")
+        print("Ingested 3 raw records to Bronze layer.")
         print("\nCalculating single-pass Spark Data Quality metrics...")
-        from backend.data_engineering_platform import HealthcareDataPipeline
         import asyncio
+
+        from backend.data_engineering_platform import HealthcareDataPipeline
         pipeline = HealthcareDataPipeline(None, None, None)
         metrics = asyncio.run(pipeline._assess_data_quality({}, df=raw_data))
         print(f"Completeness Score: {BOLD}{metrics.completeness * 100:.1f}%{RESET}")
@@ -327,7 +327,7 @@ def main():
         prediction="High Risk due to hypertension and BMI",
         timestamp=datetime.now().isoformat()
     )
-    
+
     print("\nRunning Advanced RAG Query Expansion semantic search...")
     query = "What is the heart risk for patient 42?"
     results = advanced_search_similar_records(
@@ -336,10 +336,10 @@ def main():
         n_results=1
     )
     print(f"Query: '{query}'")
-    print(f"Retrieved Document Context:")
+    print("Retrieved Document Context:")
     for doc in results:
         print(f"  {BOLD}--> {doc}{RESET}")
-        
+
     print(f"\n{GREEN}{BOLD}** CLINOS ENTERPRISE FULL LIFE-CYCLE DEMO COMPLETED SUCCESSFULLY! **{RESET}\n")
 
 if __name__ == "__main__":
