@@ -487,6 +487,9 @@ app.include_router(i18n_audio.router, prefix=API_V1_PREFIX)
 app.include_router(fhir_compression.router, prefix=API_V1_PREFIX)
 app.include_router(abdm_sandbox.router, prefix=API_V1_PREFIX, tags=["ABDM Sandbox"])
 
+from backend.routes.data_platform_routes import router as data_platform_router
+app.include_router(data_platform_router)
+
 @app.get("/")
 def root():
     if not os.getenv("TESTING"):
