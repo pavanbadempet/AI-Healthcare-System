@@ -11,6 +11,8 @@ mod tee_enclave;
 mod clinical_calculator;
 mod phi_redactor;
 mod ecg_dsp;
+mod dicom_slicer;
+mod auth_crypto;
 
 // Define stub AppState to satisfy fhir module router bindings when compiled as FFI lib
 #[derive(Clone)]
@@ -69,6 +71,16 @@ pub extern "C" fn attest_enclave_ffi(
 // =====================================================================
 
 #[pyfunction]
+fn hash_password_py(password: &str) -> PyResult<String> {
+    auth_crypto::hash_password_rust(password).map_err(|e| pyo3::exceptions::PyValueError::new_err(e))
+}
+
+#[pyfunction]
+fn verify_password_py(password: &str, hashed: &str) -> PyResult<bool> {
+    Ok(auth_crypto::verify_password_rust(password, hashed))
+}
+
+#[pyfunction]
 fn redact_phi_py(text: &str) -> PyResult<String> {
     Ok(phi_redactor::redact_phi_text(text))
 }
@@ -94,6 +106,8 @@ fn attest_enclave_py(model_name: &str, model_bytes: Vec<u8>) -> PyResult<bool> {
 
 #[pymodule]
 fn rust_gateway_ffi(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(hash_password_py, m)?)?;
+    m.add_function(wrap_pyfunction!(verify_password_py, m)?)?;
     m.add_function(wrap_pyfunction!(redact_phi_py, m)?)?;
     m.add_function(wrap_pyfunction!(calculate_egfr_py, m)?)?;
     m.add_function(wrap_pyfunction!(validate_fhir_patient_py, m)?)?;

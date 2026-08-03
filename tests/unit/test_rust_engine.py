@@ -25,3 +25,10 @@ def test_rust_phi_redaction():
     assert "john.doe@hospital.org" not in redacted
     assert "[REDACTED-SSN]" in redacted
     assert "[REDACTED-EMAIL]" in redacted
+
+def test_rust_password_hashing():
+    pwd = "SecureClinicalPassword123!"
+    hashed = sota_rust_engine_layer_engine.hash_password_rust(pwd)
+    assert hashed != pwd
+    assert sota_rust_engine_layer_engine.verify_password_rust(pwd, hashed) is True
+    assert sota_rust_engine_layer_engine.verify_password_rust("WrongPassword", hashed) is False

@@ -31,6 +31,8 @@ mod interop_grpc;
 mod clinical_calculator;
 mod phi_redactor;
 mod ecg_dsp;
+mod dicom_slicer;
+mod auth_crypto;
 
 #[derive(Clone)]
 pub struct AppState {
