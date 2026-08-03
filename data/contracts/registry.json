@@ -20,8 +20,8 @@
       "compatibility_mode": "BACKWARD",
       "sla_freshness_minutes": 1440,
       "quality_threshold": 0.95,
-      "created_at": "2026-07-22T18:07:50.363952+00:00",
-      "updated_at": "2026-07-22T18:07:50.363981+00:00"
+      "created_at": "2026-07-29T19:49:13.382913+00:00",
+      "updated_at": "2026-07-29T19:49:13.382936+00:00"
     },
     "etl_lab_results": {
       "contract_id": "etl_lab_results",
@@ -43,8 +43,8 @@
       "compatibility_mode": "BACKWARD",
       "sla_freshness_minutes": 1440,
       "quality_threshold": 0.95,
-      "created_at": "2026-07-22T18:07:50.364003+00:00",
-      "updated_at": "2026-07-22T18:07:50.364009+00:00"
+      "created_at": "2026-07-29T19:49:13.382951+00:00",
+      "updated_at": "2026-07-29T19:49:13.382955+00:00"
     },
     "prediction_input": {
       "contract_id": "prediction_input",
@@ -65,8 +65,8 @@
       "compatibility_mode": "BACKWARD",
       "sla_freshness_minutes": 1440,
       "quality_threshold": 0.95,
-      "created_at": "2026-07-22T18:07:50.364024+00:00",
-      "updated_at": "2026-07-22T18:07:50.364029+00:00"
+      "created_at": "2026-07-29T19:49:13.382965+00:00",
+      "updated_at": "2026-07-29T19:49:13.382968+00:00"
     }
   },
   "violations": {}

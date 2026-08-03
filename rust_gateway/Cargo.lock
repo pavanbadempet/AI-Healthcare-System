@@ -2194,6 +2194,7 @@ dependencies = [
  "prost-types",
  "pyo3",
  "rayon",
+ "regex",
  "reqwest",
  "rkyv",
  "rmp-serde",

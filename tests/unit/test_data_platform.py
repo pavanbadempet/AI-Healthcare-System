@@ -8,18 +8,22 @@ Unit tests for the Unified Clinical Data + AI Platform:
 - Data & AI Apps Runtime
 """
 
-from backend.data_platform.open_table_format import (
-    OpenTableFormatEngine, TableSchema,
-)
-from backend.data_platform.data_catalog import (
-    ClinicalDataCatalog, CatalogAsset, AssetType, DataClassification,
-    ColumnMetadata, AccessPolicy,
-)
-from backend.data_platform.lakehouse_sql import LakehouseSQLEngine
-from backend.data_platform.lakeflow import MedFlowOrchestrator
 from backend.data_platform.agentic_bi import AgenticBIEngine
-from backend.data_platform.data_apps import DataAIAppsRuntime, AppStatus
-
+from backend.data_platform.data_apps import AppStatus, DataAIAppsRuntime
+from backend.data_platform.data_catalog import (
+    AccessPolicy,
+    AssetType,
+    CatalogAsset,
+    ClinicalDataCatalog,
+    ColumnMetadata,
+    DataClassification,
+)
+from backend.data_platform.lakeflow import MedFlowOrchestrator
+from backend.data_platform.lakehouse_sql import LakehouseSQLEngine
+from backend.data_platform.open_table_format import (
+    OpenTableFormatEngine,
+    TableSchema,
+)
 
 # ── Open Table Format ──────────────────────────────────────────────
 
@@ -116,7 +120,8 @@ def test_clinical_catalog_access_policies():
 # ── Lakehouse SQL Engine ───────────────────────────────────────────
 
 def test_lakehouse_sql_select_and_where():
-    from backend.data_platform.open_table_format import open_table_engine, TableSchema as TS
+    from backend.data_platform.open_table_format import TableSchema as TS
+    from backend.data_platform.open_table_format import open_table_engine
     schema = TS(columns={"id": "str", "dept": "str", "score": "int"})
     if "sql_test" not in open_table_engine.list_tables():
         tbl = open_table_engine.create_table("sql_test", schema)

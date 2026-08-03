@@ -3,10 +3,9 @@
 Interactive Multi-Cloud Setup Wizard
 Enables plug-and-play cloud provider configuration for AWS, Azure, Databricks, and Snowflake.
 """
+import logging
 import os
 import sys
-import json
-import logging
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger("cloud_configurator")
@@ -47,7 +46,7 @@ def save_env(env_vars: dict):
     existing = load_existing_env()
     for k, v in env_vars.items():
         existing[k] = v
-        
+
     with open(".env", "w", encoding="utf-8") as f:
         f.write("# ClinOS Environment Configurations\n")
         f.write("# Generated dynamically by configure_cloud.py\n\n")
@@ -65,16 +64,16 @@ def test_spark_connection(provider: str, env_vars: dict):
     # Inject current variables into environment
     for k, v in env_vars.items():
         os.environ[k] = v
-        
+
     try:
         # Import local creation code
         sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         from backend.data_engineering_platform import create_spark_session
-        
+
         print("Bootstrapping PySpark JVM engine (please wait)...")
         spark = create_spark_session()
         print(f"{GREEN}{BOLD}✓ Spark session initialized successfully!{RESET}")
-        
+
         print("\nChecking storage access parameters...")
         if provider == "aws":
             # Read/write verification can be executed if s3 path is set
@@ -95,7 +94,7 @@ def test_spark_connection(provider: str, env_vars: dict):
         elif provider == "snowflake":
             print(f"Testing Snowflake connection to DB: {env_vars.get('SNOWFLAKE_DATABASE')}")
             print(f"{GREEN}✓ Snowflake query parameters mounted.{RESET}")
-            
+
         print(f"\n{GREEN}{BOLD}★★ Connection Test Passed! Your cloud environment is ready. ★★{RESET}\n")
         spark.stop()
     except Exception as e:
@@ -106,37 +105,37 @@ def test_spark_connection(provider: str, env_vars: dict):
 def main():
     print_header()
     existing = load_existing_env()
-    
+
     print("Choose your Cloud Integration Target:")
     print("1) AWS (S3, EMR, Glue Catalog)")
     print("2) Microsoft Azure (ADLS Gen2, Blob Storage)")
     print("3) Databricks (Unity Catalog)")
     print("4) Snowflake")
     print("5) Local (Local Delta Lake only)")
-    
+
     choice = read_input("Select option (1-5)", "5")
-    
+
     new_vars = {}
     provider = "local"
-    
+
     if choice == "1":
         provider = "aws"
         new_vars["CLOUD_PROVIDER"] = "aws"
         new_vars["AWS_ACCESS_KEY_ID"] = read_input("AWS Access Key ID", existing.get("AWS_ACCESS_KEY_ID", ""))
         new_vars["AWS_SECRET_ACCESS_KEY"] = read_input("AWS Secret Access Key", existing.get("AWS_SECRET_ACCESS_KEY", ""))
         new_vars["AWS_REGION"] = read_input("AWS Region", existing.get("AWS_REGION", "us-east-1"))
-        
+
         glue = read_input("Enable AWS Glue Catalog? (yes/no)", existing.get("AWS_GLUE_CATALOG_ENABLED", "no"))
         new_vars["AWS_GLUE_CATALOG_ENABLED"] = "true" if glue.lower() in ("y", "yes", "true", "1") else "false"
         new_vars["AWS_S3_PATH"] = read_input("AWS S3 target bucket path (e.g. s3a://my-bucket/lakehouse)", existing.get("AWS_S3_PATH", ""))
-        
+
     elif choice == "2":
         provider = "azure"
         new_vars["CLOUD_PROVIDER"] = "azure"
         new_vars["AZURE_STORAGE_ACCOUNT"] = read_input("Azure Storage Account Name", existing.get("AZURE_STORAGE_ACCOUNT", ""))
         new_vars["AZURE_STORAGE_KEY"] = read_input("Azure Storage Account Key", existing.get("AZURE_STORAGE_KEY", ""))
         new_vars["AZURE_ADLS_PATH"] = read_input("ADLS Gen2 target folder path (e.g. abfs://container@account.dfs.core.windows.net/lakehouse)", existing.get("AZURE_ADLS_PATH", ""))
-        
+
     elif choice == "3":
         provider = "databricks"
         new_vars["CLOUD_PROVIDER"] = "databricks"
@@ -144,7 +143,7 @@ def main():
         new_vars["DATABRICKS_TOKEN"] = read_input("Databricks PAT Token", existing.get("DATABRICKS_TOKEN", ""))
         new_vars["DELTA_CATALOG"] = read_input("Unity Catalog Name", existing.get("DELTA_CATALOG", "uc_healthcare_prod"))
         new_vars["DELTA_DATABASE"] = read_input("Unity Schema/Database Name", existing.get("DELTA_DATABASE", "healthcare_db"))
-        
+
     elif choice == "4":
         provider = "snowflake"
         new_vars["CLOUD_PROVIDER"] = "snowflake"
@@ -153,22 +152,22 @@ def main():
         new_vars["SNOWFLAKE_PASSWORD"] = read_input("Snowflake Password", existing.get("SNOWFLAKE_PASSWORD", ""))
         new_vars["SNOWFLAKE_DATABASE"] = read_input("Snowflake Database", existing.get("SNOWFLAKE_DATABASE", "HEALTHCARE_DB"))
         new_vars["SNOWFLAKE_SCHEMA"] = read_input("Snowflake Schema", existing.get("SNOWFLAKE_SCHEMA", "PUBLIC"))
-        
+
     else:
         provider = "local"
         new_vars["CLOUD_PROVIDER"] = "local"
         # Reset any cloud keys to avoid confusion
         new_vars["AWS_GLUE_CATALOG_ENABLED"] = "false"
         print(f"\n{GREEN}Configuring local filesystem mode. No remote cloud connection required.{RESET}")
-        
+
     # Save parameters
     save_env(new_vars)
-    
+
     # Prompt connection validation
     test_conn = read_input("Would you like to test the connection now? (yes/no)", "yes")
     if test_conn.lower() in ("y", "yes", "true", "1"):
         test_spark_connection(provider, new_vars)
-        
+
     print(f"{GREEN}{BOLD}Setup complete. Run 'python scripts/run_medallion_pipeline.py' to process records!{RESET}\n")
 
 if __name__ == "__main__":

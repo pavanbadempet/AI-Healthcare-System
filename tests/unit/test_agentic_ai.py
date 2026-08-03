@@ -6,14 +6,14 @@ Unit tests for Agentic AI infrastructure:
 - Plan-and-Execute Orchestrator
 """
 
-from backend.agents.tool_registry import agent_tool_registry
 from backend.agents.reflective_memory import AgentReflectiveMemory
 from backend.agents.supervisor_orchestrator import (
-    supervisor_router,
-    plan_and_execute_orchestrator,
     AgentCapability,
     PlanStep,
+    plan_and_execute_orchestrator,
+    supervisor_router,
 )
+from backend.agents.tool_registry import agent_tool_registry
 
 
 def test_tool_registry_discovery_and_invocation():

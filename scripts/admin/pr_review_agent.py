@@ -12,7 +12,7 @@ import json
 import os
 import re
 import sys
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 try:
     import requests

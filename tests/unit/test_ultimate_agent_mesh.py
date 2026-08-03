@@ -7,8 +7,9 @@ Unit & API integration tests for Ultimate State-of-the-Art Agentic AI Intelligen
 """
 
 from fastapi.testclient import TestClient
-from backend.main import app
+
 from backend.agents.ultimate_agent_mesh import ultimate_agent_mesh
+from backend.main import app
 
 client = TestClient(app)
 

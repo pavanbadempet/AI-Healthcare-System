@@ -10,11 +10,12 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from backend.database import get_db_context
 from backend.maintenance import run_system_maintenance
 
+
 def main():
     print("Initializing system maintenance...")
     with get_db_context() as db:
         report = run_system_maintenance(db, executor_id=1)
-        
+
     print("\n--- Maintenance Report ---")
     print(f"Status: {report['status']}")
     print(f"Primary DB optimized: {report['database_optimized']}")
@@ -22,7 +23,7 @@ def main():
     print("Purged Records:")
     for dataset, count in report["purged_records"].items():
         print(f"  - {dataset}: {count} rows")
-        
+
     if report["status"] == "success":
         print("\nMaintenance completed successfully.")
         sys.exit(0)

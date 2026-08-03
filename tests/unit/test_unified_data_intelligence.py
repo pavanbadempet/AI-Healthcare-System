@@ -8,13 +8,11 @@ Unit tests for Unified Data Intelligence Platform:
 """
 
 from backend.unified_data_intelligence import (
-    clinical_feature_store,
-    data_lineage_tracker,
-    streaming_analytics_engine,
-    data_quality_gate,
-    unified_query_fabric,
     ClinicalFeatureStore,
     StreamingAnalyticsEngine,
+    data_lineage_tracker,
+    data_quality_gate,
+    unified_query_fabric,
 )
 
 
@@ -47,7 +45,7 @@ def test_streaming_analytics_anomaly_detection():
     engine = StreamingAnalyticsEngine(window_size=10, z_threshold=2.0)
     # Ingest normal readings
     for hr in [72, 74, 70, 73, 71, 72, 74, 73, 71, 72]:
-        result = engine.ingest("P-300", "heart_rate", float(hr))
+        engine.ingest("P-300", "heart_rate", float(hr))
 
     # Ingest anomalous spike
     spike = engine.ingest("P-300", "heart_rate", 150.0)

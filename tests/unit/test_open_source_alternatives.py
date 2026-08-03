@@ -2,11 +2,12 @@
 Unit tests for Polars, DuckDB, and Apache Iceberg / Delta Lake multi-format engines.
 """
 
-from backend.data_platform.polars_duckdb_engine import (
-    polars_duckdb_engine, PolarsQueryResult,
-)
 from backend.data_platform.multi_format_exporter import (
-    multi_format_exporter, OpenTableSpec,
+    OpenTableSpec,
+    multi_format_exporter,
+)
+from backend.data_platform.polars_duckdb_engine import (
+    polars_duckdb_engine,
 )
 
 

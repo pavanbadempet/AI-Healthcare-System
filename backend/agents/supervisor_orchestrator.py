@@ -10,11 +10,11 @@ Implements:
 import uuid
 from enum import Enum
 from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
-from backend.agents.tool_registry import agent_tool_registry
 from backend.agents.reflective_memory import agent_reflective_memory
-
+from backend.agents.tool_registry import agent_tool_registry
 
 # =====================================================================
 # 1. Supervisor Agent Router

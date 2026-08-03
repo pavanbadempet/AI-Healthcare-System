@@ -11,21 +11,21 @@ Exposes REST endpoints for:
 """
 
 from typing import Any, Dict, List, Optional
-from fastapi import APIRouter, HTTPException, Query, Depends
+
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from backend.data_platform.lakehouse_sql import lakehouse_sql_engine
-from backend.data_platform.data_catalog import clinical_data_catalog, AssetType
-from backend.data_platform.lakeflow import medflow_orchestrator
-from backend.data_platform.agentic_bi import agentic_bi_engine
-from backend.data_platform.data_apps import data_ai_apps_runtime
-from backend.spark_engine import spark4_variant_handler, spark_connect_manager
 from backend.agents.supervisor_orchestrator import (
-    supervisor_router,
-    plan_and_execute_orchestrator,
     AgentCapability,
     RegisteredAgent,
+    plan_and_execute_orchestrator,
+    supervisor_router,
 )
+from backend.data_platform.agentic_bi import agentic_bi_engine
+from backend.data_platform.data_apps import data_ai_apps_runtime
+from backend.data_platform.data_catalog import AssetType, clinical_data_catalog
+from backend.data_platform.lakehouse_sql import lakehouse_sql_engine
+from backend.spark_engine import spark4_variant_handler
 
 # Seed default specialist agents into the supervisor router if empty
 if supervisor_router.agent_count == 0:
@@ -153,7 +153,7 @@ def route_agent_task(req: AgentRouteRequest) -> Dict[str, Any]:
         cap = AgentCapability(req.capability.upper())
         decision = supervisor_router.route(cap)
         return decision.model_dump()
-    except Exception as exc:
+    except Exception:
         raise HTTPException(status_code=400, detail=f"Invalid capability. Choose from: {[c.value for c in AgentCapability]}")
 
 
@@ -259,11 +259,11 @@ def execute_governed_agent(payload: Dict[str, Any]) -> Dict[str, Any]:
     """Execute agent action under full FDA audit logging, lineage tracking, & auto-resolution."""
     from backend.agents.agent_governance_engine import agent_governance_engine
     from backend.agents.hospital_operations_agents import agent_sepsis_deterioration
-    
+
     agent_id = payload.get("agent_id", "AGENT-ICU-SEPSIS")
     action_name = payload.get("action_name", "evaluate_sepsis_risk")
     input_data = payload.get("input_data", {"respiratory_rate": 25, "systolic_bp": 90, "gcs_score": 13})
-    
+
     res = agent_governance_engine.execute_governed_action(
         agent_id=agent_id,
         action_name=action_name,

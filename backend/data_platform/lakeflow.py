@@ -12,12 +12,14 @@ Provides:
 import time
 import uuid
 from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
 # Conditional PySpark import for Zero-Configuration local execution
 try:
-    from pyspark.sql import SparkSession, DataFrame as SparkDataFrame
+    from pyspark.sql import DataFrame as SparkDataFrame
+    from pyspark.sql import SparkSession
     HAS_PYSPARK = True
 except ImportError:
     HAS_PYSPARK = False

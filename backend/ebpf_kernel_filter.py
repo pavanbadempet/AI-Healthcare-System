@@ -4,9 +4,10 @@ AI Healthcare System — eBPF (Extended Berkeley Packet Filter) Kernel Socket Fi
 Simulates zero-overhead Linux kernel packet filtering and microservice ingress traffic validation.
 """
 
-from typing import Dict, Any, List
 import time
+
 from pydantic import BaseModel, Field
+
 
 class EBPFPacketHeader(BaseModel):
     source_ip: str = Field("127.0.0.1", json_schema_extra={"example": "127.0.0.1"})

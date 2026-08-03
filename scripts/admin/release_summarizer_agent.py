@@ -10,7 +10,7 @@ for GitHub Releases to maximize search engine indexing and stargazer reach.
 import json
 import os
 import sys
-from typing import Dict, List, Optional
+from typing import Optional
 
 try:
     import requests

@@ -35,7 +35,7 @@ def check_swallowed_exceptions() -> list[str]:
                 try:
                     with open(path, "r", encoding="utf-8") as f:
                         tree = ast.parse(f.read(), filename=path)
-                    
+
                     for node in ast.walk(tree):
                         if isinstance(node, ast.ExceptHandler):
                             if len(node.body) == 1 and isinstance(node.body[0], ast.Pass):
@@ -53,7 +53,7 @@ def check_prompt_registry() -> list[str]:
     if not os.path.exists(registry_path):
         issues.append("backend/prompt_registry.py is missing!")
         return issues
-    
+
     with open(registry_path, "r", encoding="utf-8") as f:
         content = f.read()
 
@@ -73,7 +73,7 @@ def check_route_schemas() -> list[str]:
                 rel_path = os.path.relpath(path, BACKEND_DIR)
                 with open(path, "r", encoding="utf-8") as f:
                     text = f.read()
-                
+
                 matches = re.finditer(r"@(app|router)\.(get|post|put|delete|patch)\(.*?\)\s*\n\s*def\s+(\w+)\(.*?\):", text, re.DOTALL)
                 for match in matches:
                     func_name = match.group(3)
@@ -89,14 +89,14 @@ def main():
     print("=" * 60)
     print("  AI HEALTHCARE SYSTEM - Code Quality Linter")
     print("=" * 60)
-    
+
     exception_issues = check_swallowed_exceptions()
     prompt_issues = check_prompt_registry()
     schema_issues = check_route_schemas()
 
     total_issues = len(exception_issues) + len(prompt_issues) + len(schema_issues)
 
-    print(f"\n1. Exception Handling Check:")
+    print("\n1. Exception Handling Check:")
     if exception_issues:
         print(f"   [WARNING] Found {len(exception_issues)} uncaught exception blocks.")
         for issue in exception_issues[:5]:
@@ -106,17 +106,17 @@ def main():
     else:
         print("   [OK] Clean: No bare swallowed exceptions found.")
 
-    print(f"\n2. Prompt Registry Audit:")
+    print("\n2. Prompt Registry Audit:")
     if prompt_issues:
-        print(f"   [WARNING] Prompt issues found:")
+        print("   [WARNING] Prompt issues found:")
         for issue in prompt_issues:
             print(f"     - {issue}")
     else:
         print("   [OK] Clean: Prompts strictly enforce concise phrasing.")
 
-    print(f"\n3. API Route Dependency Audit:")
+    print("\n3. API Route Dependency Audit:")
     if schema_issues:
-        print(f"   [WARNING] Route dependency issues found:")
+        print("   [WARNING] Route dependency issues found:")
         for issue in schema_issues:
             print(f"     - {issue}")
     else:

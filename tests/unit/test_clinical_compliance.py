@@ -3,12 +3,12 @@ Unit tests for FDA SaMD & HIPAA Regulatory Compliance Engine.
 """
 
 from backend.clinical_compliance.fda_samd_compliance import (
-    samd_evaluator,
+    HealthcareState,
+    SaMDRiskCategory,
+    SaMDSignificance,
     fda_audit_chain,
     hipaa_data_minimizer,
-    HealthcareState,
-    SaMDSignificance,
-    SaMDRiskCategory,
+    samd_evaluator,
 )
 
 

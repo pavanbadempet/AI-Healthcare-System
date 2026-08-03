@@ -6,12 +6,13 @@ Unit tests for essential hospital operations AI agents:
 """
 
 from fastapi.testclient import TestClient
-from backend.main import app
+
 from backend.agents.hospital_operations_agents import (
     agent_prior_auth,
     agent_sepsis_deterioration,
     agent_surgical_or,
 )
+from backend.main import app
 
 client = TestClient(app)
 

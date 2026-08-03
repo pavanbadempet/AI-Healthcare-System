@@ -13,7 +13,7 @@ import json
 import os
 import re
 import sys
-from typing import Any, Dict, Optional
+from typing import Dict
 
 try:
     import requests

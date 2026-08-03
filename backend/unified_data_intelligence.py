@@ -11,13 +11,12 @@ and real-time streaming into a single composable intelligence layer:
 5. Unified Query Fabric — single API surface across all clinical data domains
 """
 
+import statistics
 import time
 import uuid
-import statistics
-from enum import Enum
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
 
+from pydantic import BaseModel, Field
 
 # =====================================================================
 # 1. Clinical Feature Store

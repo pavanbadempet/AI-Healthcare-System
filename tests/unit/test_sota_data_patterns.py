@@ -2,7 +2,8 @@
 Unit tests for SOTA Enterprise Data Patterns (CQRS, SCD Type 2, Differential Privacy).
 """
 
-from backend.sota_data_patterns import cqrs_event_store, scd2_tracker, dp_engine
+from backend.sota_data_patterns import cqrs_event_store, dp_engine, scd2_tracker
+
 
 def test_cqrs_event_sourcing_and_read_projection():
     evt = cqrs_event_store.append_command("P9901", "ENCOUNTER_ADMISSION", {"department": "ICU"})

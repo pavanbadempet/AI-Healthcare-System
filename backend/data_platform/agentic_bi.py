@@ -9,7 +9,8 @@ Provides:
 """
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
+
 from pydantic import BaseModel, Field
 
 from backend.data_platform.lakehouse_sql import lakehouse_sql_engine

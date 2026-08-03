@@ -7,11 +7,8 @@ to generate an up-to-date, search-engine optimized API index at `docs/API_CONTRA
 Ensures AI Search Engines (Perplexity, ChatGPT Search, Bing AI) index all system contracts.
 """
 
-import inspect
-import json
 import os
 import sys
-from typing import Dict, List
 
 # Add project root to path
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../..")))

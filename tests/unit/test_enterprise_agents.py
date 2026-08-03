@@ -7,13 +7,14 @@ Unit & API integration tests for Enterprise Autonomous AI Agents:
 """
 
 from fastapi.testclient import TestClient
-from backend.main import app
+
 from backend.agents.enterprise_clinical_agents import (
-    agent_fraud_detection,
-    agent_entity_resolution,
     agent_cost_analyzer,
+    agent_entity_resolution,
+    agent_fraud_detection,
     agent_future_forecast,
 )
+from backend.main import app
 
 client = TestClient(app)
 

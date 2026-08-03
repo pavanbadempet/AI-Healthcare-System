@@ -9,10 +9,11 @@ Provides:
 - Warehouse endpoint abstraction for cloud lakehouse migration
 """
 
-import time
 import re
+import time
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel
 
 from backend.data_platform.open_table_format import open_table_engine
 

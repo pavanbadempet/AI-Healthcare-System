@@ -5,16 +5,14 @@ Provides zero-configuration local fallback pathways for ABHA creation, OTP verif
 and M1/M2/M3 digital health consent artifacts.
 """
 
-import uuid
 import random
+import uuid
 from datetime import datetime, timezone
-from fastapi import APIRouter, HTTPException, Depends
-from typing import Dict, Any, List
+from typing import Any, Dict
 
-from backend.schemas.abdm import (
-    ABHACreateRequest, ABHAResponse,
-    ConsentArtifactCreate, ConsentArtifactResponse
-)
+from fastapi import APIRouter, HTTPException
+
+from backend.schemas.abdm import ABHACreateRequest, ABHAResponse, ConsentArtifactCreate, ConsentArtifactResponse
 
 router = APIRouter(prefix="/abdm", tags=["abdm-sandbox"])
 
@@ -31,7 +29,7 @@ def generate_abha_health_id(req: ABHACreateRequest) -> Dict[str, Any]:
     abha_num = f"91-{random_digits[:4]}-{random_digits[4:8]}-{random_digits[8:]}"
     clean_username = "".join(e for e in req.name.lower() if e.isalnum())
     abha_addr = f"{clean_username}{random.randint(100,999)}@sbx"
-    
+
     record = {
         "abha_number": abha_num,
         "abha_address": abha_addr,

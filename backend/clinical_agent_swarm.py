@@ -5,9 +5,12 @@ Orchestrates multi-agent clinical decision support including triage assessment,
 drug-drug interaction verification, ReAct tool execution, and reflective memory synthesis.
 """
 
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 from pydantic import BaseModel, Field
+
 from backend.sota_rust_engine_layer import sota_rust_engine_layer_engine
+
 
 class ClinicalSwarmInput(BaseModel):
     patient_id: str = Field(..., json_schema_extra={"example": "PATIENT-8891"})

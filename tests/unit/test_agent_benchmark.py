@@ -3,8 +3,9 @@ Unit & API integration tests for Agent Performance & Benchmark Suite.
 """
 
 from fastapi.testclient import TestClient
-from backend.main import app
+
 from backend.agents.agent_benchmark_suite import agent_benchmark_runner
+from backend.main import app
 
 client = TestClient(app)
 
