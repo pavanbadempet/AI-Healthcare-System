@@ -98,6 +98,15 @@ fn calculate_egfr_py(serum_creatinine: f64, age: f64, is_female: bool) -> PyResu
 }
 
 #[pyfunction]
+fn calculate_fib4_py(ast: f64, alt: f64, platelets: f64, age: f64) -> PyResult<f64> {
+    if alt <= 0.0 || platelets <= 0.0 {
+        return Ok(0.0);
+    }
+    let score = (age * ast) / (platelets * alt.sqrt());
+    Ok((score * 100.0).round() / 100.0)
+}
+
+#[pyfunction]
 fn validate_fhir_patient_py(json_str: &str) -> PyResult<bool> {
     match serde_json::from_str::<serde_json::Value>(json_str) {
         Ok(val) => Ok(fhir::validate_fhir_resource_sync(&val).valid),
@@ -135,7 +144,6 @@ fn detect_fraud_score_py(amount: f64, cpt_code: &str, is_duplicate: bool) -> PyR
     if amount > 10000.0 && cpt_code.contains("CPT-99211") { score += 0.35; }
 
     let score_final = score.min(1.0f64);
-
     let risk = if score_final >= 0.7 {
         "CRITICAL"
     } else if score_final >= 0.4 {
@@ -155,6 +163,44 @@ fn calculate_cosine_similarity_py(vec_a: Vec<f64>, vec_b: Vec<f64>) -> PyResult<
     Ok(sim)
 }
 
+#[pyfunction]
+fn score_diabetes_risk_py(glucose: f64, bmi: f64, age: f64, hba1c: f64) -> PyResult<(f64, String)> {
+    let mut prob: f64 = 0.1;
+    if glucose >= 126.0 || hba1c >= 6.5 { prob += 0.55; }
+    if bmi >= 30.0 { prob += 0.20; }
+    if age >= 45.0 { prob += 0.15; }
+
+    let prob_final = prob.min(0.99f64);
+    let level = if prob_final >= 0.6 { "HIGH_RISK" } else if prob_final >= 0.3 { "MODERATE_RISK" } else { "LOW_RISK" };
+    Ok((prob_final, level.to_string()))
+}
+
+#[pyfunction]
+fn score_heart_risk_py(sys_bp: f64, cholesterol: f64, hdl: f64, smoker: bool) -> PyResult<(f64, String)> {
+    let mut score: f64 = 0.05;
+    if sys_bp >= 140.0 { score += 0.30; }
+    if cholesterol >= 240.0 { score += 0.25; }
+    if hdl < 40.0 { score += 0.20; }
+    if smoker { score += 0.20; }
+
+    let score_final = score.min(0.99f64);
+    let level = if score_final >= 0.5 { "HIGH_RISK" } else if score_final >= 0.25 { "MODERATE_RISK" } else { "LOW_RISK" };
+    Ok((score_final, level.to_string()))
+}
+
+#[pyfunction]
+fn classify_samd_risk_py(is_critical: bool, is_drive_management: bool, is_inform_care: bool) -> PyResult<String> {
+    if is_critical && is_drive_management {
+        Ok("CLASS_IV_CRITICAL".to_string())
+    } else if is_critical || is_drive_management {
+        Ok("CLASS_III_HIGH".to_string())
+    } else if is_inform_care {
+        Ok("CLASS_II_MODERATE".to_string())
+    } else {
+        Ok("CLASS_I_LOW".to_string())
+    }
+}
+
 #[pymodule]
 fn rust_gateway_ffi(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(aggregate_fedavg_py, m)?)?;
@@ -162,10 +208,14 @@ fn rust_gateway_ffi(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(verify_password_py, m)?)?;
     m.add_function(wrap_pyfunction!(redact_phi_py, m)?)?;
     m.add_function(wrap_pyfunction!(calculate_egfr_py, m)?)?;
+    m.add_function(wrap_pyfunction!(calculate_fib4_py, m)?)?;
     m.add_function(wrap_pyfunction!(validate_fhir_patient_py, m)?)?;
     m.add_function(wrap_pyfunction!(attest_enclave_py, m)?)?;
     m.add_function(wrap_pyfunction!(evaluate_sepsis_qsofa_py, m)?)?;
     m.add_function(wrap_pyfunction!(detect_fraud_score_py, m)?)?;
     m.add_function(wrap_pyfunction!(calculate_cosine_similarity_py, m)?)?;
+    m.add_function(wrap_pyfunction!(score_diabetes_risk_py, m)?)?;
+    m.add_function(wrap_pyfunction!(score_heart_risk_py, m)?)?;
+    m.add_function(wrap_pyfunction!(classify_samd_risk_py, m)?)?;
     Ok(())
 }
