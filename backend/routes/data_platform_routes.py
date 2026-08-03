@@ -176,3 +176,39 @@ def plan_and_execute_agent_goal(req: PlanExecuteRequest) -> Dict[str, Any]:
         return res_plan.model_dump()
     except Exception as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+
+
+@router.post("/agents/fraud-detection/analyze")
+def analyze_claim_fraud(claim_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Analyze claim for upcoding, phantom billing, and duplicate fraud."""
+    from backend.agents.enterprise_clinical_agents import agent_fraud_detection
+    res = agent_fraud_detection.analyze_claim(claim_data)
+    return res.model_dump()
+
+
+@router.post("/agents/entity-resolution/resolve")
+def resolve_patient_entity(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Resolve patient identity & deduplicate EMPI records."""
+    from backend.agents.enterprise_clinical_agents import agent_entity_resolution
+    candidate = payload.get("candidate", {})
+    master = payload.get("master_records", [])
+    res = agent_entity_resolution.resolve_entity(candidate, master)
+    return res.model_dump()
+
+
+@router.post("/agents/cost-analyzer/analyze")
+def analyze_patient_cost(patient_case: Dict[str, Any]) -> Dict[str, Any]:
+    """Analyze treatment cost, DRG length of stay, & savings opportunities."""
+    from backend.agents.enterprise_clinical_agents import agent_cost_analyzer
+    res = agent_cost_analyzer.analyze_cost(patient_case)
+    return res.model_dump()
+
+
+@router.post("/agents/future-forecast/predict")
+def predict_hospital_forecast(payload: Dict[str, Any]) -> Dict[str, Any]:
+    """Forecast ED surge, ICU bed demand, & patient trajectory."""
+    from backend.agents.enterprise_clinical_agents import agent_future_forecast
+    history = payload.get("historical_counts", [50.0, 55.0, 52.0, 58.0, 60.0])
+    horizon = payload.get("forecast_horizon_days", 7)
+    res = agent_future_forecast.forecast_demand(history, horizon)
+    return res.model_dump()
