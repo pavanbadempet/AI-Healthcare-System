@@ -31,6 +31,8 @@ class AgentCapability(str, Enum):
     PRIOR_AUTH = "PRIOR_AUTH"
     ICU_MONITOR = "ICU_MONITOR"
     SURGICAL_OR = "SURGICAL_OR"
+    TRIAL_MATCHING = "TRIAL_MATCHING"
+    RPM_ADHERENCE = "RPM_ADHERENCE"
 
 
 class RegisteredAgent(BaseModel):
