@@ -236,3 +236,19 @@ def optimize_surgical_or_schedule(surgical_case: Dict[str, Any]) -> Dict[str, An
     from backend.agents.hospital_operations_agents import agent_surgical_or
     res = agent_surgical_or.optimize_or_schedule(surgical_case)
     return res.model_dump()
+
+
+@router.post("/agents/trial-matching/match")
+def match_clinical_trials(patient_profile: Dict[str, Any]) -> Dict[str, Any]:
+    """Match patient profile & biomarkers to active ClinicalTrials.gov protocols."""
+    from backend.agents.clinical_research_rpm_agents import agent_trial_matching
+    res = agent_trial_matching.match_trials(patient_profile)
+    return res.model_dump()
+
+
+@router.post("/agents/rpm-adherence/evaluate")
+def evaluate_rpm_adherence(rpm_telemetry: Dict[str, Any]) -> Dict[str, Any]:
+    """Evaluate remote patient telemetry & medication adherence compliance."""
+    from backend.agents.clinical_research_rpm_agents import agent_rpm_adherence
+    res = agent_rpm_adherence.evaluate_rpm(rpm_telemetry)
+    return res.model_dump()
