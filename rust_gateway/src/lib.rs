@@ -212,6 +212,29 @@ fn generate_audit_hash_py(index: i64, event_type: &str, actor_id: &str, details:
     Ok(hex_str)
 }
 
+#[pyfunction]
+fn generate_counterfactual_py(features: Vec<String>, values: Vec<f64>, risk_score: f64) -> PyResult<(Vec<String>, f64)> {
+    let mut recs = Vec::new();
+    for (feat, val) in features.iter().zip(values.iter()) {
+        let f_lower = feat.to_lowercase();
+        if f_lower.contains("bp") || f_lower.contains("pressure") {
+            if *val > 120.0 {
+                recs.push(format!("Reduce {} from {:.1} to <= 120.0 mmHg", feat, val));
+            }
+        } else if f_lower.contains("chol") {
+            if *val > 200.0 {
+                recs.push(format!("Reduce {} from {:.1} to <= 200.0 mg/dL", feat, val));
+            }
+        } else if f_lower.contains("bmi") {
+            if *val > 25.0 {
+                recs.push(format!("Reduce BMI from {:.1} to <= 25.0", val));
+            }
+        }
+    }
+    let target_risk = (risk_score * 0.65).max(0.05);
+    Ok((recs, target_risk))
+}
+
 #[pymodule]
 fn rust_gateway_ffi(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(aggregate_fedavg_py, m)?)?;
@@ -229,5 +252,7 @@ fn rust_gateway_ffi(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(score_heart_risk_py, m)?)?;
     m.add_function(wrap_pyfunction!(classify_samd_risk_py, m)?)?;
     m.add_function(wrap_pyfunction!(generate_audit_hash_py, m)?)?;
+    m.add_function(wrap_pyfunction!(generate_counterfactual_py, m)?)?;
     Ok(())
 }
+

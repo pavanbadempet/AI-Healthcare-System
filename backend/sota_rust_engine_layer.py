@@ -200,6 +200,27 @@ class SOTARustEngineLayerEngine:
             payload = f"{index}:{event_type}:{actor_id}:{action_details}:{previous_hash}"
             return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
+    def generate_counterfactual_rust(self, features: List[str], values: List[float], risk_score: float) -> Tuple[List[str], float]:
+        """
+        Generates clinical counterfactual recommendations via Native Rust PyO3.
+        """
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.generate_counterfactual_py(features, values, risk_score)
+        except Exception:
+            recs = []
+            for feat, val in zip(features, values):
+                fl = feat.lower()
+                if "bp" in fl or "pressure" in fl:
+                    if val > 120.0: recs.append(f"Reduce {feat} from {val:.1f} to <= 120.0 mmHg")
+                elif "chol" in fl:
+                    if val > 200.0: recs.append(f"Reduce {feat} from {val:.1f} to <= 200.0 mg/dL")
+                elif "bmi" in fl:
+                    if val > 25.0: recs.append(f"Reduce BMI from {val:.1f} to <= 25.0")
+            target_risk = max(risk_score * 0.65, 0.05)
+            return (recs, target_risk)
+
+
 
 
 # Global Singleton Instance
