@@ -67,23 +67,11 @@ def calculate_egfr_ckd_epi(age: float, gender: int, creatinine: float) -> Option
         return None
 
     # Constants based on gender
-    if gender == 0:  # Female
-        kappa = 0.7
-        alpha = -0.241
-        gender_factor = 1.012
-    else:  # Male (and fallback default)
-        kappa = 0.9
-        alpha = -0.302
-        gender_factor = 1.0
-
-    # Calculate min/max components
-    cr_kappa_ratio = creatinine / kappa
-    min_term = min(cr_kappa_ratio, 1.0)
-    max_term = max(cr_kappa_ratio, 1.0)
-
-    # eGFR = 142 * min(Cr/K, 1)^alpha * max(Cr/K, 1)^-1.200 * 0.9938^Age * gender_factor
-    egfr = 142 * (min_term ** alpha) * (max_term ** -1.200) * (0.9938 ** age) * gender_factor
+    from .sota_rust_engine_layer import sota_rust_engine_layer_engine
+    is_female = (gender == 0)
+    egfr = sota_rust_engine_layer_engine.compute_rust_egfr(creatinine, age, is_female)
     egfr_rounded = round(egfr, 1)
+
 
     # CKD Staging classification
     if egfr_rounded >= 90:
@@ -138,9 +126,9 @@ def calculate_fib4_index(age: float, ast: float, alt: float, platelets: float) -
     if platelets <= 0 or alt <= 0 or ast <= 0 or age <= 0:
         return None
 
-    # FIB-4 = (Age * AST) / (Platelets * sqrt(ALT))
-    fib4 = (age * ast) / (platelets * math.sqrt(alt))
-    score = round(fib4, 2)
+    from .sota_rust_engine_layer import sota_rust_engine_layer_engine
+    score = sota_rust_engine_layer_engine.calculate_fib4_rust(ast, alt, platelets, age)
+
 
     # Risk threshold classifications (age-dependent cutoffs)
     if age < 65:
