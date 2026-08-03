@@ -318,3 +318,11 @@ def orchestrate_dag_plan(payload: Dict[str, Any]) -> Dict[str, Any]:
     plan = ultimate_agent_mesh.dag_orchestrator.build_dag_plan(goal, tasks)
     res = ultimate_agent_mesh.dag_orchestrator.execute_dag_plan(plan)
     return res.model_dump()
+
+
+@router.get("/agents/benchmark/run")
+def run_agent_performance_benchmark() -> Dict[str, Any]:
+    """Run live performance trials across all AI agents and return system scorecard."""
+    from backend.agents.agent_benchmark_suite import agent_benchmark_runner
+    scorecard = agent_benchmark_runner.run_full_benchmark()
+    return scorecard.model_dump()
