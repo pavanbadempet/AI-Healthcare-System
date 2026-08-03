@@ -28,6 +28,7 @@ mod fhir;
 mod tee_enclave;
 mod vector_store;
 mod interop_grpc;
+mod clinical_calculator;
 
 #[derive(Clone)]
 pub struct AppState {

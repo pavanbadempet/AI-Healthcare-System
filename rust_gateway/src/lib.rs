@@ -8,6 +8,7 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 mod fhir;
 mod tee_enclave;
+mod clinical_calculator;
 
 // Define stub AppState to satisfy fhir module router bindings when compiled as FFI lib
 #[derive(Clone)]
@@ -16,6 +17,11 @@ pub struct AppState {}
 // =====================================================================
 // 1. C-FFI / ctypes Direct Loader Exports
 // =====================================================================
+
+#[unsafe(no_mangle)]
+pub extern "C" fn calculate_egfr_ffi(serum_creatinine: f64, age: f64, is_female: bool) -> f64 {
+    clinical_calculator::calculate_egfr_ckd_epi(serum_creatinine, age, is_female)
+}
 
 #[unsafe(no_mangle)]
 pub extern "C" fn validate_fhir_patient_ffi(json_ptr: *const c_char) -> bool {
@@ -61,6 +67,11 @@ pub extern "C" fn attest_enclave_ffi(
 // =====================================================================
 
 #[pyfunction]
+fn calculate_egfr_py(serum_creatinine: f64, age: f64, is_female: bool) -> PyResult<f64> {
+    Ok(clinical_calculator::calculate_egfr_ckd_epi(serum_creatinine, age, is_female))
+}
+
+#[pyfunction]
 fn validate_fhir_patient_py(json_str: &str) -> PyResult<bool> {
     match serde_json::from_str::<serde_json::Value>(json_str) {
         Ok(val) => Ok(fhir::validate_fhir_resource_sync(&val).valid),
@@ -76,6 +87,7 @@ fn attest_enclave_py(model_name: &str, model_bytes: Vec<u8>) -> PyResult<bool> {
 
 #[pymodule]
 fn rust_gateway_ffi(m: &Bound<'_, PyModule>) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(calculate_egfr_py, m)?)?;
     m.add_function(wrap_pyfunction!(validate_fhir_patient_py, m)?)?;
     m.add_function(wrap_pyfunction!(attest_enclave_py, m)?)?;
     Ok(())
