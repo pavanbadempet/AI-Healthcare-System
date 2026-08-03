@@ -12,16 +12,19 @@ Follows the Zero-Configuration Sandbox Rule: all classes provide pure Python
 in-memory fallback pathways when running locally without a Spark 4.x cluster.
 """
 
+import json
 import os
 import time
-import json
 from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
 # Conditional PySpark import for Zero-Configuration local execution
 try:
-    from pyspark.sql import SparkSession, DataFrame as SparkDataFrame
-    from pyspark.sql.functions import col, pandas_udf, expr
+    from pyspark.sql import DataFrame as SparkDataFrame
+    from pyspark.sql import SparkSession
+    from pyspark.sql.functions import col, expr, pandas_udf  # noqa: F401
+
     HAS_PYSPARK = True
 except ImportError:
     HAS_PYSPARK = False
