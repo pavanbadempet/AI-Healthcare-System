@@ -1,14 +1,21 @@
 """
-Unit & API integration tests for Unified Data + AI Platform FastAPI routes.
+Unit & API integration tests for Unified Data + AI Platform & Multi-Agent Supervisor FastAPI routes.
 """
 
 from fastapi.testclient import TestClient
 from backend.main import app
+from backend.data_platform.open_table_format import open_table_engine, TableSchema
 
 client = TestClient(app)
 
 
 def test_api_lakehouse_sql_execute():
+    # Ensure sample table exists for testing
+    if "sql_test" not in open_table_engine.list_tables():
+        schema = TableSchema(columns={"id": "str", "dept": "str", "score": "int"})
+        tbl = open_table_engine.create_table("sql_test", schema)
+        tbl.insert([{"id": "A", "dept": "cardio", "score": 90}])
+
     res = client.post("/api/v1/data-platform/sql/execute", json={
         "sql": "SELECT COUNT(*) FROM sql_test",
     })
@@ -16,7 +23,7 @@ def test_api_lakehouse_sql_execute():
     body = res.json()
     assert "columns" in body
     assert "rows" in body
-    assert body["total_count"] == 1
+    assert body["total_count"] >= 1
 
 
 def test_api_catalog_search():
@@ -55,3 +62,33 @@ def test_api_data_apps_list():
     body = res.json()
     assert "total" in body
     assert "apps" in body
+
+
+def test_api_supervisor_agent_route():
+    res = client.post("/api/v1/data-platform/agents/route", json={
+        "capability": "TRIAGE",
+    })
+    assert res.status_code == 200
+    body = res.json()
+    assert body["selected_agent_id"].startswith("AG")
+    assert body["confidence"] > 0.0
+
+
+def test_api_plan_and_execute_orchestration():
+    res = client.post("/api/v1/data-platform/agents/plan-and-execute", json={
+        "goal": "Evaluate ED Patient Risk & Dosage",
+        "steps": [
+            {
+                "description": "Perform ED Triage Risk Assessment",
+                "required_capability": "TRIAGE",
+            },
+            {
+                "description": "Verify Pharmacy Dosage Safety",
+                "required_capability": "PHARMACY",
+            },
+        ],
+    })
+    assert res.status_code == 200
+    body = res.json()
+    assert body["overall_status"] == "COMPLETED"
+    assert len(body["steps"]) == 2

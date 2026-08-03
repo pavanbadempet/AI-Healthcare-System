@@ -7,6 +7,7 @@ Exposes REST endpoints for:
 - MedFlow declarative ETL pipeline runs
 - Agentic BI natural language analytics
 - Spark 4.x Variant JSON shredding & Spark Connect session status
+- Multi-Agent Supervisor Router & Plan-and-Execute Orchestration
 """
 
 from typing import Any, Dict, List, Optional
@@ -19,6 +20,39 @@ from backend.data_platform.lakeflow import medflow_orchestrator
 from backend.data_platform.agentic_bi import agentic_bi_engine
 from backend.data_platform.data_apps import data_ai_apps_runtime
 from backend.spark_engine import spark4_variant_handler, spark_connect_manager
+from backend.agents.supervisor_orchestrator import (
+    supervisor_router,
+    plan_and_execute_orchestrator,
+    AgentCapability,
+    RegisteredAgent,
+)
+
+# Seed default specialist agents into the supervisor router if empty
+if supervisor_router.agent_count == 0:
+    supervisor_router.register_agent(RegisteredAgent(
+        agent_id="AGENT-ED-TRIAGE",
+        name="Emergency Department Triage Specialist",
+        capabilities=[AgentCapability.TRIAGE, AgentCapability.SAFETY],
+        priority=10,
+    ))
+    supervisor_router.register_agent(RegisteredAgent(
+        agent_id="AGENT-PHARM-SAFETY",
+        name="Pharmacy Safety & Dosage Specialist",
+        capabilities=[AgentCapability.PHARMACY, AgentCapability.SAFETY],
+        priority=9,
+    ))
+    supervisor_router.register_agent(RegisteredAgent(
+        agent_id="AGENT-RAD-PREREAD",
+        name="Radiology Pre-Reader Agent",
+        capabilities=[AgentCapability.RADIOLOGY],
+        priority=8,
+    ))
+    supervisor_router.register_agent(RegisteredAgent(
+        agent_id="AGENT-DISCHARGE-SUMM",
+        name="Discharge Summary & Care Continuity Agent",
+        capabilities=[AgentCapability.DISCHARGE],
+        priority=7,
+    ))
 
 router = APIRouter(prefix="/api/v1/data-platform", tags=["Unified Data Platform"])
 
@@ -40,6 +74,15 @@ class BIAskRequest(BaseModel):
 class VariantShredRequest(BaseModel):
     raw_json: str
     target_fields: List[str] = Field(default_factory=list)
+
+
+class AgentRouteRequest(BaseModel):
+    capability: str  # "TRIAGE", "PHARMACY", "RADIOLOGY", "DISCHARGE", "SAFETY"
+
+
+class PlanExecuteRequest(BaseModel):
+    goal: str
+    steps: List[Dict[str, Any]]
 
 
 # =====================================================================
@@ -101,3 +144,35 @@ def list_data_apps() -> Dict[str, Any]:
     """List registered Data & AI Apps."""
     apps = data_ai_apps_runtime.list_apps()
     return {"total": len(apps), "apps": [a.model_dump() for a in apps]}
+
+
+@router.post("/agents/route")
+def route_agent_task(req: AgentRouteRequest) -> Dict[str, Any]:
+    """Route task to best-fit specialist agent via Multi-Agent Supervisor."""
+    try:
+        cap = AgentCapability(req.capability.upper())
+        decision = supervisor_router.route(cap)
+        return decision.model_dump()
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=f"Invalid capability. Choose from: {[c.value for c in AgentCapability]}")
+
+
+@router.post("/agents/plan-and-execute")
+def plan_and_execute_agent_goal(req: PlanExecuteRequest) -> Dict[str, Any]:
+    """Decompose and execute multi-step clinical plan via Plan-and-Execute Orchestrator."""
+    try:
+        from backend.agents.supervisor_orchestrator import PlanStep
+        plan_steps = [
+            PlanStep(
+                description=s["description"],
+                required_capability=AgentCapability(s["required_capability"].upper()),
+                tool_name=s.get("tool_name"),
+                tool_kwargs=s.get("tool_kwargs", {}),
+            )
+            for s in req.steps
+        ]
+        exec_plan = plan_and_execute_orchestrator.plan(req.goal, plan_steps)
+        res_plan = plan_and_execute_orchestrator.execute(exec_plan)
+        return res_plan.model_dump()
+    except Exception as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
