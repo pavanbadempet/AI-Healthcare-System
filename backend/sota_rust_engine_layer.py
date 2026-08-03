@@ -76,5 +76,30 @@ class SOTARustEngineLayerEngine:
             text_ssn = re.sub(r"\b\d{3}-\d{2}-\d{4}\b", "[REDACTED-SSN]", text)
             return re.sub(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b", "[REDACTED-EMAIL]", text_ssn)
 
+    def hash_password_rust(self, password: str) -> str:
+        """
+        Hashes password using Rust PyO3 bcrypt with fallback to Python bcrypt.
+        """
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.hash_password_py(password)
+        except Exception:
+            import bcrypt
+            return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+    def verify_password_rust(self, password: str, hashed: str) -> bool:
+        """
+        Verifies password hash using Rust PyO3 bcrypt with fallback to Python bcrypt.
+        """
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.verify_password_py(password, hashed)
+        except Exception:
+            import bcrypt
+            try:
+                return bcrypt.checkpw(password.encode("utf-8"), hashed.encode("utf-8"))
+            except Exception:
+                return False
+
 
 sota_rust_engine_layer_engine = SOTARustEngineLayerEngine()
