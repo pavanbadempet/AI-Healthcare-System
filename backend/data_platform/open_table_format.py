@@ -122,7 +122,7 @@ class LakehouseTable:
 class OpenTableFormatEngine:
     """
     Manages multiple lakehouse tables with a unified namespace.
-    Databricks Delta Lake / Iceberg equivalent.
+    Delta Lake (open-source) / Apache Iceberg compatible.
     """
 
     def __init__(self) -> None:

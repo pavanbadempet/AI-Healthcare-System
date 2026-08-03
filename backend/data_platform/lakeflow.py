@@ -1,12 +1,12 @@
 """
-Lakeflow — ETL/ELT Pipeline Orchestrator for Clinical Data Lakehouse.
+MedFlow — ETL/ELT Pipeline Orchestrator for Clinical Data Lakehouse.
 
 Provides:
 - Declarative pipeline DAG definition
 - Step-level retries and error handling
 - Pipeline versioning and run history
 - Source → Transform → Sink execution model
-- Databricks Lakeflow migration-compatible interface
+- Open-standard lakehouse migration-compatible interface
 """
 
 import time
@@ -47,7 +47,7 @@ class PipelineRun(BaseModel):
     total_records_processed: int = 0
 
 
-class LakeflowPipeline:
+class MedFlowPipeline:
     """
     A declarative ETL pipeline with ordered steps.
 
@@ -60,17 +60,17 @@ class LakeflowPipeline:
         self._steps: List[Dict[str, Any]] = []
         self._runs: List[PipelineRun] = []
 
-    def add_source(self, name: str, func: Callable[[], List[Dict[str, Any]]]) -> "LakeflowPipeline":
+    def add_source(self, name: str, func: Callable[[], List[Dict[str, Any]]]) -> "MedFlowPipeline":
         """Add a data source step."""
         self._steps.append({"name": name, "type": "SOURCE", "func": func})
         return self
 
-    def add_transform(self, name: str, func: Callable[[List[Dict[str, Any]]], List[Dict[str, Any]]]) -> "LakeflowPipeline":
+    def add_transform(self, name: str, func: Callable[[List[Dict[str, Any]]], List[Dict[str, Any]]]) -> "MedFlowPipeline":
         """Add a transformation step."""
         self._steps.append({"name": name, "type": "TRANSFORM", "func": func})
         return self
 
-    def add_sink(self, name: str, func: Callable[[List[Dict[str, Any]]], int]) -> "LakeflowPipeline":
+    def add_sink(self, name: str, func: Callable[[List[Dict[str, Any]]], int]) -> "MedFlowPipeline":
         """Add a data sink step."""
         self._steps.append({"name": name, "type": "SINK", "func": func})
         return self
@@ -134,19 +134,19 @@ class LakeflowPipeline:
         return list(self._runs)
 
 
-class LakeflowOrchestrator:
-    """Manages multiple Lakeflow pipelines."""
+class MedFlowOrchestrator:
+    """Manages multiple MedFlow clinical data pipelines."""
 
     def __init__(self) -> None:
-        self._pipelines: Dict[str, LakeflowPipeline] = {}
+        self._pipelines: Dict[str, MedFlowPipeline] = {}
 
-    def create_pipeline(self, name: str) -> LakeflowPipeline:
+    def create_pipeline(self, name: str) -> MedFlowPipeline:
         """Create and register a new pipeline."""
-        pipeline = LakeflowPipeline(name)
+        pipeline = MedFlowPipeline(name)
         self._pipelines[name] = pipeline
         return pipeline
 
-    def get_pipeline(self, name: str) -> Optional[LakeflowPipeline]:
+    def get_pipeline(self, name: str) -> Optional[MedFlowPipeline]:
         """Get a pipeline by name."""
         return self._pipelines.get(name)
 
@@ -155,4 +155,9 @@ class LakeflowOrchestrator:
         return list(self._pipelines.keys())
 
 
-lakeflow_orchestrator = LakeflowOrchestrator()
+medflow_orchestrator = MedFlowOrchestrator()
+
+# Backward-compatible aliases
+LakeflowPipeline = MedFlowPipeline
+LakeflowOrchestrator = MedFlowOrchestrator
+lakeflow_orchestrator = medflow_orchestrator

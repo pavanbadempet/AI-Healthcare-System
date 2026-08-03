@@ -1,12 +1,12 @@
 """
-Lakehouse SQL Engine — DBSQL-Style SQL Query Engine Over Clinical Data Lake.
+Lakehouse SQL Engine — SQL Query Engine Over Clinical Data Lake.
 
 Provides:
 - SQL parsing and execution over in-memory lakehouse tables
 - Parameterized query support
 - Query profiling with execution metrics
 - Result set pagination
-- Warehouse endpoint abstraction for Databricks migration
+- Warehouse endpoint abstraction for cloud lakehouse migration
 """
 
 import time
@@ -40,7 +40,7 @@ class LakehouseSQLEngine:
     Executes SQL-like queries against lakehouse ACID tables.
 
     Supports SELECT with WHERE, ORDER BY, LIMIT, and COUNT(*).
-    Designed for Databricks DBSQL migration compatibility.
+    Designed for open-standard lakehouse SQL migration compatibility.
     """
 
     def __init__(self, warehouse_id: str = "clinical-warehouse-01") -> None:
