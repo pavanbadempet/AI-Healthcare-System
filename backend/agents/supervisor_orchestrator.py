@@ -28,6 +28,9 @@ class AgentCapability(str, Enum):
     BILLING = "BILLING"
     SCHEDULING = "SCHEDULING"
     SAFETY = "SAFETY"
+    PRIOR_AUTH = "PRIOR_AUTH"
+    ICU_MONITOR = "ICU_MONITOR"
+    SURGICAL_OR = "SURGICAL_OR"
 
 
 class RegisteredAgent(BaseModel):

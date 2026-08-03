@@ -212,3 +212,27 @@ def predict_hospital_forecast(payload: Dict[str, Any]) -> Dict[str, Any]:
     horizon = payload.get("forecast_horizon_days", 7)
     res = agent_future_forecast.forecast_demand(history, horizon)
     return res.model_dump()
+
+
+@router.post("/agents/prior-auth/process")
+def process_prior_auth_request(request_data: Dict[str, Any]) -> Dict[str, Any]:
+    """Process prior authorization request against medical necessity guidelines."""
+    from backend.agents.hospital_operations_agents import agent_prior_auth
+    res = agent_prior_auth.process_prior_auth(request_data)
+    return res.model_dump()
+
+
+@router.post("/agents/sepsis/evaluate")
+def evaluate_icu_sepsis_risk(vital_stream: Dict[str, Any]) -> Dict[str, Any]:
+    """Evaluate real-time ICU qSOFA score & sepsis deterioration risk."""
+    from backend.agents.hospital_operations_agents import agent_sepsis_deterioration
+    res = agent_sepsis_deterioration.evaluate_sepsis_risk(vital_stream)
+    return res.model_dump()
+
+
+@router.post("/agents/surgical-or/optimize")
+def optimize_surgical_or_schedule(surgical_case: Dict[str, Any]) -> Dict[str, Any]:
+    """Optimize operating room turnover, scheduling, & sterilization prep."""
+    from backend.agents.hospital_operations_agents import agent_surgical_or
+    res = agent_surgical_or.optimize_or_schedule(surgical_case)
+    return res.model_dump()
