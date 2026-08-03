@@ -98,4 +98,6 @@ class SOTARustEngineLayerEngine:
 
 
 # Global Singleton Instance
-sota_rust_engine = SOTARustEngineLayerEngine()
+sota_rust_engine_layer_engine = SOTARustEngineLayerEngine()
+sota_rust_engine = sota_rust_engine_layer_engine
+
