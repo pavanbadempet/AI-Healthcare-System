@@ -46,5 +46,23 @@ class SOTARustEngineLayerEngine:
             is_rust_native=True,
         )
 
+    def compute_rust_egfr(self, serum_creatinine: float, age: float, is_female: bool) -> float:
+        """
+        Executes CKD-EPI eGFR via Rust PyO3 / C-FFI extension module with zero-latency fallback.
+        """
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.calculate_egfr_py(serum_creatinine, age, is_female)
+        except Exception:
+            # High-precision Python fallback matching Rust formula
+            if serum_creatinine <= 0.0 or age <= 0.0:
+                return 0.0
+            kappa, alpha = (0.7, -0.241) if is_female else (0.9, -0.302)
+            scr_over_kappa = serum_creatinine / kappa
+            min_part = min(scr_over_kappa, 1.0) ** alpha
+            max_part = max(scr_over_kappa, 1.0) ** -1.200
+            gender_factor = 1.012 if is_female else 1.0
+            return 142.0 * min_part * max_part * (0.9938 ** age) * gender_factor
+
 
 sota_rust_engine_layer_engine = SOTARustEngineLayerEngine()
