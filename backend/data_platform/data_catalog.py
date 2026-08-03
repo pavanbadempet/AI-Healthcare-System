@@ -77,7 +77,7 @@ class AccessPolicy(BaseModel):
 
 class UnityDataCatalog:
     """
-    Databricks Unity Catalog-style metadata store.
+    Unity Catalog-style metadata store (Apache-licensed open standard).
 
     Three-level namespace (catalog.schema.table) with column-level
     governance, data classification, and search.

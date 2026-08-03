@@ -5,7 +5,7 @@ Provides:
 - Declarative app registration with typed inputs/outputs
 - App lifecycle management (deploy, stop, health check)
 - Built-in integration with lakehouse tables, catalog, and BI engine
-- Databricks Apps migration-compatible interface
+- Cloud-native data app migration-compatible interface
 """
 
 import time
