@@ -181,8 +181,10 @@ def generate_counterfactual_explanation(
         "current_risk_score": round(risk_score, 4),
         "target_achievable_risk": round(target_risk, 4),
         "actionable_recommendations": recs,
+        "actionable_counterfactuals": recs,
         "counterfactual_engine": "Native_Rust_PyO3_Engine_v1"
     }
+
 
 
 
