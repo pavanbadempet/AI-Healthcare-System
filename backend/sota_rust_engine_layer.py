@@ -219,8 +219,11 @@ class SOTARustEngineLayerEngine:
                     if val > 120.0: recs.append(f"Reduce {feat} from {val:.1f} to <= 120.0 mmHg")
                 elif "chol" in fl:
                     if val > 200.0: recs.append(f"Reduce {feat} from {val:.1f} to <= 200.0 mg/dL")
+                elif "glucose" in fl or "sugar" in fl or "fbs" in fl:
+                    if val > 100.0: recs.append(f"Reduce {feat} from {val:.1f} to <= 100.0 mg/dL")
                 elif "bmi" in fl:
                     if val > 25.0: recs.append(f"Reduce BMI from {val:.1f} to <= 25.0")
+
     def calculate_cosine_similarity(self, vec_a: List[float], vec_b: List[float]) -> float:
         return self.compute_rust_cosine_similarity(vec_a, vec_b).result
 
