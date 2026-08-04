@@ -80,19 +80,26 @@ export async function apiFetch<T>(path: string, options: RequestInit = {}): Prom
     requestCache.clear();
   }
 
+  const fetchOptions: RequestInit = {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeaders(),
+      ...(options.headers || {}),
+    },
+  };
+  if (options.signal) {
+    fetchOptions.signal = options.signal;
+  }
+
   let res: Response;
   try {
-    res = await fetch(`${API_BASE}${path}`, {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...authHeaders(),
-        ...(options.headers || {}),
-      },
-    });
+    res = await fetch(`${API_BASE}${path}`, fetchOptions);
   } catch {
     throw new ApiConnectionError(path);
   }
+
+
 
   if (res.status === 401) {
     if (typeof window !== 'undefined') {
