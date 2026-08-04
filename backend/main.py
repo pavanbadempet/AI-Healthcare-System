@@ -429,17 +429,10 @@ app = FastAPI(title="AI Healthcare API", default_response_class=fast_json_respon
 API_V1_PREFIX = "/v1"
 
 
-# Add middleware (order matters - last added runs first)
+# Add middleware (order matters - last added runs first on incoming requests)
 app.add_middleware(middleware.LoggingMiddleware)
 if not os.getenv("TESTING"):
     app.add_middleware(middleware.ExceptionMiddleware)
-app.add_middleware(GZipMiddleware, minimum_size=1000)
-app.add_middleware(middleware.SecurityHeadersMiddleware)
-app.add_middleware(CORSMiddleware,
-    allow_origins=_load_cors_origins(),
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"])
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=_load_allowed_hosts())
 app.add_middleware(SlowAPIMiddleware)
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -449,6 +442,14 @@ app.add_middleware(middleware.RequestTracingMiddleware)
 app.add_middleware(middleware.PrometheusMetricsMiddleware)
 app.add_middleware(middleware.LicenseValidationMiddleware)
 app.add_middleware(middleware.APIVersioningMiddleware)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
+app.add_middleware(middleware.SecurityHeadersMiddleware)
+app.add_middleware(CORSMiddleware,
+    allow_origins=_load_cors_origins(),
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"])
+
 
 # --- Routes (versioned under /v1) ---
 app.include_router(auth.router, prefix=API_V1_PREFIX, tags=["Auth"])
