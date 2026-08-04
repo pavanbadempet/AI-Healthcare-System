@@ -1133,9 +1133,8 @@ Before submitting a Pull Request, please ensure all local verification checks pa
    ```
 
 
-<a href="https://github.com/pavanbadempet/AI-Healthcare-System/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=pavanbadempet/AI-Healthcare-System&max=20" alt="Contributors - Open-Source Developers contributing to the AI Healthcare System codebase" />
-</a>
+
+
 
 <details>
 <summary><strong>Star History</strong></summary>
