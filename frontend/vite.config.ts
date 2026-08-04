@@ -22,7 +22,14 @@ export default defineConfig(({ command }) => ({
   server: {
     host: '127.0.0.1',
     port: 3000,
+    warmup: {
+      clientFiles: ['./src/App.tsx', './src/main.tsx', './src/pages/Dashboard.tsx', './src/pages/Login.tsx', './src/pages/Patients.tsx'],
+    },
   },
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom', 'zustand', 'lucide-react', 'clsx', 'framer-motion'],
+  },
+
   build: {
     target: 'esnext',                // drop dead-browser polyfills for smaller output
     cssMinify: 'lightningcss',       // faster CSS minification
