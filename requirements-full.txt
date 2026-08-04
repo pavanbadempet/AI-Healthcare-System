@@ -25,7 +25,7 @@ sqlalchemy
 python-dotenv
 
 # --- Data Science & ML (Full) ---
-pandas>=2.2.2
+pandas>=3.0.5
 numpy>=2.4.6
 scikit-learn>=1.4.2
 # Optional — ANN vector backend; falls back to SimpleVectorStore when absent

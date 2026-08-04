@@ -26,7 +26,7 @@ python-dotenv
 # libsql-client
 
 # --- Data Science (Lite) ---
-pandas>=3.0.3
+pandas>=3.0.5
 numpy>=2.4.6
 scikit-learn==1.6.1
 xgboost
