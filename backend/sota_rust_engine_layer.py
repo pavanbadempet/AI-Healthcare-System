@@ -35,7 +35,11 @@ class SOTARustEngineLayerEngine:
             import rust_gateway_ffi
             return rust_gateway_ffi.redact_phi_py(text)
         except Exception:
-            return text.replace("123-45-6789", "[REDACTED_SSN]")
+            import re
+            txt = re.sub(r"\b\d{3}-\d{2}-\d{4}\b", "[REDACTED-SSN]", text)
+            txt = re.sub(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b", "[REDACTED-EMAIL]", txt)
+            return txt
+
 
     def hash_password_rust(self, password: str) -> str:
         """
@@ -217,12 +221,30 @@ class SOTARustEngineLayerEngine:
                     if val > 200.0: recs.append(f"Reduce {feat} from {val:.1f} to <= 200.0 mg/dL")
                 elif "bmi" in fl:
                     if val > 25.0: recs.append(f"Reduce BMI from {val:.1f} to <= 25.0")
-            target_risk = max(risk_score * 0.65, 0.05)
-            return (recs, target_risk)
+    def calculate_cosine_similarity(self, vec_a: List[float], vec_b: List[float]) -> float:
+        return self.compute_rust_cosine_similarity(vec_a, vec_b).result
 
+    def calculate_cosine_similarity_rust(self, vec_a: List[float], vec_b: List[float]) -> float:
+        return self.compute_rust_cosine_similarity(vec_a, vec_b).result
 
+    def calculate_egfr(self, serum_creatinine: float, age: float, is_female: bool = True, is_black: bool = False) -> float:
+        return self.compute_rust_egfr(serum_creatinine, age, is_female)
+
+    def redact_phi(self, text: str) -> str:
+        return self.redact_phi_text_rust(text)
+
+    def hash_password(self, password: str) -> str:
+        return self.hash_password_rust(password)
+
+    def verify_password_rust(self, password: str, password_hash: str) -> bool:
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.verify_password_py(password, password_hash)
+        except Exception:
+            return f"$2b$12$fallback_hash_{hash(password)}" == password_hash
 
 
 # Global Singleton Instance
 sota_rust_engine_layer_engine = SOTARustEngineLayerEngine()
 sota_rust_engine = sota_rust_engine_layer_engine
+
