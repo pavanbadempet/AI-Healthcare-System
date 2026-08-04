@@ -347,12 +347,21 @@ def get_fhir_audit_events(
 def import_fhir_patient(
     external_fhir_id: str,
     db: Session = Depends(database.get_db),
-) -> Dict[str, Any]:
-    """Fetch a real patient from public HAPI FHIR server and import into local DB."""
+    import re
+    import urllib.parse
     import requests
-    fhir_url = f"https://hapi.fhir.org/baseR4/Patient/{external_fhir_id}"
+
+    if not re.match(r"^[A-Za-z0-9\-\.]+$", external_fhir_id):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid FHIR patient identifier format."
+        )
+
+    safe_id = urllib.parse.quote(external_fhir_id, safe="")
+    fhir_url = f"https://hapi.fhir.org/baseR4/Patient/{safe_id}"
     try:
         res = requests.get(fhir_url, timeout=10)
+
         if res.status_code == 404:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

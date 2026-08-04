@@ -552,11 +552,14 @@ def compare_medication_pricing(
     active_ingredient = "Unknown"
 
     try:
+        import urllib.parse
         import requests
+        safe_med_name = urllib.parse.quote(medication_name, safe="")
         # Query OpenFDA NDC endpoint
-        fda_url = f"https://api.fda.gov/drug/ndc.json?search=brand_name:\"{medication_name}\"&limit=1"
+        fda_url = f"https://api.fda.gov/drug/ndc.json?search=brand_name:\"{safe_med_name}\"&limit=1"
 
         fda_resp = requests.get(fda_url, timeout=4)
+
         if fda_resp.status_code == 200:
             fda_data = fda_resp.json()
             if fda_data.get("results"):

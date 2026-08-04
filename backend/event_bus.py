@@ -222,12 +222,14 @@ class KafkaKinesisStreamBuffer:
 
     async def publish_buffered_event(self, topic: str, payload: Dict[str, Any]) -> Dict[str, Any]:
         """Publishes streaming event into high-throughput ingestion buffer."""
+        pid_mask = "[REDACTED]" if payload.get("patient_id") is not None else "N/A"
         if self.buffer_mode == "kafka":
-            logger.info("Published streaming event to Kafka topic [%s]: %s", topic, payload.get("patient_id"))
+            logger.info("Published streaming event to Kafka topic [%s]: patient_id=%s", topic, pid_mask)
             return {"status": "buffered", "engine": "Apache Kafka", "topic": topic}
         elif self.buffer_mode == "kinesis":
-            logger.info("Published streaming event to AWS Kinesis stream [%s]: %s", self.kinesis_stream, payload.get("patient_id"))
+            logger.info("Published streaming event to AWS Kinesis stream [%s]: patient_id=%s", self.kinesis_stream, pid_mask)
             return {"status": "buffered", "engine": "AWS Kinesis", "stream": self.kinesis_stream}
+
         else:
             await event_bus.publish(topic, payload)
             return {"status": "buffered", "engine": "Redis/InMemory Stream Bus", "topic": topic}
