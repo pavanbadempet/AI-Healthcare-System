@@ -237,10 +237,16 @@ def _normalize_code(system: str, code: Any) -> str:
 
 def _fetch_rxnorm_from_api(code: str) -> Optional[TerminologyConcept]:
     """Retrieve drug properties directly from NLM RxNav REST service."""
+    import re
+    import urllib.parse
+    if not re.match(r"^[A-Za-z0-9\-\.]+$", code):
+        return None
+    safe_code = urllib.parse.quote(code, safe="")
     try:
         import requests
-        url = f"https://rxnav.nlm.nih.gov/REST/rxcui/{code}/properties.json"
+        url = f"https://rxnav.nlm.nih.gov/REST/rxcui/{safe_code}/properties.json"
         res = requests.get(url, timeout=5)
+
         if res.status_code == 200:
             data = res.json()
             prop = data.get("idAndName", {})
