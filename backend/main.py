@@ -697,8 +697,11 @@ if os.path.isdir(_frontend_dist):
 
     from fastapi.responses import FileResponse
 
+    _INDEX_HTML_CACHE: str | None = None
+
     # Catch-all route to serve the React SPA and let React Router handle routing
     @app.get("/{catchall:path}")
+
     async def serve_frontend(catchall: str, request: Request):
         frontend_root = Path(_frontend_dist).resolve()
         requested_path = (frontend_root / catchall).resolve()
@@ -716,9 +719,16 @@ if os.path.isdir(_frontend_dist):
             raise HTTPException(status_code=404)
 
         # Fallback to index.html for browser client-side routing
-        index_file = os.path.join(_frontend_dist, "index.html")
-        if os.path.exists(index_file):
-            # Prevent browser caching of index.html so clients always load newly deployed JS/CSS bundles
-            return FileResponse(index_file, headers={"Cache-Control": "no-store, no-cache, must-revalidate"})
+        global _INDEX_HTML_CACHE
+        if _INDEX_HTML_CACHE is None:
+            index_file = os.path.join(_frontend_dist, "index.html")
+            if os.path.exists(index_file):
+                with open(index_file, "r", encoding="utf-8") as f:
+                    _INDEX_HTML_CACHE = f.read()
+
+        if _INDEX_HTML_CACHE:
+            from fastapi.responses import HTMLResponse
+            return HTMLResponse(content=_INDEX_HTML_CACHE, headers={"Cache-Control": "no-store, no-cache, must-revalidate"})
 
         raise HTTPException(status_code=404)
+
