@@ -17,8 +17,9 @@ export interface WebLLMProgress {
 }
 
 const RiskTrajectoryChart = lazy(() => import("@/components/operations/RiskTrajectoryChart"));
-import OperationsCockpit from "@/components/operations/OperationsCockpit";
-import LiveECGMonitor from "@/components/operations/LiveECGMonitor";
+const OperationsCockpit = lazy(() => import("@/components/operations/OperationsCockpit"));
+const LiveECGMonitor = lazy(() => import("@/components/operations/LiveECGMonitor"));
+
 import { prefetchRoute } from "@/lib/prefetch";
 import { useTranslation } from "@/lib/i18n";
 import { useMaterialRipple } from "@/lib/ripple";
