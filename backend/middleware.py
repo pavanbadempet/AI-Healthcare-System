@@ -66,6 +66,8 @@ class APIVersioningMiddleware(BaseHTTPMiddleware):
     """Redirect legacy unversioned API requests to /v1 with 307 (preserves method & body)."""
 
     async def dispatch(self, request: Request, call_next):
+        if request.method == "OPTIONS":
+            return await call_next(request)
         path = request.url.path
         # Skip root-level infrastructure paths and already-versioned paths
         if path in _UNVERSIONED_ROOT_PATHS or path.startswith("/v1") or path.startswith("/assets") or path.startswith("/static"):
@@ -81,8 +83,9 @@ class APIVersioningMiddleware(BaseHTTPMiddleware):
 
 class RateLimitMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        if os.getenv("TESTING"):
+        if request.method == "OPTIONS" or os.getenv("TESTING"):
             return await call_next(request)
+
         if request.url.path not in ["/", "/docs", "/openapi.json", "/healthz"]:
             try:
                 identifier = self._identifier_for_request(request)
