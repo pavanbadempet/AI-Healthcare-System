@@ -553,6 +553,7 @@ def compare_medication_pricing(
 
     try:
         import urllib.parse
+
         import requests
         safe_med_name = urllib.parse.quote(medication_name, safe="")
         # Query OpenFDA NDC endpoint
