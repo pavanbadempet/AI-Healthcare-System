@@ -72,7 +72,7 @@
     "eslint": "^10",
     "tailwindcss": "^4.0.0",
     "ts-node": "^10.9.2",
-    "typescript": "^6",
+    "typescript": "^7",
     "vite": "^8.0.16",
     "vitest": "^3.0.5"
   }
