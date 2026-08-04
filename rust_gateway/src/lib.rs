@@ -225,12 +225,17 @@ fn generate_counterfactual_py(features: Vec<String>, values: Vec<f64>, risk_scor
             if *val > 200.0 {
                 recs.push(format!("Reduce {} from {:.1} to <= 200.0 mg/dL", feat, val));
             }
+        } else if f_lower.contains("glucose") || f_lower.contains("sugar") || f_lower.contains("fbs") {
+            if *val > 100.0 {
+                recs.push(format!("Reduce {} from {:.1} to <= 100.0 mg/dL", feat, val));
+            }
         } else if f_lower.contains("bmi") {
             if *val > 25.0 {
                 recs.push(format!("Reduce BMI from {:.1} to <= 25.0", val));
             }
         }
     }
+
     let target_risk = (risk_score * 0.65).max(0.05);
     Ok((recs, target_risk))
 }
