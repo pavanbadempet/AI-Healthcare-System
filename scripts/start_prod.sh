@@ -41,6 +41,13 @@ WORKERS="${WEB_CONCURRENCY:-1}"
 RUST_BINARY="./rust_gateway/target/release/rust_gateway"
 ENABLE_RUST_GATEWAY="${ENABLE_RUST_GATEWAY:-1}"
 
+# On Hugging Face Spaces (detected by SPACE_ID or SPACES_ID), run Uvicorn directly
+# using in-process PyO3 Rust FFI bindings to avoid UNIX domain socket IPC contention on shared vCPUs.
+if [ -n "$SPACE_ID" ] || [ -n "$SPACES_ID" ]; then
+    echo "Hugging Face Space detected ($SPACE_ID). Running high-throughput direct Uvicorn with PyO3 Rust FFI..."
+    ENABLE_RUST_GATEWAY=0
+fi
+
 if [ -f "$RUST_BINARY" ] && [ "$ENABLE_RUST_GATEWAY" != "0" ]; then
         echo "Starting FastAPI Uvicorn background worker on socket /tmp/healthcare.sock..."
         if [ -n "$DOPPLER_TOKEN" ]; then
@@ -66,6 +73,7 @@ if [ -f "$RUST_BINARY" ] && [ "$ENABLE_RUST_GATEWAY" != "0" ]; then
             exec ./target/release/rust_gateway
         fi
 fi
+
 
 echo "Running FastAPI Uvicorn directly as PRIMARY PID 1 on port $PORT with $WORKERS worker(s)..."
 if [ -n "$DOPPLER_TOKEN" ]; then
