@@ -347,9 +347,13 @@ def get_fhir_audit_events(
 def import_fhir_patient(
     external_fhir_id: str,
     db: Session = Depends(database.get_db),
+) -> Dict[str, Any]:
+    """Fetch a real patient from public HAPI FHIR server and import into local DB."""
     import re
     import urllib.parse
+
     import requests
+
 
     if not re.match(r"^[A-Za-z0-9\-\.]+$", external_fhir_id):
         raise HTTPException(
