@@ -1,5 +1,5 @@
 {
-  "name": "AI_Healthcare_Data_Flywheel",
+  "name": "AI_Healthcare_Planetary_Lakehouse_Pipeline",
   "email_notifications": {
     "no_alert_for_skipped_runs": false
   },
@@ -8,7 +8,22 @@
   "max_concurrent_runs": 1,
   "tasks": [
     {
+      "task_key": "Governance_Setup",
+      "run_if": "ALL_SUCCESS",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Shared/AI-Healthcare/databricks_notebooks/00_unity_catalog_governance_setup",
+        "source": "WORKSPACE"
+      },
+      "job_cluster_key": "Shared_Job_Cluster",
+      "timeout_seconds": 0
+    },
+    {
       "task_key": "Bronze_Ingest",
+      "depends_on": [
+        {
+          "task_key": "Governance_Setup"
+        }
+      ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
         "notebook_path": "/Workspace/Shared/AI-Healthcare/databricks_notebooks/01_bronze_ingest",
@@ -18,14 +33,28 @@
         "source": "WORKSPACE"
       },
       "job_cluster_key": "Shared_Job_Cluster",
-      "timeout_seconds": 0,
-      "email_notifications": {}
+      "timeout_seconds": 0
+    },
+    {
+      "task_key": "Data_Quality_Gates",
+      "depends_on": [
+        {
+          "task_key": "Bronze_Ingest"
+        }
+      ],
+      "run_if": "ALL_SUCCESS",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Shared/AI-Healthcare/databricks_notebooks/08_pyspark_data_quality_gates",
+        "source": "WORKSPACE"
+      },
+      "job_cluster_key": "Shared_Job_Cluster",
+      "timeout_seconds": 0
     },
     {
       "task_key": "Silver_Cleaning",
       "depends_on": [
         {
-          "task_key": "Bronze_Ingest"
+          "task_key": "Data_Quality_Gates"
         }
       ],
       "run_if": "ALL_SUCCESS",
@@ -37,8 +66,7 @@
         "source": "WORKSPACE"
       },
       "job_cluster_key": "Shared_Job_Cluster",
-      "timeout_seconds": 0,
-      "email_notifications": {}
+      "timeout_seconds": 0
     },
     {
       "task_key": "Gold_Aggregations",
@@ -56,14 +84,43 @@
         "source": "WORKSPACE"
       },
       "job_cluster_key": "Shared_Job_Cluster",
-      "timeout_seconds": 0,
-      "email_notifications": {}
+      "timeout_seconds": 0
     },
     {
-      "task_key": "Kaggle_GPU_Scoring",
+      "task_key": "OMOP_CDM_Transformation",
       "depends_on": [
         {
           "task_key": "Gold_Aggregations"
+        }
+      ],
+      "run_if": "ALL_SUCCESS",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Shared/AI-Healthcare/databricks_notebooks/07_omop_cdm_transformation",
+        "source": "WORKSPACE"
+      },
+      "job_cluster_key": "Shared_Job_Cluster",
+      "timeout_seconds": 0
+    },
+    {
+      "task_key": "Digital_Twin_Scoring",
+      "depends_on": [
+        {
+          "task_key": "OMOP_CDM_Transformation"
+        }
+      ],
+      "run_if": "ALL_SUCCESS",
+      "notebook_task": {
+        "notebook_path": "/Workspace/Shared/AI-Healthcare/databricks_notebooks/09_recommendation_digital_twin_pyspark",
+        "source": "WORKSPACE"
+      },
+      "job_cluster_key": "Shared_Job_Cluster",
+      "timeout_seconds": 0
+    },
+    {
+      "task_key": "GPU_Risk_Scoring",
+      "depends_on": [
+        {
+          "task_key": "Digital_Twin_Scoring"
         }
       ],
       "run_if": "ALL_SUCCESS",
@@ -72,40 +129,37 @@
         "source": "WORKSPACE"
       },
       "job_cluster_key": "Shared_Job_Cluster",
-      "timeout_seconds": 0,
-      "email_notifications": {}
+      "timeout_seconds": 0
     },
     {
-      "task_key": "MLflow_Model_Retraining",
+      "task_key": "Export_To_Neon",
       "depends_on": [
         {
-          "task_key": "Silver_Cleaning"
+          "task_key": "GPU_Risk_Scoring"
         }
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Shared/AI-Healthcare/databricks_notebooks/06_mlflow_training",
+        "notebook_path": "/Workspace/Shared/AI-Healthcare/databricks_notebooks/05_export_to_neon",
         "source": "WORKSPACE"
       },
       "job_cluster_key": "Shared_Job_Cluster",
-      "timeout_seconds": 0,
-      "email_notifications": {}
+      "timeout_seconds": 0
     }
   ],
   "job_clusters": [
     {
       "job_cluster_key": "Shared_Job_Cluster",
       "new_cluster": {
-        "cluster_name": "",
         "spark_version": "14.3.x-scala2.12",
         "node_type_id": "i3.xlarge",
-        "autoscale": {
-          "min_workers": 1,
-          "max_workers": 2
-        },
-        "data_security_mode": "USER_ISOLATION"
+        "num_workers": 1,
+        "spark_conf": {
+          "spark.databricks.delta.preview.enabled": "true",
+          "spark.sql.extensions": "io.delta.sql.DeltaSparkSessionExtension",
+          "spark.sql.catalog.spark_control": "org.apache.spark.sql.delta.catalog.DeltaCatalog"
+        }
       }
     }
-  ],
-  "format": "MULTI_TASK"
+  ]
 }
