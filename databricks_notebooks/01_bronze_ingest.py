@@ -31,8 +31,8 @@ schema = StructType([
 
 import os
 
-stream_in_path = "/Volumes/apex/default/secrets/telemetry_stream_in"
-checkpoint_path = "/Volumes/apex/default/secrets/telemetry_checkpoint_bronze"
+stream_in_path = "/Volumes/apex/default/secrets/events_raw/telemetry_stream_in"
+checkpoint_path = "/Volumes/apex/default/secrets/checkpoints/telemetry_bronze"
 
 os.makedirs(stream_in_path, exist_ok=True)
 os.makedirs(checkpoint_path, exist_ok=True)
