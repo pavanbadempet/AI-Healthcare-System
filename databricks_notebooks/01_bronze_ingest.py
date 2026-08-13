@@ -39,8 +39,11 @@ os.makedirs(checkpoint_path, exist_ok=True)
 
 streaming_df = (
     spark.readStream
+    .format("cloudFiles")
+    .option("cloudFiles.format", "json")
+    .option("cloudFiles.schemaLocation", checkpoint_path + "/schema")
     .schema(schema)
-    .json(stream_in_path)
+    .load(stream_in_path)
 )
 
 # Write to Bronze Delta Table
