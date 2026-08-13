@@ -55,6 +55,22 @@ def create_medallion_job(user_email):
                     "notebook_path": "databricks_notebooks/03_gold_aggregations",
                     "source": "GIT"
                 }
+            },
+            {
+                "task_key": "step_04_gpu_risk_scoring",
+                "depends_on": [{"task_key": "step_03_gold_aggregations"}],
+                "notebook_task": {
+                    "notebook_path": "databricks_notebooks/04_gpu_risk_scoring",
+                    "source": "GIT"
+                }
+            },
+            {
+                "task_key": "step_05_export_to_neon",
+                "depends_on": [{"task_key": "step_04_gpu_risk_scoring"}],
+                "notebook_task": {
+                    "notebook_path": "databricks_notebooks/05_export_to_neon",
+                    "source": "GIT"
+                }
             }
         ]
     }
