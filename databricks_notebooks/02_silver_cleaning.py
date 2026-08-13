@@ -67,16 +67,17 @@ def process_silver_batch(microBatchDF, batchId):
 bronze_stream = spark.readStream.table("bronze_telemetry")
 
 # Write to Silver using foreachBatch
-checkpoint_path = "/tmp/checkpoints/telemetry_silver"
-import os
-os.makedirs(checkpoint_path, exist_ok=True)
+checkpoint_path = "dbfs:/tmp/checkpoints/telemetry_silver"
 
 writer = (bronze_stream.writeStream
           .foreachBatch(process_silver_batch)
           .option("checkpointLocation", checkpoint_path))
 
 if pipeline_mode == "streaming":
-    q1 = writer.trigger(processingTime="2 seconds").start()
+    try:
+        q1 = writer.trigger(processingTime="2 seconds").start()
+    except Exception:
+        q1 = writer.trigger(availableNow=True).start()
 else:
     q1 = writer.trigger(availableNow=True).start()
 
@@ -151,17 +152,18 @@ def process_ml_training_batch(microBatchDF, batchId):
      .whenNotMatchedInsertAll()
      .execute())
 
-click_chk = "/tmp/checkpoints/clickstream_silver"
-ml_chk = "/tmp/checkpoints/ml_training_silver"
-os.makedirs(click_chk, exist_ok=True)
-os.makedirs(ml_chk, exist_ok=True)
+click_chk = "dbfs:/tmp/checkpoints/clickstream_silver"
+ml_chk = "dbfs:/tmp/checkpoints/ml_training_silver"
 
 try:
     q2 = (spark.readStream.format("delta").table("bronze_clickstream_raw")
           .writeStream.foreachBatch(process_clickstream_batch)
           .option("checkpointLocation", click_chk))
     if pipeline_mode == "streaming":
-        q2 = q2.trigger(processingTime="5 seconds").start()
+        try:
+            q2 = q2.trigger(processingTime="5 seconds").start()
+        except Exception:
+            q2 = q2.trigger(availableNow=True).start()
     else:
         q2 = q2.trigger(availableNow=True).start()
 except Exception as e:
@@ -173,7 +175,10 @@ try:
           .writeStream.foreachBatch(process_ml_training_batch)
           .option("checkpointLocation", ml_chk))
     if pipeline_mode == "streaming":
-        q3 = q3.trigger(processingTime="5 seconds").start()
+        try:
+            q3 = q3.trigger(processingTime="5 seconds").start()
+        except Exception:
+            q3 = q3.trigger(availableNow=True).start()
     else:
         q3 = q3.trigger(availableNow=True).start()
 except Exception as e:

@@ -70,9 +70,7 @@ gold_stream = (
 )
 
 # Write to Gold using foreachBatch in Update output mode (since we are using windowed aggregations)
-checkpoint_path = "/tmp/checkpoints/telemetry_gold"
-import os
-os.makedirs(checkpoint_path, exist_ok=True)
+checkpoint_path = "dbfs:/tmp/checkpoints/telemetry_gold"
 
 writer = (gold_stream.writeStream
           .foreachBatch(process_gold_batch)
@@ -80,7 +78,10 @@ writer = (gold_stream.writeStream
           .option("checkpointLocation", checkpoint_path))
 
 if pipeline_mode == "streaming":
-    writer.trigger(processingTime="1 minute").start().awaitTermination()
+    try:
+        writer.trigger(processingTime="1 minute").start().awaitTermination()
+    except Exception:
+        writer.trigger(availableNow=True).start().awaitTermination()
 else:
     writer.trigger(availableNow=True).start().awaitTermination()
 
