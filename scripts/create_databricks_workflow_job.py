@@ -37,7 +37,8 @@ def create_medallion_job(user_email):
                 "task_key": "step_01_bronze_ingest",
                 "notebook_task": {
                     "notebook_path": "databricks_notebooks/01_bronze_ingest",
-                    "source": "GIT"
+                    "source": "GIT",
+                    "base_parameters": {"pipeline_mode": "batch"}
                 }
             },
             {
@@ -45,7 +46,8 @@ def create_medallion_job(user_email):
                 "depends_on": [{"task_key": "step_01_bronze_ingest"}],
                 "notebook_task": {
                     "notebook_path": "databricks_notebooks/02_silver_cleaning",
-                    "source": "GIT"
+                    "source": "GIT",
+                    "base_parameters": {"pipeline_mode": "batch"}
                 }
             },
             {
@@ -53,7 +55,8 @@ def create_medallion_job(user_email):
                 "depends_on": [{"task_key": "step_02_silver_cleaning"}],
                 "notebook_task": {
                     "notebook_path": "databricks_notebooks/03_gold_aggregations",
-                    "source": "GIT"
+                    "source": "GIT",
+                    "base_parameters": {"pipeline_mode": "batch"}
                 }
             },
             {

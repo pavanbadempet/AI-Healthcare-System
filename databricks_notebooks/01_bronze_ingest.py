@@ -2,6 +2,12 @@
 # MAGIC %md
 # MAGIC # 01: Bronze Layer (Raw Telemetry Ingest)
 # MAGIC Reads simulated JSON telemetry data and writes it to a Delta Lake Bronze table.
+# MAGIC Supports both continuous real-time streaming and triggered batch processing.
+
+# COMMAND ----------
+dbutils.widgets.text("pipeline_mode", "batch")
+pipeline_mode = dbutils.widgets.get("pipeline_mode")
+print(f"Running Bronze Ingest in mode: {pipeline_mode}")
 
 # COMMAND ----------
 from pyspark.sql.types import StructType, StructField, StringType, FloatType, IntegerType
@@ -34,7 +40,7 @@ streaming_df = (
 )
 
 # Write to Bronze Delta Table
-bronze_query = (
+writer = (
     streaming_df.writeStream
     .format("delta")
     .outputMode("append")
@@ -42,5 +48,9 @@ bronze_query = (
     .table("bronze_patient_vitals")
 )
 
-# Wait for 10 seconds to process batch in job mode
-bronze_query.awaitTermination(10)
+if pipeline_mode == "streaming":
+    # Run continuously 24/7 (Real-time)
+    writer.trigger(processingTime="2 seconds").awaitTermination()
+else:
+    # Run once to process all queued data and shut down (Batch)
+    writer.trigger(availableNow=True).awaitTermination()
