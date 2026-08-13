@@ -23,6 +23,27 @@ export default {
       });
     }
 
+    // Handle Health check and Root endpoint
+    if (request.method === "GET" && (url.pathname === "/" || url.pathname === "/health" || url.pathname === "/healthz")) {
+      return new Response(JSON.stringify({
+        status: "healthy",
+        service: "AI Healthcare System - Cloudflare Workers AI Edge Inference",
+        version: "2.0.0",
+        endpoints: ["/chat/completions", "/v1/chat/completions", "/embed", "/rerank"],
+        models: {
+          llm: "@cf/meta/llama-4-scout-17b-16e-instruct",
+          embeddings: "@cf/baai/bge-base-en-v1.5",
+          reranker: "@cf/baai/bge-reranker-base"
+        }
+      }), {
+        status: 200,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        }
+      });
+    }
+
     // Only allow POST to /chat/completions, /v1/chat/completions, /rerank, or /embed
     if (request.method !== "POST" || (url.pathname !== "/v1/chat/completions" && url.pathname !== "/chat/completions" && url.pathname !== "/rerank" && url.pathname !== "/embed")) {
       return new Response("Not Found", { status: 404 });
