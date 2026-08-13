@@ -76,6 +76,6 @@ writer = (bronze_stream.writeStream
           .option("checkpointLocation", checkpoint_path))
 
 if pipeline_mode == "streaming":
-    writer.trigger(processingTime="2 seconds").awaitTermination()
+    writer.trigger(processingTime="2 seconds").start().awaitTermination()
 else:
-    writer.trigger(availableNow=True).awaitTermination()
+    writer.trigger(availableNow=True).start().awaitTermination()
