@@ -28,7 +28,7 @@ def create_medallion_job(user_email):
             "git_branch": "main"
         },
         "schedule": {
-            "quartz_cron_expression": "0 0 * * * ?", # Runs hourly
+            "quartz_cron_expression": "0 0 0 * * ?", # Runs daily at midnight UTC
             "timezone_id": "UTC",
             "pause_status": "PAUSED" # Keep paused by default so it doesn't run up bills instantly
         },
