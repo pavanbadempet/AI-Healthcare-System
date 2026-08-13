@@ -30,11 +30,10 @@ schema = StructType([
 ])
 
 # COMMAND ----------
-import os
 spark.sql("CREATE VOLUME IF NOT EXISTS main.default.telemetry_volume")
 
-os.makedirs("/Volumes/main.default/telemetry_volume/stream_in", exist_ok=True)
-os.makedirs("/Volumes/main.default/telemetry_volume/stream_checkpoint", exist_ok=True)
+# Create the stream_in directory using Spark natively, avoiding dbutils/os permission errors
+spark.createDataFrame([], schema).write.format("json").mode("ignore").save("/Volumes/main/default/telemetry_volume/stream_in")
 
 streaming_df = (
     spark.readStream
