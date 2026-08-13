@@ -29,7 +29,7 @@ if not database_url.startswith("jdbc:"):
         password = "mock_password"
 
 # COMMAND ----------
-gold_df = spark.read.table("apex.default.gold_patient_hourly_vitals")
+gold_df = spark.read.table("gold_patient_hourly_vitals")
 
 print(f"Exporting {gold_df.count()} records to Neon Postgres database...")
 
