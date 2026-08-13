@@ -36,7 +36,7 @@ import os
 
 raw_table_name = "bronze_telemetry_raw"
 silver_table_name = "bronze_telemetry"
-checkpoint_path = "/Volumes/apex/default/secrets/checkpoints/telemetry_bronze"
+checkpoint_path = "/Volumes/workspace/default/checkpoints/telemetry_bronze"
 
 import os
 os.makedirs(checkpoint_path, exist_ok=True)

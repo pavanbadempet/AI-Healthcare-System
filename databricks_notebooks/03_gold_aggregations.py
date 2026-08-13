@@ -70,7 +70,7 @@ gold_stream = (
 )
 
 # Write to Gold using foreachBatch in Update output mode (since we are using windowed aggregations)
-checkpoint_path = "/Volumes/apex/default/secrets/checkpoints/telemetry_gold"
+checkpoint_path = "/Volumes/workspace/default/checkpoints/telemetry_gold"
 import os
 os.makedirs(checkpoint_path, exist_ok=True)
 

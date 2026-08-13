@@ -67,7 +67,7 @@ def process_silver_batch(microBatchDF, batchId):
 bronze_stream = spark.readStream.table("bronze_telemetry")
 
 # Write to Silver using foreachBatch
-checkpoint_path = "/Volumes/apex/default/secrets/checkpoints/telemetry_silver"
+checkpoint_path = "/Volumes/workspace/default/checkpoints/telemetry_silver"
 import os
 os.makedirs(checkpoint_path, exist_ok=True)
 
