@@ -45,37 +45,82 @@ os.makedirs(checkpoint_path, exist_ok=True)
 def generate_batch(batch_id):
     import random
     from datetime import datetime, timedelta
+    import requests
     
-    num_records = random.randint(50, 200)
+    backend_url = os.getenv("BACKEND_URL", "https://pavanbadempet-ai-healthcare-system.hf.space")
+    print(f"Attempting to fetch live telemetry from {backend_url}...")
+    
+    token = None
+    try:
+        # Authenticate with the HF Spaces backend
+        auth_res = requests.post(f"{backend_url}/v1/auth/login", data={"username": "admin", "password": "adminpass"}, timeout=15)
+        if auth_res.status_code == 200:
+            token = auth_res.json().get("access_token")
+    except Exception as e:
+        print(f"Auth fetch failed, falling back to local fallback data: {e}")
+        
     data = []
     base_time = datetime.utcnow()
     
-    for i in range(num_records):
-        patient_id = random.randint(1, 1000)
-        facility_id = random.randint(1, 5)
-        encounter_id = random.randint(10000, 99999)
-        department_id = random.randint(1, 10)
-        
-        heart_rate = float(random.randint(60, 120))
-        systolic_bp = float(random.randint(110, 150))
-        diastolic_bp = float(random.randint(70, 95))
-        spo2 = float(random.randint(92, 100))
-        temperature_c = round(random.uniform(36.5, 38.5), 1)
-        respiratory_rate = float(random.randint(12, 20))
-        
-        source = "device_" + str(random.randint(100, 200))
-        timestamp = (base_time - timedelta(seconds=random.randint(0, 60))).isoformat() + "Z"
-        
-        data.append((
-            patient_id, facility_id, encounter_id, department_id,
-            heart_rate, systolic_bp, diastolic_bp, spo2,
-            temperature_c, respiratory_rate, source, timestamp
-        ))
+    if token:
+        try:
+            snap_res = requests.get(f"{backend_url}/v1/telemetry/snapshot", headers={"Authorization": f"Bearer {token}"}, timeout=15)
+            if snap_res.status_code == 200:
+                snapshot = snap_res.json()
+                print(f"Successfully fetched live HF Spaces telemetry! Active Census: {snapshot.get('active_census')}")
+                
+                patient_counter = 1000
+                # Generate a vital record for every REAL occupied bed returned by the endpoint
+                for unit in snapshot.get("bed_units", []):
+                    occupied = unit.get("occupied", 0)
+                    unit_name = unit.get("unit", "Unknown")
+                    dept_id = hash(unit_name) % 10
+                    
+                    for _ in range(occupied):
+                        patient_counter += 1
+                        data.append((
+                            patient_counter, 1, 9999, dept_id,
+                            float(random.randint(60, 100)),
+                            float(random.randint(110, 140)),
+                            float(random.randint(70, 90)),
+                            float(random.randint(95, 100)),
+                            round(random.uniform(36.5, 37.5), 1),
+                            float(random.randint(12, 18)),
+                            f"live_{unit_name}_monitor",
+                            (base_time - timedelta(seconds=random.randint(0, 10))).isoformat() + "Z"
+                        ))
+        except Exception as e:
+            print(f"Failed to fetch snapshot: {e}")
+            
+    if not data:
+        print("Using local mock generation as fallback...")
+        num_records = random.randint(50, 200)
+        for i in range(num_records):
+            patient_id = random.randint(1, 1000)
+            facility_id = random.randint(1, 5)
+            encounter_id = random.randint(10000, 99999)
+            department_id = random.randint(1, 10)
+            
+            heart_rate = float(random.randint(60, 120))
+            systolic_bp = float(random.randint(110, 150))
+            diastolic_bp = float(random.randint(70, 95))
+            spo2 = float(random.randint(92, 100))
+            temperature_c = round(random.uniform(36.5, 38.5), 1)
+            respiratory_rate = float(random.randint(12, 20))
+            
+            source = "device_" + str(random.randint(100, 200))
+            timestamp = (base_time - timedelta(seconds=random.randint(0, 60))).isoformat() + "Z"
+            
+            data.append((
+                patient_id, facility_id, encounter_id, department_id,
+                heart_rate, systolic_bp, diastolic_bp, spo2,
+                temperature_c, respiratory_rate, source, timestamp
+            ))
         
     df = spark.createDataFrame(data, schema)
     # Write to raw ledger table
     df.write.format("delta").mode("append").saveAsTable(raw_table_name)
-    print(f"Appended {num_records} raw telemetry events to {raw_table_name}")
+    print(f"Appended {len(data)} raw telemetry events to {raw_table_name}")
 
 if pipeline_mode == "batch":
     # In batch mode, we generate one chunk of raw data to be processed by the stream
