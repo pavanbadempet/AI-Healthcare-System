@@ -17,6 +17,13 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
+    - name: Fetch Doppler Secrets
+      uses: dopplerhq/secrets-fetch-action@v1.2.0
+      continue-on-error: true # Allow CI to pass on PRs from forks that lack the secret
+      with:
+        doppler-token: ${{ secrets.DOPPLER_TOKEN }}
+        inject-env-vars: true
+
     - name: Set up Python 3.12
       uses: actions/setup-python@v5
       with:

@@ -638,8 +638,8 @@ Launches the complete service container stack (FastAPI backend + React frontend 
 ```bash
 git clone https://github.com/pavanbadempet/AI-Healthcare-System.git
 cd AI-Healthcare-System
-cp .env.example .env          # Update GOOGLE_API_KEY & JWT SECRET_KEY
-docker compose up --build
+doppler login                 # Authenticate with Doppler
+doppler run -- docker compose up --build
 ```
 
 ### 3. Local Developer Sandbox Setup (5-Step Walkthrough)
@@ -656,12 +656,14 @@ cd AI-Healthcare-System
 python -m pip install -r requirements-full.txt
 ```
 
-#### 2️⃣ Configure Environment Variables
-Copy the template `.env.example` file to `.env`:
+#### 2️⃣ Configure Environment Variables via Doppler
+Instead of manually managing `.env` files, we use **Doppler** as our centralized secret manager.
+
+First, install the [Doppler CLI](https://docs.doppler.com/docs/install-cli). Then, authenticate to your workspace:
 ```bash
-cp .env.example .env
+doppler login
 ```
-*(Open `.env` in your editor. For local-only sandbox mode, the default values are already pre-configured to use a local SQLite database named `healthcare.db`)*.
+*(Once logged in, the application will automatically fetch all environment variables, including `DATABRICKS_TOKEN` and database URIs, directly from Doppler)*.
 
 #### 3️⃣ Bootstrap Database & Seed Mock Data (Instant Activation)
 Run the clinical integration runner script to automatically create your database schema and seed mock clinicians, appointments, diagnostic logs, and patient records:
