@@ -34,8 +34,8 @@ import os
 # Instead of using cloudFiles and Unity Catalog Volumes (which have Serverless permission constraints),
 # we will simulate raw ingestion by writing to a raw Delta table, then streaming from it.
 
-raw_table_name = "apex.default.bronze_telemetry_raw"
-silver_table_name = "apex.default.bronze_telemetry"
+raw_table_name = "bronze_telemetry_raw"
+silver_table_name = "bronze_telemetry"
 checkpoint_path = "dbfs:/tmp/checkpoints/telemetry_bronze"
 
 # Simulate generating random telemetry and appending to the raw Delta table

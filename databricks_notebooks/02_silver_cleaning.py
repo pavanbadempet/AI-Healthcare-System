@@ -16,7 +16,7 @@ from delta.tables import DeltaTable
 
 # Initialize the Silver table if it doesn't exist
 spark.sql("""
-CREATE TABLE IF NOT EXISTS apex.default.silver_patient_vitals (
+CREATE TABLE IF NOT EXISTS silver_patient_vitals (
     patient_id INT,
     facility_id INT,
     encounter_id INT,
@@ -52,7 +52,7 @@ def process_silver_batch(microBatchDF, batchId):
     clean_df = clean_df.dropDuplicates(["patient_id", "timestamp"])
 
     # 4. Upsert (MERGE) into Silver table using DeltaTable API
-    silver_table = DeltaTable.forName(spark, "apex.default.silver_patient_vitals")
+    silver_table = DeltaTable.forName(spark, "silver_patient_vitals")
     
     (silver_table.alias("target")
      .merge(
@@ -64,7 +64,7 @@ def process_silver_batch(microBatchDF, batchId):
 
 # COMMAND ----------
 # Read from Bronze
-bronze_stream = spark.readStream.table("apex.default.bronze_telemetry")
+bronze_stream = spark.readStream.table("bronze_telemetry")
 
 # Write to Silver using foreachBatch
 writer = (bronze_stream.writeStream
