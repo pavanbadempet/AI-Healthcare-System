@@ -69,7 +69,7 @@ bronze_stream = spark.readStream.table("main.default.bronze_patient_vitals")
 # Write to Silver using foreachBatch
 writer = (bronze_stream.writeStream
           .foreachBatch(process_silver_batch)
-          .option("checkpointLocation", "/Volumes/main.default/telemetry_volume/stream_checkpoint/silver"))
+          .option("checkpointLocation", "/Volumes/apex/default/secrets/telemetry/stream_checkpoint/silver"))
 
 if pipeline_mode == "streaming":
     writer.trigger(processingTime="2 seconds").awaitTermination()

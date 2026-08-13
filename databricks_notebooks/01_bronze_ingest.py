@@ -29,16 +29,18 @@ schema = StructType([
     StructField("timestamp", StringType(), True)
 ])
 
-# COMMAND ----------
-spark.sql("CREATE VOLUME IF NOT EXISTS main.default.telemetry_volume")
+import os
 
-# Create the stream_in directory using Spark natively, avoiding dbutils/os permission errors
-spark.createDataFrame([], schema).write.format("json").mode("ignore").save("/Volumes/main/default/telemetry_volume/stream_in")
+stream_in_path = "/Volumes/apex/default/secrets/telemetry/stream_in"
+checkpoint_path = "/Volumes/apex/default/secrets/telemetry/stream_checkpoint/bronze"
+
+os.makedirs(stream_in_path, exist_ok=True)
+os.makedirs(checkpoint_path, exist_ok=True)
 
 streaming_df = (
     spark.readStream
     .schema(schema)
-    .json("/Volumes/main.default/telemetry_volume/stream_in")
+    .json(stream_in_path)
 )
 
 # Write to Bronze Delta Table
@@ -46,7 +48,7 @@ writer = (
     streaming_df.writeStream
     .format("delta")
     .outputMode("append")
-    .option("checkpointLocation", "/Volumes/main.default/telemetry_volume/stream_checkpoint/bronze")
+    .option("checkpointLocation", checkpoint_path)
     .table("main.default.bronze_patient_vitals")
 )
 

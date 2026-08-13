@@ -73,7 +73,7 @@ gold_stream = (
 writer = (gold_stream.writeStream
           .foreachBatch(process_gold_batch)
           .outputMode("update")
-          .option("checkpointLocation", "/Volumes/main.default/telemetry_volume/stream_checkpoint/gold"))
+          .option("checkpointLocation", "/Volumes/apex/default/secrets/telemetry/stream_checkpoint/gold"))
 
 if pipeline_mode == "streaming":
     writer.trigger(processingTime="1 minute").awaitTermination()
