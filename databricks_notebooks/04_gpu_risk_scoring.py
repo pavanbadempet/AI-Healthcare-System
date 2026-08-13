@@ -42,10 +42,16 @@ print("Triggering Kaggle GPU Kernel (AI-Healthcare-Risk-Scoring)...")
 import subprocess
 
 # Execute the Kaggle API trigger. This will fail if KAGGLE_USERNAME and KAGGLE_KEY are invalid!
-print("Pushing kernel configuration to Kaggle API...")
+print("Triggering Kaggle GPU Kernel (AI-Healthcare-Risk-Scoring)...")
 try:
-    subprocess.run(["kaggle", "kernels", "push", "-p", "/Volumes/workspace/default/checkpoints/kaggle_kernel_config/"], check=True)
-    print("Kaggle Kernel Triggered! Waiting for GPU scoring completion...")
+    result = subprocess.run(["kaggle", "kernels", "push", "-p", "/Volumes/workspace/default/checkpoints/kaggle_kernel_config/"], check=True, capture_output=True, text=True)
+    print("Kaggle CLI STDOUT:", result.stdout)
+    print("Kaggle CLI STDERR:", result.stderr)
+    print("Successfully pushed to Kaggle GPU Cluster!")
+except subprocess.CalledProcessError as e:
+    print("Kaggle CLI STDOUT:", e.stdout)
+    print("Kaggle CLI STDERR:", e.stderr)
+    raise e
 except Exception as e:
     print(f"KAGGLE API ERROR: {e}")
     raise e
