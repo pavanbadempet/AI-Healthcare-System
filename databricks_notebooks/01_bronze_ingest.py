@@ -31,33 +31,77 @@ schema = StructType([
 
 import os
 
-stream_in_path = "/Volumes/apex/default/secrets/events_raw/telemetry_stream_in"
-checkpoint_path = "/Volumes/apex/default/secrets/checkpoints/telemetry_bronze"
+# Instead of using cloudFiles and Unity Catalog Volumes (which have Serverless permission constraints),
+# we will simulate raw ingestion by writing to a raw Delta table, then streaming from it.
 
-os.makedirs(stream_in_path, exist_ok=True)
-os.makedirs(checkpoint_path, exist_ok=True)
+raw_table_name = "apex.default.bronze_telemetry_raw"
+silver_table_name = "apex.default.bronze_telemetry"
+checkpoint_path = "dbfs:/tmp/checkpoints/telemetry_bronze"
 
-streaming_df = (
-    spark.readStream
-    .format("cloudFiles")
-    .option("cloudFiles.format", "json")
-    .option("cloudFiles.schemaLocation", checkpoint_path + "/schema")
-    .schema(schema)
-    .load(stream_in_path)
-)
+# Simulate generating random telemetry and appending to the raw Delta table
+def generate_batch(batch_id):
+    import random
+    from datetime import datetime, timedelta
+    
+    num_records = random.randint(50, 200)
+    data = []
+    base_time = datetime.utcnow()
+    
+    for i in range(num_records):
+        device_id = f"DEV_{random.randint(1000, 1050)}"
+        patient_id = f"PAT_{random.randint(500, 600)}"
+        timestamp = (base_time - timedelta(seconds=random.randint(0, 60))).isoformat() + "Z"
+        
+        payload = {
+            "heart_rate": random.randint(60, 120),
+            "blood_pressure_sys": random.randint(110, 150),
+            "blood_pressure_dia": random.randint(70, 95),
+            "spo2": random.randint(92, 100),
+            "temperature": round(random.uniform(36.5, 38.5), 1)
+        }
+        
+        data.append((device_id, patient_id, timestamp, "vitals", str(payload)))
+        
+    df = spark.createDataFrame(data, schema)
+    # Write to raw ledger table
+    df.write.format("delta").mode("append").saveAsTable(raw_table_name)
+    print(f"Appended {num_records} raw telemetry events to {raw_table_name}")
 
-# Write to Bronze Delta Table
-writer = (
-    streaming_df.writeStream
-    .format("delta")
-    .outputMode("append")
-    .option("checkpointLocation", checkpoint_path)
-    .table("apex.default.bronze_patient_vitals")
-)
+if pipeline_mode == "batch":
+    # In batch mode, we generate one chunk of raw data to be processed by the stream
+    generate_batch(1)
+
+print(f"Starting Delta Stream from {raw_table_name}...")
+
+# 1. Read Stream using Delta table as source
+try:
+    streaming_df = (
+        spark.readStream
+        .format("delta")
+        .table(raw_table_name)
+        .withColumn("_ingested_at", current_timestamp())
+    )
+except Exception as e:
+    print(f"Raw table might not exist yet if this is the very first run: {e}")
+    generate_batch(0)
+    streaming_df = (
+        spark.readStream
+        .format("delta")
+        .table(raw_table_name)
+        .withColumn("_ingested_at", current_timestamp())
+    )
+
+# 2. Write Stream to Bronze Delta Lake Managed Table
+writer = (streaming_df.writeStream
+          .format("delta")
+          .outputMode("append")
+          .option("checkpointLocation", checkpoint_path))
 
 if pipeline_mode == "streaming":
-    # Run continuously 24/7 (Real-time)
-    writer.trigger(processingTime="2 seconds").awaitTermination()
+    # For continuous execution
+    writer.trigger(processingTime="5 seconds").toTable(silver_table_name)
 else:
-    # Run once to process all queued data and shut down (Batch)
-    writer.trigger(availableNow=True).awaitTermination()
+    # Databricks Workflows (Serverless jobs) typically use availableNow for micro-batch
+    writer.trigger(availableNow=True).toTable(silver_table_name)
+
+print(f"Streaming job initialized successfully. Streaming from {raw_table_name} to {silver_table_name}...")

@@ -63,13 +63,13 @@ def process_silver_batch(microBatchDF, batchId):
      .execute())
 
 # COMMAND ----------
-# Read Bronze as a Stream
-bronze_stream = spark.readStream.table("apex.default.bronze_patient_vitals")
+# Read from Bronze
+bronze_stream = spark.readStream.table("apex.default.bronze_telemetry")
 
 # Write to Silver using foreachBatch
 writer = (bronze_stream.writeStream
           .foreachBatch(process_silver_batch)
-          .option("checkpointLocation", "/Volumes/apex/default/secrets/checkpoints/telemetry_silver"))
+          .option("checkpointLocation", "dbfs:/tmp/checkpoints/telemetry_silver"))
 
 if pipeline_mode == "streaming":
     writer.trigger(processingTime="2 seconds").awaitTermination()
