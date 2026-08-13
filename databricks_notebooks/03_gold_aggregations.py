@@ -70,10 +70,14 @@ gold_stream = (
 )
 
 # Write to Gold using foreachBatch in Update output mode (since we are using windowed aggregations)
+checkpoint_path = "/Volumes/apex/default/secrets/checkpoints/telemetry_gold"
+import os
+os.makedirs(checkpoint_path, exist_ok=True)
+
 writer = (gold_stream.writeStream
           .foreachBatch(process_gold_batch)
           .outputMode("update")
-          .option("checkpointLocation", "dbfs:/tmp/checkpoints/telemetry_gold"))
+          .option("checkpointLocation", checkpoint_path))
 
 if pipeline_mode == "streaming":
     writer.trigger(processingTime="1 minute").awaitTermination()
