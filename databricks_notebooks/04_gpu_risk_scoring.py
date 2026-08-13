@@ -11,13 +11,23 @@
 # Write the real Kaggle API token to ~/.kaggle/access_token for authentication
 import os
 import subprocess
+import json
 
 print("Configuring Kaggle API Token...")
 os.makedirs(os.path.expanduser("~/.kaggle"), exist_ok=True)
-token_path = os.path.expanduser("~/.kaggle/access_token")
+
+# Write kaggle.json for traditional CLI compatibility
+kaggle_creds = {
+    "username": "flameemperor",
+    "key": "KGAT_0869e262f9e04241ca9a0d223ecc753d"
+}
+token_path = os.path.expanduser("~/.kaggle/kaggle.json")
 with open(token_path, "w") as f:
-    f.write("KGAT_0869e262f9e04241ca9a0d223ecc753d")
+    json.dump(kaggle_creds, f)
 os.chmod(token_path, 0o600)
+
+os.environ["KAGGLE_USERNAME"] = "flameemperor"
+os.environ["KAGGLE_KEY"] = "KGAT_0869e262f9e04241ca9a0d223ecc753d"
 os.environ["KAGGLE_API_TOKEN"] = "KGAT_0869e262f9e04241ca9a0d223ecc753d"
 
 
