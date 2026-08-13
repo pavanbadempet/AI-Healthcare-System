@@ -11,7 +11,7 @@ print(f"Running Bronze Ingest in mode: {pipeline_mode}")
 
 # COMMAND ----------
 from pyspark.sql.types import StructType, StructField, StringType, FloatType, IntegerType
-from pyspark.sql.functions import col
+from pyspark.sql.functions import col, current_timestamp
 
 # Define schema for the incoming stream
 schema = StructType([
