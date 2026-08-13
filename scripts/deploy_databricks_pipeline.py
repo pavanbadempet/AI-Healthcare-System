@@ -44,7 +44,7 @@ schema = StructType([
 dbutils.fs.mkdirs("/tmp/telemetry_stream_in")
 dbutils.fs.mkdirs("/tmp/telemetry_stream_checkpoint")
 
-# In Community Edition, we read from a DBFS directory (which we can populate with API or simulate_vitals_stream.py)
+# In Databricks Free Edition, we read from a managed volume or DBFS directory
 streaming_df = (
     spark.readStream
     .schema(schema)
@@ -95,7 +95,7 @@ def upload_notebook():
             print(f"[ERROR] Failed to deploy notebook: {response.status_code}")
             print(response.text)
     except requests.exceptions.SSLError as e:
-        print("[ERROR] Network SSL Error: The connection to Databricks Community Edition was blocked or dropped.")
+        print("[ERROR] Network SSL Error: The connection to Databricks Free Edition was blocked or dropped.")
         print("Please run this script from your local machine to bypass the sandbox network restrictions.")
         print(f"Error details: {e}")
 
