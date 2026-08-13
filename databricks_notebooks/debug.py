@@ -1,5 +1,7 @@
 from pyspark.sql import SparkSession
 spark = SparkSession.builder.getOrCreate()
-df = spark.sql("SHOW VOLUMES IN apex.default")
-for row in df.collect():
-    print(f"VOLUME: {row.volume_name}")
+try:
+    spark.sql("CREATE VOLUME IF NOT EXISTS apex.default.telemetry")
+    print("VOLUME CREATED SUCCESSFULLY!")
+except Exception as e:
+    print(f"FAILED TO CREATE VOLUME: {e}")
