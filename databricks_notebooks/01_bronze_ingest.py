@@ -31,8 +31,10 @@ schema = StructType([
 
 import os
 
-stream_in_path = "/Volumes/apex/default/secrets/telemetry/stream_in"
-checkpoint_path = "/Volumes/apex/default/secrets/telemetry/stream_checkpoint/bronze"
+spark.sql("CREATE VOLUME IF NOT EXISTS apex.default.telemetry")
+
+stream_in_path = "/Volumes/apex/default/telemetry/stream_in"
+checkpoint_path = "/Volumes/apex/default/telemetry/stream_checkpoint/bronze"
 
 streaming_df = (
     spark.readStream
