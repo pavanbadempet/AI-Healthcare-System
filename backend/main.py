@@ -490,9 +490,11 @@ app.include_router(abdm_sandbox.router, prefix=API_V1_PREFIX, tags=["ABDM Sandbo
 
 from backend.routes.data_platform_routes import router as data_platform_router
 from backend.routes.recommendation_routes import router as recommendation_router
+from backend.routes.peak_healthcare_routes import router as peak_healthcare_router
 
 app.include_router(data_platform_router)
 app.include_router(recommendation_router)
+app.include_router(peak_healthcare_router)
 
 @app.get("/")
 def root():
