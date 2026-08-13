@@ -110,7 +110,17 @@ class Spark4VariantHandler:
 
         extracted = {}
         for field in target_fields:
-            if isinstance(parsed, dict) and field in parsed:
+            if "." in field:
+                curr = parsed
+                for part in field.split("."):
+                    if isinstance(curr, dict) and part in curr:
+                        curr = curr[part]
+                    else:
+                        curr = None
+                        break
+                if curr is not None:
+                    extracted[field] = curr
+            elif isinstance(parsed, dict) and field in parsed:
                 extracted[field] = parsed[field]
 
         return VariantPayload(
@@ -118,6 +128,16 @@ class Spark4VariantHandler:
             variant_raw=raw_json,
             extracted_fields=extracted,
         )
+
+    def shred_variant_json(self, json_data: Any, target_paths: List[str]) -> Dict[str, Any]:
+        """Convenience shredder for dict or string JSON payloads."""
+        if isinstance(json_data, dict):
+            raw_str = json.dumps(json_data)
+        else:
+            raw_str = str(json_data)
+        payload = self.parse_variant_blob(raw_str, target_paths)
+        return payload.extracted_fields
+
 
 
 # =====================================================================
