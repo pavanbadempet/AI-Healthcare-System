@@ -379,18 +379,18 @@ class ModelService:
 
         if needs_download or not any(os.path.exists(os.path.join(self._model_dir, f)) for f in models_to_check):
             try:
-                logger.info("Real models are missing or placeholders. Attempting to download from Hugging Face private dataset %s...", hf_dataset_id)
+                logger.info("Real models are missing or placeholders. Attempting to download from Hugging Face private model repo %s...", hf_dataset_id)
                 from huggingface_hub import HfApi
                 api = HfApi(token=hf_token)
-                files = api.list_repo_files(repo_id=hf_dataset_id, repo_type="dataset")
+                files = api.list_repo_files(repo_id=hf_dataset_id, repo_type="model")
                 model_files = [
                     f
                     for f in files
-                    if f.startswith("models/") and os.path.basename(f) in models_to_check
+                    if os.path.basename(f) in models_to_check
                 ]
 
                 if not model_files:
-                    logger.warning("No files found in 'models/' folder of HF dataset %s", hf_dataset_id)
+                    logger.warning("No files found in HF model repo %s", hf_dataset_id)
                     return
 
                 with tempfile.TemporaryDirectory(prefix="healthcare-model-download-") as staging_dir:
@@ -399,7 +399,7 @@ class ModelService:
                         logger.info("Downloading %s from HF...", filename)
                         downloaded_path = api.hf_hub_download(
                             repo_id=hf_dataset_id,
-                            repo_type="dataset",
+                            repo_type="model",
                             filename=file,
                             local_dir=staging_dir,
                         )
