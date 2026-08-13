@@ -379,7 +379,8 @@ def _log_attributions_to_db_background(
     model_version: str,
     features_dict: dict,
     attributions_dict: dict,
-    raw_pred: int
+    raw_pred: int,
+    is_usable_for_training: int = 1
 ):
     """Persist SHAP feature attributions to the database in a background thread.
 
@@ -409,7 +410,8 @@ def _log_attributions_to_db_background(
             model_version=model_version,
             features=features_dict,
             attributions=attributions_dict,
-            prediction_value=int(raw_pred)
+            prediction_value=int(raw_pred),
+            is_usable_for_training=is_usable_for_training
         )
         db_session.add(log_entry)
         db_session.commit()
@@ -426,7 +428,8 @@ def _log_feature_attributions(
     feature_names: list = None,
     raw_pred: int = None,
     model: Any = None,
-    db: Optional[Session] = None
+    db: Optional[Session] = None,
+    is_usable_for_training: int = 1
 ) -> Optional[dict]:
     """
     Calculates SHAP values for the prediction (natively where possible) and queues
@@ -522,7 +525,8 @@ def _log_feature_attributions(
                 model_version=model_version,
                 features=features_dict,
                 attributions=attributions_dict,
-                prediction_value=int(raw_pred)
+                prediction_value=int(raw_pred),
+                is_usable_for_training=is_usable_for_training
             )
             db_session.add(log_entry)
             db_session.commit()
@@ -532,7 +536,8 @@ def _log_feature_attributions(
                 model_version,
                 features_dict,
                 attributions_dict,
-                raw_pred
+                raw_pred,
+                is_usable_for_training
             )
         return attributions_dict
     except Exception as e:

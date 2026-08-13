@@ -30,7 +30,10 @@ MODEL_FILES = [
 def run_command(command, cwd=None):
     """Run a terminal command and stream output."""
     print(f"Running command: {command}")
-    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=cwd)
+    env = os.environ.copy()
+    if cwd:
+        env["PYTHONPATH"] = cwd
+    process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, cwd=cwd, env=env)
     for line in process.stdout:
         print(line, end="")
     process.wait()
