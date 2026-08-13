@@ -42,10 +42,10 @@ gold_df = spark.read.table("gold_patient_hourly_vitals")
 
 # COMMAND ----------
 print("Creating dummy kernel config so the Kaggle CLI attempts to authenticate...")
-os.makedirs("/Volumes/workspace/default/checkpoints/kaggle_kernel_config", exist_ok=True)
-with open("/Volumes/workspace/default/checkpoints/kaggle_kernel_config/kernel-metadata.json", "w") as f:
+os.makedirs("/tmp/kaggle_kernel_config", exist_ok=True)
+with open("/tmp/kaggle_kernel_config/kernel-metadata.json", "w") as f:
     f.write('{"id": "flameemperor/ai-healthcare-risk-scoring", "title": "AI Healthcare Risk Scoring", "code_file": "notebook.ipynb", "language": "python", "kernel_type": "notebook", "is_private": "true"}')
-with open("/Volumes/workspace/default/checkpoints/kaggle_kernel_config/notebook.ipynb", "w") as f:
+with open("/tmp/kaggle_kernel_config/notebook.ipynb", "w") as f:
     f.write('{"cells":[], "metadata":{}, "nbformat": 4, "nbformat_minor": 5}')
 print("Triggering Kaggle GPU Kernel (AI-Healthcare-Risk-Scoring)...")
 
@@ -54,7 +54,7 @@ import subprocess
 # Execute the Kaggle API trigger. This will fail if KAGGLE_USERNAME and KAGGLE_KEY are invalid!
 print("Triggering Kaggle GPU Kernel (AI-Healthcare-Risk-Scoring)...")
 try:
-    result = subprocess.run(["kaggle", "kernels", "push", "-p", "/Volumes/workspace/default/checkpoints/kaggle_kernel_config/"], check=True, capture_output=True, text=True)
+    result = subprocess.run(["kaggle", "kernels", "push", "-p", "/tmp/kaggle_kernel_config/"], check=True, capture_output=True, text=True)
     print("Kaggle CLI STDOUT:", result.stdout)
     print("Kaggle CLI STDERR:", result.stderr)
     print("Successfully pushed to Kaggle GPU Cluster!")
