@@ -44,7 +44,7 @@ gold_df = spark.read.table("gold_patient_hourly_vitals")
 print("Creating dummy kernel config so the Kaggle CLI attempts to authenticate...")
 os.makedirs("/Volumes/workspace/default/checkpoints/kaggle_kernel_config", exist_ok=True)
 with open("/Volumes/workspace/default/checkpoints/kaggle_kernel_config/kernel-metadata.json", "w") as f:
-    f.write('{"id": "flameemperor/ai-healthcare-risk-scoring", "title": "Risk Scoring", "code_file": "notebook.ipynb", "language": "python", "kernel_type": "notebook", "is_private": "true"}')
+    f.write('{"id": "flameemperor/ai-healthcare-risk-scoring", "title": "AI Healthcare Risk Scoring", "code_file": "notebook.ipynb", "language": "python", "kernel_type": "notebook", "is_private": "true"}')
 with open("/Volumes/workspace/default/checkpoints/kaggle_kernel_config/notebook.ipynb", "w") as f:
     f.write('{"cells":[], "metadata":{}, "nbformat": 4, "nbformat_minor": 5}')
 print("Triggering Kaggle GPU Kernel (AI-Healthcare-Risk-Scoring)...")
