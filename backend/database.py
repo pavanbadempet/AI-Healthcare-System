@@ -117,8 +117,9 @@ elif "sqlite" in SQLALCHEMY_DATABASE_URL:
 else:
     connect_args = {
         "connect_timeout": 10,
-        "options": "-c statement_timeout=30000"
     }
+    if "neon.tech" not in SQLALCHEMY_DATABASE_URL:
+        connect_args["options"] = "-c statement_timeout=30000"
 
 # Configure SOTA Enterprise Pooling for non-SQLite (e.g. Postgres / Neon / CockroachDB)
 engine_args = {
