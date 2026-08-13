@@ -36,7 +36,10 @@ import os
 
 raw_table_name = "bronze_telemetry_raw"
 silver_table_name = "bronze_telemetry"
-checkpoint_path = "dbfs:/tmp/checkpoints/telemetry_bronze"
+checkpoint_path = "/Volumes/apex/default/secrets/checkpoints/telemetry_bronze"
+
+import os
+os.makedirs(checkpoint_path, exist_ok=True)
 
 # Simulate generating random telemetry and appending to the raw Delta table
 def generate_batch(batch_id):
