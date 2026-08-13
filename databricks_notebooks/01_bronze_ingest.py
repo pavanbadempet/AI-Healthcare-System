@@ -36,7 +36,7 @@ import os
 
 raw_table_name = "bronze_telemetry_raw"
 silver_table_name = "bronze_telemetry"
-checkpoint_path = "/Volumes/workspace/default/checkpoints/telemetry_bronze"
+checkpoint_path = "/tmp/checkpoints/telemetry_bronze"
 
 import os
 os.makedirs(checkpoint_path, exist_ok=True)
@@ -53,7 +53,7 @@ def generate_batch(batch_id):
     token = None
     try:
         # Authenticate with the HF Spaces backend
-        auth_res = requests.post(f"{backend_url}/v1/auth/login", data={"username": "admin", "password": "adminpass"}, timeout=15)
+        auth_res = requests.post(f"{backend_url}/v1/token", data={"username": "admin", "password": "adminpass"}, timeout=15)
         if auth_res.status_code == 200:
             token = auth_res.json().get("access_token")
     except Exception as e:
@@ -122,41 +122,106 @@ def generate_batch(batch_id):
     df.write.format("delta").mode("append").saveAsTable(raw_table_name)
     print(f"Appended {len(data)} raw telemetry events to {raw_table_name}")
 
-if pipeline_mode == "batch":
-    # In batch mode, we generate one chunk of raw data to be processed by the stream
-    generate_batch(1)
+    if pipeline_mode == "batch":
+        # In batch mode, we generate one chunk of raw data to be processed by the stream
+        generate_batch(1)
 
-print(f"Starting Delta Stream from {raw_table_name}...")
+    print(f"Starting Delta Stream from {raw_table_name}...")
 
-# 1. Read Stream using Delta table as source
-try:
-    streaming_df = (
-        spark.readStream
-        .format("delta")
-        .table(raw_table_name)
-        .withColumn("_ingested_at", current_timestamp())
-    )
-except Exception as e:
-    print(f"Raw table might not exist yet if this is the very first run: {e}")
-    generate_batch(0)
-    streaming_df = (
-        spark.readStream
-        .format("delta")
-        .table(raw_table_name)
-        .withColumn("_ingested_at", current_timestamp())
-    )
+    # 1. Read Stream using Delta table as source
+    try:
+        streaming_df = (
+            spark.readStream
+            .format("delta")
+            .table(raw_table_name)
+            .withColumn("_ingested_at", current_timestamp())
+        )
+    except Exception as e:
+        print(f"Raw table might not exist yet if this is the very first run: {e}")
+        generate_batch(0)
+        streaming_df = (
+            spark.readStream
+            .format("delta")
+            .table(raw_table_name)
+            .withColumn("_ingested_at", current_timestamp())
+        )
 
-# 2. Write Stream to Bronze Delta Lake Managed Table
-writer = (streaming_df.writeStream
-          .format("delta")
-          .outputMode("append")
-          .option("checkpointLocation", checkpoint_path))
+    # 2. Write Stream to Bronze Delta Lake Managed Table
+    writer = (streaming_df.writeStream
+              .format("delta")
+              .outputMode("append")
+              .option("checkpointLocation", checkpoint_path))
 
-if pipeline_mode == "streaming":
-    # For continuous execution
-    writer.trigger(processingTime="5 seconds").toTable(silver_table_name)
-else:
-    # Databricks Workflows (Serverless jobs) typically use availableNow for micro-batch
-    writer.trigger(availableNow=True).toTable(silver_table_name)
+    if pipeline_mode == "streaming":
+        # For continuous execution
+        writer.trigger(processingTime="5 seconds").toTable(silver_table_name)
+    else:
+        # Databricks Workflows (Serverless jobs) typically use availableNow for micro-batch
+        writer.trigger(availableNow=True).toTable(silver_table_name)
 
-print(f"Streaming job initialized successfully. Streaming from {raw_table_name} to {silver_table_name}...")
+    print(f"Streaming job initialized successfully. Streaming from {raw_table_name} to {silver_table_name}...")
+
+    # ==========================================
+    # NEW: INGEST CLICKSTREAM & PREDICTION LOGS
+    # ==========================================
+    def ingest_table_via_sql(table_name, target_bronze_raw, schema):
+        import requests
+        import json
+        backend_url = os.getenv("BACKEND_URL", "https://pavanbadempet-ai-healthcare-system.hf.space")
+        print(f"Pulling {table_name} from {backend_url}...")
+        
+        token = None
+        try:
+            auth_res = requests.post(f"{backend_url}/v1/token", data={"username": "admin", "password": "adminpass"}, timeout=15)
+            if auth_res.status_code == 200:
+                token = auth_res.json().get("access_token")
+        except Exception as e:
+            print(f"Auth failed: {e}")
+            return
+            
+        if not token:
+            print("No auth token, skipping SQL pull")
+            return
+            
+        try:
+            sql = f"SELECT * FROM {table_name} WHERE id > (SELECT COALESCE(MAX(id), 0) FROM {target_bronze_raw}) ORDER BY id ASC LIMIT 5000"
+            # Using try/except around the subquery in case target_bronze_raw doesn't exist yet
+            # we will just do a simple pull
+            try:
+                max_id_df = spark.sql(f"SELECT COALESCE(MAX(id), 0) as max_id FROM {target_bronze_raw}")
+                max_id = max_id_df.collect()[0]["max_id"]
+                sql = f"SELECT * FROM {table_name} WHERE id > {max_id} ORDER BY id ASC LIMIT 5000"
+            except Exception:
+                sql = f"SELECT * FROM {table_name} ORDER BY id ASC LIMIT 5000"
+                
+            res = requests.post(
+                f"{backend_url}/api/v1/data-platform/sql/execute",
+                json={"query": sql},
+                headers={"Authorization": f"Bearer {token}"},
+                timeout=30
+            )
+            if res.status_code == 200:
+                rows = res.json().get("results", [])
+                if rows:
+                    import pandas as pd
+                    pdf = pd.DataFrame(rows)
+                    # For JSON columns, convert dicts back to string so spark doesn't complain about complex types
+                    for col_name in pdf.columns:
+                        if pdf[col_name].apply(lambda x: isinstance(x, (dict, list))).any():
+                            pdf[col_name] = pdf[col_name].apply(json.dumps)
+                            
+                    spark_df = spark.createDataFrame(pdf)
+                    spark_df.write.format("delta").mode("append").saveAsTable(target_bronze_raw)
+                    print(f"Appended {len(rows)} records to {target_bronze_raw}")
+                else:
+                    print(f"No new records for {table_name}")
+            else:
+                print(f"Failed to fetch {table_name}: {res.text}")
+        except Exception as e:
+            print(f"SQL pull failed: {e}")
+
+    # Fetch clickstream events
+    ingest_table_via_sql("clickstream_events", "bronze_clickstream_raw", None)
+    
+    # Fetch prediction feature attribution logs
+    ingest_table_via_sql("feature_attribution_logs", "bronze_predictions_raw", None)

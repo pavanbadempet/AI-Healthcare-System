@@ -67,7 +67,7 @@ def process_silver_batch(microBatchDF, batchId):
 bronze_stream = spark.readStream.table("bronze_telemetry")
 
 # Write to Silver using foreachBatch
-checkpoint_path = "/Volumes/workspace/default/checkpoints/telemetry_silver"
+checkpoint_path = "/tmp/checkpoints/telemetry_silver"
 import os
 os.makedirs(checkpoint_path, exist_ok=True)
 
@@ -76,6 +76,110 @@ writer = (bronze_stream.writeStream
           .option("checkpointLocation", checkpoint_path))
 
 if pipeline_mode == "streaming":
-    writer.trigger(processingTime="2 seconds").start().awaitTermination()
+    q1 = writer.trigger(processingTime="2 seconds").start()
 else:
-    writer.trigger(availableNow=True).start().awaitTermination()
+    q1 = writer.trigger(availableNow=True).start()
+
+# ==========================================
+# NEW: PROCESS CLICKSTREAM & PREDICTIONS
+# ==========================================
+
+# 1. Init Silver Tables
+spark.sql("""
+CREATE TABLE IF NOT EXISTS silver_clickstream (
+    id INT,
+    user_id INT,
+    session_id STRING,
+    event_type STRING,
+    event_data STRING,
+    url STRING,
+    created_at TIMESTAMP
+) USING DELTA
+""")
+
+spark.sql("""
+CREATE TABLE IF NOT EXISTS silver_ml_training_data (
+    id INT,
+    model_name STRING,
+    model_version STRING,
+    features STRING,
+    attributions STRING,
+    prediction_value INT,
+    is_usable_for_training INT,
+    created_at TIMESTAMP
+) USING DELTA
+""")
+
+# 2. Clickstream Processing
+def process_clickstream_batch(microBatchDF, batchId):
+    import pyspark.sql.functions as F
+    
+    clean_df = microBatchDF.filter(col("id").isNotNull())
+    # Convert timestamps properly if needed
+    if dict(clean_df.dtypes).get("created_at", "") == "string":
+        clean_df = clean_df.withColumn("created_at", col("created_at").cast("timestamp"))
+        
+    # Upsert logic
+    silver_table = DeltaTable.forName(spark, "silver_clickstream")
+    (silver_table.alias("target")
+     .merge(
+         clean_df.alias("source"),
+         "target.id = source.id"
+     )
+     .whenNotMatchedInsertAll()
+     .execute())
+
+# 3. ML Training Data Processing
+def process_ml_training_batch(microBatchDF, batchId):
+    import pyspark.sql.functions as F
+    
+    # Filter for valid records AND ONLY where it's usable for training
+    clean_df = microBatchDF.filter(
+        col("id").isNotNull() & 
+        (col("is_usable_for_training") == 1)
+    )
+    
+    if dict(clean_df.dtypes).get("created_at", "") == "string":
+        clean_df = clean_df.withColumn("created_at", col("created_at").cast("timestamp"))
+        
+    silver_table = DeltaTable.forName(spark, "silver_ml_training_data")
+    (silver_table.alias("target")
+     .merge(
+         clean_df.alias("source"),
+         "target.id = source.id"
+     )
+     .whenNotMatchedInsertAll()
+     .execute())
+
+click_chk = "/tmp/checkpoints/clickstream_silver"
+ml_chk = "/tmp/checkpoints/ml_training_silver"
+os.makedirs(click_chk, exist_ok=True)
+os.makedirs(ml_chk, exist_ok=True)
+
+try:
+    q2 = (spark.readStream.format("delta").table("bronze_clickstream_raw")
+          .writeStream.foreachBatch(process_clickstream_batch)
+          .option("checkpointLocation", click_chk))
+    if pipeline_mode == "streaming":
+        q2 = q2.trigger(processingTime="5 seconds").start()
+    else:
+        q2 = q2.trigger(availableNow=True).start()
+except Exception as e:
+    print(f"Skipping clickstream stream: {e}")
+    q2 = None
+
+try:
+    q3 = (spark.readStream.format("delta").table("bronze_predictions_raw")
+          .writeStream.foreachBatch(process_ml_training_batch)
+          .option("checkpointLocation", ml_chk))
+    if pipeline_mode == "streaming":
+        q3 = q3.trigger(processingTime="5 seconds").start()
+    else:
+        q3 = q3.trigger(availableNow=True).start()
+except Exception as e:
+    print(f"Skipping ML training stream: {e}")
+    q3 = None
+
+q1.awaitTermination()
+if q2: q2.awaitTermination()
+if q3: q3.awaitTermination()

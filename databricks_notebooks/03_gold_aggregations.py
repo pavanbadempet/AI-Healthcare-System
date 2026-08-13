@@ -70,7 +70,7 @@ gold_stream = (
 )
 
 # Write to Gold using foreachBatch in Update output mode (since we are using windowed aggregations)
-checkpoint_path = "/Volumes/workspace/default/checkpoints/telemetry_gold"
+checkpoint_path = "/tmp/checkpoints/telemetry_gold"
 import os
 os.makedirs(checkpoint_path, exist_ok=True)
 
@@ -83,3 +83,42 @@ if pipeline_mode == "streaming":
     writer.trigger(processingTime="1 minute").start().awaitTermination()
 else:
     writer.trigger(availableNow=True).start().awaitTermination()
+
+# COMMAND ----------
+# MAGIC %md
+# MAGIC ## Feature Engineering in Unity Catalog
+# MAGIC Register the Gold Medallion table as a Feature Store table for machine learning consumption.
+# MAGIC This provides lineage tracking and allows ML models to easily fetch the latest patient vitals at inference time.
+
+# COMMAND ----------
+if pipeline_mode == "batch":
+    try:
+        from databricks.feature_engineering import FeatureEngineeringClient
+        
+        fe = FeatureEngineeringClient()
+        
+        # Check if the feature table exists, if not create it
+        table_name = "main.ai_healthcare.gold_patient_hourly_vitals"
+        
+        # We read the latest static version of the table to update the schema in Feature Store
+        gold_df = spark.read.table("gold_patient_hourly_vitals")
+        
+        try:
+            # Try to get the table to see if it exists
+            fe.get_table(name=table_name)
+            print(f"Feature table {table_name} already exists. It will be updated by the stream.")
+        except Exception as e:
+            # Create feature table using the Gold table as the source
+            print(f"Creating Feature Table {table_name} in Unity Catalog...")
+            fe.create_table(
+                name=table_name,
+                primary_keys=["patient_id", "window_start"],
+                df=gold_df,
+                schema_name="main.ai_healthcare",
+                description="Aggregated hourly patient vitals including heart rate, BP, SpO2, and hypoxic events."
+            )
+            print("Feature table created successfully!")
+    except ImportError:
+        print("FeatureEngineeringClient not available in this environment. Skipping Feature Store registration.")
+    except Exception as e:
+        print(f"Skipping feature store registration: {e}")
