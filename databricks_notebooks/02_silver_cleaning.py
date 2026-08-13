@@ -67,11 +67,8 @@ def process_silver_batch(microBatchDF, batchId):
 bronze_stream = spark.readStream.table("bronze_telemetry")
 
 # Write to Silver using foreachBatch
-checkpoint_path = "file:/tmp/checkpoints/telemetry_silver"
-
 writer = (bronze_stream.writeStream
-          .foreachBatch(process_silver_batch)
-          .option("checkpointLocation", checkpoint_path))
+          .foreachBatch(process_silver_batch))
 
 if pipeline_mode == "streaming":
     try:
@@ -152,13 +149,9 @@ def process_ml_training_batch(microBatchDF, batchId):
      .whenNotMatchedInsertAll()
      .execute())
 
-click_chk = "file:/tmp/checkpoints/clickstream_silver"
-ml_chk = "file:/tmp/checkpoints/ml_training_silver"
-
 try:
     q2 = (spark.readStream.format("delta").table("bronze_clickstream_raw")
-          .writeStream.foreachBatch(process_clickstream_batch)
-          .option("checkpointLocation", click_chk))
+          .writeStream.foreachBatch(process_clickstream_batch))
     if pipeline_mode == "streaming":
         try:
             q2 = q2.trigger(processingTime="5 seconds").start()
@@ -172,8 +165,7 @@ except Exception as e:
 
 try:
     q3 = (spark.readStream.format("delta").table("bronze_predictions_raw")
-          .writeStream.foreachBatch(process_ml_training_batch)
-          .option("checkpointLocation", ml_chk))
+          .writeStream.foreachBatch(process_ml_training_batch))
     if pipeline_mode == "streaming":
         try:
             q3 = q3.trigger(processingTime="5 seconds").start()

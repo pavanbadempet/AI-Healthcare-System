@@ -146,8 +146,7 @@ def generate_batch(batch_id):
     # 2. Write Stream to Bronze Delta Lake Managed Table
     writer = (streaming_df.writeStream
               .format("delta")
-              .outputMode("append")
-              .option("checkpointLocation", checkpoint_path))
+              .outputMode("append"))
 
     if pipeline_mode == "streaming":
         try:
