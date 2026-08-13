@@ -16,7 +16,7 @@ from delta.tables import DeltaTable
 
 # Initialize Gold table
 spark.sql("""
-CREATE TABLE IF NOT EXISTS main.default.gold_patient_hourly_vitals (
+CREATE TABLE IF NOT EXISTS apex.default.gold_patient_hourly_vitals (
     patient_id INT,
     window_start TIMESTAMP,
     window_end TIMESTAMP,
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS main.default.gold_patient_hourly_vitals (
 # COMMAND ----------
 def process_gold_batch(microBatchDF, batchId):
     # Upsert (MERGE) aggregated windows into Gold table
-    gold_table = DeltaTable.forName(spark, "main.default.gold_patient_hourly_vitals")
+    gold_table = DeltaTable.forName(spark, "apex.default.gold_patient_hourly_vitals")
     
     (gold_table.alias("target")
      .merge(
@@ -43,7 +43,7 @@ def process_gold_batch(microBatchDF, batchId):
 
 # COMMAND ----------
 # Read Silver as a Stream with Watermarking for late-arriving data (up to 2 hours late)
-silver_stream = spark.readStream.table("main.default.silver_patient_vitals")
+silver_stream = spark.readStream.table("apex.default.silver_patient_vitals")
 
 gold_stream = (
     silver_stream

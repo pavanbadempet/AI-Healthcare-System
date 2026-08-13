@@ -52,7 +52,7 @@ writer = (
     .format("delta")
     .outputMode("append")
     .option("checkpointLocation", checkpoint_path)
-    .table("main.default.bronze_patient_vitals")
+    .table("apex.default.bronze_patient_vitals")
 )
 
 if pipeline_mode == "streaming":
