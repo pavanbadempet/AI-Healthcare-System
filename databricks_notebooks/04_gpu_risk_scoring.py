@@ -8,14 +8,18 @@
 # MAGIC %pip install kaggle
 
 # COMMAND ----------
+# Write the real Kaggle API token to ~/.kaggle/access_token for authentication
 import os
-import json
-import time
+import subprocess
 
-# Use Doppler secrets for Kaggle Auth (In production, use dbutils.secrets)
-# We assume the cluster environment variables or secrets hold KAGGLE_USERNAME and KAGGLE_KEY
-os.environ["KAGGLE_USERNAME"] = os.environ.get("KAGGLE_USERNAME", "mock_kaggle_user")
-os.environ["KAGGLE_KEY"] = os.environ.get("KAGGLE_KEY", "mock_kaggle_key")
+print("Configuring Kaggle API Token...")
+os.makedirs(os.path.expanduser("~/.kaggle"), exist_ok=True)
+token_path = os.path.expanduser("~/.kaggle/access_token")
+with open(token_path, "w") as f:
+    f.write("KGAT_0869e262f9e04241ca9a0d223ecc753d")
+os.chmod(token_path, 0o600)
+os.environ["KAGGLE_API_TOKEN"] = "KGAT_0869e262f9e04241ca9a0d223ecc753d"
+
 
 # COMMAND ----------
 print("Fetching Gold data for Kaggle export...")
@@ -30,7 +34,7 @@ gold_df = spark.read.table("gold_patient_hourly_vitals")
 print("Creating dummy kernel config so the Kaggle CLI attempts to authenticate...")
 os.makedirs("/Volumes/workspace/default/checkpoints/kaggle_kernel_config", exist_ok=True)
 with open("/Volumes/workspace/default/checkpoints/kaggle_kernel_config/kernel-metadata.json", "w") as f:
-    f.write('{"id": "mock_kaggle_user/ai-healthcare-risk-scoring", "title": "Risk Scoring", "code_file": "notebook.ipynb", "language": "python", "kernel_type": "notebook", "is_private": "true"}')
+    f.write('{"id": "mariahillcole/ai-healthcare-risk-scoring", "title": "Risk Scoring", "code_file": "notebook.ipynb", "language": "python", "kernel_type": "notebook", "is_private": "true"}')
 with open("/Volumes/workspace/default/checkpoints/kaggle_kernel_config/notebook.ipynb", "w") as f:
     f.write('{"cells":[], "metadata":{}, "nbformat": 4, "nbformat_minor": 5}')
 print("Triggering Kaggle GPU Kernel (AI-Healthcare-Risk-Scoring)...")
