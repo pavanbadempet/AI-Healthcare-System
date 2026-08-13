@@ -489,8 +489,10 @@ app.include_router(fhir_compression.router, prefix=API_V1_PREFIX)
 app.include_router(abdm_sandbox.router, prefix=API_V1_PREFIX, tags=["ABDM Sandbox"])
 
 from backend.routes.data_platform_routes import router as data_platform_router
+from backend.routes.recommendation_routes import router as recommendation_router
 
 app.include_router(data_platform_router)
+app.include_router(recommendation_router)
 
 @app.get("/")
 def root():
