@@ -70,17 +70,13 @@ gold_stream = (
 )
 
 # Write to Gold using foreachBatch in Update output mode (since we are using windowed aggregations)
+checkpoint_path = "/Volumes/workspace/default/checkpoints/telemetry_gold"
 writer = (gold_stream.writeStream
           .foreachBatch(process_gold_batch)
-          .outputMode("update"))
+          .outputMode("update")
+          .option("checkpointLocation", checkpoint_path))
 
-if pipeline_mode == "streaming":
-    try:
-        writer.trigger(processingTime="1 minute").start().awaitTermination()
-    except Exception:
-        writer.trigger(availableNow=True).start().awaitTermination()
-else:
-    writer.trigger(availableNow=True).start().awaitTermination()
+writer.trigger(availableNow=True).start().awaitTermination()
 
 # COMMAND ----------
 # MAGIC %md

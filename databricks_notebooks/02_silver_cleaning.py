@@ -67,16 +67,12 @@ def process_silver_batch(microBatchDF, batchId):
 bronze_stream = spark.readStream.table("bronze_telemetry")
 
 # Write to Silver using foreachBatch
+checkpoint_path = "/Volumes/workspace/default/checkpoints/telemetry_silver"
 writer = (bronze_stream.writeStream
-          .foreachBatch(process_silver_batch))
+          .foreachBatch(process_silver_batch)
+          .option("checkpointLocation", checkpoint_path))
 
-if pipeline_mode == "streaming":
-    try:
-        q1 = writer.trigger(processingTime="2 seconds").start()
-    except Exception:
-        q1 = writer.trigger(availableNow=True).start()
-else:
-    q1 = writer.trigger(availableNow=True).start()
+q1 = writer.trigger(availableNow=True).start()
 
 # ==========================================
 # NEW: PROCESS CLICKSTREAM & PREDICTIONS
@@ -149,30 +145,23 @@ def process_ml_training_batch(microBatchDF, batchId):
      .whenNotMatchedInsertAll()
      .execute())
 
+click_chk = "/Volumes/workspace/default/checkpoints/clickstream_silver"
+ml_chk = "/Volumes/workspace/default/checkpoints/ml_training_silver"
+
 try:
     q2 = (spark.readStream.format("delta").table("bronze_clickstream_raw")
-          .writeStream.foreachBatch(process_clickstream_batch))
-    if pipeline_mode == "streaming":
-        try:
-            q2 = q2.trigger(processingTime="5 seconds").start()
-        except Exception:
-            q2 = q2.trigger(availableNow=True).start()
-    else:
-        q2 = q2.trigger(availableNow=True).start()
+          .writeStream.foreachBatch(process_clickstream_batch)
+          .option("checkpointLocation", click_chk))
+    q2 = q2.trigger(availableNow=True).start()
 except Exception as e:
     print(f"Skipping clickstream stream: {e}")
     q2 = None
 
 try:
     q3 = (spark.readStream.format("delta").table("bronze_predictions_raw")
-          .writeStream.foreachBatch(process_ml_training_batch))
-    if pipeline_mode == "streaming":
-        try:
-            q3 = q3.trigger(processingTime="5 seconds").start()
-        except Exception:
-            q3 = q3.trigger(availableNow=True).start()
-    else:
-        q3 = q3.trigger(availableNow=True).start()
+          .writeStream.foreachBatch(process_ml_training_batch)
+          .option("checkpointLocation", ml_chk))
+    q3 = q3.trigger(availableNow=True).start()
 except Exception as e:
     print(f"Skipping ML training stream: {e}")
     q3 = None

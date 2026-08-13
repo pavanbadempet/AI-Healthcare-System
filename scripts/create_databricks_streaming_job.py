@@ -27,9 +27,6 @@ def create_medallion_job(user_email):
             "git_provider": "gitHub",
             "git_branch": "main"
         },
-        "continuous": {
-            "pause_status": "PAUSED" # Keep paused by default so it doesn't run up bills instantly
-        },
         "tasks": [
             {
                 "task_key": "step_01_bronze_ingest",
@@ -41,6 +38,7 @@ def create_medallion_job(user_email):
             },
             {
                 "task_key": "step_02_silver_cleaning",
+                "depends_on": [{"task_key": "step_01_bronze_ingest"}],
                 "notebook_task": {
                     "notebook_path": "databricks_notebooks/02_silver_cleaning",
                     "source": "GIT",
@@ -49,6 +47,7 @@ def create_medallion_job(user_email):
             },
             {
                 "task_key": "step_03_gold_aggregations",
+                "depends_on": [{"task_key": "step_02_silver_cleaning"}],
                 "notebook_task": {
                     "notebook_path": "databricks_notebooks/03_gold_aggregations",
                     "source": "GIT",
@@ -59,18 +58,33 @@ def create_medallion_job(user_email):
     }
     
     try:
-        response = requests.post(url, headers=HEADERS, json=payload)
-        if response.status_code == 200:
-            job_id = response.json().get("job_id")
-            print(f"[SUCCESS] Created Databricks Workflow Job ID: {job_id}")
+        # Check if job already exists
+        list_res = requests.get(f"{DATABRICKS_INSTANCE}/api/2.1/jobs/list", headers=HEADERS)
+        existing_id = None
+        if list_res.status_code == 200:
+            for j in list_res.json().get("jobs", []):
+                if j.get("settings", {}).get("name") == payload["name"]:
+                    existing_id = j.get("job_id")
+                    break
+                    
+        if existing_id:
+            print(f"Updating existing job {existing_id} with new task dependencies...")
+            reset_payload = {"job_id": existing_id, "new_settings": payload}
+            res = requests.post(f"{DATABRICKS_INSTANCE}/api/2.1/jobs/reset", headers=HEADERS, json=reset_payload)
+            job_id = existing_id
+        else:
+            res = requests.post(url, headers=HEADERS, json=payload)
+            job_id = res.json().get("job_id") if res.status_code == 200 else None
+            
+        if job_id:
+            print(f"[SUCCESS] Configured Databricks Workflow Job ID: {job_id}")
             print(f"You can view your job here: {DATABRICKS_INSTANCE}/#job/{job_id}")
             
-            # Optional: trigger a run now
             run_res = requests.post(f"{DATABRICKS_INSTANCE}/api/2.1/jobs/run-now", headers=HEADERS, json={"job_id": job_id})
             if run_res.status_code == 200:
-                print(f"[SUCCESS] Triggered initial pipeline run! Run ID: {run_res.json().get('run_id')}")
+                print(f"[SUCCESS] Triggered pipeline run! Run ID: {run_res.json().get('run_id')}")
         else:
-            print(f"[ERROR] Failed to create job: {response.status_code} - {response.text}")
+            print(f"[ERROR] Failed to configure job: {res.status_code} - {res.text}")
     except Exception as e:
         print(f"[ERROR] SSL/Network error creating job: {e}")
 

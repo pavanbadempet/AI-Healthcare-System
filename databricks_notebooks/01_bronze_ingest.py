@@ -36,7 +36,7 @@ import os
 
 raw_table_name = "bronze_telemetry_raw"
 silver_table_name = "bronze_telemetry"
-checkpoint_path = "file:/tmp/checkpoints/telemetry_bronze"
+checkpoint_path = "/Volumes/workspace/default/checkpoints/telemetry_bronze"
 
 # Simulate generating random telemetry and appending to the raw Delta table
 def generate_batch(batch_id):
@@ -146,16 +146,10 @@ def generate_batch(batch_id):
     # 2. Write Stream to Bronze Delta Lake Managed Table
     writer = (streaming_df.writeStream
               .format("delta")
-              .outputMode("append"))
+              .outputMode("append")
+              .option("checkpointLocation", checkpoint_path))
 
-    if pipeline_mode == "streaming":
-        try:
-            writer.trigger(processingTime="5 seconds").toTable(silver_table_name)
-        except Exception:
-            writer.trigger(availableNow=True).toTable(silver_table_name)
-    else:
-        # Databricks Workflows (Serverless jobs) typically use availableNow for micro-batch
-        writer.trigger(availableNow=True).toTable(silver_table_name)
+    writer.trigger(availableNow=True).toTable(silver_table_name)
 
     print(f"Streaming job initialized successfully. Streaming from {raw_table_name} to {silver_table_name}...")
 
