@@ -19,7 +19,7 @@ os.environ["KAGGLE_KEY"] = os.environ.get("KAGGLE_KEY", "mock_kaggle_key")
 
 # COMMAND ----------
 print("Fetching Gold data for Kaggle export...")
-gold_df = spark.read.table("apex.default.gold_patient_hourly_vitals")
+gold_df = spark.read.table("main.default.gold_patient_hourly_vitals")
 
 # In a real scenario, we'd export this Gold data to a cloud bucket (S3/GCS) 
 # or DBFS so the Kaggle kernel can download it via URL.

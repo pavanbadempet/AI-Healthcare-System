@@ -30,15 +30,16 @@ schema = StructType([
 ])
 
 # COMMAND ----------
-spark.sql("CREATE VOLUME IF NOT EXISTS apex.default.telemetry_volume")
+import os
+spark.sql("CREATE VOLUME IF NOT EXISTS main.default.telemetry_volume")
 
-dbutils.fs.mkdirs("/Volumes/apex/default/telemetry_volume/stream_in")
-dbutils.fs.mkdirs("/Volumes/apex/default/telemetry_volume/stream_checkpoint")
+os.makedirs("/Volumes/main.default/telemetry_volume/stream_in", exist_ok=True)
+os.makedirs("/Volumes/main.default/telemetry_volume/stream_checkpoint", exist_ok=True)
 
 streaming_df = (
     spark.readStream
     .schema(schema)
-    .json("/Volumes/apex/default/telemetry_volume/stream_in")
+    .json("/Volumes/main.default/telemetry_volume/stream_in")
 )
 
 # Write to Bronze Delta Table
@@ -46,8 +47,8 @@ writer = (
     streaming_df.writeStream
     .format("delta")
     .outputMode("append")
-    .option("checkpointLocation", "/Volumes/apex/default/telemetry_volume/stream_checkpoint/bronze")
-    .table("apex.default.bronze_patient_vitals")
+    .option("checkpointLocation", "/Volumes/main.default/telemetry_volume/stream_checkpoint/bronze")
+    .table("main.default.bronze_patient_vitals")
 )
 
 if pipeline_mode == "streaming":
