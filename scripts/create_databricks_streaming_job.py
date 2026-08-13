@@ -41,7 +41,6 @@ def create_medallion_job(user_email):
             },
             {
                 "task_key": "step_02_silver_cleaning",
-                "depends_on": [{"task_key": "step_01_bronze_ingest"}],
                 "notebook_task": {
                     "notebook_path": "databricks_notebooks/02_silver_cleaning",
                     "source": "GIT",
@@ -50,7 +49,6 @@ def create_medallion_job(user_email):
             },
             {
                 "task_key": "step_03_gold_aggregations",
-                "depends_on": [{"task_key": "step_02_silver_cleaning"}],
                 "notebook_task": {
                     "notebook_path": "databricks_notebooks/03_gold_aggregations",
                     "source": "GIT",
