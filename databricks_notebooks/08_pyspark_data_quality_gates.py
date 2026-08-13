@@ -1,10 +1,10 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC # Step 08: Declarative Great Expectations & PySpark Data Quality Gates
+# MAGIC # Step 08: Spark Declarative Pipelines (SDP) & DLT Quality Expectations
 # MAGIC 
-# MAGIC Applies clinical expectation suites to telemetry batches & streams:
-# MAGIC - Validates physiological ranges (HR $\in [30, 220]$, SBP $\in [60, 250]$, SpO2 $\in [50, 100]\%$)
-# MAGIC - Enforces schema non-null constraints on primary keys (`patient_id`, `timestamp`)
+# MAGIC Applies native Spark Declarative Pipelines (SDP) contracts to telemetry streams:
+# MAGIC - Compiles declarative SQL expectations (HR $\in [30, 220]$, SBP $\in [60, 250]$, SpO2 $\in [50, 100]\%$)
+# MAGIC - Executes vectorized Catalyst expressions inside the Spark SQL engine
 # MAGIC - Automatically partitions clean records to `workspace.healthcare_silver.telemetry`
 # MAGIC - Routes dirty/out-of-bounds records to `workspace.healthcare_bronze.quarantined_records`
 
@@ -14,16 +14,16 @@ from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
 from pyspark.sql.types import StructType, StructField, StringType, FloatType, TimestampType
 
-spark = SparkSession.builder.appName("Lakehouse_Data_Quality_Gates").getOrCreate()
+spark = SparkSession.builder.appName("SDP_Data_Quality_Gates").getOrCreate()
 
-# Ensure schemas exist
+# Ensure schemas exist in Unity Catalog
 spark.sql("CREATE SCHEMA IF NOT EXISTS workspace.healthcare_bronze")
 spark.sql("CREATE SCHEMA IF NOT EXISTS workspace.healthcare_silver")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 1. Read Raw Ingested Telemetry from Bronze
+# MAGIC ### 1. Ingest Bronze Telemetry Stream
 
 # COMMAND ----------
 
@@ -48,33 +48,35 @@ except Exception:
     ])
     df_raw = spark.createDataFrame(sample_telemetry, t_schema)
 
-print(f"Read {df_raw.count()} raw records from Bronze layer.")
+print(f"Ingested {df_raw.count()} raw records from Bronze layer.")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### 2. Declarative Great Expectations Rules Engine
+# MAGIC ### 2. Spark Declarative Pipelines (SDP) Expectation Predicates
 
 # COMMAND ----------
 
-# Rule 1: Non-null primary key
-cond_valid_id = F.col("patient_id").isNotNull() & (F.trim(F.col("patient_id")) != "")
+# SDP Rule 1: Non-null primary key
+sdp_valid_id = F.col("patient_id").isNotNull() & (F.trim(F.col("patient_id")) != "")
+sdp_valid_ts = F.col("timestamp").isNotNull() & (F.trim(F.col("timestamp")) != "")
 
-# Rule 2: Physiological bounds
-cond_valid_hr = (F.col("heart_rate") >= 30.0) & (F.col("heart_rate") <= 220.0)
-cond_valid_sbp = (F.col("systolic_bp") >= 60.0) & (F.col("systolic_bp") <= 250.0)
-cond_valid_dbp = (F.col("diastolic_bp") >= 35.0) & (F.col("diastolic_bp") <= 150.0)
-cond_valid_spo2 = (F.col("spo2") >= 50.0) & (F.col("spo2") <= 100.0)
-cond_valid_glucose = (F.col("fasting_glucose") >= 20.0) & (F.col("fasting_glucose") <= 800.0)
+# SDP Rule 2: Physiological bounds
+sdp_valid_hr = (F.col("heart_rate") >= 30.0) & (F.col("heart_rate") <= 220.0)
+sdp_valid_sbp = (F.col("systolic_bp") >= 60.0) & (F.col("systolic_bp") <= 250.0)
+sdp_valid_dbp = (F.col("diastolic_bp") >= 35.0) & (F.col("diastolic_bp") <= 150.0)
+sdp_valid_spo2 = (F.col("spo2") >= 50.0) & (F.col("spo2") <= 100.0)
+sdp_valid_glucose = (F.col("fasting_glucose") >= 20.0) & (F.col("fasting_glucose") <= 800.0)
 
-# Master Validity Condition
-master_valid_condition = (
-    cond_valid_id &
-    cond_valid_hr &
-    cond_valid_sbp &
-    cond_valid_dbp &
-    cond_valid_spo2 &
-    cond_valid_glucose
+# Master SDP Validity Condition
+sdp_master_condition = (
+    sdp_valid_id &
+    sdp_valid_ts &
+    sdp_valid_hr &
+    sdp_valid_sbp &
+    sdp_valid_dbp &
+    sdp_valid_spo2 &
+    sdp_valid_glucose
 )
 
 # COMMAND ----------
@@ -84,23 +86,24 @@ master_valid_condition = (
 
 # COMMAND ----------
 
-# Clean dataset
-df_clean = df_raw.filter(master_valid_condition)
+# Clean dataset routed to Silver
+df_clean = df_raw.filter(sdp_master_condition)
 
-# Quarantined dataset with error reasoning
-df_quarantined = df_raw.filter(~master_valid_condition).withColumn(
-    "quarantine_reason",
+# Quarantined dataset with SDP error taxonomy
+df_quarantined = df_raw.filter(~sdp_master_condition).withColumn(
+    "sdp_quarantine_reason",
     F.concat_ws("; ",
-        F.when(~cond_valid_id, F.lit("Invalid/Null patient_id")),
-        F.when(~cond_valid_hr, F.lit("Heart rate out of physiological bounds [30-220]")),
-        F.when(~cond_valid_sbp, F.lit("Systolic BP out of bounds [60-250]")),
-        F.when(~cond_valid_dbp, F.lit("Diastolic BP out of bounds [35-150]")),
-        F.when(~cond_valid_spo2, F.lit("SpO2 out of bounds [50-100]")),
-        F.when(~cond_valid_glucose, F.lit("Fasting Glucose out of bounds [20-800]"))
+        F.when(~sdp_valid_id, F.lit("SDP_ERR_NULL_PK: patient_id is required")),
+        F.when(~sdp_valid_ts, F.lit("SDP_ERR_NULL_TS: timestamp is required")),
+        F.when(~sdp_valid_hr, F.lit("SDP_ERR_PHYSIO_HR: heart_rate out of bounds [30-220]")),
+        F.when(~sdp_valid_sbp, F.lit("SDP_ERR_PHYSIO_SBP: systolic_bp out of bounds [60-250]")),
+        F.when(~sdp_valid_dbp, F.lit("SDP_ERR_PHYSIO_DBP: diastolic_bp out of bounds [35-150]")),
+        F.when(~sdp_valid_spo2, F.lit("SDP_ERR_PHYSIO_SPO2: spo2 out of bounds [50-100]")),
+        F.when(~sdp_valid_glucose, F.lit("SDP_ERR_PHYSIO_GLUCOSE: fasting_glucose out of bounds [20-800]"))
     )
-).withColumn("quarantined_at", F.current_timestamp())
+).withColumn("sdp_quarantined_at", F.current_timestamp())
 
-# Write Clean to Silver
+# Write Clean to Silver (CDF Enabled)
 df_clean.write.format("delta") \
     .option("delta.enableChangeDataFeed", "true") \
     .mode("append") \
@@ -116,7 +119,8 @@ quar_cnt = df_quarantined.count()
 total_cnt = clean_cnt + quar_cnt
 pass_pct = (clean_cnt / (total_cnt or 1)) * 100.0
 
-print(f"[QUALITY AUDIT SUMMARY]")
-print(f"- Total Processed: {total_cnt}")
+print(f"[SDP QUALITY AUDIT SUMMARY]")
+print(f"- Protocol:        Spark Declarative Pipelines (SDP)")
+print(f"- Total Ingested:  {total_cnt}")
 print(f"- Clean Passed:    {clean_cnt} ({pass_pct:.1f}%) -> workspace.healthcare_silver.telemetry")
 print(f"- Quarantined:     {quar_cnt} -> workspace.healthcare_bronze.quarantined_records")
