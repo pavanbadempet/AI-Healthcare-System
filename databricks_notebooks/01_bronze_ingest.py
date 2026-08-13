@@ -48,19 +48,26 @@ def generate_batch(batch_id):
     base_time = datetime.utcnow()
     
     for i in range(num_records):
-        device_id = f"DEV_{random.randint(1000, 1050)}"
-        patient_id = f"PAT_{random.randint(500, 600)}"
+        patient_id = random.randint(1, 1000)
+        facility_id = random.randint(1, 5)
+        encounter_id = random.randint(10000, 99999)
+        department_id = random.randint(1, 10)
+        
+        heart_rate = float(random.randint(60, 120))
+        systolic_bp = float(random.randint(110, 150))
+        diastolic_bp = float(random.randint(70, 95))
+        spo2 = float(random.randint(92, 100))
+        temperature_c = round(random.uniform(36.5, 38.5), 1)
+        respiratory_rate = float(random.randint(12, 20))
+        
+        source = "device_" + str(random.randint(100, 200))
         timestamp = (base_time - timedelta(seconds=random.randint(0, 60))).isoformat() + "Z"
         
-        payload = {
-            "heart_rate": random.randint(60, 120),
-            "blood_pressure_sys": random.randint(110, 150),
-            "blood_pressure_dia": random.randint(70, 95),
-            "spo2": random.randint(92, 100),
-            "temperature": round(random.uniform(36.5, 38.5), 1)
-        }
-        
-        data.append((device_id, patient_id, timestamp, "vitals", str(payload)))
+        data.append((
+            patient_id, facility_id, encounter_id, department_id,
+            heart_rate, systolic_bp, diastolic_bp, spo2,
+            temperature_c, respiratory_rate, source, timestamp
+        ))
         
     df = spark.createDataFrame(data, schema)
     # Write to raw ledger table
