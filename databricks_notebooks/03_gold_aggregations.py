@@ -70,7 +70,7 @@ gold_stream = (
 )
 
 # Write to Gold using foreachBatch in Update output mode (since we are using windowed aggregations)
-checkpoint_path = "dbfs:/tmp/checkpoints/telemetry_gold"
+checkpoint_path = "file:/tmp/checkpoints/telemetry_gold"
 
 writer = (gold_stream.writeStream
           .foreachBatch(process_gold_batch)

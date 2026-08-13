@@ -67,7 +67,7 @@ def process_silver_batch(microBatchDF, batchId):
 bronze_stream = spark.readStream.table("bronze_telemetry")
 
 # Write to Silver using foreachBatch
-checkpoint_path = "dbfs:/tmp/checkpoints/telemetry_silver"
+checkpoint_path = "file:/tmp/checkpoints/telemetry_silver"
 
 writer = (bronze_stream.writeStream
           .foreachBatch(process_silver_batch)
@@ -152,8 +152,8 @@ def process_ml_training_batch(microBatchDF, batchId):
      .whenNotMatchedInsertAll()
      .execute())
 
-click_chk = "dbfs:/tmp/checkpoints/clickstream_silver"
-ml_chk = "dbfs:/tmp/checkpoints/ml_training_silver"
+click_chk = "file:/tmp/checkpoints/clickstream_silver"
+ml_chk = "file:/tmp/checkpoints/ml_training_silver"
 
 try:
     q2 = (spark.readStream.format("delta").table("bronze_clickstream_raw")
