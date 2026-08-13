@@ -83,12 +83,15 @@ def run_kaggle_pipeline():
         print(f"Repo setup note: {str(e)}")
 
     backend_dir = os.path.join(repo_dir, "backend")
+    training_dir = os.path.join(repo_dir, "scripts", "training")
     uploaded = 0
 
     for filename in MODEL_FILES:
-        filepath = os.path.join(backend_dir, filename)
+        filepath = os.path.join(training_dir, filename)
+        if not os.path.exists(filepath):
+            filepath = os.path.join(backend_dir, filename)
         if os.path.exists(filepath):
-            print(f"Pushing {filename} to Model Hub...")
+            print(f"Pushing {filename} to Model Hub from {filepath}...")
             try:
                 api.upload_file(
                     path_or_fileobj=filepath,
