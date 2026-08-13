@@ -34,8 +34,9 @@ import os
 stream_in_path = "/Volumes/apex/default/secrets/telemetry/stream_in"
 checkpoint_path = "/Volumes/apex/default/secrets/telemetry/stream_checkpoint/bronze"
 
-os.makedirs(stream_in_path, exist_ok=True)
-os.makedirs(checkpoint_path, exist_ok=True)
+# Initialize directories safely using Spark (bypasses os.makedirs OSError on Unity Catalog volumes)
+empty_df = spark.createDataFrame([], schema)
+empty_df.write.format("json").mode("ignore").save(stream_in_path)
 
 streaming_df = (
     spark.readStream
