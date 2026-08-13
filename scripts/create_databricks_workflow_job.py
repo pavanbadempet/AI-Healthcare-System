@@ -34,7 +34,15 @@ def create_medallion_job(user_email):
         },
         "tasks": [
             {
+                "task_key": "step_00_unity_catalog_governance_setup",
+                "notebook_task": {
+                    "notebook_path": "databricks_notebooks/00_unity_catalog_governance_setup",
+                    "source": "GIT"
+                }
+            },
+            {
                 "task_key": "step_01_bronze_ingest",
+                "depends_on": [{"task_key": "step_00_unity_catalog_governance_setup"}],
                 "notebook_task": {
                     "notebook_path": "databricks_notebooks/01_bronze_ingest",
                     "source": "GIT",
@@ -79,18 +87,33 @@ def create_medallion_job(user_email):
     }
     
     try:
-        response = requests.post(url, headers=HEADERS, json=payload)
-        if response.status_code == 200:
-            job_id = response.json().get("job_id")
-            print(f"[SUCCESS] Created Databricks Workflow Job ID: {job_id}")
+        # Check if job already exists
+        list_res = requests.get(f"{DATABRICKS_INSTANCE}/api/2.1/jobs/list", headers=HEADERS)
+        existing_id = None
+        if list_res.status_code == 200:
+            for j in list_res.json().get("jobs", []):
+                if j.get("settings", {}).get("name") == payload["name"]:
+                    existing_id = j.get("job_id")
+                    break
+                    
+        if existing_id:
+            print(f"Updating existing job {existing_id} with Unity Catalog governance setup...")
+            reset_payload = {"job_id": existing_id, "new_settings": payload}
+            res = requests.post(f"{DATABRICKS_INSTANCE}/api/2.1/jobs/reset", headers=HEADERS, json=reset_payload)
+            job_id = existing_id
+        else:
+            res = requests.post(url, headers=HEADERS, json=payload)
+            job_id = res.json().get("job_id") if res.status_code == 200 else None
+            
+        if job_id:
+            print(f"[SUCCESS] Configured Databricks Workflow Job ID: {job_id}")
             print(f"You can view your job here: {DATABRICKS_INSTANCE}/#job/{job_id}")
             
-            # Optional: trigger a run now
             run_res = requests.post(f"{DATABRICKS_INSTANCE}/api/2.1/jobs/run-now", headers=HEADERS, json={"job_id": job_id})
             if run_res.status_code == 200:
                 print(f"[SUCCESS] Triggered initial pipeline run! Run ID: {run_res.json().get('run_id')}")
         else:
-            print(f"[ERROR] Failed to create job: {response.status_code} - {response.text}")
+            print(f"[ERROR] Failed to configure job: {res.status_code} - {res.text}")
     except Exception as e:
         print(f"[ERROR] SSL/Network error creating job: {e}")
 

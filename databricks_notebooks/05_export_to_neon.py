@@ -34,7 +34,9 @@ gold_df = spark.read.table("gold_patient_hourly_vitals")
 print(f"Exporting {gold_df.count()} records to Neon Postgres database...")
 
 # Write to Neon via JDBC
+records_exported = 0
 try:
+    records_exported = gold_df.count()
     (gold_df.write
         .format("jdbc")
         .option("url", jdbc_url)
@@ -47,3 +49,35 @@ try:
     print("Successfully exported Gold Medallion data to Neon!")
 except Exception as e:
     print(f"Neon export skipped during mock/development run: {e}")
+
+# ==========================================
+# HIPAA AUDIT LOGGING IN UNITY CATALOG
+# ==========================================
+try:
+    import uuid
+    from datetime import datetime
+    
+    audit_row = [(
+        str(uuid.uuid4()),
+        "databricks_medallion_pipeline",
+        "SYSTEM_SERVICE_PRINCIPAL",
+        "GOLD_NEON_EXPORT",
+        "workspace",
+        "healthcare_gold",
+        "patient_risk_profile",
+        "ALL_RECORDS",
+        records_exported,
+        "10.0.0.1",
+        datetime.utcnow()
+    )]
+    
+    audit_df = spark.createDataFrame(audit_row, [
+        "audit_id", "accessed_by", "user_role", "action",
+        "target_catalog", "target_schema", "target_table",
+        "filter_applied", "records_accessed", "ip_address", "timestamp"
+    ])
+    
+    audit_df.write.format("delta").mode("append").saveAsTable("workspace.healthcare_governance.hipaa_access_audit_log")
+    print("Recorded HIPAA export event into workspace.healthcare_governance.hipaa_access_audit_log")
+except Exception as e:
+    print(f"HIPAA audit log recording: {e}")
