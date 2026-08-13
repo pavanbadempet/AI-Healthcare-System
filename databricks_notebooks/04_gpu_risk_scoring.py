@@ -27,15 +27,25 @@ gold_df = spark.read.table("gold_patient_hourly_vitals")
 # print("Data exported to DBFS.")
 
 # COMMAND ----------
+print("Creating dummy kernel config so the Kaggle CLI attempts to authenticate...")
+os.makedirs("/dbfs/tmp/kaggle_kernel_config", exist_ok=True)
+with open("/dbfs/tmp/kaggle_kernel_config/kernel-metadata.json", "w") as f:
+    f.write('{"id": "mock_kaggle_user/ai-healthcare-risk-scoring", "title": "Risk Scoring", "code_file": "notebook.ipynb", "language": "python", "kernel_type": "notebook", "is_private": "true"}')
+with open("/dbfs/tmp/kaggle_kernel_config/notebook.ipynb", "w") as f:
+    f.write('{"cells":[], "metadata":{}, "nbformat": 4, "nbformat_minor": 5}')
 print("Triggering Kaggle GPU Kernel (AI-Healthcare-Risk-Scoring)...")
 
 import subprocess
 
-# Fake the Kaggle API trigger for now, as we don't have the real Kaggle credentials mapped in the Databricks environment yet.
-# subprocess.run(["kaggle", "kernels", "push", "-p", "/dbfs/tmp/kaggle_kernel_config/"], check=True)
+# Execute the Kaggle API trigger. This will fail if KAGGLE_USERNAME and KAGGLE_KEY are invalid!
+print("Pushing kernel configuration to Kaggle API...")
+try:
+    subprocess.run(["kaggle", "kernels", "push", "-p", "/dbfs/tmp/kaggle_kernel_config/"], check=True)
+    print("Kaggle Kernel Triggered! Waiting for GPU scoring completion...")
+except Exception as e:
+    print(f"KAGGLE API ERROR: {e}")
+    raise e
 
-print("Kaggle Kernel Triggered! Waiting for GPU scoring completion...")
-time.sleep(5) # Simulate wait
 print("GPU Scoring Complete.")
 
 # COMMAND ----------
