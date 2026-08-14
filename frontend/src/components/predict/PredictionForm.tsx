@@ -782,12 +782,15 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
                         animate={{ width: `${result.confidence ?? ((result.probability ?? 0) * 100)}%` }} 
                         transition={{ duration: 0.6, ease: "easeOut" }}
                         className={`h-full ${
-                          (result.confidence ?? ((result.probability ?? 0) * 100)) >= 75 
-                            ? 'bg-[var(--danger)]' 
-                            : (result.confidence ?? ((result.probability ?? 0) * 100)) >= 40 
-                              ? 'bg-[var(--warning)]' 
-                              : 'bg-[var(--success)]'
+                          isHighRisk
+                            ? (result.confidence ?? ((result.probability ?? 0) * 100)) >= 75
+                              ? 'bg-[var(--danger)]'
+                              : (result.confidence ?? ((result.probability ?? 0) * 100)) >= 40
+                                ? 'bg-[var(--warning)]'
+                                : 'bg-[var(--text-secondary)]'
+                            : 'bg-[var(--success)]'
                         }`}
+
                         role="progressbar"
                         aria-valuenow={Math.round(result.confidence ?? ((result.probability ?? 0) * 100))}
                         aria-valuemin={0}
