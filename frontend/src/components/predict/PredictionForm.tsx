@@ -483,6 +483,8 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
                   onSelect={(idx) => {
                     const profile = exampleCases[idx];
                     setSelectedProfile(profile);
+                    setResult(null);
+                    setError("");
                     if (profile.records && profile.records.length > 0) {
                       const lastIdx = profile.records.length - 1;
                       setSelectedRecordIndex(lastIdx);
@@ -517,10 +519,13 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
                                 value={selectedRecordIndex}
                                 onSelect={(idx) => {
                                   setSelectedRecordIndex(idx);
+                                  setResult(null);
+                                  setError("");
                                   setFormData(selectedProfile.records![idx].data || selectedProfile.data);
                                 }}
                               />
                             </div>
+
                             
                             <div className="space-y-2">
                               {selectedProfile.records.map((rec, i) => (
@@ -820,9 +825,10 @@ export default function PredictionForm({ title, description, fields, onSubmit, e
                         <Tooltip content="The list of diagnoses the AI is choosing between. 'Healthy' means the AI has safely ruled out heart disease." position="top-right">
                           <span className="text-[var(--text-dim)] font-bold block mb-0.5 cursor-help border-b border-dotted border-white/20 pb-0.5">Possible Diagnoses</span>
                         </Tooltip>
-                        <span className="text-white bg-zinc-900 border border-white/[0.05] px-1.5 py-0.5 rounded">
+                        <span className="text-white bg-zinc-900 border border-white/[0.08] px-2 py-0.5 rounded text-[11px] font-sans font-medium tracking-normal">
                           {(result.clinical_indices.conformal_prediction_set || []).map((val: any) => Number(val) === 0 ? "Healthy" : "Risk/Disease").join(", ")}
                         </span>
+
                       </div>
                       <div>
                         <Tooltip content="Shows whether the AI is certain or confused. 'Low Uncertainty' means the AI is highly sure, while 'High' means the case is complex and needs closer review." position="top-right">
