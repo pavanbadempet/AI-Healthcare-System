@@ -19,31 +19,30 @@ The platform provides native **HL7 FHIR R4** compatibility, 5 calibrated **XGBoo
 <br/>
 
 <p>
+  <a href="https://huggingface.co/spaces/pavanbadempet/ai-healthcare-system"><img src="https://img.shields.io/badge/🤗%20Hugging%20Face-Live%20Interactive%20Space-yellow?style=flat-square&logo=huggingface" alt="Hugging Face Live Space" /></a>
+  <a href="https://huggingface.co/pavanbadempet/ai-healthcare-models"><img src="https://img.shields.io/badge/🤗%20Model%20Hub-16%20ONNX%20%2F%20PKL%20Weights-orange?style=flat-square&logo=huggingface" alt="Hugging Face Model Hub" /></a>
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml/badge.svg" alt="CI build status" /></a>
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml/badge.svg" alt="CodeQL security analysis" /></a>
-  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions"><img src="https://img.shields.io/badge/Autonomous_AI_Fleet-5_Agents_Active-7c3aed?style=flat-square&logo=githubactions&logoColor=white" alt="Autonomous AI Fleet" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/pavanbadempet/AI-Healthcare-System?color=22c55e&style=flat-square" alt="License" /></a>
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/stargazers"><img src="https://img.shields.io/github/stars/pavanbadempet/AI-Healthcare-System?style=flat-square&color=f59e0b" alt="Stars" /></a>
   <a href="https://star-history.com/#pavanbadempet/AI-Healthcare-System&Date"><img src="https://img.shields.io/badge/Star_History-📈-8b5cf6?style=flat-square" alt="Star History" /></a>
   <a href="CITATION.cff"><img src="https://img.shields.io/badge/Cite_This_Repo-APA_/_BibTeX-2563eb?style=flat-square" alt="Cite This Repo" /></a>
   <img src="https://img.shields.io/github/repo-size/pavanbadempet/AI-Healthcare-System?style=flat-square&color=3b82f6" alt="Repo Size" />
-  <img src="https://img.shields.io/github/issues/pavanbadempet/AI-Healthcare-System?style=flat-square&color=ef4444" alt="Open Issues" />
   <img src="https://img.shields.io/badge/PRs-welcome-10b981?style=flat-square" alt="PRs Welcome" />
 </p>
 
 <p>
   <img src="https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python" />
-  <img src="https://img.shields.io/badge/Bun-000000?style=flat-square&logo=bun&logoColor=white" alt="Bun" />
+  <img src="https://img.shields.io/badge/Databricks-Unity%20Catalog%20Lakehouse-red?style=flat-square&logo=databricks&logoColor=white" alt="Databricks" />
+  <img src="https://img.shields.io/badge/PySpark-E25A1C?style=flat-square&logo=apachespark&logoColor=white" alt="PySpark" />
+  <img src="https://img.shields.io/badge/OHDSI-OMOP%20CDM%20v5.4-blue?style=flat-square" alt="OMOP CDM v5.4" />
+  <img src="https://img.shields.io/badge/CPIC-Precision%20Pharmacogenomics-brightgreen?style=flat-square" alt="CPIC Pharmacogenomics" />
+  <img src="https://img.shields.io/badge/Digital%20Twin-10--Year%20ODE%20Simulator-purple?style=flat-square" alt="Digital Twin" />
   <img src="https://img.shields.io/badge/Rust_Gateway-000000?style=flat-square&logo=rust&logoColor=white" alt="Rust Gateway" />
   <img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/React_19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 19" />
   <img src="https://img.shields.io/badge/Cloudflare_Workers_AI-F38020?style=flat-square&logo=cloudflare&logoColor=white" alt="Cloudflare Workers AI" />
-  <img src="https://img.shields.io/badge/3D_DICOM_PACS-0052CC?style=flat-square" alt="3D DICOM PACS" />
   <img src="https://img.shields.io/badge/FHIR_R4-E73F3E?style=flat-square" alt="FHIR R4" />
-  <img src="https://img.shields.io/badge/ABDM_ABHA-1565C0?style=flat-square" alt="ABDM ABHA" />
-  <img src="https://img.shields.io/badge/SMART_on_FHIR-ff6b00?style=flat-square" alt="SMART on FHIR" />
-  <img src="https://img.shields.io/badge/LangGraph-1C3C3C?style=flat-square&logo=langchain&logoColor=white" alt="LangGraph" />
-  <img src="https://img.shields.io/badge/PySpark-E25A1C?style=flat-square&logo=apachespark&logoColor=white" alt="PySpark" />
   <img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
 </p>
 
@@ -55,17 +54,17 @@ The platform provides native **HL7 FHIR R4** compatibility, 5 calibrated **XGBoo
 
 | Category | Core Specs & Technologies (Search Optimization Keywords) |
 | :--- | :--- |
-| **💡 Core Purpose** | Open-source EHR (Electronic Health Record) & Clinical Decision Support System (CDSS) |
-| **🧠 Generative AI** | Cloudflare Workers AI (Llama 3.1 8B FP8), Groq LPU (500 tok/s), WebGPU Edge Inference, Ollama, Gemini |
-| **📊 Diagnostics** | 5 XGBoost gradient-boosted diagnostic classifiers, scikit-learn, conformal predictions |
-| **🛡️ Explainable AI** | SHAP feature attributions, counterfactual recourse recommendations, LazyMarkdown clinical reports |
-| **📁 EHR Data Interop** | HL7 FHIR R4 JSON bundles, DICOMweb (QIDO-RS/WADO-RS), ABDM ABHA Health ID, SMART on FHIR |
+| **💡 Core Purpose** | Open-source EHR & Clinical Decision Support System (CDSS) with 10-Year Multi-Organ Digital Twin |
+| **🌐 Multi-Cloud Mesh** | Hugging Face Spaces + Databricks Unity Catalog + Cloudflare Workers AI + Kaggle GPU + Neon Postgres |
+| **🧮 Digital Twin Engine**| Continuous 10-year coupled ODE multi-organ simulation (Cardiovascular, Renal eGFR, Metabolic, Hepatic) |
+| **💊 Pharmacogenomics** | CPIC gene-drug contraindication engine (CYP2C9, CYP2C19, CYP2D6, SLCO1B1, DPYD, VKORC1) |
+| **🧠 Generative AI** | Cloudflare Workers AI (Llama 3.1 8B FP8, Whisper, M2M-100), Groq LPU, Ollama, LangGraph Supervisor |
+| **📊 Diagnostics** | 5 Calibrated ExtraTrees & XGBoost classifiers with 95% Conformal Confidence Sets & SHAP attribution |
+| **📁 EHR & Lakehouse** | OHDSI OMOP CDM v5.4, Spark Declarative Pipelines (SDP) DLT Quality Gates, Delta Lake Time-Travel, FHIR R4 |
 | **🖼️ PACS Imaging** | 3D Volumetric DICOM MPR (Axial, Sagittal, Coronal, 3D Mesh), DICOM Uploader |
-| **💳 Revenue & Security**| ANSI X12 837P insurance claims, HSA/FSA card processing, Web Crypto SHA-256 e-prescribing |
-| **🔄 Data Platform** | Apache Spark (PySpark), Delta Lake Medallion Architecture (Bronze/Silver/Gold), Airflow |
-| **⚡ SOTA Speed & Cost**| Rust Gateway PID 1 proxy, C-accelerated `ORJSONResponse` (<1ms), <0.1ms AI cache hits, 100% Bun native toolchain |
+| **⚡ Edge & Gateway** | Rust Gateway PID 1 proxy, PyO3 FFI direct bindings, C-accelerated serialization (<1ms), Bun toolchain |
 | **💼 Commercial Licensing**| Air-gapped B2B perpetual lifetime keys (`perpetual=True`), offline JWT verification, zero SaaS fees |
-| **🔐 HIPAA DevSecOps** | Hardware TEE enclaves, PII redaction filters, Docker, AWS EKS (Kubernetes), SOC 2 audit harness |
+| **🔐 HIPAA DevSecOps** | Hardware TEE enclaves, PII redaction filters, Docker, AWS EKS, SOC 2 compliance harness |
 
 <!-- SEO: H1 is critical for search engines. The banner serves as the visual title. -->
 <!-- AI Healthcare System — Open-Source HIPAA-Compliant Clinical AI & EHR Platform -->
