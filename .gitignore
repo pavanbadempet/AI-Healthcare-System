@@ -28,6 +28,10 @@ htmlcov/
 pytest_output.txt
 tmp/
 output/
+data/lakehouse/
+*.parquet
+models/semantic_cache.json
+
 
 # Local drafts
 README_DATA_ENGINEERING.md
