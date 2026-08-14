@@ -31,26 +31,38 @@ spark.sql("CREATE SCHEMA IF NOT EXISTS workspace.healthcare_gold")
 try:
     df_patient_gold = spark.read.table("workspace.healthcare_gold.patient_hourly_vitals")
 except Exception:
-    # Synthetic bootstrap for zero-config execution
-    sample_patients = [
-        ("PAT-1001", 58.0, "Female", 31.4, 142.0, 88.0, 155.0, 8.2, 72.0, 140.0),
-        ("PAT-1002", 65.0, "Male", 29.0, 155.0, 94.0, 180.0, 9.1, 54.0, 165.0),
-        ("PAT-1003", 42.0, "Female", 24.5, 118.0, 78.0, 95.0, 5.4, 98.0, 105.0),
-        ("PAT-1004", 71.0, "Male", 33.2, 148.0, 90.0, 160.0, 8.5, 48.0, 150.0)
-    ]
-    p_schema = StructType([
-        StructField("patient_id", StringType(), False),
-        StructField("age", FloatType(), True),
-        StructField("gender", StringType(), True),
-        StructField("bmi", FloatType(), True),
-        StructField("systolic_bp", FloatType(), True),
-        StructField("diastolic_bp", FloatType(), True),
-        StructField("fasting_glucose", FloatType(), True),
-        StructField("hba1c", FloatType(), True),
-        StructField("egfr", FloatType(), True),
-        StructField("ldl_cholesterol", FloatType(), True)
-    ])
-    df_patient_gold = spark.createDataFrame(sample_patients, p_schema)
+    import pandas as pd
+    import numpy as np
+    
+    np.random.seed(42)
+    n_patients = 1000
+    
+    p_ids = [f"PAT-CDC-{10000 + i}" for i in range(n_patients)]
+    ages = [float(35 + (i % 50)) for i in range(n_patients)]
+    genders = ["Female" if i % 2 == 0 else "Male" for i in range(n_patients)]
+    bmis = np.clip(np.random.normal(27.5, 4.5, n_patients), 18.5, 45.0).tolist()
+    
+    sbps = [118.0 + (bmis[i] - 25.0) * 0.9 + (ages[i] - 40.0) * 0.4 for i in range(n_patients)]
+    dbps = [76.0 + (bmis[i] - 25.0) * 0.4 for i in range(n_patients)]
+    glucoses = [92.0 + (bmis[i] - 25.0) * 2.0 + (25.0 if i % 4 == 0 else 0.0) for i in range(n_patients)]
+    hba1cs = [5.4 + (glucoses[i] - 100.0) * 0.035 for i in range(n_patients)]
+    egfrs = np.clip([100.0 - (ages[i] - 30.0) * 0.7 for i in range(n_patients)], 25.0, 120.0).tolist()
+    ldls = np.clip(np.random.normal(115.0, 28.0, n_patients), 60.0, 220.0).tolist()
+    
+    pdf_features = pd.DataFrame({
+        "patient_id": p_ids,
+        "age": ages,
+        "gender": genders,
+        "bmi": [round(float(v), 1) for v in bmis],
+        "systolic_bp": [round(float(v), 1) for v in sbps],
+        "diastolic_bp": [round(float(v), 1) for v in dbps],
+        "fasting_glucose": [round(float(v), 1) for v in glucoses],
+        "hba1c": [round(float(v), 1) for v in hba1cs],
+        "egfr": [round(float(v), 1) for v in egfrs],
+        "ldl_cholesterol": [round(float(v), 1) for v in ldls]
+    })
+    
+    df_patient_gold = spark.createDataFrame(pdf_features)
 
 print(f"Loaded {df_patient_gold.count()} patient feature rows.")
 

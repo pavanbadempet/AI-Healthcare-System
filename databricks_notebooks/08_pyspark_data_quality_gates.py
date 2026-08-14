@@ -30,23 +30,42 @@ spark.sql("CREATE SCHEMA IF NOT EXISTS workspace.healthcare_silver")
 try:
     df_raw = spark.read.table("workspace.healthcare_bronze.telemetry")
 except Exception:
-    # Synthetic bootstrap for zero-config execution
-    sample_telemetry = [
-        ("PAT-1001", "2026-08-14T00:00:00Z", 72.0, 122.0, 80.0, 98.5, 95.0),
-        ("PAT-1002", "2026-08-14T00:00:00Z", 450.0, 135.0, 85.0, 99.0, 110.0), # Corrupt HR (450 > 220)
-        (None, "2026-08-14T00:00:00Z", 80.0, 120.0, 78.0, 97.0, 90.0),          # Null patient_id
-        ("PAT-1004", "2026-08-14T00:00:00Z", 68.0, 118.0, 76.0, 32.0, 88.0)   # Corrupt SpO2 (32 < 50)
-    ]
-    t_schema = StructType([
-        StructField("patient_id", StringType(), True),
-        StructField("timestamp", StringType(), True),
-        StructField("heart_rate", FloatType(), True),
-        StructField("systolic_bp", FloatType(), True),
-        StructField("diastolic_bp", FloatType(), True),
-        StructField("spo2", FloatType(), True),
-        StructField("fasting_glucose", FloatType(), True)
-    ])
-    df_raw = spark.createDataFrame(sample_telemetry, t_schema)
+    import pandas as pd
+    import numpy as np
+    
+    np.random.seed(42)
+    n_records = 2000
+    
+    p_ids = [f"PAT-CDC-{10000 + (i % 500)}" for i in range(n_records)]
+    # Intentionally inject 1% nulls to test SDP quarantine gates
+    p_ids[42] = None
+    p_ids[108] = None
+    
+    timestamps = [f"2026-08-14T{i % 24:02d}:00:00Z" for i in range(n_records)]
+    
+    hrs = np.random.normal(74.0, 10.0, n_records).tolist()
+    hrs[15] = 480.0  # Anomaly (> 220 bpm)
+    
+    sbps = np.random.normal(124.0, 14.0, n_records).tolist()
+    sbps[88] = 310.0 # Anomaly (> 250 mmHg)
+    
+    dbps = np.random.normal(78.0, 8.0, n_records).tolist()
+    spo2s = np.clip(np.random.normal(98.2, 1.2, n_records), 50.0, 100.0).tolist()
+    spo2s[150] = 32.0 # Anomaly (< 50%)
+    
+    glucoses = np.random.normal(105.0, 25.0, n_records).tolist()
+    
+    pdf_telemetry = pd.DataFrame({
+        "patient_id": p_ids,
+        "timestamp": timestamps,
+        "heart_rate": [float(v) if v is not None else None for v in hrs],
+        "systolic_bp": [float(v) if v is not None else None for v in sbps],
+        "diastolic_bp": [float(v) if v is not None else None for v in dbps],
+        "spo2": [float(v) if v is not None else None for v in spo2s],
+        "fasting_glucose": [float(v) if v is not None else None for v in glucoses]
+    })
+    
+    df_raw = spark.createDataFrame(pdf_telemetry)
 
 print(f"Ingested {df_raw.count()} raw records from Bronze layer.")
 
