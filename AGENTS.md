@@ -95,5 +95,10 @@ To guarantee a **zero learning curve** for new developers and maintain **high co
 5. **No AI Slop Patterns**:
    - Avoid manual loop thread execution queues or hardcoded prediction override handlers.
    - Never stage or commit commented-out debug statements, placeholder `pass` blocks, or dead files. Use unit tests (`pytest`, `vitest`) to verify all new features.
+6. **Strict Zero-Secret Ingestion Rule**:
+   - Never hardcode, stage, or commit real API keys, passwords, database URIs with credentials (e.g. `postgres://user:pass@host`), or tokens into source files or notebooks.
+   - All external credentials must be strictly read from environment variables (e.g. `os.environ.get("DATABASE_URL")`) or Doppler secrets with safe local fallback values (e.g. `sqlite:///./healthcare.db`).
+   - The pre-commit scanner (`scripts/pre_commit_secret_scanner.py`) enforces this automatically on every commit.
+
 
 
