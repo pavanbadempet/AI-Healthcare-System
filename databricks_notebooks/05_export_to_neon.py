@@ -8,9 +8,9 @@
 import os
 
 # Doppler will inject DATABASE_URL into the Databricks environment via CI/CD, 
-# or we read it from Databricks Secrets.
-# E.g. DATABASE_URL="postgres://user:password@ep-cool-lake-123456.us-east-2.aws.neon.tech/neondb"
-database_url = os.environ.get("DATABASE_URL", "postgresql://neondb_owner:MOCK_NEON_PASSWORD@ep-mock-pooler.us-east-1.aws.neon.tech/neondb?sslmode=require")
+# or we read it from Databricks Secrets / environment.
+database_url = os.environ.get("DATABASE_URL", "sqlite:///./healthcare.db")
+
 
 if not database_url.startswith("jdbc:"):
     # Convert standard postgres URL to JDBC
