@@ -1,0 +1,22 @@
+# AI Healthcare System
+
+> Planetary-Scale Distributed Clinical Intelligence, 10-Year Digital Twin & OMOP CDM v5.4 Lakehouse Platform.
+
+## Core Capabilities & Endpoints
+
+- **Live Web Demo & Space**: https://huggingface.co/spaces/pavanbadempet/ai-healthcare-system
+- **GitHub Repository**: https://github.com/pavanbadempet/AI-Healthcare-System
+- **Model Hub Weights**: https://huggingface.co/pavanbadempet/ai-healthcare-models
+
+## Clinical Engines & Features
+
+- **10-Year Multi-Organ Clinical Digital Twin**: Non-linear continuous trajectory modeling for cardiorenal-metabolic-hepatic syndrome using coupled ordinary differential equations (`backend/clinical_digital_twin.py`).
+- **CPIC Precision Pharmacogenomics**: Clinical Pharmacogenetics Implementation Consortium guideline lookup for Warfarin (CYP2C9/VKORC1), Clopidogrel (CYP2C19), Codeine/Tramadol (CYP2D6), Statins (SLCO1B1), and Fluoropyrimidines (DPYD).
+- **OHDSI OMOP CDM v5.4 Lakehouse**: Native PySpark relational transformation into standardized `PERSON`, `VISIT_OCCURRENCE`, `CONDITION_OCCURRENCE`, `DRUG_EXPOSURE`, and `MEASUREMENT` tables with LOINC, SNOMED-CT, and RxNorm concept mapping (`backend/data_platform/omop_cdm_engine.py`).
+- **Spark Declarative Pipelines (SDP) Quality Gates**: Native Catalyst optimizer expectation contracts with automated quarantine routing to `workspace.healthcare_bronze.quarantined_records`.
+- **4-Stage Multi-Objective Recommender Engine**: Two-Tower Candidate Retrieval -> Multi-Gate Mixture-of-Experts (MMoE) Multi-Task Ranking -> Maximal Marginal Relevance (MMR) Diversity -> Contextual Thompson Sampling Bandits.
+- **Edge AI & Low-Latency Serving**: Cloudflare Workers AI Edge Inference (Llama 3.1 8B, OpenAI Whisper, Meta M2M-100, BAAI BGE Embeddings) with in-process PyO3 Rust FFI gateway.
+
+## Medical Decision Support & Disclaimer
+
+This platform provides AI-assisted clinical screening and research simulation. All outputs must be evaluated by a licensed healthcare professional.

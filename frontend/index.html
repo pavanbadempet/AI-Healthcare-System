@@ -5,29 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
     <!-- Primary SEO Metadata -->
-    <title>AI Healthcare System — Privacy-First Clinical Intelligence & EHR Platform</title>
-    <meta name="title" content="AI Healthcare System — Privacy-First Clinical Intelligence & EHR Platform" />
-    <meta name="description" content="A production-grade, HIPAA-oriented clinical intelligence platform combining XGBoost diagnostic models, LangGraph multi-agent RAG, and HL7 FHIR R4 interoperability." />
-    <meta name="keywords" content="clinical decision support, health intelligence, medical AI assistant, HIPAA compliance, FHIR R4, LangGraph RAG, medical chatbot, EHR integration, hospital operations, medical imaging PACS, Ollama local inference" />
+    <title>AI Healthcare System — Clinical Intelligence, 10-Year Digital Twin & OMOP Lakehouse</title>
+    <meta name="title" content="AI Healthcare System — Clinical Intelligence, 10-Year Digital Twin & OMOP Lakehouse" />
+    <meta name="description" content="Planetary-scale clinical intelligence platform featuring 10-year multi-organ digital twin simulations, CPIC pharmacogenomics, OHDSI OMOP CDM v5.4 lakehouses, and real-time disease risk screening." />
+    <meta name="keywords" content="clinical decision support, medical AI, digital twin healthcare, OMOP CDM v5.4, CPIC pharmacogenomics, diabetes risk calculator, cardiovascular risk screener, FHIR R4, PySpark lakehouse, Cloudflare Workers AI, Llama 3.1 clinical AI" />
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
-    <meta name="author" content="AI Healthcare System Contributors" />
+    <meta name="author" content="Pavan Badempet" />
     <meta name="theme-color" content="#090a0f" />
+    <link rel="canonical" href="https://huggingface.co/spaces/pavanbadempet/ai-healthcare-system" />
 
-    <!-- Open Graph / Facebook / LinkedIn -->
+    <!-- Open Graph / Facebook / LinkedIn / WhatsApp -->
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://github.com/pavanbadempet/AI-Healthcare-System" />
-    <meta property="og:title" content="AI Healthcare System — Privacy-First Clinical Intelligence & EHR Platform" />
-    <meta property="og:description" content="Deploy a HIPAA-oriented, local-first clinical decision support system. Features 5 XGBoost diagnostic classifiers, multi-agent LangGraph RAG, and native HL7 FHIR R4 exports." />
+    <meta property="og:url" content="https://huggingface.co/spaces/pavanbadempet/ai-healthcare-system" />
+    <meta property="og:title" content="AI Healthcare System — Clinical Intelligence, 10-Year Digital Twin & OMOP Lakehouse" />
+    <meta property="og:description" content="Simulate 10-year multi-organ disease trajectories, lookup CPIC gene-drug guidelines, convert EHR data to OMOP CDM v5.4, and run real-time clinical screening with 95% Conformal Confidence Sets." />
     <meta property="og:image" content="https://raw.githubusercontent.com/pavanbadempet/AI-Healthcare-System/main/docs/assets/hero-banner.svg" />
-    <meta property="og:image:alt" content="AI Healthcare System Clinical Intelligence Dashboard Banner" />
+    <meta property="og:image:alt" content="AI Healthcare System Clinical Intelligence Dashboard" />
     <meta property="og:site_name" content="AI Healthcare System" />
     <meta property="og:locale" content="en_US" />
 
     <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:url" content="https://github.com/pavanbadempet/AI-Healthcare-System" />
-    <meta name="twitter:title" content="AI Healthcare System — Privacy-First Clinical Intelligence & EHR Platform" />
-    <meta name="twitter:description" content="Deploy a HIPAA-oriented, local-first clinical decision support system. Features 5 XGBoost diagnostic classifiers, multi-agent LangGraph RAG, and native HL7 FHIR R4 exports." />
+    <meta name="twitter:url" content="https://huggingface.co/spaces/pavanbadempet/ai-healthcare-system" />
+    <meta name="twitter:title" content="AI Healthcare System — Clinical Intelligence, 10-Year Digital Twin & OMOP Lakehouse" />
+    <meta name="twitter:description" content="Simulate 10-year multi-organ disease trajectories, lookup CPIC gene-drug guidelines, convert EHR data to OMOP CDM v5.4, and run real-time clinical screening with 95% Conformal Confidence Sets." />
     <meta name="twitter:image" content="https://raw.githubusercontent.com/pavanbadempet/AI-Healthcare-System/main/docs/assets/hero-banner.svg" />
 
     <!-- Mobile Web App Capability -->
@@ -41,16 +42,12 @@
     <link rel="apple-touch-icon" href="/file.svg" />
     <link rel="manifest" href="/manifest.json" crossorigin="use-credentials" />
 
-    <!-- Preconnect to speed up font delivery -->
+    <!-- Preconnect to Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
-    <noscript>
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-    </noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
 
-    <!-- Preload critical React entry module for instant FCP -->
+    <!-- Preload critical modules -->
     <link rel="modulepreload" href="/src/main.tsx" />
     <link rel="modulepreload" href="/src/App.tsx" />
 
@@ -58,37 +55,76 @@
     <meta http-equiv="x-dns-prefetch-control" content="on" />
     <link rel="dns-prefetch" href="//127.0.0.1:8000" />
 
-
-    <!-- Structured Data: JSON-LD for rich search engine snippets -->
+    <!-- Structured Data: Multi-Entity JSON-LD for Google Rich Snippets & AI Search Crawlers -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "SoftwareApplication",
-        "name": "AI Healthcare System",
-        "applicationCategory": "MedicalSoftware",
-        "operatingSystem": "Windows, macOS, Linux, Docker",
-        "downloadUrl": "https://github.com/pavanbadempet/AI-Healthcare-System",
-        "softwareVersion": "1.0.0",
-        "offers": {
-          "@type": "Offer",
-          "price": "0.00",
-          "priceCurrency": "USD"
-        },
-        "author": {
-          "@type": "Organization",
-          "name": "AI Healthcare System Open Source Contributors",
-          "url": "https://github.com/pavanbadempet/AI-Healthcare-System"
-        },
-        "description": "A production-grade, privacy-first clinical decision support system (CDSS) featuring gradient-boosted diagnostic classifiers, LangGraph multi-agent RAG, and native HL7 FHIR R4 EHR data structures.",
-        "featureList": [
-          "XGBoost Diagnostic Classifiers (Diabetes, Heart, Liver, Kidney, Lungs)",
-          "Multi-Agent LangGraph RAG Chatbot",
-          "Local Private Inference Support (Ollama)",
-          "HL7 FHIR R4 Data Bundle Serialization & Export",
-          "Real-Time Telemetry Broadcasting (WebSockets)",
-          "HIPAA-Oriented Exception Masking and RBAC Security"
-        ],
-        "releaseNotes": "https://github.com/pavanbadempet/AI-Healthcare-System/releases"
+        "@graph": [
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://huggingface.co/spaces/pavanbadempet/ai-healthcare-system/#software",
+            "name": "AI Healthcare System",
+            "applicationCategory": "HealthApplication",
+            "operatingSystem": "Web, Windows, macOS, Linux, Docker",
+            "downloadUrl": "https://github.com/pavanbadempet/AI-Healthcare-System",
+            "softwareVersion": "2.5.0",
+            "offers": {
+              "@type": "Offer",
+              "price": "0.00",
+              "priceCurrency": "USD"
+            },
+            "author": {
+              "@type": "Person",
+              "name": "Pavan Badempet",
+              "url": "https://github.com/pavanbadempet"
+            },
+            "description": "Planetary-scale clinical intelligence and lakehouse operating system with 10-year multi-organ digital twin simulation, CPIC pharmacogenomics, and OMOP CDM v5.4 standardization.",
+            "featureList": [
+              "10-Year Multi-Organ Coupled ODE Digital Twin Simulation",
+              "CPIC Precision Pharmacogenomics Guideline Engine",
+              "OHDSI OMOP CDM v5.4 Delta Lakehouse Integration",
+              "Spark Declarative Pipelines (SDP) Quality Expectation Gates",
+              "Calibrated Diagnostic Classifiers with 95% Conformal Confidence Sets",
+              "Cloudflare Edge AI Multilingual Transcription & Clinical Summarization",
+              "5-Specialist Bayesian Clinical Consensus Council"
+            ]
+          },
+          {
+            "@type": "MedicalWebPage",
+            "@id": "https://huggingface.co/spaces/pavanbadempet/ai-healthcare-system/#medical",
+            "name": "Clinical Decision Support & Digital Twin Suite",
+            "description": "Evidence-backed clinical decision support algorithms and physiological trajectory simulation for chronic disease management.",
+            "about": [
+              {
+                "@type": "MedicalCondition",
+                "name": "Type 2 Diabetes Mellitus",
+                "code": {
+                  "@type": "MedicalCode",
+                  "code": "44054006",
+                  "codingSystem": "SNOMED-CT"
+                }
+              },
+              {
+                "@type": "MedicalCondition",
+                "name": "Cardiorenal Metabolic Syndrome",
+                "code": {
+                  "@type": "MedicalCode",
+                  "code": "73211009",
+                  "codingSystem": "SNOMED-CT"
+                }
+              },
+              {
+                "@type": "MedicalCondition",
+                "name": "Chronic Kidney Disease",
+                "code": {
+                  "@type": "MedicalCode",
+                  "code": "709044004",
+                  "codingSystem": "SNOMED-CT"
+                }
+              }
+            ]
+          }
+        ]
       }
     </script>
   </head>
