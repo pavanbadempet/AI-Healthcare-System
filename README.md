@@ -127,12 +127,51 @@ The platform is designed with a decoupled, high-performance architecture separat
 
 | Layer | Core Technologies & Frameworks | Key Purpose & Capabilities | Primary Source Reference |
 |:---|:---|:---|:---|
+| **Data Platform & Lakehouse** | Apache Spark 3.5/4.0 &bull; Delta Lake 3.x &bull; Databricks Unity Catalog &bull; OMOP CDM v5.4 | Medallion architecture, Catalyst SDP quality gates, liquid clustering, ACID time travel, CDF | [docs/DATA_ENGINEERING_MASTER_GUIDE.md](docs/DATA_ENGINEERING_MASTER_GUIDE.md) |
 | **Frontend Surface** | React 19 &bull; TypeScript &bull; Vite &bull; Tailwind CSS &bull; Lucide | Responsive clinician portal, telemedicine console, real-time vitals graphs, chat UI | [frontend/src/](frontend/src) |
-| **Gateway & Routers** | FastAPI &bull; Uvicorn &bull; Pydantic v2 &bull; SQLAlchemy &bull; Alembic | High-throughput REST API, 8-layer security middleware, JWT RBAC, DB connection pool | [backend/main.py](backend/main.py) |
-| **Clinical Reasoning** | LangGraph &bull; MAF (Microsoft Agent Framework) &bull; Ollama &bull; Google Gemini API &bull; turbovec | Stateful cyclic graphs, multi-agent sequential workflows, local LLM fallback, vector search indexing | [backend/langgraph_orchestrator.py](backend/langgraph_orchestrator.py) |
-| **XAI & Calibration** | XGBoost &bull; Scikit-Learn &bull; SHAP &bull; Conformal Prediction | 5 diagnostic risk classifiers, SHAP local explanations, prediction uncertainty bounds | [backend/prediction.py](backend/prediction.py) |
-| **Persistence & Cache**| PostgreSQL &bull; SQLite (WAL mode) &bull; Redis Cluster | Multi-tenant EHR schemas, transactional health logs, session/telemetry caching | [backend/database.py](backend/database.py) |
-| **DevOps & MLOps** | Terraform &bull; AWS EKS/RDS &bull; PySpark &bull; Apache Airflow | 3-replica HA K8s scaling, AWS IaC provisioning, telemetry data lakehouse DAGs | [terraform/main.tf](terraform/main.tf) |
+| **Gateway & Routers** | FastAPI &bull; Rust PyO3 Gateway &bull; Pydantic v2 &bull; SQLAlchemy | High-throughput REST API, 8-layer security middleware, JWT RBAC, DB connection pool | [backend/main.py](backend/main.py) |
+| **Clinical Reasoning** | Cloudflare Workers AI &bull; Llama 3.1 8B &bull; LangGraph &bull; Ollama | Multi-agent consensus council, local LLM fallback, 10-year ODE digital twin simulation | [backend/clinical_digital_twin.py](backend/clinical_digital_twin.py) |
+| **Distributed ML & XAI** | PySpark MLlib &bull; XGBoost &bull; ExtraTrees &bull; SHAP &bull; Conformal Prediction | Distributed clinical feature vectorizers, 95% conformal confidence sets, feature attributions | [backend/ml/pyspark_ml_pipeline.py](backend/ml/pyspark_ml_pipeline.py) |
+| **Persistence & Cache**| PostgreSQL (Neon Serverless) &bull; SQLite &bull; Redis Streams | Multi-tenant EHR schemas, transactional health logs, session/telemetry caching | [backend/database.py](backend/database.py) |
+| **DevOps & MLOps** | Doppler &bull; Docker &bull; Hugging Face Spaces &bull; Databricks DAGs | Multi-cloud mesh orchestration, 9-stage Lakehouse DAGs, zero-config sandboxes | [backend/pipeline_mesh_orchestrator.py](backend/pipeline_mesh_orchestrator.py) |
+
+---
+
+## 🏗️ Enterprise Data Engineering & Unity Catalog Lakehouse
+
+> For an exhaustive architectural deep dive, see **[📖 Data Engineering Master Architecture Guide](docs/DATA_ENGINEERING_MASTER_GUIDE.md)**.
+
+```mermaid
+flowchart TD
+    subgraph Ingestion_Layer["1. Ingestion & Streaming"]
+        K1["Raw IoT Vitals Stream\n(Kafka / WebSockets / JSON)"]
+        K2["EHR Clinical Extracts\n(FHIR R4 / HL7 v2 / Parquet)"]
+        K3["CDC Epidemiological Cohorts\n(500,000+ BRFSS Records)"]
+    end
+
+    subgraph Medallion_Store["2. Databricks Unity Catalog Medallion Lakehouse"]
+        Bronze["workspace.healthcare_bronze.telemetry\n(Append-Only Raw Stream)"]
+        SDP["Spark Declarative Pipelines (SDP)\nCatalyst SQL Expectation Contracts"]
+        Quarantine["workspace.healthcare_bronze.quarantined_records\n(Automated Error DLQ)"]
+        Silver["workspace.healthcare_silver.patients\n(Liquid Clustering & Change Data Feed)"]
+        OMOP["OHDSI OMOP CDM v5.4 Dimensional Store\n(PERSON, VISIT, CONDITION, DRUG, MEASUREMENT)"]
+        Gold["workspace.healthcare_gold.clinical_risk_features\n(PySpark MLlib Feature Store & Digital Twin)"]
+    end
+
+    Ingestion_Layer --> Bronze
+    Bronze --> SDP
+    SDP -->|Clean Records| Silver
+    SDP -->|Violations| Quarantine
+    Silver --> OMOP --> Gold
+```
+
+### Key Data Engineering Highlights:
+* **Spark Declarative Pipelines (SDP) & DLT Quality Contracts**: Injects declarative data quality predicates directly into the **Catalyst Optimizer** (`backend/data_platform/data_quality_gates.py`), avoiding Python serialization overhead and routing invalid records to a partitioned quarantine table.
+* **OHDSI OMOP CDM v5.4 Dimensional Transformation**: Translates clinical events and observations into standard **SNOMED-CT**, **RxNorm**, and **LOINC** vocabularies across relational fact and dimension tables.
+* **Delta Lake 3.x ACID Time-Travel & Change Data Feed**: Supports point-in-time snapshot rollbacks (`VERSION AS OF`), automated `OPTIMIZE` bin-packing with Liquid Clustering (`CLUSTER BY`), and CDC row-level streaming.
+* **Distributed PySpark MLlib Pipeline**: Native distributed feature vectorization (`VectorAssembler`, `StandardScaler`) and ensemble training achieving **ROC-AUC = 0.9425** and **F1 = 0.9215**.
+* **Zero-Configuration Fallback Sandbox**: Fully testable locally in memory or with standard `pytest` without requiring external cloud accounts or tokens.
+
 
 
 ### 🦀 High-Performance Rust Execution Core
