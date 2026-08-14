@@ -116,3 +116,35 @@ if pipeline_mode == "batch":
         print("FeatureEngineeringClient not available in this environment. Skipping Feature Store registration.")
     except Exception as e:
         print(f"Skipping feature store registration: {e}")
+
+# COMMAND ----------
+# MAGIC %md
+# MAGIC ## 3. Patient Search & Diagnostic Query Aggregations (Clickstream & Duplicate Detection)
+# MAGIC Groups by patient_name and search_query to compute:
+# MAGIC - Total search frequency and duplicate query counts per specific person
+# MAGIC - Unique clinicians querying the record
+# MAGIC - Earliest and latest lookup timestamps
+
+# COMMAND ----------
+def aggregate_patient_search_activity():
+    try:
+        from pyspark.sql import functions as F
+        if spark.catalog.tableExists("bronze_clickstream_raw"):
+            clickstream_df = spark.read.table("bronze_clickstream_raw")
+            search_agg_df = (
+                clickstream_df
+                .groupBy("patient_name", "search_query")
+                .agg(
+                    F.count("*").alias("duplicate_query_frequency"),
+                    F.countDistinct("user_id").alias("distinct_clinicians_count"),
+                    F.min("timestamp").alias("earliest_query_time"),
+                    F.max("timestamp").alias("latest_query_time")
+                )
+            )
+            search_agg_df.write.format("delta").mode("overwrite").saveAsTable("gold_patient_search_analytics")
+            print("Successfully refreshed gold_patient_search_analytics in Databricks Gold Lakehouse!")
+    except Exception as e:
+        print(f"Skipping patient search analytics aggregation: {e}")
+
+aggregate_patient_search_activity()
+
