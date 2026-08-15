@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     
     <!-- Primary SEO Metadata -->
-    <title>AI Healthcare System — Clinical Intelligence, 10-Year Digital Twin & OMOP Lakehouse</title>
-    <meta name="title" content="AI Healthcare System — Clinical Intelligence, 10-Year Digital Twin & OMOP Lakehouse" />
-    <meta name="description" content="Planetary-scale clinical intelligence platform featuring 10-year multi-organ digital twin simulations, CPIC pharmacogenomics, OHDSI OMOP CDM v5.4 lakehouses, and real-time disease risk screening." />
-    <meta name="keywords" content="clinical decision support, medical AI, digital twin healthcare, OMOP CDM v5.4, CPIC pharmacogenomics, diabetes risk calculator, cardiovascular risk screener, FHIR R4, PySpark lakehouse, Cloudflare Workers AI, Llama 3.1 clinical AI" />
+    <title>AI Healthcare System — Open-Source Clinical Intelligence, TabICLv2 Foundation Model & Databricks Lakehouse</title>
+    <meta name="title" content="AI Healthcare System — Open-Source Clinical Intelligence, TabICLv2 Foundation Model & Databricks Lakehouse" />
+    <meta name="description" content="Planetary-scale open-source clinical intelligence platform featuring TabICLv2 foundation models, Databricks Delta Lakehouse (OMOP CDM v5.4), 10-year multi-organ digital twin ODE simulations, and CPIC pharmacogenomics." />
+    <meta name="keywords" content="clinical AI, TabICL, TabICLv2, tabular foundation model, Databricks healthcare lakehouse, Delta Lake, OMOP CDM v5.4, FHIR R4, open source EHR, clinical decision support system CDSS, 10-year digital twin, CPIC pharmacogenomics, conformal prediction, medical AI, HIPAA compliant AI, PySpark MLlib, DICOM PACS" />
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1" />
     <meta name="author" content="Pavan Badempet" />
     <meta name="theme-color" content="#090a0f" />
@@ -17,8 +17,8 @@
     <!-- Open Graph / Facebook / LinkedIn / WhatsApp -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://huggingface.co/spaces/pavanbadempet/ai-healthcare-system" />
-    <meta property="og:title" content="AI Healthcare System — Clinical Intelligence, 10-Year Digital Twin & OMOP Lakehouse" />
-    <meta property="og:description" content="Simulate 10-year multi-organ disease trajectories, lookup CPIC gene-drug guidelines, convert EHR data to OMOP CDM v5.4, and run real-time clinical screening with 95% Conformal Confidence Sets." />
+    <meta property="og:title" content="AI Healthcare System — Open-Source Clinical Intelligence & Databricks Lakehouse" />
+    <meta property="og:description" content="State-of-the-art open-source clinical intelligence: TabICLv2 foundation models, 10-year multi-organ digital twin trajectories, CPIC pharmacogenomics, Databricks Medallion lakehouse, and 95% Conformal Confidence Sets." />
     <meta property="og:image" content="https://raw.githubusercontent.com/pavanbadempet/AI-Healthcare-System/main/docs/assets/hero-banner.svg" />
     <meta property="og:image:alt" content="AI Healthcare System Clinical Intelligence Dashboard" />
     <meta property="og:site_name" content="AI Healthcare System" />
@@ -27,8 +27,8 @@
     <!-- Twitter / X -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:url" content="https://huggingface.co/spaces/pavanbadempet/ai-healthcare-system" />
-    <meta name="twitter:title" content="AI Healthcare System — Clinical Intelligence, 10-Year Digital Twin & OMOP Lakehouse" />
-    <meta name="twitter:description" content="Simulate 10-year multi-organ disease trajectories, lookup CPIC gene-drug guidelines, convert EHR data to OMOP CDM v5.4, and run real-time clinical screening with 95% Conformal Confidence Sets." />
+    <meta name="twitter:title" content="AI Healthcare System — Open-Source Clinical Intelligence & Databricks Lakehouse" />
+    <meta name="twitter:description" content="State-of-the-art open-source clinical intelligence: TabICLv2 foundation models, 10-year multi-organ digital twin trajectories, CPIC pharmacogenomics, Databricks Medallion lakehouse, and 95% Conformal Confidence Sets." />
     <meta name="twitter:image" content="https://raw.githubusercontent.com/pavanbadempet/AI-Healthcare-System/main/docs/assets/hero-banner.svg" />
 
     <!-- Mobile Web App Capability -->
@@ -65,9 +65,9 @@
             "@id": "https://huggingface.co/spaces/pavanbadempet/ai-healthcare-system/#software",
             "name": "AI Healthcare System",
             "applicationCategory": "HealthApplication",
-            "operatingSystem": "Web, Windows, macOS, Linux, Docker",
+            "operatingSystem": "Web, Windows, macOS, Linux, Docker, Kubernetes",
             "downloadUrl": "https://github.com/pavanbadempet/AI-Healthcare-System",
-            "softwareVersion": "2.5.0",
+            "softwareVersion": "2.6.0",
             "offers": {
               "@type": "Offer",
               "price": "0.00",
@@ -78,14 +78,16 @@
               "name": "Pavan Badempet",
               "url": "https://github.com/pavanbadempet"
             },
-            "description": "Planetary-scale clinical intelligence and lakehouse operating system with 10-year multi-organ digital twin simulation, CPIC pharmacogenomics, and OMOP CDM v5.4 standardization.",
+            "description": "Planetary-scale clinical intelligence platform with TabICLv2 foundation models, Databricks Delta Lakehouse (OMOP CDM v5.4), 10-year multi-organ digital twin ODE simulation, and CPIC pharmacogenomics.",
             "featureList": [
+              "TabICLv2 Open-Source Tabular Foundation Model (Inria Soda)",
+              "Databricks Medallion (Bronze, Silver, Gold) Lakehouse Integration",
               "10-Year Multi-Organ Coupled ODE Digital Twin Simulation",
               "CPIC Precision Pharmacogenomics Guideline Engine",
-              "OHDSI OMOP CDM v5.4 Delta Lakehouse Integration",
-              "Spark Declarative Pipelines (SDP) Quality Expectation Gates",
+              "OHDSI OMOP CDM v5.4 & HL7 FHIR R4 Standardization",
               "Calibrated Diagnostic Classifiers with 95% Conformal Confidence Sets",
               "Cloudflare Edge AI Multilingual Transcription & Clinical Summarization",
+              "3D Volumetric DICOM WebGL PACS Viewer",
               "5-Specialist Bayesian Clinical Consensus Council"
             ]
           },
@@ -106,10 +108,10 @@
               },
               {
                 "@type": "MedicalCondition",
-                "name": "Cardiorenal Metabolic Syndrome",
+                "name": "Cardiovascular & Coronary Artery Disease",
                 "code": {
                   "@type": "MedicalCode",
-                  "code": "73211009",
+                  "code": "53741008",
                   "codingSystem": "SNOMED-CT"
                 }
               },
@@ -119,6 +121,24 @@
                 "code": {
                   "@type": "MedicalCode",
                   "code": "709044004",
+                  "codingSystem": "SNOMED-CT"
+                }
+              },
+              {
+                "@type": "MedicalCondition",
+                "name": "Hepatic & Liver Disease",
+                "code": {
+                  "@type": "MedicalCode",
+                  "code": "235856003",
+                  "codingSystem": "SNOMED-CT"
+                }
+              },
+              {
+                "@type": "MedicalCondition",
+                "name": "Respiratory & Pulmonary Disease",
+                "code": {
+                  "@type": "MedicalCode",
+                  "code": "50043002",
                   "codingSystem": "SNOMED-CT"
                 }
               }

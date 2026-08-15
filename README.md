@@ -8,13 +8,13 @@
 
 <br/>
 
-**Production-grade clinical AI platform — 5 ML diagnostics · Multi-agent RAG chatbot · FHIR R4 · Offline-first privacy**
+**Production-grade clinical AI platform — TabICLv2 Foundation Model · Databricks Lakehouse (OMOP CDM v5.4) · 10-Year Digital Twin · Multi-Agent RAG · FHIR R4**
 
 <br/>
 
-AI Healthcare System is a production-grade, privacy-first **open-source EHR (Electronic Health Record)** and **Clinical Decision Support System (CDSS)**. It is designed for healthcare software developers, startup founders, and medical informatics researchers who need a secure, HIPAA-compliant framework integrating advanced clinical machine learning and generative AI.
+AI Healthcare System is a production-grade, privacy-first **open-source EHR (Electronic Health Record)**, **Databricks Lakehouse**, and **Clinical Decision Support System (CDSS)**. It is designed for healthcare software developers, digital health startup founders, hospital system architects, and medical informatics researchers who need a secure, HIPAA-compliant platform integrating state-of-the-art tabular foundation models, digital twins, and generative AI.
 
-The platform provides native **HL7 FHIR R4** compatibility, 5 calibrated **XGBoost diagnostic risk classifiers** with **SHAP explainability**, and a stateful **LangGraph multi-agent RAG (Retrieval-Augmented Generation)** supervisor chatbot that supports complete **offline private inference (via local Ollama Llama 3.2)**. Designed to run on consumer hardware or scale to enterprise high-availability Kubernetes on AWS, it serves as a secure blueprint for digital health innovation.
+The platform provides native **HL7 FHIR R4** and **OHDSI OMOP CDM v5.4** compatibility, **TabICLv2 Tabular Foundation Models** (Rank #1 on TabArena) alongside calibrated **CatBoost, XGBoost, and FT-Transformer ensembles** with **95% Conformal Prediction sets** and **C++ SHAP explainability**, a 10-year coupled ODE **multi-organ digital twin simulator**, and a stateful **LangGraph multi-agent RAG** supervisor chatbot supporting complete **offline private inference (via local Ollama Llama 3.2)**. Designed to run on consumer hardware or scale to enterprise Databricks workspaces and Kubernetes on AWS, it provides an open, sovereign blueprint for clinical intelligence.
 
 <br/>
 
@@ -32,8 +32,9 @@ The platform provides native **HL7 FHIR R4** compatibility, 5 calibrated **XGBoo
 </p>
 
 <p>
-  <img src="https://img.shields.io/badge/Python-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/TabICLv2-Tabular%20Foundation%20Transformer-blueviolet?style=flat-square" alt="TabICLv2 Foundation Model" />
   <img src="https://img.shields.io/badge/Databricks-Unity%20Catalog%20Lakehouse-red?style=flat-square&logo=databricks&logoColor=white" alt="Databricks" />
+  <img src="https://img.shields.io/badge/Delta_Lake-Medallion%20Architecture-003366?style=flat-square" alt="Delta Lake" />
   <img src="https://img.shields.io/badge/PySpark-E25A1C?style=flat-square&logo=apachespark&logoColor=white" alt="PySpark" />
   <img src="https://img.shields.io/badge/OHDSI-OMOP%20CDM%20v5.4-blue?style=flat-square" alt="OMOP CDM v5.4" />
   <img src="https://img.shields.io/badge/CPIC-Precision%20Pharmacogenomics-brightgreen?style=flat-square" alt="CPIC Pharmacogenomics" />
