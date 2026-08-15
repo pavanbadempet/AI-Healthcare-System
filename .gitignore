@@ -28,6 +28,8 @@ htmlcov/
 pytest_output.txt
 tmp/
 output/
+catboost_info/
+models/vector_store_test_temp_*.db
 data/lakehouse/
 *.parquet
 models/semantic_cache.json
