@@ -1,62 +1,52 @@
 {
   "model_name": "diabetes",
-  "evaluated_at": "2026-08-04T04:59:23.493628+00:00",
-  "test_set_size": 6,
+  "evaluated_at": "2026-08-15T18:52:23.246075+00:00",
+  "test_set_size": 200,
   "class_distribution": {
-    "0": 1,
-    "1": 5
+    "0": 27,
+    "1": 173
   },
-  "accuracy": 0.1667,
-  "auc_roc": 0.5,
-  "sensitivity": 0.0,
-  "specificity": 1.0,
+  "accuracy": 0.995,
+  "auc_roc": 1.0,
+  "sensitivity": 1.0,
+  "specificity": 0.963,
   "classification_report": {
     "0": {
-      "precision": 0.16666666666666666,
-      "recall": 1.0,
-      "f1-score": 0.2857142857142857,
-      "support": 1.0
+      "precision": 1.0,
+      "recall": 0.9629629629629629,
+      "f1-score": 0.9811320754716981,
+      "support": 27.0
     },
     "1": {
-      "precision": 0.0,
-      "recall": 0.0,
-      "f1-score": 0.0,
-      "support": 5.0
+      "precision": 0.9942528735632183,
+      "recall": 1.0,
+      "f1-score": 0.9971181556195965,
+      "support": 173.0
     },
     "macro avg": {
-      "precision": 0.08333333333333333,
-      "recall": 0.5,
-      "f1-score": 0.14285714285714285,
-      "support": 6.0
+      "precision": 0.9971264367816092,
+      "recall": 0.9814814814814814,
+      "f1-score": 0.9891251155456473,
+      "support": 200.0
     },
     "weighted avg": {
-      "precision": 0.027777777777777776,
-      "recall": 0.16666666666666666,
-      "f1-score": 0.047619047619047616,
-      "support": 6.0
+      "precision": 0.9950287356321839,
+      "recall": 0.995,
+      "f1-score": 0.9949600347996302,
+      "support": 200.0
     }
   },
   "confusion_matrix": [
     [
-      1,
-      0
+      26,
+      1
     ],
     [
-      5,
-      0
+      0,
+      173
     ]
   ],
-  "feature_importances": {
-    "hypertension": 0.0,
-    "high_chol": 0.0,
-    "bmi": 0.0,
-    "smoking_history": 0.0,
-    "heart_disease": 0.0,
-    "physical_activity": 0.0,
-    "general_health": 0.0,
-    "gender": 0.0,
-    "age_bucket": 0.0
-  },
+  "feature_importances": {},
   "n_features": 9,
   "feature_names": [
     "hypertension",

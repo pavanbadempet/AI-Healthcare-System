@@ -1,66 +1,52 @@
 {
   "model_name": "heart",
-  "evaluated_at": "2026-08-04T04:59:23.706110+00:00",
-  "test_set_size": 6,
+  "evaluated_at": "2026-08-15T18:52:43.121396+00:00",
+  "test_set_size": 200,
   "class_distribution": {
-    "0": 1,
-    "1": 5
+    "0": 88,
+    "1": 112
   },
-  "accuracy": 0.1667,
-  "auc_roc": 0.5,
-  "sensitivity": 0.0,
-  "specificity": 1.0,
+  "accuracy": 0.95,
+  "auc_roc": 0.9918,
+  "sensitivity": 0.9643,
+  "specificity": 0.9318,
   "classification_report": {
     "0": {
-      "precision": 0.16666666666666666,
-      "recall": 1.0,
-      "f1-score": 0.2857142857142857,
-      "support": 1.0
+      "precision": 0.9534883720930233,
+      "recall": 0.9318181818181818,
+      "f1-score": 0.9425287356321839,
+      "support": 88.0
     },
     "1": {
-      "precision": 0.0,
-      "recall": 0.0,
-      "f1-score": 0.0,
-      "support": 5.0
+      "precision": 0.9473684210526315,
+      "recall": 0.9642857142857143,
+      "f1-score": 0.9557522123893806,
+      "support": 112.0
     },
     "macro avg": {
-      "precision": 0.08333333333333333,
-      "recall": 0.5,
-      "f1-score": 0.14285714285714285,
-      "support": 6.0
+      "precision": 0.9504283965728274,
+      "recall": 0.948051948051948,
+      "f1-score": 0.9491404740107823,
+      "support": 200.0
     },
     "weighted avg": {
-      "precision": 0.027777777777777776,
-      "recall": 0.16666666666666666,
-      "f1-score": 0.047619047619047616,
-      "support": 6.0
+      "precision": 0.9500611995104039,
+      "recall": 0.95,
+      "f1-score": 0.949933882616214,
+      "support": 200.0
     }
   },
   "confusion_matrix": [
     [
-      1,
-      0
+      82,
+      6
     ],
     [
-      5,
-      0
+      4,
+      108
     ]
   ],
-  "feature_importances": {
-    "age": 0.0,
-    "sex": 0.0,
-    "cp": 0.0,
-    "trestbps": 0.0,
-    "chol": 0.0,
-    "fbs": 0.0,
-    "restecg": 0.0,
-    "thalach": 0.0,
-    "exang": 0.0,
-    "oldpeak": 0.0,
-    "slope": 0.0,
-    "ca": 0.0,
-    "thal": 0.0
-  },
+  "feature_importances": {},
   "n_features": 13,
   "feature_names": [
     "age",
