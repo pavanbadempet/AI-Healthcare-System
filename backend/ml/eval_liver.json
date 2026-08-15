@@ -1,63 +1,52 @@
 {
   "model_name": "liver",
-  "evaluated_at": "2026-08-04T04:59:23.887399+00:00",
-  "test_set_size": 6,
+  "evaluated_at": "2026-08-15T17:56:43.966316+00:00",
+  "test_set_size": 200,
   "class_distribution": {
-    "0": 3,
-    "1": 3
+    "0": 4,
+    "1": 196
   },
-  "accuracy": 0.5,
-  "auc_roc": 0.5,
-  "sensitivity": 0.0,
-  "specificity": 1.0,
+  "accuracy": 0.995,
+  "auc_roc": 1.0,
+  "sensitivity": 1.0,
+  "specificity": 0.75,
   "classification_report": {
     "0": {
-      "precision": 0.5,
-      "recall": 1.0,
-      "f1-score": 0.6666666666666666,
-      "support": 3.0
+      "precision": 1.0,
+      "recall": 0.75,
+      "f1-score": 0.8571428571428571,
+      "support": 4.0
     },
     "1": {
-      "precision": 0.0,
-      "recall": 0.0,
-      "f1-score": 0.0,
-      "support": 3.0
+      "precision": 0.9949238578680203,
+      "recall": 1.0,
+      "f1-score": 0.9974554707379135,
+      "support": 196.0
     },
     "macro avg": {
-      "precision": 0.25,
-      "recall": 0.5,
-      "f1-score": 0.3333333333333333,
-      "support": 6.0
+      "precision": 0.9974619289340101,
+      "recall": 0.875,
+      "f1-score": 0.9272991639403854,
+      "support": 200.0
     },
     "weighted avg": {
-      "precision": 0.25,
-      "recall": 0.5,
-      "f1-score": 0.3333333333333333,
-      "support": 6.0
+      "precision": 0.9950253807106598,
+      "recall": 0.995,
+      "f1-score": 0.9946492184660123,
+      "support": 200.0
     }
   },
   "confusion_matrix": [
     [
       3,
-      0
+      1
     ],
     [
-      3,
-      0
+      0,
+      196
     ]
   ],
-  "feature_importances": {
-    "Age": 0.0,
-    "Gender": 0.0,
-    "Total_Bilirubin": 0.0,
-    "Direct_Bilirubin": 0.0,
-    "Alkaline_Phosphotase": 0.0,
-    "Alamine_Aminotransferase": 0.0,
-    "Aspartate_Aminotransferase": 0.0,
-    "Total_Proteins": 0.0,
-    "Albumin": 0.0,
-    "Albumin_and_Globulin_Ratio": 0.0
-  },
+  "feature_importances": {},
   "n_features": 10,
   "feature_names": [
     "Age",

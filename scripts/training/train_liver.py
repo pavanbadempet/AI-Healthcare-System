@@ -1,7 +1,7 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 import pickle
 
 import numpy as np
@@ -141,7 +141,10 @@ def train_liver_model():
         print("Training TabPFN Classifier...")
         try:
             os.environ["TABPFN_TOKEN"] = token
+            t_env = os.environ.pop("TESTING", None)
             from tabpfn import TabPFNClassifier
+            if t_env is not None:
+                os.environ["TESTING"] = t_env
             model = TabPFNClassifier(device='cpu')
             model.fit(X_train_final, Y_train_final)
             print("TabPFN Classifier trained successfully!")

@@ -306,24 +306,36 @@ class ModelService:
 
         @contextmanager
         def silence_stderr_fd():
+            dup_stderr = None
+            devnull = None
+            stderr_fd = None
             try:
                 stderr_fd = sys.stderr.fileno()
                 dup_stderr = os.dup(stderr_fd)
                 devnull = os.open(os.devnull, os.O_WRONLY)
                 os.dup2(devnull, stderr_fd)
-                try:
-                    yield
-                finally:
-                    os.dup2(dup_stderr, stderr_fd)
-                    os.close(dup_stderr)
-                    os.close(devnull)
             except Exception:
+                pass
+            try:
                 yield
+            finally:
+                if dup_stderr is not None and stderr_fd is not None:
+                    try:
+                        os.dup2(dup_stderr, stderr_fd)
+                        os.close(dup_stderr)
+                    except Exception:
+                        pass
+                if devnull is not None:
+                    try:
+                        os.close(devnull)
+                    except Exception:
+                        pass
 
         for f_name in filenames:
             path = os.path.join(self._model_dir, f_name)
             if os.path.exists(path):
 
+                t_env = os.environ.pop("TESTING", None)
                 try:
                     # Use memory mapping to read scikit-learn arrays directly from disk.
                     # This drastically reduces RSS RAM usage and speeds up model loads.
@@ -341,6 +353,9 @@ class ModelService:
                             return obj
                     except Exception:
                         logger.error("Failed to load model file %s: %s", f_name, mmap_err)
+                finally:
+                    if t_env is not None:
+                        os.environ["TESTING"] = t_env
 
         logger.warning("Could not find any of: %s in %s", filenames, self._model_dir)
         return None

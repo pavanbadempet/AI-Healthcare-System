@@ -2,8 +2,8 @@ import os
 import pickle
 import sys
 
-# Ensure parent directory is in python path so backend is importable as package
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+# Ensure repo root directory is in python path so backend is importable as package
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 import numpy as np
 import pandas as pd
@@ -102,7 +102,10 @@ def train_lungs_model():
         print("Training TabPFN Classifier...")
         try:
             os.environ["TABPFN_TOKEN"] = token
+            t_env = os.environ.pop("TESTING", None)
             from tabpfn import TabPFNClassifier
+            if t_env is not None:
+                os.environ["TESTING"] = t_env
             model = TabPFNClassifier(device='cpu')
             model.fit(X_train_scaled, Y_train)
             print("TabPFN Classifier trained successfully!")
