@@ -6,18 +6,20 @@ FastAPI Router for Peak Healthcare Capabilities:
 """
 
 import logging
+
 from fastapi import APIRouter, HTTPException, status
+
+from backend.agents.clinical_consensus_council import clinical_council
+from backend.clinical_digital_twin import digital_twin_engine
+from backend.precision_pharmacogenomics import pharmacogenomics_engine
 from backend.schemas.peak_healthcare import (
+    ClinicalCouncilConsensusResponse,
+    ClinicalCouncilDeliberationRequest,
     DigitalTwinSimulationRequest,
     DigitalTwinSimulationResponse,
     PharmacogenomicEvaluationRequest,
     PharmacogenomicEvaluationResponse,
-    ClinicalCouncilDeliberationRequest,
-    ClinicalCouncilConsensusResponse
 )
-from backend.clinical_digital_twin import digital_twin_engine
-from backend.precision_pharmacogenomics import pharmacogenomics_engine
-from backend.agents.clinical_consensus_council import clinical_council
 
 logger = logging.getLogger("backend.peak_healthcare_routes")
 

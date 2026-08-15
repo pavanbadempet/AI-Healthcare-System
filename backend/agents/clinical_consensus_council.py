@@ -9,13 +9,13 @@ Orchestrates 5 specialized clinical AI agents:
 Synthesizes a unified, peer-reviewed, explainable care plan with critical safety alerts.
 """
 
-import uuid
 import logging
-from typing import List, Dict, Any
+import uuid
+
 from backend.schemas.peak_healthcare import (
-    ClinicalCouncilDeliberationRequest,
     ClinicalCouncilConsensusResponse,
-    SpecialistOpinion
+    ClinicalCouncilDeliberationRequest,
+    SpecialistOpinion,
 )
 
 logger = logging.getLogger("backend.clinical_council")
@@ -33,7 +33,11 @@ class ClinicalConsensusCouncil:
         is_hypertensive = bp > 135
         has_chest_discomfort = any("chest" in s or "tightness" in s or "angina" in s for s in symptoms)
 
-        diag = "Elevated ASCVD Risk with Stage 1/2 Essential Hypertension."
+        diag = (
+            "Elevated ASCVD Risk with Stage 1/2 Essential Hypertension."
+            if is_hypertensive
+            else "Normotensive baseline with cardiovascular risk profile."
+        )
         if has_chest_discomfort:
             diag += " Suspected atypical angina / microvascular coronary ischemia requiring urgent CCTA workup."
 
@@ -76,7 +80,11 @@ class ClinicalConsensusCouncil:
         egfr = req.lab_results.get("egfr", 90)
         uacr = req.lab_results.get("uacr", 15)
 
-        diag = "Preserved Glomerular Filtration (G1/G2)" if egfr > 60 else "Stage 3 Chronic Kidney Disease (CKD)"
+        diag = (
+            "Preserved Glomerular Filtration (G1/G2) without significant albuminuria"
+            if (egfr > 60 and uacr < 30)
+            else "Stage 3 Chronic Kidney Disease (CKD) or Microalbuminuria"
+        )
         actions = [
             "Maintain ACEi/ARB therapy for intraglomerular pressure reduction.",
             "Quarterly surveillance of spot urinary Albumin-to-Creatinine Ratio (uACR) and serum potassium.",

@@ -9,10 +9,10 @@ Standardizes raw FHIR R4 resources, HL7 v2.x messages, and EHR records into stan
 Maps clinical text and codes to standard SNOMED-CT, RxNorm, LOINC, and ICD-10 OMOP concept identifiers.
 """
 
-import uuid
 import datetime
 import logging
-from typing import List, Dict, Any, Optional
+import uuid
+from typing import Any, Dict, List
 
 logger = logging.getLogger("backend.omop_cdm")
 
@@ -27,7 +27,7 @@ class OMOPConceptMapper:
         "chronic kidney disease": {"concept_id": 443614, "concept_name": "Chronic kidney disease stage 3", "domain": "Condition", "vocab": "SNOMED"},
         "heart failure": {"concept_id": 316139, "concept_name": "Heart failure", "domain": "Condition", "vocab": "SNOMED"},
         "hyperlipidemia": {"concept_id": 432867, "concept_name": "Hyperlipidemia", "domain": "Condition", "vocab": "SNOMED"},
-        
+
         # Drugs (RxNorm)
         "metformin": {"concept_id": 1503297, "concept_name": "Metformin hydrochloride 500 MG", "domain": "Drug", "vocab": "RxNorm"},
         "lisinopril": {"concept_id": 1308216, "concept_name": "Lisinopril 10 MG Oral Tablet", "domain": "Drug", "vocab": "RxNorm"},

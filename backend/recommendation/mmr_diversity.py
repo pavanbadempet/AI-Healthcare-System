@@ -4,7 +4,8 @@ Prevents redundant echo chambers by balancing multi-objective relevance against 
 """
 
 import math
-from typing import List, Dict, Any, Tuple, Optional
+from typing import Dict, List, Tuple
+
 from backend.schemas.recommendation import CandidateItem
 
 

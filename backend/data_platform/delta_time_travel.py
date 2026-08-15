@@ -7,9 +7,9 @@ Provides enterprise-grade lakehouse auditability:
 - HIPAA 7-Year Retention & VACUUM policy auditor
 """
 
-import time
 import logging
-from typing import List, Dict, Any, Optional
+import time
+from typing import Any, Dict, List
 
 logger = logging.getLogger("backend.delta_time_travel")
 
@@ -63,7 +63,7 @@ class DeltaTimeTravelEngine:
         matched = next((h for h in history if h["version"] == target_version), None)
         if not matched:
             matched = history[-1]
-        
+
         return {
             "table_name": table_name,
             "queried_version": target_version,
@@ -77,7 +77,7 @@ class DeltaTimeTravelEngine:
         """Executes RESTORE TABLE AS OF target_version with HIPAA audit trail."""
         history = self.get_table_history(table_name)
         new_version = len(history)
-        
+
         restore_commit = {
             "version": new_version,
             "timestamp": str(time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())),

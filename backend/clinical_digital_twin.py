@@ -4,13 +4,13 @@ Implements continuous differential state-space modeling and Markovian trajectory
 for Cardiovascular, Renal, Metabolic, and Hepatic systems under hypothetical therapeutic interventions.
 """
 
-import math
 import logging
-from typing import List, Dict, Any, Tuple
+from typing import Dict
+
 from backend.schemas.peak_healthcare import (
     DigitalTwinSimulationRequest,
     DigitalTwinSimulationResponse,
-    OrganSystemTrajectory
+    OrganSystemTrajectory,
 )
 
 logger = logging.getLogger("backend.digital_twin")

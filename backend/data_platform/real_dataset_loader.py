@@ -11,12 +11,12 @@ Converts multi-source open research datasets into standard OMOP CDM v5.4 relatio
 structures and streams them through Spark Declarative Pipeline (SDP) quality gates.
 """
 
-import os
-import time
 import logging
-from typing import Dict, Any, List, Optional
+import os
+from typing import Any, Dict, List, Optional
+
 import pandas as pd
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 
 logger = logging.getLogger("backend.real_dataset_loader")
 
@@ -76,7 +76,7 @@ class RealClinicalDatasetLoader:
         real CDC BRFSS and clinical datasets with true epidemiological co-variances.
         """
         df_diabetes = cls.load_cdc_diabetes_cohort(limit=sample_size)
-        
+
         cohort: List[Dict[str, Any]] = []
         for idx, row in df_diabetes.iterrows():
             bmi = float(row.get("BMI", 26.0))
@@ -84,7 +84,7 @@ class RealClinicalDatasetLoader:
             high_chol = int(row.get("HighChol", 0))
             has_diabetes = int(row.get("diabetes", 0))
             smoker = int(row.get("Smoker", 0))
-            
+
             # Map epidemiological indicators to physiological measurements
             sbp = 145.0 + (bmi - 25.0) * 0.8 if high_bp else 118.0 + (bmi - 25.0) * 0.4
             dbp = 90.0 if high_bp else 76.0

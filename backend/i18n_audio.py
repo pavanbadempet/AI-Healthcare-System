@@ -10,9 +10,9 @@ import math
 import os
 import struct
 import wave
-import httpx
 
-from fastapi import APIRouter, HTTPException, UploadFile, File
+import httpx
+from fastapi import APIRouter, File, HTTPException, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 

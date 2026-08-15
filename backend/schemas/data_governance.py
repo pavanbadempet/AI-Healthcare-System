@@ -1,6 +1,8 @@
-from typing import Optional, Dict, Any
-from pydantic import BaseModel, Field
 from datetime import datetime
+from typing import Any, Dict, Optional
+
+from pydantic import BaseModel
+
 
 class ClickstreamEventInput(BaseModel):
     session_id: str

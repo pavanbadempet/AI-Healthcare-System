@@ -12,11 +12,12 @@ Adheres strictly to the Zero-Configuration Sandbox Rule with resilient
 fallback pathways and graceful degradation for every single edge case.
 """
 
+import logging
 import os
 import time
 import uuid
-import logging
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict
+
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger("backend.pipeline_mesh")
@@ -104,7 +105,7 @@ class CloudflareAIBridge:
     def check_health_and_warmup(cls) -> MeshServiceStatus:
         start = time.time()
         mode = DopplerSecretsBridge.get_service_mode("cloudflare")
-        
+
         if mode == "LIVE":
             # Real edge worker health check
             worker_url = os.getenv("CLOUDFLARE_WORKER_URL", "").rstrip("/")
@@ -191,14 +192,14 @@ class DatabricksLakehouseBridge:
             host = os.getenv("DATABRICKS_HOST", "").rstrip("/")
             token = os.getenv("DATABRICKS_TOKEN", "")
             try:
-                import urllib.request
                 import json
+                import urllib.request
                 req = urllib.request.Request(
                     f"{host}/api/2.1/unity-catalog/catalogs/workspace",
                     headers={"Authorization": f"Bearer {token}", "User-Agent": "Healthcare-Mesh/1.0"}
                 )
                 with urllib.request.urlopen(req, timeout=4.0) as resp:
-                    data = json.loads(resp.read().decode())
+                    resp_data = json.loads(resp.read().decode())
                     latency = (time.time() - start) * 1000.0
                     return MeshServiceStatus(
                         service_name="Databricks Free Edition Lakehouse",
@@ -206,7 +207,12 @@ class DatabricksLakehouseBridge:
                         latency_ms=round(latency, 2),
                         mode="LIVE",
                         message="Unity Catalog Lakehouse active (OMOP v5.4, Great Expectations & Delta CDF)",
-                        details={"catalog": "workspace", "run_status": "SUCCESS", "batch_records": batch_size}
+                        details={
+                            "catalog": "workspace",
+                            "run_status": "SUCCESS",
+                            "batch_records": batch_size,
+                            "response_keys": list(resp_data.keys()) if isinstance(resp_data, dict) else []
+                        }
                     )
             except Exception as e:
                 logger.warning("Databricks live API call failed (%s), switching to sandbox", e)
@@ -325,7 +331,6 @@ class PipelineMeshOrchestrator:
         # Compute summary
         total_duration = time.time() - start_time
         all_connected = all(s.is_connected for s in statuses.values())
-        any_live = any(s.mode == "LIVE" for s in statuses.values())
 
         summary = {
             "total_services_orchestrated": len(statuses),

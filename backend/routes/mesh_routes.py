@@ -5,16 +5,17 @@ Doppler, Cloudflare Workers AI, Neon PostgreSQL, Databricks Free Edition, Kaggle
 """
 
 from fastapi import APIRouter
+
 from backend.pipeline_mesh_orchestrator import (
-    pipeline_mesh_orchestrator,
+    CloudflareAIBridge,
+    DatabricksLakehouseBridge,
+    DopplerSecretsBridge,
+    HuggingFaceSpacesBridge,
+    KaggleGPUBridge,
     MeshPipelineRunRequest,
     MeshPipelineRunResult,
-    DopplerSecretsBridge,
-    CloudflareAIBridge,
     NeonPostgresBridge,
-    DatabricksLakehouseBridge,
-    KaggleGPUBridge,
-    HuggingFaceSpacesBridge
+    pipeline_mesh_orchestrator,
 )
 
 router = APIRouter(prefix="/v1/mesh", tags=["Multi-Cloud Pipeline Mesh"])

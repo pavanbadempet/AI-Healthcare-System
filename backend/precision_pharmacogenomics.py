@@ -5,12 +5,12 @@ against proposed pharmacotherapies to determine metabolic clearance rates and sa
 """
 
 import logging
-from typing import List, Dict, Any, Tuple
+from typing import Any, Dict, List
+
 from backend.schemas.peak_healthcare import (
-    PharmacogenomicProfile,
+    DrugMetabolismReport,
     PharmacogenomicEvaluationRequest,
     PharmacogenomicEvaluationResponse,
-    DrugMetabolismReport
 )
 
 logger = logging.getLogger("backend.pharmacogenomics")

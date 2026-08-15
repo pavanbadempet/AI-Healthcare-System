@@ -5,21 +5,19 @@ scaling, hyperparameter cross-validation, and distributed batch inference.
 """
 
 import logging
-from typing import List, Dict, Any, Tuple, Optional
+from typing import Any, Dict, List, Optional
+
 from pydantic import BaseModel, Field
 
 logger = logging.getLogger("backend.ml.pyspark_pipeline")
 
 # Check for native PySpark installation
 try:
-    from pyspark.sql import SparkSession
-    from pyspark.sql import functions as F
-    from pyspark.sql.types import StructType, StructField, StringType, FloatType, IntegerType
     from pyspark.ml import Pipeline
-    from pyspark.ml.feature import VectorAssembler, StandardScaler, StringIndexer
-    from pyspark.ml.classification import RandomForestClassifier, GBTClassifier
+    from pyspark.ml.classification import RandomForestClassifier
     from pyspark.ml.evaluation import BinaryClassificationEvaluator, MulticlassClassificationEvaluator
-    from pyspark.ml.tuning import ParamGridBuilder, CrossValidator
+    from pyspark.ml.feature import StandardScaler, VectorAssembler
+    from pyspark.sql import SparkSession
     HAS_PYSPARK_ML = True
 except ImportError:
     HAS_PYSPARK_ML = False
@@ -31,7 +29,7 @@ class PySparkPipelineConfig(BaseModel):
     """Configuration parameters for distributed PySpark ML pipeline."""
     feature_columns: List[str] = Field(
         default=[
-            "age", "bmi", "systolic_bp", "diastolic_bp", 
+            "age", "bmi", "systolic_bp", "diastolic_bp",
             "fasting_glucose", "hba1c", "egfr", "ldl_cholesterol"
         ]
     )

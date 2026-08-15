@@ -488,11 +488,11 @@ app.include_router(i18n_audio.router, prefix=API_V1_PREFIX)
 app.include_router(fhir_compression.router, prefix=API_V1_PREFIX)
 app.include_router(abdm_sandbox.router, prefix=API_V1_PREFIX, tags=["ABDM Sandbox"])
 
-from backend.routes.data_platform_routes import router as data_platform_router
-from backend.routes.recommendation_routes import router as recommendation_router
-from backend.routes.peak_healthcare_routes import router as peak_healthcare_router
 from backend.routes.data_engineering_routes import router as data_engineering_router
+from backend.routes.data_platform_routes import router as data_platform_router
 from backend.routes.mesh_routes import router as mesh_router
+from backend.routes.peak_healthcare_routes import router as peak_healthcare_router
+from backend.routes.recommendation_routes import router as recommendation_router
 
 app.include_router(data_platform_router)
 app.include_router(recommendation_router)

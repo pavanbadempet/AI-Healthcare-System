@@ -7,22 +7,22 @@ Coordinates:
 4. Stage 4: Clinical Guardrails & Contextual Thompson Bandits (ClinicalSafetyGuardrail, ContextualThompsonBandit)
 """
 
-import time
 import logging
-from typing import List, Dict, Any, Optional
+import time
+from typing import Any, Dict, List
 
-from backend.schemas.recommendation import (
-    PatientContext,
-    RecommendationRequest,
-    CandidateItem,
-    RankedRecommendation,
-    RecommendationResponse,
-    FeedbackEvent
-)
-from backend.recommendation.two_tower import TwoTowerCandidateRetrieval
+from backend.recommendation.guardrails_and_bandits import ClinicalSafetyGuardrail, ContextualThompsonBandit
 from backend.recommendation.mmoe_ranker import MMoERankingEngine
 from backend.recommendation.mmr_diversity import MMRDiversityReRanker
-from backend.recommendation.guardrails_and_bandits import ClinicalSafetyGuardrail, ContextualThompsonBandit
+from backend.recommendation.two_tower import TwoTowerCandidateRetrieval
+from backend.schemas.recommendation import (
+    CandidateItem,
+    FeedbackEvent,
+    PatientContext,
+    RankedRecommendation,
+    RecommendationRequest,
+    RecommendationResponse,
+)
 
 logger = logging.getLogger("backend.recommendation.engine")
 
@@ -46,7 +46,7 @@ class MultiStageRecommendationPipeline:
             reasons.append(f"High predicted efficacy ({eff*100:.0f}%) per {item.evidence_level}")
         if safe > 0.80:
             reasons.append("Verified low risk of pharmacological adverse events")
-        
+
         return ". ".join(reasons) + "." if reasons else f"Recommended as an evidence-based {item.category} intervention."
 
     async def recommend(self, request: RecommendationRequest) -> RecommendationResponse:

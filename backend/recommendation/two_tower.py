@@ -3,11 +3,12 @@ Stage 1: Two-Tower Candidate Retrieval Engine.
 Encodes Patient & Item representations into dense embedding space and retrieves top-K candidates via ANN search.
 """
 
-import math
 import logging
-from typing import List, Dict, Any, Optional
-from backend.schemas.recommendation import PatientContext, CandidateItem
+import math
+from typing import Any, Dict, List
+
 from backend.core_ai import embed_text
+from backend.schemas.recommendation import CandidateItem, PatientContext
 
 logger = logging.getLogger("backend.recommendation.two_tower")
 
@@ -26,7 +27,7 @@ def _cosine_similarity(vec_a: List[float], vec_b: List[float]) -> float:
 
 class ClinicalKnowledgeUniverse:
     """In-memory repository of evidence-based clinical interventions, trials, and lifestyle pathways."""
-    
+
     _INSTANCES: Dict[str, List[Dict[str, Any]]] = {
         "clinical_intervention": [
             {
@@ -229,7 +230,7 @@ class TwoTowerCandidateRetrieval:
             if item_id not in self._item_embeddings_cache:
                 item_text = self._build_item_representation_text(raw_item)
                 self._item_embeddings_cache[item_id] = embed_text(item_text)
-            
+
             item_vector = self._item_embeddings_cache[item_id]
             sim = _cosine_similarity(patient_vector, item_vector)
 

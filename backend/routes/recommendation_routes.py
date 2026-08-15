@@ -2,14 +2,12 @@
 FastAPI Router for 4-Stage Multi-Objective Clinical Recommendation Engine.
 """
 
-from typing import Dict, Any
+from typing import Any, Dict
+
 from fastapi import APIRouter, HTTPException, status
-from backend.schemas.recommendation import (
-    RecommendationRequest,
-    RecommendationResponse,
-    FeedbackEvent
-)
+
 from backend.recommendation.engine import recommendation_pipeline
+from backend.schemas.recommendation import FeedbackEvent, RecommendationRequest, RecommendationResponse
 
 router = APIRouter(prefix="/v1/recommendations", tags=["Recommendation Engine"])
 

@@ -3,10 +3,11 @@ Stage 4: Deterministic Clinical Guardrails & Contextual Multi-Armed Bandits (Tho
 Enforces hard safety constraints and dynamically explores high-potential clinical actions.
 """
 
-import random
 import logging
-from typing import List, Dict, Any, Tuple, Optional
-from backend.schemas.recommendation import PatientContext, CandidateItem
+import random
+from typing import Dict, Tuple
+
+from backend.schemas.recommendation import CandidateItem, PatientContext
 
 logger = logging.getLogger("backend.recommendation.guardrails")
 
@@ -84,7 +85,7 @@ class ContextualThompsonBandit:
         alpha, beta = self._get_posterior(item_id)
         # Draw Thompson sample from Beta(alpha, beta)
         sample = random.betavariate(alpha, beta)
-        
+
         # An item is considered explored if the sample deviates substantially (> 15%) from its prior mean
         prior_mean = alpha / (alpha + beta)
         is_explored = abs(sample - prior_mean) > 0.15

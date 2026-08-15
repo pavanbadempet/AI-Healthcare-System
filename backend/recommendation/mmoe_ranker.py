@@ -7,9 +7,11 @@ Scores candidates across 3 simultaneous objectives:
 """
 
 import math
+from typing import List, Tuple
+
 import numpy as np
-from typing import List, Dict, Any, Tuple
-from backend.schemas.recommendation import PatientContext, CandidateItem
+
+from backend.schemas.recommendation import CandidateItem, PatientContext
 
 
 def _sigmoid(x: float) -> float:
@@ -36,7 +38,7 @@ class MMoERankingEngine:
         # In production, these weights are trained via PySpark / MLflow offline
         self.num_features = 8
         self.num_experts = 4
-        
+
         # Expert feature weights: Shape (num_experts, num_features)
         self.expert_weights = np.array([
             [0.35, 0.40, 0.25, 0.30, 0.15, 0.20, 0.10, 0.50],  # Expert 1: Efficacy specialist

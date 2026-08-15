@@ -2,7 +2,8 @@
 Pydantic Schemas for Peak Clinical Digital Twin, Pharmacogenomics, and Multi-Agent Council.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import Any, Dict, List
+
 from pydantic import BaseModel, Field
 
 

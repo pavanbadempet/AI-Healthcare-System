@@ -511,8 +511,8 @@ def _log_feature_attributions(
 
         # Also write event to local streaming buffer for Databricks Lakehouse Bronze Ingest
         try:
-            import time
             import json
+            import time
             stream_dir = os.path.join("data", "telemetry_stream")
             os.makedirs(stream_dir, exist_ok=True)
             event_id = f"evt_{int(time.time() * 1000)}_{model_name}"

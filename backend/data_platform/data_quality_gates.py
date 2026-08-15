@@ -6,10 +6,11 @@ Implements native Spark Declarative Pipeline quality contracts and Delta Live Ta
 - Automatically partitions clean records to Silver and routes dirty records to the SDP Quarantine Table (healthcare_bronze.quarantined_records)
 """
 
-import time
 import logging
-from typing import List, Dict, Any, Tuple
-from pydantic import BaseModel, Field
+import time
+from typing import Any, Dict, List, Tuple
+
+from pydantic import BaseModel
 
 logger = logging.getLogger("backend.data_quality_gates")
 

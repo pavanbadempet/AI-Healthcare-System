@@ -5,13 +5,14 @@ FastAPI Router for Enterprise Healthcare Data Engineering Platform:
 - Delta Lake Time-Travel, Change Data Feed (CDF), and ACID Rollback
 """
 
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
 from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
-from backend.data_platform.omop_cdm_engine import omop_engine
 from backend.data_platform.data_quality_gates import data_quality_gate
 from backend.data_platform.delta_time_travel import delta_time_travel
+from backend.data_platform.omop_cdm_engine import omop_engine
 
 router = APIRouter(prefix="/v1/lakehouse", tags=["Lakehouse Data Engineering"])
 
