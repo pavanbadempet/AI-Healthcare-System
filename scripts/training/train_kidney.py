@@ -115,7 +115,7 @@ def train_kidney_model():
             from tabpfn import TabPFNClassifier
             if t_env is not None:
                 os.environ["TESTING"] = t_env
-            model = TabPFNClassifier(device='cpu')
+            model = TabPFNClassifier(device='cpu', n_estimators=16, random_state=42)
             model.fit(X_train_scaled, Y_train)
             print("TabPFN Classifier trained successfully!")
             trained_tabpfn = True

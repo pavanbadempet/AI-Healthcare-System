@@ -1,6 +1,6 @@
 {
   "model_name": "kidney",
-  "evaluated_at": "2026-08-15T17:55:54.822221+00:00",
+  "evaluated_at": "2026-08-15T18:11:51.229710+00:00",
   "test_set_size": 200,
   "class_distribution": {
     "1": 200
