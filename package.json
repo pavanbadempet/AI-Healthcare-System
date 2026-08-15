@@ -1,0 +1,31 @@
+{
+  "name": "ai-healthcare-system-root",
+  "version": "2.6.0",
+  "private": true,
+  "description": "Root workspace orchestrator for AI Healthcare System (React 19, Bun, Rust Gateway, FastAPI)",
+  "workspaces": [
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "bun run --cwd frontend dev",
+    "build": "bun run --cwd frontend build",
+    "start": "bun run --cwd frontend start",
+    "test": "bun run --cwd frontend test",
+    "lint": "bun run --cwd frontend lint",
+    "rust:build": "cargo build --manifest-path rust_gateway/Cargo.toml --release",
+    "rust:test": "cargo test --manifest-path rust_gateway/Cargo.toml",
+    "rust:run": "cargo run --manifest-path rust_gateway/Cargo.toml --release"
+  },
+  "keywords": [
+    "healthcare",
+    "clinical-ai",
+    "databricks",
+    "tabicl",
+    "bun",
+    "rust",
+    "react19",
+    "fastapi"
+  ],
+  "author": "Pavan Badempet",
+  "license": "MIT"
+}
