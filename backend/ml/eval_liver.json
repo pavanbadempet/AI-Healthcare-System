@@ -1,45 +1,45 @@
 {
   "model_name": "liver",
-  "evaluated_at": "2026-08-15T18:12:53.888824+00:00",
+  "evaluated_at": "2026-08-15T18:43:34.517446+00:00",
   "test_set_size": 200,
   "class_distribution": {
     "0": 4,
     "1": 196
   },
-  "accuracy": 0.995,
+  "accuracy": 1.0,
   "auc_roc": 1.0,
   "sensitivity": 1.0,
-  "specificity": 0.75,
+  "specificity": 1.0,
   "classification_report": {
     "0": {
       "precision": 1.0,
-      "recall": 0.75,
-      "f1-score": 0.8571428571428571,
+      "recall": 1.0,
+      "f1-score": 1.0,
       "support": 4.0
     },
     "1": {
-      "precision": 0.9949238578680203,
+      "precision": 1.0,
       "recall": 1.0,
-      "f1-score": 0.9974554707379135,
+      "f1-score": 1.0,
       "support": 196.0
     },
     "macro avg": {
-      "precision": 0.9974619289340101,
-      "recall": 0.875,
-      "f1-score": 0.9272991639403854,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
       "support": 200.0
     },
     "weighted avg": {
-      "precision": 0.9950253807106598,
-      "recall": 0.995,
-      "f1-score": 0.9946492184660123,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
       "support": 200.0
     }
   },
   "confusion_matrix": [
     [
-      3,
-      1
+      4,
+      0
     ],
     [
       0,

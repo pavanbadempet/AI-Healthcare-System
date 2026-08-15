@@ -1,6 +1,6 @@
 {
   "model_name": "lungs",
-  "evaluated_at": "2026-08-15T18:10:34.419217+00:00",
+  "evaluated_at": "2026-08-15T18:42:14.043876+00:00",
   "test_set_size": 200,
   "class_distribution": {
     "0": 38,

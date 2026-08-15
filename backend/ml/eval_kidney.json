@@ -1,48 +1,37 @@
 {
   "model_name": "kidney",
-  "evaluated_at": "2026-08-15T18:11:51.229710+00:00",
+  "evaluated_at": "2026-08-15T18:42:52.165216+00:00",
   "test_set_size": 200,
   "class_distribution": {
     "1": 200
   },
-  "accuracy": 0.995,
+  "accuracy": 1.0,
   "auc_roc": NaN,
-  "sensitivity": 0.995,
-  "specificity": 0.0,
+  "sensitivity": null,
+  "specificity": null,
   "classification_report": {
-    "0": {
-      "precision": 0.0,
-      "recall": 0.0,
-      "f1-score": 0.0,
-      "support": 0.0
-    },
     "1": {
       "precision": 1.0,
-      "recall": 0.995,
-      "f1-score": 0.9974937343358395,
+      "recall": 1.0,
+      "f1-score": 1.0,
       "support": 200.0
     },
     "macro avg": {
-      "precision": 0.5,
-      "recall": 0.4975,
-      "f1-score": 0.49874686716791977,
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1-score": 1.0,
       "support": 200.0
     },
     "weighted avg": {
       "precision": 1.0,
-      "recall": 0.995,
-      "f1-score": 0.9974937343358395,
+      "recall": 1.0,
+      "f1-score": 1.0,
       "support": 200.0
     }
   },
   "confusion_matrix": [
     [
-      0,
-      0
-    ],
-    [
-      1,
-      199
+      200
     ]
   ],
   "feature_importances": {},

@@ -100,32 +100,20 @@ def train_kidney_model():
         pickle.dump(scaler, f)
     print(f"Scaler Saved to {SCALER_PATH}")
 
-    # 6. Training with TabPFN (with Ensemble fallback)
-    from dotenv import load_dotenv
-    load_dotenv()
+    # 6. Training with Open-Source Foundation Model (TabICL / Sovereign Ensemble)
+    trained_foundation = False
 
-    token = os.environ.get("TABPFN_TOKEN")
-    trained_tabpfn = False
+    print("Training Open-Source TabICL Foundation Classifier (Inria Soda)...")
+    try:
+        from tabicl import TabICLClassifier
+        model = TabICLClassifier()
+        model.fit(X_train_scaled, Y_train)
+        print("TabICL Foundation Classifier trained successfully!")
+        trained_foundation = True
+    except Exception as e:
+        print(f"[WARNING] TabICL initialization/training failed: {e}")
 
-    if token:
-        print("Training TabPFN Classifier...")
-        try:
-            os.environ["TABPFN_TOKEN"] = token
-            t_env = os.environ.pop("TESTING", None)
-            from tabpfn import TabPFNClassifier
-            if t_env is not None:
-                os.environ["TESTING"] = t_env
-            model = TabPFNClassifier(model_path='tabpfn-v3-classifier-v3_default.ckpt', device='cpu', n_estimators=16, random_state=42)
-            model.fit(X_train_scaled, Y_train)
-            print("TabPFN Classifier trained successfully!")
-            trained_tabpfn = True
-        except Exception as e:
-            print(f"[WARNING] TabPFN initialization/training failed: {e}")
-
-    if not trained_tabpfn:
-        if not token:
-            print("[INFO] No TABPFN_TOKEN found in environment. Bypassing TabPFN to run offline.")
-            print("To enable TabPFN, run 'python scripts/setup_tabpfn.py' to configure your API key.")
+    if not trained_foundation:
         print("Falling back to Calibrated Soft Voting Ensemble (XGBoost + LightGBM + Random Forest)...")
         import lightgbm as lgb
         from sklearn.calibration import CalibratedClassifierCV

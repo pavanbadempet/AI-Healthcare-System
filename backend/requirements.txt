@@ -33,6 +33,7 @@ xgboost
 lightgbm
 catboost
 torch
+tabicl>=2.1.1
 # shap
 # joblib
 
