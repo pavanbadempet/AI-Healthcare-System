@@ -22,12 +22,20 @@
 - `backend/main.py` -> FastAPI application entry point
 - `backend/` -> All API routes, models, services, ML, AI modules
 - `frontend/` -> Vite React SPA (`src/pages`, components, Vitest tests, lib)
-- `frontend_legacy/` -> Old Python UI (for reference/legacy only)
-- `scripts/` -> Dev utilities, DB management, deployment checks
+- `rust_gateway/` -> Axum/Tokio Rust PID 1 edge proxy with PyO3 FFI
+- `android/` -> Kotlin Jetpack Compose mobile app
+- `scripts/` -> Dev utilities, DB management, training scripts
 - `tests/` -> Pytest test suite
 - `docs/` -> Architecture docs, whitepapers, analysis
 - `data/` -> Training datasets for ML models
+- `databricks_notebooks/` -> Medallion pipeline notebooks (Bronze/Silver/Gold)
 - `airflow/`, `mlops/`, `monitoring/` -> Infrastructure & pipeline configs
+- `k8s/` -> Kubernetes deployment manifests
+- `terraform/` -> IaC provisioning (AWS/GCP)
+- `microservices/` -> ABDM FHIR, Cloudflare AI, RAG, prediction workers
+- `packages/` -> Shared Python packages (FHIR, RAG cache, tabular, license gate)
+- `kaggle_gpu_kernel/` -> Kaggle GPU risk scoring kernel
+- `models/` -> Production model artifacts & vector store
 
 ## Always True
 
