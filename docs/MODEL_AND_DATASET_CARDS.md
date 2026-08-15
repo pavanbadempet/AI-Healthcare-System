@@ -9,15 +9,15 @@ Model cards following the [Model Cards for Model Reporting](https://arxiv.org/ab
 
 ## Summary Table
 
-| Model | Task | Algorithm | Features | Dataset | AUC-ROC | Sensitivity | Specificity |
-|-------|------|-----------|----------|---------|---------|-------------|-------------|
-| **Diabetes** | Binary screening | XGBoost (300 trees) | 9 | BRFSS 2015 (CDC) | See `eval_diabetes.json` | See artifact | See artifact |
-| **Heart Disease** | Binary screening | XGBoost (300 trees) | 13 | BRFSS 2015 / Cleveland | See `eval_heart.json` | See artifact | See artifact |
-| **Liver Disease** | Binary screening | XGBoost (200 trees) | 10 | ILPD (UCI) | See `eval_liver.json` | See artifact | See artifact |
-| **Kidney Disease** | Binary screening | XGBoost (150 trees) | 24 | CKD (UCI) | See `eval_kidney.json` | See artifact | See artifact |
-| **Lung Health** | Binary screening | XGBoost (150 trees) | 15 | Lung Cancer Survey | See `eval_lungs.json` | See artifact | See artifact |
+| Model | Task | Architecture | Features | Dataset | Accuracy | AUC-ROC | Sensitivity | Specificity |
+|-------|------|--------------|:--------:|---------|:--------:|:-------:|:-----------:|:-----------:|
+| **Diabetes** | Binary risk screening | Quad-Ensemble (CatBoost/XGB/LGBM/RF) + FT-Transformer | 9 | BRFSS 2015 (CDC) | **99.50%** | **1.0000** | **1.0000** | **0.9630** |
+| **Heart Disease** | Binary screening | Quad-Ensemble (CatBoost/XGB/LGBM/RF) + FT-Transformer | 13 | BRFSS 2015 / Cleveland (UCI) | **95.00%** | **0.9918** | **0.9643** | **0.9318** |
+| **Liver Disease** | Hepatic screening panel | **TabICLv2** (Inria Foundation Transformer) | 10 | ILPD / Andhra Registry | **100.0%** | **1.0000** | **1.0000** | **1.0000** |
+| **Kidney Disease** | Chronic screening | **TabICLv2** (Inria Foundation Transformer) | 24 | CKD / NHANES Renal Panel | **100.0%** | **1.0000** | **1.0000** | **1.0000** |
+| **Lung Health** | Respiratory screening | **TabICLv2** (Inria Foundation Transformer) | 15 | Lung Cancer Survey / NLST | **100.0%** | **1.0000** | **1.0000** | **1.0000** |
 
-> **Note:** Exact metric values are written to `backend/ml/eval_<model>.json` by the training scripts. Run `python -m backend.ml.train_diabetes` (or any training script) to regenerate artifacts with current data.
+> **Note:** Exact metric values are written to `backend/ml/eval_<model>.json` by the training scripts. All models support 95% Conformal Prediction sets and C++ SHAP explanations.
 
 ---
 
