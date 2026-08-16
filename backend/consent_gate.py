@@ -133,11 +133,11 @@ def accept_eula(
     db.commit()
     db.refresh(record)
 
+    clean_version = str(body.eula_version).replace("\r", "").replace("\n", "")[:20]
     logger.info(
-        "EULA v%s accepted by user %d from %s",
-        body.eula_version,
+        "EULA v%s accepted by user %d",
+        clean_version,
         current_user.id,
-        record.ip_address or "unknown",
     )
 
     return {

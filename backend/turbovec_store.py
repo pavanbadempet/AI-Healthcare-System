@@ -131,9 +131,10 @@ class TurboVecVectorStore(VectorStoreBackend):
         try:
             vector = get_embedding(text)
         except Exception:
+            clean_rec_id = str(record_id).replace("\r", "").replace("\n", "")[:50]
             logger.error(
-                "TurboVecVectorStore.add() failed to get embedding for record_id=%r",
-                record_id,
+                "TurboVecVectorStore.add() failed to get embedding for record_id=%s",
+                clean_rec_id,
                 exc_info=True,
             )
             raise
@@ -186,9 +187,10 @@ class TurboVecVectorStore(VectorStoreBackend):
         try:
             self.save()
         except Exception:
+            clean_rec_id = str(record_id).replace("\r", "").replace("\n", "")[:50]
             logger.error(
-                "TurboVecVectorStore.delete() failed to save after removing record_id=%r",
-                record_id,
+                "TurboVecVectorStore.delete() failed to save after removing record_id=%s",
+                clean_rec_id,
                 exc_info=True,
             )
             return False

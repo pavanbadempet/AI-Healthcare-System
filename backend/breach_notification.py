@@ -93,13 +93,14 @@ class BreachNotificationManager:
             phi_involved=phi_involved,
         )
         self._incidents[report.incident_id] = report
+        clean_incident_id = str(report.incident_id).replace("\r", "").replace("\n", "")[:50]
+        clean_severity = str(severity.value).replace("\r", "").replace("\n", "")[:20]
         logger.critical(
-            "SECURITY BREACH REPORTED: %s | Severity: %s | PHI: %s | Affected: %d | Deadline: %s",
-            report.incident_id,
-            severity.value,
-            phi_involved,
-            affected_records,
-            report.notification_deadline.isoformat(),
+            "SECURITY BREACH REPORTED: %s | Severity: %s | PHI: %s | Affected: %d",
+            clean_incident_id,
+            clean_severity,
+            bool(phi_involved),
+            int(affected_records),
         )
         return report
 

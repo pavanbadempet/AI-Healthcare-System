@@ -259,8 +259,9 @@ def _fetch_rxnorm_from_api(code: str) -> Optional[TerminologyConcept]:
                     category="medication",
                     version_note="NLM RxNav Live Lookup",
                 )
-    except Exception as e:
-        logger.warning("RxNorm API lookup failed for CUI %s: %s", code, e)
+    except Exception:
+        clean_code = str(code).replace("\r", "").replace("\n", "")[:30]
+        logger.warning("RxNorm API lookup failed for CUI %s", clean_code)
     return None
 
 

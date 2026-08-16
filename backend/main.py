@@ -713,29 +713,15 @@ if os.path.isdir(_frontend_dist):
     @app.get("/{catchall:path}")
 
     async def serve_frontend(catchall: str, request: Request):
-        import re
-        # Reject any path traversal attempt or illegal characters
-        if not catchall or ".." in catchall or not re.match(r"^[a-zA-Z0-9_\-./]+$", catchall):
+        if not catchall or ".." in catchall:
             raise HTTPException(status_code=404)
 
-        frontend_root = Path(_frontend_dist).resolve()
-        requested_path = (frontend_root / catchall).resolve()
-
-        # Strict containment check
-        try:
-            requested_path.relative_to(frontend_root)
-        except ValueError:
-            raise HTTPException(status_code=404)
-
-        if not str(requested_path).startswith(str(frontend_root)):
-            raise HTTPException(status_code=404)
-
-        # Serve specific static asset if it exists safely within dist directory
-        if requested_path.is_file() and requested_path.exists():
-            return FileResponse(str(requested_path))
-
-        # If requesting a file (with extension) that does not exist, return 404
-        if "." in os.path.basename(catchall):
+        filename = os.path.basename(catchall)
+        if "." in filename:
+            # Only serve if file exists strictly inside frontend dist
+            safe_target = os.path.normpath(os.path.join(_frontend_dist, filename))
+            if os.path.isfile(safe_target) and os.path.dirname(safe_target) == os.path.normpath(_frontend_dist):
+                return FileResponse(safe_target)
             raise HTTPException(status_code=404)
 
         # Fallback to index.html for browser client-side routing

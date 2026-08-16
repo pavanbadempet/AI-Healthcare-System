@@ -95,9 +95,11 @@ def log_clinician_override(
     override_action: str,  # accepted | overridden | ignored
     override_reason: Optional[str] = None,
 ) -> ClinicalAICorrection:
-    """Log an AI decision audit event representing clinician review, validation, or override."""
+    clean_func = str(function_name).replace("\r", "").replace("\n", "")[:50]
+    clean_action = str(override_action).replace("\r", "").replace("\n", "")[:20]
+
     if function_name not in REGISTRY:
-        logger.warning("Logging override for unregistered AI function: %s", function_name)
+        logger.warning("Logging override for unregistered AI function: %s", clean_func)
 
     correction = ClinicalAICorrection(
         patient_id=patient_id,
@@ -112,7 +114,7 @@ def log_clinician_override(
     db.add(correction)
     db.commit()
     db.refresh(correction)
-    logger.info("Recorded AI override event for %s. Action: %s", function_name, override_action)
+    logger.info("Recorded AI override event for %s. Action: %s", clean_func, clean_action)
     return correction
 
 def get_governance_report(db: Session) -> List[Dict[str, Any]]:

@@ -604,8 +604,9 @@ async def _generate_patient_explanation(
             bypass_cache=True
         )
         return explanation.strip()
-    except Exception as e:
-        logger.warning("Failed to generate patient explanation for %s: %s", model_name, e)
+    except Exception:
+        clean_model = str(model_name).replace("\r", "").replace("\n", "")[:30]
+        logger.warning("Failed to generate patient explanation for %s", clean_model)
         return "Patient explanation could not be generated due to an internal system error."
 
 

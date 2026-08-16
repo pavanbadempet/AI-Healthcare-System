@@ -82,7 +82,9 @@ class MultiStageRecommendationPipeline:
             if not is_contra:
                 safe_candidates.append(cand)
             else:
-                logger.debug("Filtered candidate %s due to contraindication: %s", cand.item_id, reason)
+                clean_id = str(cand.item_id).replace("\r", "").replace("\n", "")[:50]
+                clean_reason = str(reason).replace("\r", "").replace("\n", "")[:100]
+                logger.debug("Filtered candidate %s due to contraindication: %s", clean_id, clean_reason)
 
         # If all candidates filtered, fall back to safe subset of raw candidates
         if not safe_candidates:

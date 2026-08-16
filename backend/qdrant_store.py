@@ -134,8 +134,9 @@ class QdrantVectorStore(VectorStoreBackend):
                 points_selector=[point_id]
             )
             return True
-        except Exception as e:
-            logger.error("Failed to delete point %s from Qdrant: %s", record_id, e)
+        except Exception:
+            clean_rec = str(record_id).replace("\r", "").replace("\n", "")[:50]
+            logger.error("Failed to delete point %s from Qdrant", clean_rec)
             return False
 
     def _build_filter(self, filter_meta: Optional[Dict[str, Any]]) -> Optional[Any]:

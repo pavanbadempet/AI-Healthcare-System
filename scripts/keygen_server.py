@@ -110,14 +110,9 @@ async def lemonsqueezy_webhook(request: Request, x_signature: str = Header(None)
     # Generate key
     license_key = licensing.generate_license_key(holder=customer_name, tier=tier, days_valid=days_valid)
 
-    logger.info(
-        "AUTOMATED LICENSE ISSUED: Event=%s, Holder=%s, Email=%s, Tier=%s, Key=%s",
-        event_name,
-        customer_name,
-        customer_email,
-        tier,
-        license_key,
-    )
+    clean_event = str(event_name).replace("\r", "").replace("\n", "")[:30]
+    clean_tier = str(tier).replace("\r", "").replace("\n", "")[:20]
+    logger.info("AUTOMATED LICENSE ISSUED: Event=%s, Tier=%s", clean_event, clean_tier)
 
     # In production, integrate here with SendGrid, Resend, or your email server
     # to mail the license key automatically. For now, we log it so it is retrievable.
