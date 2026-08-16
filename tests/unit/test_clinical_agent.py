@@ -86,15 +86,15 @@ def test_base_agent_github_actions():
             with open(summary_file, "r", encoding="utf-8") as f:
                 content = f.read()
                 assert "# ✅ APEX Agent Execution Summary: GHA Agent" in content
-                assert "Est. Input Tokens" in content
+                assert "Est. Prompt Volume" in content
 
             # Verify outputs written
             assert os.path.exists(output_file)
             with open(output_file, "r", encoding="utf-8") as f:
                 lines = f.read().splitlines()
                 assert "agent_status=completed" in lines
-                assert "input_tokens=1" in lines
-                assert "output_tokens=1" in lines
+                assert "prompt_units_count=1" in lines
+                assert "completion_units_count=1" in lines
 
 
 @pytest.mark.asyncio

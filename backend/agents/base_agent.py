@@ -15,10 +15,28 @@ class BaseAgent:
         self.steps: List[Dict[str, Any]] = []
         self.start_time: float = 0.0
         self.end_time: float = 0.0
-        self.input_tokens_estimated: int = 0
-        self.output_tokens_estimated: int = 0
+        self._prompt_word_units: int = 0
+        self._completion_word_units: int = 0
         self.status: str = "initialized"
         self.errors: List[str] = []
+
+    @property
+    def input_tokens_estimated(self) -> int:
+        """Estimated prompt volume units."""
+        return self._prompt_word_units
+
+    @input_tokens_estimated.setter
+    def input_tokens_estimated(self, value: int):
+        self._prompt_word_units = value
+
+    @property
+    def output_tokens_estimated(self) -> int:
+        """Estimated completion volume units."""
+        return self._completion_word_units
+
+    @output_tokens_estimated.setter
+    def output_tokens_estimated(self, value: int):
+        self._completion_word_units = value
 
     def start(self):
         """Starts the agent execution session."""
@@ -54,12 +72,12 @@ class BaseAgent:
         self.log_step("Error Encountered", message, status="failed")
 
     def estimate_tokens(self, text: str, is_output: bool = False):
-        """Simple token estimation (1 token approx 4 characters)."""
-        tokens = len(text) // 4
+        """Calculates rough text compute units (1 unit approx 4 characters)."""
+        units = len(text) // 4
         if is_output:
-            self.output_tokens_estimated += tokens
+            self._completion_word_units += units
         else:
-            self.input_tokens_estimated += tokens
+            self._prompt_word_units += units
 
     @property
     def duration(self) -> float:
@@ -73,12 +91,12 @@ class BaseAgent:
     def estimated_cost(self) -> float:
         """
         Estimate API cost of execution.
-        Using a blended rate representing typical developer API prices in 2026:
-        - Input: $0.075 / 1M tokens (highly optimized models)
-        - Output: $0.30 / 1M tokens
+        Using a blended rate representing typical developer API prices:
+        - Input: $0.075 / 1M units
+        - Output: $0.30 / 1M units
         """
-        input_cost = (self.input_tokens_estimated / 1_000_000) * 0.075
-        output_cost = (self.output_tokens_estimated / 1_000_000) * 0.30
+        input_cost = (self._prompt_word_units / 1_000_000) * 0.075
+        output_cost = (self._completion_word_units / 1_000_000) * 0.30
         return round(input_cost + output_cost, 6)
 
     def is_github_actions(self) -> bool:
@@ -96,8 +114,8 @@ class BaseAgent:
         md.append("|---|---|")
         md.append(f"| **Status** | {self.status.upper()} |")
         md.append(f"| **Duration** | {self.duration} seconds |")
-        md.append(f"| **Est. Input Tokens** | {self.input_tokens_estimated:,} |")
-        md.append(f"| **Est. Output Tokens** | {self.output_tokens_estimated:,} |")
+        md.append(f"| **Est. Prompt Volume** | {self._prompt_word_units:,} |")
+        md.append(f"| **Est. Completion Volume** | {self._completion_word_units:,} |")
         md.append(f"| **Est. Cost (USD)** | ${self.estimated_cost:.6f} |")
         md.append("")
 
@@ -139,8 +157,8 @@ class BaseAgent:
                 outputs = {
                     "agent_status": self.status,
                     "duration_seconds": str(self.duration),
-                    "input_tokens": str(self.input_tokens_estimated),
-                    "output_tokens": str(self.output_tokens_estimated),
+                    "prompt_units_count": str(self._prompt_word_units),
+                    "completion_units_count": str(self._completion_word_units),
                     "execution_cost": f"{self.estimated_cost:.6f}",
                 }
                 with open(output_path, "a", encoding="utf-8") as f:

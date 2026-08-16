@@ -45,23 +45,36 @@ class RustBridgeEngine:
             return txt
 
     def hash_password_rust(self, password: str) -> str:
-        """Hashes password using Rust native bcrypt or fallback SHA-256."""
+        """Hashes password using Rust native bcrypt or fallback PBKDF2-HMAC-SHA256."""
         try:
             import rust_gateway_ffi
             return rust_gateway_ffi.hash_password_py(password)
         except Exception:
             import hashlib
-            return hashlib.sha256(password.encode("utf-8")).hexdigest()
+            import secrets
+            salt = secrets.token_hex(16)
+            key = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt.encode("utf-8"), 100_000)
+            return f"pbkdf2_sha256$100000${salt}${key.hex()}"
 
     def verify_password_rust(self, password: str, hashed_value: str) -> bool:
-        """Verifies password using Rust native bcrypt or fallback SHA-256 comparison."""
+        """Verifies password using Rust native bcrypt or fallback PBKDF2-HMAC-SHA256 comparison."""
         try:
             import rust_gateway_ffi
             return rust_gateway_ffi.verify_password_py(password, hashed_value)
         except Exception:
             import hashlib
-            computed = hashlib.sha256(password.encode("utf-8")).hexdigest()
-            return computed == hashed_value
+            import hmac
+            try:
+                parts = hashed_value.split("$")
+                if len(parts) == 4 and parts[0] == "pbkdf2_sha256":
+                    iterations = int(parts[1])
+                    salt = parts[2].encode("utf-8")
+                    expected_key = parts[3]
+                    computed_key = hashlib.pbkdf2_hmac("sha256", password.encode("utf-8"), salt, iterations).hex()
+                    return hmac.compare_digest(computed_key, expected_key)
+            except Exception:
+                pass
+            return False
 
     def compute_rust_cosine_similarity(self, vec_a: List[float], vec_b: List[float]) -> RustExecutionMetrics:
         """Computes vector cosine similarity executing Native Rust PyO3 SIMD logic."""
