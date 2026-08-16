@@ -805,8 +805,8 @@ if _pkg_rag is None:
         """Strips basic PII like emails and phone numbers before vector ingestion."""
         if not text:
             return text
-        # Redact emails
-        text = re.sub(r'[\w\.-]+@[\w\.-]+\.\w+', '[EMAIL_REDACTED]', text)
+        # Redact emails (linear-time, ReDoS-safe)
+        text = re.sub(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b', '[EMAIL_REDACTED]', text)
         # Redact simple phone numbers
         text = re.sub(r'\b\d{3}[-.]?\d{3}[-.]?\d{4}\b', '[PHONE_REDACTED]', text)
         return text

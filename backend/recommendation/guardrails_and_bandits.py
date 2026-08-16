@@ -103,4 +103,5 @@ class ContextualThompsonBandit:
             self._posteriors[item_id]["alpha"] = alpha + 1.0
         else:
             self._posteriors[item_id]["beta"] = beta + 1.0
-        logger.info("Bandit updated for %s: Alpha=%.1f, Beta=%.1f", item_id, self._posteriors[item_id]["alpha"], self._posteriors[item_id]["beta"])
+        clean_item_id = str(item_id).replace("\r", "").replace("\n", "")[:50]
+        logger.info("Bandit updated for %s: Alpha=%.1f, Beta=%.1f", clean_item_id, self._posteriors[item_id]["alpha"], self._posteriors[item_id]["beta"])

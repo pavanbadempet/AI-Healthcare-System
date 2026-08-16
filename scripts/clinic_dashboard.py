@@ -188,9 +188,9 @@ def render_dashboard(stream):
     move_cursor(8, 47)
     sys.stdout.write(f"{FG_WHITE}Exception Masking: {FG_GREEN}● HIPAA SECURE{CLR_RESET}")
 
-    # --- Middle Left: Live ICU Vitals Streaming ---
+    # --- Middle Left: Live Simulated Telemetry Stream ---
     move_cursor(10, 3)
-    sys.stdout.write(f"{FG_CYAN}{CLR_BOLD}📡 LIVE PATIENT VITAL CHANNELS (BED 07){CLR_RESET}")
+    sys.stdout.write(f"{FG_CYAN}{CLR_BOLD}📡 SYNTHETIC TELEMETRY CHANNEL (CH-07){CLR_RESET}")
 
     if stream.vitals_history:
         hr, sbp, dbp, spo2, temp = stream.vitals_history[-1]
@@ -200,13 +200,13 @@ def render_dashboard(stream):
         spo2_color = FG_GREEN if spo2 >= 95 else FG_HI_RED
 
         move_cursor(12, 3)
-        sys.stdout.write(f"{FG_WHITE}Heart Rate (PR):    {hr_color}{CLR_BOLD}{hr} bpm{CLR_RESET}   ")
+        sys.stdout.write(f"{FG_WHITE}Telemetry Rate:     {hr_color}{CLR_BOLD}{hr} bpm{CLR_RESET}   ")
         move_cursor(13, 3)
-        sys.stdout.write(f"{FG_WHITE}Blood Pressure:     {FG_GREEN}{sbp}/{dbp} mmHg{CLR_RESET}   ")
+        sys.stdout.write(f"{FG_WHITE}Pressure Wave:      {FG_GREEN}{sbp}/{dbp} mmHg{CLR_RESET}   ")
         move_cursor(14, 3)
-        sys.stdout.write(f"{FG_WHITE}Oxygen Sat (SpO2):  {spo2_color}{CLR_BOLD}{spo2}%{CLR_RESET}      ")
+        sys.stdout.write(f"{FG_WHITE}O2 Saturation:      {spo2_color}{CLR_BOLD}{spo2}%{CLR_RESET}      ")
         move_cursor(15, 3)
-        sys.stdout.write(f"{FG_WHITE}Body Temperature:   {FG_GREEN}{temp:.1f} °F{CLR_RESET}   ")
+        sys.stdout.write(f"{FG_WHITE}Thermal Index:      {FG_GREEN}{temp:.1f} °F{CLR_RESET}   ")
 
     # --- Middle Right: ML Inference Diagnostics ---
     move_cursor(10, 42)

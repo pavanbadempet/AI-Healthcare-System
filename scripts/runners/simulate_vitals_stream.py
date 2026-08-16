@@ -76,7 +76,7 @@ def generate_vitals(patient, anomaly_rate):
 
     if is_anomaly:
         anomaly_type = random.choice(["hypoxia", "tachycardia", "hypertension", "fever"])
-        print(f"Generating clinical anomaly [{anomaly_type}] for patient {patient['patient_id']}")
+        print(f"Generating synthetic clinical anomaly [{anomaly_type}] for telemetry stream")
 
         if anomaly_type == "hypoxia":
             heart_rate = float(random.randint(105, 130))

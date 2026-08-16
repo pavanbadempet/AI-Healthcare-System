@@ -37,7 +37,7 @@ def fhir_patient(payload: Dict[str, Any]):
     try:
         return fhir_lib.patient_resource(patient_obj)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="FHIR resource processing failed")
 
 @app.post("/fhir/encounter")
 def fhir_encounter(payload: Dict[str, Any]):
@@ -47,7 +47,7 @@ def fhir_encounter(payload: Dict[str, Any]):
     try:
         return fhir_lib.encounter_resource(encounter_obj, patient_id)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="FHIR resource processing failed")
 
 @app.post("/fhir/observation")
 def fhir_observation(payload: Dict[str, Any]):
@@ -57,7 +57,7 @@ def fhir_observation(payload: Dict[str, Any]):
     try:
         return fhir_lib.observation_resource(observation_obj, patient_id)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="FHIR resource processing failed")
 
 @app.post("/fhir/diagnostic_report")
 def fhir_diagnostic_report(payload: Dict[str, Any]):
@@ -67,7 +67,7 @@ def fhir_diagnostic_report(payload: Dict[str, Any]):
     try:
         return fhir_lib.diagnostic_report_resource(result_obj, patient_id)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="FHIR resource processing failed")
 
 @app.post("/fhir/medication_request")
 def fhir_medication_request(payload: Dict[str, Any]):
@@ -77,7 +77,7 @@ def fhir_medication_request(payload: Dict[str, Any]):
     try:
         return fhir_lib.medication_request_resource(prescription_obj, patient_id)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="FHIR resource processing failed")
 
 @app.post("/fhir/invoice")
 def fhir_invoice(payload: Dict[str, Any]):
@@ -87,7 +87,7 @@ def fhir_invoice(payload: Dict[str, Any]):
     try:
         return fhir_lib.invoice_resource(invoice_obj, patient_id)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="FHIR resource processing failed")
 
 @app.post("/fhir/care_event")
 def fhir_care_event(payload: Dict[str, Any]):
@@ -97,7 +97,7 @@ def fhir_care_event(payload: Dict[str, Any]):
     try:
         return fhir_lib.care_event_resource(event_obj, patient_id)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="FHIR resource processing failed")
 
 @app.post("/fhir/build_bundle")
 def fhir_build_bundle(payload: Dict[str, Any]):
@@ -105,7 +105,7 @@ def fhir_build_bundle(payload: Dict[str, Any]):
     try:
         return fhir_lib.build_bundle(resources)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="FHIR resource processing failed")
 
 @app.post("/fhir/audit_event")
 def fhir_audit_event(payload: Dict[str, Any]):
@@ -114,7 +114,7 @@ def fhir_audit_event(payload: Dict[str, Any]):
     try:
         return fhir_lib.audit_event_resource(audit_obj)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="FHIR resource processing failed")
 
 # --- ABDM Endpoints ---
 
@@ -131,21 +131,21 @@ def abdm_settings():
             "missing_keys": settings.missing_for_submission()
         }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="FHIR resource processing failed")
 
 @app.get("/abdm/readiness")
 def abdm_readiness():
     try:
         return abdm_lib.get_readiness()
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="FHIR resource processing failed")
 
 @app.post("/abdm/consent/callback")
 def abdm_consent_callback(payload: Dict[str, Any]):
     try:
         return abdm_lib.normalize_consent_callback(payload)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="FHIR resource processing failed")
 
 @app.post("/abdm/consent/request")
 def abdm_consent_request(payload: Dict[str, Any]):
@@ -163,7 +163,7 @@ def abdm_consent_request(payload: Dict[str, Any]):
         )
         return res
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="FHIR resource processing failed")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8003)

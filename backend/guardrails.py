@@ -136,9 +136,7 @@ def redact_pii_from_text(text: str) -> str:
 # ---------------------------------------------------------------------------
 
 # HTML/Script injection patterns
-_SCRIPT_TAG_RE = re.compile(r"<\s*script[^>]*>.*?</\s*script\s*>", re.IGNORECASE | re.DOTALL)
-_HTML_TAG_RE = re.compile(r"<[^>]+>")
-_EVENT_HANDLER_RE = re.compile(r"\bon\w+\s*=", re.IGNORECASE)
+_EVENT_HANDLER_RE = re.compile(r"\bon[a-zA-Z]+\s*=", re.IGNORECASE)
 _JAVASCRIPT_URI_RE = re.compile(r"javascript\s*:", re.IGNORECASE)
 
 # SQL injection patterns (basic detection)
@@ -154,29 +152,23 @@ def sanitize_input(text: str) -> str:
     """
     Sanitize user input by stripping potentially dangerous content.
 
-    - Removes script tags and HTML event handlers
-    - Escapes remaining HTML entities
+    - Escapes HTML entities using html.escape to prevent XSS
+    - Strips javascript URIs and event handlers
     - Does NOT alter clinical/medical content
     """
     if not text:
         return ""
 
-    # Remove script tags entirely
-    text = _SCRIPT_TAG_RE.sub("", text)
-
     # Remove HTML event handlers (onclick=, onerror=, etc.)
-    text = _EVENT_HANDLER_RE.sub("", text)
+    cleaned = _EVENT_HANDLER_RE.sub("", text)
 
     # Remove javascript: URIs
-    text = _JAVASCRIPT_URI_RE.sub("", text)
+    cleaned = _JAVASCRIPT_URI_RE.sub("", cleaned)
 
-    # Strip remaining HTML tags
-    text = _HTML_TAG_RE.sub("", text)
+    # Escape HTML to prevent XSS safely without flawed tag-stripping regexes
+    cleaned = html.escape(cleaned)
 
-    # Escape any remaining HTML entities for safe rendering
-    text = html.unescape(text)
-
-    return text.strip()
+    return cleaned.strip()
 
 
 def contains_sql_injection(text: str) -> bool:

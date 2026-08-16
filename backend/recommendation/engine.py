@@ -56,11 +56,12 @@ class MultiStageRecommendationPipeline:
         start_time = time.perf_counter()
         patient = request.patient_context
         domain = request.domain
-        top_k = request.top_k
+        top_k = int(request.top_k)
         div_lambda = request.diversity_lambda
         enable_exploration = request.enable_exploration
 
-        logger.info("Executing 4-stage recommendation (domain=%s, top_k=%d)", domain, top_k)
+        clean_domain = str(domain).replace("\r", "").replace("\n", "")[:50]
+        logger.info("Executing 4-stage recommendation (domain=%s, top_k=%d)", clean_domain, top_k)
 
         # ---------------------------------------------------------------------
         # STAGE 1: Two-Tower Candidate Retrieval (Retrieve top candidates)

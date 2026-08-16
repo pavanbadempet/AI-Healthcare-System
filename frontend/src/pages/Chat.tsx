@@ -52,11 +52,14 @@ export default function ChatCopilotPage() {
     
     try {
       setPlayingId(msgId);
-      // Clean text of html tags, markdown characters, etc.
-      const cleanText = text
-        .replace(/<[^>]*>/g, "")
-        .replace(/[\*\_`#]/g, "")
-        .trim();
+      // Clean text of html tags, markdown characters, etc. safely
+      let cleanText = text;
+      let prev = '';
+      while (cleanText !== prev) {
+        prev = cleanText;
+        cleanText = cleanText.replace(/<[^>]*>/g, '');
+      }
+      cleanText = cleanText.replace(/[*_`#]/g, '').trim();
         
       const apiBase = import.meta.env.VITE_PUBLIC_API_URL || "";
       const response = await fetch(`${apiBase}/v1/audio/tts`, {

@@ -2,7 +2,9 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Clinical Platform Core Flows', () => {
   test('User Signup, Login, Dashboard, and CASA Scheduling Agent flow', async ({ page }) => {
-    const suffix = Math.random().toString(36).substring(2, 10);
+    const suffix = (typeof crypto !== 'undefined' && crypto.randomUUID)
+      ? crypto.randomUUID().replace(/-/g, '').substring(0, 8)
+      : Date.now().toString(36);
     const username = `fe_e2e_${suffix}`;
     const email = `fe_e2e_${suffix}@clinical.invalid`;
 

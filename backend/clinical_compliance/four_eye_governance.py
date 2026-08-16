@@ -103,8 +103,8 @@ class FourEyeGovernanceEngine:
 
         self._requests[request_id] = req
         logger.info(
-            "Submitted Four-Eye Check request %s for action %s",
-            request_id, action_type.value
+            "Submitted Four-Eye Check request for action %s",
+            str(action_type.value).replace("\r", "").replace("\n", "")
         )
         return req
 
@@ -122,19 +122,16 @@ class FourEyeGovernanceEngine:
         Enforces rule: reviewer_id != initiator_doctor_id (Strict Anti-Self-Approval Gate).
         """
         if request_id not in self._requests:
-            raise ValueError(f"Four-Eye Check request {request_id} not found.")
+            raise ValueError("Four-Eye Check request not found.")
 
         req = self._requests[request_id]
 
         if req.status != FourEyeStatus.PENDING_PEER_REVIEW:
-            raise ValueError(f"Request {request_id} is already in state: {req.status.value}")
+            raise ValueError(f"Request is already in state: {req.status.value}")
 
         # Strict Anti-Self-Approval Rule
         if reviewer_id == req.initiator_doctor_id:
-            logger.warning(
-                "Rejected self-approval attempt on Four-Eye Check %s",
-                request_id
-            )
+            logger.warning("Rejected self-approval attempt on Four-Eye Check")
             raise PermissionError("Four-Eye Policy Violation: Initiating clinician cannot peer-approve their own request.")
 
         now_str = datetime.now(timezone.utc).isoformat()
@@ -149,8 +146,8 @@ class FourEyeGovernanceEngine:
         )
 
         logger.info(
-            "Four-Eye Check request %s reviewed -> Status: %s",
-            request_id, req.status.value
+            "Four-Eye Check request reviewed -> Status: %s",
+            str(req.status.value).replace("\r", "").replace("\n", "")
         )
         return req
 

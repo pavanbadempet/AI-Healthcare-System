@@ -87,8 +87,8 @@ def log_clinical_access_event(
 
     # Output to standard logger securely (safe from exposing PII, logs only reference IDs)
     logger.info(
-        "HIPAA Access Audit: Action=%s, Actor=%s, PatientReference=Patient/%d, Outcome=%s",
-        action, actor_id, patient_id, outcome_desc
+        "HIPAA Access Audit: Action=%s, Outcome=%s",
+        action, outcome_desc
     )
 
     return audit_event

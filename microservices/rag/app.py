@@ -112,16 +112,16 @@ def add_document(input_data: AddInput):
             input_data.record_id
         )
         return {"status": "success"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=500, detail="Document ingestion failed")
 
 @app.get("/prompt/get")
 def get_prompt(name: str):
     try:
         prompt_text = prompt_lib.get_prompt(name)
         return {"prompt": prompt_text}
-    except Exception as e:
-        raise HTTPException(status_code=404, detail=str(e))
+    except Exception:
+        raise HTTPException(status_code=404, detail="Requested prompt template not found")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8002)

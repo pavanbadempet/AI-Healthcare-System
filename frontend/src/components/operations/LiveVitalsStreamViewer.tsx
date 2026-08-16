@@ -25,7 +25,13 @@ export const LiveVitalsStreamViewer: React.FC = () => {
     const interval = setInterval(() => {
       setTelemetryList((prev) =>
         prev.map((item) => {
-          const hrDelta = Math.floor(Math.random() * 5) - 2;
+          const randArray = new Uint32Array(1);
+          if (typeof window !== 'undefined' && window.crypto) {
+            window.crypto.getRandomValues(randArray);
+          } else {
+            randArray[0] = Date.now();
+          }
+          const hrDelta = (randArray[0] % 5) - 2;
           const newHr = Math.max(50, Math.min(160, item.heartRate + hrDelta));
           const newStatus = newHr > 110 ? 'WARNING' : 'STABLE';
           return {

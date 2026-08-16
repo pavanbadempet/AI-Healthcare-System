@@ -501,8 +501,8 @@ async def agent_stream_endpoint(
                     if time.time() - last_activity >= 15.0:
                         yield ":heartbeat (keepalive)\n\n"
                         last_activity = time.time()
-        except Exception as e:
-            yield f"data: {json.dumps({'error': str(e), 'status': 'error'})}\n\n"
+        except Exception:
+            yield f"data: {json.dumps({'error': 'Voice streaming encountered an internal error', 'status': 'error'})}\n\n"
         finally:
             if stream_task and not stream_task.done():
                 stream_task.cancel()

@@ -103,10 +103,8 @@ def main():
     for fpath in staged:
         violations = scan_file(fpath)
         if violations:
-            for line_no, secret_type, snippet in violations:
-                masked = (snippet[:3] + "***") if len(snippet) > 3 else "***"
-                print(f"[BLOCKED] {secret_type} detected in {fpath} (Line {line_no})")
-                print(f"   Snippet (Masked): {masked}")
+            for line_no, secret_type, _ in violations:
+                print(f"[BLOCKED] Potential secret detected in {fpath} (Line {line_no}) - Type: {secret_type}")
                 total_violations += 1
 
     if total_violations > 0:

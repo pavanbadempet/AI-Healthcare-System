@@ -601,8 +601,8 @@ async def time_predict(background_tasks: BackgroundTasks):
         )
         timings["narrative_and_explanation"] = time.time() - start
 
-    except Exception as e:
-        timings["error"] = str(e)
+    except Exception:
+        timings["error"] = "Benchmark execution encountered an internal error"
     finally:
         db.close()
 
@@ -713,15 +713,25 @@ if os.path.isdir(_frontend_dist):
     @app.get("/{catchall:path}")
 
     async def serve_frontend(catchall: str, request: Request):
+        import re
+        # Reject any path traversal attempt or illegal characters
+        if not catchall or ".." in catchall or not re.match(r"^[a-zA-Z0-9_\-./]+$", catchall):
+            raise HTTPException(status_code=404)
+
         frontend_root = Path(_frontend_dist).resolve()
         requested_path = (frontend_root / catchall).resolve()
+
+        # Strict containment check
         try:
             requested_path.relative_to(frontend_root)
         except ValueError:
             raise HTTPException(status_code=404)
 
-        # Serve specific file if it exists inside the dist directory (e.g., favicon.ico)
-        if requested_path.is_file():
+        if not str(requested_path).startswith(str(frontend_root)):
+            raise HTTPException(status_code=404)
+
+        # Serve specific static asset if it exists safely within dist directory
+        if requested_path.is_file() and requested_path.exists():
             return FileResponse(str(requested_path))
 
         # If requesting a file (with extension) that does not exist, return 404

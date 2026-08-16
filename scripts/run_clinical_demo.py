@@ -202,7 +202,7 @@ def main():
 
     # Define an async event listener
     async def on_vitals_recorded(payload: dict):
-        print(f"{YELLOW}[EventBus Handler] Received VITALS_RECORDED event for patient ID: {payload['patient_id']}{RESET}")
+        print(f"{YELLOW}[EventBus Handler] Received VITALS_RECORDED event{RESET}")
         print(f"  --> Heart Rate: {payload['hr']} bpm, SpO2: {payload['spo2']}%")
 
     print("Subscribing clinical listener to VITALS_RECORDED topic...")
@@ -258,13 +258,13 @@ def main():
             {"cpt": "90837", "charge": 150.0, "date": "2026-07-16", "units": 1, "diagnosis_pointer": [1]}
         ]
     )
-    print(f"{GREEN}[OK] Compiled Claim (NPI: {claim.provider_npi}, CPTs: {[p['cpt'] for p in claim.procedures]}){RESET}")
+    print(f"{GREEN}[OK] Compiled Claim (CPTs: {[p['cpt'] for p in claim.procedures]}){RESET}")
 
     print("\nRunning preflight claims denial risk evaluator...")
     audit_res = analyse_denial_risk(claim)
     print(f"Risk Assessment: {BOLD}{audit_res['denial_risk']}{RESET}")
     print(f"Passed Preflight: {BOLD}{audit_res['passed_preflight']}{RESET}")
-    print(f"Validation Warnings: {BOLD}{audit_res['warnings']}{RESET}")
+    print(f"Validation Check: {BOLD}{'Clean' if not audit_res['warnings'] else 'Issues flagged'}{RESET}")
 
     # ------------------------------------------------------------------
     # Step 6: Delta Lake Medallion Ingestion & Spark Data Quality

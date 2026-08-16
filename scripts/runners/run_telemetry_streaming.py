@@ -347,7 +347,7 @@ def process_conformed_record(db, record, avg_stats=None, heart_risk=None, lung_r
 
     alert_summary = " ".join(summary)
     if trigger_alert:
-        logger.warning(f"ALERT! Patient {patient_id} - {title}: {alert_summary}")
+        logger.warning(f"ALERT! Clinical Monitoring - {title}: {alert_summary}")
 
         if flush:
             signal = MonitoringSignal(

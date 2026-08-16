@@ -122,10 +122,14 @@ class BaseAgent:
     def write_github_step_summary(self):
         """Writes the Markdown summary report directly to the Job Summary page."""
         summary_path = os.getenv("GITHUB_STEP_SUMMARY")
-        if summary_path:
+        if summary_path and os.path.exists(os.path.dirname(os.path.abspath(summary_path))):
             try:
+                import re
+                summary = self.get_summary_markdown()
+                # Sanitize any accidental sensitive tokens
+                sanitized_summary = re.sub(r"\b\d{3}-\d{2}-\d{4}\b", "[REDACTED]", summary)
                 with open(summary_path, "a", encoding="utf-8") as f:
-                    f.write("\n" + self.get_summary_markdown() + "\n")
+                    f.write("\n" + sanitized_summary + "\n")
             except Exception as e:
                 print(f"Warning: Failed to write to GITHUB_STEP_SUMMARY: {e}")
 

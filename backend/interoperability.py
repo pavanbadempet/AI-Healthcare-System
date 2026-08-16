@@ -856,9 +856,9 @@ def prepare_abdm_consent_request(
             submit=payload.submit,
         )
     except abdm.ABDMValidationError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
+        raise HTTPException(status_code=400, detail="Invalid ABDM consent request parameters.") from exc
     except abdm.ABDMConfigurationError as exc:
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        raise HTTPException(status_code=503, detail="ABDM service integration is temporarily unavailable.") from exc
     result["patient_id"] = payload.patient_id
     return result
 
