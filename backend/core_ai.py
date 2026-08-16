@@ -888,13 +888,15 @@ async def _stream_cloud(messages: list[dict], system: str, model: Optional[str],
                 break
             try:
                 data = json.loads(data_str)
-                # Some APIs use choices[0].delta.content
+                # Support both standard OpenAI delta format and native Cloudflare Workers AI format
                 choices = data.get("choices", [])
                 if choices:
                     delta = choices[0].get("delta", {})
                     chunk = delta.get("content")
                     if chunk:
                         yield chunk
+                elif "response" in data and data.get("response"):
+                    yield data.get("response")
             except Exception:
                 pass
 

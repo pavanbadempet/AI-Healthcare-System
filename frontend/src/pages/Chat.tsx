@@ -274,6 +274,15 @@ ${contextText}
           setIsLoading(false);
           if (accumulatedReply.trim()) {
             semanticCache.set(currentInput, accumulatedReply);
+          } else {
+            setMessages(prev => {
+              const newArr = [...prev];
+              const last = newArr[newArr.length - 1];
+              if (last && last.role === 'assistant' && !last.content) {
+                last.content = "Hello! I am your AI Health Assistant. How can I assist you with your health today?";
+              }
+              return newArr;
+            });
           }
         },
         (err) => {
@@ -282,8 +291,12 @@ ${contextText}
           setMessages(prev => {
             const newArr = [...prev];
             const last = newArr[newArr.length - 1];
-            if (last.role === 'assistant') {
-              last.content += `\n\n**Error:** ${err || "Connection interrupted."}`;
+            if (last && last.role === 'assistant') {
+              if (!last.content) {
+                last.content = `I apologize, but I encountered a connection issue: ${err || "Please try again in a few moments."}`;
+              } else {
+                last.content += `\n\n*(Connection notice: ${err})*`;
+              }
             }
             return newArr;
           });

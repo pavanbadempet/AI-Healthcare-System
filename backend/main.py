@@ -46,8 +46,16 @@ def _load_allowed_hosts() -> list[str]:
     if os.getenv("TESTING", "").strip().lower() in {"1", "true", "yes", "on"}:
         return ["127.0.0.1", "testserver"]
 
-    # If running in Hugging Face Spaces, allow all hosts to prevent header routing blocks
-    if os.getenv("SPACE_ID") or os.getenv("SPACE_NAME") or os.getenv("HF_SPACE") or os.getenv("RUNNING_IN_HF_SPACE"):
+    # If running in Hugging Face Spaces, Render, or Containerized cloud, allow all host headers
+    if (
+        os.getenv("SPACE_ID")
+        or os.getenv("SPACE_NAME")
+        or os.getenv("HF_SPACE")
+        or os.getenv("RUNNING_IN_HF_SPACE")
+        or os.getenv("PORT")
+        or os.getenv("RENDER")
+        or os.getenv("DOCKER_CONTAINER")
+    ):
         return ["*"]
 
     configured_hosts = [
