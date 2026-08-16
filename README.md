@@ -48,8 +48,34 @@ The platform provides native **HL7 FHIR R4** and **OHDSI OMOP CDM v5.4** compati
 </p>
 
 <a href="https://codespaces.new/pavanbadempet/AI-Healthcare-System"><img src="https://github.com/codespaces/badge.svg" alt="Open in GitHub Codespaces" height="32"/></a>
+&nbsp;
+<a href="https://huggingface.co/spaces/pavanbadempet/ai-healthcare-system"><img src="https://img.shields.io/badge/🚀%20Live%20Demo-Hugging%20Face%20Space-yellow?style=for-the-badge&logo=huggingface" height="32" alt="Live Demo"/></a>
+&nbsp;
+<a href="https://github.com/pavanbadempet/AI-Healthcare-System/stargazers"><img src="https://img.shields.io/badge/⭐%20Star%20on%20GitHub-Free%20&%20Open%20Source-blue?style=for-the-badge&logo=github" height="32" alt="Star on GitHub"/></a>
 
 </div>
+
+---
+
+### ⚡ 30-Second Quickstart (1-Click Interactive Demo)
+
+Experience the entire clinical intelligence stack locally with a single command (auto-provisions mock EHR database, pre-loads TabICLv2 & Quad-Ensemble weights, and opens the React 19 workstation):
+
+```bash
+# Clone the repository
+git clone https://github.com/pavanbadempet/AI-Healthcare-System.git
+cd AI-Healthcare-System
+
+# Run with Bun (Instant 1-Click Interactive Demo)
+bun run demo
+
+# Or with standard Python
+python scripts/demo_quickstart.py
+```
+
+> **Live Demo & Sandbox**: If you don't have a local environment, test it instantly on **[🤗 Hugging Face Spaces](https://huggingface.co/spaces/pavanbadempet/ai-healthcare-system)** or **[GitHub Codespaces](https://codespaces.new/pavanbadempet/AI-Healthcare-System)**.
+
+---
 
 ### 🚀 Core Platform Specifications
 
@@ -67,6 +93,7 @@ The platform provides native **HL7 FHIR R4** and **OHDSI OMOP CDM v5.4** compati
 | **⚡ Edge & Gateway** | Rust Gateway PID 1 proxy, PyO3 FFI direct bindings, C-accelerated serialization (<1ms), Bun toolchain |
 | **💼 Commercial Licensing**| 100% Open-Source & Sovereign (Zero token locks), Air-gapped B2B perpetual keys, zero SaaS fees |
 | **🔐 HIPAA DevSecOps** | Hardware TEE enclaves, PII redaction filters, Docker, AWS EKS, SOC 2 compliance harness |
+| **📣 Promotion & Growth**| [🚀 Launch & Star Growth Playbook](docs/LAUNCH_AND_PROMOTION_PLAYBOOK.md) with ready-to-use posts for HN, Reddit & X |
 
 <!-- SEO: H1 is critical for search engines. The banner serves as the visual title. -->
 <!-- AI Healthcare System — Open-Source HIPAA-Compliant Clinical AI & EHR Platform -->

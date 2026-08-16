@@ -7,6 +7,7 @@
     "frontend"
   ],
   "scripts": {
+    "demo": "python scripts/demo_quickstart.py",
     "dev": "bun run --cwd frontend dev",
     "build": "bun run --cwd frontend build",
     "start": "bun run --cwd frontend start",
