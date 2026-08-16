@@ -1,6 +1,9 @@
 import sys
+
 if hasattr(sys.stdout, 'reconfigure'): sys.stdout.reconfigure(encoding='utf-8', errors='replace')
-import duckdb, json, os, pandas as pd
+
+import duckdb
+import pandas as pd
 
 print('=' * 75)
 print('🏛️ DATABRICKS DELTA LAKE: PATIENT SEARCH & QUERY AGGREGATION AUDIT')
@@ -28,7 +31,7 @@ print(con.execute("SELECT event_id, patient_name, search_query, user_id, event_t
 
 print('\n[2. GOLD LAYER GROUPBY AGGREGATIONS (Counts, Duplicate Searches, & Activity for Specific Person)]')
 gold_query = """
-SELECT 
+SELECT
     patient_name,
     COUNT(*) as total_events_count,
     COUNT(CASE WHEN event_type = 'patient_search' THEN 1 END) as search_count,
@@ -45,7 +48,7 @@ print(df_gold.to_string(index=False))
 
 print('\n[3. DRILL-DOWN: SPECIFIC SEARCH QUERY BREAKDOWN FOR "Robert M."]')
 robert_query = """
-SELECT 
+SELECT
     patient_name,
     search_query,
     COUNT(*) as duplicate_query_frequency,

@@ -4,9 +4,9 @@ Launches the complete clinical stack with zero friction and zero setup.
 """
 
 import os
+import subprocess
 import sys
 import time
-import subprocess
 import webbrowser
 from pathlib import Path
 
@@ -18,7 +18,7 @@ def check_environment():
     print("=" * 65)
     print("\n[1/4] Checking Python & Node/Bun environment...")
     print(f"  -> Python {sys.version.split()[0]} ({sys.executable})")
-    
+
     # Check bun or npm
     has_bun = False
     try:
@@ -28,7 +28,7 @@ def check_environment():
             has_bun = True
     except FileNotFoundError:
         pass
-    
+
     if not has_bun:
         try:
             res = subprocess.run(["npm", "--version"], capture_output=True, text=True, check=False)
@@ -36,7 +36,7 @@ def check_environment():
                 print(f"  -> Node.js npm {res.stdout.strip()} detected")
         except FileNotFoundError:
             print("  [!] Warning: Neither Bun nor Node/npm found on PATH.")
-            
+
     return has_bun
 
 def verify_and_seed_database():
@@ -45,8 +45,7 @@ def verify_and_seed_database():
     if not db_path.exists():
         print("  -> Initializing fresh SQLite clinical database...")
         try:
-            from backend.database import engine, Base
-            import backend.models as models
+            from backend.database import Base, engine
             Base.metadata.create_all(bind=engine)
             print("  -> Database tables created successfully.")
         except Exception as e:
@@ -74,34 +73,34 @@ def start_services(has_bun):
     print("\n[4/4] Starting FastAPI backend & React frontend...")
     env = os.environ.copy()
     env["PYTHONPATH"] = str(REPO_ROOT)
-    
+
     # 1. Start Backend
     backend_cmd = [sys.executable, "-m", "uvicorn", "backend.main:app", "--host", "127.0.0.1", "--port", "8000"]
     print(f"  -> Launching Backend: {' '.join(backend_cmd)}")
     backend_proc = subprocess.Popen(backend_cmd, cwd=str(REPO_ROOT), env=env)
-    
+
     # 2. Start Frontend
     if has_bun:
         frontend_cmd = ["bun", "run", "--cwd", "frontend", "dev"]
     else:
         frontend_cmd = ["npm", "--prefix", "frontend", "run", "dev"]
-        
+
     print(f"  -> Launching Frontend: {' '.join(frontend_cmd)}")
     frontend_proc = subprocess.Popen(frontend_cmd, cwd=str(REPO_ROOT), env=env)
-    
+
     print("\n" + "=" * 65)
     print("  ALL SERVICES RUNNING!")
     print("  Backend API:  http://127.0.0.1:8000/docs")
     print("  Frontend App: http://127.0.0.1:3000")
     print("=" * 65)
     print("\nOpening browser in 3 seconds... (Press Ctrl+C to stop)")
-    
+
     time.sleep(3)
     try:
         webbrowser.open("http://127.0.0.1:3000")
     except Exception:
         pass
-        
+
     try:
         while True:
             time.sleep(1)

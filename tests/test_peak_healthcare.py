@@ -8,16 +8,17 @@ Comprehensive Test Suite for Peak Healthcare Intelligence:
 
 import pytest
 from fastapi.testclient import TestClient
-from backend.main import app
-from backend.schemas.peak_healthcare import (
-    DigitalTwinSimulationRequest,
-    PharmacogenomicProfile,
-    PharmacogenomicEvaluationRequest,
-    ClinicalCouncilDeliberationRequest
-)
-from backend.clinical_digital_twin import digital_twin_engine
-from backend.precision_pharmacogenomics import pharmacogenomics_engine
+
 from backend.agents.clinical_consensus_council import clinical_council
+from backend.clinical_digital_twin import digital_twin_engine
+from backend.main import app
+from backend.precision_pharmacogenomics import pharmacogenomics_engine
+from backend.schemas.peak_healthcare import (
+    ClinicalCouncilDeliberationRequest,
+    DigitalTwinSimulationRequest,
+    PharmacogenomicEvaluationRequest,
+    PharmacogenomicProfile,
+)
 
 
 @pytest.fixture
@@ -72,11 +73,11 @@ def sample_council_request():
 def test_digital_twin_trajectory_simulation(sample_twin_request):
     """Verifies that the Digital Twin engine projects 10-year multi-organ trajectories."""
     resp = digital_twin_engine.simulate_10_year_trajectory(sample_twin_request)
-    
+
     assert resp.patient_id == "TWIN-PAT-101"
     assert resp.simulation_horizon_years == 10
     assert resp.overall_longevity_gain_years > 0.0
-    
+
     for organ_name in ["cardiovascular", "renal", "metabolic", "hepatic"]:
         organ_traj = getattr(resp, organ_name)
         assert organ_traj.organ == organ_name
@@ -90,19 +91,19 @@ def test_digital_twin_trajectory_simulation(sample_twin_request):
 def test_precision_pharmacogenomics_cpic_evaluation(sample_pgx_request):
     """Verifies CPIC Level A detection for critical gene-drug metabolic interactions."""
     resp = pharmacogenomics_engine.evaluate(sample_pgx_request)
-    
+
     assert resp.patient_id == "PGX-PAT-202"
     assert resp.total_drugs_analyzed == 4
     assert resp.has_critical_contraindications is True
-    
+
     clopidogrel_rep = next(r for r in resp.evaluations if "clopidogrel" in r.drug_name.lower())
     assert "CYP2C19" in clopidogrel_rep.relevant_gene
     assert "AVOID CLOPIDOGREL" in clopidogrel_rep.recommended_dosage_adjustment
-    
+
     simvastatin_rep = next(r for r in resp.evaluations if "simvastatin" in r.drug_name.lower())
     assert "SLCO1B1" in simvastatin_rep.relevant_gene
     assert "RHABDOMYOLYSIS" in simvastatin_rep.recommended_dosage_adjustment
-    
+
     abacavir_rep = next(r for r in resp.evaluations if "abacavir" in r.drug_name.lower())
     assert "HLA-B*5701" in abacavir_rep.relevant_gene
     assert "ABSOLUTELY CONTRAINDICATED" in abacavir_rep.recommended_dosage_adjustment
@@ -111,12 +112,12 @@ def test_precision_pharmacogenomics_cpic_evaluation(sample_pgx_request):
 def test_clinical_consensus_council_deliberation(sample_council_request):
     """Verifies multi-agent swarm deliberation across 5 medical specialties and safety synthesis."""
     resp = clinical_council.deliberate_and_synthesize(sample_council_request)
-    
+
     assert resp.patient_id == "COUNCIL-PAT-303"
     assert len(resp.specialist_opinions) == 5
     assert resp.consensus_confidence > 0.85
     assert len(resp.unified_care_plan) > 0
-    
+
     # Check that dual RAS blockade flag was caught by pharmacist
     assert any("Concurrent ACEI and ARB" in alert for alert in resp.critical_safety_alerts)
 
@@ -124,21 +125,21 @@ def test_clinical_consensus_council_deliberation(sample_council_request):
 def test_peak_healthcare_fastapi_endpoints(sample_twin_request, sample_pgx_request, sample_council_request):
     """Verifies HTTP REST API endpoints for all peak healthcare capabilities."""
     client = TestClient(app)
-    
+
     # 1. Digital twin simulation endpoint
     res_twin = client.post("/v1/digital-twin/simulate", json=sample_twin_request.model_dump())
     assert res_twin.status_code == 200
     data_twin = res_twin.json()
     assert "cardiovascular" in data_twin
     assert data_twin["overall_longevity_gain_years"] > 0
-    
+
     # 2. Pharmacogenomics evaluation endpoint
     res_pgx = client.post("/v1/pharmacogenomics/evaluate", json=sample_pgx_request.model_dump())
     assert res_pgx.status_code == 200
     data_pgx = res_pgx.json()
     assert data_pgx["has_critical_contraindications"] is True
     assert len(data_pgx["evaluations"]) == 4
-    
+
     # 3. Clinical council deliberation endpoint
     res_council = client.post("/v1/clinical-council/deliberate", json=sample_council_request.model_dump())
     assert res_council.status_code == 200

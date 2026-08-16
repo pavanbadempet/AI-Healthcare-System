@@ -3,18 +3,15 @@ Unit tests for the Four-Eye Clinical Governance Engine and Multi-Level AI Guardi
 """
 
 import pytest
-from fastapi.testclient import TestClient
 
-from backend import models
-from backend.clinical_compliance.four_eye_governance import (
-    FourEyeActionType,
-    FourEyeStatus,
-    FourEyeGovernanceEngine,
-)
 from backend.ai_governance_guardian import (
     MultiLevelAIGovernanceGuardian,
 )
-from backend.main import app
+from backend.clinical_compliance.four_eye_governance import (
+    FourEyeActionType,
+    FourEyeGovernanceEngine,
+    FourEyeStatus,
+)
 
 
 @pytest.fixture

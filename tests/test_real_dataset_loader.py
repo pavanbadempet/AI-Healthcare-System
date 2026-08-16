@@ -5,8 +5,7 @@ Test Suite for Real Clinical Dataset Loader & Standardized Cohort Generator:
 - Unified Multi-Condition Clinical Cohort Generation (Epidemiological Co-variance)
 """
 
-import pytest
-from backend.data_platform.real_dataset_loader import real_dataset_loader, RealClinicalDatasetLoader
+from backend.data_platform.real_dataset_loader import real_dataset_loader
 
 
 def test_cdc_diabetes_dataset_loading():

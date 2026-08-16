@@ -6,12 +6,12 @@ Comprehensive Test Suite for Peak Healthcare Data Engineering:
 - Lakehouse Data Engineering FastAPI Endpoints
 """
 
-import pytest
 from fastapi.testclient import TestClient
-from backend.main import app
-from backend.data_platform.omop_cdm_engine import omop_engine, OMOPConceptMapper
+
 from backend.data_platform.data_quality_gates import data_quality_gate
 from backend.data_platform.delta_time_travel import delta_time_travel
+from backend.data_platform.omop_cdm_engine import OMOPConceptMapper, omop_engine
+from backend.main import app
 
 
 def test_omop_concept_mapper():
@@ -80,7 +80,7 @@ def test_data_quality_gates_and_quarantine():
 def test_delta_time_travel_and_restore():
     """Verifies Delta Lake history querying, point-in-time snapshot, and table restore."""
     table = "workspace.healthcare_silver.patients"
-    
+
     # 1. History
     history = delta_time_travel.get_table_history(table)
     assert len(history) >= 1

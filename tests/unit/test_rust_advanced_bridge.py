@@ -10,8 +10,9 @@ Unit tests for Advanced Rust Execution Engines:
 
 import hashlib
 import math
-from backend.rust_bridge import rust_bridge
+
 from backend.ml.genomics_variant_pipeline import CLINICAL_VARIANT_CATALOG
+from backend.rust_bridge import rust_bridge
 
 
 def test_rust_ecg_pan_tompkins_and_hrv():

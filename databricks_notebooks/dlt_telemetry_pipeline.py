@@ -4,9 +4,9 @@
 # MAGIC Declarative, modern data engineering pipeline for Bronze -> Silver -> Gold Medallion Architecture.
 # MAGIC This pipeline demonstrates Unity Catalog integration, Data Quality expectations, and automatic schema evolution.
 
+
 import dlt
-from pyspark.sql.functions import col, current_timestamp, avg, max, min, sum, when, window, expr
-import json
+from pyspark.sql.functions import avg, col, current_timestamp, max, min, sum, when, window
 
 # ==========================================
 # 1. BRONZE LAYER (RAW INGESTION)
@@ -20,7 +20,7 @@ import json
 def bronze_telemetry_raw():
     # In a real DLT pipeline, this would use Auto Loader (cloudFiles)
     # spark.readStream.format("cloudFiles").option("cloudFiles.format", "json").load("/path/to/raw/data")
-    
+
     # For this example, we assume there is an existing raw table or stream
     return (
         spark.readStream.format("delta")
@@ -58,14 +58,14 @@ def bronze_clickstream_raw():
 @dlt.expect_or_drop("valid_spo2", "spo2 >= 0 AND spo2 <= 100")
 def silver_patient_vitals():
     df = dlt.read_stream("bronze_telemetry_raw")
-    
+
     # Deduplicate within the micro-batch based on exact patient and timestamp
     clean_df = df.dropDuplicates(["patient_id", "timestamp"])
-    
+
     # Convert timestamp if it's a string
     if dict(clean_df.dtypes).get("timestamp", "") == "string":
         clean_df = clean_df.withColumn("timestamp", col("timestamp").cast("timestamp"))
-        
+
     return clean_df
 
 
@@ -77,10 +77,10 @@ def silver_patient_vitals():
 @dlt.expect_or_drop("valid_id", "id IS NOT NULL")
 def silver_clickstream():
     df = dlt.read_stream("bronze_clickstream_raw")
-    
+
     if dict(df.dtypes).get("created_at", "") == "string":
         df = df.withColumn("created_at", col("created_at").cast("timestamp"))
-        
+
     return df
 
 # ==========================================
@@ -94,12 +94,12 @@ def silver_clickstream():
 )
 def gold_patient_hourly_vitals():
     silver_stream = dlt.read_stream("silver_patient_vitals")
-    
+
     return (
         silver_stream
         .withWatermark("timestamp", "2 hours")
         .groupBy(
-            col("patient_id"), 
+            col("patient_id"),
             window(col("timestamp"), "1 hour")
         )
         .agg(

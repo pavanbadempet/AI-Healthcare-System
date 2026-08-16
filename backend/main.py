@@ -3,7 +3,6 @@ import logging
 import os
 import sys
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -705,7 +704,7 @@ if os.path.isdir(_frontend_dist):
     if os.path.isdir(assets_dir):
         app.mount("/assets", ImmutableStaticFiles(directory=assets_dir), name="assets")
 
-    from fastapi.responses import FileResponse, HTMLResponse
+    from fastapi.responses import FileResponse
 
     # Pre-index allowed static files to avoid any dynamic path construction
     _ALLOWED_STATIC_FILES: dict[str, str] = {}

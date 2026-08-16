@@ -4,11 +4,11 @@ Securely manages, verifies, and pushes project secrets directly to Doppler
 so credentials NEVER need to touch source code or git-tracked files.
 """
 
-import sys
-import os
 import json
 import logging
-from typing import Dict, Any, Optional
+import os
+import sys
+from typing import Any, Dict
 
 # Ensure UTF-8 output
 if hasattr(sys.stdout, "reconfigure"):
@@ -48,12 +48,12 @@ def audit_doppler_environment() -> Dict[str, Dict[str, Any]]:
 
 def push_secret_to_doppler(token: str, project: str, config: str, secrets_to_set: Dict[str, str]) -> bool:
     """Pushes a dictionary of secrets to Doppler via the Doppler REST API."""
-    import urllib.request
     import urllib.error
-    
+    import urllib.request
+
     url = f"https://api.doppler.com/v1/configs/config/secrets?project={project}&config={config}"
     payload = json.dumps({"secrets": secrets_to_set}).encode("utf-8")
-    
+
     req = urllib.request.Request(
         url,
         data=payload,
@@ -64,10 +64,10 @@ def push_secret_to_doppler(token: str, project: str, config: str, secrets_to_set
         },
         method="POST"
     )
-    
+
     try:
         with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read().decode("utf-8"))
+            json.loads(resp.read().decode("utf-8"))
             logger.info("Successfully synchronized %d secret(s) to Doppler project '%s' (%s)", len(secrets_to_set), project, config)
             return True
     except urllib.error.HTTPError as e:

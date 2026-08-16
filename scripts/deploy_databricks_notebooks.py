@@ -1,6 +1,7 @@
-import os
-import requests
 import base64
+import os
+
+import requests
 
 DATABRICKS_INSTANCE = "https://dbc-3f46f628-dd14.cloud.databricks.com"
 DATABRICKS_TOKEN = os.environ.get("DATABRICKS_TOKEN", "")
@@ -19,15 +20,15 @@ def get_user_email():
 
 def upload_notebook(local_path, user_email):
     url = f"{DATABRICKS_INSTANCE}/api/2.0/workspace/import"
-    
+
     with open(local_path, "r", encoding="utf-8") as f:
         content = f.read()
-        
+
     content_b64 = base64.b64encode(content.encode("utf-8")).decode("utf-8")
-    
+
     filename = os.path.basename(local_path).replace(".py", "")
     databricks_path = f"/Workspace/Users/{user_email}/AI_Healthcare_Medallion/{filename}"
-    
+
     payload = {
         "path": databricks_path,
         "format": "SOURCE",
@@ -35,7 +36,7 @@ def upload_notebook(local_path, user_email):
         "content": content_b64,
         "overwrite": True
     }
-    
+
     try:
         response = requests.post(url, headers=HEADERS, json=payload)
         if response.status_code == 200:
@@ -52,10 +53,10 @@ if __name__ == "__main__":
     else:
         folder_path = f"/Workspace/Users/{email}/AI_Healthcare_Medallion"
         print(f"Deploying Medallion Notebooks to {folder_path}/")
-        
+
         # Create folder
         requests.post(f"{DATABRICKS_INSTANCE}/api/2.0/workspace/mkdirs", headers=HEADERS, json={"path": folder_path})
-        
+
         # Ensure the directory exists by uploading files into it
         for file in sorted(os.listdir(NOTEBOOK_DIR)):
             if file.endswith(".py"):

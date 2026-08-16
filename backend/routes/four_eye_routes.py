@@ -5,18 +5,19 @@ Four-Eye Governance and Multi-Level AI Safety API Router
 from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 
-from .. import auth, models, database
+from .. import auth, models
+from ..ai_governance_guardian import (
+    GovernanceCheckResult,
+    ai_guardian,
+)
 from ..clinical_compliance.four_eye_governance import (
     FourEyeActionType,
     FourEyeCheckRequest,
     four_eye_engine,
-)
-from ..ai_governance_guardian import (
-    GovernanceCheckResult,
-    ai_guardian,
 )
 
 router = APIRouter(prefix="/v1/governance", tags=["Four-Eye Clinical Governance & AI Safety"])

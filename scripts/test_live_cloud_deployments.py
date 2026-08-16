@@ -9,13 +9,11 @@ Validates:
 """
 
 import os
-import sys
-import json
 import random
 import string
-import time
-import requests
 from datetime import datetime, timezone
+
+import requests
 
 # Color formatting
 GREEN = "\033[92m"
@@ -56,10 +54,10 @@ def record_test(name, success, details=""):
 # ==============================================================================
 def test_render_backend():
     log_section("1. TESTING RENDER LIVE BACKEND (aio-health-backend.onrender.com)")
-    
+
     base_url = "https://aio-health-backend.onrender.com"
     token = None
-    
+
     # Test 1.1 Health endpoint
     try:
         res = requests.get(f"{base_url}/healthz", timeout=20)
@@ -77,7 +75,7 @@ def test_render_backend():
         username = f"clinician{rand_str}"
         password = f"StrongPass123{rand_str}"
         email = f"{username}@healthcare.org"
-        
+
         reg_res = requests.post(
             f"{base_url}/v1/signup",
             json={
@@ -90,7 +88,7 @@ def test_render_backend():
             timeout=15
         )
         record_test("Render Live Clinician User Registration (/v1/signup)", reg_res.status_code in [200, 201])
-        
+
         auth_res = requests.post(
             f"{base_url}/v1/token",
             data={"username": username, "password": password},
@@ -200,21 +198,21 @@ def test_neon_database():
         record_test("Neon DB Connection (Sandbox Mode)", True, "Running in zero-config local sandbox mode (set DATABASE_URL for live Neon DB)")
         return
 
-        
+
     try:
         import psycopg2
         conn = psycopg2.connect(db_url, connect_timeout=10)
         cur = conn.cursor()
-        
+
         cur.execute("SELECT 1;")
         res = cur.fetchone()
         record_test("Neon DB Connection & Query Execution (SELECT 1)", res[0] == 1)
-        
+
         cur.execute("SELECT table_name FROM information_schema.tables WHERE table_schema = 'public';")
         tables = [t[0] for t in cur.fetchall()]
         record_test("Neon DB Schema & Application Tables Present", len(tables) > 0, f"Found {len(tables)} tables")
         log_info(f"Neon Public Tables: {', '.join(tables[:8])}...")
-        
+
         cur.close()
         conn.close()
     except Exception as e:
@@ -225,25 +223,25 @@ def test_neon_database():
 # ==============================================================================
 def test_huggingface_hub():
     log_section("3. TESTING HUGGING FACE MODEL REGISTRY")
-    
+
     hf_token = os.environ.get("HF_TOKEN")
     repo_id = "pavanbadempet/ai-healthcare-models"
-    
+
     try:
         from huggingface_hub import HfApi
         api = HfApi(token=hf_token)
-        
+
         files = api.list_repo_files(repo_id=repo_id, repo_type="model")
-        
+
         expected_models = [
             "diabetes_model.pkl", "heart_disease_model.pkl",
             "kidney_model.pkl", "kidney_scaler.pkl",
             "liver_disease_model.pkl", "liver_scaler.pkl",
             "lungs_model.pkl", "lungs_scaler.pkl"
         ]
-        
+
         present_count = sum(1 for m in expected_models if m in files)
-        
+
         record_test(
             f"Hugging Face Model Registry ({repo_id})",
             present_count >= 8,
@@ -258,11 +256,11 @@ def test_huggingface_hub():
 # ==============================================================================
 def test_databricks_workflows():
     log_section("4. TESTING DATABRICKS LAKEHOUSE PIPELINES & WORKFLOW JOBS")
-    
+
     instance = "https://dbc-3f46f628-dd14.cloud.databricks.com"
     token = os.environ.get("DATABRICKS_TOKEN", "")
     headers = {"Authorization": f"Bearer {token}"}
-    
+
     # 4.1 Check Databricks Connection
     try:
         me_res = requests.get(f"{instance}/api/2.0/preview/scim/v2/Me", headers=headers, timeout=15)
@@ -277,17 +275,17 @@ def test_databricks_workflows():
         jobs_res = requests.get(f"{instance}/api/2.1/jobs/list", headers=headers, timeout=15)
         jobs = jobs_res.json().get("jobs", [])
         record_test("Databricks Jobs Listing & Deployment Verification", len(jobs) >= 2, f"Found {len(jobs)} active jobs")
-        
+
         runs_res = requests.get(f"{instance}/api/2.1/jobs/runs/list?limit=10", headers=headers, timeout=15)
         runs = runs_res.json().get("runs", [])
-        
+
         batch_job_runs = [r for r in runs if "Bronze -> Silver -> Gold" in r.get("run_name", "")]
         has_successful_batch = any(r.get("state", {}).get("result_state") == "SUCCESS" for r in batch_job_runs)
         record_test("Databricks Medallion Batch Pipeline (Bronze->Silver->Gold->GPU->Neon) Successful Run", has_successful_batch)
-        
+
         for r in batch_job_runs[:2]:
             log_info(f"Batch Run {r.get('run_id')}: Result={r.get('state', {}).get('result_state')}")
-            
+
     except Exception as e:
         record_test("Databricks Workflow Verification", False, str(e))
 
@@ -296,12 +294,12 @@ def test_databricks_workflows():
 # ==============================================================================
 def test_keygen_server():
     log_section("5. TESTING LICENSING & KEYGEN MICROSERVICE")
-    
+
     keygen_urls = [
         "https://healthcare-keygen-server-0r3c.onrender.com",
         "https://healthcare-keygen-server.onrender.com"
     ]
-    
+
     reachable = False
     for url in keygen_urls:
         try:
@@ -312,7 +310,7 @@ def test_keygen_server():
                 break
         except Exception:
             continue
-            
+
     if not reachable:
         # Fallback test with main backend licensing endpoints
         try:
@@ -331,17 +329,17 @@ if __name__ == "__main__":
     print("   AI HEALTHCARE SYSTEM - END-TO-END DEPLOYMENT ECOSYSTEM AUDIT", flush=True)
     print(f"==========================================================================={RESET}", flush=True)
     print(f"Timestamp: {datetime.now(timezone.utc).isoformat()}\n", flush=True)
-    
+
     test_render_backend()
     test_neon_database()
     test_huggingface_hub()
     test_databricks_workflows()
     test_keygen_server()
-    
+
     log_section("FINAL ECOSYSTEM TEST SUMMARY")
     print(f"{GREEN}{BOLD}Tests Passed: {results['passed']}{RESET}", flush=True)
     print(f"{RED}{BOLD}Tests Failed: {results['failed']}{RESET}", flush=True)
-    
+
     if results['failed'] == 0:
         print(f"\n{GREEN}{BOLD}🎉 ALL CLOUD DEPLOYMENTS & PIPELINES ARE 100% OPERATIONAL! 🎉{RESET}\n", flush=True)
     else:

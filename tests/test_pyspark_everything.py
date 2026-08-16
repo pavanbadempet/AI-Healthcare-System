@@ -6,9 +6,8 @@ Comprehensive Test Suite for PySpark ML & Distributed Data Engineering Platform:
 - SparkConnect Session & Zero-Config Sandbox Validation
 """
 
-import pytest
-from backend.ml.pyspark_ml_pipeline import pyspark_ml_engine, PySparkPipelineConfig, PySparkClinicalMLEngine
-from backend.spark_engine import spark4_variant_handler, SparkConnectManager
+from backend.ml.pyspark_ml_pipeline import PySparkPipelineConfig, pyspark_ml_engine
+from backend.spark_engine import spark4_variant_handler
 
 
 def test_pyspark_ml_pipeline_config():
@@ -25,7 +24,7 @@ def test_pyspark_ml_train_and_evaluate():
     result = pyspark_ml_engine.train_and_evaluate()
     assert result["status"] == "TRAINING_COMPLETE"
     assert "metrics" in result
-    
+
     metrics = result["metrics"]
     assert 0.0 <= metrics["roc_auc"] <= 1.0
     assert 0.0 <= metrics["pr_auc"] <= 1.0
@@ -43,7 +42,7 @@ def test_pyspark_ml_batch_prediction():
 
     scored = pyspark_ml_engine.predict_batch_records(batch)
     assert len(scored) == 2
-    
+
     # High risk patient P-101
     p1 = scored[0]
     assert p1["pyspark_predicted_label"] == 1

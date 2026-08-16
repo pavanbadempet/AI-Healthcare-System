@@ -1,4 +1,5 @@
 import os
+
 import requests
 
 DATABRICKS_INSTANCE = "https://dbc-3f46f628-dd14.cloud.databricks.com"
@@ -16,10 +17,10 @@ def get_user_email():
 
 def create_medallion_job(user_email):
     url = f"{DATABRICKS_INSTANCE}/api/2.1/jobs/create"
-    
+
     # We define a 3-task pipeline executing on a shared Serverless Job cluster for cost efficiency
     GIT_URL = "https://github.com/pavanbadempet/AI-Healthcare-System"
-    
+
     payload = {
         "name": "⭐ AI Healthcare Medallion Real-Time Streaming Pipeline",
         "git_source": {
@@ -56,7 +57,7 @@ def create_medallion_job(user_email):
             }
         ]
     }
-    
+
     try:
         # Check if job already exists
         list_res = requests.get(f"{DATABRICKS_INSTANCE}/api/2.1/jobs/list", headers=HEADERS)
@@ -66,7 +67,7 @@ def create_medallion_job(user_email):
                 if j.get("settings", {}).get("name") == payload["name"]:
                     existing_id = j.get("job_id")
                     break
-                    
+
         if existing_id:
             print(f"Updating existing job {existing_id} with new task dependencies...")
             reset_payload = {"job_id": existing_id, "new_settings": payload}
@@ -75,11 +76,11 @@ def create_medallion_job(user_email):
         else:
             res = requests.post(url, headers=HEADERS, json=payload)
             job_id = res.json().get("job_id") if res.status_code == 200 else None
-            
+
         if job_id:
             print(f"[SUCCESS] Configured Databricks Workflow Job ID: {job_id}")
             print(f"You can view your job here: {DATABRICKS_INSTANCE}/#job/{job_id}")
-            
+
             run_res = requests.post(f"{DATABRICKS_INSTANCE}/api/2.1/jobs/run-now", headers=HEADERS, json={"job_id": job_id})
             if run_res.status_code == 200:
                 print(f"[SUCCESS] Triggered pipeline run! Run ID: {run_res.json().get('run_id')}")

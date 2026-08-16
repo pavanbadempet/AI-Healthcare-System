@@ -1,7 +1,7 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # 🏥 AI Healthcare System: Enterprise Unity Catalog Governance & Security Layer
-# MAGIC 
+# MAGIC
 # MAGIC ### Architecture & Governance Standards:
 # MAGIC 1. **Three-Level Namespace**: `workspace.healthcare_<bronze|silver|gold|governance|mlops>.<table_name>`
 # MAGIC 2. **Dynamic Data Masking (DDM)**: Column-level masking for Patient PHI (Names, MRNs, DOBs, SSNs) based on RBAC group memberships.
@@ -10,7 +10,6 @@
 # MAGIC 5. **Delta Lake Optimization**: Liquid Clustering / Z-Ordering on `(patient_id, timestamp)`, automatic compaction, and ACID Time-Travel.
 
 # COMMAND ----------
-import pyspark.sql.functions as F
 from pyspark.sql.types import *
 
 CATALOG = "workspace"

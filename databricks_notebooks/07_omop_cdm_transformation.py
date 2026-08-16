@@ -1,23 +1,22 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # Step 07: Clinical OMOP Common Data Model (CDM v5.4) PySpark Engine
-# MAGIC 
-# MAGIC Transforms unified patient records and longitudinal telemetry from `workspace.healthcare_silver` 
+# MAGIC
+# MAGIC Transforms unified patient records and longitudinal telemetry from `workspace.healthcare_silver`
 # MAGIC into standardized OMOP CDM v5.4 relational Delta tables:
 # MAGIC - `workspace.healthcare_gold.omop_person`
 # MAGIC - `workspace.healthcare_gold.omop_visit_occurrence`
 # MAGIC - `workspace.healthcare_gold.omop_condition_occurrence`
 # MAGIC - `workspace.healthcare_gold.omop_drug_exposure`
 # MAGIC - `workspace.healthcare_gold.omop_measurement`
-# MAGIC 
+# MAGIC
 # MAGIC Fully enabled with Delta Lake Change Data Feed (CDF) and Liquid Clustering.
 
 # COMMAND ----------
 
-import os
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType, FloatType, TimestampType
+from pyspark.sql.types import IntegerType, StringType, StructField, StructType
 
 spark = SparkSession.builder.appName("OMOP_CDM_v54_Transformation").getOrCreate()
 
@@ -41,7 +40,7 @@ concept_mapping_data = [
     ("ckd", 443614, "Chronic kidney disease stage 3", "Condition", "SNOMED"),
     ("heart failure", 316139, "Heart failure", "Condition", "SNOMED"),
     ("hyperlipidemia", 432867, "Hyperlipidemia", "Condition", "SNOMED"),
-    
+
     # Drugs (RxNorm)
     ("metformin", 1503297, "Metformin hydrochloride 500 MG", "Drug", "RxNorm"),
     ("lisinopril", 1308216, "Lisinopril 10 MG Oral Tablet", "Drug", "RxNorm"),
@@ -80,9 +79,9 @@ df_concepts.write.format("delta").mode("overwrite").saveAsTable("workspace.healt
 try:
     df_silver_patients = spark.read.table("workspace.healthcare_silver.patients")
 except Exception:
-    import pandas as pd
     import numpy as np
-    
+    import pandas as pd
+
     # Generate 1,000+ realistic patient cohort records with true epidemiological correlations
     np.random.seed(42)
     n_cohort = 1000
@@ -91,7 +90,7 @@ except Exception:
     yobs = [int(2026 - (40 + (i % 45))) for i in range(n_cohort)]
     mobs = [(i % 12) + 1 for i in range(n_cohort)]
     dobs = [(i % 28) + 1 for i in range(n_cohort)]
-    
+
     conditions_list = []
     medications_list = []
     for i in range(n_cohort):
@@ -112,10 +111,10 @@ except Exception:
         if not conds:
             conds.append("Essential Hypertension")
             meds.append("Lisinopril 10mg")
-            
+
         conditions_list.append(", ".join(conds))
         medications_list.append(", ".join(meds))
-        
+
     pdf_cohort = pd.DataFrame({
         "patient_id": p_ids,
         "gender": genders,
@@ -125,7 +124,7 @@ except Exception:
         "conditions": conditions_list,
         "medications": medications_list
     })
-    
+
     df_silver_patients = spark.createDataFrame(pdf_cohort)
 
 

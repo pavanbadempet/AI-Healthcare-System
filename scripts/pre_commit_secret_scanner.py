@@ -5,10 +5,10 @@ PostgreSQL connection strings with passwords, Neon keys, API tokens, or secrets
 can ever be committed to the repository.
 """
 
-import sys
 import os
 import re
 import subprocess
+import sys
 from typing import List, Tuple
 
 # Ensure UTF-8 output across all operating systems
@@ -61,7 +61,7 @@ def scan_file(filepath: str) -> List[Tuple[int, str, str]]:
     """Scans a single file for secret pattern violations."""
     if not os.path.exists(filepath) or os.path.isdir(filepath):
         return []
-    
+
     # Check if excluded
     norm_path = filepath.replace("\\", "/")
     for exc in EXCLUDED_FILES:

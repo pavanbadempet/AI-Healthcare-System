@@ -1,7 +1,7 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # 03: Gold Layer (Aggregations)
-# MAGIC Reads the cleaned Silver stream, aggregates patient vitals over 1-hour tumbling windows, 
+# MAGIC Reads the cleaned Silver stream, aggregates patient vitals over 1-hour tumbling windows,
 # MAGIC handles late-arriving data via watermarking, and upserts to the Gold Medallion table.
 # MAGIC Supports both continuous real-time streaming and triggered batch processing.
 
@@ -11,8 +11,8 @@ pipeline_mode = dbutils.widgets.get("pipeline_mode")
 print(f"Running Gold Aggregations in mode: {pipeline_mode}")
 
 # COMMAND ----------
-from pyspark.sql.functions import col, avg, max, min, sum, when, window
 from delta.tables import DeltaTable
+from pyspark.sql.functions import avg, col, max, min, sum, when, window
 
 # Initialize Gold table
 spark.sql("""
@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS gold_patient_hourly_vitals (
 def process_gold_batch(microBatchDF, batchId):
     # Upsert (MERGE) aggregated windows into Gold table
     gold_table = DeltaTable.forName(spark, "gold_patient_hourly_vitals")
-    
+
     (gold_table.alias("target")
      .merge(
          microBatchDF.alias("source"),
@@ -49,7 +49,7 @@ gold_stream = (
     silver_stream
     .withWatermark("timestamp", "2 hours")
     .groupBy(
-        col("patient_id"), 
+        col("patient_id"),
         window(col("timestamp"), "1 hour")
     )
     .agg(
@@ -88,20 +88,20 @@ writer.trigger(availableNow=True).start().awaitTermination()
 if pipeline_mode == "batch":
     try:
         from databricks.feature_engineering import FeatureEngineeringClient
-        
+
         fe = FeatureEngineeringClient()
-        
+
         # Check if the feature table exists, if not create it
         table_name = "main.ai_healthcare.gold_patient_hourly_vitals"
-        
+
         # We read the latest static version of the table to update the schema in Feature Store
         gold_df = spark.read.table("gold_patient_hourly_vitals")
-        
+
         try:
             # Try to get the table to see if it exists
             fe.get_table(name=table_name)
             print(f"Feature table {table_name} already exists. It will be updated by the stream.")
-        except Exception as e:
+        except Exception:
             # Create feature table using the Gold table as the source
             print(f"Creating Feature Table {table_name} in Unity Catalog...")
             fe.create_table(

@@ -16,7 +16,7 @@ import json
 import math
 import time
 import zlib
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 from pydantic import BaseModel
 

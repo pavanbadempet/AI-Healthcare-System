@@ -396,7 +396,6 @@ async def agent_stream_endpoint(
                         # Check booking tag in background
                         booking_match = BOOKING_ACTION_PATTERN.search(full_reply)
                         booking_details = None
-                        error_msg = None
 
                         if booking_match:
                             doc_id_str, date_str, time_str, reason_str = booking_match.groups()

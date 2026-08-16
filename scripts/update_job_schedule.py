@@ -1,5 +1,6 @@
-import requests
 import os
+
+import requests
 
 url = "https://dbc-3f46f628-dd14.cloud.databricks.com/api/2.1/jobs/update"
 token = os.environ.get("DATABRICKS_TOKEN")

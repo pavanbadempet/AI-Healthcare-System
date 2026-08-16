@@ -3,10 +3,7 @@
 Provides base85-encoded zlib compression for FHIR patient bundles,
 optimizing payloads for low-bandwidth rural GSM and SMS transmission.
 """
-import base64
-import json
 import logging
-import zlib
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel

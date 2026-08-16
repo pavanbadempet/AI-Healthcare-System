@@ -1,5 +1,9 @@
-import sys, os, requests, json
-if hasattr(sys.stdout, 'reconfigure'): 
+import os
+import sys
+
+import requests
+
+if hasattr(sys.stdout, 'reconfigure'):
     sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
 token = os.environ.get('DATABRICKS_TOKEN')

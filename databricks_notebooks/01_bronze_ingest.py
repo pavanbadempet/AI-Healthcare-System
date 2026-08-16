@@ -10,8 +10,8 @@ pipeline_mode = dbutils.widgets.get("pipeline_mode")
 print(f"Running Bronze Ingest in mode: {pipeline_mode}")
 
 # COMMAND ----------
-from pyspark.sql.types import StructType, StructField, StringType, FloatType, IntegerType
-from pyspark.sql.functions import col, current_timestamp
+from pyspark.sql.functions import current_timestamp
+from pyspark.sql.types import FloatType, IntegerType, StringType, StructField, StructType
 
 # Define schema for the incoming stream
 schema = StructType([
@@ -42,11 +42,12 @@ checkpoint_path = "/Volumes/workspace/default/checkpoints/telemetry_bronze"
 def generate_batch(batch_id):
     import random
     from datetime import datetime, timedelta
+
     import requests
-    
+
     backend_url = os.getenv("BACKEND_URL", "https://pavanbadempet-ai-healthcare-system.hf.space")
     print(f"Attempting to fetch live telemetry from {backend_url}...")
-    
+
     token = None
     try:
         # Authenticate with the HF Spaces backend
@@ -55,24 +56,24 @@ def generate_batch(batch_id):
             token = auth_res.json().get("access_token")
     except Exception as e:
         print(f"Auth fetch failed, falling back to local fallback data: {e}")
-        
+
     data = []
     base_time = datetime.utcnow()
-    
+
     if token:
         try:
             snap_res = requests.get(f"{backend_url}/v1/telemetry/snapshot", headers={"Authorization": f"Bearer {token}"}, timeout=15)
             if snap_res.status_code == 200:
                 snapshot = snap_res.json()
                 print(f"Successfully fetched live HF Spaces telemetry! Active Census: {snapshot.get('active_census')}")
-                
+
                 patient_counter = 1000
                 # Generate a vital record for every REAL occupied bed returned by the endpoint
                 for unit in snapshot.get("bed_units", []):
                     occupied = unit.get("occupied", 0)
                     unit_name = unit.get("unit", "Unknown")
                     dept_id = hash(unit_name) % 10
-                    
+
                     for _ in range(occupied):
                         patient_counter += 1
                         data.append((
@@ -88,7 +89,7 @@ def generate_batch(batch_id):
                         ))
         except Exception as e:
             print(f"Failed to fetch snapshot: {e}")
-            
+
     if not data:
         print("Using local mock generation as fallback...")
         num_records = random.randint(50, 200)
@@ -97,23 +98,23 @@ def generate_batch(batch_id):
             facility_id = random.randint(1, 5)
             encounter_id = random.randint(10000, 99999)
             department_id = random.randint(1, 10)
-            
+
             heart_rate = float(random.randint(60, 120))
             systolic_bp = float(random.randint(110, 150))
             diastolic_bp = float(random.randint(70, 95))
             spo2 = float(random.randint(92, 100))
             temperature_c = round(random.uniform(36.5, 38.5), 1)
             respiratory_rate = float(random.randint(12, 20))
-            
+
             source = "device_" + str(random.randint(100, 200))
             timestamp = (base_time - timedelta(seconds=random.randint(0, 60))).isoformat() + "Z"
-            
+
             data.append((
                 patient_id, facility_id, encounter_id, department_id,
                 heart_rate, systolic_bp, diastolic_bp, spo2,
                 temperature_c, respiratory_rate, source, timestamp
             ))
-        
+
     df = spark.createDataFrame(data, schema)
     # Write to raw ledger table
     df.write.format("delta").mode("append").saveAsTable(raw_table_name)
@@ -157,11 +158,12 @@ def generate_batch(batch_id):
     # NEW: INGEST CLICKSTREAM & PREDICTION LOGS
     # ==========================================
     def ingest_table_via_sql(table_name, target_bronze_raw, schema):
-        import requests
         import json
+
+        import requests
         backend_url = os.getenv("BACKEND_URL", "https://pavanbadempet-ai-healthcare-system.hf.space")
         print(f"Pulling {table_name} from {backend_url}...")
-        
+
         token = None
         try:
             auth_res = requests.post(f"{backend_url}/v1/token", data={"username": "admin", "password": "adminpass"}, timeout=15)
@@ -170,11 +172,11 @@ def generate_batch(batch_id):
         except Exception as e:
             print(f"Auth failed: {e}")
             return
-            
+
         if not token:
             print("No auth token, skipping SQL pull")
             return
-            
+
         try:
             sql = f"SELECT * FROM {table_name} WHERE id > (SELECT COALESCE(MAX(id), 0) FROM {target_bronze_raw}) ORDER BY id ASC LIMIT 5000"
             # Using try/except around the subquery in case target_bronze_raw doesn't exist yet
@@ -185,7 +187,7 @@ def generate_batch(batch_id):
                 sql = f"SELECT * FROM {table_name} WHERE id > {max_id} ORDER BY id ASC LIMIT 5000"
             except Exception:
                 sql = f"SELECT * FROM {table_name} ORDER BY id ASC LIMIT 5000"
-                
+
             res = requests.post(
                 f"{backend_url}/api/v1/data-platform/sql/execute",
                 json={"query": sql},
@@ -201,7 +203,7 @@ def generate_batch(batch_id):
                     for col_name in pdf.columns:
                         if pdf[col_name].apply(lambda x: isinstance(x, (dict, list))).any():
                             pdf[col_name] = pdf[col_name].apply(json.dumps)
-                            
+
                     spark_df = spark.createDataFrame(pdf)
                     spark_df.write.format("delta").mode("append").saveAsTable(target_bronze_raw)
                     print(f"Appended {len(rows)} records to {target_bronze_raw}")
@@ -214,6 +216,6 @@ def generate_batch(batch_id):
 
     # Fetch clickstream events
     ingest_table_via_sql("clickstream_events", "bronze_clickstream_raw", None)
-    
+
     # Fetch prediction feature attribution logs
     ingest_table_via_sql("feature_attribution_logs", "bronze_predictions_raw", None)

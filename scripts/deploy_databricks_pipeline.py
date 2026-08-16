@@ -1,8 +1,7 @@
-import os
-import requests
 import base64
-import json
-import time
+import os
+
+import requests
 
 DATABRICKS_INSTANCE = "https://dbc-3f46f628-dd14.cloud.databricks.com"
 DATABRICKS_TOKEN = os.environ.get("DATABRICKS_TOKEN", "")
@@ -65,20 +64,20 @@ def upload_notebook():
     # First, get the current user's email
     me_url = f"{DATABRICKS_INSTANCE}/api/2.0/preview/scim/v2/Me"
     me_response = requests.get(me_url, headers=HEADERS)
-    
+
     if me_response.status_code != 200:
         print(f"[ERROR] Failed to fetch current user info: {me_response.status_code}")
         print(me_response.text)
         return
-        
+
     user_email = me_response.json().get("userName")
     print(f"Deploying to user workspace: {user_email}")
-    
+
     url = f"{DATABRICKS_INSTANCE}/api/2.0/workspace/import"
-    
+
     # Base64 encode the notebook content
     content_b64 = base64.b64encode(NOTEBOOK_CONTENT.encode("utf-8")).decode("utf-8")
-    
+
     payload = {
         "path": f"/Workspace/Users/{user_email}/AI_Healthcare_Pipeline",
         "format": "SOURCE",
@@ -86,7 +85,7 @@ def upload_notebook():
         "content": content_b64,
         "overwrite": True
     }
-    
+
     try:
         response = requests.post(url, headers=HEADERS, json=payload)
         if response.status_code == 200:

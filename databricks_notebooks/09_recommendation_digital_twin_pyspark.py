@@ -1,11 +1,11 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # Step 09: Distributed Clinical Digital Twin & Recommendation Scoring (PySpark)
-# MAGIC 
+# MAGIC
 # MAGIC Executes distributed batch inference for:
 # MAGIC 1. **10-Year Multi-Organ Digital Twin Trajectory Simulation** (Cardiovascular, Renal, Metabolic, Hepatic degradation & QALY lifespans)
 # MAGIC 2. **4-Stage Multi-Objective Clinical Recommendation Funnel** (Two-Tower Retrieval, MMoE Multi-Objective Ranking, MMR Diversity, and Deterministic Safety Guardrails)
-# MAGIC 
+# MAGIC
 # MAGIC Outputs to:
 # MAGIC - `workspace.healthcare_gold.patient_digital_twins`
 # MAGIC - `workspace.healthcare_gold.clinical_recommendations`
@@ -14,7 +14,6 @@
 
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
-from pyspark.sql.types import StructType, StructField, StringType, FloatType, IntegerType, ArrayType
 
 spark = SparkSession.builder.appName("Distributed_Clinical_Intelligence").getOrCreate()
 
@@ -31,24 +30,24 @@ spark.sql("CREATE SCHEMA IF NOT EXISTS workspace.healthcare_gold")
 try:
     df_patient_gold = spark.read.table("workspace.healthcare_gold.patient_hourly_vitals")
 except Exception:
-    import pandas as pd
     import numpy as np
-    
+    import pandas as pd
+
     np.random.seed(42)
     n_patients = 1000
-    
+
     p_ids = [f"PAT-CDC-{10000 + i}" for i in range(n_patients)]
     ages = [float(35 + (i % 50)) for i in range(n_patients)]
     genders = ["Female" if i % 2 == 0 else "Male" for i in range(n_patients)]
     bmis = np.clip(np.random.normal(27.5, 4.5, n_patients), 18.5, 45.0).tolist()
-    
+
     sbps = [118.0 + (bmis[i] - 25.0) * 0.9 + (ages[i] - 40.0) * 0.4 for i in range(n_patients)]
     dbps = [76.0 + (bmis[i] - 25.0) * 0.4 for i in range(n_patients)]
     glucoses = [92.0 + (bmis[i] - 25.0) * 2.0 + (25.0 if i % 4 == 0 else 0.0) for i in range(n_patients)]
     hba1cs = [5.4 + (glucoses[i] - 100.0) * 0.035 for i in range(n_patients)]
     egfrs = np.clip([100.0 - (ages[i] - 30.0) * 0.7 for i in range(n_patients)], 25.0, 120.0).tolist()
     ldls = np.clip(np.random.normal(115.0, 28.0, n_patients), 60.0, 220.0).tolist()
-    
+
     pdf_features = pd.DataFrame({
         "patient_id": p_ids,
         "age": ages,
@@ -61,7 +60,7 @@ except Exception:
         "egfr": [round(float(v), 1) for v in egfrs],
         "ldl_cholesterol": [round(float(v), 1) for v in ldls]
     })
-    
+
     df_patient_gold = spark.createDataFrame(pdf_features)
 
 print(f"Loaded {df_patient_gold.count()} patient feature rows.")
@@ -76,7 +75,7 @@ print(f"Loaded {df_patient_gold.count()} patient feature rows.")
 # Compute baseline organ scores using vectorized Spark SQL expressions
 df_digital_twins = df_patient_gold.withColumn(
     "cardiovascular_baseline",
-    F.greatest(F.lit(15.0), F.least(F.lit(98.0), 
+    F.greatest(F.lit(15.0), F.least(F.lit(98.0),
         100.0 - F.greatest(F.lit(0.0), (F.col("systolic_bp") - 120.0) * 0.6) - F.greatest(F.lit(0.0), (F.col("ldl_cholesterol") - 100.0) * 0.25) - F.greatest(F.lit(0.0), (F.col("age") - 40.0) * 0.4)
     ))
 ).withColumn(
@@ -97,9 +96,9 @@ df_digital_twins = df_patient_gold.withColumn(
 ).withColumn(
     "projected_10yr_qaly_gain",
     F.round(
-        (F.col("cardiovascular_baseline") * 0.03) + 
-        (F.col("renal_baseline") * 0.025) + 
-        (F.col("metabolic_baseline") * 0.035), 
+        (F.col("cardiovascular_baseline") * 0.03) +
+        (F.col("renal_baseline") * 0.025) +
+        (F.col("metabolic_baseline") * 0.035),
         2
     )
 ).withColumn(

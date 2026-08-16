@@ -1,13 +1,13 @@
 # Databricks notebook source
 # MAGIC %md
 # MAGIC # 05: Export to Neon Postgres (HuggingFace Frontend)
-# MAGIC Reads the final scored Gold Medallion data and securely exports it to the Neon Postgres database 
+# MAGIC Reads the final scored Gold Medallion data and securely exports it to the Neon Postgres database
 # MAGIC so the HuggingFace Spaces React/FastAPI website can serve it to clinicians.
 
 # COMMAND ----------
 import os
 
-# Doppler will inject DATABASE_URL into the Databricks environment via CI/CD, 
+# Doppler will inject DATABASE_URL into the Databricks environment via CI/CD,
 # or we read it from Databricks Secrets / environment.
 database_url = os.environ.get("DATABASE_URL", "sqlite:///./healthcare.db")
 
@@ -15,7 +15,7 @@ database_url = os.environ.get("DATABASE_URL", "sqlite:///./healthcare.db")
 if not database_url.startswith("jdbc:"):
     # Convert standard postgres URL to JDBC
     jdbc_url = database_url.replace("postgresql://", "jdbc:postgresql://").replace("postgres://", "jdbc:postgresql://")
-    
+
     if "@" in jdbc_url:
         # Extract user/pass from JDBC URL if needed
         parts = jdbc_url.split("://")[1].split("@")
@@ -56,7 +56,7 @@ except Exception as e:
 try:
     import uuid
     from datetime import datetime
-    
+
     audit_row = [(
         str(uuid.uuid4()),
         "databricks_medallion_pipeline",
@@ -70,13 +70,13 @@ try:
         "10.0.0.1",
         datetime.utcnow()
     )]
-    
+
     audit_df = spark.createDataFrame(audit_row, [
         "audit_id", "accessed_by", "user_role", "action",
         "target_catalog", "target_schema", "target_table",
         "filter_applied", "records_accessed", "ip_address", "timestamp"
     ])
-    
+
     audit_df.write.format("delta").mode("append").saveAsTable("workspace.healthcare_governance.hipaa_access_audit_log")
     print("Recorded HIPAA export event into workspace.healthcare_governance.hipaa_access_audit_log")
 except Exception as e:

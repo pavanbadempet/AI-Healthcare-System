@@ -4,11 +4,10 @@ Handles automated creation, sync, model weight uploading, and health verificatio
 for both the Hugging Face Space (Web Demo) and Hugging Face Model Hub repository.
 """
 
-import os
-import sys
 import json
 import logging
-from typing import Dict, Any, List
+import os
+from typing import Any, Dict
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("sync_hf_space_and_hub")

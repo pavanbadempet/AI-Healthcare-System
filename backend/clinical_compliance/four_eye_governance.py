@@ -11,10 +11,10 @@ import hashlib
 import hmac
 import logging
 import os
-import time
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
-from pydantic import BaseModel, Field
+
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 

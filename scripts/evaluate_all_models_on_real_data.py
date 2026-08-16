@@ -9,21 +9,18 @@ Evaluates Accuracy, Sensitivity, Specificity, ROC-AUC, Precision, and F1 across:
 6. Distributed PySpark MLlib Clinical Engine
 """
 
+import json
 import os
 import sys
-import json
-import numpy as np
+
 import pandas as pd
+from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, roc_auc_score
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import (
-    accuracy_score, roc_auc_score, precision_score,
-    recall_score, f1_score
-)
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from backend.model_service import model_service
 from backend.ml.pyspark_ml_pipeline import PySparkClinicalMLEngine
+from backend.model_service import model_service
 
 DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "data", "processed")
 
@@ -49,7 +46,7 @@ def evaluate_models():
         y = (df_diab["diabetes"] > 0).astype(int).values
 
         _, X_test, _, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
-        
+
         # Test on 2,000 stratified samples
         X_eval = X_test[:2000]
         y_eval = y_test[:2000]
@@ -84,17 +81,17 @@ def evaluate_models():
     if os.path.exists(heart_data) and entry_heart and entry_heart.model:
         df_heart = pd.read_parquet(heart_data)
         from backend.features import HEART_FEATURES
-        
+
         target_col = "target" if "target" in df_heart.columns else ("heart_disease" if "heart_disease" in df_heart.columns else "HeartDiseaseorAttack")
         y = (df_heart[target_col] > 0).astype(int).values
-        
+
         feature_cols = [c for c in HEART_FEATURES if c in df_heart.columns]
         if not feature_cols:
             feature_cols = [c for c in df_heart.columns if c != target_col]
 
         X = df_heart[feature_cols].values
         _, X_test, _, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
-        
+
         X_eval = X_test[:2000]
         y_eval = y_test[:2000]
 
@@ -128,17 +125,17 @@ def evaluate_models():
     if os.path.exists(liver_data) and entry_liver and entry_liver.model:
         df_liver = pd.read_parquet(liver_data)
         from backend.features import LIVER_FEATURES
-        
+
         target_col = "target" if "target" in df_liver.columns else ("liver_disease" if "liver_disease" in df_liver.columns else "Dataset")
         y = (df_liver[target_col] > 0).astype(int).values
-        
+
         feature_cols = [c for c in LIVER_FEATURES if c in df_liver.columns]
         if not feature_cols:
             feature_cols = [c for c in df_liver.columns if c != target_col]
 
         X = df_liver[feature_cols].values
         _, X_test, _, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-        
+
         X_eval = X_test[:1000]
         y_eval = y_test[:1000]
 
