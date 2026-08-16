@@ -123,11 +123,16 @@ class BaseAgent:
     def write_github_step_summary(self):
         """Writes the Markdown summary report directly to the Job Summary page."""
         summary_path = os.getenv("GITHUB_STEP_SUMMARY")
-        if summary_path and os.path.isfile(summary_path):
+        if summary_path and os.path.exists(summary_path):
             try:
-                summary = self.get_summary_markdown()
+                summary_text = (
+                    f"# APEX Agent Execution: {self.name}\n\n"
+                    f"- **Status**: {self.status}\n"
+                    f"- **Duration**: {self.duration}s\n"
+                    f"- **Est. Cost**: ${self.estimated_cost:.6f}\n"
+                )
                 with open(summary_path, "a", encoding="utf-8") as f:
-                    f.write("\n" + summary + "\n")
+                    f.write(summary_text)
             except Exception:
                 pass
 
