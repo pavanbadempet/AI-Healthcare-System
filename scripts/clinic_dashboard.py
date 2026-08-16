@@ -75,6 +75,10 @@ class TelemetryStream:
         self.active_consults = 3
         self.errors_logged = 0
 
+    @property
+    def vitals_history(self):
+        return self.metric_signals
+
     def update(self):
         self.tick += 1
         # Randomly toggle beds (admissions/discharges)

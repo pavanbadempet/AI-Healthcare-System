@@ -81,18 +81,20 @@ class RustBridgeEngine:
             is_rust_native=is_native
         )
 
-    def compute_rust_egfr(self, creatinine: float, age: float, is_female: bool) -> float:
+    def compute_rust_egfr(self, serum_creatinine: float = 0.9, age: float = 45.0, is_female: bool = False, creatinine: float | None = None) -> float:
         """Computes eGFR using CKD-EPI formula in Rust or fallback Python."""
+        cr = creatinine if creatinine is not None else serum_creatinine
         try:
             import rust_gateway_ffi
-            return rust_gateway_ffi.compute_egfr_py(creatinine, age, is_female)
+            return rust_gateway_ffi.calculate_egfr_py(cr, age, is_female)
         except Exception:
-            k = 0.7 if is_female else 0.9
-            a = -0.241 if is_female else -0.302
+            if cr <= 0.0 or age <= 0.0:
+                return 0.0
+            kappa, alpha = (0.7, -0.241) if is_female else (0.9, -0.302)
             f_mult = 1.012 if is_female else 1.0
-            scr_k = creatinine / k
-            val = 142.0 * (min(scr_k, 1.0) ** a) * (max(scr_k, 1.0) ** -1.200) * (0.9938 ** age) * f_mult
-            return round(val, 2)
+            min_val = min(cr / kappa, 1.0) ** alpha
+            max_val = max(cr / kappa, 1.0) ** (-1.200)
+            return round(142.0 * min_val * max_val * (0.9938 ** age) * f_mult, 2)
 
     def calculate_fib4_rust(self, ast: float, alt: float, platelets: float, age: float) -> float:
         """Computes FIB-4 Liver Fibrosis Index."""
