@@ -304,6 +304,128 @@ class RustBridgeEngine:
             decompressed = zlib.decompress(base64.b85decode(base85_str.encode("ascii")))
             return json.loads(decompressed.decode("utf-8"))
 
+    # =========================================================================
+    # 🧬 MULTI-OMICS GENOMICS & VCF PARSING
+    # =========================================================================
+    def parse_vcf_and_compute_prs_rust(self, vcf_text: str, catalog: dict) -> Tuple[List[Dict[str, str]], List[Dict[str, Any]], Dict[str, Any]]:
+        """Parses VCF lines and calculates Polygenic Risk Scores (PRS) via Rust SIMD / Fallback."""
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.parse_vcf_and_compute_prs_py(vcf_text, catalog)
+        except Exception:
+            variants = []
+            lines = vcf_text.strip().split("\n")
+            for line in lines:
+                if line.startswith("#"):
+                    continue
+                parts = line.split("\t")
+                if len(parts) >= 5:
+                    variants.append({
+                        "chrom": parts[0],
+                        "pos": parts[1],
+                        "rsid": parts[2],
+                        "ref": parts[3],
+                        "alt": parts[4],
+                    })
+
+            detected_variants = []
+            risk_multipliers = {
+                "diabetes": 1.0,
+                "heart": 1.0,
+                "liver": 1.0,
+                "lungs": 1.0,
+                "kidney": 1.0,
+            }
+
+            for v in variants:
+                rsid = v["rsid"]
+                if rsid in catalog:
+                    entry = catalog[rsid]
+                    condition = entry["condition"]
+                    alt_alleles = v["alt"].split(",")
+                    if entry["risk_allele"] in alt_alleles:
+                        detected_variants.append({
+                            "rsid": rsid,
+                            "gene": entry["gene"],
+                            "condition": condition,
+                            "detected_allele": entry["risk_allele"],
+                            "odds_ratio": entry["odds_ratio"],
+                            "description": entry["description"],
+                        })
+                        risk_multipliers[condition] *= entry["odds_ratio"]
+
+            prs_scores = {}
+            for cond, mult in risk_multipliers.items():
+                prs_percentile = min(99.9, round((mult - 1.0) * 50 + 50, 1)) if mult > 1.0 else 50.0
+                prs_scores[cond] = {
+                    "risk_multiplier": round(mult, 2),
+                    "polygenic_risk_percentile": prs_percentile,
+                    "risk_category": "HIGH" if prs_percentile >= 75 else ("ELEVATED" if prs_percentile >= 60 else "NORMAL"),
+                }
+
+            return (variants, detected_variants, prs_scores)
+
+    # =========================================================================
+    # 📈 TELEMETRY LTTB DOWNSAMPLING (LARGEST-TRIANGLE-THREE-BUCKETS)
+    # =========================================================================
+    def downsample_lttb_rust(self, data: List[Tuple[float, float]], threshold: int = 500) -> List[Tuple[float, float]]:
+        """Downsamples time-series telemetry using Largest-Triangle-Three-Buckets algorithm in Rust."""
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.downsample_lttb_py(data, threshold)
+        except Exception:
+            if threshold >= len(data) or threshold <= 2:
+                return data
+            sampled = [data[0]]
+            bucket_size = (len(data) - 2) / (threshold - 2)
+            a = 0
+
+            for i in range(threshold - 2):
+                range_offs = int((i + 0) * bucket_size) + 1
+                range_to = int((i + 1) * bucket_size) + 1
+                next_range_offs = int((i + 1) * bucket_size) + 1
+                next_range_to = int((i + 2) * bucket_size) + 1
+                next_range_to = min(next_range_to, len(data))
+
+                # Calculate average point for the next bucket
+                avg_x = sum(pt[0] for pt in data[next_range_offs:next_range_to]) / max(1, next_range_to - next_range_offs)
+                avg_y = sum(pt[1] for pt in data[next_range_offs:next_range_to]) / max(1, next_range_to - next_range_offs)
+
+                # Find point in current bucket with largest triangle area with point A and Avg point
+                max_area = -1.0
+                max_idx = range_offs
+                pt_a = data[a]
+
+                for j in range(range_offs, min(range_to, len(data))):
+                    pt_b = data[j]
+                    area = abs((pt_a[0] - avg_x) * (pt_b[1] - pt_a[1]) - (pt_a[0] - pt_b[0]) * (avg_y - pt_a[1])) * 0.5
+                    if area > max_area:
+                        max_area = area
+                        max_idx = j
+
+                sampled.append(data[max_idx])
+                a = max_idx
+
+            sampled.append(data[-1])
+            return sampled
+
+    # =========================================================================
+    # 🔐 CRYPTOGRAPHIC MERKLE PROOF ATTESTATION
+    # =========================================================================
+    def verify_merkle_proof_rust(self, leaf_hash: str, proof: List[str], root_hash: str) -> bool:
+        """Verifies Merkle branch proof in Rust constant-time SHA-256."""
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.verify_merkle_proof_py(leaf_hash, proof, root_hash)
+        except Exception:
+            import hashlib
+            current = leaf_hash
+            for p in proof:
+                # Lexicographical ordering for deterministic Merkle hashing
+                combined = (current + p).encode("utf-8") if current < p else (p + current).encode("utf-8")
+                current = hashlib.sha256(combined).hexdigest()
+            return current == root_hash
+
 
 rust_bridge = RustBridgeEngine()
 sota_rust_engine_layer_engine = rust_bridge
