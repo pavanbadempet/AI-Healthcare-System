@@ -122,9 +122,9 @@ class DuckDBClient:
                 "gold_patients_aggregated": len(gold_df),
                 "lakehouse_mode": "embedded_duckdb_zero_infra"
             }
-        except Exception as e:
-            logger.error("Embedded Medallion stream processing failed: %s", e)
-            return {"status": "error", "error": str(e)}
+        except Exception:
+            logger.error("Embedded Medallion stream processing failed")
+            return {"status": "error", "error": "Medallion stream processing encountered an error"}
 
     def close(self):
         """Close connection."""

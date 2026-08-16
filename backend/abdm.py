@@ -553,14 +553,14 @@ def prepare_consent_request(
             "payload": payload,
             "abdm_response": gateway_res
         }
-    except Exception as e:
-        logger.error("Failed to submit consent request to ABDM gateway: %s", e)
+    except Exception:
+        logger.error("Failed to submit consent request to ABDM gateway")
         return {
             "submitted": True,
             "status": "failed",
             "endpoint": endpoint,
             "payload": payload,
-            "error": str(e)
+            "error": "Gateway submission request failed"
         }
 
 def verify_gateway_signature(signature_header: str | None, payload_bytes: bytes) -> bool:
