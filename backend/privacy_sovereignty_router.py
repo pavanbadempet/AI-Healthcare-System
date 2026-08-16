@@ -40,8 +40,8 @@ class GlobalDataSovereigntyRouter:
         allowed_nodes = [f"node-{target_region}-primary", f"node-{target_region}-replica"]
 
         logger.info(
-            "Data Sovereignty check for patient %s [%s]: Routing to region %s",
-            patient_id, jurisdiction, target_region
+            "Data Sovereignty check [%s]: Routing to region %s",
+            jurisdiction, target_region
         )
 
         return DataSovereigntyCheckResult(

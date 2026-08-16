@@ -60,7 +60,7 @@ class MultiStageRecommendationPipeline:
         div_lambda = request.diversity_lambda
         enable_exploration = request.enable_exploration
 
-        logger.info("Executing 4-stage recommendation for patient %s (domain=%s, top_k=%d)", patient.patient_id, domain, top_k)
+        logger.info("Executing 4-stage recommendation (domain=%s, top_k=%d)", domain, top_k)
 
         # ---------------------------------------------------------------------
         # STAGE 1: Two-Tower Candidate Retrieval (Retrieve top candidates)

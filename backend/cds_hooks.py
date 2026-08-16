@@ -48,7 +48,7 @@ def evaluate_cardio_risk_service(request_data: Dict[str, Any], db: Session) -> D
         else:
             patient_id = int(patient_id_str)
     except ValueError:
-        logger.warning("Invalid patient ID format: %s", patient_id_str)
+        logger.warning("Invalid patient ID format provided to CDS Hook")
         return {"cards": []}
 
     # Fetch latest VitalObservation record for the patient

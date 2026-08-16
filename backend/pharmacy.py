@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 from datetime import datetime, timezone
 
 logger = logging.getLogger(__name__)
@@ -521,23 +522,26 @@ def compare_medication_pricing(
     goodrx_key = os.getenv("GOODRX_API_KEY")
     goodrx_secret = os.getenv("GOODRX_API_SECRET")
 
+    # Sanitize medication input to prevent SSRF or injection
+    clean_medication = re.sub(r"[^a-zA-Z0-9\s-]", "", str(medication_name)).strip()
+
     # If GoodRx is configured, execute signature verification and call live v2 endpoint
-    if goodrx_key and goodrx_secret:
+    if goodrx_key and goodrx_secret and clean_medication:
         try:
             import requests
             path = "/v2/compare-price"
             params = {
-                "name": medication_name,
+                "name": clean_medication,
                 "api_key": goodrx_key
             }
             sig = _generate_goodrx_signature(goodrx_key, goodrx_secret, path, params)
             params["sig"] = sig
 
-            resp = requests.get(f"https://api.goodrx.com{path}", params=params, timeout=5)
+            resp = requests.get("https://api.goodrx.com/v2/compare-price", params=params, timeout=5)
             if resp.status_code == 200:
                 data = resp.json()
                 return {
-                    "medication": medication_name,
+                    "medication": clean_medication,
                     "base_price": data.get("base_price", 15.0),
                     "prices": data.get("prices", []),
                     "message": "Medicine prices retrieved from live GoodRx API."
@@ -551,34 +555,35 @@ def compare_medication_pricing(
     ndc_code = "N/A"
     active_ingredient = "Unknown"
 
-    try:
-        import urllib.parse
+    if clean_medication:
+        try:
+            import requests
+            fda_endpoint = "https://api.fda.gov/drug/ndc.json"
+            fda_params = {
+                "search": f'brand_name:"{clean_medication}"',
+                "limit": 1
+            }
 
-        import requests
-        safe_med_name = urllib.parse.quote(medication_name, safe="")
-        # Query OpenFDA NDC endpoint
-        fda_url = f"https://api.fda.gov/drug/ndc.json?search=brand_name:\"{safe_med_name}\"&limit=1"
+            fda_resp = requests.get(fda_endpoint, params=fda_params, timeout=4)
 
-        fda_resp = requests.get(fda_url, timeout=4)
-
-        if fda_resp.status_code == 200:
-            fda_data = fda_resp.json()
-            if fda_data.get("results"):
-                res = fda_data["results"][0]
-                ndc_code = res.get("product_ndc", "N/A")
-                active_ingredients = res.get("active_ingredients", [])
-                if active_ingredients:
-                    active_ingredient = active_ingredients[0].get("name", "Unknown")
-                    strength = active_ingredients[0].get("strength", "1")
-                    # Calculate dynamic price based on active ingredient name length and strength numbers
-                    try:
-                        strength_num = float(''.join(c for c in strength if c.isdigit() or c == '.'))
-                        base_price = round(10.0 + (strength_num % 40) + (len(active_ingredient) % 15), 2)
-                    except Exception:
-                        base_price = round(12.0 + (len(active_ingredient) % 20), 2)
-                openfda_msg = f"Medicine details verified via OpenFDA API (NDC: {ndc_code}, Active Ingredient: {active_ingredient})."
-    except Exception as e:
-        logger.warning("OpenFDA API drug search failed: %s", e)
+            if fda_resp.status_code == 200:
+                fda_data = fda_resp.json()
+                if fda_data.get("results"):
+                    res = fda_data["results"][0]
+                    ndc_code = res.get("product_ndc", "N/A")
+                    active_ingredients = res.get("active_ingredients", [])
+                    if active_ingredients:
+                        active_ingredient = active_ingredients[0].get("name", "Unknown")
+                        strength = active_ingredients[0].get("strength", "1")
+                        # Calculate dynamic price based on active ingredient name length and strength numbers
+                        try:
+                            strength_num = float(''.join(c for c in strength if c.isdigit() or c == '.'))
+                            base_price = round(10.0 + (strength_num % 40) + (len(active_ingredient) % 15), 2)
+                        except Exception:
+                            base_price = round(12.0 + (len(active_ingredient) % 20), 2)
+                    openfda_msg = f"Medicine details verified via OpenFDA API (NDC: {ndc_code}, Active Ingredient: {active_ingredient})."
+        except Exception as e:
+            logger.warning("OpenFDA API drug search failed: %s", e)
 
     # If OpenFDA lookup did not resolve custom pricing, use local fallbacks
     if base_price == 15.0:

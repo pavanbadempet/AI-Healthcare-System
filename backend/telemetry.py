@@ -408,7 +408,7 @@ async def patient_vitals_stream(websocket: WebSocket, patient_id: int):
             return
 
     await websocket.accept()
-    logger.info("Patient vitals stream client connected for patient %s", patient_id)
+    logger.info("Patient vitals stream client connected")
     try:
         last_observed_at = None
         while True:
@@ -433,7 +433,7 @@ async def patient_vitals_stream(websocket: WebSocket, patient_id: int):
                         await websocket.send_text(json.dumps(payload))
             await asyncio.sleep(2)
     except WebSocketDisconnect:
-        logger.info("Patient vitals stream client disconnected for patient %s", patient_id)
+        logger.info("Patient vitals stream client disconnected")
     except Exception as e:
-        logger.error("Patient vitals stream error for patient %s: %s", patient_id, e)
+        logger.error("Patient vitals stream error: %s", e)
 

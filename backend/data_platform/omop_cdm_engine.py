@@ -146,7 +146,7 @@ class OMOPCommonDataModelEngine:
 def hashlib_int(s: str) -> int:
     """Generates a positive 32-bit integer hash for OMOP relational keys."""
     import hashlib
-    return int(hashlib.md5(s.encode("utf-8")).hexdigest()[:8], 16)
+    return int(hashlib.sha256(s.encode("utf-8")).hexdigest()[:8], 16)
 
 
 omop_engine = OMOPCommonDataModelEngine()
