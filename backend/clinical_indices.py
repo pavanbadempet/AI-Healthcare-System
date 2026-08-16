@@ -67,9 +67,9 @@ def calculate_egfr_ckd_epi(age: float, gender: int, creatinine: float) -> Option
         return None
 
     # Constants based on gender
-    from .sota_rust_engine_layer import sota_rust_engine_layer_engine
+    from .rust_bridge import rust_bridge
     is_female = (gender == 0)
-    egfr = sota_rust_engine_layer_engine.compute_rust_egfr(creatinine, age, is_female)
+    egfr = rust_bridge.compute_rust_egfr(creatinine, age, is_female)
     egfr_rounded = round(egfr, 1)
 
 
@@ -126,8 +126,8 @@ def calculate_fib4_index(age: float, ast: float, alt: float, platelets: float) -
     if platelets <= 0 or alt <= 0 or ast <= 0 or age <= 0:
         return None
 
-    from .sota_rust_engine_layer import sota_rust_engine_layer_engine
-    score = sota_rust_engine_layer_engine.calculate_fib4_rust(ast, alt, platelets, age)
+    from .rust_bridge import rust_bridge
+    score = rust_bridge.calculate_fib4_rust(ast, alt, platelets, age)
 
 
     # Risk threshold classifications (age-dependent cutoffs)

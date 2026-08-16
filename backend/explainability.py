@@ -171,8 +171,8 @@ def generate_counterfactual_explanation(
     """
     Generates clinical counterfactual recommendations via Native Rust PyO3 engine.
     """
-    from .sota_rust_engine_layer import sota_rust_engine_layer_engine
-    recs, target_risk = sota_rust_engine_layer_engine.generate_counterfactual_rust(feature_names, input_values, risk_score)
+    from .rust_bridge import rust_bridge
+    recs, target_risk = rust_bridge.generate_counterfactual_rust(feature_names, input_values, risk_score)
 
     if not recs:
         recs.append("All primary physiological vitals are currently within normal baseline ranges.")

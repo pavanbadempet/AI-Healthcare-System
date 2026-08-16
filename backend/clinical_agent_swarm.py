@@ -9,7 +9,7 @@ from typing import Any, Dict, List
 
 from pydantic import BaseModel, Field
 
-from backend.sota_rust_engine_layer import sota_rust_engine_layer_engine
+from backend.rust_bridge import rust_bridge
 
 
 class ClinicalSwarmInput(BaseModel):
@@ -52,7 +52,7 @@ class AutonomousClinicalSwarmEngine:
         reasoning_trace: List[AgentThoughtStep] = []
 
         # 1. Triage Agent Node (ReAct with Rust eGFR Calculation Tool Call)
-        egfr = sota_rust_engine_layer_engine.compute_rust_egfr(
+        egfr = rust_bridge.compute_rust_egfr(
             input_data.serum_creatinine, input_data.age, input_data.is_female
         )
         reasoning_trace.append(AgentThoughtStep(
@@ -79,7 +79,7 @@ class AutonomousClinicalSwarmEngine:
         ))
 
         # 2. Pharmacy Interaction Agent Node (ReAct Tool Call for PHI Redaction)
-        redacted_complaint = sota_rust_engine_layer_engine.redact_phi_text_rust(input_data.chief_complaint)
+        redacted_complaint = rust_bridge.redact_phi_text_rust(input_data.chief_complaint)
         reasoning_trace.append(AgentThoughtStep(
             agent_name="PharmacyAgent-Node-02",
             thought="Sanitizing clinical text to eliminate PHI prior to cloud pharmacotherapy analysis.",

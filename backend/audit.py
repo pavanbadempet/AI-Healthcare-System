@@ -58,8 +58,8 @@ def _is_sensitive_key(key: str) -> bool:
 
 
 def _sanitize_text(value: str) -> str:
-    from .sota_rust_engine_layer import sota_rust_engine_layer_engine
-    sanitized = sota_rust_engine_layer_engine.redact_phi_text_rust(value)
+    from .rust_bridge import rust_bridge
+    sanitized = rust_bridge.redact_phi_text_rust(value)
     sanitized = _SECRET_ASSIGNMENT_RE.sub(r"\1=[redacted-secret]", sanitized)
     sanitized = _EMAIL_RE.sub("[redacted-email]", sanitized)
     sanitized = _DOB_RE.sub("[redacted-date]", sanitized)

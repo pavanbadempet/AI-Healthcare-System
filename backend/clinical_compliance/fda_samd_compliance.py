@@ -122,8 +122,8 @@ class FDAAuditChain:
         new_index = prev_block.index + 1
         ts = time.time()
 
-        from backend.sota_rust_engine_layer import sota_rust_engine_layer_engine
-        curr_hash = sota_rust_engine_layer_engine.generate_audit_hash_rust(
+        from backend.rust_bridge import rust_bridge
+        curr_hash = rust_bridge.generate_audit_hash_rust(
             new_index, event_type, actor_id, action_details, prev_block.current_hash
         )
 
@@ -148,8 +148,8 @@ class FDAAuditChain:
             prev = self._chain[i - 1]
             if curr.previous_hash != prev.current_hash:
                 return False
-            from backend.sota_rust_engine_layer import sota_rust_engine_layer_engine
-            recomputed = sota_rust_engine_layer_engine.generate_audit_hash_rust(
+            from backend.rust_bridge import rust_bridge
+            recomputed = rust_bridge.generate_audit_hash_rust(
                 curr.index, curr.event_type, curr.actor_id, curr.action_details, curr.previous_hash
             )
             if curr.current_hash != recomputed:

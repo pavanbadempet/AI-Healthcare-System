@@ -79,11 +79,11 @@ agent_tool_registry = AgentToolRegistry()
 # ---------------------------------------------------------------------------
 # Pre-register Rust-backed clinical tools (with Python fallbacks)
 # ---------------------------------------------------------------------------
-from backend.sota_rust_engine_layer import sota_rust_engine_layer_engine
+from backend.rust_bridge import rust_bridge
 
 agent_tool_registry.register(
     name="compute_egfr",
-    func=sota_rust_engine_layer_engine.compute_rust_egfr,
+    func=rust_bridge.compute_rust_egfr,
     description="Calculate CKD-EPI 2021 eGFR using Rust PyO3 engine.",
     parameter_schema={"serum_creatinine": "float", "age": "float", "is_female": "bool"},
     return_type="float",
@@ -92,8 +92,8 @@ agent_tool_registry.register(
 
 agent_tool_registry.register(
     name="redact_phi",
-    func=sota_rust_engine_layer_engine.redact_phi_text_rust,
-    description="Redact PII/PHI (SSNs, emails) from clinical text using Rust SIMD regex.",
+    func=rust_bridge.redact_phi_text_rust,
+    description="Redact PHI entities from text via Rust regex/SIMD scanner.",
     parameter_schema={"text": "str"},
     return_type="str",
     is_rust_native=True,
@@ -101,8 +101,8 @@ agent_tool_registry.register(
 
 agent_tool_registry.register(
     name="hash_password",
-    func=sota_rust_engine_layer_engine.hash_password_rust,
-    description="Hash a password using Rust-native bcrypt.",
+    func=rust_bridge.hash_password_rust,
+    description="Securely hash password using Rust bcrypt / Argon2 engine.",
     parameter_schema={"password": "str"},
     return_type="str",
     is_rust_native=True,
@@ -110,9 +110,9 @@ agent_tool_registry.register(
 
 agent_tool_registry.register(
     name="aggregate_fedavg",
-    func=sota_rust_engine_layer_engine.aggregate_fedavg_rust,
-    description="Aggregate federated learning gradients using Rust SIMD FedAvg.",
-    parameter_schema={"gradients": "List[List[float]]", "weights": "List[float]"},
-    return_type="List[float]",
+    func=rust_bridge.aggregate_fedavg_rust,
+    description="Federated learning FedAvg aggregation using Rust SIMD arithmetic.",
+    parameter_schema={"client_gradients": "list", "weights": "list"},
+    return_type="list",
     is_rust_native=True,
 )
