@@ -917,13 +917,8 @@ async def _resolve_provider_and_key(api_provider: Optional[str] = None, api_key:
         pass
 
     if not resolved_provider or (resolved_provider.lower() == "gemini" and not gemini_active) or (resolved_provider.lower() == "ollama" and not ollama_active):
-        hf_token = os.getenv("HF_TOKEN")
-        if os.getenv("SPACE_ID") and hf_token:
-            resolved_provider = "huggingface"
-            resolved_key = hf_token
-        else:
-            resolved_provider = "custom"
-            resolved_key = resolved_key or "cloudflare"
+        resolved_provider = "custom"
+        resolved_key = resolved_key or "cloudflare"
 
     return resolved_provider, resolved_key
 
