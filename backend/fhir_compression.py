@@ -11,6 +11,8 @@ import zlib
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from backend.rust_bridge import rust_bridge
+
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/fhir", tags=["FHIR Compression"])
@@ -23,35 +25,24 @@ class DecompressRequest(BaseModel):
 
 @router.post("/compact")
 def compact_fhir(body: CompactRequest):
-    """Compress a FHIR JSON bundle into an ultra-dense base85 string."""
+    """Compress a FHIR JSON bundle into an ultra-dense base85 string via Rust/C-FFI engine."""
     try:
-        raw_json = json.dumps(body.fhir_bundle, separators=(",", ":"))
-        json_bytes = raw_json.encode("utf-8")
-        compressed = zlib.compress(json_bytes, level=9)
-        base85_str = base64.b85encode(compressed).decode("ascii")
-
-        ratio = len(base85_str) / len(raw_json) if raw_json else 1.0
-        logger.info("Compressed FHIR bundle from %d to %d characters (Ratio: %.1f%%)",
-                    len(raw_json), len(base85_str), ratio * 100)
-
+        base85_str, orig_sz, comp_sz, ratio = rust_bridge.compress_fhir_bundle_rust(body.fhir_bundle)
         return {
-            "original_size": len(raw_json),
-            "compressed_size": len(base85_str),
-            "ratio": round(ratio, 3),
+            "original_size": orig_sz,
+            "compressed_size": comp_sz,
+            "ratio": ratio,
             "payload": base85_str
         }
-    except Exception as e:
-        logger.error("FHIR bundle compression failed: %s", e)
-        raise HTTPException(status_code=400, detail=f"Compression failed: {str(e)}")
+    except Exception:
+        logger.error("FHIR bundle compression failed")
+        raise HTTPException(status_code=400, detail="FHIR bundle compression failed.")
 
 @router.post("/decompress")
 def decompress_fhir(body: DecompressRequest):
-    """Decompress a base85-encoded FHIR bundle back to its original JSON dict."""
+    """Decompress a base85-encoded FHIR bundle back to its original JSON dict via Rust/C-FFI engine."""
     try:
-        compressed_bytes = base64.b85decode(body.compressed_data.encode("ascii"))
-        decompressed_bytes = zlib.decompress(compressed_bytes)
-        fhir_dict = json.loads(decompressed_bytes.decode("utf-8"))
-        return fhir_dict
-    except Exception as e:
-        logger.error("FHIR bundle decompression failed: %s", e)
-        raise HTTPException(status_code=400, detail=f"Decompression failed: {str(e)}")
+        return rust_bridge.decompress_fhir_bundle_rust(body.compressed_data)
+    except Exception:
+        logger.error("FHIR bundle decompression failed")
+        raise HTTPException(status_code=400, detail="FHIR bundle decompression failed.")

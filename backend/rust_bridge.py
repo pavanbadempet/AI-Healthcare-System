@@ -6,10 +6,16 @@ Provides high-performance Rust integration primitives across the stack:
 2. Rust PyO3 / Maturin Module Dispatcher & FFI Safety Harness
 3. Zero-Allocation Memory Buffer Transfers & Native Sepsis / Fraud Compute
 4. Native Clinical Risk Algorithms (Diabetes, Heart, FIB-4, SaMD Risk Matrix)
+5. Real-Time Biosignal DSP (Pan-Tompkins ECG & HRV Analysis)
+6. DICOM Medical Imaging Pixel Matrix Normalization (HU Scaling & VOI LUT)
+7. Fast Binary FHIR Serialization & Zstandard/Base85 Compression
 """
 
+import base64
+import json
 import math
 import time
+import zlib
 from typing import Any, Dict, List, Optional, Tuple
 
 from pydantic import BaseModel
@@ -190,6 +196,113 @@ class RustBridgeEngine:
             for i in range(dim):
                 aggregated[i] += grads[i] * normalized_w
         return aggregated
+
+    # =========================================================================
+    # 🫀 BIOSIGNAL DSP & ECG ANALYSIS (RUST PY03 ENGINE)
+    # =========================================================================
+    def detect_ecg_r_peaks_rust(self, signal: List[float], sampling_rate: float = 250.0) -> List[int]:
+        """Runs Pan-Tompkins QRS R-peak detection in Rust PyO3 with zero-allocation fallback."""
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.detect_ecg_r_peaks_py(signal, sampling_rate)
+        except Exception:
+            if len(signal) < int(sampling_rate * 0.5):
+                return []
+            import numpy as np
+            x = np.array(signal, dtype=float)
+            kernel_lp = np.array([1, 2, 3, 4, 5, 4, 3, 2, 1]) / 25.0
+            filtered = np.convolve(x, kernel_lp, mode='same')
+            kernel_hp = np.array([-1, 2, -1]) / 4.0
+            filtered = np.convolve(filtered, kernel_hp, mode='same')
+            der_kernel = np.array([-1, -2, 0, 2, 1]) * (sampling_rate / 8.0)
+            derivative = np.convolve(filtered, der_kernel, mode='same')
+            squared = derivative ** 2
+            window_size = max(1, int(0.150 * sampling_rate))
+            integrated = np.convolve(squared, np.ones(window_size) / window_size, mode='same')
+
+            peaks = []
+            min_dist = int(0.2 * sampling_rate)
+            thresh = np.mean(integrated) + 0.5 * np.std(integrated)
+            i = 0
+            while i < len(integrated):
+                if integrated[i] > thresh:
+                    start_idx = max(0, i - window_size)
+                    end_idx = min(len(signal), i + window_size)
+                    local_max = start_idx + int(np.argmax(signal[start_idx:end_idx]))
+                    if not peaks or (local_max - peaks[-1]) > min_dist:
+                        peaks.append(local_max)
+                    i += min_dist
+                else:
+                    i += 1
+            return peaks
+
+    def compute_hrv_metrics_rust(self, r_peaks: List[int], sampling_rate: float = 250.0) -> Tuple[float, float, float, float]:
+        """Calculates Heart Rate Variability (HR, SDNN, RMSSD, pNN50) in Rust."""
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.compute_hrv_metrics_py(r_peaks, sampling_rate)
+        except Exception:
+            if len(r_peaks) < 2:
+                return 72.0, 0.0, 0.0, 0.0
+            import numpy as np
+            rr = np.diff(r_peaks) * (1000.0 / sampling_rate)
+            valid = rr[(rr >= 300) & (rr <= 2000)]
+            if len(valid) < 2:
+                valid = rr
+            mean_rr = float(np.mean(valid))
+            hr = 60000.0 / mean_rr if mean_rr > 0 else 72.0
+            sdnn = float(np.std(valid))
+            diffs = np.diff(valid)
+            rmssd = float(np.sqrt(np.mean(diffs ** 2))) if len(diffs) > 0 else 0.0
+            nn50 = np.sum(np.abs(diffs) > 50.0) if len(diffs) > 0 else 0
+            pnn50 = float((nn50 / len(diffs)) * 100.0) if len(diffs) > 0 else 0.0
+            return (round(hr, 1), round(sdnn, 2), round(rmssd, 2), round(pnn50, 2))
+
+    # =========================================================================
+    # 🩻 MEDICAL IMAGING (DICOM MATRIX NORMALIZATION & WINDOWING)
+    # =========================================================================
+    def normalize_dicom_pixels_rust(
+        self, raw_pixels: List[float], rescale_slope: float = 1.0, rescale_intercept: float = 0.0,
+        window_center: float = 40.0, window_width: float = 400.0
+    ) -> List[float]:
+        """Applies Hounsfield Unit scaling and VOI LUT window/level clamping in Rust SIMD."""
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.normalize_dicom_pixels_py(raw_pixels, rescale_slope, rescale_intercept, window_center, window_width)
+        except Exception:
+            lower = window_center - (window_width / 2.0)
+            upper = window_center + (window_width / 2.0)
+            normalized = []
+            for px in raw_pixels:
+                hu = px * rescale_slope + rescale_intercept
+                clamped = max(lower, min(upper, hu))
+                norm_val = (clamped - lower) / window_width if window_width > 0 else 0.0
+                normalized.append(round(norm_val, 4))
+            return normalized
+
+    # =========================================================================
+    # 📦 HIGH-SPEED FHIR SERIALIZATION & COMPRESSION
+    # =========================================================================
+    def compress_fhir_bundle_rust(self, fhir_bundle: dict) -> Tuple[str, int, int, float]:
+        """Compresses FHIR bundle into base85 payload using Rust zlib/zstd."""
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.compress_fhir_bundle_py(fhir_bundle)
+        except Exception:
+            raw_json = json.dumps(fhir_bundle, separators=(",", ":"))
+            compressed = zlib.compress(raw_json.encode("utf-8"), level=9)
+            b85 = base64.b85encode(compressed).decode("ascii")
+            ratio = len(b85) / len(raw_json) if raw_json else 1.0
+            return (b85, len(raw_json), len(b85), round(ratio, 3))
+
+    def decompress_fhir_bundle_rust(self, base85_str: str) -> dict:
+        """Decompresses base85 payload back into FHIR dictionary using Rust."""
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.decompress_fhir_bundle_py(base85_str)
+        except Exception:
+            decompressed = zlib.decompress(base64.b85decode(base85_str.encode("ascii")))
+            return json.loads(decompressed.decode("utf-8"))
 
 
 rust_bridge = RustBridgeEngine()

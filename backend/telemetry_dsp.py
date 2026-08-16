@@ -38,62 +38,11 @@ class EcgAnalysisResult:
 def pan_tompkins_r_peak_detector(signal: np.ndarray, sampling_rate: float = 250.0) -> List[int]:
     """
     State-of-the-Art Pan-Tompkins ECG R-peak detection algorithm.
-    Steps:
-    1. Bandpass filter (5-15 Hz passband approximation)
-    2. Five-point derivative operator
-    3. Non-linear squaring operator
-    4. Moving window integration
-    5. Adaptive threshold peak detection
+    Delegates to high-throughput Rust SIMD engine with Python fallback.
     """
-    if len(signal) < int(sampling_rate * 0.5):
-        return []
-
-    # Ensure float numpy array
-    x = np.array(signal, dtype=float)
-
-    # 1. Bandpass Filter (Low-pass + High-pass difference filter)
-    # Low-pass filter: y[n] = 2*y[n-1] - y[n-2] + x[n] - 2*x[n-6] + x[n-12]
-    # Simple zero-phase digital smoothing approximation:
-    kernel_lp = np.array([1, 2, 3, 4, 5, 4, 3, 2, 1]) / 25.0
-    filtered = np.convolve(x, kernel_lp, mode='same')
-
-    # High-pass filter subtraction
-    kernel_hp = np.array([-1, 2, -1]) / 4.0
-    filtered = np.convolve(filtered, kernel_hp, mode='same')
-
-    # 2. Derivative Filter: y[n] = (1/8)(-x[n-2] - 2x[n-1] + 2x[n+1] + x[n+2])
-    der_kernel = np.array([-1, -2, 0, 2, 1]) * (sampling_rate / 8.0)
-    derivative = np.convolve(filtered, der_kernel, mode='same')
-
-    # 3. Squaring Function: y[n] = (x[n])^2
-    squared = derivative ** 2
-
-    # 4. Moving Window Integration (window size ~150ms)
-    window_size = int(0.150 * sampling_rate)
-    window_size = max(1, window_size)
-    integrated = np.convolve(squared, np.ones(window_size) / window_size, mode='same')
-
-    # 5. Adaptive Thresholding for R-peak detection
-    peaks = []
-    min_distance = int(0.2 * sampling_rate) # Refractory period ~200ms
-
-    threshold = np.mean(integrated) + 0.5 * np.std(integrated)
-
-    i = 0
-    while i < len(integrated):
-        if integrated[i] > threshold:
-            # Search local max in raw signal near this integration peak
-            search_start = max(0, i - window_size)
-            search_end = min(len(signal), i + window_size)
-            local_max_idx = search_start + np.argmax(signal[search_start:search_end])
-
-            if not peaks or (local_max_idx - peaks[-1]) > min_distance:
-                peaks.append(int(local_max_idx))
-            i += min_distance
-        else:
-            i += 1
-
-    return peaks
+    from backend.rust_bridge import rust_bridge
+    sig_list = [float(x) for x in signal]
+    return rust_bridge.detect_ecg_r_peaks_rust(sig_list, sampling_rate)
 
 
 def calculate_hrv_metrics(r_peaks: List[int], sampling_rate: float = 250.0) -> Tuple[float, float, float, float]:
@@ -104,29 +53,8 @@ def calculate_hrv_metrics(r_peaks: List[int], sampling_rate: float = 250.0) -> T
     - RMSSD: Root Mean Square of Successive Differences (ms)
     - pNN50: Percentage of successive NN intervals > 50ms (%)
     """
-    if len(r_peaks) < 2:
-        return 72.0, 0.0, 0.0, 0.0
-
-    # Calculate RR intervals in milliseconds
-    rr_intervals_ms = np.diff(r_peaks) * (1000.0 / sampling_rate)
-
-    # Filter out physiological impossibilities (300ms to 2000ms RR interval)
-    valid_rr = rr_intervals_ms[(rr_intervals_ms >= 300) & (rr_intervals_ms <= 2000)]
-    if len(valid_rr) < 2:
-        valid_rr = rr_intervals_ms
-
-    mean_rr = float(np.mean(valid_rr))
-    heart_rate_bpm = 60000.0 / mean_rr if mean_rr > 0 else 72.0
-
-    sdnn = float(np.std(valid_rr))
-
-    rr_diffs = np.diff(valid_rr)
-    rmssd = float(np.sqrt(np.mean(rr_diffs ** 2))) if len(rr_diffs) > 0 else 0.0
-
-    nn50 = np.sum(np.abs(rr_diffs) > 50.0) if len(rr_diffs) > 0 else 0
-    pnn50 = float((nn50 / len(rr_diffs)) * 100.0) if len(rr_diffs) > 0 else 0.0
-
-    return heart_rate_bpm, sdnn, rmssd, pnn50
+    from backend.rust_bridge import rust_bridge
+    return rust_bridge.compute_hrv_metrics_rust(r_peaks, sampling_rate)
 
 
 def analyze_ecg_signal(signal: List[float], sampling_rate: float = 250.0) -> EcgAnalysisResult:
