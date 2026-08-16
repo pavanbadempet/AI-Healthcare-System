@@ -705,30 +705,35 @@ if os.path.isdir(_frontend_dist):
     if os.path.isdir(assets_dir):
         app.mount("/assets", ImmutableStaticFiles(directory=assets_dir), name="assets")
 
-    from fastapi.responses import FileResponse
+    from fastapi.responses import FileResponse, HTMLResponse
+
+    # Pre-index allowed static files to avoid any dynamic path construction
+    _ALLOWED_STATIC_FILES: dict[str, str] = {}
+    if os.path.isdir(_frontend_dist):
+        for entry in os.listdir(_frontend_dist):
+            full_p = os.path.abspath(os.path.join(_frontend_dist, entry))
+            if os.path.isfile(full_p):
+                _ALLOWED_STATIC_FILES[entry] = full_p
+    _ALLOWED_STATIC_FILES["index.html"] = os.path.abspath(os.path.join(_frontend_dist, "index.html"))
 
     _INDEX_HTML_CACHE: str | None = None
 
     # Catch-all route to serve the React SPA and let React Router handle routing
     @app.get("/{catchall:path}")
-
     async def serve_frontend(catchall: str, request: Request):
-        if not catchall or ".." in catchall:
-            raise HTTPException(status_code=404)
-
         filename = os.path.basename(catchall)
         if "." in filename:
-            # Only serve if file exists strictly inside frontend dist
-            safe_target = os.path.normpath(os.path.join(_frontend_dist, filename))
-            if os.path.isfile(safe_target) and os.path.dirname(safe_target) == os.path.normpath(_frontend_dist):
-                return FileResponse(safe_target)
+            # Look up purely from statically verified dictionary (zero tainted path joins)
+            target_path = _ALLOWED_STATIC_FILES.get(filename)
+            if target_path and os.path.isfile(target_path):
+                return FileResponse(target_path)
             raise HTTPException(status_code=404)
 
         # Fallback to index.html for browser client-side routing
         global _INDEX_HTML_CACHE
         if _INDEX_HTML_CACHE is None:
-            index_file = os.path.join(_frontend_dist, "index.html")
-            if os.path.exists(index_file):
+            index_file = _ALLOWED_STATIC_FILES.get("index.html") or os.path.join(_frontend_dist, "index.html")
+            if os.path.isfile(index_file):
                 with open(index_file, "r", encoding="utf-8") as f:
                     _INDEX_HTML_CACHE = f.read()
 
