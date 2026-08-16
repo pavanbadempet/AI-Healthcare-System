@@ -355,8 +355,8 @@ def embed_text(text: str, task_type: str = "retrieval_document") -> list[float]:
     import hashlib
 
     from .cache_service import cache
-    # Generate MD5 hash of text to create a compact, unique cache key
-    text_hash = hashlib.md5(text.encode("utf-8")).hexdigest()
+    # Generate SHA-256 hash of text to create a compact, unique cache key
+    text_hash = hashlib.sha256(text.encode("utf-8")).hexdigest()[:16]
     cache_key = f"emb:{task_type}:{text_hash}"
 
     try:
@@ -469,7 +469,7 @@ async def _generate_gemini(prompt: str, system: str = "") -> str:
 
             from google.generativeai import caching
 
-            system_hash = hashlib.md5(system.encode("utf-8")).hexdigest()
+            system_hash = hashlib.sha256(system.encode("utf-8")).hexdigest()[:16]
             cache_name = f"sys-cache-{system_hash}"
 
             cached_content = None

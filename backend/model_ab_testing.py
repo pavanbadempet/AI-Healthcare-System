@@ -145,7 +145,7 @@ class ModelABTestManager:
 
             # Deterministic split on identifier (patient_id, email, username, etc.)
             patient_id = str(patient_data.get("patient_id", patient_data.get("id", "anonymous")))
-            hash_val = int(hashlib.md5(patient_id.encode("utf-8")).hexdigest(), 16)
+            hash_val = int(hashlib.sha256(patient_id.encode("utf-8")).hexdigest(), 16)
             bucket = (hash_val % 100) / 100.0
 
             if config.strategy == "shadow":

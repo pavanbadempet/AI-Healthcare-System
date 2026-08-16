@@ -69,7 +69,7 @@ class MinHashDeduplicator:
         for i in range(self.num_hashes):
             min_val = float("inf")
             for shingle in shingles:
-                val = struct.unpack("<I", hashlib.md5(f"{i}:{shingle}".encode("utf-8")).digest()[:4])[0]
+                val = struct.unpack("<I", hashlib.sha256(f"{i}:{shingle}".encode("utf-8")).digest()[:4])[0]
                 if val < min_val:
                     min_val = val
             sig.append(int(min_val) if min_val != float("inf") else 0)
@@ -93,7 +93,7 @@ class ConsistentHashRing:
         self.sorted_keys: List[int] = []
 
     def _hash(self, key: str) -> int:
-        return struct.unpack("<I", hashlib.md5(key.encode("utf-8")).digest()[:4])[0]
+        return struct.unpack("<I", hashlib.sha256(key.encode("utf-8")).digest()[:4])[0]
 
     def add_node(self, node: str):
         for i in range(self.virtual_nodes):

@@ -70,8 +70,8 @@ def text_to_speech(body: TTSRequest):
     if not body.text or not body.text.strip():
         raise HTTPException(status_code=400, detail="Text cannot be empty.")
 
-    # 1. Local caching logic based on md5 hash
-    text_hash = hashlib.md5((body.text.strip() + "_" + body.lang).encode("utf-8")).hexdigest()
+    # 1. Local caching logic based on sha256 hash
+    text_hash = hashlib.sha256((body.text.strip() + "_" + body.lang).encode("utf-8")).hexdigest()[:16]
     cache_dir = os.path.abspath(os.path.join("data", "tts_cache"))
     os.makedirs(cache_dir, exist_ok=True)
 

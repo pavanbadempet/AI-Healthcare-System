@@ -86,18 +86,24 @@ class AgenticBIEngine:
         """Auto-generate a clinical KPI dashboard from a table."""
         widgets: List[DashboardWidget] = []
 
+        # Sanitize table identifier against SQL injection
+        import re
+        safe_table = re.sub(r"[^a-zA-Z0-9_]", "", table)
+        if not safe_table:
+            return widgets
+
         # Total records KPI
-        count_result = lakehouse_sql_engine.execute(f"SELECT COUNT(*) FROM {table}")
+        count_result = lakehouse_sql_engine.execute(f"SELECT COUNT(*) FROM {safe_table}")
         count = count_result.rows[0].get("count", 0) if count_result.rows else 0
         widgets.append(DashboardWidget(
-            widget_id="W-TOTAL", title=f"Total Records — {table}",
+            widget_id="W-TOTAL", title=f"Total Records — {safe_table}",
             metric_value=count, chart_type="KPI",
         ))
 
         # Sample data table
-        sample = lakehouse_sql_engine.execute(f"SELECT * FROM {table} LIMIT 10")
+        sample = lakehouse_sql_engine.execute(f"SELECT * FROM {safe_table} LIMIT 10")
         widgets.append(DashboardWidget(
-            widget_id="W-SAMPLE", title=f"Recent Records — {table}",
+            widget_id="W-SAMPLE", title=f"Recent Records — {safe_table}",
             metric_value=sample.total_count, chart_type="TABLE",
             data=sample.rows,
         ))

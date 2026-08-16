@@ -27,8 +27,8 @@ class BloomFilter:
         self.bit_array = [0] * self.m
 
     def _hashes(self, item: str) -> List[int]:
-        h1 = struct.unpack("<I", hashlib.md5(item.encode("utf-8")).digest()[:4])[0]
-        h2 = struct.unpack("<I", hashlib.sha256(item.encode("utf-8")).digest()[:4])[0]
+        h1 = struct.unpack("<I", hashlib.sha256(f"h1:{item}".encode("utf-8")).digest()[:4])[0]
+        h2 = struct.unpack("<I", hashlib.sha256(f"h2:{item}".encode("utf-8")).digest()[:4])[0]
         return [(h1 + i * h2) % self.m for i in range(self.k)]
 
     def add(self, item: str):
