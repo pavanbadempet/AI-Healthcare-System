@@ -426,6 +426,108 @@ class RustBridgeEngine:
                 current = hashlib.sha256(combined).hexdigest()
             return current == root_hash
 
+    # =========================================================================
+    # 🫀 FRAMINGHAM 10-YEAR CARDIOVASCULAR RISK
+    # =========================================================================
+    def calculate_framingham_risk_rust(
+        self, age: float, is_female: bool, total_chol: float, hdl_chol: float,
+        sbp: float, smoker: bool, diabetes: bool, hyp_treatment: bool
+    ) -> float:
+        """Calculates 10-year CVD risk percentage in Rust / Python IEEE-754 floating point."""
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.calculate_framingham_risk_py(
+                age, is_female, total_chol, hdl_chol, sbp, smoker, diabetes, hyp_treatment
+            )
+        except Exception:
+            clamped_age = max(30.0, min(74.0, age))
+            ln_age = math.log(clamped_age)
+            ln_tc = math.log(total_chol)
+            ln_hdl = math.log(hdl_chol)
+            ln_sbp = math.log(sbp)
+
+            if is_female:
+                mean_sum = 26.0145
+                baseline = 0.94833
+                coeff_sum = (
+                    (2.72107 * ln_age) + (0.81734 * ln_tc) + (-0.27634 * ln_hdl) +
+                    ((2.88267 if hyp_treatment else 2.81291) * ln_sbp) +
+                    (0.61868 * float(smoker)) + (0.77763 * float(diabetes))
+                )
+            else:
+                mean_sum = 23.9388
+                baseline = 0.88431
+                coeff_sum = (
+                    (3.06117 * ln_age) + (1.12370 * ln_tc) + (-0.93267 * ln_hdl) +
+                    ((1.99881 if hyp_treatment else 1.93303) * ln_sbp) +
+                    (0.70953 * float(smoker)) + (0.53160 * float(diabetes))
+                )
+
+            try:
+                risk = 1.0 - (baseline ** math.exp(coeff_sum - mean_sum))
+                return round(risk * 100.0, 1)
+            except OverflowError:
+                return 99.9
+
+    # =========================================================================
+    # 💊 PHARMACOGENOMICS (PGX) CPIC DIPLOTYPE MATCHING
+    # =========================================================================
+    def match_pgx_diplotype_rust(
+        self, medication: str, gene: str, diplotype: str, rules_catalog: dict
+    ) -> dict:
+        """Evaluates PGx drug-gene interaction guidelines in Rust or in-memory fallback."""
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.match_pgx_diplotype_py(medication, gene, diplotype, rules_catalog)
+        except Exception:
+            key = (medication.lower(), gene.upper())
+            if key in rules_catalog and diplotype in rules_catalog[key]:
+                info = rules_catalog[key][diplotype]
+                return {
+                    "medication": medication,
+                    "gene": gene.upper(),
+                    "diplotype": diplotype,
+                    "metabolizer_phenotype": info["metabolizer"],
+                    "pgx_recommendation_action": info["action"],
+                    "clinical_guideline": info["recommendation"],
+                    "is_pgx_alert": info["action"] != "STANDARD_DOSING",
+                }
+            return {
+                "medication": medication,
+                "gene": gene.upper(),
+                "diplotype": diplotype,
+                "metabolizer_phenotype": "UNKNOWN/WILD_TYPE",
+                "pgx_recommendation_action": "STANDARD_DOSING",
+                "clinical_guideline": "No specific CPIC PGx contraindication found for this diplotype.",
+                "is_pgx_alert": False,
+            }
+
+    # =========================================================================
+    # ⚖️ TWO-TOWER VECTOR RANKING & SIMILARITY
+    # =========================================================================
+    def rank_candidates_two_tower_rust(
+        self, query_vec: List[float], candidate_vectors: List[List[float]], top_k: int = 5
+    ) -> List[Tuple[int, float]]:
+        """Ranks candidate vectors by cosine similarity using Rust SIMD / Fallback."""
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.rank_candidates_two_tower_py(query_vec, candidate_vectors, top_k)
+        except Exception:
+            norm_q = math.sqrt(sum(x * x for x in query_vec))
+            if norm_q == 0:
+                return []
+            scores = []
+            for i, cand in enumerate(candidate_vectors):
+                norm_c = math.sqrt(sum(y * y for y in cand))
+                if norm_c > 0:
+                    dot = sum(x * y for x, y in zip(query_vec, cand))
+                    sim = dot / (norm_q * norm_c)
+                    scores.append((i, round(sim, 4)))
+                else:
+                    scores.append((i, 0.0))
+            scores.sort(key=lambda item: item[1], reverse=True)
+            return scores[:top_k]
+
 
 rust_bridge = RustBridgeEngine()
 sota_rust_engine_layer_engine = rust_bridge

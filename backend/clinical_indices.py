@@ -204,56 +204,17 @@ def calculate_framingham_risk(
     if age <= 0 or total_chol <= 0 or hdl_chol <= 0 or sbp <= 0:
         return None
 
-    # Clamp age to valid FRS bounds to prevent extreme extrapolation
-    clamped_age = max(30.0, min(74.0, age))
-
-    ln_age = math.log(clamped_age)
-    ln_total_chol = math.log(total_chol)
-    ln_hdl_chol = math.log(hdl_chol)
-    ln_sbp = math.log(sbp)
-
-    if gender == 0:  # Female
-        mean_sum = 26.0145
-        baseline_survival = 0.94833
-
-        # Beta coefficients
-        b_age = 2.72107
-        b_total_chol = 0.81734
-        b_hdl_chol = -0.27634
-        b_sbp = 2.88267 if hyp_treatment == 1 else 2.81291
-        b_smoker = 0.61868
-        b_diabetes = 0.77763
-
-    else:  # Male
-        mean_sum = 23.9388
-        baseline_survival = 0.88431
-
-        # Beta coefficients
-        b_age = 3.06117
-        b_total_chol = 1.12370
-        b_hdl_chol = -0.93267
-        b_sbp = 1.99881 if hyp_treatment == 1 else 1.93303
-        b_smoker = 0.70953
-        b_diabetes = 0.53160
-
-    # Sum of beta * value
-    coeff_sum = (
-        (b_age * ln_age) +
-        (b_total_chol * ln_total_chol) +
-        (b_hdl_chol * ln_hdl_chol) +
-        (b_sbp * ln_sbp) +
-        (b_smoker * float(smoker)) +
-        (b_diabetes * float(diabetes))
+    from .rust_bridge import rust_bridge
+    risk_percent = rust_bridge.calculate_framingham_risk_rust(
+        age=age,
+        is_female=(gender == 0),
+        total_chol=total_chol,
+        hdl_chol=hdl_chol,
+        sbp=sbp,
+        smoker=bool(smoker),
+        diabetes=bool(diabetes),
+        hyp_treatment=bool(hyp_treatment)
     )
-
-    # Risk calculation: 1 - baseline_survival ^ exp(coeff_sum - mean_sum)
-    try:
-        power = math.exp(coeff_sum - mean_sum)
-        risk = 1.0 - (baseline_survival ** power)
-        risk_percent = round(risk * 100.0, 1)
-    except OverflowError:
-        # Prevent math overflow for extreme values
-        risk_percent = 99.9
 
     # Risk level classification
     if risk_percent < 10.0:

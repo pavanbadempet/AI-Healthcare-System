@@ -19,8 +19,11 @@ PGX_GENE_RULES = {
 }
 
 
+from backend.rust_bridge import rust_bridge
+
+
 class PharmacogenomicsEngine:
-    """Evaluates drug-gene interactions and metabolizer phenotype risks."""
+    """Evaluates drug-gene interactions and metabolizer phenotype risks via Rust / Fallback."""
 
     def evaluate_pgx_dosing(
         self,
@@ -28,30 +31,7 @@ class PharmacogenomicsEngine:
         gene: str,
         diplotype: str,
     ) -> Dict[str, any]:
-        med_lower = medication_name.lower()
-        key = (med_lower, gene.upper())
-
-        if key in PGX_GENE_RULES and diplotype in PGX_GENE_RULES[key]:
-            info = PGX_GENE_RULES[key][diplotype]
-            return {
-                "medication": medication_name,
-                "gene": gene.upper(),
-                "diplotype": diplotype,
-                "metabolizer_phenotype": info["metabolizer"],
-                "pgx_recommendation_action": info["action"],
-                "clinical_guideline": info["recommendation"],
-                "is_pgx_alert": info["action"] != "STANDARD_DOSING",
-            }
-
-        return {
-            "medication": medication_name,
-            "gene": gene.upper(),
-            "diplotype": diplotype,
-            "metabolizer_phenotype": "UNKNOWN/WILD_TYPE",
-            "pgx_recommendation_action": "STANDARD_DOSING",
-            "clinical_guideline": "No specific CPIC PGx contraindication found for this diplotype.",
-            "is_pgx_alert": False,
-        }
+        return rust_bridge.match_pgx_diplotype_rust(medication_name, gene, diplotype, PGX_GENE_RULES)
 
 
 # Singleton engine instance
