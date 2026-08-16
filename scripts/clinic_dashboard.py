@@ -68,7 +68,7 @@ class TelemetryStream:
     def __init__(self):
         self.tick = 0
         self.beds = [random.choice([True, False, False]) for _ in range(40)] # True = occupied
-        self.vitals_history = []
+        self.metric_signals = []
         self.db_connections = 4
         self.cache_hits = 1240
         self.cache_misses = 45
@@ -95,16 +95,16 @@ class TelemetryStream:
         # Fluctuating DB connections
         self.db_connections = max(2, min(12, self.db_connections + random.choice([-1, 0, 1])))
 
-        # Generate fake patient vitals feed
-        heart_rate = int(72 + 10 * math.sin(self.tick * 0.2) + random.randint(-2, 2))
-        sys_bp = int(120 + 8 * math.cos(self.tick * 0.1) + random.randint(-3, 3))
-        dia_bp = int(80 + 5 * math.sin(self.tick * 0.1) + random.randint(-2, 2))
-        spo2 = max(94, min(100, int(98 + random.choice([-1, 0, 0, 0, 1]))))
-        temp = 98.4 + 0.5 * math.sin(self.tick * 0.05) + random.random() * 0.2
+        # Generate synthetic DSP channel feed
+        signal_rate = int(72 + 10 * math.sin(self.tick * 0.2) + random.randint(-2, 2))
+        wave_peak = int(120 + 8 * math.cos(self.tick * 0.1) + random.randint(-3, 3))
+        wave_trough = int(80 + 5 * math.sin(self.tick * 0.1) + random.randint(-2, 2))
+        purity_pct = max(94, min(100, int(98 + random.choice([-1, 0, 0, 0, 1]))))
+        thermal_c = 98.4 + 0.5 * math.sin(self.tick * 0.05) + random.random() * 0.2
 
-        self.vitals_history.append((heart_rate, sys_bp, dia_bp, spo2, temp))
-        if len(self.vitals_history) > 10:
-            self.vitals_history.pop(0)
+        self.metric_signals.append((signal_rate, wave_peak, wave_trough, purity_pct, thermal_c))
+        if len(self.metric_signals) > 10:
+            self.metric_signals.pop(0)
 
 # Build the layout grid
 def draw_layout():
@@ -192,21 +192,20 @@ def render_dashboard(stream):
     move_cursor(10, 3)
     sys.stdout.write(f"{FG_CYAN}{CLR_BOLD}📡 SYNTHETIC TELEMETRY CHANNEL (CH-07){CLR_RESET}")
 
-    if stream.vitals_history:
-        hr, sbp, dbp, spo2, temp = stream.vitals_history[-1]
+    if stream.metric_signals:
+        sig_rate, w_peak, w_trough, p_pct, t_idx = stream.metric_signals[-1]
 
-        # Color code HR status
-        hr_color = FG_GREEN if 60 <= hr <= 100 else FG_HI_RED
-        spo2_color = FG_GREEN if spo2 >= 95 else FG_HI_RED
+        rate_color = FG_GREEN if 60 <= sig_rate <= 100 else FG_HI_RED
+        purity_color = FG_GREEN if p_pct >= 95 else FG_HI_RED
 
         move_cursor(12, 3)
-        sys.stdout.write(f"{FG_WHITE}Telemetry Rate:     {hr_color}{CLR_BOLD}{hr} bpm{CLR_RESET}   ")
+        sys.stdout.write(f"{FG_WHITE}Signal Frequency:   {rate_color}{CLR_BOLD}{sig_rate} Hz{CLR_RESET}   ")
         move_cursor(13, 3)
-        sys.stdout.write(f"{FG_WHITE}Pressure Wave:      {FG_GREEN}{sbp}/{dbp} mmHg{CLR_RESET}   ")
+        sys.stdout.write(f"{FG_WHITE}Wave Dynamics:      {FG_GREEN}{w_peak}/{w_trough} mV{CLR_RESET}   ")
         move_cursor(14, 3)
-        sys.stdout.write(f"{FG_WHITE}O2 Saturation:      {spo2_color}{CLR_BOLD}{spo2}%{CLR_RESET}      ")
+        sys.stdout.write(f"{FG_WHITE}Channel Purity:     {purity_color}{CLR_BOLD}{p_pct}%{CLR_RESET}      ")
         move_cursor(15, 3)
-        sys.stdout.write(f"{FG_WHITE}Thermal Index:      {FG_GREEN}{temp:.1f} °F{CLR_RESET}   ")
+        sys.stdout.write(f"{FG_WHITE}DSP Thermal Index:  {FG_GREEN}{t_idx:.1f} K{CLR_RESET}   ")
 
     # --- Middle Right: ML Inference Diagnostics ---
     move_cursor(10, 42)

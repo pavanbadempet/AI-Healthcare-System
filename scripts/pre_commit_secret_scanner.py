@@ -103,8 +103,8 @@ def main():
     for fpath in staged:
         violations = scan_file(fpath)
         if violations:
-            for line_no, secret_type, _ in violations:
-                print(f"[BLOCKED] Potential secret detected in {fpath} (Line {line_no}) - Type: {secret_type}")
+            for line_no, _, _ in violations:
+                print(f"[BLOCKED] Security violation detected in {fpath} (Line {line_no})")
                 total_violations += 1
 
     if total_violations > 0:

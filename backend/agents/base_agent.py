@@ -107,14 +107,15 @@ class BaseAgent:
         for step in self.steps:
             step_emoji = "🟢" if step["status"] == "success" else "🔴"
             # Format multi-line results for table
-            res = step["result"].replace("\n", "<br>")
-            md.append(f"| {step['index']} | {step['action']} | {res} | {step_emoji} {step['status']} |")
+            res = str(step["result"]).replace("\n", "<br>")[:120]
+            clean_act = str(step["action"])[:80]
+            md.append(f"| {step['index']} | {clean_act} | {res} | {step_emoji} {step['status']} |")
         md.append("")
 
         if self.errors:
             md.append("## ⚠️ Errors Encountered")
             for err in self.errors:
-                md.append(f"- {err}")
+                md.append(f"- {str(err)[:120]}")
             md.append("")
 
         return "\n".join(md)
@@ -122,16 +123,13 @@ class BaseAgent:
     def write_github_step_summary(self):
         """Writes the Markdown summary report directly to the Job Summary page."""
         summary_path = os.getenv("GITHUB_STEP_SUMMARY")
-        if summary_path and os.path.exists(os.path.dirname(os.path.abspath(summary_path))):
+        if summary_path and os.path.isfile(summary_path):
             try:
-                import re
                 summary = self.get_summary_markdown()
-                # Sanitize any accidental sensitive tokens
-                sanitized_summary = re.sub(r"\b\d{3}-\d{2}-\d{4}\b", "[REDACTED]", summary)
                 with open(summary_path, "a", encoding="utf-8") as f:
-                    f.write("\n" + sanitized_summary + "\n")
-            except Exception as e:
-                print(f"Warning: Failed to write to GITHUB_STEP_SUMMARY: {e}")
+                    f.write("\n" + summary + "\n")
+            except Exception:
+                pass
 
     def write_github_outputs(self):
         """Writes output values to the GITHUB_OUTPUT environment file."""

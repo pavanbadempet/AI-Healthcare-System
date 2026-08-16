@@ -490,10 +490,9 @@ async def agent_stream_endpoint(
                                     "reason": new_appt.reason
                                 }
                                 yield f"data: {json.dumps({'action_triggered': True, 'booking_details': booking_details, 'status': 'complete'})}\n\n"
-                            except Exception as ex:
+                            except Exception:
                                 db.rollback()
-                                error_msg = str(ex)
-                                yield f"data: {json.dumps({'action_triggered': True, 'error': error_msg, 'status': 'complete'})}\n\n"
+                                yield f"data: {json.dumps({'action_triggered': False, 'error': 'Appointment booking encountered an error', 'status': 'complete'})}\n\n"
                         else:
                             yield f"data: {json.dumps({'action_triggered': False, 'status': 'complete'})}\n\n"
                         break

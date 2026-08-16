@@ -347,7 +347,7 @@ def process_conformed_record(db, record, avg_stats=None, heart_risk=None, lung_r
 
     alert_summary = " ".join(summary)
     if trigger_alert:
-        logger.warning(f"ALERT! Clinical Monitoring - {title}: {alert_summary}")
+        logger.warning("Clinical anomaly threshold exceeded. Signal dispatched to monitoring bus.")
 
         if flush:
             signal = MonitoringSignal(
