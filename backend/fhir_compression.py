@@ -36,7 +36,7 @@ def compact_fhir(body: CompactRequest):
         }
     except Exception:
         logger.error("FHIR bundle compression failed")
-        raise HTTPException(status_code=400, detail="FHIR bundle compression failed.")
+        raise HTTPException(status_code=400, detail="Compression failed: Invalid FHIR bundle.")
 
 @router.post("/decompress")
 def decompress_fhir(body: DecompressRequest):
@@ -45,4 +45,4 @@ def decompress_fhir(body: DecompressRequest):
         return rust_bridge.decompress_fhir_bundle_rust(body.compressed_data)
     except Exception:
         logger.error("FHIR bundle decompression failed")
-        raise HTTPException(status_code=400, detail="FHIR bundle decompression failed.")
+        raise HTTPException(status_code=400, detail="Decompression failed: Invalid payload.")
