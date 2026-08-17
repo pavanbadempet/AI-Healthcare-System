@@ -93,7 +93,6 @@ python scripts/demo_quickstart.py
 | **⚡ Edge & Gateway** | Rust Gateway PID 1 proxy, PyO3 FFI direct bindings, C-accelerated serialization (<1ms), Bun toolchain |
 | **💼 Commercial Licensing**| 100% Open-Source & Sovereign (Zero token locks), Air-gapped B2B perpetual keys, zero SaaS fees |
 | **🔐 HIPAA DevSecOps** | Hardware TEE enclaves, PII redaction filters, Docker, AWS EKS, SOC 2 compliance harness |
-| **📣 Promotion & Growth**| [🚀 Launch & Star Growth Playbook](docs/LAUNCH_AND_PROMOTION_PLAYBOOK.md) with ready-to-use posts for HN, Reddit & X |
 
 <!-- SEO: H1 is critical for search engines. The banner serves as the visual title. -->
 <!-- AI Healthcare System — Open-Source HIPAA-Compliant Clinical AI & EHR Platform -->
