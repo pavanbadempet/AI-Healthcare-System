@@ -77,7 +77,7 @@ export interface Encounter {
 }
 
 export interface AdmissionCreate {
-  encounter_id: number;
+  encounter_id?: number;
   patient_id: number;
   doctor_id?: number;
   department_id?: number;

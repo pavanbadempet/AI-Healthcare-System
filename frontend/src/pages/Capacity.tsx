@@ -987,6 +987,9 @@ export default function CapacityPage() {
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+
       {showOnboardingGuide && (
         <OnboardingGuideModal
           isOpen={showOnboardingGuide}
