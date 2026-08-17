@@ -273,6 +273,33 @@ def seed_hospital_operations_data():
                 session.commit()
                 logger.info("Default hospital facility, departments, and beds seeded.")
 
+            existing_meds = session.query(models.MedicationInventory).count()
+            if existing_meds == 0:
+                med_items = [
+                    ("Atorvastatin", "80mg", "Oral Tablet", "LOT-AT80-991", 500.0, 50.0),
+                    ("Aspirin (Enteric-Coated)", "325mg", "Oral Tablet", "LOT-ASA325-102", 1200.0, 100.0),
+                    ("Metformin HCl ER", "500mg", "Oral Tablet", "LOT-MET500-442", 800.0, 80.0),
+                    ("Ceftriaxone", "1g", "IV Solution", "LOT-CEF1G-003", 150.0, 20.0),
+                    ("Levofloxacin", "750mg", "IV Piggyback", "LOT-LEVO750-811", 100.0, 15.0),
+                    ("Albuterol Sulfate", "2.5mg/3mL", "Inhalation Solution", "LOT-ALB25-560", 300.0, 30.0),
+                    ("Furosemide", "40mg/4mL", "IV Injection", "LOT-FUR40-771", 250.0, 25.0),
+                    ("Heparin Sodium", "5000 units/mL", "IV Vial", "LOT-HEP5K-302", 200.0, 25.0),
+                    ("Insulin Lispro (Humalog)", "100 units/mL", "Subcutaneous Vial", "LOT-INS100-994", 180.0, 20.0),
+                ]
+                for mname, mstr, mform, mbatch, mqty, mreord in med_items:
+                    med = models.MedicationInventory(
+                        facility_id=facility.id,
+                        medication_name=mname,
+                        strength=mstr,
+                        form=mform,
+                        batch_number=mbatch,
+                        quantity_on_hand=mqty,
+                        reorder_level=mreord,
+                        status="active"
+                    )
+                    session.add(med)
+                session.commit()
+
             existing_patients = session.query(models.User).filter(models.User.role == "patient").count()
             if existing_patients == 0:
                 # Find or create a default doctor user
@@ -390,8 +417,187 @@ def seed_hospital_operations_data():
                     )
                     session.add(event)
 
+                    # Create Diagnostic Order & Result
+                    if uname == "marcus_thorne":
+                        order_ecg = models.ClinicalOrder(
+                            facility_id=facility.id,
+                            encounter_id=encounter.id,
+                            patient_id=puser.id,
+                            doctor_id=doctor.id,
+                            department_id=dept_id,
+                            order_type="radiology",
+                            title="12-Lead Electrocardiogram (ECG)",
+                            priority="stat",
+                            status="completed",
+                            notes="Evaluate ST segment changes in anterior leads V2-V4",
+                            completed_at=datetime.now(timezone.utc)
+                        )
+                        session.add(order_ecg)
+                        session.commit()
+                        session.refresh(order_ecg)
+
+                        res_ecg = models.DiagnosticResult(
+                            facility_id=facility.id,
+                            order_id=order_ecg.id,
+                            encounter_id=encounter.id,
+                            patient_id=puser.id,
+                            doctor_id=doctor.id,
+                            department_id=dept_id,
+                            result_type="radiology",
+                            title="12-Lead ECG Analysis",
+                            summary="Sinus tachycardia at 118 bpm. Acute ST-elevation of 2.5mm in leads V2, V3, V4 with reciprocal ST-depression in II, III, aVF. Consistent with acute anterior STEMI.",
+                            abnormal_flag=1,
+                            status="final",
+                            review_status="reviewed",
+                            review_note="Cardiology consulted. Emergency catheterization lab activated.",
+                            reviewed_by_id=doctor.id,
+                            reviewed_at=datetime.now(timezone.utc)
+                        )
+                        session.add(res_ecg)
+
+                        order_trop = models.ClinicalOrder(
+                            facility_id=facility.id,
+                            encounter_id=encounter.id,
+                            patient_id=puser.id,
+                            doctor_id=doctor.id,
+                            department_id=dept_id,
+                            order_type="lab",
+                            title="High-Sensitivity Cardiac Troponin I (hs-cTnI)",
+                            priority="stat",
+                            status="completed",
+                            notes="Serial troponin draw for acute myocardial injury",
+                            completed_at=datetime.now(timezone.utc)
+                        )
+                        session.add(order_trop)
+                        session.commit()
+                        session.refresh(order_trop)
+
+                        res_trop = models.DiagnosticResult(
+                            facility_id=facility.id,
+                            order_id=order_trop.id,
+                            encounter_id=encounter.id,
+                            patient_id=puser.id,
+                            doctor_id=doctor.id,
+                            department_id=dept_id,
+                            result_type="lab",
+                            title="High-Sensitivity Cardiac Troponin I",
+                            summary="Serum hs-cTnI: 1.840 ng/mL [CRITICAL HIGH, Reference: 0.000 - 0.034 ng/mL]. Delta positive vs admission baseline.",
+                            abnormal_flag=1,
+                            status="final",
+                            review_status="reviewed",
+                            review_note="Critical value communicated to Attending Cardiologist.",
+                            reviewed_by_id=doctor.id,
+                            reviewed_at=datetime.now(timezone.utc)
+                        )
+                        session.add(res_trop)
+
+                    elif uname == "sarah_jenkins":
+                        order_cbc = models.ClinicalOrder(
+                            facility_id=facility.id,
+                            encounter_id=encounter.id,
+                            patient_id=puser.id,
+                            doctor_id=doctor.id,
+                            department_id=dept_id,
+                            order_type="lab",
+                            title="Complete Blood Count with Differential",
+                            priority="routine",
+                            status="completed",
+                            notes="Post-operative 24h surveillance",
+                            completed_at=datetime.now(timezone.utc)
+                        )
+                        session.add(order_cbc)
+                        session.commit()
+                        session.refresh(order_cbc)
+
+                        res_cbc = models.DiagnosticResult(
+                            facility_id=facility.id,
+                            order_id=order_cbc.id,
+                            encounter_id=encounter.id,
+                            patient_id=puser.id,
+                            doctor_id=doctor.id,
+                            department_id=dept_id,
+                            result_type="lab",
+                            title="Complete Blood Count with Diff",
+                            summary="WBC: 7.4 x10^3/mcL, Hemoglobin: 13.2 g/dL, Hematocrit: 39.8%, Platelets: 260 x10^3/mcL, ANC: 4.8 x10^3/mcL. Normal post-surgical profile.",
+                            abnormal_flag=0,
+                            status="final",
+                            review_status="reviewed",
+                            review_note="Surgical recovery progressing within expected clinical parameters.",
+                            reviewed_by_id=doctor.id,
+                            reviewed_at=datetime.now(timezone.utc)
+                        )
+                        session.add(res_cbc)
+
+                    elif uname == "linda_zhao":
+                        order_a1c = models.ClinicalOrder(
+                            facility_id=facility.id,
+                            encounter_id=encounter.id,
+                            patient_id=puser.id,
+                            doctor_id=doctor.id,
+                            department_id=dept_id,
+                            order_type="lab",
+                            title="Hemoglobin A1c (Glycated Hb) & Glucose Panel",
+                            priority="routine",
+                            status="completed",
+                            notes="Evaluate glycemic control and inpatient insulin titration",
+                            completed_at=datetime.now(timezone.utc)
+                        )
+                        session.add(order_a1c)
+                        session.commit()
+                        session.refresh(order_a1c)
+
+                        res_a1c = models.DiagnosticResult(
+                            facility_id=facility.id,
+                            order_id=order_a1c.id,
+                            encounter_id=encounter.id,
+                            patient_id=puser.id,
+                            doctor_id=doctor.id,
+                            department_id=dept_id,
+                            result_type="lab",
+                            title="Hemoglobin A1c & Blood Glucose",
+                            summary="HbA1c: 9.2% [HIGH, Target: <7.0%], Fasting Plasma Glucose: 248 mg/dL [HIGH, Reference: 70 - 99 mg/dL]. Serum Ketones: 1.2 mmol/L [MODERATE].",
+                            abnormal_flag=1,
+                            status="final",
+                            review_status="reviewed",
+                            review_note="Initiate subcutaneous basal-bolus insulin sliding scale protocol.",
+                            reviewed_by_id=doctor.id,
+                            reviewed_at=datetime.now(timezone.utc)
+                        )
+                        session.add(res_a1c)
+
+                    # Seed active prescription
+                    presc = models.Prescription(
+                        facility_id=facility.id,
+                        encounter_id=encounter.id,
+                        patient_id=puser.id,
+                        doctor_id=doctor.id,
+                        diagnosis_context="Acute Coronary Syndrome" if uname == "marcus_thorne" else ("Type 2 Diabetes Mellitus" if uname == "linda_zhao" else "Inpatient Clinical Care"),
+                        status="active",
+                        created_at=datetime.now(timezone.utc)
+                    )
+                    session.add(presc)
+                    session.commit()
+                    session.refresh(presc)
+
+                    med_name = "Atorvastatin" if uname == "marcus_thorne" else ("Metformin HCl ER" if uname == "linda_zhao" else "Ceftriaxone")
+                    med_dose = "80mg" if uname == "marcus_thorne" else ("500mg" if uname == "linda_zhao" else "1g")
+                    med_freq = "Once daily at bedtime" if uname == "marcus_thorne" else ("Twice daily with meals" if uname == "linda_zhao" else "Every 24 hours IV")
+                    
+                    item = models.PrescriptionItem(
+                        prescription_id=presc.id,
+                        medication_name=med_name,
+                        dosage=med_dose,
+                        frequency=med_freq,
+                        duration="14 days",
+                        quantity_prescribed=14.0,
+                        quantity_dispensed=14.0,
+                        instructions="Administer with full glass of water. Monitor clinical parameters.",
+                        status="dispensed"
+                    )
+                    session.add(item)
+
                 session.commit()
-                logger.info("Demo patient profiles, encounters, vitals, and admissions seeded successfully.")
+                logger.info("Demo patient profiles, encounters, vitals, admissions, diagnostic results, and prescriptions seeded successfully.")
         except Exception as seed_err:
             session.rollback()
             logger.warning("Hospital operations seeding failed: %s", seed_err)
