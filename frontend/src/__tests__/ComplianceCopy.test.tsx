@@ -178,6 +178,8 @@ vi.mock('@/lib/api', () => ({
   exportDoctorPatientFhirBundle: vi.fn(),
   createEncounter: vi.fn(),
   createAdmission: vi.fn(),
+  getDoctorPatientMonitoringSignals: vi.fn(() => Promise.resolve({ patient_id: 42, latest_vitals: [], open_signals: [] })),
+  getPatientOrganHealth: vi.fn(() => Promise.resolve(null)),
   createClinicalOrder: vi.fn(),
   getDoctorPatientCareEventFeed: vi.fn(() => Promise.resolve({ events: [], next_after_id: null })),
   getPatientCareEventFeed: vi.fn(() => Promise.resolve({ events: [], next_after_id: null })),

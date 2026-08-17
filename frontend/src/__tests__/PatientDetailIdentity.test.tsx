@@ -177,6 +177,7 @@ vi.mock('@/lib/api', () => ({
     disclaimer: 'Mock disclaimer',
   })),
   createClinicalOrder: vi.fn(() => Promise.resolve({ id: 99 })),
+  getDoctorPatientMonitoringSignals: vi.fn(() => Promise.resolve({ patient_id: 42, latest_vitals: [], open_signals: [] })),
 }));
 
 vi.mock('@/lib/apiIntelligence', () => ({

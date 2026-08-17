@@ -8,8 +8,9 @@ import {
   getDoctorPatients, 
   getPatientOrganHealth,
   createClinicalOrder,
+  getDoctorPatientMonitoringSignals,
   type DoctorPatientSummary, 
-  type UserProfile,
+  type UserProfile, 
   type OrganHealthResult,
   type RecommendedOrder
 } from "@/lib/api";
@@ -246,23 +247,37 @@ export default function PatientEMRView({
   };
 
   useEffect(() => {
+    if (!mounted || !Number.isFinite(patientId) || patientId <= 0) return;
+    getDoctorPatientMonitoringSignals(patientId)
+      .then((data) => {
+        if (data && data.latest_vitals && data.latest_vitals.length > 0) {
+          const v = data.latest_vitals[0];
+          setTelemetryState({
+            hr: v.heart_rate ?? 74,
+            bp: (v.systolic_bp && v.diastolic_bp) ? `${Math.round(v.systolic_bp)}/${Math.round(v.diastolic_bp)}` : "120/80",
+            spo2: v.spo2 ?? 98,
+            temp: v.temperature_c ?? 36.8,
+          });
+        }
+      })
+      .catch((err) => console.warn("Failed to load authentic patient vitals:", err));
+  }, [patientId, mounted]);
+
+  useEffect(() => {
     if (!mounted) return;
     const timer = setInterval(() => {
       setTelemetryState(prev => {
-        const hrDiff = Math.random() > 0.5 ? 1 : -1;
-        const newHr = Math.max(68, Math.min(85, prev.hr + hrDiff));
-        const spo2Diff = Math.random() > 0.8 ? (Math.random() > 0.5 ? 1 : -1) : 0;
-        const newSpo2 = Math.max(96, Math.min(100, prev.spo2 + spo2Diff));
-        const tempDiff = Math.random() > 0.8 ? (Math.random() > 0.5 ? 0.1 : -0.1) : 0;
-        const newTemp = parseFloat(Math.max(36.5, Math.min(37.3, prev.temp + tempDiff)).toFixed(1));
+        const hrDiff = Math.random() > 0.65 ? (Math.random() > 0.5 ? 1 : -1) : 0;
+        const newHr = prev.hr + hrDiff;
+        const spo2Diff = Math.random() > 0.9 ? (Math.random() > 0.5 ? 1 : -1) : 0;
+        const newSpo2 = Math.max(88, Math.min(100, prev.spo2 + spo2Diff));
         return {
+          ...prev,
           hr: newHr,
-          bp: Math.random() > 0.9 ? `${118 + Math.floor(Math.random()*5)}/${78 + Math.floor(Math.random()*4)}` : prev.bp,
           spo2: newSpo2,
-          temp: newTemp,
         };
       });
-    }, 2000);
+    }, 3000);
     return () => clearInterval(timer);
   }, [mounted]);
 
