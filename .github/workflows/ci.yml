@@ -18,7 +18,7 @@ jobs:
     - uses: actions/checkout@v4
     
     - name: Fetch Doppler Secrets
-      uses: dopplerhq/secrets-fetch-action@v1.2.0
+      uses: dopplerhq/secrets-fetch-action@v2.0.0
       continue-on-error: true # Allow CI to pass on PRs from forks that lack the secret
       with:
         doppler-token: ${{ secrets.DOPPLER_TOKEN }}
