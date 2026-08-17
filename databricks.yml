@@ -1,0 +1,149 @@
+# Databricks Asset Bundle (DAB) Configuration for AI Healthcare System
+# Standardized multi-target Lakehouse deployment for Medallion Pipelines, Unity Catalog, and DLT.
+
+bundle:
+  name: ai-healthcare-lakehouse
+
+include:
+  - databricks_notebooks/telemetry_workflow_job.json
+
+variables:
+  catalog:
+    description: "Unity Catalog root name"
+    default: "workspace"
+  spark_version:
+    description: "Databricks Runtime version"
+    default: "15.4.x-scala2.12"
+  node_type_id:
+    description: "Default compute node type"
+    default: "i3.xlarge"
+
+workspace:
+  root_path: /Workspace/Shared/AI-Healthcare/${bundle.name}/${bundle.target}
+
+resources:
+  jobs:
+    ai_healthcare_etl_pipeline:
+      name: "[${bundle.target}] AI Healthcare Planetary Lakehouse Pipeline"
+      description: "End-to-end Medallion ETL, OMOP CDM transformation, Great Expectations Quality Gates, and GPU risk scoring."
+      schedule:
+        quartz_cron_expression: "0 0/15 * * * ?"
+        timezone_id: "UTC"
+        pause_status: UNPAUSED
+      job_clusters:
+        - job_cluster_key: "Shared_Job_Cluster"
+          new_cluster:
+            spark_version: "${var.spark_version}"
+            node_type_id: "${var.node_type_id}"
+            num_workers: 2
+            spark_conf:
+              "spark.databricks.delta.preview.enabled": "true"
+              "spark.sql.streaming.schemaInference": "true"
+              "spark.databricks.delta.optimizeWrite.enabled": "true"
+              "spark.databricks.delta.autoCompact.enabled": "true"
+            custom_tags:
+              Project: "AI-Healthcare-System"
+              Environment: "${bundle.target}"
+      tasks:
+        - task_key: "00_Unity_Catalog_Governance"
+          job_cluster_key: "Shared_Job_Cluster"
+          notebook_task:
+            notebook_path: "databricks_notebooks/00_unity_catalog_governance_setup.py"
+            source: WORKSPACE
+        - task_key: "01_Bronze_Ingest"
+          depends_on:
+            - task_key: "00_Unity_Catalog_Governance"
+          job_cluster_key: "Shared_Job_Cluster"
+          notebook_task:
+            notebook_path: "databricks_notebooks/01_bronze_ingest.py"
+            base_parameters:
+              pipeline_mode: "batch"
+            source: WORKSPACE
+        - task_key: "08_Data_Quality_Gates"
+          depends_on:
+            - task_key: "01_Bronze_Ingest"
+          job_cluster_key: "Shared_Job_Cluster"
+          notebook_task:
+            notebook_path: "databricks_notebooks/08_pyspark_data_quality_gates.py"
+            source: WORKSPACE
+        - task_key: "02_Silver_Cleaning"
+          depends_on:
+            - task_key: "08_Data_Quality_Gates"
+          job_cluster_key: "Shared_Job_Cluster"
+          notebook_task:
+            notebook_path: "databricks_notebooks/02_silver_cleaning.py"
+            base_parameters:
+              pipeline_mode: "batch"
+            source: WORKSPACE
+        - task_key: "03_Gold_Aggregations"
+          depends_on:
+            - task_key: "02_Silver_Cleaning"
+          job_cluster_key: "Shared_Job_Cluster"
+          notebook_task:
+            notebook_path: "databricks_notebooks/03_gold_aggregations.py"
+            base_parameters:
+              pipeline_mode: "batch"
+            source: WORKSPACE
+        - task_key: "07_OMOP_CDM_Transformation"
+          depends_on:
+            - task_key: "03_Gold_Aggregations"
+          job_cluster_key: "Shared_Job_Cluster"
+          notebook_task:
+            notebook_path: "databricks_notebooks/07_omop_cdm_transformation.py"
+            source: WORKSPACE
+        - task_key: "04_GPU_Risk_Scoring"
+          depends_on:
+            - task_key: "07_OMOP_CDM_Transformation"
+          job_cluster_key: "Shared_Job_Cluster"
+          notebook_task:
+            notebook_path: "databricks_notebooks/04_gpu_risk_scoring.py"
+            source: WORKSPACE
+        - task_key: "09_Digital_Twin_Recommendation"
+          depends_on:
+            - task_key: "04_GPU_Risk_Scoring"
+          job_cluster_key: "Shared_Job_Cluster"
+          notebook_task:
+            notebook_path: "databricks_notebooks/09_recommendation_digital_twin_pyspark.py"
+            source: WORKSPACE
+        - task_key: "05_Export_To_Neon"
+          depends_on:
+            - task_key: "09_Digital_Twin_Recommendation"
+          job_cluster_key: "Shared_Job_Cluster"
+          notebook_task:
+            notebook_path: "databricks_notebooks/05_export_to_neon.py"
+            source: WORKSPACE
+        - task_key: "06_MLflow_Training"
+          depends_on:
+            - task_key: "05_Export_To_Neon"
+          job_cluster_key: "Shared_Job_Cluster"
+          notebook_task:
+            notebook_path: "databricks_notebooks/06_mlflow_training.py"
+            source: WORKSPACE
+
+  pipelines:
+    dlt_telemetry_stream:
+      name: "[${bundle.target}] Delta Live Tables (DLT) Clinical Telemetry"
+      target: "${var.catalog}.healthcare_silver"
+      continuous: false
+      edition: ADVANCED
+      photon: true
+      libraries:
+        - notebook:
+            path: "databricks_notebooks/dlt_telemetry_pipeline.py"
+
+targets:
+  development:
+    default: true
+    mode: development
+    workspace:
+      host: https://adb-dev.azuredatabricks.net
+
+  staging:
+    mode: production
+    workspace:
+      host: https://adb-staging.azuredatabricks.net
+
+  production:
+    mode: production
+    workspace:
+      host: https://adb-prod.azuredatabricks.net

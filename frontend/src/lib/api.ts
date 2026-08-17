@@ -188,3 +188,20 @@ export {
   type CASAMessage,
   type CASAChatResponse,
 } from './apiBilling';
+
+// ── Lakehouse Data Engineering ──────────────────────────────────
+export {
+  transformToOmop,
+  auditDataQuality,
+  getDeltaHistory,
+  queryDeltaTimeTravel,
+  executeLakehouseSql,
+  askAgenticBi,
+  type OmopPatientPayload,
+  type OmopTransformResult,
+  type QualityAuditResult,
+  type DeltaCommitLog,
+  type LakehouseSqlResult,
+  type AgenticBiResult,
+} from './apiLakehouse';
+
