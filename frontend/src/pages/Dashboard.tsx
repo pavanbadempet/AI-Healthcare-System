@@ -613,9 +613,9 @@ export default function DashboardPage() {
     return map;
   }, [beds, dbPatients]);
 
-  const capacityPct = telemetry
+  const capacityPct = (telemetry && telemetry.total_capacity > 0)
     ? Math.round((telemetry.active_census / telemetry.total_capacity) * 100)
-    : 84;
+    : 79;
 
   const stableBedsCount = beds.filter(b => b.status === "Stable").length;
   const alertBedsCount = beds.filter(b => b.status === "Alert").length;
@@ -786,20 +786,20 @@ export default function DashboardPage() {
 
       {/* Aggregated Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: ICU Active Census */}
+        {/* Card 1: Facility Active Census */}
         <div className="glass-card p-4 rounded-xl flex items-center justify-between group">
           <div className="space-y-1">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">Occupied Beds (ICU)</span>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">Occupied Beds (Facility)</span>
             <div className="flex items-baseline gap-1">
               <span className="text-2xl font-black text-[var(--text-primary)] font-display">
-                {telemetry ? telemetry.active_census : "12"}
+                {telemetry?.active_census !== undefined ? telemetry.active_census : "79"}
               </span>
               <span className="text-[10px] text-[var(--text-dim)] font-mono">
-                / {telemetry ? telemetry.total_capacity : "15"} Beds
+                / {telemetry?.total_capacity !== undefined ? telemetry.total_capacity : "100"} Beds
               </span>
             </div>
             <p className="text-[9px] text-[var(--text-dim)] font-mono uppercase tracking-wide">
-              {capacityPct}% Rooms In Use
+              {capacityPct}% Facility Occupancy
             </p>
           </div>
           <div className="relative w-12 h-12 shrink-0">
