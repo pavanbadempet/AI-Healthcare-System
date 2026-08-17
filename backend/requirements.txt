@@ -55,7 +55,7 @@ matplotlib>=3.8.0
 # --- Utilities ---
 fpdf2
 pillow
-feedparser>=6.0.12
+feedparser>=6.0.14
 razorpay
 psutil
 prometheus_client
