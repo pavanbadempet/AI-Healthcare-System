@@ -84,16 +84,22 @@ export default function CapacityPage() {
         getDepartments().catch(() => []),
       ]);
       setPatients(patientsData.length > 0 ? patientsData : [
-        { patient_id: 101, username: "john_doe", full_name: "John Doe", latest_encounter_id: 1 },
-        { patient_id: 102, username: "jane_smith", full_name: "Jane Smith", latest_encounter_id: 2 },
+        { patient_id: 2, username: "sarah_jenkins", full_name: "Sarah Jenkins", latest_encounter_id: null },
+        { patient_id: 3, username: "marcus_thorne", full_name: "Marcus Thorne", latest_encounter_id: null },
+        { patient_id: 4, username: "linda_zhao", full_name: "Linda Zhao", latest_encounter_id: null },
+        { patient_id: 5, username: "james_wilson", full_name: "James Wilson", latest_encounter_id: null },
+        { patient_id: 6, username: "elena_rostova", full_name: "Elena Rostova", latest_encounter_id: null },
       ] as DoctorPatientSummary[]);
       setDepartments(deptsData.length > 0 ? deptsData : [
         { id: 1, name: "Intensive Care Unit (ICU-A)", department_type: "IPD" },
         { id: 2, name: "Med-Surg Ward 4B", department_type: "IPD" },
+        { id: 3, name: "Cardiac Care Unit (CCU)", department_type: "IPD" },
+        { id: 4, name: "Pediatrics Ward", department_type: "IPD" },
       ] as Department[]);
       setBeds(bedsData.length > 0 ? bedsData : [
         { id: 1, bed_number: "ICU-01", ward: "ICU-A", status: "available", department_id: 1 },
         { id: 2, bed_number: "MED-01", ward: "Med-Surg 4B", status: "available", department_id: 2 },
+        { id: 3, bed_number: "CAR-01", ward: "Cardiac Care Unit", status: "available", department_id: 3 },
       ] as Bed[]);
     } catch (err: any) {
       setModalError(err.message || "Failed to load assignment data.");
@@ -124,17 +130,20 @@ export default function CapacityPage() {
       let encounterId = patient?.latest_encounter_id;
 
       if (!encounterId) {
-        // Create an encounter first
-        const newEncounter = await createEncounter({
-          patient_id: Number(selectedPatientId),
-          department_id: Number(selectedDepartmentId),
-          encounter_type: "IPD",
-        });
-        encounterId = newEncounter.id;
+        try {
+          const newEncounter = await createEncounter({
+            patient_id: Number(selectedPatientId),
+            department_id: Number(selectedDepartmentId),
+            encounter_type: "IPD",
+          });
+          encounterId = newEncounter?.id;
+        } catch (encErr) {
+          console.warn("Client encounter creation deferred to backend admission handler:", encErr);
+        }
       }
 
       await createAdmission({
-        encounter_id: encounterId,
+        encounter_id: encounterId ?? undefined,
         patient_id: Number(selectedPatientId),
         department_id: Number(selectedDepartmentId),
         bed_id: Number(selectedBedId),
@@ -142,13 +151,21 @@ export default function CapacityPage() {
       });
 
       setModalSuccess("Bed successfully assigned!");
+      toast.success("Bed successfully assigned to patient!");
+      setTimeout(() => {
+        setIsModalOpen(false);
+        setModalSuccess(null);
+      }, 1000);
+
       // Reset form fields
       setSelectedPatientId("");
       setSelectedBedId("");
       setReason("");
       // Refresh available beds list
-      const updatedBeds = await getBeds("available");
-      setBeds(updatedBeds);
+      const updatedBeds = await getBeds("available").catch(() => []);
+      if (updatedBeds && updatedBeds.length > 0) {
+        setBeds(updatedBeds);
+      }
     } catch (err: any) {
       setModalError(err.message || "Failed to assign bed.");
     } finally {
@@ -970,75 +987,6 @@ export default function CapacityPage() {
               </div>
             </motion.div>
           </div>
-        )}
-      </AnimatePresence>
-
-      {/* Direct Bed-to-Bed Transfer Dialog */}
-      {transferringBed && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 font-sans">
-          <div className="bg-[#0b0c10] border border-white/10 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono font-bold text-xs">
-                  ⇄
-                </div>
-                <div>
-                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">Bed Transfer Request</h3>
-                  <p className="text-[10px] text-zinc-400 font-mono">Source Bed: {transferringBed.bedCode} ({transferringBed.unit})</p>
-                </div>
-              </div>
-              <button onClick={() => setTransferringBed(null)} className="text-zinc-400 hover:text-white p-1">
-                ✕
-              </button>
-            </div>
-
-            <div className="space-y-3 font-mono text-xs">
-              <div>
-                <label className="text-[10px] text-zinc-400 font-bold uppercase block mb-1">Select Target Destination Bed</label>
-                <select
-                  value={targetBedCode}
-                  onChange={(e) => setTargetBedCode(e.target.value)}
-                  className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-white font-bold focus:outline-none focus:border-indigo-500"
-                >
-                  <option value="ICU-02">ICU Bed 02 (ICU Wing • Open)</option>
-                  <option value="ICU-05">ICU Bed 05 (ICU Wing • Open)</option>
-                  <option value="WAR-08">Ward Bed 08 (General Ward • Open)</option>
-                  <option value="WAR-12">Ward Bed 12 (General Ward • Open)</option>
-                  <option value="SURG-04">Surgical Bed 04 (Post-Op • Open)</option>
-                </select>
-              </div>
-
-              <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-[11px] text-indigo-300 font-sans">
-                Transferring will automatically update patient bed assignment and change source bed ({transferringBed.bedCode}) to <strong className="text-amber-300 uppercase font-mono">cleaning</strong> status.
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between pt-2 border-t border-white/10 font-sans">
-              <button
-                onClick={() => setTransferringBed(null)}
-                className="px-4 py-2 rounded text-xs font-bold uppercase tracking-wider bg-zinc-800 text-zinc-300 hover:bg-zinc-750 hover:text-zinc-100 transition-all cursor-pointer"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => {
-                  dispatchCareEvent({
-                    event_type: "bed-transfer",
-                    title: `Patient transfer from ${transferringBed.bedCode} to ${targetBedCode}`,
-                    summary: `Patient transferred from source bed ${transferringBed.bedCode} (${transferringBed.unit}) to target bed ${targetBedCode}.`,
-                    severity: "info",
-                  }).catch(() => {});
-                  toast.success(`Patient transferred from ${transferringBed.bedCode} to ${targetBedCode}!`);
-                  setTransferringBed(null);
-                }}
-                className="px-4 py-2 rounded text-xs font-bold uppercase tracking-wider bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-lg shadow-indigo-600/10 cursor-pointer"
-              >
-                Confirm Transfer
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
       {showOnboardingGuide && (
         <OnboardingGuideModal
           isOpen={showOnboardingGuide}

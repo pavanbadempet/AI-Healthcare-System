@@ -377,12 +377,41 @@ def create_admission(
     current_user: models.User = Depends(auth.get_current_user),
 ):
     _require_doctor_or_admin(current_user)
-    encounter = _get_encounter(db, admission.encounter_id)
     patient = _get_user(db, admission.patient_id, role="patient")
     doctor = None
     if admission.doctor_id is not None:
         doctor = _get_user(db, admission.doctor_id, role="doctor")
     department = _get_department(db, admission.department_id)
+
+    encounter = None
+    if admission.encounter_id is not None:
+        encounter = db.query(models.Encounter).filter(models.Encounter.id == admission.encounter_id).first()
+    if encounter is None:
+        encounter = db.query(models.Encounter).filter(
+            models.Encounter.patient_id == admission.patient_id,
+            models.Encounter.status.in_(OPEN_ENCOUNTER_STATUSES),
+        ).order_by(models.Encounter.started_at.desc()).first()
+
+    if encounter is None:
+        # Seamlessly create an IPD encounter for this admission
+        facility_id = _resolve_facility_id(
+            "Admission participants must belong to the same facility",
+            patient,
+            doctor,
+            department,
+        )
+        encounter = models.Encounter(
+            facility_id=facility_id,
+            patient_id=admission.patient_id,
+            doctor_id=doctor.id if doctor else (current_user.id if current_user.role == "doctor" else None),
+            department_id=admission.department_id,
+            encounter_type="IPD",
+            status="in_progress",
+            started_at=datetime.now(timezone.utc),
+        )
+        db.add(encounter)
+        db.flush()
+
     if encounter.patient_id != admission.patient_id:
         raise HTTPException(status_code=400, detail="Admission patient must match encounter")
     if current_user.role == "doctor" and admission.doctor_id not in (None, current_user.id):
@@ -424,7 +453,7 @@ def create_admission(
 
     db_admission = models.Admission(
         facility_id=facility_id,
-        encounter_id=admission.encounter_id,
+        encounter_id=encounter.id,
         patient_id=admission.patient_id,
         doctor_id=doctor_id,
         department_id=admission.department_id,
@@ -574,30 +603,34 @@ def get_doctor_patients(
     from sqlalchemy import func
     from sqlalchemy.orm import joinedload
 
-    query = db.query(models.Encounter).options(joinedload(models.Encounter.patient))
+    patient_query = _scope_query_to_user_facility(
+        db.query(models.User).filter(models.User.role == "patient"),
+        models.User.facility_id,
+        current_user,
+    )
+    patients = patient_query.order_by(models.User.id.asc()).all()
+
+    enc_query = db.query(models.Encounter)
     if current_user.role == "doctor":
-        query = query.filter(models.Encounter.doctor_id == current_user.id)
-    encounters = query.order_by(models.Encounter.started_at.desc()).all()
+        enc_query = enc_query.filter(models.Encounter.doctor_id == current_user.id)
+    encounters = enc_query.order_by(models.Encounter.started_at.desc()).all()
+
+    encounters_by_patient: dict[int, models.Encounter] = {}
+    for enc in encounters:
+        if enc.patient_id not in encounters_by_patient:
+            encounters_by_patient[enc.patient_id] = enc
 
     panel: dict[int, dict[str, Any]] = {}
-    for encounter in encounters:
-        patient = encounter.patient
-        if not patient:
-            continue
-        row = panel.setdefault(
-            encounter.patient_id,
-            {
-                **_serialize_patient(patient),
-                "latest_encounter_id": encounter.id,
-                "latest_encounter_type": encounter.encounter_type,
-                "latest_status": encounter.status,
-                "open_orders": 0,
-                "active_admissions": 0,
-            },
-        )
-        if encounter.started_at and encounter.id == row["latest_encounter_id"]:
-            row["latest_encounter_type"] = encounter.encounter_type
-            row["latest_status"] = encounter.status
+    for patient in patients:
+        enc = encounters_by_patient.get(patient.id)
+        panel[patient.id] = {
+            **_serialize_patient(patient),
+            "latest_encounter_id": enc.id if enc else None,
+            "latest_encounter_type": enc.encounter_type if enc else "OPD",
+            "latest_status": enc.status if enc else "registered",
+            "open_orders": 0,
+            "active_admissions": 0,
+        }
 
     if not panel:
         return []
