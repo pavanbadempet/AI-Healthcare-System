@@ -601,7 +601,6 @@ def get_doctor_patients(
         raise HTTPException(status_code=403, detail="Doctor or admin privileges required")
 
     from sqlalchemy import func
-    from sqlalchemy.orm import joinedload
 
     patient_query = _scope_query_to_user_facility(
         db.query(models.User).filter(models.User.role == "patient"),

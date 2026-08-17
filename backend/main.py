@@ -583,7 +583,7 @@ def seed_hospital_operations_data():
                     med_name = "Atorvastatin" if uname == "marcus_thorne" else ("Metformin HCl ER" if uname == "linda_zhao" else "Ceftriaxone")
                     med_dose = "80mg" if uname == "marcus_thorne" else ("500mg" if uname == "linda_zhao" else "1g")
                     med_freq = "Once daily at bedtime" if uname == "marcus_thorne" else ("Twice daily with meals" if uname == "linda_zhao" else "Every 24 hours IV")
-                    
+
                     item = models.PrescriptionItem(
                         prescription_id=presc.id,
                         medication_name=med_name,
