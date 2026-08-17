@@ -27,11 +27,12 @@ const CIProfileSelect = ({ value, onSelect }: { value: number, onSelect: (idx: n
   const selectRef = useRef<HTMLDivElement>(null);
   
   const options = [
-    { id: 1, name: "John Doe", desc: "MRN: 101024" },
-    { id: 2, name: "Jane Smith", desc: "MRN: 102048" },
-    { id: 3, name: "Robert Johnson", desc: "MRN: 103072" },
-    { id: 4, name: "Emily Davis", desc: "MRN: 104096" },
-    { id: 5, name: "Michael Wilson", desc: "MRN: 105120" }
+    { id: 2, name: "Sarah Jenkins", desc: "MRN: 102048 • ICU-A" },
+    { id: 3, name: "Marcus Thorne", desc: "MRN: 103072 • Cardiac Care" },
+    { id: 4, name: "Linda Zhao", desc: "MRN: 104096 • Med-Surg 4B" },
+    { id: 5, name: "Robert Garcia", desc: "MRN: 105120 • Med-Surg 4B" },
+    { id: 6, name: "Emily Watson", desc: "MRN: 106144 • Pediatric Ward" },
+    { id: 7, name: "Oscar Meyer", desc: "MRN: 107168 • ICU-A" },
   ];
   
   useEffect(() => {

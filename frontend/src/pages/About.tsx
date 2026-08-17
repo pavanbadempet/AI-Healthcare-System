@@ -114,16 +114,16 @@ export default function AboutPage() {
             </div>
           </div>
 
-          {/* Tier 3: Cloud APIs */}
+          {/* Tier 3: Cloudflare Workers AI & Cloud APIs */}
           <div className="col-span-1 p-4 rounded border border-[var(--accent-blue-border)] bg-[var(--accent-blue-muted)] flex flex-col items-center text-center relative hover:border-[var(--accent-blue)] transition-all">
             <div className="absolute -top-2.5 px-2 py-0.5 rounded bg-[var(--accent-blue)] text-[8px] font-bold text-white uppercase tracking-wider">
               Priority 03
             </div>
             <Globe size={24} className="text-[var(--accent-blue)] mb-2" />
-            <h4 className="text-xs font-bold uppercase text-[var(--text-primary)]">Cloud Endpoint</h4>
-            <p className="text-[10px] text-[var(--text-secondary)] mt-1 font-mono uppercase">Gemini / OpenAI</p>
+            <h4 className="text-xs font-bold uppercase text-[var(--text-primary)]">Cloudflare Workers AI</h4>
+            <p className="text-[10px] text-[var(--text-secondary)] mt-1 font-mono uppercase">Edge Inference</p>
             <span className="text-[8px] text-[var(--accent-blue)] font-bold mt-2 bg-[var(--accent-blue-muted)] px-1 rounded uppercase">
-              Max Capability
+              Global Low Latency
             </span>
           </div>
         </div>

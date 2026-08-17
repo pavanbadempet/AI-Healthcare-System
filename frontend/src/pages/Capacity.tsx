@@ -378,25 +378,71 @@ export default function CapacityPage() {
                 <h3 className="section-title">Critical Transfers</h3>
               </div>
               <div className="flex-1 divide-y divide-[var(--border)] overflow-y-auto max-h-96">
-                {[1, 2, 3, 4, 5].map((item) => (
-                  <div key={item} className="p-3 hover:bg-[rgba(255,255,255,0.01)] transition-colors cursor-pointer group">
-                    <div className="flex justify-between items-start mb-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--danger)] animate-pulse" aria-hidden="true" />
-                        <span className="text-xs font-bold text-[var(--text-primary)]">MRN-774{item}2</span>
+                {triageQueue.filter((p: any) => p.esi_level <= 3).length > 0 ? (
+                  triageQueue.filter((p: any) => p.esi_level <= 3).map((item: any, idx: number) => (
+                    <div 
+                      key={item.patient_id || idx} 
+                      onClick={() => {
+                        setSelectedPatientId(item.patient_id);
+                        openAssignmentModal();
+                      }}
+                      className="p-3 hover:bg-[rgba(255,255,255,0.02)] transition-colors cursor-pointer group"
+                      title="Click to assign bed for transfer"
+                    >
+                      <div className="flex justify-between items-start mb-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`w-1.5 h-1.5 rounded-full ${item.esi_level <= 2 ? "bg-[var(--danger)] animate-pulse" : "bg-[var(--warning)]"}`} aria-hidden="true" />
+                          <span className="text-xs font-bold text-[var(--text-primary)]">{item.full_name}</span>
+                        </div>
+                        <span className={`text-[9px] font-mono border px-1.5 py-0.5 rounded-sm font-bold ${item.esi_level <= 2 ? "text-[var(--danger)] border-[var(--danger-border)] bg-[var(--danger-muted)]" : "text-[var(--warning)] border-[var(--warning-border)] bg-[var(--warning-muted)]"}`}>
+                          {item.esi_level <= 2 ? "STAT Transfer" : "Awaiting Bed"}
+                        </span>
                       </div>
-                      <span className="text-[9px] font-mono text-[var(--warning)] border border-[var(--warning-border)] px-1.5 py-0.5 rounded-sm bg-[var(--warning-muted)] font-bold">Awaiting Bed</span>
+                      <p className="text-[10px] text-[var(--text-secondary)] font-mono uppercase">
+                        <MapPin size={9} className="inline mr-1 text-[var(--text-dim)]" aria-hidden="true" />
+                        MRN-{(item.patient_id * 1024 + 100000).toString().substring(0, 6)} • ED Bay → {item.esi_level <= 2 ? "Cardiac Care" : "Med-Surg 4B"}
+                      </p>
+                      <div className="flex justify-between items-center text-[9px] font-mono text-[var(--text-dim)] uppercase mt-1.5">
+                        <span className="truncate max-w-[200px]" title={item.triage_reason}>Dx: {item.triage_reason || "Acute Inpatient Care"}</span>
+                        <span>ESI {item.esi_level}</span>
+                      </div>
                     </div>
-                    <p className="text-[10px] text-[var(--text-secondary)] font-mono uppercase">
-                      <MapPin size={9} className="inline mr-1 text-[var(--text-dim)]" aria-hidden="true" />
-                      ED Trauma Bay {item} → ICU-A
-                    </p>
-                    <div className="flex justify-between items-center text-[9px] font-mono text-[var(--text-dim)] uppercase mt-1.5">
-                      <span>Dx: STEMI</span>
-                      <span>Wait: {15 * item}m</span>
+                  ))
+                ) : (
+                  [
+                    { id: 3, name: "Marcus Thorne", mrn: "MRN-103072", from: "ED Trauma Bay 2", to: "Cardiac Care Unit", dx: "Acute Coronary Syndrome / Troponin Elevation", wait: "18m", urgent: true },
+                    { id: 2, name: "Sarah Jenkins", mrn: "MRN-102048", from: "PACU Recovery", to: "ICU-A", dx: "Post-Op Respiratory Monitoring", wait: "25m", urgent: false },
+                    { id: 4, name: "Robert Garcia", mrn: "MRN-104096", from: "ED Bay 4", to: "Med-Surg Ward 4B", dx: "Sepsis Workup & Fluid Resuscitation", wait: "40m", urgent: false },
+                  ].map((item) => (
+                    <div 
+                      key={item.id} 
+                      onClick={() => {
+                        setSelectedPatientId(item.id);
+                        openAssignmentModal();
+                      }}
+                      className="p-3 hover:bg-[rgba(255,255,255,0.02)] transition-colors cursor-pointer group"
+                      title="Click to assign bed for transfer"
+                    >
+                      <div className="flex justify-between items-start mb-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className={`w-1.5 h-1.5 rounded-full ${item.urgent ? "bg-[var(--danger)] animate-pulse" : "bg-[var(--warning)]"}`} aria-hidden="true" />
+                          <span className="text-xs font-bold text-[var(--text-primary)]">{item.name}</span>
+                        </div>
+                        <span className={`text-[9px] font-mono border px-1.5 py-0.5 rounded-sm font-bold ${item.urgent ? "text-[var(--danger)] border-[var(--danger-border)] bg-[var(--danger-muted)]" : "text-[var(--warning)] border-[var(--warning-border)] bg-[var(--warning-muted)]"}`}>
+                          {item.urgent ? "STAT Transfer" : "Awaiting Bed"}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-[var(--text-secondary)] font-mono uppercase">
+                        <MapPin size={9} className="inline mr-1 text-[var(--text-dim)]" aria-hidden="true" />
+                        {item.mrn} • {item.from} → {item.to}
+                      </p>
+                      <div className="flex justify-between items-center text-[9px] font-mono text-[var(--text-dim)] uppercase mt-1.5">
+                        <span className="truncate max-w-[200px]" title={item.dx}>Dx: {item.dx}</span>
+                        <span>Wait: {item.wait}</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             </div>
 
