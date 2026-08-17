@@ -58,30 +58,18 @@ export default function InfrastructurePage() {
              setServers((current) =>
                current.map((srv) => ({
                  ...srv,
-                 cpu: srv.name.includes("AI") ? data.cpu_percent : Math.max(5, Math.min(95, data.cpu_percent + (Math.random() * 20 - 10))),
-                 ram: srv.name.includes("AI") ? data.ram_percent : Math.max(10, Math.min(95, data.ram_percent + (Math.random() * 20 - 10))),
+                 cpu: data.cpu_percent,
+                 ram: data.ram_percent,
                }))
              );
           }
           if (data.hl7_logs && Array.isArray(data.hl7_logs) && data.hl7_logs.length > 0) {
              setLogs(data.hl7_logs.slice(0, 8));
           }
-        } else {
-          runLocalMockFluctuations();
         }
       } catch {
-        runLocalMockFluctuations();
+        // Fallback silently without random jitter
       }
-    }
-
-    function runLocalMockFluctuations() {
-       setServers((current) =>
-         current.map((srv) => ({
-           ...srv,
-           cpu: Math.max(5, Math.min(95, srv.cpu + Math.floor(Math.random() * 6 - 3))),
-           ram: Math.max(10, Math.min(95, srv.ram + Math.floor(Math.random() * 4 - 2))),
-         }))
-       );
     }
 
     function startPolling() {
@@ -114,9 +102,8 @@ export default function InfrastructurePage() {
              setServers((current) =>
                current.map((srv) => ({
                   ...srv,
-                  // If it's the main AI worker, use the real machine CPU, else simulate variations of it
-                  cpu: srv.name.includes("AI") ? data.cpu_percent : Math.max(5, Math.min(95, data.cpu_percent + (Math.random() * 20 - 10))),
-                  ram: srv.name.includes("AI") ? data.ram_percent : Math.max(10, Math.min(95, data.ram_percent + (Math.random() * 20 - 10))),
+                  cpu: data.cpu_percent,
+                  ram: data.ram_percent,
                }))
              );
           }

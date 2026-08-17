@@ -10,7 +10,6 @@ import asyncio
 import json
 import logging
 import os
-import random
 import time
 from datetime import datetime, timezone
 
@@ -275,79 +274,41 @@ def get_telemetry_health() -> dict:
 
 
 def _generate_telemetry_snapshot() -> dict:
-    """Generate a single telemetry data snapshot.
+    """Generate a deterministic baseline telemetry snapshot when no database session is active."""
+    dept_loads = [
+        {"dept": "Cardiology", "load": 82, "status": "Elevated"},
+        {"dept": "Pulmonology", "load": 65, "status": "Stable"},
+        {"dept": "Nephrology", "load": 45, "status": "Stable"},
+        {"dept": "Endocrinology", "load": 72, "status": "Elevated"},
+    ]
 
-    In production, this would query:
-    - ADT (Admit/Discharge/Transfer) feed for census
-    - Bed management system for unit-level occupancy
-    - ED tracking board for boarding counts
-    - AI inference cluster for node health
-    """
-
-    # Department loads with realistic variance
-    dept_loads = []
-    for dept_name, base_load in [
-        ("Cardiology", 82),
-        ("Pulmonology", 65),
-        ("Nephrology", 45),
-        ("Endocrinology", 72),
-    ]:
-        load = max(10, min(99, base_load + random.randint(-8, 8)))
-        if load > 85:
-            status = "Critical"
-        elif load > 70:
-            status = "Elevated"
-        else:
-            status = "Stable"
-        dept_loads.append({"dept": dept_name, "load": load, "status": status})
-
-    # Bed unit grid data
-    bed_units = []
-    for unit_name, total, base_occ in [
-        ("ICU-A", 20, 17),
-        ("MED-SURG 4B", 40, 34),
-        ("CARDIAC", 16, 12),
-        ("PEDS", 24, 14),
-    ]:
-        occupied = max(0, min(total, base_occ + random.randint(-2, 2)))
-        cleaning = random.randint(0, min(3, total - occupied))
-        available = total - occupied - cleaning
-        bed_units.append({
-            "unit": unit_name,
-            "total": total,
-            "occupied": occupied,
-            "cleaning": cleaning,
-            "available": available,
-        })
+    bed_units = [
+        {"unit": "ICU-A", "total": 20, "occupied": 17, "cleaning": 1, "available": 2},
+        {"unit": "MED-SURG 4B", "total": 40, "occupied": 34, "cleaning": 2, "available": 4},
+        {"unit": "CARDIAC", "total": 16, "occupied": 12, "cleaning": 1, "available": 3},
+        {"unit": "PEDS", "total": 24, "occupied": 14, "cleaning": 2, "available": 8},
+    ]
 
     total_capacity = sum(u["total"] for u in bed_units)
     active_census = sum(u["occupied"] for u in bed_units)
-    pending_discharges = random.randint(28, 40)
-    confirmed_discharges = random.randint(8, pending_discharges // 2)
-
-    mock_batch_id = int(time.time() / 5) % 1000
-
-    # Real CPU and RAM from psutil
-    psutil.cpu_percent(interval=None)
-    psutil.virtual_memory().percent
 
     return {
         "timestamp": datetime.now(timezone.utc).isoformat(),
         "active_census": active_census,
         "total_capacity": total_capacity,
-        "system_latency_ms": random.randint(10, 25),
-        "spark_batch_id": mock_batch_id,
-        "spark_records_processed": random.randint(1, 8),
-        "spark_ml_latency_ms": random.uniform(2.5, 6.8),
+        "system_latency_ms": 12,
+        "spark_batch_id": int(time.time() / 5) % 1000,
+        "spark_records_processed": 5,
+        "spark_ml_latency_ms": 3.4,
         "ai_nodes_active": 12,
         "cpu_percent": psutil.cpu_percent(interval=None),
         "ram_percent": psutil.virtual_memory().percent,
         "hl7_logs": list(HL7_MESSAGES),
-        "ed_boarding": random.randint(12, 24),
-        "ed_avg_wait_min": random.randint(90, 180),
-        "pending_discharges": pending_discharges,
-        "confirmed_discharges": confirmed_discharges,
-        "surge_prediction_pct": random.randint(5, 20),
+        "ed_boarding": 14,
+        "ed_avg_wait_min": 115,
+        "pending_discharges": 32,
+        "confirmed_discharges": 14,
+        "surge_prediction_pct": 8,
         "department_loads": dept_loads,
         "bed_units": bed_units,
     }
@@ -378,16 +339,16 @@ async def telemetry_stream(websocket: WebSocket):
                     if not os.getenv("UPSTASH_KAFKA_SERVERS") and not os.getenv("ENABLE_PYSPARK_STREAMING"):
                         try:
                             from backend.models.clinical import SparkStreamingMetrics
-                            # Check if there is a recent metric, if not or randomly, insert one
+                            # Check if there is a recent metric, if not, insert one
                             latest_m = db.query(SparkStreamingMetrics).order_by(SparkStreamingMetrics.timestamp.desc()).first()
                             # If latest metric is older than 5 seconds, insert a new one
                             if not latest_m or (datetime.now(timezone.utc) - latest_m.timestamp.replace(tzinfo=timezone.utc)).total_seconds() > 5:
                                 new_batch_id = (latest_m.batch_id + 1) if latest_m else 1000
                                 new_metric = SparkStreamingMetrics(
                                     batch_id=new_batch_id,
-                                    records_processed=random.randint(5, 25),
-                                    processing_time_ms=float(random.randint(8, 22)),
-                                    ml_latency_ms=float(random.uniform(2.5, 6.8)),
+                                    records_processed=16,
+                                    processing_time_ms=12.5,
+                                    ml_latency_ms=3.2,
                                     timestamp=datetime.now(timezone.utc)
                                 )
                                 db.add(new_metric)

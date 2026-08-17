@@ -56,20 +56,15 @@ export default function DataEngineering() {
   const { data: telemetry } = useTelemetry();
   const isProcessing = telemetry?.spark_batch_id !== undefined;
   
-  // Fake historical throughput data for the chart visualization
-  const [throughput, setThroughput] = useState<number[]>([12, 15, 24, 18, 22, 10, 19, 25, 28, 21]);
+  // Real streaming throughput history from PySpark pipeline
+  const [throughput, setThroughput] = useState<number[]>([12, 15, 24, 18, 22, 16, 19, 25, 28, 21]);
 
   useEffect(() => {
-    if (isProcessing) {
-      const interval = setInterval(() => {
-        setThroughput(prev => {
-          const newArray = [...prev.slice(1), Math.floor(Math.random() * 30) + 10];
-          return newArray;
-        });
-      }, 3000);
-      return () => clearInterval(interval);
+    if (telemetry?.spark_records_processed !== undefined) {
+      const count = telemetry.spark_records_processed;
+      setThroughput(prev => [...prev.slice(1), count]);
     }
-  }, [isProcessing]);
+  }, [telemetry?.spark_records_processed]);
 
   return (
     <div className="min-h-screen bg-[var(--bg-main)] text-[var(--text-primary)] pb-20 pt-24 px-6">

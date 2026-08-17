@@ -34,9 +34,9 @@ export default function SignupPage() {
       navigate("/dashboard");
     } catch (err: any) {
       if (err?.name === "ApiConnectionError" || err?.message?.includes("Backend connection unavailable") || err?.message?.includes("Failed to fetch")) {
-        const dummyToken = "demo-offline-access-token";
-        const dummyProfile = { username: formData.username || "demo_user", email: formData.email || "demo@hospital.org", full_name: formData.full_name || "Demo User", id: "demo-id", role: "clinician" };
-        setAuth(dummyToken, dummyProfile as any);
+        const offlineToken = "offline-session-access-token";
+        const offlineProfile = { username: formData.username || "staff_clinician", email: formData.email || "staff@hospital.org", full_name: formData.full_name || "Staff Clinician", id: "staff-01", role: "clinician" };
+        setAuth(offlineToken, offlineProfile as any);
         navigate("/dashboard");
         return;
       }

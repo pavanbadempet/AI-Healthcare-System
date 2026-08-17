@@ -71,7 +71,9 @@ export default function TelemetryPage() {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 3000);
 
-      let metrics = gatewayMetrics; // fallback to current
+      let metrics = gatewayMetrics;
+      let latencyMs = 8;
+      const startTime = performance.now();
       try {
         let apiBase = import.meta.env.NEXT_PUBLIC_API_URL || import.meta.env.VITE_PUBLIC_API_URL;
         if (!apiBase && typeof window !== "undefined") {
@@ -89,17 +91,14 @@ export default function TelemetryPage() {
           ? cleanApiBase.replace(":8000", ":7860") + "/v1/telemetry/health"
           : cleanApiBase + "/v1/telemetry/health";
         const response = await fetch(gatewayUrl, { signal: controller.signal });
+        latencyMs = Math.max(1, Math.round(performance.now() - startTime));
         if (response.ok) {
           metrics = await response.json();
           if (!cancelled) setGatewayMetrics(metrics);
         }
       } catch {
-        // Simulate slight drift for demo when gateway is unreachable
-        metrics = {
-          ...gatewayMetrics,
-          cpu_usage_percent: Math.max(3, Math.min(45, gatewayMetrics.cpu_usage_percent + (Math.random() * 4 - 2))),
-          ram_usage_percent: Math.max(30, Math.min(90, gatewayMetrics.ram_usage_percent + (Math.random() * 2 - 1))),
-        };
+        latencyMs = Math.max(1, Math.round(performance.now() - startTime));
+        metrics = gatewayMetrics;
         if (!cancelled) setGatewayMetrics(metrics);
       } finally {
         clearTimeout(timeout);
@@ -112,7 +111,7 @@ export default function TelemetryPage() {
             time: now,
             cpu: metrics.cpu_usage_percent,
             ram: metrics.ram_usage_percent,
-            latency: Math.floor(Math.random() * 15) + 5
+            latency: latencyMs
           }];
           return next.slice(-20);
         });

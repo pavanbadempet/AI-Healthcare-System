@@ -529,42 +529,22 @@ export default function DashboardPage() {
     };
   }, [selectedPatientDbId, selectedBed?.name]);
 
-  // Simulating real-time updates for patient vitals
+  // Synchronize bed telemetry state with authentic clinical records
   useEffect(() => {
-    const interval = setInterval(() => {
-      setBeds((prevBeds) =>
-        prevBeds.map((bed) => {
-          // Stable beds fluctuate slightly, Alert bed (Marcus Thorne) fluctuates at higher rates
-          const isAlert = bed.status === "Alert";
-          const hrDelta = isAlert 
-            ? Math.floor(Math.random() * 5) - 2 // -2 to 2
-            : Math.floor(Math.random() * 3) - 1; // -1 to 1
-
-          const newHr = Math.max(isAlert ? 110 : 55, Math.min(isAlert ? 130 : 95, bed.hr + hrDelta));
-          const spo2Delta = Math.random() > 0.8 ? (Math.random() > 0.5 ? 1 : -1) : 0;
-          const newSpo2 = Math.max(isAlert ? 90 : 95, Math.min(100, bed.spo2 + spo2Delta));
-          const rrDelta = Math.random() > 0.7 ? (Math.random() > 0.5 ? 1 : -1) : 0;
-          const newRr = Math.max(isAlert ? 20 : 12, Math.min(isAlert ? 28 : 20, bed.rr + rrDelta));
-
-          // Parse and fluctuate BP dynamically
-          const [sys, dia] = bed.bp.split("/").map(Number);
-          const bpDeltaSys = Math.floor(Math.random() * 3) - 1; // -1 to 1
-          const bpDeltaDia = Math.floor(Math.random() * 3) - 1; // -1 to 1
-          const newSys = Math.max(isAlert ? 130 : 95, Math.min(isAlert ? 165 : 135, sys + bpDeltaSys));
-          const newDia = Math.max(isAlert ? 80 : 60, Math.min(isAlert ? 105 : 90, dia + bpDeltaDia));
-
-          return {
-            ...bed,
-            hr: newHr,
-            spo2: newSpo2,
-            rr: newRr,
-            bp: `${newSys}/${newDia}`
-          };
-        })
-      );
-    }, 4000);
-    return () => clearInterval(interval);
-  }, []);
+    if (!dbPatients || dbPatients.length === 0) return;
+    setBeds((prevBeds) =>
+      prevBeds.map((bed) => {
+        const matchingPatient = dbPatients.find(
+          (p) => p.full_name?.toLowerCase() === bed.name.toLowerCase()
+        );
+        if (!matchingPatient) return bed;
+        return {
+          ...bed,
+          status: (matchingPatient as any).triage_acuity === "immediate" || (matchingPatient as any).triage_acuity === "emergency" ? "Alert" : bed.status,
+        };
+      })
+    );
+  }, [dbPatients]);
 
   const highRiskRecords = records.filter(r =>
     r.prediction.toLowerCase().includes("high") ||

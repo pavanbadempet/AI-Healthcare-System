@@ -264,22 +264,24 @@ export default function PatientEMRView({
   }, [patientId, mounted]);
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || !patientId) return;
     const timer = setInterval(() => {
-      setTelemetryState(prev => {
-        const hrDiff = Math.random() > 0.65 ? (Math.random() > 0.5 ? 1 : -1) : 0;
-        const newHr = prev.hr + hrDiff;
-        const spo2Diff = Math.random() > 0.9 ? (Math.random() > 0.5 ? 1 : -1) : 0;
-        const newSpo2 = Math.max(88, Math.min(100, prev.spo2 + spo2Diff));
-        return {
-          ...prev,
-          hr: newHr,
-          spo2: newSpo2,
-        };
-      });
-    }, 3000);
+      getDoctorPatientMonitoringSignals(patientId)
+        .then((res) => {
+          const v = res?.latest_vitals?.[0];
+          if (v) {
+            setTelemetryState({
+              hr: v.heart_rate ?? 74,
+              bp: (v.systolic_bp && v.diastolic_bp) ? `${Math.round(v.systolic_bp)}/${Math.round(v.diastolic_bp)}` : "120/80",
+              spo2: v.spo2 ?? 98,
+              temp: v.temperature_c ?? 36.8,
+            });
+          }
+        })
+        .catch(() => {});
+    }, 5000);
     return () => clearInterval(timer);
-  }, [mounted]);
+  }, [patientId, mounted]);
 
   useEffect(() => {
     setMounted(true);

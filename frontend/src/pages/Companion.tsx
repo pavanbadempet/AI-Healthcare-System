@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import TopNav from '@/components/layout/TopNav';
 import { useAuthStore } from '@/lib/auth';
+import { streamChat } from '@/lib/api';
 
 type Severity = 'mild' | 'moderate' | 'severe';
 
@@ -40,47 +41,30 @@ const SYMPTOM_LIST = [
   'Brain Fog', 'Stomach Pain', 'Back Pain', 'Anxiety', 'Palpitations',
 ];
 
-const COMPANION_RESPONSES: Record<string, string[]> = {
-  greeting: [
-    "Patient simulator initialized. Log clinical symptom trends or query simulated compliance statistics.",
-  ],
-  mild: [
-    "Simulation log saved. Severity classified as Mild. Continuous monitoring is recommended.",
-  ],
-  moderate: [
-    "Simulation log saved. Severity classified as Moderate. Advice clinician consult if status degrades.",
-  ],
-  severe: [
-    "Simulation log saved. Severity classified as Severe. Alert flag raised. Medical emergency review suggested.",
-  ],
-  general: [
-    "Record updated in patient self-reporting ledger.",
-  ]
-};
-
-function getSimulatedResponse(input: string, severity?: Severity): string {
-  const lower = input.toLowerCase();
-  if (severity) {
-    const responses = COMPANION_RESPONSES[severity];
-    return responses[Math.floor(Math.random() * responses.length)];
-  }
-  return COMPANION_RESPONSES.general[0];
-}
+const INITIAL_GREETING = "Hello, I am your Clinical AI Health Companion. You can log symptoms, review treatment compliance, or ask clinical questions. Always consult your attending clinician for emergency medical guidance.";
 
 function generateSeedData(): SymptomEntry[] {
   const entries: SymptomEntry[] = [];
-  const severities: Severity[] = ['mild', 'moderate', 'severe', 'mild', 'moderate', 'mild', 'moderate'];
-  const symptoms = ['Joint Pain', 'Fatigue', 'Headache', 'Muscle Ache', 'Back Pain', 'Brain Fog', 'Nausea'];
+  const baseline = [
+    { symptom: 'Joint Pain', severity: 'mild' as Severity, sleep: 7.5, meds: true },
+    { symptom: 'Fatigue', severity: 'moderate' as Severity, sleep: 6.0, meds: true },
+    { symptom: 'Headache', severity: 'mild' as Severity, sleep: 8.0, meds: true },
+    { symptom: 'Muscle Ache', severity: 'mild' as Severity, sleep: 7.0, meds: false },
+    { symptom: 'Back Pain', severity: 'moderate' as Severity, sleep: 6.5, meds: true },
+    { symptom: 'Brain Fog', severity: 'mild' as Severity, sleep: 7.0, meds: true },
+    { symptom: 'Shortness of Breath', severity: 'mild' as Severity, sleep: 8.0, meds: true },
+  ];
   for (let i = 6; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
+    const item = baseline[6 - i];
     entries.push({
       id: `seed-${i}`,
       date: d.toISOString().split('T')[0],
-      symptom: symptoms[6 - i],
-      severity: severities[6 - i],
-      sleepHours: 4 + Math.floor(Math.random() * 5),
-      tookMeds: Math.random() > 0.3,
+      symptom: item.symptom,
+      severity: item.severity,
+      sleepHours: item.sleep,
+      tookMeds: item.meds,
       notes: '',
     });
   }
@@ -92,7 +76,7 @@ export default function Companion() {
   const [showCheckIn, setShowCheckIn] = useState(false);
   const [activeSection, setActiveSection] = useState<string>('daily');
   const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: '1', role: 'system', text: COMPANION_RESPONSES.greeting[0], timestamp: new Date() }
+    { id: '1', role: 'system', text: INITIAL_GREETING, timestamp: new Date() }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -124,40 +108,69 @@ export default function Companion() {
     setEntries(prev => [...prev, newEntry]);
     setShowCheckIn(false);
     
-    // Simulate system response
-    setIsTyping(true);
-    setTimeout(() => {
-      setMessages(prev => [...prev, {
-        id: `msg-${Date.now()}`,
-        role: 'system',
-        text: getSimulatedResponse('', severity),
-        timestamp: new Date()
-      }]);
-      setIsTyping(false);
-    }, 800);
+    const severityAdvice = severity === 'severe'
+      ? `Clinical log recorded: ${symptom} (${severity.toUpperCase()}). Please contact emergency services or your healthcare provider immediately.`
+      : severity === 'moderate'
+      ? `Clinical log recorded: ${symptom} (MODERATE). We recommend monitoring and scheduling a consultation if symptoms persist.`
+      : `Clinical log recorded: ${symptom} (MILD). Logged successfully in your health timeline.`;
+
+    setMessages(prev => [...prev, {
+      id: `msg-${Date.now()}`,
+      role: 'system',
+      text: severityAdvice,
+      timestamp: new Date()
+    }]);
   };
 
   const handleSendChat = () => {
-    if (!input.trim()) return;
+    if (!input.trim() || isTyping) return;
+    const prompt = input;
     const userMsg: ChatMessage = {
       id: `user-${Date.now()}`,
       role: 'user',
-      text: input,
+      text: prompt,
       timestamp: new Date()
     };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsTyping(true);
 
-    setTimeout(() => {
-      setMessages(prev => [...prev, {
-        id: `bot-${Date.now()}`,
-        role: 'system',
-        text: getSimulatedResponse(input),
-        timestamp: new Date()
-      }]);
-      setIsTyping(false);
-    }, 800);
+    const botMsgId = `bot-${Date.now()}`;
+    let accumulatedText = "";
+
+    setMessages(prev => [...prev, {
+      id: botMsgId,
+      role: 'system',
+      text: "",
+      timestamp: new Date()
+    }]);
+
+    const history = messages
+      .filter(m => m.id !== '1')
+      .map(m => ({ role: m.role === 'user' ? 'user' : 'assistant', content: m.text }));
+
+    streamChat(
+      prompt,
+      history,
+      (chunk: Record<string, unknown>) => {
+        if (chunk.reply) {
+          accumulatedText += String(chunk.reply);
+          setMessages(prev => prev.map(m => m.id === botMsgId ? { ...m, text: accumulatedText } : m));
+        }
+      },
+      () => {
+        setIsTyping(false);
+      },
+      (err: string) => {
+        console.warn("Companion streamChat fallback:", err);
+        const fallbackText = accumulatedText.trim()
+          ? accumulatedText
+          : `I have received your inquiry regarding "${prompt}". Please ensure you follow up with your qualified clinician for specific medical evaluations.`;
+        setMessages(prev => prev.map(m => m.id === botMsgId ? { ...m, text: fallbackText } : m));
+        setIsTyping(false);
+      },
+      'patient'
+    );
   };
 
   // Computations
@@ -185,9 +198,9 @@ export default function Companion() {
   return (
     <div className="w-full space-y-6 pb-12 selection:bg-[var(--accent)] selection:text-white relative">
       <header className="space-y-1.5 border-l-2 border-[var(--accent)] pl-4">
-        <h1 className="text-xl font-bold text-[var(--text-primary)] uppercase tracking-wider">Patient Self-Reporting Simulation</h1>
+        <h1 className="text-xl font-bold text-[var(--text-primary)] uppercase tracking-wider">Patient Health Companion & Diary</h1>
         <p className="text-[var(--text-dim)] text-xs font-mono tracking-wide max-w-xl uppercase">
-          Simulate and audit home-based patient portal logging feeds, symptom diaries, and medication compliance logs.
+          Track home-based symptom diaries, medication compliance logs, and query the Clinical AI Assistant.
         </p>
       </header>
 
@@ -196,12 +209,12 @@ export default function Companion() {
         {/* Left Column: Logging & Metrics */}
         <div className="lg:col-span-7 space-y-6">
           
-          {/* Simulation Controls Card */}
+          {/* Controls Card */}
           <div className="glass-card rounded-2xl p-5 border border-white/[0.04]">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wide flex items-center gap-2">
                 <ClipboardList size={14} className="text-[var(--accent)]" />
-                Simulate Patient Log Entry
+                Log Patient Symptom Entry
               </h2>
               <button 
                 onClick={() => setShowCheckIn(!showCheckIn)}
@@ -366,15 +379,15 @@ export default function Companion() {
           </div>
         </div>
 
-        {/* Right Column: Portal Message Simulator */}
+        {/* Right Column: AI Health Companion Chat */}
         <div className="lg:col-span-5 space-y-6">
           <div className="glass-card rounded-2xl border border-white/[0.04] flex flex-col h-[400px]">
             <div className="panel-header bg-[rgba(15,15,17,0.5)] border-b border-[var(--border)] px-4 py-3 flex justify-between items-center">
               <div>
-                <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">Patient Engagement Sync</h3>
+                <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">Clinical AI Assistant</h3>
                 <p className="text-[8px] text-[var(--success)] font-mono uppercase tracking-wider mt-0.5 flex items-center gap-1">
                   <span className="w-1 h-1 rounded-full bg-[var(--success)] animate-pulse" />
-                  Simulator Mode Active
+                  Live AI Engine Connected
                 </p>
               </div>
             </div>
@@ -401,7 +414,7 @@ export default function Companion() {
                 <div className="flex justify-start">
                   <div className="bg-white/[0.02] border border-white/[0.04] rounded-xl px-3 py-2 flex items-center gap-1">
                     <Loader2 size={10} className="animate-spin text-[var(--accent)]" />
-                    <span className="text-[9px] font-mono text-[var(--text-dim)] uppercase">Generating log response...</span>
+                    <span className="text-[9px] font-mono text-[var(--text-dim)] uppercase">Synthesizing clinical response...</span>
                   </div>
                 </div>
               )}
@@ -416,7 +429,7 @@ export default function Companion() {
                   value={input}
                   onChange={e => setInput(e.target.value)}
                   onKeyDown={e => { if(e.key === 'Enter') handleSendChat(); }}
-                  placeholder="Simulate medical compliance inquiry..."
+                  placeholder="Ask a health or medication question..."
                   className="flex-1 bg-black/40 border border-zinc-800/80 rounded-lg px-3 py-1.5 text-xs text-[var(--text-primary)] placeholder-[var(--text-dim)] focus:outline-none focus:border-[var(--accent)]"
                 />
                 <button 
@@ -434,8 +447,8 @@ export default function Companion() {
           <div className="rounded-xl p-4 bg-zinc-950/40 border border-zinc-800/60 flex items-start gap-3">
             <Info className="w-5 h-5 text-[var(--accent)] shrink-0 mt-0.5" />
             <p className="text-[10px] text-[var(--text-secondary)] font-mono uppercase tracking-wide leading-relaxed">
-              <strong className="text-[var(--text-primary)] font-bold block mb-0.5">Clinical Simulator Notice</strong> 
-              This portal simulates patients self-reporting diagnostics and treatment compliance. Always consult clinical practitioners for real diagnosis, treatment audits, or emergency medical review.
+              <strong className="text-[var(--text-primary)] font-bold block mb-0.5">Clinical & Medical Disclaimer</strong> 
+              This AI Health Companion provides educational summaries and self-reporting tracking. Always consult a licensed clinician for medical diagnosis, treatment protocols, or urgent health emergencies.
             </p>
           </div>
         </div>

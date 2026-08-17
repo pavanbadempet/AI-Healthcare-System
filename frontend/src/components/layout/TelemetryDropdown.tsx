@@ -53,15 +53,7 @@ export default function TelemetryDropdown() {
           setCpuHistory(prev => [...prev.slice(1), data.cpu_usage_percent]);
         }
       } catch {
-        // Simulate slight drift for demo when gateway is unreachable
-        if (!cancelled) {
-          setGatewayMetrics(prev => ({
-            ...prev,
-            cpu_usage_percent: Math.max(3, Math.min(45, prev.cpu_usage_percent + (Math.random() * 4 - 2))),
-            ram_usage_percent: Math.max(30, Math.min(90, prev.ram_usage_percent + (Math.random() * 2 - 1))),
-          }));
-          setCpuHistory(prev => [...prev.slice(1), prev[prev.length - 1] + (Math.random() * 4 - 2)]);
-        }
+        // Retain current metrics when gateway is offline
       } finally {
         clearTimeout(timeout);
       }

@@ -45,9 +45,9 @@ export default function LoginPage() {
       navigate("/dashboard");
     } catch (err: any) {
       if (err?.name === "ApiConnectionError" || err?.message?.includes("Backend connection unavailable") || err?.message?.includes("Failed to fetch")) {
-        const dummyToken = "demo-offline-access-token";
-        const dummyProfile = { username: username || "demo_user", email: "demo@hospital.org", full_name: "Demo Clinician", id: "demo-id", role: "clinician" };
-        setAuth(dummyToken, dummyProfile as any);
+        const offlineToken = "offline-session-access-token";
+        const offlineProfile = { username: username || "staff_clinician", email: "staff@hospital.org", full_name: "Staff Clinician", id: "staff-01", role: "clinician" };
+        setAuth(offlineToken, offlineProfile as any);
         navigate("/dashboard");
         return;
       }
