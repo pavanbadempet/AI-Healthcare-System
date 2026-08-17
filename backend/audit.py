@@ -160,12 +160,12 @@ def record_audit_event(
         db.commit()
         db.refresh(entry)
         return entry
-    except Exception:
+    except Exception as err:
         try:
             db.rollback()
-        except Exception:
-            pass
-        logger.error("Audit log failed")
+        except Exception as rb_err:
+            logger.warning("Audit log rollback failed: %s", rb_err)
+        logger.error("Audit log creation failed: %s", err)
         return None
 
 

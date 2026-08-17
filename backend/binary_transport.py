@@ -17,7 +17,7 @@ try:
     import msgpack
     _MSGPACK_AVAILABLE = True
 except ImportError:
-    pass
+    _MSGPACK_AVAILABLE = False
 
 
 def pack_binary_payload(data: Any) -> bytes:
@@ -36,8 +36,8 @@ def unpack_binary_payload(payload_bytes: bytes) -> Any:
     if _MSGPACK_AVAILABLE:
         try:
             return msgpack.unpackb(payload_bytes, raw=False)
-        except Exception:
-            pass
+        except Exception as err:
+            logger.warning("MessagePack unpack failed, falling back to JSON: %s", err)
     import json
     return json.loads(payload_bytes.decode("utf-8"))
 
