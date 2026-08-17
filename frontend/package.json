@@ -50,10 +50,10 @@
     "react-router-dom": "^7.1.1",
     "recharts": "^3.8.1",
     "remark-gfm": "^4.0.1",
-    "zustand": "^5.0.14"
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@happy-dom/global-registrator": "^20.11.1",
+    "@happy-dom/global-registrator": "^20.11.2",
     "@playwright/test": "^1.62.1",
     "@rolldown/plugin-babel": "^0.2.3",
     "@tailwindcss/postcss": "^4.3.0",
