@@ -272,6 +272,126 @@ def seed_hospital_operations_data():
                             session.add(bed)
                 session.commit()
                 logger.info("Default hospital facility, departments, and beds seeded.")
+
+            existing_patients = session.query(models.User).filter(models.User.role == "patient").count()
+            if existing_patients == 0:
+                # Find or create a default doctor user
+                doctor = session.query(models.User).filter(models.User.role == "doctor").first()
+                if not doctor:
+                    doctor = models.User(
+                        username="dr_smith",
+                        hashed_password=auth.get_password_hash("Doctor123!"),
+                        email="dr.smith@hospital.local",
+                        role="doctor",
+                        full_name="Dr. Sarah Smith, MD",
+                        facility_id=facility.id,
+                        specialization="Internal Medicine",
+                        allow_data_collection=0
+                    )
+                    session.add(doctor)
+                    session.commit()
+                    session.refresh(doctor)
+
+                demo_patients = [
+                    ("sarah_jenkins", "Sarah Jenkins", "sarah@patient.local", 28, "F", 72.0, 120.0, 80.0, 98.0, 36.8, "ICU", "ICU-01"),
+                    ("marcus_thorne", "Marcus Thorne", "marcus@patient.local", 54, "M", 118.0, 145.0, 95.0, 94.0, 38.2, "CAR", "CAR-01"),
+                    ("linda_zhao", "Linda Zhao", "linda@patient.local", 42, "F", 64.0, 115.0, 75.0, 99.0, 36.7, "MED", "MED-01"),
+                    ("robert_g", "Robert Garcia", "robert@patient.local", 61, "M", 85.0, 132.0, 84.0, 97.0, 37.0, "MED", "MED-02"),
+                    ("emily_watson", "Emily Watson", "emily@patient.local", 19, "F", 68.0, 112.0, 68.0, 98.0, 36.6, "PED", "PED-01"),
+                    ("oscar_meyer", "Oscar Meyer", "oscar@patient.local", 67, "M", 76.0, 128.0, 82.0, 96.0, 36.9, "ICU", "ICU-02"),
+                ]
+
+                for uname, fname, email, age, gender, hr, sbp, dbp, spo2, temp, dept_pref, bed_num in demo_patients:
+                    puser = models.User(
+                        username=uname,
+                        hashed_password=auth.get_password_hash("Patient123!"),
+                        email=email,
+                        role="patient",
+                        full_name=fname,
+                        facility_id=facility.id,
+                        allow_data_collection=0
+                    )
+                    session.add(puser)
+                    session.commit()
+                    session.refresh(puser)
+
+                    dept_match = session.query(models.Department).filter(models.Department.name.like(f"%{dept_pref}%")).first()
+                    dept_id = dept_match.id if dept_match else 1
+
+                    # Create Encounter
+                    encounter = models.Encounter(
+                        facility_id=facility.id,
+                        patient_id=puser.id,
+                        doctor_id=doctor.id,
+                        department_id=dept_id,
+                        encounter_type="IPD",
+                        reason="Inpatient clinical monitoring and diagnostic evaluation",
+                        priority="urgent" if hr > 100 or spo2 < 95 else "routine",
+                        status="open",
+                        started_at=datetime.now(timezone.utc)
+                    )
+                    session.add(encounter)
+                    session.commit()
+                    session.refresh(encounter)
+
+                    # Create Vital Observation
+                    vital = models.VitalObservation(
+                        facility_id=facility.id,
+                        patient_id=puser.id,
+                        recorded_by_id=doctor.id,
+                        encounter_id=encounter.id,
+                        department_id=dept_id,
+                        source="device",
+                        heart_rate=hr,
+                        systolic_bp=sbp,
+                        diastolic_bp=dbp,
+                        spo2=spo2,
+                        temperature_c=temp,
+                        respiratory_rate=16.0 if hr <= 100 else 24.0,
+                        blood_glucose=95.0 if uname != "marcus_thorne" else 145.0,
+                        observed_at=datetime.now(timezone.utc)
+                    )
+                    session.add(vital)
+
+                    # Link bed and create admission
+                    bed_match = session.query(models.Bed).filter(
+                        models.Bed.facility_id == facility.id,
+                        models.Bed.bed_number == bed_num
+                    ).first()
+                    if bed_match:
+                        bed_match.current_patient_id = puser.id
+                        bed_match.status = "occupied"
+
+                    admission = models.Admission(
+                        facility_id=facility.id,
+                        encounter_id=encounter.id,
+                        patient_id=puser.id,
+                        doctor_id=doctor.id,
+                        department_id=dept_id,
+                        bed_id=bed_match.id if bed_match else None,
+                        reason="Inpatient Care & Telemetry",
+                        status="active",
+                        admitted_at=datetime.now(timezone.utc)
+                    )
+                    session.add(admission)
+
+                    # Create Care Event
+                    event = models.CareEvent(
+                        facility_id=facility.id,
+                        patient_id=puser.id,
+                        actor_user_id=doctor.id,
+                        encounter_id=encounter.id,
+                        department_id=dept_id,
+                        event_type="ADMISSION",
+                        title=f"Inpatient Admission to {dept_pref}",
+                        summary=f"Patient admitted with initial vitals: HR {hr} bpm, BP {sbp}/{dbp}, SpO2 {spo2}%.",
+                        severity="warning" if hr > 100 or spo2 < 95 else "info",
+                        created_at=datetime.now(timezone.utc)
+                    )
+                    session.add(event)
+
+                session.commit()
+                logger.info("Demo patient profiles, encounters, vitals, and admissions seeded successfully.")
         except Exception as seed_err:
             session.rollback()
             logger.warning("Hospital operations seeding failed: %s", seed_err)
