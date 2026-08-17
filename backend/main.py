@@ -598,6 +598,80 @@ def seed_hospital_operations_data():
 
                 session.commit()
                 logger.info("Demo patient profiles, encounters, vitals, admissions, diagnostic results, and prescriptions seeded successfully.")
+
+            existing_services = session.query(models.BillableService).count()
+            if existing_services == 0:
+                services_list = [
+                    ("SRV-EM-01", "Emergency Department Triage & Acute Resuscitation", "Emergency", 1500.0),
+                    ("SRV-ICU-01", "Intensive Care Unit (ICU) Bed & Hemodynamic Monitoring / 24h", "IPD", 8500.0),
+                    ("SRV-CAR-01", "Cardiac Care Unit (CCU) Bed & Telemetry Surveillance / 24h", "IPD", 6200.0),
+                    ("SRV-MED-01", "Inpatient Med-Surg Room & Skilled Nursing Care / 24h", "IPD", 3200.0),
+                    ("SRV-LAB-01", "Comprehensive Metabolic Panel & High-Sensitivity Troponin I", "Diagnostics", 1800.0),
+                    ("SRV-RAD-01", "12-Lead Electrocardiogram & Cardiologist Interpretation", "Diagnostics", 950.0),
+                    ("SRV-PHARM-01", "Inpatient Clinical Pharmacotherapy & IV Infusion Management", "Pharmacy", 2400.0),
+                ]
+                for scode, sname, stype, sprice in services_list:
+                    srv = models.BillableService(
+                        facility_id=facility.id,
+                        service_code=scode,
+                        name=sname,
+                        service_type=stype,
+                        unit_price=sprice,
+                        status="active"
+                    )
+                    session.add(srv)
+                session.commit()
+
+            existing_claims = session.query(models.InsuranceClaim).count()
+            if existing_claims == 0:
+                claims_list = [
+                    ("CLM-2026-98101", "Marcus Thorne", "Star Health & Allied Insurance", "POL-ST-994821", 42500.0, 3500.0, "approved"),
+                    ("CLM-2026-98102", "Sarah Jenkins", "HDFC ERGO Health Insurance", "POL-HE-331094", 28000.0, 2000.0, "submitted"),
+                    ("CLM-2026-98103", "Linda Zhao", "Max Bupa Health Insurance", "POL-MB-771203", 18500.0, 1500.0, "in_review"),
+                    ("CLM-2026-98104", "Robert Garcia", "Care Health Insurance", "POL-CH-552109", 22000.0, 1800.0, "submitted"),
+                ]
+                for cnum, pname, payer, pol, camt, copay, cstatus in claims_list:
+                    claim = models.InsuranceClaim(
+                        claim_number=cnum,
+                        patient_name=pname,
+                        payer_name=payer,
+                        policy_id=pol,
+                        claim_amount=camt,
+                        copay_amount=copay,
+                        status=cstatus
+                    )
+                    session.add(claim)
+                session.commit()
+
+            existing_appts = session.query(models.Appointment).count()
+            if existing_appts == 0:
+                p_marcus = session.query(models.User).filter(models.User.username == "marcus_thorne").first()
+                p_sarah = session.query(models.User).filter(models.User.username == "sarah_jenkins").first()
+                doc = session.query(models.User).filter(models.User.role == "doctor").first()
+                if doc and p_marcus:
+                    appt1 = models.Appointment(
+                        facility_id=facility.id,
+                        user_id=p_marcus.id,
+                        doctor_id=doc.id,
+                        specialist="Cardiology",
+                        date_time=datetime.now(timezone.utc),
+                        reason="Post-STEMI Coronary Angiogram Follow-up",
+                        status="Scheduled"
+                    )
+                    session.add(appt1)
+                if doc and p_sarah:
+                    appt2 = models.Appointment(
+                        facility_id=facility.id,
+                        user_id=p_sarah.id,
+                        doctor_id=doc.id,
+                        specialist="General Surgery",
+                        date_time=datetime.now(timezone.utc),
+                        reason="Post-Operative Wound & Recovery Check",
+                        status="Scheduled"
+                    )
+                    session.add(appt2)
+                session.commit()
+                logger.info("Demo billable services, insurance claims, and appointments seeded successfully.")
         except Exception as seed_err:
             session.rollback()
             logger.warning("Hospital operations seeding failed: %s", seed_err)
