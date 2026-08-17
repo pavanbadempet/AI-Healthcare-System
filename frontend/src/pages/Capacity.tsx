@@ -158,23 +158,35 @@ export default function CapacityPage() {
 
   if (!mounted) return null;
 
-  const totalCensus = telemetry?.active_census ?? 412;
-  const rawTotalCapacity = telemetry?.total_capacity ?? 450;
-  const totalCapacity = rawTotalCapacity > 0 ? rawTotalCapacity : 450;
-  const occupancyPct = totalCapacity > 0 ? Math.round((totalCensus / totalCapacity) * 100) : 0;
-  const edBoarding = telemetry?.ed_boarding ?? 18;
-  const edAvgWait = telemetry?.ed_avg_wait_min ?? 145;
-  const pendingDischarges = telemetry?.pending_discharges ?? 34;
-  const confirmedDischarges = telemetry?.confirmed_discharges ?? 12;
-  const surgePct = telemetry?.surge_prediction_pct ?? 15;
   const bedUnits = (telemetry?.bed_units && telemetry.bed_units.length > 0) 
     ? telemetry.bed_units 
     : [
-        { unit: "ICU-A", total: 20, occupied: 18, cleaning: 1, available: 1 },
-        { unit: "MED-SURG 4B", total: 40, occupied: 35, cleaning: 2, available: 3 },
+        { unit: "ICU-A", total: 20, occupied: 16, cleaning: 1, available: 3 },
+        { unit: "MED-SURG 4B", total: 40, occupied: 32, cleaning: 2, available: 6 },
         { unit: "CARDIAC", total: 16, occupied: 12, cleaning: 1, available: 3 },
-        { unit: "PEDS", total: 24, occupied: 14, cleaning: 2, available: 8 },
+        { unit: "PEDS", total: 24, occupied: 19, cleaning: 2, available: 3 },
       ];
+
+  const totalOccupiedFromUnits = bedUnits.reduce((acc, u) => acc + (Number(u.occupied) || 0), 0);
+  const totalCapFromUnits = bedUnits.reduce((acc, u) => acc + (Number(u.total) || 0), 0);
+
+  const totalCensus = (telemetry?.active_census !== undefined && telemetry.active_census > 0)
+    ? telemetry.active_census
+    : totalOccupiedFromUnits;
+  const rawTotalCapacity = (telemetry?.total_capacity !== undefined && telemetry.total_capacity > 0)
+    ? telemetry.total_capacity
+    : totalCapFromUnits;
+  const totalCapacity = rawTotalCapacity > 0 ? rawTotalCapacity : (totalCapFromUnits || 100);
+  const occupancyPct = totalCapacity > 0 ? Math.round((totalCensus / totalCapacity) * 100) : 0;
+  const edBoarding = telemetry?.ed_boarding ?? 18;
+  const edAvgWait = telemetry?.ed_avg_wait_min ?? 145;
+  const pendingDischarges = (telemetry?.pending_discharges !== undefined && telemetry.pending_discharges > 0)
+    ? telemetry.pending_discharges
+    : Math.round(totalCensus * 0.15);
+  const confirmedDischarges = (telemetry?.confirmed_discharges !== undefined && telemetry.confirmed_discharges > 0)
+    ? telemetry.confirmed_discharges
+    : Math.max(1, Math.round(totalCensus * 0.08));
+  const surgePct = telemetry?.surge_prediction_pct ?? 15;
 
   const statusLabel = occupancyPct > 90
     ? "SURGE RED ALARM"
@@ -219,7 +231,7 @@ export default function CapacityPage() {
           <div>
             <h1 className="text-xl font-bold text-[var(--text-primary)] uppercase tracking-wider flex items-baseline gap-2">
               Admission Capacity
-              <span className={`text-[10px] ${occupancyPct > 90 ? "bg-[var(--danger-muted)] border-[var(--danger-border)] text-[var(--danger)]" : "bg-[var(--warning-muted)] border-[var(--warning-border)] text-[var(--warning)]"} border px-2 py-0.5 rounded uppercase tracking-wider font-mono`}>
+              <span className={`text-[10px] ${occupancyPct > 85 ? "bg-[var(--danger-muted)] border-[var(--danger-border)] text-[var(--danger)]" : occupancyPct > 70 ? "bg-[var(--warning-muted)] border-[var(--warning-border)] text-[var(--warning)]" : "bg-[var(--success-muted)] border-[var(--success-border)] text-[var(--success)]"} border px-2 py-0.5 rounded uppercase tracking-wider font-mono`}>
                 {occupancyPct}% Occupancy
               </span>
             </h1>
@@ -261,8 +273,8 @@ export default function CapacityPage() {
               <span className="text-2xl font-bold text-[var(--text-primary)] font-mono">
                 {totalCensus}<span className="text-xs text-[var(--text-dim)]"> / {totalCapacity}</span>
               </span>
-              <span className="text-[10px] font-mono text-[var(--success)] font-bold">
-                {occupancyPct > 85 ? "CRITICAL" : "NORMAL"}
+              <span className={`text-[10px] font-mono font-bold ${occupancyPct > 85 ? "text-[var(--danger)]" : occupancyPct > 70 ? "text-[var(--warning)]" : "text-[var(--success)]"}`}>
+                {occupancyPct > 85 ? "CRITICAL" : occupancyPct > 70 ? "ELEVATED" : "NORMAL"}
               </span>
             </div>
           </div>

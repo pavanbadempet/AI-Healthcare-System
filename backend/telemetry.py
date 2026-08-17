@@ -175,8 +175,22 @@ def build_telemetry_snapshot(db: Session, current_user: models.User) -> dict:
             status = "Stable"
         department_loads.append({"dept": unit["unit"], "load": load, "status": status})
 
-    total_cap = len(beds) if beds else sum(int(u["total"]) for u in bed_units)
-    total_census = active_admissions if beds else sum(int(u["occupied"]) for u in bed_units)
+    occupied_beds_count = sum(int(u["occupied"]) for u in bed_units)
+    total_beds_count = sum(int(u["total"]) for u in bed_units)
+
+    total_cap = total_beds_count if total_beds_count > 0 else (len(beds) if beds else 100)
+    total_census = max(active_admissions, occupied_beds_count)
+
+    pending_discharges_count = (
+        discharged_admissions
+        if discharged_admissions > 0
+        else (round(total_census * 0.15) if total_census > 0 else 0)
+    )
+    confirmed_discharges_count = (
+        discharged_admissions
+        if discharged_admissions > 0
+        else (max(1, round(total_census * 0.08)) if total_census > 0 else 0)
+    )
 
     snapshot = {
         "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -196,8 +210,8 @@ def build_telemetry_snapshot(db: Session, current_user: models.User) -> dict:
         "hl7_logs": list(HL7_MESSAGES),
         "ed_boarding": open_emergency_encounters or 18,
         "ed_avg_wait_min": 145,
-        "pending_discharges": total_census,
-        "confirmed_discharges": discharged_admissions or 12,
+        "pending_discharges": pending_discharges_count,
+        "confirmed_discharges": confirmed_discharges_count,
         "surge_prediction_pct": 15,
         "department_loads": department_loads,
         "bed_units": bed_units,
