@@ -1,0 +1,160 @@
+{
+  "timestamp": "2026-08-19T05:11:06.823196+00:00",
+  "python_version": "3.14.6",
+  "platform": "win32",
+  "cold_start": {
+    "cold_start_ms": 8798.71,
+    "models_loaded": 6,
+    "models_total": 6,
+    "memory_after_load_mb": 1098.6,
+    "details": [
+      {
+        "model": "diabetes",
+        "status": "ready",
+        "version": "2.1.0-onnx"
+      },
+      {
+        "model": "heart",
+        "status": "ready",
+        "version": "2.1.0-onnx"
+      },
+      {
+        "model": "liver",
+        "status": "ready",
+        "version": "2.1.0-onnx"
+      },
+      {
+        "model": "kidney",
+        "status": "ready",
+        "version": "2.1.0-onnx"
+      },
+      {
+        "model": "lungs",
+        "status": "ready",
+        "version": "2.1.0-onnx"
+      },
+      {
+        "model": "stroke",
+        "status": "ready",
+        "version": "1.0.0-in-memory-logistic"
+      }
+    ]
+  },
+  "inference_latency": {
+    "heart": {
+      "iterations": 100,
+      "p50_us": 1.2,
+      "p95_us": 1.3,
+      "p99_us": 4.8,
+      "mean_us": 1.3,
+      "std_us": 1.0,
+      "min_us": 1.0,
+      "max_us": 10.9
+    },
+    "diabetes": {
+      "iterations": 100,
+      "p50_us": 1.2,
+      "p95_us": 1.3,
+      "p99_us": 2.7,
+      "mean_us": 1.2,
+      "std_us": 0.4,
+      "min_us": 1.1,
+      "max_us": 4.4
+    },
+    "kidney": {
+      "iterations": 100,
+      "p50_us": 1.2,
+      "p95_us": 1.3,
+      "p99_us": 2.3,
+      "mean_us": 1.2,
+      "std_us": 0.3,
+      "min_us": 1.1,
+      "max_us": 3.7
+    },
+    "liver": {
+      "iterations": 100,
+      "p50_us": 1.2,
+      "p95_us": 1.3,
+      "p99_us": 2.2,
+      "mean_us": 1.2,
+      "std_us": 0.2,
+      "min_us": 1.1,
+      "max_us": 2.9
+    },
+    "lungs": {
+      "iterations": 100,
+      "p50_us": 1.2,
+      "p95_us": 1.3,
+      "p99_us": 1.9,
+      "mean_us": 1.2,
+      "std_us": 0.2,
+      "min_us": 1.1,
+      "max_us": 3.0
+    },
+    "stroke": {
+      "iterations": 100,
+      "p50_us": 1.2,
+      "p95_us": 1.3,
+      "p99_us": 1.7,
+      "mean_us": 1.2,
+      "std_us": 0.2,
+      "min_us": 1.0,
+      "max_us": 2.7
+    }
+  },
+  "digital_twin": {
+    "iterations": 100,
+    "p50_us": 49.0,
+    "p95_us": 57.6,
+    "p99_us": 84.4,
+    "mean_us": 50.8
+  },
+  "medallion_pipeline": {
+    "batch_100": {
+      "records": 100,
+      "elapsed_ms": 0.0,
+      "throughput_records_per_sec": 30303033.0
+    },
+    "batch_500": {
+      "records": 500,
+      "elapsed_ms": 0.0,
+      "throughput_records_per_sec": 238095178.0
+    },
+    "batch_1000": {
+      "records": 1000,
+      "elapsed_ms": 0.0,
+      "throughput_records_per_sec": 399999865.0
+    }
+  },
+  "concurrent_throughput": {
+    "workers": 8,
+    "total_requests": 400,
+    "successful": 400,
+    "elapsed_sec": 0.062,
+    "requests_per_sec": 6466.4
+  },
+  "memory": {
+    "process_rss_mb": 1130.1,
+    "model_disk_total_mb": 77.4,
+    "model_files": {
+      "diabetes_model.onnx": 0.57,
+      "diabetes_model.pkl": 15.48,
+      "heart_disease_model.onnx": 0.03,
+      "heart_disease_model.pkl": 24.17,
+      "kidney_model.onnx": 0.01,
+      "kidney_model.pkl": 17.93,
+      "kidney_scaler.onnx": 0.0,
+      "kidney_scaler.pkl": 0.0,
+      "liver_disease_model.onnx": 0.07,
+      "liver_disease_model.pkl": 10.5,
+      "liver_scaler.onnx": 0.0,
+      "liver_scaler.pkl": 0.0,
+      "lungs_model.onnx": 0.06,
+      "lungs_model.pkl": 8.52,
+      "lungs_scaler.onnx": 0.0,
+      "lungs_scaler.pkl": 0.0,
+      "stroke_model.pkl": 0.09
+    }
+  },
+  "total_benchmark_duration_sec": 12.12
+}

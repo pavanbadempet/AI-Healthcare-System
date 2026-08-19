@@ -1,0 +1,18 @@
+\begin{table*}[t]
+\centering
+\caption{\textbf{30-Day Hospital Readmission Prediction Performance.} Comparison of baseline clinical scoring, classical machine learning, tabular foundation models, and our proposed hybrid Digital Twin + TabPFN framework on the study cohort ($N=300$, Readmission Rate: 13.0\%). All metrics report mean and [95\% bootstrap confidence intervals] over 1,000 iterations under 5-fold stratified cross-validation.}
+\label{tab:main_results}
+\vspace{2mm}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Model / Architecture} & \textbf{AUROC [95\% CI]} & \textbf{AUPRC [95\% CI]} & \textbf{Brier Score $\downarrow$} & \textbf{ECE $\downarrow$} \\
+\midrule
+LACE Index & 0.588 [0.481, 0.702] & 0.249 [0.132, 0.399] & 0.194 & 0.255 \\
+Logistic Regression & 0.457 [0.373, 0.537] & 0.137 [0.095, 0.203] & 0.299 & 0.312 \\
+Random Forest & 0.589 [0.511, 0.665] & 0.171 [0.119, 0.239] & 0.137 & 0.133 \\
+XGBoost & 0.582 [0.512, 0.665] & 0.177 [0.115, 0.256] & 0.147 & 0.135 \\
+TabPFN (EHR Features) & 0.589 [0.511, 0.665] & 0.171 [0.119, 0.239] & 0.137 & 0.133 \\
+\textbf{TabPFN + Digital Twin (Ours)} & \textbf{0.603 [0.525, 0.673]} & \textbf{0.195 [0.128, 0.274]} & \textbf{0.136} & \textbf{0.133} \\
+\bottomrule
+\end{tabular}
+\end{table*}

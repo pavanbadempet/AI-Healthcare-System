@@ -1,0 +1,14 @@
+\begin{table}[h]
+\centering
+\caption{\textbf{Ablation Study: Impact of Mechanistic Digital Twin Features.} Evaluating the marginal gain of augmenting tabular foundation models with 10-year ODE state-space trajectory features.}
+\label{tab:ablation_results}
+\vspace{2mm}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Configuration} & \textbf{AUROC} & \textbf{$\Delta$ AUROC} & \textbf{Brier Score} & \textbf{$p$-value} \\
+\midrule
+EHR Features Only (TabPFN) & 0.589 & --- & 0.137 & --- \\
+\textbf{+ 10-Yr ODE Digital Twin (Ours)} & \textbf{0.603} & \textbf{+0.014} & \textbf{0.136} & \textbf{$p < 0.001$} \\
+\bottomrule
+\end{tabular}
+\end{table}
