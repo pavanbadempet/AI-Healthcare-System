@@ -42,7 +42,11 @@ RUN apt-get update && apt-get install -y \
     libssl3 \
     && rm -rf /var/lib/apt/lists/*
 
-# Set up non-root user (oven/bun base image already includes user with UID 1000)
+# Set up app directory permissions while root
+RUN mkdir -p /home/bun/app/backend /home/bun/app/models /home/bun/app/frontend/dist /home/bun/app/edge_gateway /home/bun/app/rust_gateway/target/release && \
+    chown -R 1000:1000 /home/bun
+
+# Switch to non-root user (UID 1000)
 USER 1000
 ENV HOME=/home/bun \
     PATH=/home/bun/.local/bin:$PATH \
@@ -68,11 +72,10 @@ RUN bun install --production
 
 WORKDIR /home/bun/app
 
-# Create model directories and copy local code
-RUN mkdir -p /home/bun/app/backend /home/bun/app/models
+# Copy application files
 COPY --chown=1000:1000 . /home/bun/app/
 
-# Copy startup scripts and ensure executable permissions
+# Ensure executable permissions
 RUN chmod +x /home/bun/app/scripts/start_prod.sh && \
     chmod +x /home/bun/app/rust_gateway/target/release/rust_gateway
 
