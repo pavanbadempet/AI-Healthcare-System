@@ -69,13 +69,13 @@ RUN bun install --production
 
 WORKDIR $HOME/app
 
-# Copy ONNX disease prediction models and artifacts
-COPY --chown=user:user backend/*.onnx $HOME/app/backend/
-COPY --chown=user:user models/ $HOME/app/models/
+# Create model directories and copy local code
+RUN mkdir -p $HOME/app/backend $HOME/app/models
+COPY --chown=user:user . $HOME/app/
 
-# Copy startup and management scripts
-COPY --chown=user:user scripts/start_prod.sh $HOME/app/scripts/start_prod.sh
-RUN chmod +x $HOME/app/scripts/start_prod.sh && chmod +x $HOME/app/rust_gateway/target/release/rust_gateway
+# Copy startup scripts and ensure executable permissions
+RUN chmod +x $HOME/app/scripts/start_prod.sh && \
+    chmod +x $HOME/app/rust_gateway/target/release/rust_gateway
 
 # Expose ports (7860 for Hugging Face Spaces / default, 8000 for standard HTTP)
 EXPOSE 7860 8000 8001

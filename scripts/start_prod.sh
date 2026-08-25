@@ -22,6 +22,18 @@ echo "  ⚡ Rust Backend Port : $RUST_PORT"
 echo "  🔗 Upstream Route    : $RUST_BACKEND_URL"
 echo "======================================================================"
 
+# 0. Ensure ONNX models are present (download from HF hub if missing)
+MODEL_DIR="./backend"
+mkdir -p "$MODEL_DIR"
+HF_BASE="https://huggingface.co/pavanbadempet/ai-healthcare-models/resolve/main"
+
+for model in diabetes_model.onnx heart_disease_model.onnx kidney_model.onnx kidney_scaler.onnx liver_disease_model.onnx liver_scaler.onnx lungs_model.onnx lungs_scaler.onnx stroke_model.onnx; do
+    if [ ! -f "$MODEL_DIR/$model" ] || [ ! -s "$MODEL_DIR/$model" ]; then
+        echo "[BOOT] Downloading $model from Hugging Face Model Registry..."
+        curl -s -L -f "$HF_BASE/$model" -o "$MODEL_DIR/$model" || echo "[WARN] Failed to fetch $model"
+    fi
+done
+
 # 1. Start Rust Backend Server in background
 echo "[BOOT] Launching Rust Backend Server on port $RUST_PORT..."
 export PORT="$RUST_PORT"

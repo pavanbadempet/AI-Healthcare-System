@@ -1,83 +1,89 @@
-# =======================================================
-# AI HEALTHCARE - HUGGING FACE SPACES BACKEND & FRONTEND
-# =======================================================
-# Hugging Face Spaces (Docker Space) requires port 7860
-# and running as a non-root user (uid 1000).
-# =======================================================
+# ==============================================================================
+# AI HEALTHCARE SYSTEM — HUGGING FACE SPACES PRODUCTION DOCKERFILE (RUST + BUN)
+# ==============================================================================
+# Dual-tier high-performance architecture:
+# Tier 1 (PID 1): Bun + ElysiaJS Edge Gateway & API Orchestration Layer
+# Tier 2 (Compute): Rust Axum/Tokio Backend Server + ONNX Runtime (Zero Python)
+# Fully compatible with Hugging Face Spaces (Port 7860, UID 1000).
+# ==============================================================================
 
-# Stage 1: Build Frontend React SPA
-FROM oven/bun:alpine AS frontend-builder
+# ------------------------------------------------------------------------------
+# Stage 1: Build Frontend React 19 SPA
+# ------------------------------------------------------------------------------
+FROM oven/bun:1.2-alpine AS frontend-builder
 WORKDIR /build
 
-# Copy frontend package list and install dependencies
-COPY frontend/package.json frontend/bun.lock ./
-RUN bun install
+COPY frontend/package.json frontend/bun.lock* ./
+RUN bun install --frozen-lockfile || bun install
 
-# Copy frontend source and build the production bundle
 COPY frontend/ ./
 RUN bun run build
 
-# Stage 2: Final image with Python backend and frontend assets
-FROM python:3.12-slim
+# ------------------------------------------------------------------------------
+# Stage 2: Build Rust Gateway & ONNX Inference Server
+# ------------------------------------------------------------------------------
+FROM rust:latest AS rust-builder
+RUN apt-get update && apt-get install -y protobuf-compiler libssl-dev pkg-config && rm -rf /var/lib/apt/lists/*
+WORKDIR /build
 
-# Install system dependencies and Rust
+COPY rust_gateway/ ./rust_gateway/
+WORKDIR /build/rust_gateway
+RUN cargo build --release
+
+# ------------------------------------------------------------------------------
+# Stage 3: Unified Production Runtime (Bun + Rust, Zero Python)
+# ------------------------------------------------------------------------------
+FROM oven/bun:debian AS runtime
+
+# Install system runtime libraries (SSL, curl for healthchecks and model fetching)
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    curl \
     ca-certificates \
-    gnupg \
-    default-jre-headless \
-    protobuf-compiler \
-    python3-dev \
-    git \
-    && curl -sLf --retry 3 https://cli.doppler.com/install.sh | sh \
+    curl \
+    libssl3 \
     && rm -rf /var/lib/apt/lists/*
 
-
-
-# Set up non-root user required by Hugging Face Spaces
+# Set up non-root user required by Hugging Face Spaces (uid 1000)
 RUN useradd -m -u 1000 user
 USER user
 ENV HOME=/home/user \
-    PATH=/home/user/.cargo/bin:/home/user/.local/bin:$PATH
-
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    PATH=/home/user/.local/bin:$PATH \
+    PORT=7860 \
+    HOST=0.0.0.0 \
+    RUST_BACKEND_URL=http://127.0.0.1:8001 \
+    RUST_WS_URL=ws://127.0.0.1:8001 \
+    STATIC_DIR=/home/user/app/frontend/dist \
+    DATABASE_URL=sqlite:///home/user/app/healthcare.db
 
 WORKDIR $HOME/app
 
-# Copy requirements and local packages
-COPY --chown=user backend/requirements.txt $HOME/app/backend/requirements.txt
-COPY --chown=user requirements.txt $HOME/app/
-COPY --chown=user packages/ $HOME/app/packages/
+# Copy built Rust Gateway binary from Stage 2
+COPY --from=rust-builder --chown=user:user /build/rust_gateway/target/release/rust_gateway $HOME/app/rust_gateway/target/release/rust_gateway
 
-# Install dependencies based on backend requirements and local private packages
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r backend/requirements.txt && \
-    pip install --no-cache-dir \
-        ./packages/fastapi-license-gate \
-        ./packages/clinical-tabular \
-        ./packages/clinical-fhir-abdm \
-        ./packages/clinical-rag-cache
+# Copy built frontend assets from Stage 1
+COPY --from=frontend-builder --chown=user:user /build/dist $HOME/app/frontend/dist
 
-# Copy source code
-COPY --chown=user . $HOME/app/
+# Copy Edge Gateway source and install production dependencies
+COPY --chown=user:user edge_gateway/ $HOME/app/edge_gateway/
+WORKDIR $HOME/app/edge_gateway
+RUN bun install --production
 
-# Build Rust Gateway during image build phase
-ENV PYO3_PYTHON=/usr/local/bin/python
-RUN cd rust_gateway && (LIBRARY_PATH=/usr/local/lib LD_LIBRARY_PATH=/usr/local/lib cargo build --release || true)
+WORKDIR $HOME/app
 
-# Copy built frontend assets from Stage 1 to home app dir
-COPY --from=frontend-builder --chown=user /build/dist $HOME/app/frontend/dist
+# Create model directories and copy local code
+RUN mkdir -p $HOME/app/backend $HOME/app/models
+COPY --chown=user:user . $HOME/app/
 
-# Download AI model weights from Hugging Face Model Registry
-RUN python backend/download_models.py || true
+# Copy startup scripts and ensure executable permissions
+RUN chmod +x $HOME/app/scripts/start_prod.sh && \
+    chmod +x $HOME/app/rust_gateway/target/release/rust_gateway
 
-# Make startup script executable
-RUN chmod +x $HOME/app/scripts/start_prod.sh
+# Expose Hugging Face Spaces standard port 7860
+EXPOSE 7860 8000 8001
 
-# Expose the specific port Hugging Face Spaces uses
-EXPOSE 7860
+# Health check against edge gateway health endpoint
+HEALTHCHECK --interval=15s --timeout=5s --start-period=10s --retries=3 \
+    CMD curl -f http://127.0.0.1:${PORT}/healthz/live || exit 1
 
-# Run FastAPI backend with Doppler/standard fallback
+# Start unified Rust + Bun dual stack via startup orchestrator
 CMD ["bash", "scripts/start_prod.sh"]
 
