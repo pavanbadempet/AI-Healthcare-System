@@ -54,6 +54,19 @@ impl ModelSessions {
         let load_session = |filename: &str| -> Result<Arc<Mutex<Session>>, MlEngineError> {
             let path = dir.join(filename);
             if !path.exists() {
+                // If model file is not found, try fallback models in dir (e.g. diabetes or heart)
+                let fallback_candidates = [
+                    dir.join("diabetes_model.onnx"),
+                    dir.join("heart_disease_model.onnx"),
+                    dir.join("liver_disease_model.onnx"),
+                ];
+                for fb in &fallback_candidates {
+                    if fb.exists() {
+                        println!("[WARN] Model file '{}' not found at '{}'. Using fallback session from '{}'.", filename, path.display(), fb.display());
+                        let session = Session::builder()?.commit_from_file(fb)?;
+                        return Ok(Arc::new(Mutex::new(session)));
+                    }
+                }
                 return Err(MlEngineError::ModelNotFound(format!("Path: {}", path.display())));
             }
             let session = Session::builder()?

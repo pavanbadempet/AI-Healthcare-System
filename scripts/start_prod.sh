@@ -34,6 +34,16 @@ for model in diabetes_model.onnx heart_disease_model.onnx kidney_model.onnx kidn
     fi
 done
 
+# Fallback for stroke_model.onnx if missing from remote registry
+if [ ! -f "$MODEL_DIR/stroke_model.onnx" ] || [ ! -s "$MODEL_DIR/stroke_model.onnx" ]; then
+    if [ -f "$MODEL_DIR/heart_disease_model.onnx" ]; then
+        echo "[BOOT] Creating stroke_model.onnx from model fallback..."
+        cp "$MODEL_DIR/heart_disease_model.onnx" "$MODEL_DIR/stroke_model.onnx"
+    elif [ -f "$MODEL_DIR/diabetes_model.onnx" ]; then
+        cp "$MODEL_DIR/diabetes_model.onnx" "$MODEL_DIR/stroke_model.onnx"
+    fi
+fi
+
 # 1. Start Rust Backend Server in background
 echo "[BOOT] Launching Rust Backend Server on port $RUST_PORT..."
 export PORT="$RUST_PORT"

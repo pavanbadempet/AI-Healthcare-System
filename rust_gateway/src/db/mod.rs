@@ -44,13 +44,7 @@ impl DbPool {
             schema::init_schema(&db_pool).await?;
             Ok(db_pool)
         } else {
-            let mut pg_url = database_url.to_string();
-            if pg_url.starts_with("postgres://") {
-                pg_url = pg_url.replacen("postgres://", "postgresql://", 1);
-            }
-            pg_url = pg_url
-                .replace("&channel_binding=require", "")
-                .replace("?channel_binding=require", "");
+            let pg_url = clean_postgres_url(database_url);
 
             let pool = PgPoolOptions::new()
                 .max_connections(32)
@@ -78,10 +72,7 @@ impl DbPool {
                 .connect_lazy_with(options);
             Ok(DbPool::Sqlite(pool))
         } else {
-            let mut pg_url = database_url.to_string();
-            if pg_url.starts_with("postgres://") {
-                pg_url = pg_url.replacen("postgres://", "postgresql://", 1);
-            }
+            let pg_url = clean_postgres_url(database_url);
             let options = PgConnectOptions::from_str(&pg_url)?;
             let pool = PgPoolOptions::new()
                 .max_connections(32)
@@ -159,6 +150,24 @@ fn parse_sqlite_options(url: &str) -> Result<SqliteConnectOptions, Box<dyn std::
     };
 
     Ok(options)
+}
+
+pub fn clean_postgres_url(database_url: &str) -> String {
+    let mut pg_url = database_url.to_string();
+    if pg_url.starts_with("postgres://") {
+        pg_url = pg_url.replacen("postgres://", "postgresql://", 1);
+    }
+    pg_url = pg_url
+        .replace("?channel_binding=require&", "?")
+        .replace("&channel_binding=require", "")
+        .replace("?channel_binding=require", "");
+
+    if !pg_url.contains('?') && pg_url.contains('&') {
+        if let Some(idx) = pg_url.find('&') {
+            pg_url.replace_range(idx..=idx, "?");
+        }
+    }
+    pg_url
 }
 
 #[cfg(test)]

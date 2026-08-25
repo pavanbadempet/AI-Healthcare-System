@@ -92,11 +92,16 @@ async fn main() {
 
     let inference_manager = Arc::new(
         ml::InferenceManager::new()
-            .or_else(|_| ml::InferenceManager::from_dir("../backend"))
             .or_else(|_| ml::InferenceManager::from_dir("backend"))
+            .or_else(|_| ml::InferenceManager::from_dir("../backend"))
+            .or_else(|_| ml::InferenceManager::from_dir("."))
             .unwrap_or_else(|err| {
-                println!("Warning: ONNX model loading error ({:?}). Retrying with default env.", err);
-                ml::InferenceManager::new().expect("Failed to initialize InferenceManager")
+                println!("Warning: ONNX model loading error ({:?}). Creating fallback manager.", err);
+                ml::InferenceManager::from_dir("backend")
+                    .or_else(|_| ml::InferenceManager::new())
+                    .unwrap_or_else(|_| {
+                        panic!("Failed to initialize InferenceManager: {:?}", err);
+                    })
             })
     );
 
