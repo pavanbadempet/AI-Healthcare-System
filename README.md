@@ -155,13 +155,13 @@ The platform is designed with a decoupled, high-performance architecture separat
 
 | Layer | Core Technologies & Frameworks | Key Purpose & Capabilities | Primary Source Reference |
 |:---|:---|:---|:---|
+| **Edge Gateway (Tier 1)** | Bun &bull; ElysiaJS &bull; JWT Guard &bull; Token Bucket Rate Limiter | PID 1 edge entry point, reverse proxy, static SPA serving, CORS, compression, request validation | [edge_gateway/](edge_gateway/) |
+| **Backend Engine (Tier 2)** | Rust 2024 &bull; Axum &bull; Tokio &bull; ONNX Runtime (`ort`) &bull; sqlx | 100% REST API parity (40 domains, 289 paths), sub-2ms native ONNX ML inference, SQLite WAL / PostgreSQL | [rust_gateway/](rust_gateway/) |
+| **Frontend Surface** | React 19 &bull; TypeScript &bull; Vite &bull; Tailwind CSS 4 &bull; Lucide &bull; Bun | Responsive clinician portal, telemedicine console, real-time vitals graphs, chat UI | [frontend/src/](frontend/src) |
 | **Data Platform & Lakehouse** | Apache Spark 3.5/4.0 &bull; Delta Lake 3.x &bull; Databricks Unity Catalog &bull; OMOP CDM v5.4 | Medallion architecture, Catalyst SDP quality gates, liquid clustering, ACID time travel, CDF | [docs/DATA_ENGINEERING_MASTER_GUIDE.md](docs/DATA_ENGINEERING_MASTER_GUIDE.md) |
-| **Frontend Surface** | React 19 &bull; TypeScript &bull; Vite &bull; Tailwind CSS &bull; Lucide | Responsive clinician portal, telemedicine console, real-time vitals graphs, chat UI | [frontend/src/](frontend/src) |
-| **Gateway & Routers** | FastAPI &bull; Rust PyO3 Gateway &bull; Pydantic v2 &bull; SQLAlchemy | High-throughput REST API, 8-layer security middleware, JWT RBAC, DB connection pool | [backend/main.py](backend/main.py) |
-| **Clinical Reasoning** | Cloudflare Workers AI &bull; Llama 3.1 8B &bull; LangGraph &bull; Ollama | Multi-agent consensus council, local LLM fallback, 10-year ODE digital twin simulation | [backend/clinical_digital_twin.py](backend/clinical_digital_twin.py) |
-| **Distributed ML & XAI** | PySpark MLlib &bull; XGBoost &bull; ExtraTrees &bull; SHAP &bull; Conformal Prediction | Distributed clinical feature vectorizers, 95% conformal confidence sets, feature attributions | [backend/ml/pyspark_ml_pipeline.py](backend/ml/pyspark_ml_pipeline.py) |
-| **Persistence & Cache**| PostgreSQL (Neon Serverless) &bull; SQLite &bull; Redis Streams | Multi-tenant EHR schemas, transactional health logs, session/telemetry caching | [backend/database.py](backend/database.py) |
-| **DevOps & MLOps** | Doppler &bull; Docker &bull; Hugging Face Spaces &bull; Databricks DAGs | Multi-cloud mesh orchestration, 9-stage Lakehouse DAGs, zero-config sandboxes | [backend/pipeline_mesh_orchestrator.py](backend/pipeline_mesh_orchestrator.py) |
+| **Clinical ML & Inference** | Native Rust ONNX Engine (`ort`) &bull; Static Scalers &bull; Conformal Sets | Zero-Python disease risk scoring (Diabetes, Heart, Kidney, Liver, Lung, Stroke), eGFR, FIB-4, Framingham | [rust_gateway/src/ml/](rust_gateway/src/ml/) |
+| **Persistence & Cache**| Dual sqlx Engine (SQLite WAL & PostgreSQL) &bull; AES-GCM PII Encryption | 46 entity models, auto-initialized schemas, atomic transaction safety, PII crypto | [rust_gateway/src/db/](rust_gateway/src/db/) |
+| **DevOps & MLOps** | Multi-Stage Docker &bull; Docker Compose &bull; Hugging Face Spaces &bull; Doppler | Unified Rust+Bun container (port 7860/8000), zero Python runtime dependency | [Dockerfile](Dockerfile) |
 
 ---
 
@@ -202,14 +202,14 @@ flowchart TD
 
 
 
-### 🦀 High-Performance Rust Execution Core
+### 🦀 High-Performance Rust & Bun Execution Core
 
-To satisfy low-latency clinical SLAs and secure high throughput under concurrent hospital queries, critical runtime components are built on optimized **Rust** engines:
+To satisfy sub-millisecond clinical SLAs and secure high throughput under concurrent hospital traffic, the entire runtime is built on a **Rust + Bun** architecture eliminating Python inference latency:
 
-*   **In-Memory Semantic Search (`turbovec`):** A custom vector index written in Rust using SIMD (Single Instruction, Multiple Data) operations to search patient record embeddings in sub-10ms times.
-*   **Schema Validation (`pydantic-core`):** Powered by Pydantic v2's Rust-compiled core engine, executing payload schema parsing and validation up to 17x faster than pure-Python equivalents.
-*   **Fast JSON Serialization (`orjson`):** Utilizing a Rust-compiled JSON library to achieve maximum serialization throughput for high-frequency WebSocket vitals and REST API payloads.
-*   **Cryptographic Security (`bcrypt`/`cryptography`):** Employs Rust-compiled hashing backends for secure JWT verification and patient credentials protection.
+*   **Native ONNX ML Inference (`ort`):** 100% native Rust ONNX runtime sessions with zero-allocation static vector scalers executing disease risk predictions in under 1.5ms.
+*   **Dual sqlx Database Engine:** Concurrent async pool supporting SQLite WAL mode (zero-config local dev) and PostgreSQL (production) with AES-GCM PII encryption.
+*   **Bun + ElysiaJS Edge Gateway:** High-performance edge reverse proxy and BFF serving static React 19 assets, enforcing JWT authentication, and managing rate limits with sub-millisecond overhead.
+*   **WebSockets & Telemetry Streaming:** Native Tokio WebSocket pipelines streaming ICU vitals, telemetry, and Server-Sent Events (SSE) chat with zero buffering.
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 

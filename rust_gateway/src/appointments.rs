@@ -70,22 +70,37 @@ async fn get_appointments(
 ) -> Result<Json<Vec<Appointment>>, StatusCode> {
     let pool = &state.db_pool;
 
-    let query = if user.role == "admin" {
-        if let Some(fid) = user.facility_id {
-            sqlx::query_as::<_, Appointment>("SELECT id, facility_id, user_id, doctor_id, specialist, date_time, reason, status, created_at FROM appointments WHERE facility_id = $1 AND is_deleted = 0 ORDER BY date_time ASC")
-                .bind(fid)
-        } else {
-            sqlx::query_as::<_, Appointment>("SELECT * FROM appointments WHERE is_deleted = 0 ORDER BY date_time ASC")
+    let appointments = match (user.role.as_str(), user.facility_id) {
+        ("admin", Some(fid)) => {
+            let sql = "SELECT id, facility_id, user_id, doctor_id, specialist, date_time, reason, status, created_at FROM appointments WHERE facility_id = $1 AND is_deleted = 0 ORDER BY date_time ASC";
+            match pool {
+                crate::db::DbPool::Sqlite(p) => sqlx::query_as::<_, Appointment>(sql).bind(fid).fetch_all(p).await,
+                crate::db::DbPool::Postgres(p) => sqlx::query_as::<_, Appointment>(sql).bind(fid).fetch_all(p).await,
+            }
         }
-    } else if user.role == "doctor" {
-        sqlx::query_as::<_, Appointment>("SELECT id, facility_id, user_id, doctor_id, specialist, date_time, reason, status, created_at FROM appointments WHERE doctor_id = $1 AND is_deleted = 0 ORDER BY date_time ASC")
-            .bind(user.id)
-    } else {
-        sqlx::query_as::<_, Appointment>("SELECT id, facility_id, user_id, doctor_id, specialist, date_time, reason, status, created_at FROM appointments WHERE user_id = $1 AND is_deleted = 0 ORDER BY date_time ASC")
-            .bind(user.id)
-    };
-
-    let appointments = query.fetch_all(pool).await.map_err(|e| {
+        ("admin", None) => {
+            let sql = "SELECT id, facility_id, user_id, doctor_id, specialist, date_time, reason, status, created_at FROM appointments WHERE is_deleted = 0 ORDER BY date_time ASC";
+            match pool {
+                crate::db::DbPool::Sqlite(p) => sqlx::query_as::<_, Appointment>(sql).fetch_all(p).await,
+                crate::db::DbPool::Postgres(p) => sqlx::query_as::<_, Appointment>(sql).fetch_all(p).await,
+            }
+        }
+        ("doctor", _) => {
+            let sql = "SELECT id, facility_id, user_id, doctor_id, specialist, date_time, reason, status, created_at FROM appointments WHERE doctor_id = $1 AND is_deleted = 0 ORDER BY date_time ASC";
+            match pool {
+                crate::db::DbPool::Sqlite(p) => sqlx::query_as::<_, Appointment>(sql).bind(user.id).fetch_all(p).await,
+                crate::db::DbPool::Postgres(p) => sqlx::query_as::<_, Appointment>(sql).bind(user.id).fetch_all(p).await,
+            }
+        }
+        _ => {
+            let sql = "SELECT id, facility_id, user_id, doctor_id, specialist, date_time, reason, status, created_at FROM appointments WHERE user_id = $1 AND is_deleted = 0 ORDER BY date_time ASC";
+            match pool {
+                crate::db::DbPool::Sqlite(p) => sqlx::query_as::<_, Appointment>(sql).bind(user.id).fetch_all(p).await,
+                crate::db::DbPool::Postgres(p) => sqlx::query_as::<_, Appointment>(sql).bind(user.id).fetch_all(p).await,
+            }
+        }
+    }
+    .map_err(|e| {
         eprintln!("DB Error: {:?}", e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
@@ -123,12 +138,11 @@ async fn create_appointment(
     }
 
     let doctor_id = payload.doctor_id;
-    let doctor: Option<DoctorInfo> = sqlx::query_as(
-        "SELECT id, role, facility_id, specialization FROM users WHERE id = $1 AND role = 'doctor'"
-    )
-    .bind(doctor_id)
-    .fetch_optional(pool)
-    .await
+    let doc_query = "SELECT id, role, facility_id, specialization FROM users WHERE id = $1 AND role = 'doctor'";
+    let doctor: Option<DoctorInfo> = match pool {
+        crate::db::DbPool::Sqlite(p) => sqlx::query_as(doc_query).bind(doctor_id).fetch_optional(p).await,
+        crate::db::DbPool::Postgres(p) => sqlx::query_as(doc_query).bind(doctor_id).fetch_optional(p).await,
+    }
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let doctor = doctor.ok_or(StatusCode::BAD_REQUEST)?;
@@ -142,15 +156,27 @@ async fn create_appointment(
         return Err(StatusCode::BAD_REQUEST);
     }
 
-    let existing: Option<(i64,)> = sqlx::query_as(
-        "SELECT id FROM appointments WHERE doctor_id = $1 AND date_time = $2 AND status IN ($3, $4)"
-    )
-    .bind(doctor_id)
-    .bind(appointment_dt)
-    .bind("Scheduled")
-    .bind("Rescheduled")
-    .fetch_optional(pool)
-    .await
+    let check_sql = "SELECT id FROM appointments WHERE doctor_id = $1 AND date_time = $2 AND status IN ($3, $4)";
+    let existing: Option<(i64,)> = match pool {
+        crate::db::DbPool::Sqlite(p) => {
+            sqlx::query_as(check_sql)
+                .bind(doctor_id)
+                .bind(appointment_dt)
+                .bind("Scheduled")
+                .bind("Rescheduled")
+                .fetch_optional(p)
+                .await
+        }
+        crate::db::DbPool::Postgres(p) => {
+            sqlx::query_as(check_sql)
+                .bind(doctor_id)
+                .bind(appointment_dt)
+                .bind("Scheduled")
+                .bind("Rescheduled")
+                .fetch_optional(p)
+                .await
+        }
+    }
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     if existing.is_some() {
@@ -160,23 +186,39 @@ async fn create_appointment(
 
     let facility_id = user.facility_id.or(doctor.facility_id);
     let specialist = doctor.specialization.unwrap_or_else(|| "General Physician".to_string());
-    
-    let result = sqlx::query_as::<_, Appointment>(
-        r#"
+
+    let insert_sql = r#"
         INSERT INTO appointments (facility_id, user_id, doctor_id, specialist, date_time, reason, status)
         VALUES ($1, $2, $3, $4, $5, $6, $7)
         RETURNING id, facility_id, user_id, doctor_id, specialist, date_time, reason, status, created_at
-        "#
-    )
-    .bind(facility_id)
-    .bind(user.id)
-    .bind(doctor_id)
-    .bind(specialist)
-    .bind(appointment_dt)
-    .bind(payload.reason)
-    .bind("Scheduled")
-    .fetch_one(pool)
-    .await
+    "#;
+
+    let result = match pool {
+        crate::db::DbPool::Sqlite(p) => {
+            sqlx::query_as::<_, Appointment>(insert_sql)
+                .bind(facility_id)
+                .bind(user.id)
+                .bind(doctor_id)
+                .bind(specialist)
+                .bind(appointment_dt)
+                .bind(payload.reason)
+                .bind("Scheduled")
+                .fetch_one(p)
+                .await
+        }
+        crate::db::DbPool::Postgres(p) => {
+            sqlx::query_as::<_, Appointment>(insert_sql)
+                .bind(facility_id)
+                .bind(user.id)
+                .bind(doctor_id)
+                .bind(specialist)
+                .bind(appointment_dt)
+                .bind(payload.reason)
+                .bind("Scheduled")
+                .fetch_one(p)
+                .await
+        }
+    }
     .map_err(|e| {
         eprintln!("DB Insert Error: {:?}", e);
         StatusCode::INTERNAL_SERVER_ERROR
@@ -193,24 +235,30 @@ async fn get_doctors(
 ) -> Result<Json<Vec<DoctorResponse>>, StatusCode> {
     let pool = &state.db_pool;
 
-    let query = if user.role == "admin" && user.facility_id.is_some() {
-        sqlx::query_as::<_, DoctorResponse>(
-            r#"SELECT id, full_name, specialization, consultation_fee, profile_picture 
-               FROM users WHERE role = 'doctor' AND facility_id = $1"#
-        ).bind(user.facility_id)
-    } else if user.facility_id.is_some() {
-        sqlx::query_as::<_, DoctorResponse>(
-            r#"SELECT id, full_name, specialization, consultation_fee, profile_picture 
-               FROM users WHERE role = 'doctor' AND (facility_id = $1 OR facility_id IS NULL)"#
-        ).bind(user.facility_id)
-    } else {
-        sqlx::query_as::<_, DoctorResponse>(
-            r#"SELECT id, full_name, specialization, consultation_fee, profile_picture 
-               FROM users WHERE role = 'doctor'"#
-        )
-    };
-
-    let doctors = query.fetch_all(pool).await.map_err(|e| {
+    let doctors: Vec<DoctorResponse> = match (user.role.as_str(), user.facility_id) {
+        ("admin", Some(fid)) => {
+            let sql = "SELECT id, full_name, specialization, consultation_fee, profile_picture FROM users WHERE role = 'doctor' AND facility_id = $1";
+            match pool {
+                crate::db::DbPool::Sqlite(p) => sqlx::query_as(sql).bind(fid).fetch_all(p).await,
+                crate::db::DbPool::Postgres(p) => sqlx::query_as(sql).bind(fid).fetch_all(p).await,
+            }
+        }
+        (_, Some(fid)) => {
+            let sql = "SELECT id, full_name, specialization, consultation_fee, profile_picture FROM users WHERE role = 'doctor' AND (facility_id = $1 OR facility_id IS NULL)";
+            match pool {
+                crate::db::DbPool::Sqlite(p) => sqlx::query_as(sql).bind(fid).fetch_all(p).await,
+                crate::db::DbPool::Postgres(p) => sqlx::query_as(sql).bind(fid).fetch_all(p).await,
+            }
+        }
+        _ => {
+            let sql = "SELECT id, full_name, specialization, consultation_fee, profile_picture FROM users WHERE role = 'doctor'";
+            match pool {
+                crate::db::DbPool::Sqlite(p) => sqlx::query_as(sql).fetch_all(p).await,
+                crate::db::DbPool::Postgres(p) => sqlx::query_as(sql).fetch_all(p).await,
+            }
+        }
+    }
+    .map_err(|e| {
         eprintln!("DB Error: {:?}", e);
         StatusCode::INTERNAL_SERVER_ERROR
     })?;
@@ -235,12 +283,11 @@ async fn cancel_appointment(
 ) -> Result<Json<MessageResponse>, StatusCode> {
     let pool = &state.db_pool;
 
-    let appt: Option<Appointment> = sqlx::query_as(
-        "SELECT id, facility_id, user_id, doctor_id, specialist, date_time, reason, status, created_at FROM appointments WHERE id = $1"
-    )
-    .bind(appointment_id)
-    .fetch_optional(pool)
-    .await
+    let select_sql = "SELECT id, facility_id, user_id, doctor_id, specialist, date_time, reason, status, created_at FROM appointments WHERE id = $1";
+    let appt: Option<Appointment> = match pool {
+        crate::db::DbPool::Sqlite(p) => sqlx::query_as(select_sql).bind(appointment_id).fetch_optional(p).await,
+        crate::db::DbPool::Postgres(p) => sqlx::query_as(select_sql).bind(appointment_id).fetch_optional(p).await,
+    }
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let appt = appt.ok_or(StatusCode::NOT_FOUND)?;
@@ -257,11 +304,11 @@ async fn cancel_appointment(
         }
     }
 
-    sqlx::query("UPDATE appointments SET status = 'Cancelled' WHERE id = $1")
-        .bind(appointment_id)
-        .execute(pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let update_sql = "UPDATE appointments SET status = 'Cancelled' WHERE id = $1";
+    match pool {
+        crate::db::DbPool::Sqlite(p) => { let _ = sqlx::query(update_sql).bind(appointment_id).execute(p).await; }
+        crate::db::DbPool::Postgres(p) => { let _ = sqlx::query(update_sql).bind(appointment_id).execute(p).await; }
+    };
 
     Ok(Json(MessageResponse {
         message: "Appointment cancelled".to_string(),
@@ -276,12 +323,11 @@ async fn reschedule_appointment(
 ) -> Result<Json<MessageResponse>, StatusCode> {
     let pool = &state.db_pool;
 
-    let appt: Option<Appointment> = sqlx::query_as(
-        "SELECT id, facility_id, user_id, doctor_id, specialist, date_time, reason, status, created_at FROM appointments WHERE id = $1"
-    )
-    .bind(appointment_id)
-    .fetch_optional(pool)
-    .await
+    let select_sql = "SELECT id, facility_id, user_id, doctor_id, specialist, date_time, reason, status, created_at FROM appointments WHERE id = $1";
+    let appt: Option<Appointment> = match pool {
+        crate::db::DbPool::Sqlite(p) => sqlx::query_as(select_sql).bind(appointment_id).fetch_optional(p).await,
+        crate::db::DbPool::Postgres(p) => sqlx::query_as(select_sql).bind(appointment_id).fetch_optional(p).await,
+    }
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let appt = appt.ok_or(StatusCode::NOT_FOUND)?;
@@ -312,16 +358,29 @@ async fn reschedule_appointment(
     }
 
     if let Some(doc_id) = appt.doctor_id {
-        let existing: Option<(i64,)> = sqlx::query_as(
-            "SELECT id FROM appointments WHERE doctor_id = $1 AND date_time = $2 AND status IN ($3, $4) AND id != $5"
-        )
-        .bind(doc_id)
-        .bind(new_dt)
-        .bind("Scheduled")
-        .bind("Rescheduled")
-        .bind(appointment_id)
-        .fetch_optional(pool)
-        .await
+        let check_sql = "SELECT id FROM appointments WHERE doctor_id = $1 AND date_time = $2 AND status IN ($3, $4) AND id != $5";
+        let existing: Option<(i64,)> = match pool {
+            crate::db::DbPool::Sqlite(p) => {
+                sqlx::query_as(check_sql)
+                    .bind(doc_id)
+                    .bind(new_dt)
+                    .bind("Scheduled")
+                    .bind("Rescheduled")
+                    .bind(appointment_id)
+                    .fetch_optional(p)
+                    .await
+            }
+            crate::db::DbPool::Postgres(p) => {
+                sqlx::query_as(check_sql)
+                    .bind(doc_id)
+                    .bind(new_dt)
+                    .bind("Scheduled")
+                    .bind("Rescheduled")
+                    .bind(appointment_id)
+                    .fetch_optional(p)
+                    .await
+            }
+        }
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
         if existing.is_some() {
@@ -330,12 +389,11 @@ async fn reschedule_appointment(
         }
     }
 
-    sqlx::query("UPDATE appointments SET date_time = $1, status = 'Rescheduled' WHERE id = $2")
-        .bind(new_dt)
-        .bind(appointment_id)
-        .execute(pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let update_sql = "UPDATE appointments SET date_time = $1, status = 'Rescheduled' WHERE id = $2";
+    match pool {
+        crate::db::DbPool::Sqlite(p) => { let _ = sqlx::query(update_sql).bind(new_dt).bind(appointment_id).execute(p).await; }
+        crate::db::DbPool::Postgres(p) => { let _ = sqlx::query(update_sql).bind(new_dt).bind(appointment_id).execute(p).await; }
+    };
 
     Ok(Json(MessageResponse {
         message: "Appointment rescheduled".to_string(),
@@ -349,12 +407,11 @@ async fn delete_appointment(
 ) -> Result<Json<MessageResponse>, StatusCode> {
     let pool = &state.db_pool;
 
-    let appt: Option<Appointment> = sqlx::query_as(
-        "SELECT id, facility_id, user_id, doctor_id, specialist, date_time, reason, status, created_at FROM appointments WHERE id = $1"
-    )
-    .bind(appointment_id)
-    .fetch_optional(pool)
-    .await
+    let select_sql = "SELECT id, facility_id, user_id, doctor_id, specialist, date_time, reason, status, created_at FROM appointments WHERE id = $1";
+    let appt: Option<Appointment> = match pool {
+        crate::db::DbPool::Sqlite(p) => sqlx::query_as(select_sql).bind(appointment_id).fetch_optional(p).await,
+        crate::db::DbPool::Postgres(p) => sqlx::query_as(select_sql).bind(appointment_id).fetch_optional(p).await,
+    }
     .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     let appt = appt.ok_or(StatusCode::NOT_FOUND)?;
@@ -371,11 +428,11 @@ async fn delete_appointment(
         }
     }
 
-    sqlx::query("DELETE FROM appointments WHERE id = $1")
-        .bind(appointment_id)
-        .execute(pool)
-        .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let delete_sql = "DELETE FROM appointments WHERE id = $1";
+    match pool {
+        crate::db::DbPool::Sqlite(p) => { let _ = sqlx::query(delete_sql).bind(appointment_id).execute(p).await; }
+        crate::db::DbPool::Postgres(p) => { let _ = sqlx::query(delete_sql).bind(appointment_id).execute(p).await; }
+    };
 
     Ok(Json(MessageResponse {
         message: "Appointment deleted".to_string(),

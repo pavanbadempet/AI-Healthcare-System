@@ -1,0 +1,1215 @@
+{
+  "total": 213,
+  "unique": [
+    "${API_BASE}${path}",
+    "${API_BASE}/admin/audit-logs/export",
+    "${API_BASE}/ai/models",
+    "${API_BASE}/ai/models/library",
+    "${API_BASE}/ai/models/pull",
+    "${API_BASE}/appointments/agent-stream",
+    "${API_BASE}/chat",
+    "${API_BASE}/chat/stream",
+    "${API_BASE}/report/analyze/report",
+    "${API_BASE}/reports/download/health-report",
+    "${API_BASE}/telemetry/snapshot",
+    "${API_BASE}/token",
+    "${API_BASE}/v1/admin/maintenance",
+    "${apiBase}/v1/audio/tts",
+    "${apiBase}/v1/telemetry/snapshot",
+    "/admin/agents/auto-call?alert_details=${encodeURIComponent(alertDetails)}&staff_directory=${encodeURIComponent(staffDirectory)}",
+    "/admin/agents/auto-fix?error_logs=${encodeURIComponent(errorLogs)}&health_signals=${encodeURIComponent(healthSignals)}",
+    "/admin/agents/billing-audit?soap_note=${encodeURIComponent(soapNote)}",
+    "/admin/agents/discharge-summary?patient_id=${patientId}",
+    "/admin/agents/langgraph-triage?symptoms=${encodeURIComponent(symptoms)}&patient_id=${patientId}",
+    "/admin/agents/maf-billing-audit?soap_note=${encodeURIComponent(soapNote)}",
+    "/admin/agents/maf-handoff-audit?soap_note=${encodeURIComponent(soapNote)}",
+    "/admin/agents/nursing-handoff?patient_id=${patientId}",
+    "/admin/agents/security-patch?dependencies=${encodeURIComponent(dependencies)}&env_config=${encodeURIComponent(envConfig)}",
+    "/admin/agents/wellness-advisory?patient_data=${encodeURIComponent(patientData)}",
+    "/admin/ai-functions",
+    "/admin/analytics/report",
+    "/admin/attribution-drift",
+    "/admin/audit-logs",
+    "/admin/data-quality",
+    "/admin/federated-sim?epochs=${epochs}&epsilon=${epsilon}",
+    "/admin/maintenance",
+    "/admin/model-cards",
+    "/admin/operational-health",
+    "/admin/patients",
+    "/admin/patients/${patientId}",
+    "/admin/semantic-cache",
+    "/admin/stats",
+    "/admin/users",
+    "/api/v1/data-platform/bi/ask",
+    "/api/v1/data-platform/sql/execute",
+    "/appointments/",
+    "/appointments/agent-chat",
+    "/appointments/doctors",
+    "/appointments/recommend-specialists/${patientId}",
+    "/appointments/special-care",
+    "/billing/admin/metrics",
+    "/billing/claims/submit",
+    "/billing/estimate?procedure_type=${encodeURIComponent(procedureType)}${providerParam}${regionParam}",
+    "/billing/soap-audit",
+    "/chat",
+    "/chat/context?q=${encodeURIComponent(query)}",
+    "/chat/history",
+    "/chat/suggestions",
+    "/consent/accept",
+    "/consent/status",
+    "/demo-readiness/",
+    "/diagnostics/admin/metrics",
+    "/diagnostics/doctor/patients/${patientId}/results",
+    "/diagnostics/lab-kits",
+    "/diagnostics/lab-kits/${patientId}",
+    "/diagnostics/patient/results",
+    "/diagnostics/results/${resultId}/review",
+    "/diagnostics/upload",
+    "/discharge/admin/metrics",
+    "/discharge/summaries/generate/${patient.patient_id}",
+    "/events/admin/metrics",
+    "/events/admin/patients/${patientId}/feed?limit=${limit}",
+    "/events/dispatch",
+    "/events/doctor/patients/${patientId}/feed?limit=${limit}",
+    "/events/patient/feed?limit=${limit}",
+    "/federated/audits",
+    "/federated/feedback",
+    "/federated/stats",
+    "/federated/sync",
+    "/fhir/AuditEvent",
+    "/forgot-password",
+    "/healthz",
+    "/hospital/admin/operations",
+    "/hospital/admissions",
+    "/hospital/beds",
+    "/hospital/beds/${bedId}/status",
+    "/hospital/departments",
+    "/hospital/dicom/upload",
+    "/hospital/dictation/soap",
+    "/hospital/doctor/patients",
+    "/hospital/encounters",
+    "/hospital/orders",
+    "/hospital/triage-queue",
+    "/intelligence/alerts${qs}",
+    "/intelligence/alerts/${alertId}/acknowledge",
+    "/intelligence/explainability/${predictionId}",
+    "/intelligence/insights/${patientId}",
+    "/interop/abdm/link",
+    "/interop/admin/metrics",
+    "/interop/doctor/patients/${patientId}/fhir-bundle",
+    "/interop/external-records/${patientId}",
+    "/interop/health-passport/${patientId}",
+    "/lakehouse/delta/history?table_name=${encodeURIComponent(tableName)}",
+    "/lakehouse/delta/time-travel",
+    "/lakehouse/omop/transform",
+    "/lakehouse/quality/audit",
+    "/monitoring/admin/patterns",
+    "/monitoring/doctor/patients/${patientId}/signals",
+    "/monitoring/signals/${signalId}/resolve",
+    "/monitoring/vitals",
+    "/nursing/admin/metrics",
+    "/nursing/patients/${patient.patient_id}/handoff",
+    "/payments/create-order",
+    "/payments/verify",
+    "/pharmacy/admin/metrics",
+    "/pharmacy/check-safety",
+    "/pharmacy/compare-pricing?medication_name=${encodeURIComponent(medicationName)}",
+    "/pharmacy/doctor/patients/${patientId}/prescriptions",
+    "/pharmacy/generic-substitute?branded_name=${encodeURIComponent(brandedName)}",
+    "/pharmacy/patient/prescriptions",
+    "/pharmacy/prescriptions",
+    "/predict/advisory-board/${patientId}",
+    "/predict/clinical-trials/${patientId}",
+    "/predict/consensus/${patientId}",
+    "/predict/counterfactual/${patientId}",
+    "/predict/diabetes",
+    "/predict/explain-text/${modelName}",
+    "/predict/heart",
+    "/predict/kidney",
+    "/predict/liver",
+    "/predict/lungs",
+    "/predict/multi-organ",
+    "/predict/organ_health/${patientId}",
+    "/predict/scribe/${patientId}",
+    "/predict/scribe/commit",
+    "/predict/stroke",
+    "/profile",
+    "/records",
+    "/records/${id}",
+    "/reset-password",
+    "/signup",
+    "/smart/apps",
+    "/smart/apps/${appId}",
+    "/smart/launch",
+    "/v1/abdm/abha/generate",
+    "/v1/licensing/activate",
+    "/v1/licensing/status"
+  ],
+  "calls": [
+    {
+      "file": "frontend/src/components/chat/ModelManager.tsx",
+      "endpoint": "${API_BASE}/ai/models/library",
+      "type": "fetch"
+    },
+    {
+      "file": "frontend/src/components/chat/ModelManager.tsx",
+      "endpoint": "${API_BASE}/ai/models",
+      "type": "fetch"
+    },
+    {
+      "file": "frontend/src/components/chat/ModelManager.tsx",
+      "endpoint": "${API_BASE}/ai/models/pull",
+      "type": "fetch"
+    },
+    {
+      "file": "frontend/src/components/chat/ModelManager.tsx",
+      "endpoint": "${API_BASE}/ai/models",
+      "type": "fetch"
+    },
+    {
+      "file": "frontend/src/components/modals/AbdmHealthIdModal.tsx",
+      "endpoint": "/interop/abdm/link",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/components/modals/BillingClaimsModal.tsx",
+      "endpoint": "/billing/claims/submit",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/components/modals/DdiAllergySafetyModal.tsx",
+      "endpoint": "/pharmacy/doctor/patients/${patientId}/prescriptions",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/components/modals/DdiAllergySafetyModal.tsx",
+      "endpoint": "/pharmacy/check-safety",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/components/modals/DdiAllergySafetyModal.tsx",
+      "endpoint": "/pharmacy/doctor/patients/${patientId}/prescriptions",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/components/modals/DicomUploadModal.tsx",
+      "endpoint": "/hospital/dicom/upload",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/components/modals/DischargeSummaryModal.tsx",
+      "endpoint": "/discharge/summaries/generate/${patient.patient_id}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/components/modals/DischargeSummaryModal.tsx",
+      "endpoint": "/discharge/summaries/generate/${patient.patient_id}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/components/modals/ShiftHandoffModal.tsx",
+      "endpoint": "/nursing/patients/${patient.patient_id}/handoff",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/components/modals/ShiftHandoffModal.tsx",
+      "endpoint": "/nursing/patients/${patient.patient_id}/handoff",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/components/modals/SoapDenialAuditModal.tsx",
+      "endpoint": "/billing/soap-audit",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/components/modals/SpeechToTextModal.tsx",
+      "endpoint": "/hospital/dictation/soap",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/components/operations/PatientMedicationsPanel.tsx",
+      "endpoint": "/pharmacy/prescriptions",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/stats",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/users",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/audit-logs",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/patients",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/patients/${patientId}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/hospital/doctor/patients",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/monitoring/doctor/patients/${patientId}/signals",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/monitoring/signals/${signalId}/resolve",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/monitoring/vitals",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/diagnostics/doctor/patients/${patientId}/results",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/diagnostics/patient/results",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/diagnostics/results/${resultId}/review",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/diagnostics/upload",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/pharmacy/doctor/patients/${patientId}/prescriptions",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/pharmacy/patient/prescriptions",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/hospital/admin/operations",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/monitoring/admin/patterns",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/diagnostics/admin/metrics",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/pharmacy/admin/metrics",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/billing/admin/metrics",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/discharge/admin/metrics",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/nursing/admin/metrics",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/events/admin/metrics",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/interop/admin/metrics",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/interop/doctor/patients/${patientId}/fhir-bundle",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/demo-readiness/",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/data-quality",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/operational-health",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/maintenance",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/analytics/report",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/attribution-drift",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/semantic-cache",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/semantic-cache",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/ai-functions",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/model-cards",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/federated-sim?epochs=${epochs}&epsilon=${epsilon}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/fhir/AuditEvent",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/agents/billing-audit?soap_note=${encodeURIComponent(soapNote)}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/agents/maf-billing-audit?soap_note=${encodeURIComponent(soapNote)}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/agents/maf-handoff-audit?soap_note=${encodeURIComponent(soapNote)}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/agents/langgraph-triage?symptoms=${encodeURIComponent(symptoms)}&patient_id=${patientId}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/agents/discharge-summary?patient_id=${patientId}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/agents/nursing-handoff?patient_id=${patientId}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/agents/security-patch?dependencies=${encodeURIComponent(dependencies)}&env_config=${encodeURIComponent(envConfig)}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/agents/auto-fix?error_logs=${encodeURIComponent(errorLogs)}&health_signals=${encodeURIComponent(healthSignals)}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/agents/auto-call?alert_details=${encodeURIComponent(alertDetails)}&staff_directory=${encodeURIComponent(staffDirectory)}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/agents/wellness-advisory?patient_data=${encodeURIComponent(patientData)}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "${API_BASE}/admin/audit-logs/export",
+      "type": "fetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/patients/${patientId}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/monitoring/doctor/patients/${patientId}/signals",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/monitoring/signals/${signalId}/resolve",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/diagnostics/doctor/patients/${patientId}/results",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/diagnostics/results/${resultId}/review",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/pharmacy/doctor/patients/${patientId}/prescriptions",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/interop/doctor/patients/${patientId}/fhir-bundle",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/federated-sim?epochs=${epochs}&epsilon=${epsilon}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/agents/billing-audit?soap_note=${encodeURIComponent(soapNote)}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/agents/maf-billing-audit?soap_note=${encodeURIComponent(soapNote)}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/agents/maf-handoff-audit?soap_note=${encodeURIComponent(soapNote)}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/agents/langgraph-triage?symptoms=${encodeURIComponent(symptoms)}&patient_id=${patientId}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/agents/discharge-summary?patient_id=${patientId}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/agents/nursing-handoff?patient_id=${patientId}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/agents/security-patch?dependencies=${encodeURIComponent(dependencies)}&env_config=${encodeURIComponent(envConfig)}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/agents/auto-fix?error_logs=${encodeURIComponent(errorLogs)}&health_signals=${encodeURIComponent(healthSignals)}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/agents/auto-call?alert_details=${encodeURIComponent(alertDetails)}&staff_directory=${encodeURIComponent(staffDirectory)}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiAdmin.ts",
+      "endpoint": "/admin/agents/wellness-advisory?patient_data=${encodeURIComponent(patientData)}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiAuth.ts",
+      "endpoint": "/signup",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAuth.ts",
+      "endpoint": "/forgot-password",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAuth.ts",
+      "endpoint": "/reset-password",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAuth.ts",
+      "endpoint": "/profile",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAuth.ts",
+      "endpoint": "/profile",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAuth.ts",
+      "endpoint": "/consent/status",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAuth.ts",
+      "endpoint": "/consent/accept",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiAuth.ts",
+      "endpoint": "${API_BASE}/token",
+      "type": "fetch"
+    },
+    {
+      "file": "frontend/src/lib/apiBilling.ts",
+      "endpoint": "/payments/create-order",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiBilling.ts",
+      "endpoint": "/payments/verify",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiBilling.ts",
+      "endpoint": "/v1/licensing/status",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiBilling.ts",
+      "endpoint": "/v1/licensing/activate",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiBilling.ts",
+      "endpoint": "/appointments/",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiBilling.ts",
+      "endpoint": "/appointments/",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiBilling.ts",
+      "endpoint": "/appointments/doctors",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiBilling.ts",
+      "endpoint": "/appointments/agent-chat",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiBilling.ts",
+      "endpoint": "${API_BASE}/appointments/agent-stream",
+      "type": "fetch"
+    },
+    {
+      "file": "frontend/src/lib/apiChat.ts",
+      "endpoint": "/chat",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiChat.ts",
+      "endpoint": "/chat/history",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiChat.ts",
+      "endpoint": "/chat/history",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiChat.ts",
+      "endpoint": "/chat/suggestions",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiChat.ts",
+      "endpoint": "/chat/context?q=${encodeURIComponent(query)}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiChat.ts",
+      "endpoint": "/records",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiChat.ts",
+      "endpoint": "/records",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiChat.ts",
+      "endpoint": "/records/${id}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiChat.ts",
+      "endpoint": "${API_BASE}/chat/stream",
+      "type": "fetch"
+    },
+    {
+      "file": "frontend/src/lib/apiChat.ts",
+      "endpoint": "${API_BASE}/chat",
+      "type": "fetch"
+    },
+    {
+      "file": "frontend/src/lib/apiChat.ts",
+      "endpoint": "/chat/context?q=${encodeURIComponent(query)}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiChat.ts",
+      "endpoint": "/records/${id}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiCore.ts",
+      "endpoint": "${API_BASE}${path}",
+      "type": "fetch"
+    },
+    {
+      "file": "frontend/src/lib/apiFederated.ts",
+      "endpoint": "/federated/stats",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiFederated.ts",
+      "endpoint": "/federated/audits",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiFederated.ts",
+      "endpoint": "/federated/sync",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiFederated.ts",
+      "endpoint": "/federated/feedback",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiHospital.ts",
+      "endpoint": "/hospital/departments",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiHospital.ts",
+      "endpoint": "/hospital/departments",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiHospital.ts",
+      "endpoint": "/hospital/beds",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiHospital.ts",
+      "endpoint": "/hospital/encounters",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiHospital.ts",
+      "endpoint": "/hospital/admissions",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiHospital.ts",
+      "endpoint": "/hospital/orders",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiHospital.ts",
+      "endpoint": "/events/doctor/patients/${patientId}/feed?limit=${limit}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiHospital.ts",
+      "endpoint": "/events/admin/patients/${patientId}/feed?limit=${limit}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiHospital.ts",
+      "endpoint": "/events/patient/feed?limit=${limit}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiHospital.ts",
+      "endpoint": "/events/dispatch",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiHospital.ts",
+      "endpoint": "/hospital/beds/${bedId}/status",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiHospital.ts",
+      "endpoint": "/events/doctor/patients/${patientId}/feed?limit=${limit}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiHospital.ts",
+      "endpoint": "/events/admin/patients/${patientId}/feed?limit=${limit}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiHospital.ts",
+      "endpoint": "/events/patient/feed?limit=${limit}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiHospital.ts",
+      "endpoint": "/hospital/beds/${bedId}/status",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/intelligence/alerts${qs}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/intelligence/alerts/${alertId}/acknowledge",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/intelligence/insights/${patientId}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/intelligence/explainability/${predictionId}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/predict/advisory-board/${patientId}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/predict/scribe/${patientId}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/predict/scribe/commit",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/predict/clinical-trials/${patientId}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/predict/counterfactual/${patientId}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/pharmacy/check-safety",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/pharmacy/compare-pricing?medication_name=${encodeURIComponent(medicationName)}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/pharmacy/generic-substitute?branded_name=${encodeURIComponent(brandedName)}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/predict/consensus/${patientId}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/hospital/triage-queue",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/interop/external-records/${patientId}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/interop/health-passport/${patientId}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/diagnostics/lab-kits",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/diagnostics/lab-kits/${patientId}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/appointments/special-care",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/appointments/recommend-specialists/${patientId}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/billing/estimate?procedure_type=${encodeURIComponent(procedureType)}${providerParam}${regionParam}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/predict/multi-organ",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/predict/stroke",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "${API_BASE}/report/analyze/report",
+      "type": "fetch"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/intelligence/alerts${qs}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/intelligence/alerts/${alertId}/acknowledge",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/intelligence/insights/${patientId}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/intelligence/explainability/${predictionId}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/predict/advisory-board/${patientId}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/predict/scribe/${patientId}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/predict/scribe/commit",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/predict/clinical-trials/${patientId}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/predict/counterfactual/${patientId}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/pharmacy/check-safety",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/pharmacy/compare-pricing?medication_name=${encodeURIComponent(medicationName)}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/pharmacy/generic-substitute?branded_name=${encodeURIComponent(brandedName)}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/predict/consensus/${patientId}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/hospital/triage-queue",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/interop/external-records/${patientId}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/interop/health-passport/${patientId}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/diagnostics/lab-kits",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/diagnostics/lab-kits/${patientId}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/appointments/special-care",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/appointments/recommend-specialists/${patientId}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiIntelligence.ts",
+      "endpoint": "/billing/estimate?procedure_type=${encodeURIComponent(procedureType)}${providerParam}${regionParam}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiLakehouse.ts",
+      "endpoint": "/lakehouse/omop/transform",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiLakehouse.ts",
+      "endpoint": "/lakehouse/quality/audit",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiLakehouse.ts",
+      "endpoint": "/lakehouse/delta/history?table_name=${encodeURIComponent(tableName)}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiLakehouse.ts",
+      "endpoint": "/lakehouse/delta/time-travel",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiLakehouse.ts",
+      "endpoint": "/api/v1/data-platform/sql/execute",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiLakehouse.ts",
+      "endpoint": "/api/v1/data-platform/bi/ask",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiLakehouse.ts",
+      "endpoint": "/lakehouse/delta/history?table_name=${encodeURIComponent(tableName)}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiPredictions.ts",
+      "endpoint": "/predict/diabetes",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiPredictions.ts",
+      "endpoint": "/predict/diabetes",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiPredictions.ts",
+      "endpoint": "/predict/heart",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiPredictions.ts",
+      "endpoint": "/predict/heart",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiPredictions.ts",
+      "endpoint": "/predict/liver",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiPredictions.ts",
+      "endpoint": "/predict/liver",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiPredictions.ts",
+      "endpoint": "/predict/kidney",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiPredictions.ts",
+      "endpoint": "/predict/kidney",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiPredictions.ts",
+      "endpoint": "/predict/lungs",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiPredictions.ts",
+      "endpoint": "/predict/lungs",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiPredictions.ts",
+      "endpoint": "/predict/organ_health/${patientId}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiPredictions.ts",
+      "endpoint": "/predict/explain-text/${modelName}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiPredictions.ts",
+      "endpoint": "/predict/organ_health/${patientId}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiPredictions.ts",
+      "endpoint": "/predict/explain-text/${modelName}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/apiSmart.ts",
+      "endpoint": "/smart/apps",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiSmart.ts",
+      "endpoint": "/smart/apps",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiSmart.ts",
+      "endpoint": "/smart/apps/${appId}",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiSmart.ts",
+      "endpoint": "/smart/launch",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/lib/apiSmart.ts",
+      "endpoint": "/smart/apps/${appId}",
+      "type": "template"
+    },
+    {
+      "file": "frontend/src/lib/useTelemetry.ts",
+      "endpoint": "${apiBase}/v1/telemetry/snapshot",
+      "type": "fetch"
+    },
+    {
+      "file": "frontend/src/pages/ABDMIntegration.tsx",
+      "endpoint": "/v1/abdm/abha/generate",
+      "type": "fetch"
+    },
+    {
+      "file": "frontend/src/pages/Chat.tsx",
+      "endpoint": "${apiBase}/v1/audio/tts",
+      "type": "fetch"
+    },
+    {
+      "file": "frontend/src/pages/Dashboard.tsx",
+      "endpoint": "${API_BASE}/v1/admin/maintenance",
+      "type": "fetch"
+    },
+    {
+      "file": "frontend/src/pages/Dashboard.tsx",
+      "endpoint": "${API_BASE}/reports/download/health-report",
+      "type": "fetch"
+    },
+    {
+      "file": "frontend/src/pages/Infrastructure.tsx",
+      "endpoint": "${API_BASE}/telemetry/snapshot",
+      "type": "fetch"
+    },
+    {
+      "file": "frontend/src/__tests__/apiCore.test.ts",
+      "endpoint": "/healthz",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/__tests__/apiCore.test.ts",
+      "endpoint": "/predict/diabetes",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/__tests__/apiCore.test.ts",
+      "endpoint": "/records",
+      "type": "apiFetch"
+    },
+    {
+      "file": "frontend/src/__tests__/apiCore.test.ts",
+      "endpoint": "/profile",
+      "type": "apiFetch"
+    }
+  ]
+}

@@ -1,83 +1,70 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # ==============================================================================
-# AI HEALTHCARE SYSTEM — FAILSAFE PRODUCTION STARTUP SCRIPT
+# AI HEALTHCARE SYSTEM — UNIFIED PRODUCTION STARTUP ORCHESTRATOR
 # ==============================================================================
+# Starts Tier 2 Rust Backend Server (Axum + Tokio + ONNX Runtime) on port 8001
+# Starts Tier 1 Bun ElysiaJS Edge Gateway (BFF + Static SPA) on $PORT (7860/8000)
+# Zero Python dependency.
+# ==============================================================================
+
+set -e
 
 PORT="${PORT:-7860}"
-echo "Starting AI Healthcare System on port $PORT..."
+RUST_PORT="${RUST_PORT:-8001}"
+RUST_BACKEND_URL="${RUST_BACKEND_URL:-http://127.0.0.1:8001}"
+RUST_BINARY="${RUST_BINARY:-./rust_gateway/target/release/rust_gateway}"
 
-# Normalize environment variables
-export LICENSE_KEY="${LICENSE_KEY:-CLINIC-TRIAL-2026}"
-if [ -z "$DOPPLER_TOKEN" ] && [ -z "$DATABASE_URL" ]; then
-    echo "DOPPLER_TOKEN and DATABASE_URL not set. Defaulting to local SQLite database."
-    export SQLALCHEMY_URL="sqlite:///./healthcare.db"
-    export SQLX_URL="sqlite://healthcare.db"
-    export DATABASE_URL=$SQLALCHEMY_URL
-elif [ -n "$DATABASE_URL" ]; then
-    export SQLALCHEMY_URL=$DATABASE_URL
-    export SQLX_URL=$DATABASE_URL
-fi
+echo "======================================================================"
+echo "  AI HEALTHCARE SYSTEM — UNIFIED PRODUCTION BOOTSTRAP"
+echo "======================================================================"
+echo "  🚀 Edge Gateway Port : $PORT"
+echo "  ⚡ Rust Backend Port : $RUST_PORT"
+echo "  🔗 Upstream Route    : $RUST_BACKEND_URL"
+echo "======================================================================"
 
-# Download models on-demand if needed
-echo "Checking model weights..."
-python backend/download_models.py || true
-
-# Initialize database schema
-echo "Initializing database schema..."
-python -c "from backend.database import engine; from backend.models import Base; Base.metadata.create_all(bind=engine)" || true
-
-# Start PySpark or Vitals streaming if configured
-if [ -n "$UPSTASH_KAFKA_SERVERS" ]; then
-    echo "UPSTASH_KAFKA_SERVERS detected. Starting PySpark Kafka streaming in background..."
-    python scripts/runners/simulate_vitals_stream.py --kafka --kafka-servers "$UPSTASH_KAFKA_SERVERS" > /dev/null 2>&1 &
-    python scripts/runners/run_telemetry_streaming.py --kafka --kafka-servers "$UPSTASH_KAFKA_SERVERS" > /dev/null 2>&1 &
-elif [ "$ENABLE_PYSPARK_STREAMING" = "true" ] || [ "$ENABLE_PYSPARK_STREAMING" = "1" ]; then
-    echo "ENABLE_PYSPARK_STREAMING detected. Starting local PySpark streaming in background..."
-    python scripts/runners/simulate_vitals_stream.py > /dev/null 2>&1 &
-    python scripts/runners/run_telemetry_streaming.py > /dev/null 2>&1 &
-fi
-
-WORKERS="${WEB_CONCURRENCY:-1}"
-RUST_BINARY="./rust_gateway/target/release/rust_gateway"
-ENABLE_RUST_GATEWAY="${ENABLE_RUST_GATEWAY:-1}"
-
-# On Hugging Face Spaces (detected by SPACE_ID or SPACES_ID), run Uvicorn directly
-# using in-process PyO3 Rust FFI bindings to avoid UNIX domain socket IPC contention on shared vCPUs.
-if [ -n "$SPACE_ID" ] || [ -n "$SPACES_ID" ]; then
-    echo "Hugging Face Space detected ($SPACE_ID). Running high-throughput direct Uvicorn with PyO3 Rust FFI..."
-    ENABLE_RUST_GATEWAY=0
-fi
-
-if [ -f "$RUST_BINARY" ] && [ "$ENABLE_RUST_GATEWAY" != "0" ]; then
-        echo "Starting FastAPI Uvicorn background worker on socket /tmp/healthcare.sock..."
-        if [ -n "$DOPPLER_TOKEN" ]; then
-            doppler run -- uvicorn backend.main:app --uds /tmp/healthcare.sock --workers "$WORKERS" &
-        else
-            uvicorn backend.main:app --uds /tmp/healthcare.sock --workers "$WORKERS" &
-        fi
-
-        echo "Waiting for Uvicorn domain socket /tmp/healthcare.sock to be ready..."
-        for i in {1..30}; do
-            if [ -S "/tmp/healthcare.sock" ]; then
-                echo "Domain socket ready."
-                break
-            fi
-            sleep 1
-        done
-
-        echo "Launching Rust Gateway as PRIMARY PID 1 on port $PORT..."
-        cd rust_gateway
-        if [ -n "$DOPPLER_TOKEN" ]; then
-            exec doppler run -- ./target/release/rust_gateway
-        else
-            exec ./target/release/rust_gateway
-        fi
-fi
-
-
-echo "Running FastAPI Uvicorn directly as PRIMARY PID 1 on port $PORT with $WORKERS worker(s)..."
-if [ -n "$DOPPLER_TOKEN" ]; then
-    exec doppler run -- uvicorn backend.main:app --host 0.0.0.0 --port "$PORT" --workers "$WORKERS"
+# 1. Start Rust Backend Server in background
+echo "[BOOT] Launching Rust Backend Server on port $RUST_PORT..."
+export PORT="$RUST_PORT"
+if [ -f "$RUST_BINARY" ]; then
+    "$RUST_BINARY" &
+    RUST_PID=$!
+elif [ -f "./rust_gateway" ]; then
+    ./rust_gateway &
+    RUST_PID=$!
 else
-    exec uvicorn backend.main:app --host 0.0.0.0 --port "$PORT" --workers "$WORKERS"
+    echo "Rust binary not found at $RUST_BINARY. Attempting cargo run..."
+    (cd rust_gateway && cargo run --release) &
+    RUST_PID=$!
+fi
+
+# 2. Wait for Rust Backend to become healthy
+echo "[BOOT] Awaiting Rust Backend health readiness..."
+READY=0
+for i in $(seq 1 30); do
+    if curl -s -f "http://127.0.0.1:${RUST_PORT}/health" > /dev/null 2>&1 || \
+       curl -s -f "http://127.0.0.1:${RUST_PORT}/healthz_rust" > /dev/null 2>&1; then
+        echo "[BOOT] Rust Backend is HEALTHY and listening on port $RUST_PORT (took ${i}s)."
+        READY=1
+        break
+    fi
+    sleep 1
+done
+
+if [ "$READY" -ne 1 ]; then
+    echo "[WARN] Rust backend readiness check timed out. Proceeding to launch edge gateway..."
+fi
+
+# 3. Handle shutdown signals to clean up background processes
+trap "echo 'Shutting down AI Healthcare Stack...'; kill -TERM $RUST_PID 2>/dev/null || true; exit 0" SIGINT SIGTERM EXIT
+
+# 4. Launch Bun ElysiaJS Edge Gateway as foreground PID 1 process
+echo "[BOOT] Launching Bun ElysiaJS Edge Gateway on port $PORT..."
+export PORT="$PORT"
+export RUST_BACKEND_URL="$RUST_BACKEND_URL"
+
+if [ -d "edge_gateway" ]; then
+    cd edge_gateway
+    exec bun run src/index.ts
+else
+    exec bun run src/index.ts
 fi

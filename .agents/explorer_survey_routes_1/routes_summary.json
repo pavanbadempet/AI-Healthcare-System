@@ -1,0 +1,159 @@
+{
+  "total_http_routes": 10,
+  "total_ws_routes": 0,
+  "routes": [
+    {
+      "path": "/",
+      "name": "root",
+      "methods": [
+        "GET"
+      ],
+      "tags": [],
+      "summary": null,
+      "description": "",
+      "status_code": null,
+      "response_model": null,
+      "dependencies": [],
+      "endpoint_name": "root",
+      "endpoint_module": "backend.main"
+    },
+    {
+      "path": "/healthz",
+      "name": "health",
+      "methods": [
+        "GET"
+      ],
+      "tags": [],
+      "summary": null,
+      "description": "",
+      "status_code": null,
+      "response_model": null,
+      "dependencies": [],
+      "endpoint_name": "health",
+      "endpoint_module": "backend.main"
+    },
+    {
+      "path": "/healthz/env",
+      "name": "healthz_env",
+      "methods": [
+        "GET"
+      ],
+      "tags": [],
+      "summary": null,
+      "description": "",
+      "status_code": null,
+      "response_model": null,
+      "dependencies": [],
+      "endpoint_name": "healthz_env",
+      "endpoint_module": "backend.main"
+    },
+    {
+      "path": "/healthz/circuit_breaker",
+      "name": "circuit_breaker",
+      "methods": [
+        "GET"
+      ],
+      "tags": [],
+      "summary": null,
+      "description": "",
+      "status_code": null,
+      "response_model": null,
+      "dependencies": [],
+      "endpoint_name": "circuit_breaker",
+      "endpoint_module": "backend.main"
+    },
+    {
+      "path": "/healthz/time_predict",
+      "name": "time_predict",
+      "methods": [
+        "GET"
+      ],
+      "tags": [],
+      "summary": null,
+      "description": "",
+      "status_code": null,
+      "response_model": null,
+      "dependencies": [],
+      "endpoint_name": "time_predict",
+      "endpoint_module": "backend.main"
+    },
+    {
+      "path": "/generate_report",
+      "name": "generate_report",
+      "methods": [
+        "POST"
+      ],
+      "tags": [],
+      "summary": null,
+      "description": "",
+      "status_code": null,
+      "response_model": null,
+      "dependencies": [
+        "get_current_user"
+      ],
+      "endpoint_name": "generate_report",
+      "endpoint_module": "backend.main"
+    },
+    {
+      "path": "/v1/licensing/status",
+      "name": "get_licensing_status",
+      "methods": [
+        "GET"
+      ],
+      "tags": [],
+      "summary": null,
+      "description": "Retrieve active platform licensing status, tier, and module grants.",
+      "status_code": null,
+      "response_model": null,
+      "dependencies": [],
+      "endpoint_name": "get_licensing_status",
+      "endpoint_module": "backend.main"
+    },
+    {
+      "path": "/v1/licensing/activate",
+      "name": "activate_license_key",
+      "methods": [
+        "POST"
+      ],
+      "tags": [],
+      "summary": null,
+      "description": "Validate and activate a B2B enterprise license key.",
+      "status_code": null,
+      "response_model": null,
+      "dependencies": [],
+      "endpoint_name": "activate_license_key",
+      "endpoint_module": "backend.main"
+    },
+    {
+      "path": "/metrics",
+      "name": "get_prometheus_metrics",
+      "methods": [
+        "GET"
+      ],
+      "tags": [],
+      "summary": null,
+      "description": "Exposes structured Prometheus telemetry metrics.",
+      "status_code": null,
+      "response_model": null,
+      "dependencies": [],
+      "endpoint_name": "get_prometheus_metrics",
+      "endpoint_module": "backend.main"
+    },
+    {
+      "path": "/{catchall:path}",
+      "name": "serve_frontend",
+      "methods": [
+        "GET"
+      ],
+      "tags": [],
+      "summary": null,
+      "description": "",
+      "status_code": null,
+      "response_model": null,
+      "dependencies": [],
+      "endpoint_name": "serve_frontend",
+      "endpoint_module": "backend.main"
+    }
+  ],
+  "ws_routes": []
+}

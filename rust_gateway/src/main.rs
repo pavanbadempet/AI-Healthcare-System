@@ -3,19 +3,12 @@ use axum::{
     extract::{Request, State},
     http::{uri::Uri, HeaderMap, Method, StatusCode},
     response::Response,
-    routing::{get, post},
-    Router,
 };
 use reqwest::Client;
-use sqlx::{postgres::PgPoolOptions, PgPool};
 use std::net::SocketAddr;
-use tower_http::cors::CorsLayer;
 use dotenvy::dotenv;
 use std::env;
 use std::sync::{Arc, Mutex};
-
-#[global_allocator]
-static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 use sysinfo::System;
 
 mod auth;
@@ -35,15 +28,20 @@ mod dicom_slicer;
 mod auth_crypto;
 mod billing_audit;
 mod federated_aggregator;
+pub mod db;
+pub mod models;
+pub mod ml;
+pub mod routes;
 
 #[derive(Clone)]
 pub struct AppState {
     pub http_client: Client,
     pub python_backend_url: String,
-    pub db_pool: PgPool,
+    pub db_pool: db::DbPool,
     pub secret_key: String,
     pub sysinfo: Arc<Mutex<System>>,
     pub vector_store: vector_store::VectorStoreState,
+    pub inference_manager: Arc<ml::InferenceManager>,
 }
 
 #[tokio::main]
@@ -56,33 +54,11 @@ async fn main() {
     let db_url = env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite://healthcare.db".to_string());
     let secret_key = env::var("SECRET_KEY").unwrap_or_else(|_| "test_secret_key_for_local_tests_only".to_string());
 
-    // Clean and normalize postgres_url for sqlx compatibility
-    let clean_db_url = if db_url.contains("postgresql://") || db_url.contains("postgres://") {
-        let mut u = db_url.clone();
-        if let Some(idx) = u.find("postgres") {
-            u = u[idx..].to_string();
-        }
-        u.replace("sslmode=verify-full", "sslmode=require")
-    } else {
-        println!("DATABASE_URL is not a Postgres connection. Native Edge Gateway database operations will be disabled.");
-        "postgres://127.0.0.1/dummy_db".to_string()
-    };
-
-    // Connect to PostgreSQL lazily to guarantee startup and allow local SQLite/multi-database operation
-    let pool = PgPoolOptions::new()
-        .max_connections(10)
-        .min_connections(2)
-        .acquire_timeout(std::time::Duration::from_secs(3))
-        .idle_timeout(std::time::Duration::from_secs(300))
-        .max_lifetime(std::time::Duration::from_secs(1800))
-        .test_before_acquire(false)
-        .connect_lazy(&clean_db_url)
-        .unwrap_or_else(|err| {
-            println!("Warning: Failed to parse Postgres URL ({:?}). Falling back to dummy pool.", err);
-            PgPoolOptions::new()
-                .connect_lazy("postgres://127.0.0.1/dummy_db")
-                .expect("Failed to create dummy pool")
-        });
+    // Connect to database (SQLite WAL mode or PostgreSQL) and auto-initialize schema
+    let pool = db::DbPool::new(&db_url).await.unwrap_or_else(|err| {
+        println!("Warning: Failed to connect to DB ({:?}). Falling back to lazy in-memory SQLite pool.", err);
+        db::DbPool::connect_lazy("sqlite::memory:").expect("Failed to create fallback pool")
+    });
 
     // Initialize System metric collector with a default system refresh all configuration
     let sys = System::new_all();
@@ -114,6 +90,16 @@ async fn main() {
 
     let vector_store_state = vector_store::VectorStoreState::default();
 
+    let inference_manager = Arc::new(
+        ml::InferenceManager::new()
+            .or_else(|_| ml::InferenceManager::from_dir("../backend"))
+            .or_else(|_| ml::InferenceManager::from_dir("backend"))
+            .unwrap_or_else(|err| {
+                println!("Warning: ONNX model loading error ({:?}). Retrying with default env.", err);
+                ml::InferenceManager::new().expect("Failed to initialize InferenceManager")
+            })
+    );
+
     let state = AppState {
         http_client,
         python_backend_url,
@@ -121,6 +107,7 @@ async fn main() {
         secret_key,
         sysinfo: Arc::new(Mutex::new(sys)),
         vector_store: vector_store_state.clone(),
+        inference_manager,
     };
 
     // Spin up gRPC Server on port 50051
@@ -130,68 +117,20 @@ async fn main() {
         }
     });
 
-    let app = Router::new()
-        .route("/healthz_rust", get(health_check))
-        .route("/metrics", get(metrics_handler))
-        .route("/v1/auth/token", post(auth::login_handler))
-        .route("/v1/auth/profile", get(auth::profile_handler))
-        .nest("/v1/appointments", appointments::router())
-        .nest("/v1/telehealth", telehealth::router())
-        .nest("/v1/claims", claims::router())
-        .nest("/v1/telemetry", telemetry::router())
-        .nest("/v1/interop/fhir", fhir::router())
-        .nest("/v1/interop/vector-store", vector_store::router(vector_store_state))
-        // Fallback proxy to Python backend
-        .fallback(proxy_handler_fallback)
-        .layer(tower_http::compression::CompressionLayer::new())
-        .layer(CorsLayer::permissive())
-        .with_state(state);
+    let app = routes::build_app_router(state);
 
-    let addr = SocketAddr::from(([0, 0, 0, 0], 7860));
-    println!("Gateway listening on {}", addr);
+    let port: u16 = env::var("PORT")
+        .ok()
+        .and_then(|p| p.parse().ok())
+        .unwrap_or(8001);
+    let addr = SocketAddr::from(([0, 0, 0, 0], port));
+    println!("Gateway listening on http://{}", addr);
 
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }
 
-async fn health_check() -> &'static str {
-    "Rust Gateway is healthy!"
-}
-
-async fn metrics_handler(
-    State(state): State<AppState>,
-) -> impl axum::response::IntoResponse {
-    let mut sys = state.sysinfo.lock().unwrap();
-    sys.refresh_all();
-    
-    let cpu_usage = sys.global_cpu_usage();
-    let total_mem = sys.total_memory();
-    let used_mem = sys.used_memory();
-    let active_conns = state.db_pool.size();
-    
-    let body = format!(
-        "# HELP rust_gateway_cpu_usage_percent CPU usage of the Rust Gateway in percent\n\
-         # TYPE rust_gateway_cpu_usage_percent gauge\n\
-         rust_gateway_cpu_usage_percent {}\n\
-         # HELP rust_gateway_memory_total_bytes Total memory in bytes\n\
-         # TYPE rust_gateway_memory_total_bytes gauge\n\
-         rust_gateway_memory_total_bytes {}\n\
-         # HELP rust_gateway_memory_used_bytes Used memory in bytes\n\
-         # TYPE rust_gateway_memory_used_bytes gauge\n\
-         rust_gateway_memory_used_bytes {}\n\
-         # HELP rust_gateway_active_db_connections Number of active database connections in SQLx pool\n\
-         # TYPE rust_gateway_active_db_connections gauge\n\
-         rust_gateway_active_db_connections {}\n",
-        cpu_usage, total_mem, used_mem, active_conns
-    );
-    
-    (
-        [("content-type", "text/plain; version=0.0.4; charset=utf-8")],
-        body
-    )
-}
-
-async fn proxy_handler_fallback(
+pub async fn proxy_handler_fallback(
     State(state): State<AppState>,
     req: Request,
 ) -> Result<Response, StatusCode> {

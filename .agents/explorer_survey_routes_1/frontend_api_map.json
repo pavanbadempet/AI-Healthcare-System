@@ -1,0 +1,76 @@
+{
+  "total": 15,
+  "unique": [
+    "/api/v1/data-platform/bi/ask",
+    "/api/v1/data-platform/sql/execute",
+    "/healthz",
+    "/telemetry",
+    "/v1/abdm/abha/generate",
+    "/v1/licensing/activate",
+    "/v1/licensing/status",
+    "/v1/telemetry/health",
+    "/v1/telemetry/stream"
+  ],
+  "calls": [
+    {
+      "file": "frontend/src/App.tsx",
+      "endpoint": "/telemetry"
+    },
+    {
+      "file": "frontend/src/components/layout/nav-config.ts",
+      "endpoint": "/telemetry"
+    },
+    {
+      "file": "frontend/src/components/layout/TelemetryDropdown.tsx",
+      "endpoint": "/v1/telemetry/health"
+    },
+    {
+      "file": "frontend/src/components/layout/TelemetryDropdown.tsx",
+      "endpoint": "/v1/telemetry/health"
+    },
+    {
+      "file": "frontend/src/lib/apiBilling.ts",
+      "endpoint": "/v1/licensing/status"
+    },
+    {
+      "file": "frontend/src/lib/apiBilling.ts",
+      "endpoint": "/v1/licensing/activate"
+    },
+    {
+      "file": "frontend/src/lib/apiLakehouse.ts",
+      "endpoint": "/api/v1/data-platform/sql/execute"
+    },
+    {
+      "file": "frontend/src/lib/apiLakehouse.ts",
+      "endpoint": "/api/v1/data-platform/bi/ask"
+    },
+    {
+      "file": "frontend/src/lib/prefetch.ts",
+      "endpoint": "/telemetry"
+    },
+    {
+      "file": "frontend/src/lib/useTelemetry.ts",
+      "endpoint": "/v1/telemetry/stream"
+    },
+    {
+      "file": "frontend/src/pages/ABDMIntegration.tsx",
+      "endpoint": "/v1/abdm/abha/generate"
+    },
+    {
+      "file": "frontend/src/pages/Infrastructure.tsx",
+      "endpoint": "/v1/telemetry/stream"
+    },
+    {
+      "file": "frontend/src/pages/Telemetry.tsx",
+      "endpoint": "/v1/telemetry/health"
+    },
+    {
+      "file": "frontend/src/pages/Telemetry.tsx",
+      "endpoint": "/v1/telemetry/health"
+    },
+    {
+      "file": "frontend/src/__tests__/apiCore.test.ts",
+      "endpoint": "/healthz"
+    }
+  ]
+}

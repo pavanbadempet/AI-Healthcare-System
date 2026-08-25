@@ -4,7 +4,8 @@
   "private": true,
   "description": "Root workspace orchestrator for AI Healthcare System (React 19, Bun, Rust Gateway, FastAPI)",
   "workspaces": [
-    "frontend"
+    "frontend",
+    "edge_gateway"
   ],
   "scripts": {
     "demo": "python scripts/demo_quickstart.py",

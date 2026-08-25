@@ -7,6 +7,9 @@ use sha2::{Digest, Sha256};
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
+pub mod db;
+pub mod models;
+pub mod ml;
 mod fhir;
 mod tee_enclave;
 mod clinical_calculator;

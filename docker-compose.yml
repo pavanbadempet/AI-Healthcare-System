@@ -1,58 +1,111 @@
-# ============================================================
-# AI Healthcare System — Docker Compose
-# ============================================================
+# ==============================================================================
+# AI Healthcare System — Multi-Tier Docker Compose (Rust + Bun Architecture)
+# ==============================================================================
+# Architecture:
+#   - edge_gateway: Bun + ElysiaJS API Orchestrator & BFF (Port 8000, PID 1)
+#   - rust_backend: Rust Axum/Tokio Native Engine + ONNX ML Inference (Port 8001)
+#   - frontend: Vite + React 19 Workstation SPA (Port 3000)
+#
 # Usage:
-#   docker compose up --build        (start all services)
-#   docker compose up backend        (backend only)
-#   docker compose down              (stop all)
-# ============================================================
+#   docker compose up --build          (start entire stack)
+#   docker compose up edge_gateway     (start edge & rust backend)
+#   docker compose down                (stop all services)
+# ==============================================================================
 
 services:
-  backend:
+  # ----------------------------------------------------------------------------
+  # Tier 2: Rust Backend Server (Axum + Tokio + ONNX Runtime)
+  # ----------------------------------------------------------------------------
+  rust_backend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: healthcare_backend
+      target: rust-builder
+    container_name: healthcare_rust_backend
+    command: ["./target/release/rust_gateway"]
+    working_dir: /build/rust_gateway
     ports:
-      - "8000:7860"
-    env_file:
-      - .env
+      - "8001:8001"
+    environment:
+      - PORT=8001
+      - DATABASE_URL=sqlite:///app/healthcare.db
+      - SECRET_KEY=healthcare_jwt_secret_key_production_2026
+      - RUST_LOG=info
     volumes:
       - ./healthcare.db:/app/healthcare.db
-      - ./backend:/app/backend
-      - ./data:/app/data
-      - ./models:/app/models
+      - ./backend:/app/backend:ro
+      - ./models:/app/models:ro
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://127.0.0.1:7860/healthz_rust"]
-      interval: 30s
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8001/health"]
+      interval: 15s
       timeout: 5s
       retries: 3
-      start_period: 30s
+      start_period: 10s
     deploy:
       resources:
         limits:
           memory: 2G
           cpus: "2.0"
         reservations:
-          memory: 512M
-          cpus: "0.5"
+          memory: 256M
+          cpus: "0.25"
 
+  # ----------------------------------------------------------------------------
+  # Tier 1: Bun + ElysiaJS Edge Gateway (BFF, Reverse Proxy, Static SPA)
+  # ----------------------------------------------------------------------------
+  edge_gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: runtime
+    container_name: healthcare_edge_gateway
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - RUST_BACKEND_URL=http://rust_backend:8001
+      - RUST_WS_URL=ws://rust_backend:8001
+      - SECRET_KEY=healthcare_jwt_secret_key_production_2026
+      - STATIC_DIR=/home/user/app/frontend/dist
+      - ENABLE_STATIC_SPA=true
+      - RATE_LIMIT_REQUESTS_PER_MINUTE=200
+    depends_on:
+      rust_backend:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/healthz/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "1.5"
+        reservations:
+          memory: 128M
+          cpus: "0.1"
+
+  # ----------------------------------------------------------------------------
+  # Frontend: React 19 + Vite SPA Development Server (Optional standalone)
+  # ----------------------------------------------------------------------------
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
         - VITE_PUBLIC_API_URL=http://127.0.0.1:8000
     container_name: healthcare_frontend
     ports:
       - "3000:3000"
     environment:
-      - NEXT_PUBLIC_API_URL=http://127.0.0.1:8000
       - VITE_PUBLIC_API_URL=http://127.0.0.1:8000
     depends_on:
-      backend:
+      edge_gateway:
         condition: service_healthy
     restart: unless-stopped
     deploy:
@@ -62,4 +115,4 @@ services:
           cpus: "1.0"
         reservations:
           memory: 128M
-          cpus: "0.25"
+          cpus: "0.1"

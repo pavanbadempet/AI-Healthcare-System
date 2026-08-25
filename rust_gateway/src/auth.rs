@@ -76,16 +76,16 @@ struct UserRow {
     hashed_password: String,
 }
 
-    let user_row = sqlx::query_as::<_, UserRow>(
-        r#"
+    let sql = r#"
         SELECT id, username, hashed_password 
         FROM users 
         WHERE username = $1 AND is_deleted = 0
-        "#
-    )
-    .bind(&form.username)
-    .fetch_optional(&state.db_pool)
-    .await?;
+    "#;
+
+    let user_row = match &state.db_pool {
+        crate::db::DbPool::Sqlite(p) => sqlx::query_as::<_, UserRow>(sql).bind(&form.username).fetch_optional(p).await?,
+        crate::db::DbPool::Postgres(p) => sqlx::query_as::<_, UserRow>(sql).bind(&form.username).fetch_optional(p).await?,
+    };
 
     let user_row = match user_row {
         Some(u) => u,
@@ -129,9 +129,6 @@ struct UserRow {
         &EncodingKey::from_secret(state.secret_key.as_bytes()),
     )?;
 
-    // Audit Log logic in Rust is skipped for now, but in Python it inserts to audit_logs. 
-    // To ensure exact behavior we could just insert it, or fallback.
-    // If we must insert it to match Python exactly:
     let now = chrono::Utc::now().to_rfc3339();
     let details = serde_json::json!({
         "resource_type": "auth_session",
@@ -139,18 +136,31 @@ struct UserRow {
         "occurred_at": now
     }).to_string();
 
-    sqlx::query(
-        r#"
+    let audit_sql = r#"
         INSERT INTO audit_logs (admin_id, target_user_id, action, details)
         VALUES ($1, $2, $3, $4)
-        "#
-    )
-    .bind(user_row.id)
-    .bind(user_row.id)
-    .bind("LOGIN_SUCCESS")
-    .bind(details)
-    .execute(&state.db_pool)
-    .await?;
+    "#;
+
+    match &state.db_pool {
+        crate::db::DbPool::Sqlite(p) => {
+            let _ = sqlx::query(audit_sql)
+                .bind(user_row.id)
+                .bind(user_row.id)
+                .bind("LOGIN_SUCCESS")
+                .bind(&details)
+                .execute(p)
+                .await;
+        }
+        crate::db::DbPool::Postgres(p) => {
+            let _ = sqlx::query(audit_sql)
+                .bind(user_row.id)
+                .bind(user_row.id)
+                .bind("LOGIN_SUCCESS")
+                .bind(&details)
+                .execute(p)
+                .await;
+        }
+    }
 
     Ok(Json(TokenResponse {
         access_token: token,
@@ -254,8 +264,7 @@ struct UserProfileRow {
     role: String,
 }
 
-    let user_row = sqlx::query_as::<_, UserProfileRow>(
-        r#"
+    let sql = r#"
         SELECT 
             username, email, full_name, gender, dob, height, weight, 
             blood_type, existing_ailments, profile_picture, about_me, 
@@ -263,11 +272,12 @@ struct UserProfileRow {
             allow_data_collection, role
         FROM users 
         WHERE username = $1 AND is_deleted = 0
-        "#
-    )
-    .bind(&token_data.claims.sub)
-    .fetch_optional(&state.db_pool)
-    .await?;
+    "#;
+
+    let user_row = match &state.db_pool {
+        crate::db::DbPool::Sqlite(p) => sqlx::query_as::<_, UserProfileRow>(sql).bind(&token_data.claims.sub).fetch_optional(p).await?,
+        crate::db::DbPool::Postgres(p) => sqlx::query_as::<_, UserProfileRow>(sql).bind(&token_data.claims.sub).fetch_optional(p).await?,
+    };
 
     let u = user_row.ok_or("User not found")?;
 
@@ -351,12 +361,12 @@ struct AuthUserRow {
     facility_id: Option<i64>,
 }
 
-    let user_row = sqlx::query_as::<_, AuthUserRow>(
-        r#"SELECT id, username, role, facility_id FROM users WHERE username = $1 AND is_deleted = 0"#
-    )
-    .bind(&token_data.claims.sub)
-    .fetch_optional(&state.db_pool)
-    .await?;
+    let auth_sql = r#"SELECT id, username, role, facility_id FROM users WHERE username = $1 AND is_deleted = 0"#;
+
+    let user_row = match &state.db_pool {
+        crate::db::DbPool::Sqlite(p) => sqlx::query_as::<_, AuthUserRow>(auth_sql).bind(&token_data.claims.sub).fetch_optional(p).await?,
+        crate::db::DbPool::Postgres(p) => sqlx::query_as::<_, AuthUserRow>(auth_sql).bind(&token_data.claims.sub).fetch_optional(p).await?,
+    };
 
     let u = user_row.ok_or("User not found")?;
     Ok(AuthenticatedUser {
