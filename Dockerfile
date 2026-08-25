@@ -42,40 +42,39 @@ RUN apt-get update && apt-get install -y \
     libssl3 \
     && rm -rf /var/lib/apt/lists/*
 
-# Set up non-root user required by Hugging Face Spaces & security best practices
-RUN useradd -m -u 1000 user
-USER user
-ENV HOME=/home/user \
-    PATH=/home/user/.local/bin:$PATH \
+# Set up non-root user (oven/bun base image already includes user with UID 1000)
+USER 1000
+ENV HOME=/home/bun \
+    PATH=/home/bun/.local/bin:$PATH \
     PORT=7860 \
     HOST=0.0.0.0 \
     RUST_BACKEND_URL=http://127.0.0.1:8001 \
     RUST_WS_URL=ws://127.0.0.1:8001 \
-    STATIC_DIR=/home/user/app/frontend/dist \
-    DATABASE_URL=sqlite:///home/user/app/healthcare.db
+    STATIC_DIR=/home/bun/app/frontend/dist \
+    DATABASE_URL=sqlite:///home/bun/app/healthcare.db
 
-WORKDIR $HOME/app
+WORKDIR /home/bun/app
 
 # Copy built Rust Gateway binary from Stage 2
-COPY --from=rust-builder --chown=user:user /build/rust_gateway/target/release/rust_gateway $HOME/app/rust_gateway/target/release/rust_gateway
+COPY --from=rust-builder --chown=1000:1000 /build/rust_gateway/target/release/rust_gateway /home/bun/app/rust_gateway/target/release/rust_gateway
 
 # Copy built frontend assets from Stage 1
-COPY --from=frontend-builder --chown=user:user /build/dist $HOME/app/frontend/dist
+COPY --from=frontend-builder --chown=1000:1000 /build/dist /home/bun/app/frontend/dist
 
 # Copy Edge Gateway source and install production dependencies
-COPY --chown=user:user edge_gateway/ $HOME/app/edge_gateway/
-WORKDIR $HOME/app/edge_gateway
+COPY --chown=1000:1000 edge_gateway/ /home/bun/app/edge_gateway/
+WORKDIR /home/bun/app/edge_gateway
 RUN bun install --production
 
-WORKDIR $HOME/app
+WORKDIR /home/bun/app
 
 # Create model directories and copy local code
-RUN mkdir -p $HOME/app/backend $HOME/app/models
-COPY --chown=user:user . $HOME/app/
+RUN mkdir -p /home/bun/app/backend /home/bun/app/models
+COPY --chown=1000:1000 . /home/bun/app/
 
 # Copy startup scripts and ensure executable permissions
-RUN chmod +x $HOME/app/scripts/start_prod.sh && \
-    chmod +x $HOME/app/rust_gateway/target/release/rust_gateway
+RUN chmod +x /home/bun/app/scripts/start_prod.sh && \
+    chmod +x /home/bun/app/rust_gateway/target/release/rust_gateway
 
 # Expose ports (7860 for Hugging Face Spaces / default, 8000 for standard HTTP)
 EXPOSE 7860 8000 8001
