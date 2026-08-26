@@ -179,17 +179,17 @@ mod tests {
         let pool = DbPool::new("sqlite::memory:").await.expect("Failed to create SQLite in-memory pool");
         assert!(pool.is_sqlite());
 
-        // Verify that tables were created
+        // Verify that tables were created and default seeds populated
         let count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM users")
             .fetch_one(pool.as_sqlite().unwrap())
             .await
             .expect("Failed to query users table");
-        assert_eq!(count.0, 0);
+        assert!(count.0 >= 8);
 
         let fac_count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM hospital_facilities")
             .fetch_one(pool.as_sqlite().unwrap())
             .await
             .expect("Failed to query hospital_facilities table");
-        assert_eq!(fac_count.0, 0);
+        assert_eq!(fac_count.0, 1);
     }
 }

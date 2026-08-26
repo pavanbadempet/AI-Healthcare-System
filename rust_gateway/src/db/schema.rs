@@ -1447,6 +1447,8 @@ CREATE TABLE IF NOT EXISTS consent_records (
 "#;
 
 /// Automatically initialize all 46 database tables and indexes on the connection pool
+/// Automatically initialize all 46 database tables and indexes on the connection pool,
+/// and seed default administrative and clinical records if absent.
 pub async fn init_schema(pool: &DbPool) -> Result<(), Error> {
     match pool {
         DbPool::Sqlite(p) => {
@@ -1467,5 +1469,73 @@ pub async fn init_schema(pool: &DbPool) -> Result<(), Error> {
             }
         }
     }
+
+    // Seed default administrative and clinical records
+    seed_defaults(pool).await?;
+
+    Ok(())
+}
+
+async fn seed_defaults(pool: &DbPool) -> Result<(), Error> {
+    // 1. Seed Hospital Facility #1
+    let facility_sql = r#"
+        INSERT INTO hospital_facilities (id, name, facility_type, country, region, status)
+        VALUES (1, 'General Hospital', 'hospital', 'US', 'North', 'active')
+        ON CONFLICT (id) DO NOTHING
+    "#;
+    match pool {
+        DbPool::Sqlite(p) => { let _ = sqlx::query(facility_sql).execute(p).await; },
+        DbPool::Postgres(p) => { let _ = sqlx::query(facility_sql).execute(p).await; },
+    };
+
+    // 2. Seed Departments
+    let dept_sql = r#"
+        INSERT INTO departments (id, facility_id, name, department_type, status)
+        VALUES (1, 1, 'Cardiology', 'clinical', 'active')
+        ON CONFLICT (id) DO NOTHING
+    "#;
+    match pool {
+        DbPool::Sqlite(p) => { let _ = sqlx::query(dept_sql).execute(p).await; },
+        DbPool::Postgres(p) => { let _ = sqlx::query(dept_sql).execute(p).await; },
+    };
+
+    // 3. Seed Default Users
+    let admin_hash = bcrypt::hash("Admin123!", 4)
+        .unwrap_or_else(|_| "$2b$12$e8kPqZq1yF0P7r5e0t7G/.XmF6xH.K8/J9O3x6k3R7Q8Z9J9O3x6k".to_string());
+    let doctor_hash = bcrypt::hash("Doctor123!", 4).unwrap_or_else(|_| admin_hash.clone());
+    let nurse_hash = bcrypt::hash("Nurse123!", 4).unwrap_or_else(|_| admin_hash.clone());
+    let patient_hash = bcrypt::hash("Patient123!", 4).unwrap_or_else(|_| admin_hash.clone());
+
+    let seed_users = [
+        ("admin", &admin_hash, "admin", "admin@hospital.org", "System Administrator"),
+        ("admin_e2e", &admin_hash, "admin", "admin_e2e@hospital.org", "E2E Admin"),
+        ("doctor", &doctor_hash, "doctor", "doctor@hospital.org", "Dr. Sarah Smith"),
+        ("doctor_e2e", &doctor_hash, "doctor", "doctor_e2e@hospital.org", "E2E Doctor"),
+        ("nurse", &nurse_hash, "nurse", "nurse@hospital.org", "Nurse John"),
+        ("nurse_e2e", &nurse_hash, "nurse", "nurse_e2e@hospital.org", "E2E Nurse"),
+        ("patient", &patient_hash, "patient", "patient@hospital.org", "Demo Patient"),
+        ("patient_e2e", &patient_hash, "patient", "patient_e2e@hospital.org", "E2E Patient"),
+    ];
+
+    for (username, pw_hash, role, email, full_name) in seed_users {
+        let user_insert = r#"
+            INSERT INTO users (username, hashed_password, role, email, full_name, facility_id, allow_data_collection, is_deleted)
+            VALUES ($1, $2, $3, $4, $5, 1, 1, 0)
+            ON CONFLICT (username) DO NOTHING
+        "#;
+        match pool {
+            DbPool::Sqlite(p) => {
+                let _ = sqlx::query(user_insert)
+                    .bind(username).bind(pw_hash).bind(role).bind(email).bind(full_name)
+                    .execute(p).await;
+            },
+            DbPool::Postgres(p) => {
+                let _ = sqlx::query(user_insert)
+                    .bind(username).bind(pw_hash).bind(role).bind(email).bind(full_name)
+                    .execute(p).await;
+            },
+        };
+    }
+
     Ok(())
 }
