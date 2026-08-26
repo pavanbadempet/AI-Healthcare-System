@@ -57,7 +57,7 @@ export const SotaTelemetryDashboard: React.FC<TelemetryDashboardProps> = ({
             <span>Batch Throughput</span>
             <Cpu className="w-4 h-4 text-emerald-400" />
           </div>
-          <div className="text-2xl font-extrabold text-emerald-400">{tokensPerSec.toLocaleString()} t/s</div>
+          <div className="text-2xl font-extrabold text-emerald-400">{(tokensPerSec ?? 0).toLocaleString()} t/s</div>
           <p className="text-[11px] text-slate-500 mt-1">PagedAttention 16-token blocks</p>
         </div>
 

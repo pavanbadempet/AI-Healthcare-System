@@ -120,7 +120,7 @@ export default function AnalyticsPanel() {
               <span className="text-[9px] font-bold text-[var(--text-dim)] uppercase tracking-wider">Total Records Analyzed</span>
               <div className="mt-2 flex items-baseline gap-2">
                 <span className="text-2xl font-extrabold text-white tracking-tight font-mono">
-                  {analyticsReport.total_records_analyzed.toLocaleString()}
+                  {analyticsReport.total_records_analyzed?.toLocaleString() ?? "0"}
                 </span>
                 <span className="text-[10px] font-bold text-[var(--success)] uppercase">Conformed</span>
               </div>

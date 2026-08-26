@@ -115,7 +115,7 @@ export const FederatedNodeOrchestratorModal: React.FC<FederatedNodeOrchestratorM
             <div className="p-3.5 rounded-xl bg-cyan-500/5 border border-cyan-500/20 space-y-1">
               <span className="text-[10px] text-zinc-400 uppercase font-bold block">Pooled Sample Volume</span>
               <div className="text-base font-bold text-cyan-300 flex items-center gap-1.5">
-                <Layers size={14} /> {totalSamples.toLocaleString()} Samples
+                <Layers size={14} /> {(totalSamples ?? 0).toLocaleString()} Samples
               </div>
             </div>
 
@@ -213,7 +213,7 @@ export const FederatedNodeOrchestratorModal: React.FC<FederatedNodeOrchestratorM
                     />
                     <div>
                       <div className="text-white font-bold">{node.name}</div>
-                      <div className="text-[10px] text-zinc-400 font-mono">{node.region} • {node.sampleCount.toLocaleString()} Local Encounters</div>
+                      <div className="text-[10px] text-zinc-400 font-mono">{node.region} • {(node.sampleCount ?? 0).toLocaleString()} Local Encounters</div>
                     </div>
                   </div>
 

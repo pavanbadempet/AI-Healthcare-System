@@ -500,7 +500,7 @@ export default function TelemedicinePage() {
                         <div className="col-span-2">
                           <span className="text-[9px] text-[var(--text-dim)] uppercase block">Scheduled Date/Time</span>
                           <span className="text-[var(--text-primary)] uppercase flex items-center gap-1">
-                            <Clock size={11} className="text-[var(--accent)]" /> {new Date(bookingConfirmation.date_time).toLocaleString()}
+                            <Clock size={11} className="text-[var(--accent)]" /> {bookingConfirmation?.date_time ? new Date(bookingConfirmation.date_time).toLocaleString() : "--"}
                           </span>
                         </div>
                       </div>
@@ -905,7 +905,7 @@ export default function TelemedicinePage() {
 
                 <div className="p-3.5 bg-white/[0.02] border border-white/5 rounded-xl space-y-1">
                   <span className="text-[10px] text-zinc-400 uppercase block font-bold">Scheduled Encounter Time</span>
-                  <p className="text-cyan-300 font-bold">{new Date(viewingIntakeApt.appointment_date).toLocaleString()}</p>
+                  <p className="text-cyan-300 font-bold">{viewingIntakeApt?.appointment_date ? new Date(viewingIntakeApt.appointment_date).toLocaleString() : "--"}</p>
                 </div>
 
                 <div className="p-3.5 bg-white/[0.02] border border-white/5 rounded-xl space-y-1.5">

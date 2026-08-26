@@ -102,7 +102,7 @@ export default function AuditPanel() {
                   <td className="px-4 py-3 border-r border-[var(--border)] text-[var(--text-secondary)] whitespace-nowrap">
                     <span className="flex items-center gap-1.5">
                       <Calendar size={11} className="text-[var(--text-dim)]" />
-                      {new Date(log.timestamp).toLocaleString()}
+                      {log.timestamp ? new Date(log.timestamp).toLocaleString() : "--"}
                     </span>
                   </td>
                   <td className="px-4 py-3 border-r border-[var(--border)]">

@@ -1165,7 +1165,7 @@ export default function DashboardPage() {
             <div>
               <h2 className="section-title">Population Risk Trajectory</h2>
               <p className="mono-meta mt-0.5">
-                AGGREGATED PREDICTIVE MODELING (N={telemetry ? telemetry.active_census.toLocaleString() : "1,248"})
+                AGGREGATED PREDICTIVE MODELING (N={telemetry?.active_census != null ? telemetry.active_census.toLocaleString() : "1,248"})
               </p>
             </div>
             <div className="flex gap-1" role="group" aria-label="Time range selector">
