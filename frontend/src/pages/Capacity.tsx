@@ -56,6 +56,140 @@ const CLINICAL_ROSTER: Record<string, { id: number; name: string; age: number; g
   "ED-02": { id: 18, name: "George Bailey", age: 51, gender: "M", diagnosis: "Chest Pain Rule-Out" }
 };
 
+export interface ClinicalPatientMeta {
+  id: number;
+  name: string;
+  age: number;
+  gender: string;
+  bloodType: string;
+  weightKg: number;
+  esiLevel: number;
+  acuity: string;
+  vitals: {
+    bp: string;
+    hr: number;
+    spo2: number;
+    temp: string;
+    rr: number;
+  };
+  location: string;
+  chiefComplaint: string;
+  allergies: string[];
+  alerts: string[];
+  recommendedDeptId: number;
+}
+
+export const PATIENT_CLINICAL_PROFILES: Record<number, ClinicalPatientMeta> = {
+  3: {
+    id: 3,
+    name: "Marcus Thorne",
+    age: 58,
+    gender: "M",
+    bloodType: "O+",
+    weightKg: 84,
+    esiLevel: 1,
+    acuity: "STAT Emergency (ESI 1)",
+    vitals: { bp: "86/52", hr: 122, spo2: 91, temp: "39.2°C", rr: 28 },
+    location: "ED Trauma Bay 2",
+    chiefComplaint: "Septic Shock secondary to Urosepsis & Refractory Hypotension",
+    allergies: ["Penicillin (Anaphylaxis)", "Sulfa Drugs"],
+    alerts: ["🚨 STAT Vasopressor Protocol Active", "⚠️ High Fall Risk"],
+    recommendedDeptId: 1
+  },
+  2: {
+    id: 2,
+    name: "Sarah Jenkins",
+    age: 44,
+    gender: "F",
+    bloodType: "A+",
+    weightKg: 68,
+    esiLevel: 2,
+    acuity: "Emergent (ESI 2)",
+    vitals: { bp: "104/68", hr: 98, spo2: 93, temp: "37.8°C", rr: 22 },
+    location: "PACU Recovery Bay 4",
+    chiefComplaint: "Post-Op Respiratory Distress & ARDS Early Protocol",
+    allergies: ["Latex (Moderate Rash)"],
+    alerts: ["🫁 On High-Flow O2 (60% FiO2)", "Continuous Telemetry"],
+    recommendedDeptId: 1
+  },
+  4: {
+    id: 4,
+    name: "Linda Zhao",
+    age: 52,
+    gender: "F",
+    bloodType: "B+",
+    weightKg: 62,
+    esiLevel: 2,
+    acuity: "Emergent (ESI 2)",
+    vitals: { bp: "148/92", hr: 104, spo2: 97, temp: "38.1°C", rr: 18 },
+    location: "ED Acute Room 5",
+    chiefComplaint: "Acute Necrotizing Pancreatitis with Severe Epigastric Pain",
+    allergies: ["NKDA (No Known Drug Allergies)"],
+    alerts: ["💧 IV Fluid Hydration (250 mL/hr)", "NPO Strict"],
+    recommendedDeptId: 2
+  },
+  5: {
+    id: 5,
+    name: "James Wilson",
+    age: 72,
+    gender: "M",
+    bloodType: "AB-",
+    weightKg: 79,
+    esiLevel: 1,
+    acuity: "STAT Emergency (ESI 1)",
+    vitals: { bp: "96/60", hr: 58, spo2: 94, temp: "36.9°C", rr: 20 },
+    location: "Cath Lab Holding",
+    chiefComplaint: "Acute STEMI / Post-PCI Stent Placement in LAD",
+    allergies: ["Aspirin (GI Bleed History)"],
+    alerts: ["🫀 Dual Antiplatelet Therapy", "Continuous ST Segment Telemetry"],
+    recommendedDeptId: 3
+  },
+  6: {
+    id: 6,
+    name: "Elena Rostova",
+    age: 61,
+    gender: "F",
+    bloodType: "O-",
+    weightKg: 71,
+    esiLevel: 2,
+    acuity: "Emergent (ESI 2)",
+    vitals: { bp: "162/98", hr: 82, spo2: 98, temp: "37.0°C", rr: 16 },
+    location: "Neurology Acute Suite",
+    chiefComplaint: "Acute Ischemic Stroke / Neuro ICU Thrombolytic Watch",
+    allergies: ["NKDA"],
+    alerts: ["🧠 Strict Q15m Neuro Vitals", "Bleeding Precautions"],
+    recommendedDeptId: 1
+  }
+};
+
+export const getPatientClinicalProfile = (patientId: number, patientName?: string): ClinicalPatientMeta => {
+  if (PATIENT_CLINICAL_PROFILES[patientId]) {
+    return PATIENT_CLINICAL_PROFILES[patientId];
+  }
+  return {
+    id: patientId,
+    name: patientName || `Patient #${patientId}`,
+    age: 45 + (patientId % 30),
+    gender: patientId % 2 === 0 ? "F" : "M",
+    bloodType: ["O+", "A+", "B+", "AB+"][patientId % 4],
+    weightKg: 65 + (patientId % 25),
+    esiLevel: (patientId % 3) + 1,
+    acuity: patientId % 3 === 0 ? "STAT Emergency (ESI 1)" : "Emergent (ESI 2)",
+    vitals: {
+      bp: `${110 + (patientId % 30)}/${70 + (patientId % 15)}`,
+      hr: 75 + (patientId % 35),
+      spo2: 94 + (patientId % 5),
+      temp: "37.2°C",
+      rr: 18 + (patientId % 6)
+    },
+    location: `ED Bay ${(patientId % 8) + 1}`,
+    chiefComplaint: "Acute Inpatient Admission & Clinical Stabilization",
+    allergies: ["NKDA"],
+    alerts: ["Continuous Bedside Telemetry"],
+    recommendedDeptId: 2
+  };
+};
+
 export const QUICK_CLINICAL_CHIPS = [
   { label: "🚨 STAT Sepsis / Shock", text: "Severe Sepsis / Septic Shock Resuscitation Protocol" },
   { label: "🫀 Acute STEMI / PCI", text: "Acute STEMI / Post-PCI Intensive Cardiac Monitoring" },
@@ -265,6 +399,35 @@ export default function CapacityPage() {
     }
   };
 
+  const handleSelectPatient = (patientId: number) => {
+    setSelectedPatientId(patientId);
+    const selected = patients.find(p => p.patient_id === patientId);
+    const meta = getPatientClinicalProfile(patientId, selected?.full_name || selected?.username);
+    if (meta) {
+      if (meta.esiLevel === 1) {
+        setIsEmergencyMode(true);
+        const icuDept = departments.find(d => d.name.toLowerCase().includes("icu") || d.id === 1);
+        if (icuDept) {
+          setSelectedDepartmentId(icuDept.id);
+          const bed = beds.find(b => b.department_id === icuDept.id);
+          if (bed) setSelectedBedId(bed.id);
+        }
+        setReason(`🚨 STAT Emergency Admission: ${meta.chiefComplaint} (BP ${meta.vitals.bp}, HR ${meta.vitals.hr}, SpO2 ${meta.vitals.spo2}%)`);
+      } else if (meta.chiefComplaint.toLowerCase().includes("stemi") || meta.chiefComplaint.toLowerCase().includes("cardiac")) {
+        setIsEmergencyMode(true);
+        const ccuDept = departments.find(d => d.name.toLowerCase().includes("cardiac") || d.id === 3);
+        if (ccuDept) {
+          setSelectedDepartmentId(ccuDept.id);
+          const bed = beds.find(b => b.department_id === ccuDept.id);
+          if (bed) setSelectedBedId(bed.id);
+        }
+        setReason(`🫀 STAT CCU Cardiac Alert: ${meta.chiefComplaint} (BP ${meta.vitals.bp}, HR ${meta.vitals.hr}, SpO2 ${meta.vitals.spo2}%)`);
+      } else {
+        setReason(`Inpatient Admission: ${meta.chiefComplaint}`);
+      }
+    }
+  };
+
   const applyEmergencyProtocol = (type: "icu" | "ccu" | "ed" | "surg") => {
     if (type === "icu") {
       setIsEmergencyMode(true);
@@ -388,6 +551,9 @@ export default function CapacityPage() {
   };
 
   if (!mounted) return null;
+
+  const selectedPatient = patients.find(p => p.patient_id === Number(selectedPatientId)) || patients[0];
+  const activeMeta = selectedPatient ? getPatientClinicalProfile(selectedPatient.patient_id, selectedPatient.full_name || selectedPatient.username) : null;
 
   const bedUnits = (telemetry?.bed_units && telemetry.bed_units.length > 0) 
     ? telemetry.bed_units 
@@ -874,52 +1040,174 @@ export default function CapacityPage() {
                   </div>
                 </div>
 
-                {/* Patient Profile Selection */}
-                <div className="space-y-1.5">
+                {/* Patient Profile Selection & Rich Clinical Hero Card */}
+                <div className="space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <label htmlFor="patient-select" className="text-[11px] font-medium text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
-                      <Users size={12} className="text-indigo-400" /> Select Patient Profile
+                    <label className="text-[11px] font-medium text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
+                      <Users size={12} className="text-indigo-400" /> Patient Profile & Clinical Triage
                     </label>
-                    <span className="text-[9px] font-mono text-indigo-300">Quick Select:</span>
+                    <span className="text-[9px] font-mono text-zinc-400">
+                      {patients.length} Active Triage Records
+                    </span>
                   </div>
 
-                  {/* Patient Quick Chips */}
-                  <div className="flex flex-wrap gap-1.5 pb-1">
+                  {/* Quick Patient Switcher Tabs with Acuity Dots & MRN */}
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     {patients.slice(0, 4).map((p) => {
                       const isSelected = selectedPatientId === p.patient_id;
+                      const meta = getPatientClinicalProfile(p.patient_id, p.full_name || p.username);
+                      const isEsi1 = meta.esiLevel === 1;
+
                       return (
                         <button
                           key={p.patient_id}
                           type="button"
-                          onClick={() => setSelectedPatientId(p.patient_id)}
-                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer border flex items-center gap-1 ${
+                          onClick={() => handleSelectPatient(p.patient_id)}
+                          className={`p-2.5 rounded-xl text-left border transition-all cursor-pointer flex flex-col justify-between h-[56px] ${
                             isSelected
-                              ? "bg-indigo-600 text-white border-indigo-400 shadow-md shadow-indigo-600/20"
-                              : "bg-white/5 border-white/10 text-zinc-300 hover:text-white hover:bg-white/10"
+                              ? isEmergencyMode
+                                ? "bg-red-500/20 border-red-500/60 shadow-lg shadow-red-500/20 ring-1 ring-red-500/40"
+                                : "bg-indigo-600/25 border-indigo-500/60 shadow-lg shadow-indigo-600/20 ring-1 ring-indigo-500/40"
+                              : "bg-white/[0.03] border-white/10 hover:border-white/20 hover:bg-white/[0.06]"
                           }`}
                         >
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                          {p.full_name || p.username}
+                          <div className="flex items-center justify-between w-full">
+                            <span className={`text-xs font-bold truncate ${isSelected ? "text-white" : "text-zinc-300"}`}>
+                              {p.full_name || p.username}
+                            </span>
+                            <span className={`w-2 h-2 rounded-full shrink-0 ${isEsi1 ? "bg-red-500 animate-pulse shadow-sm shadow-red-500" : "bg-amber-400"}`} />
+                          </div>
+                          <div className="flex items-center justify-between text-[9px] font-mono text-zinc-400 mt-0.5">
+                            <span>{formatMrn(p.patient_id)}</span>
+                            <span className={isEsi1 ? "text-red-400 font-bold" : "text-amber-400"}>ESI {meta.esiLevel}</span>
+                          </div>
                         </button>
                       );
                     })}
                   </div>
 
-                  <select
-                    id="patient-select"
-                    value={selectedPatientId}
-                    onChange={(e) => setSelectedPatientId(e.target.value ? Number(e.target.value) : "")}
-                    disabled={loading}
-                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 disabled:opacity-50 font-sans"
-                    required
-                  >
-                    <option value="" className="bg-zinc-900 text-zinc-400">-- Choose Patient --</option>
-                    {patients.map((p) => (
-                      <option key={p.patient_id} value={p.patient_id} className="bg-zinc-900 text-white">
-                        {p.full_name || p.username} ({formatMrn(p.patient_id)})
-                      </option>
-                    ))}
-                  </select>
+                  {/* Rich Patient Clinical Hero Card */}
+                  {selectedPatient && activeMeta && (
+                    <div className={`p-3.5 rounded-2xl border ${isEmergencyMode ? "bg-red-950/20 border-red-500/30" : "bg-white/[0.03] border-white/10"} backdrop-blur-sm space-y-3`}>
+                      {/* Patient Header & Identifiers */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-white/10">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-xs shrink-0 ${
+                            isEmergencyMode
+                              ? "bg-red-500/20 text-red-300 border border-red-500/30"
+                              : "bg-indigo-500/20 text-indigo-300 border border-indigo-500/30"
+                          }`}>
+                            {(selectedPatient.full_name || selectedPatient.username || "P")
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .substring(0, 2)
+                              .toUpperCase()}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-white tracking-wide">
+                                {selectedPatient.full_name || selectedPatient.username}
+                              </span>
+                              <span className="text-[10px] font-mono text-indigo-300 bg-indigo-500/10 border border-indigo-500/20 px-1.5 py-0.5 rounded font-bold">
+                                {formatMrn(selectedPatient.patient_id)}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-zinc-400 font-mono mt-0.5">
+                              {activeMeta.age} yrs • {activeMeta.gender === "M" ? "Male" : "Female"} • Blood: <span className="text-zinc-200 font-bold">{activeMeta.bloodType}</span> • {activeMeta.weightKg} kg
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <span className={`text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded-full border ${
+                            activeMeta.esiLevel === 1
+                              ? "bg-red-500/20 border-red-500/40 text-red-400 animate-pulse"
+                              : "bg-amber-500/20 border-amber-500/40 text-amber-400"
+                          }`}>
+                            {activeMeta.acuity}
+                          </span>
+                          <span className="text-[9px] font-mono bg-white/5 border border-white/10 px-2 py-0.5 rounded-full text-zinc-300 flex items-center gap-1">
+                            <MapPin size={9} className="text-indigo-400" /> {activeMeta.location}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Live Vitals Telemetry Strips */}
+                      <div className="grid grid-cols-5 gap-1.5 text-center font-mono">
+                        <div className="p-1.5 rounded-xl bg-black/40 border border-white/5">
+                          <div className="text-[8px] uppercase text-zinc-400">Blood Press.</div>
+                          <div className={`text-xs font-bold ${activeMeta.vitals.bp.startsWith("8") ? "text-red-400 font-black animate-pulse" : "text-white"}`}>
+                            {activeMeta.vitals.bp}
+                          </div>
+                        </div>
+                        <div className="p-1.5 rounded-xl bg-black/40 border border-white/5">
+                          <div className="text-[8px] uppercase text-zinc-400">Heart Rate</div>
+                          <div className={`text-xs font-bold ${activeMeta.vitals.hr > 100 ? "text-amber-400" : "text-white"}`}>
+                            {activeMeta.vitals.hr} <span className="text-[8px] text-zinc-500 font-normal">bpm</span>
+                          </div>
+                        </div>
+                        <div className="p-1.5 rounded-xl bg-black/40 border border-white/5">
+                          <div className="text-[8px] uppercase text-zinc-400">SpO2 Pulse</div>
+                          <div className={`text-xs font-bold ${activeMeta.vitals.spo2 < 94 ? "text-amber-400" : "text-emerald-400"}`}>
+                            {activeMeta.vitals.spo2}%
+                          </div>
+                        </div>
+                        <div className="p-1.5 rounded-xl bg-black/40 border border-white/5">
+                          <div className="text-[8px] uppercase text-zinc-400">Temp</div>
+                          <div className={`text-xs font-bold ${parseFloat(activeMeta.vitals.temp) >= 38.5 ? "text-red-400" : "text-white"}`}>
+                            {activeMeta.vitals.temp}
+                          </div>
+                        </div>
+                        <div className="p-1.5 rounded-xl bg-black/40 border border-white/5">
+                          <div className="text-[8px] uppercase text-zinc-400">Resp. Rate</div>
+                          <div className="text-xs font-bold text-white">
+                            {activeMeta.vitals.rr} <span className="text-[8px] text-zinc-500 font-normal">/m</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Clinical Notes & Allergies */}
+                      <div className="space-y-1.5 pt-1 border-t border-white/5">
+                        <div className="text-[10px] text-zinc-300 flex items-start gap-1.5">
+                          <span className="text-zinc-500 font-mono text-[9px] uppercase shrink-0 mt-0.5">Clinical Dx:</span>
+                          <span className="font-semibold text-white leading-relaxed">{activeMeta.chiefComplaint}</span>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          {activeMeta.allergies.map((alg, i) => (
+                            <span key={i} className="text-[9px] font-mono px-2 py-0.5 rounded-md bg-red-500/15 border border-red-500/30 text-red-300 font-bold flex items-center gap-1">
+                              <AlertTriangle size={9} /> Allergy: {alg}
+                            </span>
+                          ))}
+                          {activeMeta.alerts.map((al, i) => (
+                            <span key={i} className="text-[9px] font-mono px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-amber-300">
+                              {al}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Fallback Selector for Full Roster */}
+                  {patients.length > 4 && (
+                    <div className="pt-1">
+                      <select
+                        id="patient-select"
+                        value={selectedPatientId}
+                        onChange={(e) => e.target.value && handleSelectPatient(Number(e.target.value))}
+                        disabled={loading}
+                        className="w-full bg-white/[0.02] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-zinc-400 focus:text-white focus:outline-none focus:border-indigo-500 disabled:opacity-50 font-sans"
+                      >
+                        <option value="" className="bg-zinc-900 text-zinc-400">-- Browse Other Patient Records --</option>
+                        {patients.map((p) => (
+                          <option key={p.patient_id} value={p.patient_id} className="bg-zinc-900 text-white">
+                            {p.full_name || p.username} ({formatMrn(p.patient_id)})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </div>
 
                 {/* 2-Column Ward Department & Bed Unit */}
