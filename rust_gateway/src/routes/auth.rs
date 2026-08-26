@@ -268,47 +268,10 @@ pub async fn login_for_access_token(
         ));
     }
 
-    let pg_sql = r#"
-        SELECT 
-            id::bigint AS id,
-            username,
-            hashed_password,
-            created_at,
-            role,
-            email,
-            full_name,
-            gender,
-            blood_type,
-            dob,
-            height,
-            weight,
-            existing_ailments,
-            profile_picture,
-            about_me,
-            diet,
-            activity_level,
-            sleep_hours,
-            stress_level,
-            COALESCE(allow_data_collection, 1)::bigint AS allow_data_collection,
-            facility_id::bigint AS facility_id,
-            COALESCE(plan_tier, 'free') AS plan_tier,
-            subscription_expiry,
-            razorpay_customer_id,
-            COALESCE(consultation_fee, 500.0) AS consultation_fee,
-            specialization,
-            psych_profile,
-            totp_secret,
-            COALESCE(is_totp_enabled, 0)::bigint AS is_totp_enabled,
-            (CASE WHEN is_deleted THEN 1 ELSE 0 END)::bigint AS is_deleted,
-            deleted_at
-        FROM users
-        WHERE (username = $1 OR email = $1) AND is_deleted IS NOT TRUE LIMIT 1
-    "#;
-    let sqlite_sql = "SELECT * FROM users WHERE (username = $1 OR email = $1) AND is_deleted = 0 LIMIT 1";
-
+    let sql = "SELECT * FROM users WHERE (username = $1 OR email = $1) AND is_deleted = 0 LIMIT 1";
     let user_opt = match &state.db_pool {
-        DbPool::Sqlite(p) => sqlx::query_as::<_, User>(sqlite_sql).bind(username).fetch_optional(p).await,
-        DbPool::Postgres(p) => sqlx::query_as::<_, User>(pg_sql).bind(username).fetch_optional(p).await,
+        DbPool::Sqlite(p) => sqlx::query_as::<_, User>(sql).bind(username).fetch_optional(p).await,
+        DbPool::Postgres(p) => sqlx::query_as::<_, User>(sql).bind(username).fetch_optional(p).await,
     }
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"detail": e.to_string()}))))?;
 
@@ -318,23 +281,18 @@ pub async fn login_for_access_token(
             // Auto-provision admin user on-the-fly if database was unseeded
             let admin_pw = if form.password.trim().is_empty() { "Admin123!" } else { form.password.trim() };
             let hashed = hash(admin_pw, 4).unwrap_or_else(|_| "$2b$04$vQ5B1K0jQ0p8j8CgS0eSaeZfX.jT4/2n3w1G6gK0v6VfWj.jT4/2n".to_string());
-            let sqlite_insert = r#"
+            let insert_sql = r#"
                 INSERT INTO users (username, hashed_password, role, email, full_name, facility_id, allow_data_collection, is_deleted)
                 VALUES ('admin', $1, 'admin', 'admin@hospital.org', 'System Administrator', 1, 1, 0)
                 ON CONFLICT (username) DO NOTHING
             "#;
-            let pg_insert = r#"
-                INSERT INTO users (username, hashed_password, role, email, full_name, facility_id, allow_data_collection, is_deleted)
-                VALUES ('admin', $1, 'admin', 'admin@hospital.org', 'System Administrator', 1, 1, false)
-                ON CONFLICT (username) DO NOTHING
-            "#;
             match &state.db_pool {
-                DbPool::Sqlite(p) => { let _ = sqlx::query(sqlite_insert).bind(&hashed).execute(p).await; },
-                DbPool::Postgres(p) => { let _ = sqlx::query(pg_insert).bind(&hashed).execute(p).await; },
+                DbPool::Sqlite(p) => { let _ = sqlx::query(insert_sql).bind(&hashed).execute(p).await; },
+                DbPool::Postgres(p) => { let _ = sqlx::query(insert_sql).bind(&hashed).execute(p).await; },
             };
             match &state.db_pool {
-                DbPool::Sqlite(p) => sqlx::query_as::<_, User>(sqlite_sql).bind("admin").fetch_optional(p).await.ok().flatten(),
-                DbPool::Postgres(p) => sqlx::query_as::<_, User>(pg_sql).bind("admin").fetch_optional(p).await.ok().flatten(),
+                DbPool::Sqlite(p) => sqlx::query_as::<_, User>(sql).bind("admin").fetch_optional(p).await.ok().flatten(),
+                DbPool::Postgres(p) => sqlx::query_as::<_, User>(sql).bind("admin").fetch_optional(p).await.ok().flatten(),
             }.unwrap_or_else(|| {
                 User {
                     id: 1,

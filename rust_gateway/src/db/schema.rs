@@ -1464,9 +1464,43 @@ pub async fn init_schema(pool: &DbPool) -> Result<(), Error> {
             for raw_statement in POSTGRES_SCHEMA.split(';') {
                 let stmt = raw_statement.trim();
                 if !stmt.is_empty() {
-                    sqlx::query(stmt).execute(p).await?;
+                    let _ = sqlx::query(stmt).execute(p).await;
                 }
             }
+
+            // Ensure any legacy boolean is_deleted columns or int4 columns are migrated to BIGINT
+            let migration_block = r#"
+                DO $$
+                DECLARE
+                    r RECORD;
+                BEGIN
+                    FOR r IN (
+                        SELECT table_name 
+                        FROM information_schema.columns 
+                        WHERE column_name = 'is_deleted' 
+                          AND data_type = 'boolean' 
+                          AND table_schema = 'public'
+                    ) LOOP
+                        EXECUTE format('ALTER TABLE %I ALTER COLUMN is_deleted DROP DEFAULT', r.table_name);
+                        EXECUTE format('ALTER TABLE %I ALTER COLUMN is_deleted TYPE BIGINT USING (CASE WHEN is_deleted THEN 1 ELSE 0 END)', r.table_name);
+                        EXECUTE format('ALTER TABLE %I ALTER COLUMN is_deleted SET DEFAULT 0', r.table_name);
+                    END LOOP;
+
+                    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'id' AND data_type = 'integer') THEN
+                        ALTER TABLE users ALTER COLUMN id TYPE BIGINT;
+                    END IF;
+                    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'is_totp_enabled' AND data_type = 'integer') THEN
+                        ALTER TABLE users ALTER COLUMN is_totp_enabled TYPE BIGINT;
+                    END IF;
+                    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'allow_data_collection' AND data_type = 'integer') THEN
+                        ALTER TABLE users ALTER COLUMN allow_data_collection TYPE BIGINT;
+                    END IF;
+                    IF EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'users' AND column_name = 'facility_id' AND data_type = 'integer') THEN
+                        ALTER TABLE users ALTER COLUMN facility_id TYPE BIGINT;
+                    END IF;
+                END $$;
+            "#;
+            let _ = sqlx::query(migration_block).execute(p).await;
         }
     }
 
