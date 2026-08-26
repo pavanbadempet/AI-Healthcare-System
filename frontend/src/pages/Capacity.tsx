@@ -56,6 +56,15 @@ const CLINICAL_ROSTER: Record<string, { id: number; name: string; age: number; g
   "ED-02": { id: 18, name: "George Bailey", age: 51, gender: "M", diagnosis: "Chest Pain Rule-Out" }
 };
 
+export const QUICK_CLINICAL_CHIPS = [
+  { label: "🚨 STAT Sepsis / Shock", text: "Severe Sepsis / Septic Shock Resuscitation Protocol" },
+  { label: "🫀 Acute STEMI / PCI", text: "Acute STEMI / Post-PCI Intensive Cardiac Monitoring" },
+  { label: "🫁 Acute ARDS / Hypoxia", text: "Acute Respiratory Distress / High-Flow O2 Management" },
+  { label: "🧠 Stroke / Neuro Alert", text: "Acute Ischemic Stroke / Neuro ICU Thrombolytic Watch" },
+  { label: "🔪 Post-Op Recovery", text: "Post-Surgical Step-Down Inpatient Observation" },
+  { label: "🚑 ED Overflow Placement", text: "Emergency Dept Boarding Overflow Inpatient Placement" }
+];
+
 export const getBedPatientDetails = (bedCode: string, unit: string, bedIdx: number, rosterPatients: DoctorPatientSummary[]) => {
   if (CLINICAL_ROSTER[bedCode]) {
     const r = CLINICAL_ROSTER[bedCode];
@@ -96,6 +105,7 @@ export default function CapacityPage() {
 
   // Bed Assignment Form States
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEmergencyMode, setIsEmergencyMode] = useState(false);
   const [patients, setPatients] = useState<DoctorPatientSummary[]>([]);
   const [beds, setBeds] = useState<Bed[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -150,35 +160,90 @@ export default function CapacityPage() {
     return () => clearInterval(interval);
   }, []);
 
-  const openAssignmentModal = async () => {
+  const openAssignmentModal = async (preset?: {
+    patientId?: number | "";
+    departmentId?: number | "";
+    bedId?: number | "";
+    reason?: string;
+    isEmergency?: boolean;
+    unit?: string;
+    bedCode?: string;
+  }) => {
     setIsModalOpen(true);
     setLoading(true);
     setModalError(null);
     setModalSuccess(null);
+    const isEmerg = preset?.isEmergency ?? false;
+    setIsEmergencyMode(isEmerg);
+
+    if (preset?.reason) {
+      setReason(preset.reason);
+    } else if (isEmerg) {
+      setReason("🚨 STAT Emergency Code Red Admission — Immediate Critical Care Protocol");
+    } else {
+      setReason("Routine Inpatient Care & Telemetry Monitoring");
+    }
+
     try {
       const [patientsData, bedsData, deptsData] = await Promise.all([
         getDoctorPatients().catch(() => []),
         getBeds("available").catch(() => []),
         getDepartments().catch(() => []),
       ]);
-      setPatients(patientsData.length > 0 ? patientsData : [
-        { patient_id: 2, username: "sarah_jenkins", full_name: "Sarah Jenkins", latest_encounter_id: null },
+      const resolvedPatients = patientsData.length > 0 ? patientsData : [
         { patient_id: 3, username: "marcus_thorne", full_name: "Marcus Thorne", latest_encounter_id: null },
+        { patient_id: 2, username: "sarah_jenkins", full_name: "Sarah Jenkins", latest_encounter_id: null },
         { patient_id: 4, username: "linda_zhao", full_name: "Linda Zhao", latest_encounter_id: null },
         { patient_id: 5, username: "james_wilson", full_name: "James Wilson", latest_encounter_id: null },
         { patient_id: 6, username: "elena_rostova", full_name: "Elena Rostova", latest_encounter_id: null },
-      ] as DoctorPatientSummary[]);
-      setDepartments(deptsData.length > 0 ? deptsData : [
+      ] as DoctorPatientSummary[];
+
+      const resolvedDepts = deptsData.length > 0 ? deptsData : [
         { id: 1, name: "Intensive Care Unit (ICU-A)", department_type: "IPD" },
         { id: 2, name: "Med-Surg Ward 4B", department_type: "IPD" },
         { id: 3, name: "Cardiac Care Unit (CCU)", department_type: "IPD" },
         { id: 4, name: "Pediatrics Ward", department_type: "IPD" },
-      ] as Department[]);
-      setBeds(bedsData.length > 0 ? bedsData : [
+      ] as Department[];
+
+      const resolvedBeds = bedsData.length > 0 ? bedsData : [
         { id: 1, bed_number: "ICU-01", ward: "ICU-A", status: "available", department_id: 1 },
         { id: 2, bed_number: "MED-01", ward: "Med-Surg 4B", status: "available", department_id: 2 },
         { id: 3, bed_number: "CAR-01", ward: "Cardiac Care Unit", status: "available", department_id: 3 },
-      ] as Bed[]);
+      ] as Bed[];
+
+      setPatients(resolvedPatients);
+      setDepartments(resolvedDepts);
+      setBeds(resolvedBeds);
+
+      // Auto-prepopulate patient
+      const targetPatientId = preset?.patientId !== undefined && preset.patientId !== "" 
+        ? preset.patientId 
+        : resolvedPatients[0]?.patient_id ?? "";
+      setSelectedPatientId(targetPatientId);
+
+      // Auto-prepopulate department
+      let targetDeptId = preset?.departmentId ?? "";
+      if (!targetDeptId) {
+        if (preset?.unit) {
+          const matched = resolvedDepts.find(d => d.name.toLowerCase().includes(preset.unit!.toLowerCase()));
+          if (matched) targetDeptId = matched.id;
+        } else if (isEmerg) {
+          const icuDept = resolvedDepts.find(d => d.name.toLowerCase().includes("icu") || d.id === 1);
+          if (icuDept) targetDeptId = icuDept.id;
+        }
+      }
+      if (!targetDeptId && resolvedDepts.length > 0) {
+        targetDeptId = resolvedDepts[0].id;
+      }
+      setSelectedDepartmentId(targetDeptId);
+
+      // Auto-prepopulate bed
+      let targetBedId = preset?.bedId ?? "";
+      if (!targetBedId) {
+        const matchingBed = resolvedBeds.find(b => !targetDeptId || b.department_id === Number(targetDeptId)) || resolvedBeds[0];
+        targetBedId = matchingBed?.id ?? "";
+      }
+      setSelectedBedId(targetBedId);
     } catch (err: any) {
       setModalError(err.message || "Failed to load assignment data.");
     } finally {
@@ -186,9 +251,70 @@ export default function CapacityPage() {
     }
   };
 
+  const handleDepartmentChange = (deptId: number | "") => {
+    setSelectedDepartmentId(deptId);
+    if (deptId) {
+      const matchingBed = beds.find(b => b.department_id === Number(deptId));
+      if (matchingBed) {
+        setSelectedBedId(matchingBed.id);
+      } else {
+        setSelectedBedId("");
+      }
+    } else {
+      setSelectedBedId("");
+    }
+  };
+
+  const applyEmergencyProtocol = (type: "icu" | "ccu" | "ed" | "surg") => {
+    if (type === "icu") {
+      setIsEmergencyMode(true);
+      const icuDept = departments.find(d => d.name.toLowerCase().includes("icu") || d.id === 1) || departments[0];
+      if (icuDept) {
+        setSelectedDepartmentId(icuDept.id);
+        const bed = beds.find(b => b.department_id === icuDept.id) || beds[0];
+        if (bed) setSelectedBedId(bed.id);
+      }
+      setReason("🚨 STAT ICU Admission — Severe Sepsis / Shock / ARDS (Immediate Critical Care)");
+      toast.success("Applied STAT ICU Emergency Admission Protocol");
+    } else if (type === "ccu") {
+      setIsEmergencyMode(true);
+      const ccuDept = departments.find(d => d.name.toLowerCase().includes("cardiac") || d.id === 3) || departments[0];
+      if (ccuDept) {
+        setSelectedDepartmentId(ccuDept.id);
+        const bed = beds.find(b => b.department_id === ccuDept.id) || beds[0];
+        if (bed) setSelectedBedId(bed.id);
+      }
+      setReason("🫀 STAT CCU Cardiac Alert — Acute STEMI / Post-PCI Intensive Monitoring");
+      toast.success("Applied STAT CCU Cardiac Alert Protocol");
+    } else if (type === "ed") {
+      setIsEmergencyMode(true);
+      const medDept = departments.find(d => d.name.toLowerCase().includes("med") || d.id === 2) || departments[0];
+      if (medDept) {
+        setSelectedDepartmentId(medDept.id);
+        const bed = beds.find(b => b.department_id === medDept.id) || beds[0];
+        if (bed) setSelectedBedId(bed.id);
+      }
+      setReason("⚡ Rapid ED Overflow Placement — Urgent Triage Bed Allocation");
+      toast.success("Applied Rapid ED Overflow Protocol");
+    } else if (type === "surg") {
+      setIsEmergencyMode(false);
+      const medDept = departments.find(d => d.name.toLowerCase().includes("med") || d.id === 2) || departments[0];
+      if (medDept) {
+        setSelectedDepartmentId(medDept.id);
+        const bed = beds.find(b => b.department_id === medDept.id) || beds[0];
+        if (bed) setSelectedBedId(bed.id);
+      }
+      setReason("Post-Surgical Inpatient Recovery — Standard Monitoring Protocol");
+    }
+  };
+
   const handleBedClick = (unit: string, bedCode: string, status: "occupied" | "cleaning" | "open", bedIdx: number) => {
     if (status === "open") {
-      openAssignmentModal();
+      openAssignmentModal({
+        unit,
+        bedCode,
+        reason: `Direct Placement to Bed ${bedCode} (${unit})`,
+      });
     } else {
       setInspectBed({ unit, bedCode, status, bedIdx });
     }
@@ -228,11 +354,21 @@ export default function CapacityPage() {
         reason: reason || "Routine Admission",
       });
 
+      if (isEmergencyMode) {
+        dispatchCareEvent({
+          event_type: "rapid-response",
+          title: `🚨 STAT Emergency Bed Admission: ${patient?.full_name || "Patient"} Allocated`,
+          summary: `Emergency STAT bed admission completed for ${patient?.full_name || "Patient"} in ${departments.find(d => d.id === Number(selectedDepartmentId))?.name || "Critical Care"}. Indication: ${reason}.`,
+          severity: "critical",
+        }).catch(() => {});
+      }
+
       setModalSuccess("Bed successfully assigned!");
-      toast.success("Bed successfully assigned to patient!");
+      toast.success(isEmergencyMode ? "🚨 STAT Emergency Bed Admission confirmed!" : "Bed successfully assigned to patient!");
       setTimeout(() => {
         setIsModalOpen(false);
         setModalSuccess(null);
+        setIsEmergencyMode(false);
       }, 1000);
 
       // Reset form fields
@@ -335,6 +471,13 @@ export default function CapacityPage() {
 
           <div className="flex flex-wrap gap-2">
             <button 
+              onClick={() => openAssignmentModal({ isEmergency: true, reason: "🚨 STAT Emergency Code Red Admission — Immediate Critical Care Protocol" })}
+              className="btn btn-secondary text-xs flex items-center justify-center gap-1.5 cursor-pointer bg-red-500/10 border-red-500/30 text-red-400 hover:bg-red-500/20 hover:text-red-300 font-bold shadow-lg shadow-red-500/10" 
+              aria-label="STAT Emergency Admission"
+            >
+              <AlertTriangle size={13} className="text-red-400 animate-pulse" aria-hidden="true" /> STAT Emergency Admit
+            </button>
+            <button 
               onClick={() => setShowOnboardingGuide(true)}
               className="btn btn-secondary text-xs flex items-center justify-center gap-1.5 cursor-pointer border-purple-500/30 text-purple-300 hover:bg-purple-500/10" 
               aria-label="Open Interactive Guide"
@@ -349,7 +492,7 @@ export default function CapacityPage() {
               <BedDouble size={13} aria-hidden="true" /> Inspect Free Bed
             </button>
             <button 
-              onClick={openAssignmentModal}
+              onClick={() => openAssignmentModal()}
               className="btn btn-primary text-xs flex items-center justify-center gap-1.5 cursor-pointer" 
               aria-label="Request patient transfer"
             >
@@ -478,11 +621,14 @@ export default function CapacityPage() {
                     <div 
                       key={item.patient_id || idx} 
                       onClick={() => {
-                        setSelectedPatientId(item.patient_id);
-                        openAssignmentModal();
+                        openAssignmentModal({
+                          patientId: item.patient_id,
+                          isEmergency: (item.esi_level ?? 1) <= 2,
+                          reason: `STAT Transfer for ${item.full_name}: ${item.triage_reason || "Acute Inpatient Care"} (ESI ${item.esi_level})`
+                        });
                       }}
-                      className="p-3 hover:bg-[rgba(255,255,255,0.02)] transition-colors cursor-pointer group"
-                      title="Click to assign bed for transfer"
+                      className="p-3 hover:bg-[rgba(255,255,255,0.03)] transition-colors cursor-pointer group"
+                      title="Click for Rapid Emergency Bed Assignment"
                     >
                       <div className="flex justify-between items-start mb-1">
                         <div className="flex items-center gap-1.5">
@@ -512,11 +658,14 @@ export default function CapacityPage() {
                     <div 
                       key={item.id} 
                       onClick={() => {
-                        setSelectedPatientId(item.id);
-                        openAssignmentModal();
+                        openAssignmentModal({
+                          patientId: item.id,
+                          isEmergency: item.urgent,
+                          reason: `${item.urgent ? "🚨 STAT Transfer" : "Urgent Inpatient Transfer"} for ${item.name}: ${item.dx}`
+                        });
                       }}
-                      className="p-3 hover:bg-[rgba(255,255,255,0.02)] transition-colors cursor-pointer group"
-                      title="Click to assign bed for transfer"
+                      className="p-3 hover:bg-[rgba(255,255,255,0.03)] transition-colors cursor-pointer group"
+                      title="Click for Rapid Emergency Bed Assignment"
                     >
                       <div className="flex justify-between items-start mb-1">
                         <div className="flex items-center gap-1.5">
@@ -575,10 +724,21 @@ export default function CapacityPage() {
                       5: "bg-emerald-500/10 border-emerald-500/30 text-emerald-500"
                     };
                     return (
-                      <div key={idx} className="p-3 hover:bg-[rgba(255,255,255,0.01)] transition-colors">
+                      <div 
+                        key={idx} 
+                        onClick={() => {
+                          openAssignmentModal({
+                            patientId: item.patient_id,
+                            isEmergency: (item.esi_level ?? 1) <= 2,
+                            reason: `ER Triage Admission (ESI ${item.esi_level}): ${item.triage_reason || "Acute Inpatient Care"} | Vitals: ${item.vital_summary || "Continuous Monitoring"}`
+                          });
+                        }}
+                        className="p-3 hover:bg-[rgba(255,255,255,0.03)] transition-colors cursor-pointer group"
+                        title="Click for Rapid Emergency Bed Assignment"
+                      >
                         <div className="flex justify-between items-start mb-1">
                           <div>
-                            <span className="text-xs font-bold text-[var(--text-primary)]">{item.full_name}</span>
+                            <span className="text-xs font-bold text-[var(--text-primary)] group-hover:text-indigo-300 transition-colors">{item.full_name}</span>
                             <span className="text-[9px] font-mono text-[var(--text-dim)] block">ID: #{item.patient_id}</span>
                           </div>
                           <span className={`text-[9px] font-mono border px-1.5 py-0.5 rounded-sm font-bold uppercase ${esiColors[item.esi_level] || "bg-slate-500/10 text-slate-400 border-slate-500/20"}`}>
@@ -610,28 +770,38 @@ export default function CapacityPage() {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
               transition={{ duration: 0.2 }}
-              className="bg-[#0b0c10] border border-white/10 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col font-sans"
+              className={`bg-[#0b0c10] border ${isEmergencyMode ? "border-red-500/40 shadow-red-500/10" : "border-white/10"} rounded-2xl max-w-xl w-full overflow-hidden shadow-2xl flex flex-col font-sans`}
               role="dialog"
               aria-modal="true"
               aria-labelledby="modal-title"
             >
               {/* Modal Header */}
-              <div className="bg-white/[0.02] border-b border-white/10 p-5 flex items-center justify-between">
+              <div className={`bg-white/[0.02] border-b ${isEmergencyMode ? "border-red-500/20 bg-red-950/20" : "border-white/10"} p-5 flex items-center justify-between`}>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
-                    <BedDouble size={18} />
+                  <div className={`w-10 h-10 rounded-xl ${isEmergencyMode ? "bg-red-500/20 border border-red-500/40 text-red-400" : "bg-indigo-500/10 border border-indigo-500/20 text-indigo-400"} flex items-center justify-center shrink-0`}>
+                    {isEmergencyMode ? <AlertTriangle size={20} className="animate-pulse text-red-400" /> : <BedDouble size={18} />}
                   </div>
                   <div>
-                    <h2 id="modal-title" className="text-sm font-bold text-white uppercase tracking-wider">
-                      Assign Bed & Inpatient Admission
-                    </h2>
+                    <div className="flex items-center gap-2">
+                      <h2 id="modal-title" className="text-sm font-bold text-white uppercase tracking-wider">
+                        {isEmergencyMode ? "STAT Emergency Bed Admission" : "Assign Bed & Inpatient Admission"}
+                      </h2>
+                      {isEmergencyMode && (
+                        <span className="text-[9px] font-mono font-bold uppercase px-2 py-0.5 rounded-full bg-red-500/20 border border-red-500/40 text-red-300 animate-pulse">
+                          Code Red Active
+                        </span>
+                      )}
+                    </div>
                     <p className="text-[10px] text-[var(--text-secondary)] font-mono uppercase mt-0.5">
-                      EHR Patient Allocation & Ward Department Check-in
+                      {isEmergencyMode ? "Priority Emergency Triage & Real-Time Ward Allocation" : "EHR Patient Allocation & Ward Department Check-in"}
                     </p>
                   </div>
                 </div>
                 <button 
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setIsEmergencyMode(false);
+                  }}
                   className="w-8 h-8 rounded-lg border border-white/5 hover:border-white/10 hover:bg-white/5 flex items-center justify-center text-zinc-400 hover:text-white transition-colors cursor-pointer"
                   aria-label="Close modal"
                 >
@@ -640,7 +810,7 @@ export default function CapacityPage() {
               </div>
 
               {/* Modal Body / Form */}
-              <form onSubmit={handleAssignBed} className="p-6 space-y-4 font-sans">
+              <form onSubmit={handleAssignBed} className="p-6 space-y-4 font-sans max-h-[80vh] overflow-y-auto">
                 {modalError && (
                   <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs font-mono">
                     {modalError}
@@ -652,17 +822,95 @@ export default function CapacityPage() {
                   </div>
                 )}
 
-                {/* Patient Select */}
+                {/* 1-Click Fast Protocols */}
                 <div className="space-y-1.5">
-                  <label htmlFor="patient-select" className="text-[11px] font-medium text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
-                    <Users size={12} className="text-indigo-400" /> Patient Profile
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-zinc-400 flex items-center gap-1">
+                      <Sparkles size={11} className="text-amber-400" /> Rapid Triage & Emergency Protocols
+                    </span>
+                    <span className="text-[9px] font-mono text-zinc-500">1-Click Auto-Fill</span>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => applyEmergencyProtocol("icu")}
+                      className="p-2 rounded-xl text-left bg-red-500/10 border border-red-500/20 hover:border-red-500/50 hover:bg-red-500/20 transition-all cursor-pointer group"
+                    >
+                      <div className="text-xs font-bold text-red-400 flex items-center gap-1">
+                        🚨 STAT ICU
+                      </div>
+                      <div className="text-[9px] text-zinc-400 font-mono mt-0.5">Critical / Sepsis</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyEmergencyProtocol("ccu")}
+                      className="p-2 rounded-xl text-left bg-amber-500/10 border border-amber-500/20 hover:border-amber-500/50 hover:bg-amber-500/20 transition-all cursor-pointer group"
+                    >
+                      <div className="text-xs font-bold text-amber-400 flex items-center gap-1">
+                        🫀 CCU Cardiac
+                      </div>
+                      <div className="text-[9px] text-zinc-400 font-mono mt-0.5">STEMI / Post-PCI</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyEmergencyProtocol("ed")}
+                      className="p-2 rounded-xl text-left bg-cyan-500/10 border border-cyan-500/20 hover:border-cyan-500/50 hover:bg-cyan-500/20 transition-all cursor-pointer group"
+                    >
+                      <div className="text-xs font-bold text-cyan-400 flex items-center gap-1">
+                        ⚡ ED Overflow
+                      </div>
+                      <div className="text-[9px] text-zinc-400 font-mono mt-0.5">Rapid Placement</div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => applyEmergencyProtocol("surg")}
+                      className="p-2 rounded-xl text-left bg-white/5 border border-white/10 hover:border-white/20 hover:bg-white/10 transition-all cursor-pointer group"
+                    >
+                      <div className="text-xs font-bold text-zinc-200 flex items-center gap-1">
+                        📋 Standard
+                      </div>
+                      <div className="text-[9px] text-zinc-400 font-mono mt-0.5">Med-Surg Ward</div>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Patient Profile Selection */}
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="patient-select" className="text-[11px] font-medium text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
+                      <Users size={12} className="text-indigo-400" /> Select Patient Profile
+                    </label>
+                    <span className="text-[9px] font-mono text-indigo-300">Quick Select:</span>
+                  </div>
+
+                  {/* Patient Quick Chips */}
+                  <div className="flex flex-wrap gap-1.5 pb-1">
+                    {patients.slice(0, 4).map((p) => {
+                      const isSelected = selectedPatientId === p.patient_id;
+                      return (
+                        <button
+                          key={p.patient_id}
+                          type="button"
+                          onClick={() => setSelectedPatientId(p.patient_id)}
+                          className={`px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer border flex items-center gap-1 ${
+                            isSelected
+                              ? "bg-indigo-600 text-white border-indigo-400 shadow-md shadow-indigo-600/20"
+                              : "bg-white/5 border-white/10 text-zinc-300 hover:text-white hover:bg-white/10"
+                          }`}
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                          {p.full_name || p.username}
+                        </button>
+                      );
+                    })}
+                  </div>
+
                   <select
                     id="patient-select"
                     value={selectedPatientId}
                     onChange={(e) => setSelectedPatientId(e.target.value ? Number(e.target.value) : "")}
                     disabled={loading}
-                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 disabled:opacity-50 font-sans"
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 disabled:opacity-50 font-sans"
                     required
                   >
                     <option value="" className="bg-zinc-900 text-zinc-400">-- Choose Patient --</option>
@@ -674,91 +922,139 @@ export default function CapacityPage() {
                   </select>
                 </div>
 
-                {/* Department Select */}
-                <div className="space-y-1.5">
-                  <label htmlFor="dept-select" className="text-[11px] font-medium text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
-                    <Building2 size={12} className="text-indigo-400" /> Ward Department
-                  </label>
-                  <select
-                    id="dept-select"
-                    value={selectedDepartmentId}
-                    onChange={(e) => setSelectedDepartmentId(e.target.value ? Number(e.target.value) : "")}
-                    disabled={loading}
-                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 disabled:opacity-50 font-sans"
-                    required
-                  >
-                    <option value="" className="bg-zinc-900 text-zinc-400">-- Choose Department --</option>
-                    {departments.map((d) => (
-                      <option key={d.id} value={d.id} className="bg-zinc-900 text-white">
-                        {d.name} ({d.department_type})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Bed Select */}
-                <div className="space-y-1.5">
-                  <label htmlFor="bed-select" className="text-[11px] font-medium text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
-                    <BedDouble size={12} className="text-indigo-400" /> Available Bed Unit
-                  </label>
-                  <select
-                    id="bed-select"
-                    value={selectedBedId}
-                    onChange={(e) => setSelectedBedId(e.target.value ? Number(e.target.value) : "")}
-                    disabled={loading || !selectedDepartmentId}
-                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 disabled:opacity-50 font-sans"
-                    required
-                  >
-                    <option value="" className="bg-zinc-900 text-zinc-400">
-                      {!selectedDepartmentId ? "Select a department first" : "-- Choose Bed --"}
-                    </option>
-                    {beds
-                      .filter(b => !selectedDepartmentId || b.department_id === Number(selectedDepartmentId))
-                      .map((b) => (
-                        <option key={b.id} value={b.id} className="bg-zinc-900 text-white">
-                          Bed {b.bed_number} (Ward: {b.ward || "General"})
+                {/* 2-Column Ward Department & Bed Unit */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                  {/* Department Select */}
+                  <div className="space-y-1.5">
+                    <label htmlFor="dept-select" className="text-[11px] font-medium text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
+                      <Building2 size={12} className="text-indigo-400" /> Ward Department
+                    </label>
+                    <select
+                      id="dept-select"
+                      value={selectedDepartmentId}
+                      onChange={(e) => handleDepartmentChange(e.target.value ? Number(e.target.value) : "")}
+                      disabled={loading}
+                      className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 disabled:opacity-50 font-sans"
+                      required
+                    >
+                      <option value="" className="bg-zinc-900 text-zinc-400">-- Choose Department --</option>
+                      {departments.map((d) => (
+                        <option key={d.id} value={d.id} className="bg-zinc-900 text-white">
+                          {d.name} ({d.department_type})
                         </option>
                       ))}
-                  </select>
+                    </select>
+                  </div>
+
+                  {/* Bed Select */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label htmlFor="bed-select" className="text-[11px] font-medium text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
+                        <BedDouble size={12} className="text-indigo-400" /> Available Bed
+                      </label>
+                      {selectedBedId && (
+                        <span className="text-[9px] font-mono text-emerald-400 font-bold">Auto-Matched</span>
+                      )}
+                    </div>
+                    <select
+                      id="bed-select"
+                      value={selectedBedId}
+                      onChange={(e) => setSelectedBedId(e.target.value ? Number(e.target.value) : "")}
+                      disabled={loading || !selectedDepartmentId}
+                      className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-indigo-500 disabled:opacity-50 font-sans"
+                      required
+                    >
+                      <option value="" className="bg-zinc-900 text-zinc-400">
+                        {!selectedDepartmentId ? "Select department" : "-- Choose Bed --"}
+                      </option>
+                      {beds
+                        .filter(b => !selectedDepartmentId || b.department_id === Number(selectedDepartmentId))
+                        .map((b) => (
+                          <option key={b.id} value={b.id} className="bg-zinc-900 text-white">
+                            Bed {b.bed_number} ({b.ward || "General"})
+                          </option>
+                        ))}
+                    </select>
+                  </div>
                 </div>
 
-                {/* Admission Reason */}
+                {/* Admission Reason & Quick Chips */}
                 <div className="space-y-1.5">
-                  <label htmlFor="reason-input" className="text-[11px] font-medium text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
-                    <Activity size={12} className="text-indigo-400" /> Admission Reason / Diagnosis Notes
-                  </label>
+                  <div className="flex items-center justify-between">
+                    <label htmlFor="reason-input" className="text-[11px] font-medium text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
+                      <Activity size={12} className="text-indigo-400" /> Admission Indication / Clinical Notes
+                    </label>
+                    <span className="text-[9px] font-mono text-zinc-500">Preset chips:</span>
+                  </div>
+
+                  {/* Diagnosis Chips */}
+                  <div className="flex flex-wrap gap-1.5 pb-1">
+                    {QUICK_CLINICAL_CHIPS.map((chip, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setReason(chip.text)}
+                        className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-white/5 border border-white/10 text-zinc-300 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all cursor-pointer"
+                      >
+                        {chip.label}
+                      </button>
+                    ))}
+                  </div>
+
                   <textarea
                     id="reason-input"
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
                     disabled={loading}
-                    rows={3}
-                    placeholder="Enter reason for admission or primary diagnosis notes..."
-                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 resize-none disabled:opacity-50 font-sans"
+                    rows={2}
+                    placeholder="Enter reason for admission or click a quick preset chip above..."
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 resize-none disabled:opacity-50 font-sans"
                   />
                 </div>
 
                 {/* Actions */}
-                <div className="bg-white/[0.02] border-t border-white/10 -mx-6 -mb-6 p-4 flex items-center justify-between gap-3 mt-6 font-sans">
+                <div className={`bg-white/[0.02] border-t ${isEmergencyMode ? "border-red-500/20" : "border-white/10"} -mx-6 -mb-6 p-4 flex items-center justify-between gap-3 mt-4 font-sans`}>
                   <button
                     type="button"
-                    onClick={() => setIsModalOpen(false)}
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setIsEmergencyMode(false);
+                    }}
                     disabled={loading}
-                    className="btn btn-secondary text-xs uppercase font-bold tracking-wide py-2.5 px-4"
+                    className="btn btn-secondary text-xs uppercase font-bold tracking-wide py-2.5 px-4 cursor-pointer"
                   >
                     Cancel
                   </button>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="btn btn-primary text-xs uppercase font-bold tracking-wide py-2.5 px-5 flex items-center gap-2 shadow-lg shadow-indigo-600/20 disabled:opacity-50"
-                  >
-                    {loading ? (
-                      <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  <div className="flex items-center gap-2">
+                    {isEmergencyMode ? (
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="btn btn-primary text-xs uppercase font-bold tracking-wide py-2.5 px-5 flex items-center gap-2 bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 border-none shadow-lg shadow-red-600/30 text-white cursor-pointer disabled:opacity-50"
+                      >
+                        {loading ? (
+                          <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          <>
+                            <AlertTriangle size={14} className="animate-pulse" />
+                            Confirm STAT Emergency Admit
+                          </>
+                        )}
+                      </button>
                     ) : (
-                      "Confirm Assignment"
+                      <button
+                        type="submit"
+                        disabled={loading}
+                        className="btn btn-primary text-xs uppercase font-bold tracking-wide py-2.5 px-5 flex items-center gap-2 shadow-lg shadow-indigo-600/20 cursor-pointer disabled:opacity-50"
+                      >
+                        {loading ? (
+                          <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        ) : (
+                          "Confirm Assignment"
+                        )}
+                      </button>
                     )}
-                  </button>
+                  </div>
                 </div>
               </form>
             </motion.div>
