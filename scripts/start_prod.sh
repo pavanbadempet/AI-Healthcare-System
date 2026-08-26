@@ -9,7 +9,7 @@
 
 set -e
 
-PORT="${PORT:-7860}"
+EDGE_PORT="${PORT:-7860}"
 RUST_PORT="${RUST_PORT:-8001}"
 RUST_BACKEND_URL="${RUST_BACKEND_URL:-http://127.0.0.1:8001}"
 RUST_BINARY="${RUST_BINARY:-./rust_gateway/target/release/rust_gateway}"
@@ -17,7 +17,7 @@ RUST_BINARY="${RUST_BINARY:-./rust_gateway/target/release/rust_gateway}"
 echo "======================================================================"
 echo "  AI HEALTHCARE SYSTEM — UNIFIED PRODUCTION BOOTSTRAP"
 echo "======================================================================"
-echo "  🚀 Edge Gateway Port : $PORT"
+echo "  🚀 Edge Gateway Port : $EDGE_PORT"
 echo "  ⚡ Rust Backend Port : $RUST_PORT"
 echo "  🔗 Upstream Route    : $RUST_BACKEND_URL"
 echo "======================================================================"
@@ -46,16 +46,15 @@ fi
 
 # 1. Start Rust Backend Server in background
 echo "[BOOT] Launching Rust Backend Server on port $RUST_PORT..."
-export PORT="$RUST_PORT"
 if [ -f "$RUST_BINARY" ]; then
-    "$RUST_BINARY" &
+    PORT="$RUST_PORT" RUST_PORT="$RUST_PORT" "$RUST_BINARY" &
     RUST_PID=$!
 elif [ -f "./rust_gateway" ]; then
-    ./rust_gateway &
+    PORT="$RUST_PORT" RUST_PORT="$RUST_PORT" ./rust_gateway &
     RUST_PID=$!
 else
     echo "Rust binary not found at $RUST_BINARY. Attempting cargo run..."
-    (cd rust_gateway && cargo run --release) &
+    (cd rust_gateway && PORT="$RUST_PORT" RUST_PORT="$RUST_PORT" cargo run --release) &
     RUST_PID=$!
 fi
 
@@ -80,8 +79,9 @@ fi
 trap "echo 'Shutting down AI Healthcare Stack...'; kill -TERM $RUST_PID 2>/dev/null || true; exit 0" SIGINT SIGTERM EXIT
 
 # 4. Launch Bun ElysiaJS Edge Gateway as foreground PID 1 process
-echo "[BOOT] Launching Bun ElysiaJS Edge Gateway on port $PORT..."
-export PORT="$PORT"
+echo "[BOOT] Launching Bun ElysiaJS Edge Gateway on port $EDGE_PORT..."
+export PORT="$EDGE_PORT"
+export HOST="0.0.0.0"
 export RUST_BACKEND_URL="$RUST_BACKEND_URL"
 
 if [ -d "edge_gateway" ]; then

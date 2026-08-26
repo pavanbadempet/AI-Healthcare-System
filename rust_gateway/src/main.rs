@@ -124,14 +124,28 @@ async fn main() {
 
     let app = routes::build_app_router(state);
 
-    let port: u16 = env::var("PORT")
+    let port: u16 = env::var("RUST_PORT")
+        .or_else(|_| env::var("PORT"))
         .ok()
         .and_then(|p| p.parse().ok())
         .unwrap_or(8001);
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
     println!("Gateway listening on http://{}", addr);
 
-    let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
+    let listener = {
+        let mut retries = 5;
+        loop {
+            match tokio::net::TcpListener::bind(&addr).await {
+                Ok(l) => break l,
+                Err(e) if retries > 0 => {
+                    eprintln!("Warning: Failed to bind to {} ({:?}), retrying in 1s...", addr, e);
+                    tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+                    retries -= 1;
+                }
+                Err(e) => panic!("Failed to bind to {}: {:?}", addr, e),
+            }
+        }
+    };
     axum::serve(listener, app).await.unwrap();
 }
 
