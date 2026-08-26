@@ -604,26 +604,35 @@ export default function CapacityPage() {
       {/* Bed Assignment Modal */}
       <AnimatePresence>
         {isModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 font-sans">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
               transition={{ duration: 0.2 }}
-              className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl flex flex-col font-sans"
+              className="bg-[#0b0c10] border border-white/10 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col font-sans"
               role="dialog"
               aria-modal="true"
               aria-labelledby="modal-title"
             >
               {/* Modal Header */}
-              <div className="bg-zinc-950/80 border-b border-zinc-850 px-4 py-3 flex justify-between items-center">
-                <h2 id="modal-title" className="text-sm font-bold text-zinc-100 uppercase tracking-wider flex items-center gap-2">
-                  <BedDouble size={14} className="text-indigo-400" />
-                  Assign Bed & Admission
-                </h2>
+              <div className="bg-white/[0.02] border-b border-white/10 p-5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+                    <BedDouble size={18} />
+                  </div>
+                  <div>
+                    <h2 id="modal-title" className="text-sm font-bold text-white uppercase tracking-wider">
+                      Assign Bed & Inpatient Admission
+                    </h2>
+                    <p className="text-[10px] text-[var(--text-secondary)] font-mono uppercase mt-0.5">
+                      EHR Patient Allocation & Ward Department Check-in
+                    </p>
+                  </div>
+                </div>
                 <button 
                   onClick={() => setIsModalOpen(false)}
-                  className="text-zinc-400 hover:text-zinc-100 transition-colors p-1 rounded-md hover:bg-zinc-800"
+                  className="w-8 h-8 rounded-lg border border-white/5 hover:border-white/10 hover:bg-white/5 flex items-center justify-center text-zinc-400 hover:text-white transition-colors cursor-pointer"
                   aria-label="Close modal"
                 >
                   <X size={16} />
@@ -631,56 +640,56 @@ export default function CapacityPage() {
               </div>
 
               {/* Modal Body / Form */}
-              <form onSubmit={handleAssignBed} className="p-5 space-y-4">
+              <form onSubmit={handleAssignBed} className="p-6 space-y-4 font-sans">
                 {modalError && (
-                  <div className="p-3 bg-red-950/50 border border-red-900/50 rounded text-red-400 text-xs font-mono">
+                  <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-xs font-mono">
                     {modalError}
                   </div>
                 )}
                 {modalSuccess && (
-                  <div className="p-3 bg-emerald-950/50 border border-emerald-900/50 rounded text-emerald-400 text-xs font-mono">
+                  <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-400 text-xs font-mono">
                     {modalSuccess}
                   </div>
                 )}
 
                 {/* Patient Select */}
-                <div className="space-y-1">
-                  <label htmlFor="patient-select" className="block text-[10px] font-mono uppercase tracking-wider text-zinc-400">
-                    Patient Profile
+                <div className="space-y-1.5">
+                  <label htmlFor="patient-select" className="text-[11px] font-medium text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
+                    <Users size={12} className="text-indigo-400" /> Patient Profile
                   </label>
                   <select
                     id="patient-select"
                     value={selectedPatientId}
                     onChange={(e) => setSelectedPatientId(e.target.value ? Number(e.target.value) : "")}
                     disabled={loading}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50"
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 disabled:opacity-50 font-sans"
                     required
                   >
-                    <option value="">-- Choose Patient --</option>
+                    <option value="" className="bg-zinc-900 text-zinc-400">-- Choose Patient --</option>
                     {patients.map((p) => (
-                      <option key={p.patient_id} value={p.patient_id}>
-                        {p.full_name || p.username} (MRN-{(p.patient_id * 1024 + 100000).toString().substring(0, 6)})
+                      <option key={p.patient_id} value={p.patient_id} className="bg-zinc-900 text-white">
+                        {p.full_name || p.username} ({formatMrn(p.patient_id)})
                       </option>
                     ))}
                   </select>
                 </div>
 
                 {/* Department Select */}
-                <div className="space-y-1">
-                  <label htmlFor="dept-select" className="block text-[10px] font-mono uppercase tracking-wider text-zinc-400">
-                    Ward Department
+                <div className="space-y-1.5">
+                  <label htmlFor="dept-select" className="text-[11px] font-medium text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
+                    <Building2 size={12} className="text-indigo-400" /> Ward Department
                   </label>
                   <select
                     id="dept-select"
                     value={selectedDepartmentId}
                     onChange={(e) => setSelectedDepartmentId(e.target.value ? Number(e.target.value) : "")}
                     disabled={loading}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50"
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 disabled:opacity-50 font-sans"
                     required
                   >
-                    <option value="">-- Choose Department --</option>
+                    <option value="" className="bg-zinc-900 text-zinc-400">-- Choose Department --</option>
                     {departments.map((d) => (
-                      <option key={d.id} value={d.id}>
+                      <option key={d.id} value={d.id} className="bg-zinc-900 text-white">
                         {d.name} ({d.department_type})
                       </option>
                     ))}
@@ -688,25 +697,25 @@ export default function CapacityPage() {
                 </div>
 
                 {/* Bed Select */}
-                <div className="space-y-1">
-                  <label htmlFor="bed-select" className="block text-[10px] font-mono uppercase tracking-wider text-zinc-400">
-                    Available Bed Unit
+                <div className="space-y-1.5">
+                  <label htmlFor="bed-select" className="text-[11px] font-medium text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
+                    <BedDouble size={12} className="text-indigo-400" /> Available Bed Unit
                   </label>
                   <select
                     id="bed-select"
                     value={selectedBedId}
                     onChange={(e) => setSelectedBedId(e.target.value ? Number(e.target.value) : "")}
                     disabled={loading || !selectedDepartmentId}
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-sm text-zinc-100 focus:outline-none focus:border-indigo-500 disabled:opacity-50"
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 disabled:opacity-50 font-sans"
                     required
                   >
-                    <option value="">
+                    <option value="" className="bg-zinc-900 text-zinc-400">
                       {!selectedDepartmentId ? "Select a department first" : "-- Choose Bed --"}
                     </option>
                     {beds
                       .filter(b => !selectedDepartmentId || b.department_id === Number(selectedDepartmentId))
                       .map((b) => (
-                        <option key={b.id} value={b.id}>
+                        <option key={b.id} value={b.id} className="bg-zinc-900 text-white">
                           Bed {b.bed_number} (Ward: {b.ward || "General"})
                         </option>
                       ))}
@@ -714,9 +723,9 @@ export default function CapacityPage() {
                 </div>
 
                 {/* Admission Reason */}
-                <div className="space-y-1">
-                  <label htmlFor="reason-input" className="block text-[10px] font-mono uppercase tracking-wider text-zinc-400">
-                    Admission Reason / Diagnosis
+                <div className="space-y-1.5">
+                  <label htmlFor="reason-input" className="text-[11px] font-medium text-[var(--text-secondary)] uppercase tracking-wider flex items-center gap-1.5">
+                    <Activity size={12} className="text-indigo-400" /> Admission Reason / Diagnosis Notes
                   </label>
                   <textarea
                     id="reason-input"
@@ -725,24 +734,24 @@ export default function CapacityPage() {
                     disabled={loading}
                     rows={3}
                     placeholder="Enter reason for admission or primary diagnosis notes..."
-                    className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-sm text-zinc-100 placeholder-zinc-600 focus:outline-none focus:border-indigo-500 resize-none disabled:opacity-50"
+                    className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-indigo-500 resize-none disabled:opacity-50 font-sans"
                   />
                 </div>
 
                 {/* Actions */}
-                <div className="flex gap-2 justify-end pt-2 border-t border-zinc-850">
+                <div className="bg-white/[0.02] border-t border-white/10 -mx-6 -mb-6 p-4 flex items-center justify-between gap-3 mt-6 font-sans">
                   <button
                     type="button"
                     onClick={() => setIsModalOpen(false)}
                     disabled={loading}
-                    className="px-4 py-2 rounded text-xs font-bold uppercase tracking-wider bg-zinc-800 text-zinc-300 hover:bg-zinc-750 hover:text-zinc-100 transition-all cursor-pointer disabled:opacity-50"
+                    className="btn btn-secondary text-xs uppercase font-bold tracking-wide py-2.5 px-4"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     disabled={loading}
-                    className="px-4 py-2 rounded text-xs font-bold uppercase tracking-wider bg-indigo-600 hover:bg-indigo-500 text-white transition-all cursor-pointer shadow-lg shadow-indigo-600/10 hover:shadow-indigo-600/20 disabled:opacity-50 flex items-center justify-center gap-1.5"
+                    className="btn btn-primary text-xs uppercase font-bold tracking-wide py-2.5 px-5 flex items-center gap-2 shadow-lg shadow-indigo-600/20 disabled:opacity-50"
                   >
                     {loading ? (
                       <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -760,40 +769,59 @@ export default function CapacityPage() {
       {/* Bed Inspector Modal */}
       <AnimatePresence>
         {inspectBed && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 font-sans">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
               transition={{ duration: 0.2 }}
-              className="bg-zinc-900 border border-zinc-800 rounded-xl max-w-md w-full overflow-hidden shadow-2xl flex flex-col font-sans"
+              className="bg-[#0b0c10] border border-white/10 rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col font-sans"
               role="dialog"
               aria-modal="true"
               aria-labelledby="inspect-title"
             >
-              <div className="bg-zinc-950/80 border-b border-zinc-850 px-4 py-3 flex justify-between items-center">
-                <h2 id="inspect-title" className="text-sm font-bold text-zinc-100 uppercase tracking-wider flex items-center gap-2">
-                  <BedDouble size={14} className="text-indigo-400" />
-                  Bed {inspectBed.bedCode} — {inspectBed.unit}
-                </h2>
+              {/* Header */}
+              <div className="bg-white/[0.02] border-b border-white/10 p-5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0">
+                    <BedDouble size={18} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h2 id="inspect-title" className="text-sm font-bold text-white uppercase tracking-wider">
+                        Bed {inspectBed.bedCode}
+                      </h2>
+                      <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-zinc-300">
+                        {inspectBed.unit}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-[var(--text-secondary)] font-mono uppercase mt-0.5">
+                      Real-Time Telemetry Node & Bed Allocation
+                    </p>
+                  </div>
+                </div>
                 <button 
                   onClick={() => setInspectBed(null)}
-                  className="text-zinc-400 hover:text-zinc-100 transition-colors p-1 rounded-md hover:bg-zinc-800"
+                  className="w-8 h-8 rounded-lg border border-white/5 hover:border-white/10 hover:bg-white/5 flex items-center justify-center text-zinc-400 hover:text-white transition-colors cursor-pointer"
                   aria-label="Close inspector"
                 >
                   <X size={16} />
                 </button>
               </div>
 
-              <div className="p-5 space-y-4">
-                <div className="flex items-center justify-between p-3 rounded-lg border bg-zinc-950/50 border-zinc-800">
-                  <span className="text-xs font-mono uppercase text-zinc-400">Unit Status</span>
-                  <span className={`text-xs font-mono font-bold uppercase px-2 py-0.5 rounded border ${
+              {/* Body */}
+              <div className="p-6 space-y-4 font-sans">
+                <div className="flex items-center justify-between p-3.5 rounded-xl bg-white/[0.02] border border-white/5">
+                  <div className="flex items-center gap-2">
+                    <Activity size={15} className="text-indigo-400" />
+                    <span className="text-xs font-medium text-zinc-300">Current Occupancy State</span>
+                  </div>
+                  <span className={`text-[11px] font-mono font-bold uppercase px-3 py-1 rounded-full border ${
                     inspectBed.status === "occupied"
-                      ? "bg-red-950/60 border-red-800 text-red-400"
+                      ? "bg-red-500/10 border-red-500/30 text-red-400"
                       : inspectBed.status === "cleaning"
-                      ? "bg-amber-950/60 border-amber-800 text-amber-400"
-                      : "bg-emerald-950/60 border-emerald-800 text-emerald-400"
+                      ? "bg-amber-500/10 border-amber-500/30 text-amber-400"
+                      : "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
                   }`}>
                     {inspectBed.status}
                   </span>
@@ -802,94 +830,94 @@ export default function CapacityPage() {
                 {(() => {
                   const patientInfo = getBedPatientDetails(inspectBed.bedCode, inspectBed.unit, inspectBed.bedIdx ?? 0, patients);
                   return (
-                    <div className="space-y-2.5 text-xs font-mono bg-zinc-950/40 p-4 rounded-xl border border-zinc-800/80">
-                      <div className="flex justify-between text-zinc-300">
-                        <span className="text-zinc-500">Unit Location:</span>
+                    <div className="space-y-3 p-4 rounded-xl bg-white/[0.02] border border-white/5 text-xs">
+                      <div className="flex justify-between items-center py-1 border-b border-white/5">
+                        <span className="text-zinc-400 font-medium">Unit Location:</span>
                         <span className="font-semibold text-white">{inspectBed.unit}</span>
                       </div>
-                      <div className="flex justify-between text-zinc-300">
-                        <span className="text-zinc-500">Bed Identification:</span>
-                        <span className="font-bold text-cyan-400">{inspectBed.bedCode}</span>
+                      <div className="flex justify-between items-center py-1 border-b border-white/5">
+                        <span className="text-zinc-400 font-medium">Bed Identifier:</span>
+                        <span className="font-mono font-bold text-cyan-400 px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20">{inspectBed.bedCode}</span>
                       </div>
-                      <div className="flex justify-between text-zinc-300">
-                        <span className="text-zinc-500">Monitoring Sensor:</span>
-                        <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                          Node telemetry link ACTIVE
+                      <div className="flex justify-between items-center py-1">
+                        <span className="text-zinc-400 font-medium">Telemetry Node Sensor:</span>
+                        <span className="text-emerald-400 font-medium flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                          Continuous Feed Active
                         </span>
                       </div>
+
                       {inspectBed.status === "occupied" && (
-                        <div className="pt-2.5 border-t border-zinc-800/80 space-y-1.5">
-                          <div className="flex justify-between text-zinc-300">
-                            <span className="text-zinc-500">Assigned Patient:</span>
-                            <span className="text-white font-bold">{patientInfo.name}</span>
+                        <div className="mt-3 pt-3 border-t border-white/10 space-y-2.5">
+                          <div className="flex items-center justify-between">
+                            <span className="text-zinc-400 font-medium">Assigned Patient:</span>
+                            <span className="text-white font-bold text-sm">{patientInfo.name}</span>
                           </div>
-                          <div className="flex justify-between text-zinc-300">
-                            <span className="text-zinc-500">Medical Record No:</span>
-                            <span className="text-indigo-400 font-bold font-mono">{patientInfo.mrn}</span>
+                          <div className="flex items-center justify-between">
+                            <span className="text-zinc-400 font-medium">Medical Record No:</span>
+                            <span className="text-indigo-400 font-mono font-bold">{patientInfo.mrn}</span>
                           </div>
-                          <div className="flex justify-between text-zinc-300">
-                            <span className="text-zinc-500">Clinical Profile:</span>
-                            <span className="text-zinc-400">{patientInfo.age}{patientInfo.gender} • {patientInfo.diagnosis}</span>
+                          <div className="flex items-center justify-between">
+                            <span className="text-zinc-400 font-medium">Clinical Profile:</span>
+                            <span className="text-zinc-300 font-sans">{patientInfo.age}{patientInfo.gender} • {patientInfo.diagnosis}</span>
                           </div>
                         </div>
                       )}
                     </div>
                   );
                 })()}
+              </div>
 
-                <div className="flex gap-2 justify-end pt-2 border-t border-zinc-850">
-                  <button
-                    onClick={() => setInspectBed(null)}
-                    className="px-4 py-2 rounded text-xs font-bold uppercase tracking-wider bg-zinc-800 text-zinc-300 hover:bg-zinc-750 hover:text-zinc-100 transition-all"
-                  >
-                    Close
-                  </button>
-                  {inspectBed.status === "open" ? (
-                    <button
-                      onClick={() => {
-                        setInspectBed(null);
-                        openAssignmentModal();
-                      }}
-                      className="px-4 py-2 rounded text-xs font-bold uppercase tracking-wider bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-lg shadow-indigo-600/10"
-                    >
-                      Assign Patient
-                    </button>
-                  ) : (
+              {/* Footer */}
+              <div className="bg-white/[0.02] border-t border-white/10 p-4 flex items-center justify-between gap-3 font-sans">
+                <button
+                  onClick={() => setInspectBed(null)}
+                  className="btn btn-secondary text-xs uppercase font-bold tracking-wide py-2.5 px-4"
+                >
+                  Close
+                </button>
+                <div className="flex gap-2">
+                  {inspectBed.status === "occupied" ? (
                     <>
-                      {inspectBed.status === "occupied" && (
-                        <button
-                          onClick={() => {
-                            dispatchCareEvent({
-                              event_type: "discharge-initiated",
-                              title: `Discharge initiated for bed ${inspectBed.bedCode}`,
-                              summary: `Patient in bed ${inspectBed.bedCode} (${inspectBed.unit}) marked for discharge. Bed transitioning to cleaning status.`,
-                              severity: "info",
-                            }).catch(() => {});
-                            toast.success(`Bed ${inspectBed.bedCode} discharged — now in cleaning status.`);
-                            setInspectBed(null);
-                          }}
-                          className="px-4 py-2 rounded text-xs font-bold uppercase tracking-wider bg-amber-600 hover:bg-amber-500 text-white transition-all"
-                        >
-                          Discharge Patient
-                        </button>
-                      )}
+                      <button
+                        onClick={() => {
+                          dispatchCareEvent({
+                            event_type: "discharge-initiated",
+                            title: `Discharge initiated for bed ${inspectBed.bedCode}`,
+                            summary: `Patient in bed ${inspectBed.bedCode} (${inspectBed.unit}) marked for discharge. Bed transitioning to cleaning status.`,
+                            severity: "info",
+                          }).catch(() => {});
+                          toast.success(`Bed ${inspectBed.bedCode} discharged — transitioning to cleaning status.`);
+                          setInspectBed(null);
+                        }}
+                        className="btn btn-secondary text-xs uppercase font-bold tracking-wide py-2.5 px-4 text-amber-400 border-amber-500/30 hover:bg-amber-500/10"
+                      >
+                        Discharge Patient
+                      </button>
                       <button
                         onClick={() => {
                           const bed = inspectBed;
                           setInspectBed(null);
                           if (bed) {
                             setTransferringBed({ unit: bed.unit, bedCode: bed.bedCode });
-                          } else {
-                            openAssignmentModal();
                           }
                         }}
-                        className="px-4 py-2 rounded text-xs font-bold uppercase tracking-wider bg-indigo-600 hover:bg-indigo-500 text-white transition-all"
+                        className="btn btn-primary text-xs uppercase font-bold tracking-wide py-2.5 px-5 flex items-center gap-1.5 shadow-lg shadow-indigo-600/20"
                       >
                         Transfer / Reassign
                       </button>
                     </>
-                  )}
+                  ) : inspectBed.status === "open" ? (
+                    <button
+                      onClick={() => {
+                        setInspectBed(null);
+                        openAssignmentModal();
+                      }}
+                      className="btn btn-primary text-xs uppercase font-bold tracking-wide py-2.5 px-5 flex items-center gap-1.5 shadow-lg shadow-indigo-600/20"
+                    >
+                      Assign Patient
+                    </button>
+                  ) : null}
                 </div>
               </div>
             </motion.div>
@@ -900,48 +928,66 @@ export default function CapacityPage() {
       {/* Direct Bed-to-Bed Transfer Dialog */}
       {transferringBed && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 font-sans">
-          <div className="bg-[#0b0c10] border border-white/10 rounded-2xl w-full max-w-md p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-mono font-bold text-xs">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            className="bg-[#0b0c10] border border-white/10 rounded-2xl w-full max-w-md overflow-hidden shadow-2xl flex flex-col font-sans"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="transfer-modal-title"
+          >
+            {/* Header */}
+            <div className="bg-white/[0.02] border-b border-white/10 p-5 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 shrink-0 font-mono font-bold text-sm">
                   ⇄
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">Bed Transfer Request</h3>
-                  <p className="text-[10px] text-zinc-400 font-mono">Source Bed: {transferringBed.bedCode} ({transferringBed.unit})</p>
+                  <h3 id="transfer-modal-title" className="text-sm font-bold text-white uppercase tracking-wider">
+                    Direct Bed Transfer
+                  </h3>
+                  <p className="text-[10px] text-[var(--text-secondary)] font-mono uppercase mt-0.5">
+                    Source: {transferringBed.bedCode} ({transferringBed.unit})
+                  </p>
                 </div>
               </div>
-              <button onClick={() => setTransferringBed(null)} className="text-zinc-400 hover:text-white p-1">
-                ✕
+              <button 
+                onClick={() => setTransferringBed(null)} 
+                className="w-8 h-8 rounded-lg border border-white/5 hover:border-white/10 hover:bg-white/5 flex items-center justify-center text-zinc-400 hover:text-white transition-colors cursor-pointer"
+                aria-label="Close transfer modal"
+              >
+                <X size={16} />
               </button>
             </div>
 
-            <div className="space-y-3 font-mono text-xs">
-              <div>
-                <label className="text-[10px] text-zinc-400 font-bold uppercase block mb-1">Select Target Destination Bed</label>
+            <div className="p-6 space-y-4 font-sans">
+              <div className="space-y-1.5">
+                <label className="text-[11px] font-medium text-[var(--text-secondary)] uppercase tracking-wider block">
+                  Select Target Destination Bed
+                </label>
                 <select
                   value={targetBedCode}
                   onChange={(e) => setTargetBedCode(e.target.value)}
-                  className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-white font-bold focus:outline-none focus:border-indigo-500"
+                  className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-indigo-500 font-sans"
                 >
-                  <option value="ICU-A-02">ICU-A-02 (ICU Wing A • Available)</option>
-                  <option value="ICU-B-03">ICU-B-03 (ICU Wing B • Available)</option>
-                  <option value="CCU-05">CCU-05 (Cardiac Care Unit • Available)</option>
-                  <option value="MED-12">MED-12 (General Med-Surg • Available)</option>
-                  <option value="SURG-04">SURG-04 (Surgical Step-Down • Available)</option>
-                  <option value="ED-03">ED-03 (Emergency Obs • Available)</option>
+                  <option value="ICU-A-02" className="bg-zinc-900 text-white">ICU-A-02 (ICU Wing A • Available)</option>
+                  <option value="ICU-B-03" className="bg-zinc-900 text-white">ICU-B-03 (ICU Wing B • Available)</option>
+                  <option value="CCU-05" className="bg-zinc-900 text-white">CCU-05 (Cardiac Care Unit • Available)</option>
+                  <option value="MED-12" className="bg-zinc-900 text-white">MED-12 (General Med-Surg • Available)</option>
+                  <option value="SURG-04" className="bg-zinc-900 text-white">SURG-04 (Surgical Step-Down • Available)</option>
+                  <option value="ED-03" className="bg-zinc-900 text-white">ED-03 (Emergency Obs • Available)</option>
                 </select>
               </div>
 
-              <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-[11px] text-indigo-300 font-sans">
-                Transferring will automatically update patient bed assignment and change source bed ({transferringBed.bedCode}) to <strong className="text-amber-300 uppercase font-mono">cleaning</strong> status.
+              <div className="p-3.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-xs text-indigo-300 font-sans leading-relaxed">
+                Transferring will update patient allocation in real-time and transition source bed <strong className="text-amber-300 font-mono font-bold">({transferringBed.bedCode})</strong> to <span className="text-amber-300 uppercase font-mono font-semibold">cleaning</span> status.
               </div>
             </div>
 
-            <div className="flex items-center justify-between pt-2 border-t border-white/10 font-sans">
+            <div className="bg-white/[0.02] border-t border-white/10 p-4 flex items-center justify-between gap-3 font-sans">
               <button
                 onClick={() => setTransferringBed(null)}
-                className="px-4 py-2 rounded text-xs font-bold uppercase tracking-wider bg-zinc-800 text-zinc-300 hover:bg-zinc-750 hover:text-zinc-100 transition-all cursor-pointer"
+                className="btn btn-secondary text-xs uppercase font-bold tracking-wide py-2.5 px-4"
               >
                 Cancel
               </button>
@@ -956,12 +1002,12 @@ export default function CapacityPage() {
                   toast.success(`Patient transferred from ${transferringBed.bedCode} to ${targetBedCode}!`);
                   setTransferringBed(null);
                 }}
-                className="px-4 py-2 rounded text-xs font-bold uppercase tracking-wider bg-indigo-600 hover:bg-indigo-500 text-white transition-all shadow-lg shadow-indigo-600/10 cursor-pointer"
+                className="btn btn-primary text-xs uppercase font-bold tracking-wide py-2.5 px-5 flex items-center gap-1.5 shadow-lg shadow-indigo-600/20"
               >
                 Confirm Transfer
               </button>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
 
