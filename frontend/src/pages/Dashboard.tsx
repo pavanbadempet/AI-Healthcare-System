@@ -198,7 +198,7 @@ export default function DashboardPage() {
   // Live telemetry beds state
   const [beds, setBeds] = useState<ClinicalBed[]>([
     {
-      bed: "Bed 12A",
+      bed: "ICU-A-02",
       name: "Sarah Jenkins",
       status: "Stable",
       hr: 72,
@@ -208,7 +208,7 @@ export default function DashboardPage() {
       ecgD: "M0,50 L50,50 L60,20 L70,80 L80,50 L120,50 L130,20 L140,80 L150,50 L200,50 L210,10 L220,90 L230,50 L280,50 L290,20 L300,80 L310,50 L360,50 L370,20 L380,80 L390,50 L400,50"
     },
     {
-      bed: "Bed 14C",
+      bed: "ICU-A-01",
       name: "Marcus Thorne",
       status: "Alert",
       hr: 118,
@@ -218,7 +218,7 @@ export default function DashboardPage() {
       ecgD: "M0,50 L30,50 L35,10 L45,90 L55,50 L80,50 L85,10 L95,90 L105,50 L130,50 L135,10 L145,90 L155,50 L180,50 L185,10 L195,90 L205,50 L230,50 L235,10 L245,90 L255,50 L280,50 L285,10 L295,90 L305,50 L330,50 L335,10 L345,90 L355,50 L380,50 L385,10 L395,90 L400,50"
     },
     {
-      bed: "Bed 08B",
+      bed: "MED-02",
       name: "Linda Zhao",
       status: "Stable",
       hr: 64,
@@ -228,8 +228,8 @@ export default function DashboardPage() {
       ecgD: "M0,50 L40,50 L50,15 L60,85 L70,50 L110,50 L120,15 L130,85 L140,50 L180,50 L190,15 L200,85 L210,50 L250,50 L260,15 L270,85 L280,50 L320,50 L330,15 L340,85 L350,50 L400,50"
     },
     {
-      bed: "Bed 10D",
-      name: "Robert G.",
+      bed: "MED-01",
+      name: "Robert Garcia",
       status: "Stable",
       hr: 85,
       spo2: 97,
@@ -238,7 +238,7 @@ export default function DashboardPage() {
       ecgD: "M0,50 L60,50 L70,25 L80,75 L90,50 L150,50 L160,25 L170,75 L180,50 L240,50 L250,25 L260,75 L270,50 L330,50 L340,25 L350,75 L360,50 L400,50"
     },
     {
-      bed: "Bed 05A",
+      bed: "SURG-01",
       name: "Emily Watson",
       status: "Stable",
       hr: 68,
@@ -248,7 +248,7 @@ export default function DashboardPage() {
       ecgD: "M0,50 L55,50 L65,30 L75,70 L85,50 L140,50 L150,30 L160,70 L170,50 L225,50 L235,30 L245,70 L255,50 L310,50 L320,30 L330,70 L340,50 L400,50"
     },
     {
-      bed: "Bed 11F",
+      bed: "ICU-A-11",
       name: "Oscar Meyer",
       status: "Stable",
       hr: 76,
@@ -298,7 +298,7 @@ export default function DashboardPage() {
         new CustomEvent("clinical-alarm", {
           detail: {
             active: isAlertActive,
-            bed: "Bed 14C",
+            bed: "ICU-A-01",
             name: "Marcus Thorne",
             hr: beds[1].hr,
           },
@@ -317,7 +317,7 @@ export default function DashboardPage() {
 
       setBeds((prevBeds) =>
         prevBeds.map((b) => {
-          if (b.bed === "Bed 14C") {
+          if (b.bed === "ICU-A-01") {
             return {
               ...b,
               status: "Stable",
@@ -332,12 +332,12 @@ export default function DashboardPage() {
       );
 
       if (action === "code-blue") {
-        setCodeBlueActive((prev) => ({ ...prev, "Bed 14C": true }));
-        toast.success("Dispatching Code Blue response team to Bed 14C.");
+        setCodeBlueActive((prev) => ({ ...prev, "ICU-A-01": true }));
+        toast.success("Dispatching Code Blue response team to Bed ICU-A-01.");
       } else if (action === "dismiss") {
         setSnoozingAlarmBed({
-          bedCode: "Bed 14C",
-          patientName: "Robert Chen",
+          bedCode: "ICU-A-01",
+          patientName: "Marcus Thorne",
           alarmTitle: "Critical Telemetry Tachycardia Spike (HR: 142 bpm)",
         });
       }
