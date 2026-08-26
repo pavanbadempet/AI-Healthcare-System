@@ -305,9 +305,9 @@ pub async fn login_for_access_token(
                     gender: None, blood_type: None, dob: None, height: None, weight: None,
                     existing_ailments: None, profile_picture: None, about_me: None,
                     diet: None, activity_level: None, sleep_hours: None, stress_level: None,
-                    allow_data_collection: 1, facility_id: Some(1), plan_tier: "enterprise".to_string(),
-                    subscription_expiry: None, razorpay_customer_id: None, consultation_fee: 500.0,
-                    specialization: None, psych_profile: None, totp_secret: None, is_totp_enabled: 0,
+                    allow_data_collection: Some(1), facility_id: Some(1), plan_tier: Some("enterprise".to_string()),
+                    subscription_expiry: None, razorpay_customer_id: None, consultation_fee: Some(500.0),
+                    specialization: None, psych_profile: None, totp_secret: None, is_totp_enabled: Some(0),
                     is_deleted: 0, deleted_at: None,
                 }
             })
@@ -350,7 +350,7 @@ pub async fn login_for_access_token(
         ));
     }
 
-    if user.is_totp_enabled != 0 {
+    if user.is_totp_enabled.unwrap_or(0) != 0 {
         match &form.totp_code {
             Some(code) if !code.trim().is_empty() => {
                 let secret = user.totp_secret.as_deref().unwrap_or("");
