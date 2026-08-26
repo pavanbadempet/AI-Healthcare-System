@@ -577,7 +577,7 @@ pub async fn get_profile_handler(
         sleep_hours: u.sleep_hours,
         stress_level: u.stress_level,
         specialization: u.specialization,
-        allow_data_collection: u.allow_data_collection != 0,
+        allow_data_collection: u.allow_data_collection.unwrap_or(1) != 0,
         role: u.role,
         facility_id: u.facility_id,
     }))
@@ -889,7 +889,7 @@ pub async fn get_user_full_details_handler(
         DbPool::Postgres(p) => sqlx::query_as::<_, ChatLogRow>(chat_sql).bind(user_id).fetch_all(p).await.unwrap_or_default(),
     };
 
-    if u.allow_data_collection == 0 {
+    if u.allow_data_collection.unwrap_or(1) == 0 {
         Ok(Json(json!({
             "id": u.id,
             "username": u.username,
