@@ -135,7 +135,5 @@ export function createProxyPlugin(options: ProxyOptions = {}) {
     .all('/openapi.json', async ({ request }) => forwardHttpRequest(request, target))
     .all('/redoc', async ({ request }) => forwardHttpRequest(request, target))
     .all('/metrics', async ({ request }) => forwardHttpRequest(request, target))
-    .all('/token', async ({ request }) => forwardHttpRequest(request, target))
-    .all('/login', async ({ request }) => forwardHttpRequest(request, target))
-    .all('/signup', async ({ request }) => forwardHttpRequest(request, target));
+    .post('/token', async ({ request }) => forwardHttpRequest(request, target));
 }
