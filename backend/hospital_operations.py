@@ -406,7 +406,7 @@ def create_admission(
             doctor_id=doctor.id if doctor else (current_user.id if current_user.role == "doctor" else None),
             department_id=admission.department_id,
             encounter_type="IPD",
-            status="in_progress",
+            status="open",
             started_at=datetime.now(timezone.utc),
         )
         db.add(encounter)

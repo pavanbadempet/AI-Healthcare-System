@@ -389,8 +389,8 @@ async fn create_encounter(
     user: AuthenticatedUser,
     Json(payload): Json<EncounterCreate>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    if user.role != "doctor" && user.role != "admin" {
-        return Err((StatusCode::FORBIDDEN, Json(json!({"detail": "Doctor or admin privileges required"}))));
+    if user.role != "doctor" && user.role != "admin" && user.role != "nurse" && user.role != "clinician" {
+        return Err((StatusCode::FORBIDDEN, Json(json!({"detail": "Clinical staff or admin privileges required"}))));
     }
 
     let pool = &state.db_pool;
@@ -442,8 +442,8 @@ async fn create_admission(
     user: AuthenticatedUser,
     Json(payload): Json<AdmissionCreate>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    if user.role != "doctor" && user.role != "admin" {
-        return Err((StatusCode::FORBIDDEN, Json(json!({"detail": "Doctor or admin privileges required"}))));
+    if user.role != "doctor" && user.role != "admin" && user.role != "nurse" && user.role != "clinician" {
+        return Err((StatusCode::FORBIDDEN, Json(json!({"detail": "Clinical staff or admin privileges required"}))));
     }
 
     let pool = &state.db_pool;
@@ -454,8 +454,26 @@ async fn create_admission(
         crate::db::DbPool::Sqlite(p) => sqlx::query_as(chk_sql).bind(payload.patient_id).fetch_optional(p).await.unwrap_or(None),
         crate::db::DbPool::Postgres(p) => sqlx::query_as(chk_sql).bind(payload.patient_id).fetch_optional(p).await.unwrap_or(None),
     };
-    if active_adm.is_some() {
-        return Err((StatusCode::CONFLICT, Json(json!({"detail": "Patient already has an active admission"}))));
+    if let Some((existing_id,)) = active_adm {
+        // Patient already has active admission - gracefully update department, bed, and reason
+        let upd_adm_sql = "UPDATE admissions SET department_id = COALESCE($1, department_id), bed_id = COALESCE($2, bed_id), reason = COALESCE($3, reason) WHERE id = $4";
+        match pool {
+            crate::db::DbPool::Sqlite(p) => { let _ = sqlx::query(upd_adm_sql).bind(payload.department_id).bind(payload.bed_id).bind(&payload.reason).bind(existing_id).execute(p).await; }
+            crate::db::DbPool::Postgres(p) => { let _ = sqlx::query(upd_adm_sql).bind(payload.department_id).bind(payload.bed_id).bind(&payload.reason).bind(existing_id).execute(p).await; }
+        };
+        if let Some(bid) = payload.bed_id {
+            let occ_sql = "UPDATE beds SET status = 'occupied', current_patient_id = $1 WHERE id = $2";
+            match pool {
+                crate::db::DbPool::Sqlite(p) => { let _ = sqlx::query(occ_sql).bind(payload.patient_id).bind(bid).execute(p).await; }
+                crate::db::DbPool::Postgres(p) => { let _ = sqlx::query(occ_sql).bind(payload.patient_id).bind(bid).execute(p).await; }
+            };
+        }
+        let get_sql = "SELECT id, facility_id, encounter_id, patient_id, doctor_id, department_id, bed_id, admitted_at, discharged_at, reason, status, is_deleted, deleted_at FROM admissions WHERE id = $1";
+        let adm: Admission = match pool {
+            crate::db::DbPool::Sqlite(p) => sqlx::query_as(get_sql).bind(existing_id).fetch_one(p).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"detail": format!("Failed to update admission: {:?}", e)}))))?,
+            crate::db::DbPool::Postgres(p) => sqlx::query_as(get_sql).bind(existing_id).fetch_one(p).await.map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"detail": format!("Failed to update admission: {:?}", e)}))))?,
+        };
+        return Ok(Json(adm));
     }
 
     let doctor_id = payload.doctor_id.or(if user.role == "doctor" { Some(user.id) } else { None });
@@ -465,10 +483,16 @@ async fn create_admission(
         eid
     } else {
         // Create an IPD encounter
-        let enc_insert = "INSERT INTO encounters (facility_id, patient_id, doctor_id, department_id, encounter_type, status, is_deleted) VALUES ($1, $2, $3, $4, 'IPD', 'in_progress', 0) RETURNING id";
+        let enc_insert = "INSERT INTO encounters (facility_id, patient_id, doctor_id, department_id, encounter_type, status, is_deleted) VALUES ($1, $2, $3, $4, 'IPD', 'open', 0) RETURNING id";
         let row: (i64,) = match pool {
-            crate::db::DbPool::Sqlite(p) => sqlx::query_as(enc_insert).bind(user.facility_id).bind(payload.patient_id).bind(doctor_id).bind(payload.department_id).fetch_one(p).await.map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"detail": "DB error"}))))?,
-            crate::db::DbPool::Postgres(p) => sqlx::query_as(enc_insert).bind(user.facility_id).bind(payload.patient_id).bind(doctor_id).bind(payload.department_id).fetch_one(p).await.map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"detail": "DB error"}))))?,
+            crate::db::DbPool::Sqlite(p) => sqlx::query_as(enc_insert).bind(user.facility_id).bind(payload.patient_id).bind(doctor_id).bind(payload.department_id).fetch_one(p).await.map_err(|e| {
+                eprintln!("DB Error creating encounter: {:?}", e);
+                (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"detail": "Failed to create admission encounter"})))
+            })?,
+            crate::db::DbPool::Postgres(p) => sqlx::query_as(enc_insert).bind(user.facility_id).bind(payload.patient_id).bind(doctor_id).bind(payload.department_id).fetch_one(p).await.map_err(|e| {
+                eprintln!("DB Error creating encounter: {:?}", e);
+                (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"detail": "Failed to create admission encounter"})))
+            })?,
         };
         row.0
     };
