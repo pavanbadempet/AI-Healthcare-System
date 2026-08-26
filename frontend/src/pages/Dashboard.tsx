@@ -593,8 +593,8 @@ export default function DashboardPage() {
     return map;
   }, [beds, dbPatients]);
 
-  const capacityPct = (telemetry && telemetry.total_capacity > 0)
-    ? Math.round((telemetry.active_census / telemetry.total_capacity) * 100)
+  const capacityPct = (telemetry && telemetry.total_capacity && telemetry.total_capacity > 0)
+    ? Math.round(((telemetry.active_census ?? 0) / telemetry.total_capacity) * 100)
     : 79;
 
   const stableBedsCount = beds.filter(b => b.status === "Stable").length;
@@ -620,7 +620,7 @@ export default function DashboardPage() {
           <span>AUTH: JWT SESSION</span>
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-          <span>LATENCY: {telemetry ? telemetry.system_latency_ms : "--"}ms</span>
+          <span>LATENCY: {telemetry?.system_latency_ms != null ? telemetry.system_latency_ms : "--"}ms</span>
           <span>UPTIME: 99.999%</span>
           {wsStatus === "connected" ? (
             <span className="flex items-center gap-1 text-[var(--success)] font-semibold"><Wifi size={11} aria-hidden="true" /> WS LIVE</span>
@@ -838,7 +838,7 @@ export default function DashboardPage() {
             </span>
             <div className="flex items-baseline gap-1">
               <span className="text-2xl font-black text-[var(--text-primary)] font-display">
-                {telemetry ? telemetry.system_latency_ms : "14"}
+                {telemetry?.system_latency_ms != null ? telemetry.system_latency_ms : "14"}
               </span>
               <span className="text-[10px] text-[var(--text-dim)] font-mono">ms Speed</span>
             </div>
@@ -1258,7 +1258,7 @@ export default function DashboardPage() {
           <h2 className="section-title">Department Load Allocations</h2>
         </div>
         <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" role="region" aria-label="Department load indicators">
-          {(telemetry ? telemetry.department_loads : [
+          {(telemetry?.department_loads?.length ? telemetry.department_loads : [
             { dept: "Cardiology", load: 88, status: "Critical" },
             { dept: "Pulmonology", load: 64, status: "Stable" },
             { dept: "Nephrology", load: 42, status: "Optimal" },
