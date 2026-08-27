@@ -1,10 +1,6 @@
-# Stale issue/PR bot — auto-labels and closes inactive issues
-# FREE via GitHub Actions
 name: "Stale Issues"
 
 on:
-  schedule:
-    - cron: "0 0 * * *" # Daily at midnight UTC
   workflow_dispatch:
 
 permissions:

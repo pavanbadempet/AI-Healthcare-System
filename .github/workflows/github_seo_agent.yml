@@ -1,9 +1,6 @@
 name: SOTA Autonomous GitHub SEO & Virality Agent
 
 on:
-  schedule:
-    # Run every 3 days at 6:00 AM UTC
-    - cron: '0 6 */3 * *'
   workflow_dispatch:
 
 permissions:

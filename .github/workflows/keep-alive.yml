@@ -1,10 +1,7 @@
 name: Keep Alive
 
 on:
-  schedule:
-    # Runs every 14 minutes to prevent free tier spin-down (Render spins down after 15 min of inactivity)
-    - cron: '*/14 * * * *'
-  workflow_dispatch:  # Allow manual trigger
+  workflow_dispatch:  # Manual trigger on-demand only (disabled 14-min cron to prevent notification spam)
 
 jobs:
   ping-services:

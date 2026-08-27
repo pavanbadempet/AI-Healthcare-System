@@ -1,9 +1,6 @@
 name: Daily Clinical Audit Agent
 
 on:
-  schedule:
-    # Trigger daily at 1:00 AM UTC
-    - cron: '0 1 * * *'
   workflow_dispatch:
     # Allow manual execution via the Actions tab
     inputs:
