@@ -4,6 +4,57 @@ if (typeof window === 'undefined') {
   GlobalRegistrator.register();
 }
 
+// Suppress AbortError caused by happy-dom animation cancellation during component unmounts
+const ElementClass = (globalThis as any).Element || (globalThis as any).window?.Element;
+if (ElementClass?.prototype?.animate) {
+  const origAnimate = ElementClass.prototype.animate;
+  ElementClass.prototype.animate = function (...args: any[]) {
+    const anim = origAnimate.apply(this, args);
+    if (anim?.finished && typeof anim.finished.catch === 'function') {
+      anim.finished.catch(() => {});
+    }
+    return anim;
+  };
+}
+
+const AnimClass = (globalThis as any).Animation || (globalThis as any).window?.Animation;
+if (AnimClass?.prototype?.cancel) {
+  const origCancel = AnimClass.prototype.cancel;
+  AnimClass.prototype.cancel = function (...args: any[]) {
+    if (this.finished && typeof this.finished.catch === 'function') {
+      this.finished.catch(() => {});
+    }
+    try {
+      return origCancel.apply(this, args);
+    } catch {
+      // ignore animation abort error on cancel
+    }
+  };
+}
+
+if (typeof window !== 'undefined' && window.addEventListener) {
+  window.addEventListener('unhandledrejection', (event: any) => {
+    if (
+      event?.reason?.name === 'AbortError' ||
+      event?.reason?.message?.includes('The animation was canceled')
+    ) {
+      event.preventDefault();
+      event.stopImmediatePropagation?.();
+    }
+  });
+}
+
+if (typeof process !== 'undefined' && process.on) {
+  process.on('unhandledRejection', (reason: any) => {
+    if (
+      reason?.name === 'AbortError' ||
+      reason?.message?.includes('The animation was canceled')
+    ) {
+      return;
+    }
+  });
+}
+
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import React from 'react';
