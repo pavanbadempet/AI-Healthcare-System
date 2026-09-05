@@ -13,11 +13,11 @@ updates:
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
       day: "monday"
       time: "09:00"
       timezone: "Asia/Kolkata"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 3
     reviewers:
       - "pavanbadempet"
     labels:
@@ -26,26 +26,22 @@ updates:
     commit-message:
       prefix: "deps"
       include: "scope"
-    # Allow both direct and indirect dependency updates for security patches
     allow:
       - dependency-type: "all"
-    # Group patch updates to reduce PR noise
     groups:
-      patch-updates:
+      python-dependencies:
         patterns:
           - "*"
-        update-types:
-          - "patch"
 
   # bun — frontend dependencies
   - package-ecosystem: "bun"
     directory: "/frontend"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
       day: "monday"
       time: "09:00"
       timezone: "Asia/Kolkata"
-    open-pull-requests-limit: 10
+    open-pull-requests-limit: 3
     reviewers:
       - "pavanbadempet"
     labels:
@@ -57,31 +53,19 @@ updates:
     allow:
       - dependency-type: "all"
     groups:
-      patch-updates:
+      frontend-dependencies:
         patterns:
           - "*"
-        update-types:
-          - "patch"
-      dev-dependencies:
-        patterns:
-          - "@types/*"
-          - "eslint*"
-          - "prettier"
-          - "vitest"
-          - "typescript"
-        update-types:
-          - "minor"
-          - "patch"
 
   # GitHub Actions — keep actions up to date
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
       day: "monday"
       time: "09:00"
       timezone: "Asia/Kolkata"
-    open-pull-requests-limit: 5
+    open-pull-requests-limit: 2
     reviewers:
       - "pavanbadempet"
     labels:
@@ -95,11 +79,11 @@ updates:
   - package-ecosystem: "docker"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
       day: "monday"
       time: "09:00"
       timezone: "Asia/Kolkata"
-    open-pull-requests-limit: 3
+    open-pull-requests-limit: 2
     reviewers:
       - "pavanbadempet"
     labels:
