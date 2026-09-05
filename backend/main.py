@@ -154,8 +154,8 @@ def run_migrations():
 
         command.upgrade(alembic_cfg, "head")
         logger.info("Migrations completed successfully.")
-    except Exception as mig_err:
-        logger.warning("Migration check failed: %s. Ensuring database schema via metadata.create_all...", mig_err)
+    except Exception:
+        logger.warning("Migration check failed. Ensuring database schema via metadata.create_all...")
         models.Base.metadata.create_all(bind=database.engine)
 
 
@@ -195,9 +195,9 @@ def create_default_admin():
                 logger.info("Default admin created from configured bootstrap credentials.")
             else:
                 logger.info("Admin or matching bootstrap account already exists (%s).", existing_user.username)
-        except Exception as seed_err:
+        except Exception:
             session.rollback()
-            logger.warning("Default admin seeding skipped due to existing constraint: %s", seed_err)
+            logger.warning("Default admin seeding skipped due to existing constraint or uninitialized schema.")
 
 
 def seed_hospital_operations_data():
