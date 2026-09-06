@@ -39,6 +39,8 @@ models/semantic_cache.json
 README_DATA_ENGINEERING.md
 README_ENHANCED.md
 RESUME_*.tex
+local_notes/
+.local/
 
 # IDE & AI Tools
 .cursor/

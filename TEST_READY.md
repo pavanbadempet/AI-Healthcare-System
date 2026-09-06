@@ -175,14 +175,14 @@ E2E_API_URL="http://127.0.0.1:8000" python -m pytest e2e_tests/ --no-cov -v
 - [x] **Domain 28 — DICOMweb PACS (`/v1/dicomweb/*`)**: Study Queries, Series Metadata, Instance Retrieval, DICOM Upload.
 - [x] **Domain 29 — i18n Audio (`/v1/audio/*`)**: Text-to-Speech (TTS), Multi-Language Translation, Speech Transcription, Doctor Dictation.
 - [x] **Domain 30 — Peak Healthcare Intelligence (`/v1/digital-twin/*`)**: 10-Year Trajectory Simulation, Pharmacogenomics, Multi-Specialist AI Council.
-- [x] **Domain 31 — Reports & Payments (`/generate_report`, `/v1/analyze/report`, `/v1/payments/*`)**: PDF Generation, Report Analysis, Razorpay Orders & Verification.
+- [x] **Domain 31 — Reports & Clinical Analysis (`/generate_report`, `/v1/analyze/report`)**: PDF Generation, Report Analysis & Clinical Summaries.
 - [x] **Domain 32 — Consent Gate (`/v1/consent/*`, `/v1/interop/patient/consents`)**: Consent Grant, Consent Verification, Consent Revocation.
 - [x] **Domain 33 — FHIR Compression (`/v1/fhir/compact`, `/v1/fhir/decompress`)**: Bundle Compaction, Bundle Decompression, Schema Integrity.
 - [x] **Domain 34 — Multi-Cloud Pipeline Mesh (`/v1/mesh/*`)**: Pipeline Status, Cross-Cloud Trigger, Agent Consensus Debate, DAG Orchestration.
 - [x] **Domain 35 — ML Explanations & SHAP (`/v1/predict/explain/*`)**: Disease Attributions, SHAP Values, Text Explanation, Counterfactual Recourse.
 - [x] **Domain 36 — Sales Readiness (`/v1/admin/sales-readiness`)**: Enterprise Checklist, B2B Tenant Audit.
 - [x] **Domain 37 — Demo Readiness (`/v1/demo-readiness`)**: Sandbox State, Demo Seed Data.
-- [x] **Domain 38 — Enterprise Licensing (`/v1/licensing/*`)**: Status, Tier Activation & Enforcement.
+- [x] **Domain 38 — System Operations (`/v1/system/*`)**: Platform Readiness, Auditing & Runtime Topology.
 - [x] **Domain 39 — Top-Level System & Health (`/`, `/healthz/*`, `/metrics`)**: Healthz, Circuit Breaker, Environment, Prometheus Metrics.
 - [x] **Domain 40 — Static SPA & Catchall (`/{catchall}`)**: Frontend SPA Fallback Routing.
 
