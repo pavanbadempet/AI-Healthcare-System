@@ -9,10 +9,6 @@ import sys
 
 # Target repositories configuration
 PACKAGES = {
-    "fastapi-license-gate": {
-        "path": "packages/fastapi-license-gate",
-        "url": "https://github.com/shantanam-ai/fastapi-license-gate.git",
-    },
     "clinical-tabular": {
         "path": "packages/clinical-tabular",
         "url": "https://github.com/shantanam-ai/tabular-ml-sdk.git",

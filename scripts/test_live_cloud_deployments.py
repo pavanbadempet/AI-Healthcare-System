@@ -5,7 +5,6 @@ Validates:
 2. Neon Serverless Postgres Database (Direct Connection & Schema Verification)
 3. Hugging Face Model Registry (Validates Model Hub Weights & Scalers)
 4. Databricks Lakehouse (Workflow Jobs, Medallion Pipeline Runs, Streaming Queries)
-5. Keygen / B2B Licensing Microservice
 """
 
 import os
@@ -290,38 +289,6 @@ def test_databricks_workflows():
         record_test("Databricks Workflow Verification", False, str(e))
 
 # ==============================================================================
-# 5. KEYGEN SERVER & LICENSING MICROSERVICE VALIDATION
-# ==============================================================================
-def test_keygen_server():
-    log_section("5. TESTING LICENSING & KEYGEN MICROSERVICE")
-
-    keygen_urls = [
-        "https://healthcare-keygen-server-0r3c.onrender.com",
-        "https://healthcare-keygen-server.onrender.com"
-    ]
-
-    reachable = False
-    for url in keygen_urls:
-        try:
-            res = requests.get(f"{url}/docs", timeout=15)
-            if res.status_code == 200:
-                record_test(f"Keygen Microservice ({url})", True)
-                reachable = True
-                break
-        except Exception:
-            continue
-
-    if not reachable:
-        # Fallback test with main backend licensing endpoints
-        try:
-            res = requests.get("https://aio-health-backend.onrender.com/v1/licensing/status", timeout=15)
-            record_test("Platform Licensing Status Endpoint (/v1/licensing/status)", res.status_code == 200)
-            if res.status_code == 200:
-                log_info(f"License Status: Tier={res.json().get('tier')}, Valid={res.json().get('is_valid')}")
-        except Exception as e:
-            record_test("Platform Licensing Status Endpoint", False, str(e))
-
-# ==============================================================================
 # MAIN EXECUTION
 # ==============================================================================
 if __name__ == "__main__":
@@ -334,7 +301,6 @@ if __name__ == "__main__":
     test_neon_database()
     test_huggingface_hub()
     test_databricks_workflows()
-    test_keygen_server()
 
     log_section("FINAL ECOSYSTEM TEST SUMMARY")
     print(f"{GREEN}{BOLD}Tests Passed: {results['passed']}{RESET}", flush=True)

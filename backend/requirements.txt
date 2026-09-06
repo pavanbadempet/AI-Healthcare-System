@@ -56,7 +56,6 @@ matplotlib>=3.8.0
 fpdf2
 pillow
 feedparser>=6.0.12
-razorpay
 psutil
 prometheus_client
 ruff

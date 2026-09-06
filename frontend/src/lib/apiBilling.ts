@@ -1,52 +1,8 @@
 /**
- * AI Healthcare System — Billing & Telemedicine API
+ * AI Healthcare System — Telemedicine & Clinical Scheduling API
  */
 import { apiFetch, API_BASE, authHeaders } from './apiCore';
 
-// ── Payments ─────────────────────────────────────────────────────
-export interface PaymentOrder {
-  id: string;
-  amount?: number;
-  currency?: string;
-  status: string;
-  gateway: string;
-  url?: string;
-}
-
-export interface PaymentVerification {
-  success: boolean;
-  message?: string;
-  plan_tier?: string;
-}
-
-export async function createPaymentOrder(planId: string): Promise<PaymentOrder> {
-  return apiFetch('/payments/create-order', { method: 'POST', body: JSON.stringify({ plan_id: planId }) });
-}
-
-export async function verifyPayment(data: { gateway: string; razorpay_order_id?: string; razorpay_payment_id?: string; razorpay_signature?: string; payment_intent_id?: string; plan_id?: string }): Promise<PaymentVerification> {
-  return apiFetch('/payments/verify', { method: 'POST', body: JSON.stringify(data) });
-}
-
-// ── B2B Licensing ────────────────────────────────────────────────
-export interface LicensingStatus {
-  active_key: string;
-  is_valid: boolean;
-  tier: string;
-  details: string;
-  modules: string[];
-  perpetual: boolean;
-}
-
-export async function fetchLicensingStatus(): Promise<LicensingStatus> {
-  return apiFetch('/v1/licensing/status');
-}
-
-export async function activateLicenseKey(licenseKey: string): Promise<LicensingStatus> {
-  return apiFetch('/v1/licensing/activate', {
-    method: 'POST',
-    body: JSON.stringify({ license_key: licenseKey }),
-  });
-}
 
 // ── Telemedicine ─────────────────────────────────────────────────
 export interface Appointment {

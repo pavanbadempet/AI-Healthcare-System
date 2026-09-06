@@ -70,7 +70,6 @@
 | `interoperability.py` | Standards-friendly FHIR-style export bundles, patient consent controls, reusable export profiles, resource/department filters, signed export manifests, ABDM readiness/consent request/callback endpoints, DICOMweb metadata/readiness endpoints, SMART on FHIR readiness/authorization endpoints, terminology lookup endpoints, assigned-clinician access checks, and admin interoperability metrics |
 | `chat.py` | Synchronous chat endpoint + health records CRUD + PDF download |
 | `admin.py` | Admin panel endpoints for user management, audit review, operational readiness, backup readiness, incident readiness, retention readiness, security assurance, data quality, AI governance inventories, and privacy deletion-plan review |
-| `payments.py` | Razorpay subscription management |
 | `appointments.py` | Telemedicine appointment booking |
 | `email_service.py` | Email notifications |
 | `security.py` | Rate limiting middleware |

@@ -12,7 +12,7 @@
  *   - apiPredictions.ts  — ML prediction endpoints
  *   - apiHospital.ts     — hospital operations, encounters, care events
  *   - apiAdmin.ts        — admin, monitoring, diagnostics, pharmacy, billing
- *   - apiBilling.ts      — payments, telemedicine
+ *   - apiBilling.ts      — telemedicine & clinical scheduling
  */
 
 // ── Core ─────────────────────────────────────────────────────────
@@ -170,20 +170,13 @@ export {
 } from './apiAdmin';
 
 
-// ── Billing & Telemedicine ──────────────────────────────────────
+// ── Telemedicine ───────────────────────────────────────────────
 export {
-  createPaymentOrder,
-  verifyPayment,
-  fetchLicensingStatus,
-  activateLicenseKey,
   getAppointments,
   bookAppointment,
   getDoctors,
   chatWithCASA,
   streamCASA,
-  type PaymentOrder,
-  type PaymentVerification,
-  type LicensingStatus,
   type Appointment,
   type CASAMessage,
   type CASAChatResponse,

@@ -4,7 +4,7 @@
  */
 import { useState, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Settings, Shield, CreditCard, LogOut, ChevronDown } from "lucide-react";
+import { Settings, Shield, LogOut, ChevronDown } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { prefetchRoute } from "@/lib/prefetch";
 import Tooltip from "./Tooltip";
@@ -109,15 +109,6 @@ export default function ProfileDropdown({ user, logout, adminLabel }: ProfileDro
                     <Shield size={12} className="text-[var(--text-dim)]" /> {adminLabel}
                   </Link>
                 )}
-
-                <Link
-                  to="/pricing"
-                  onClick={() => setProfileOpen(false)}
-                  onMouseEnter={() => prefetchRoute('/pricing')}
-                  className="flex items-center gap-2 px-2.5 py-2 text-[11px] font-bold uppercase tracking-wider text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-white/[0.03] rounded-lg transition-colors"
-                >
-                  <CreditCard size={12} className="text-[var(--text-dim)]" /> Billing Console
-                </Link>
               </div>
 
               <div className="p-1 border-t border-white/[0.03]">

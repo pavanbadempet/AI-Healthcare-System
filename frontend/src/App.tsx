@@ -23,7 +23,6 @@ const InfrastructurePage = lazy(() => import('@/pages/Infrastructure'));
 const CapacityPage = lazy(() => import('@/pages/Capacity'));
 const AdminPage = lazy(() => import('@/pages/Admin'));
 const ProfilePage = lazy(() => import('@/pages/Profile'));
-const PricingPage = lazy(() => import('@/pages/Pricing'));
 const AboutPage = lazy(() => import('@/pages/About'));
 const AppRegistryPage = lazy(() => import('@/pages/AppRegistry'));
 const FederatedLearningPage = lazy(() => import('@/pages/FederatedLearning'));
@@ -83,7 +82,6 @@ export default function App() {
                   <Route path="/capacity" element={<CapacityPage />} />
                   <Route path="/admin" element={<AdminPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
-                  <Route path="/pricing" element={<PricingPage />} />
                   <Route path="/about" element={<AboutPage />} />
                   <Route path="/apps" element={<AppRegistryPage />} />
                   <Route path="/federated" element={<FederatedLearningPage />} />

@@ -12,7 +12,6 @@ python-multipart>=0.0.32
 orjson
 starlette
 requests>=2.32.3
-razorpay
 
 # --- Authentication & Security ---
 passlib[bcrypt]>=1.7.4

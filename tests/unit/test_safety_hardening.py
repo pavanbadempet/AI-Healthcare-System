@@ -1,8 +1,7 @@
-"""Tests for SOTA Safety Hardening modules.
+"""Tests for Safety Hardening modules.
 
 Covers: PHI encryption, AI safety thresholds, breach notification,
-consent gate, compliance check, enhanced guardrails, input sanitization,
-and license secret hardening.
+consent gate, compliance check, enhanced guardrails, and input sanitization.
 """
 import os
 from datetime import datetime, timezone
@@ -279,33 +278,7 @@ class TestInputSanitization:
         assert contains_sql_injection("normal search query") is False
 
 
-# ---------------------------------------------------------------------------
-# 7. License Secret Hardening
-# ---------------------------------------------------------------------------
 
-class TestLicenseSecretHardening:
-    def test_uses_env_secret_when_set(self):
-        with patch.dict(os.environ, {"LICENSE_SIGNING_SECRET": "my-prod-secret", "TESTING": "1"}):
-            import importlib
-
-            from backend import licensing
-            importlib.reload(licensing)
-            assert licensing.LICENSE_SECRET == "my-prod-secret"
-            # Restore
-            importlib.reload(licensing)
-
-    def test_falls_back_to_default_in_testing(self):
-        with patch.dict(os.environ, {"TESTING": "1"}, clear=False):
-            os.environ.pop("LICENSE_SIGNING_SECRET", None)
-            import importlib
-
-            from backend import licensing
-            importlib.reload(licensing)
-            assert licensing.LICENSE_SECRET == licensing._DEFAULT_LICENSE_SECRET
-            importlib.reload(licensing)
-
-
-# ---------------------------------------------------------------------------
 # 8. HIPAA Compliance Self-Check
 # ---------------------------------------------------------------------------
 

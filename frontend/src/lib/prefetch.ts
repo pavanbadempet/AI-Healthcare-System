@@ -45,9 +45,6 @@ export const prefetchRoute = (path: string) => {
     case '/profile':
       import('@/pages/Profile').catch(() => {});
       break;
-    case '/pricing':
-      import('@/pages/Pricing').catch(() => {});
-      break;
     case '/about':
       import('@/pages/About').catch(() => {});
       break;
