@@ -207,10 +207,10 @@ export const OnboardingGuideModal: React.FC<OnboardingGuideModalProps> = ({ isOp
                   <ArrowRight className="w-3.5 h-3.5 text-blue-500" />
                 </li>
                 <li 
-                  onClick={() => handleNavigate('/pricing')}
+                  onClick={() => handleNavigate('/capacity')}
                   className="p-3 bg-slate-50 dark:bg-slate-800/50 hover:bg-blue-500/10 rounded-lg flex items-center justify-between cursor-pointer transition-colors"
                 >
-                  <span>💳 <strong>Billing & Claims Portal</strong> — View itemized invoices and submit HSA/FSA claims in 1 click.</span>
+                  <span>🏥 <strong>Hospital Bed Capacity & Census</strong> — View live ward occupancy and department bed allocations.</span>
                   <ArrowRight className="w-3.5 h-3.5 text-blue-500" />
                 </li>
               </ul>

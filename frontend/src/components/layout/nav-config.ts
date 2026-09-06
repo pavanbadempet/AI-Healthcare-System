@@ -5,7 +5,7 @@
 import {
   LayoutDashboard, MessageSquare, Heart, Activity,
   FlaskConical, Stethoscope, Wind, User,
-  CreditCard, Video, Info, ShieldCheck,
+  Video, Info, ShieldCheck,
   BedDouble, Server, Settings, Plug, BrainCircuit, Smile, Workflow
 } from "lucide-react";
 
@@ -251,21 +251,6 @@ export const intelligenceItems: MenuItem[] = [
     highlights: ["Architecture Specs", "Network Blueprints", "Data Flow Maps"],
   },
   {
-    id: "billing",
-    title: "Procedure Cost Portal",
-    href: "/pricing",
-    icon: CreditCard,
-    desc: "Cost estimation & coverage audits",
-    longDesc:
-      "Compute out-of-pocket patient cost estimations for surgical and imaging procedures, and run simulated insurance coverage audit pipelines.",
-    color: "text-indigo-400",
-    bg: "bg-indigo-500/10",
-    borderHover: "hover:border-indigo-500/60",
-    glow: "drop-shadow-[0_0_15px_rgba(99,102,241,0.5)]",
-    gradient: "bg-gradient-to-br from-indigo-950/80 via-indigo-900/20 to-black/60",
-    highlights: ["Cost Estimator", "Coverage Diagnostics", "Audits"],
-  },
-  {
     id: "telemetry",
     title: "System Telemetry",
     href: "/telemetry",
@@ -357,7 +342,6 @@ export const COMMAND_ITEMS = [
   { label: "Diabetes Risk Test", href: "/predict/diabetes", category: "Diagnostics AI", desc: "Sugar level insulin resistance screening", icon: Activity },
   { label: "Ask AI Doctor / Chat Assistant", href: "/chat", category: "Intelligence", desc: "Type medical questions to the smart AI helper", icon: MessageSquare },
   { label: "Platform Documents & Info", href: "/about", category: "Intelligence", desc: "Read platform manuals and server setup blueprints", icon: Info },
-  { label: "Pricing & API Billing Details", href: "/pricing", category: "Intelligence", desc: "Hospital pricing plans and usage details", icon: CreditCard },
   { label: "User Profile Settings", href: "/profile", category: "Account", desc: "View your user name, email, and preferences", icon: Settings },
   { label: "Administrative Tools Panel", href: "/admin", category: "Admin", desc: "Doctor credentials, audit logs, and security levels", icon: ShieldCheck },
   { label: "SMART App Registry", href: "/apps", category: "AI Healthcare System", desc: "Register and launch third-party SMART apps", icon: Plug },
@@ -395,7 +379,7 @@ export const MENU_GROUPS: MenuGroup[] = [
     accentColor: "text-purple-400 data-[state=open]:text-purple-400",
     items: intelligenceItems,
     cols: 1,
-    routes: ["/chat", "/about", "/pricing"],
+    routes: ["/chat", "/about"],
   },
   {
     key: "AI Healthcare System",

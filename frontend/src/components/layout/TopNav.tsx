@@ -165,7 +165,7 @@ export default function TopNav({
       accentColor: "text-purple-400 data-[state=open]:text-purple-400",
       items: dynamicIntelligenceItems,
       cols: 1,
-      routes: ["/chat", "/about", "/pricing"],
+      routes: ["/chat", "/about"],
     },
     {
       key: "AI Healthcare System",
