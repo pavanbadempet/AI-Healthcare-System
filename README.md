@@ -545,6 +545,18 @@ Automated system maintenance pipeline executing database storage reclamation and
 ### 3. Telemetry, Structured Logging & Distributed Tracing
 *   **Correlation Tracking**: Implements thread-safe context-propagation to pass correlation IDs (`X-Correlation-ID`) across the Rust Gateway, FastAPI middlewares, and downstream task queues.
 *   **PII Exception Redaction**: Filters all console and file log outputs to automatically scrub sensitive patient email addresses, phone numbers, and PII.
+*   **Prometheus Exporters**: Exposes system metrics (CPU utilization, RAM memory, active PostgreSQL/SQLite connections) and HTTP route latency histograms directly on `/metrics` for scraper systems.
+
+### 4. Continuous Repository Automation
+The repository includes automated workflows running on GitHub Actions to maintain repository metadata, pull request code reviews, community contributor triage, and search indexing:
+
+| Workflow | Trigger Event | Primary Capabilities | Workflow Source |
+| :--- | :--- | :--- | :--- |
+| **GitHub SEO Automation** | Every 3 days (`cron`) | Syncs search topics & metadata description. | [.github/workflows/github_seo_agent.yml](.github/workflows/github_seo_agent.yml) |
+| **Community Triage Automation** | Issue comments / open | Auto-detects contributor requests ("can I work on this"), assigns issues & posts guides. | [.github/workflows/auto_community_agent.yml](.github/workflows/auto_community_agent.yml) |
+| **AI PR Reviewer** | Pull Requests | Runs automated code reviews on incoming pull request diffs. | [.github/workflows/pr_review_agent.yml](.github/workflows/pr_review_agent.yml) |
+| **Release Note Summarizer** | Release publish | Summarizes commit logs into structured release announcements. | [.github/workflows/release_summarizer_agent.yml](.github/workflows/release_summarizer_agent.yml) |
+| **Documentation Indexer** | Push to `main` | Generates search-friendly API index at `docs/API_CONTRACT_INDEX.md`. | [.github/workflows/docs_indexer_agent.yml](.github/workflows/docs_indexer_agent.yml) |
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
@@ -554,9 +566,14 @@ Automated system maintenance pipeline executing database storage reclamation and
 ```
 AI-Healthcare-System/
 ├── .github/workflows/               # CI/CD & Automated Quality Gates
+│   ├── github_seo_agent.yml         # SEO Search Topics & Meta-Description Sync
+│   ├── auto_community_agent.yml     # Issue Assignment & Contributor Onboarding
+│   ├── pr_review_agent.yml          # Pull Request Code Review Assistant
+│   ├── release_summarizer_agent.yml # Release Announcement Generator
+│   ├── docs_indexer_agent.yml       # API Contract Indexer (`docs/API_CONTRACT_INDEX.md`)
 │   ├── ci.yml                       # Runs full unit/integration pytest & Vitest suite
 │   ├── codeql.yml                   # CodeQL SAST vulnerability analysis scanner
-│   ├── security.yml                 # Automated Bandit, Ruff & Pip-Audit security scan
+│   ├── ai_security_guardian.yml     # Automated Bandit, Ruff & Pip-Audit security scan
 │   ├── docker-image.yml             # Container build and image validation
 │   └── keep-alive.yml               # Production health check ping scheduler
 ├── airflow/                         # Data Engineering Orchestration
