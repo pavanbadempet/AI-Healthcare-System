@@ -84,7 +84,7 @@ async def trigger_billing_agent_audit(
     current_admin: models.User = Depends(get_current_admin),
     db: Session = Depends(database.get_db),
 ):
-    """Audits a SOAP note using SOTA Clinical Billing Agent to flag claims denial risk."""
+    """Audits a SOAP note for clinical documentation and coding consistency."""
     from backend.agents.billing_agent import ClinicalBillingAgent
     agent = ClinicalBillingAgent(db)
     report = await agent.audit_billing_claim(soap_note)
@@ -114,18 +114,14 @@ async def trigger_maf_handoff_agent_audit(
 
 
 @router.post("/agents/langgraph-triage", status_code=status.HTTP_200_OK)
-async def trigger_langgraph_triage(
-    symptoms: str = Query(..., description="The clinical symptoms to triage"),
-    patient_id: int = Query(1, description="The patient ID context"),
+async def trigger_langgraph_triage_audit(
+    symptoms: str = Query(..., description="Patient emergency room presentation"),
     current_admin: models.User = Depends(get_current_admin),
 ):
-    """Triages symptoms using a stateful LangGraph workflow (triage, safety, compliance)."""
+    """Triages an acute emergency presentation through LangGraph stateful multi-agent supervisor."""
     from backend.langgraph_orchestrator import run_langgraph_triage
-    report = await run_langgraph_triage(symptoms, patient_id)
+    report = await run_langgraph_triage(symptoms)
     return report
-
-
-
 
 
 @router.post("/agents/discharge-summary", status_code=status.HTTP_200_OK)
@@ -134,7 +130,7 @@ async def trigger_discharge_agent_summary(
     current_admin: models.User = Depends(get_current_admin),
     db: Session = Depends(database.get_db),
 ):
-    """Generates a transition-of-care summary and discharge instructions using SOTA Discharge Coordinator Agent."""
+    """Generates a transition-of-care summary and discharge instructions."""
     from backend.agents.discharge_agent import ClinicalDischargeAgent
     agent = ClinicalDischargeAgent(db)
     report = await agent.generate_discharge_plan(patient_id)
@@ -147,7 +143,7 @@ async def trigger_nursing_agent_handoff(
     current_admin: models.User = Depends(get_current_admin),
     db: Session = Depends(database.get_db),
 ):
-    """Compiles a shift handoff card and task priority list using SOTA Clinical Nursing Agent."""
+    """Compiles a shift handoff card and nursing task priority list."""
     from backend.agents.nursing_agent import ClinicalNursingAgent
     agent = ClinicalNursingAgent(db)
     report = await agent.generate_handoff_card(patient_id)
@@ -162,7 +158,7 @@ async def trigger_security_patch_agent(
     db: Session = Depends(database.get_db),
     _license: None = Depends(licensing.enforce_license_tier("enterprise")),
 ):
-    """Runs a security posture scan and generates recommended and virtual hotpatches using SOTA Patch Agent."""
+    """Runs a security posture scan and generates recommended patch configurations."""
     from backend.agents.patch_agent import ClinicalPatchAgent
     agent = ClinicalPatchAgent(db)
     report = await agent.audit_and_apply_patches(dependencies, env_config)
@@ -177,7 +173,7 @@ async def trigger_auto_fixing_agent(
     db: Session = Depends(database.get_db),
     _license: None = Depends(licensing.enforce_license_tier("enterprise")),
 ):
-    """Executes a diagnostic self-healing session and recovery routine using SOTA Fixing Agent."""
+    """Executes a diagnostic self-healing session and system recovery routine."""
     from backend.agents.fixing_agent import ClinicalFixingAgent
     agent = ClinicalFixingAgent(db)
     report = await agent.diagnose_and_heal(error_logs, health_signals)
@@ -192,7 +188,7 @@ async def trigger_auto_calling_agent(
     db: Session = Depends(database.get_db),
     _license: None = Depends(licensing.enforce_license_tier("enterprise")),
 ):
-    """Triggers an emergency calling and notification broadcast routing session using SOTA Calling Agent."""
+    """Dispatches an emergency telephony routing session for critical clinical telemetry."""
     from backend.agents.calling_agent import ClinicalCallingAgent
     agent = ClinicalCallingAgent(db)
     report = await agent.route_emergency_call(alert_details, staff_directory)
@@ -206,7 +202,7 @@ async def trigger_wellness_agent(
     db: Session = Depends(database.get_db),
     _license: None = Depends(licensing.enforce_license_tier("enterprise")),
 ):
-    """Generates a structured SOTA preventive care and wellness plan using SOTA Wellness Agent."""
+    """Generates a structured preventive care and wellness advisory plan."""
     from backend.agents.wellness_agent import ClinicalWellnessAgent
     agent = ClinicalWellnessAgent(db)
     report = await agent.generate_wellness_plan(patient_data)

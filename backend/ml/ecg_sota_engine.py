@@ -1,6 +1,6 @@
 """
-SOTA 1D Residual Convolutional Neural Network Engine for ECG Telemetry
-=======================================================================
+1D Residual Convolutional Neural Network Engine for ECG Telemetry
+=================================================================
 Implements a 1D Residual CNN (ECGResNet1D) for multi-lead ECG waveform analysis
 and real-time arrhythmia classification (AFib, VTach, PVC, Normal Sinus Rhythm).
 """
@@ -83,4 +83,5 @@ class ECGResNet1DEngine:
 
 
 # Global singleton instance
-ecg_sota_engine = ECGResNet1DEngine()
+ecg_resnet_engine = ECGResNet1DEngine()
+ecg_sota_engine = ecg_resnet_engine

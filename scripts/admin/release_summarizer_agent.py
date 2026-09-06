@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
 """
-SOTA Release Note AI Summarizer Agent
-======================================
-Powered by Cloudflare Workers AI / Gemini AI.
-Automatically converts raw git commits into rich, keyword-optimized release notes
-for GitHub Releases to maximize search engine indexing and stargazer reach.
+Release Note Summarizer
+=======================
+Generates structured release notes from commit history for GitHub Releases.
 """
 
 import json
@@ -15,28 +13,21 @@ from typing import Optional
 try:
     import requests
 except ImportError:
-    print("pip install requests")
-    sys.exit(1)
-
-OWNER = "pavanbadempet"
-REPO = "AI-Healthcare-System"
+    pass
 
 
-def generate_ai_release_summary(commits_text: str, cf_url: Optional[str], google_key: Optional[str]) -> str:
-    """Generate SEO-rich release summary using Cloudflare Workers AI or Gemini AI."""
+def generate_ai_release_summary(commits_summary: str, cf_url: Optional[str], google_key: Optional[str]) -> str:
     prompt = f"""
-You are an expert AI Technical Writer creating Release Notes for AI-Healthcare-System on GitHub.
+Summarize the following git commits into a clean, developer-friendly release changelog:
+{commits_summary}
 
-Recent Commit Logs:
-{commits_text[:3000]}
-
-Generate a professional, exciting, Markdown-formatted Release Announcement including:
-1. 🚀 Major Highlights & Features
+Format into 4 clean sections:
+1. 🌟 New Features & Capabilities
 2. 🛠 Engineering & Performance Optimizations
 3. 🔐 Security & Compliance Updates
 4. 📦 Installation / Quick Start command
 
-Keep it engaging and keyword-dense (healthcare AI, FHIR, FastAPI, React 19, ONNX, SOTA).
+Keep it clear, concise, and professional.
 """
 
     # Try Cloudflare Workers AI first
@@ -75,9 +66,9 @@ Keep it engaging and keyword-dense (healthcare AI, FHIR, FastAPI, React 19, ONNX
 
     # Standard fallback release template
     return (
-        "## 🚀 AI Healthcare System New Release\n\n"
+        "## AI Healthcare System Release\n\n"
         "### Highlights\n"
-        "- Enhanced SOTA speed & cost optimizations (<0.1ms AI cache hits, ONNX memory-arena pooling).\n"
+        "- Enhanced speed & cost optimizations (<0.1ms cache hits, ONNX memory-arena pooling).\n"
         "- Upgraded FHIR R4 interoperability and ABDM ABHA ID e-KYC integration.\n"
         "- Performance & security audit updates.\n\n"
         "### Quick Install\n"
@@ -103,19 +94,19 @@ def main():
             release = event.get("release", {})
             tag_name = release.get("tag_name", tag_name)
 
-    print(f"📦 Generating SOTA Release Summary for {tag_name}...")
+    print(f"Generating release summary for {tag_name}...")
 
     commits_sample = (
-        "- feat: Add SOTA Speed & Cost Optimizer with vectorized cosine cache\n"
-        "- feat: Add Cloudflare Workers AI Llama-4 Scout integration for PR Reviews\n"
+        "- feat: Add Speed & Cost Optimizer with vectorized cosine cache\n"
+        "- feat: Add Cloudflare Workers AI integration for PR Reviews\n"
         "- fix: SQLite WAL 512MB MMAP and busy timeout lock prevention\n"
-        "- docs: Update SOTA README specs and 20 GitHub search topics\n"
+        "- docs: Update README specs and repository search topics\n"
     )
 
     summary_text = generate_ai_release_summary(commits_sample, cf_url, google_key)
     print("Generated Release Summary:\n")
     print(summary_text[:300] + "...\n")
-    print("✅ Release Summarizer Agent Complete!")
+    print("Release Summarizer Complete.")
 
 
 if __name__ == "__main__":

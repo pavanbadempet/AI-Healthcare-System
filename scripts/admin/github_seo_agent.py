@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-SOTA Autonomous GitHub SEO & Virality Agent
-===========================================
+GitHub Repository Metadata Sync
+===============================
 Runs on GitHub Actions (schedule + workflow_dispatch).
-1. Ensures 20 high-volume SEO topic tags & meta-description are applied.
-2. Audits repository issues to guarantee open 'good first issue' magnets exist.
-3. Keeps README metrics, PyPI package links, and star history badges in 100% sync.
+1. Ensures topic tags & meta-description are applied.
+2. Checks open starter issues for contributors.
+3. Keeps repository documentation metadata in sync.
 """
 
 import os
@@ -54,22 +54,22 @@ def run_seo_audit(token: str):
     headers = {
         "Authorization": f"token {token}",
         "Accept": "application/vnd.github.v3+json",
-        "User-Agent": "SOTA-GitHub-SEO-Agent",
+        "User-Agent": "GitHub-Metadata-Sync",
     }
 
-    print(f"🚀 SOTA GitHub SEO Agent starting repository optimization for {OWNER}/{REPO}...")
+    print(f"Starting repository metadata sync for {OWNER}/{REPO}...")
 
     # 1. Update Repository Description & Homepage
     r_patch = requests.patch(API_URL, headers=headers, json={"description": OPTIMIZED_DESCRIPTION})
     if r_patch.status_code == 200:
-        print("✅ Repository SEO description verified & updated via REST API.")
+        print("✅ Repository description verified & updated via REST API.")
     else:
         # Fallback to gh CLI subprocess
         import subprocess
         cmd = ["gh", "repo", "edit", f"{OWNER}/{REPO}", "--description", OPTIMIZED_DESCRIPTION]
         res = subprocess.run(cmd, capture_output=True, text=True)
         if res.returncode == 0:
-            print("✅ Repository SEO description verified & updated via gh CLI.")
+            print("✅ Repository description verified & updated via gh CLI.")
         else:
             print(f"⚠️ Description update status: {res.stderr.strip() or r_patch.text[:100]}")
 
@@ -78,7 +78,7 @@ def run_seo_audit(token: str):
     headers_mercy = {**headers, "Accept": "application/vnd.github.mercy-preview+json"}
     r_topics = requests.put(topics_url, headers=headers_mercy, json={"names": SEO_TOPICS})
     if r_topics.status_code == 200:
-        print(f"✅ Verified {len(SEO_TOPICS)} high-ranking SEO topic tags on GitHub via REST API.")
+        print(f"✅ Verified {len(SEO_TOPICS)} topic tags on GitHub via REST API.")
     else:
         # Fallback to gh CLI subprocess
         import subprocess
@@ -86,7 +86,7 @@ def run_seo_audit(token: str):
         cmd = ["gh", "repo", "edit", f"{OWNER}/{REPO}", "--add-topic", topic_str]
         res = subprocess.run(cmd, capture_output=True, text=True)
         if res.returncode == 0:
-            print(f"✅ Verified {len(SEO_TOPICS)} high-ranking SEO topic tags on GitHub via gh CLI.")
+            print(f"✅ Verified {len(SEO_TOPICS)} topic tags on GitHub via gh CLI.")
         else:
             print(f"⚠️ Topics update status: {res.stderr.strip() or r_topics.text[:100]}")
 
@@ -95,11 +95,11 @@ def run_seo_audit(token: str):
     r_issues = requests.get(issues_url, headers=headers)
     if r_issues.status_code == 200:
         open_starter_issues = r_issues.json()
-        print(f"📊 Active 'good first issue' contributor magnets: {len(open_starter_issues)}")
+        print(f"📊 Active 'good first issue' starter tasks: {len(open_starter_issues)}")
         if len(open_starter_issues) < 2:
-            print("💡 Recommendation: Create 1-2 new 'good first issue' items to keep contributor bots active!")
+            print("💡 Recommendation: Consider adding starter issues for new contributors.")
 
-    print("\n✅ SOTA GitHub SEO & Virality Audit Complete!")
+    print("\nRepository metadata sync complete.")
 
 
 def main():

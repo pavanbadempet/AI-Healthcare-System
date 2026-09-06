@@ -31,7 +31,7 @@ def apply_fedprox_regularization(
 
 
 class MomentsAccountantDP:
-    """SOTA Moments Accountant tracking privacy budget loss (epsilon, delta) across aggregation rounds."""
+    """Moments Accountant tracking privacy budget loss (epsilon, delta) across aggregation rounds."""
 
     def __init__(self, target_delta: float = 1e-5):
         self.target_delta = target_delta

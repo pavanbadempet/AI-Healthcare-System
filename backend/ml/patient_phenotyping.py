@@ -27,7 +27,7 @@ class PhenotypingClusterResult:
 
 
 class VariationalAutoencoderPhenotypingEngine:
-    """SOTA Variational Autoencoder (VAE) Deep Clinical Phenotyping Engine for latent space sampling."""
+    """Variational Autoencoder (VAE) deep clinical phenotyping engine for latent space sampling."""
 
     def __init__(self, input_dim: int = 10, latent_dim: int = 4):
         self.input_dim = input_dim

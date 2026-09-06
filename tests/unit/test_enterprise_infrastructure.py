@@ -1,5 +1,5 @@
 """
-Unit tests for SOTA Enterprise Infrastructure Adapters.
+Unit tests for Enterprise Infrastructure Adapters.
 """
 
 from backend.database import apply_postgres_rls_policy, set_session_tenant_context

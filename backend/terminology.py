@@ -29,7 +29,7 @@ CACHE_DB = os.environ.get("TERMINOLOGY_CACHE_DB", "terminology_cache.db")
 
 
 class SapBertEntityLinker:
-    """SOTA SapBERT Biomedical Entity Linking & Disambiguation Engine for UMLS/SNOMED/ICD-10 mapping."""
+    """SapBERT Biomedical Entity Linking & Disambiguation Engine for UMLS/SNOMED/ICD-10 mapping."""
 
     def __init__(self, embedding_dim: int = 768):
         self.embedding_dim = embedding_dim

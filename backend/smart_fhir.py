@@ -133,7 +133,7 @@ def build_authorization_response(
 
 def verify_smart_launch_jwt(jwt_token: str) -> dict[str, Any]:
     """
-    SOTA SMART-on-FHIR OAuth2 JWT Bearer Token Validator.
+    SMART-on-FHIR OAuth2 JWT Bearer Token Validator.
     Parses and verifies SMART launch context scopes and patient context claims.
     """
     if not jwt_token or not jwt_token.startswith("smt_"):

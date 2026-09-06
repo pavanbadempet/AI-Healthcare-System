@@ -354,7 +354,7 @@ async def generate_nursing_handoff_card(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(auth.get_current_user),
 ):
-    """Auto-generates a shift-handoff card using SOTA Clinical Nursing Agent."""
+    """Auto-generates a shift-handoff card using the clinical nursing agent."""
     if current_user.role not in ("nurse", "doctor") and not auth.is_admin(current_user):
         raise HTTPException(status_code=403, detail="Nurse, doctor, or admin privileges required")
     patient = _get_patient(db, patient_id)

@@ -327,7 +327,7 @@ async def auto_generate_discharge_summary(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(auth.get_current_user),
 ):
-    """Auto-generates a structured clinical discharge summary and care transition plan using SOTA Discharge Coordinator Agent."""
+    """Auto-generates a structured clinical discharge summary and care transition plan using the discharge coordinator agent."""
     _ensure_doctor_can_access_patient(db, current_user, patient_id)
     from backend.agents.discharge_agent import ClinicalDischargeAgent
     agent = ClinicalDischargeAgent(db)

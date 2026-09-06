@@ -1,4 +1,4 @@
-name: SOTA Autonomous GitHub SEO & Virality Agent
+name: GitHub Repository Metadata Sync
 
 on:
   workflow_dispatch:
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   seo_optimization:
-    name: Run SOTA GitHub SEO Agent
+    name: Sync Repository Metadata
     runs-on: ubuntu-latest
 
     steps:

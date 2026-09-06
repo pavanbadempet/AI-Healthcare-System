@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class ClinicalFixingAgent(BaseAgent):
     """
-    State-of-the-Art (SOTA) Self-Healing & Auto-Fixing Application Agent.
+    Self-Healing & Auto-Fixing Application Agent.
     Analyzes system diagnostics and exception logs to execute automated recovery operations.
     """
 
@@ -30,7 +30,7 @@ class ClinicalFixingAgent(BaseAgent):
         if not health_signals or not health_signals.strip():
             health_signals = "CPU: 12%, Memory: 42%, Active SQL Pool: 3/10"
 
-        self.log_step("Diagnose Faults & Self-Heal", "Calling SOTA System Self-Healing LLM...")
+        self.log_step("Diagnose Faults & Self-Heal", "Running diagnostic evaluation...")
         prompt = get_prompt("auto_fixing_analysis").format(
             error_logs=error_logs,
             health_signals=health_signals
@@ -38,7 +38,7 @@ class ClinicalFixingAgent(BaseAgent):
         self.estimate_tokens(prompt)
         raw_output = await generate(
             prompt=prompt,
-            system="You are a SOTA system self-healing and recovery coordinator. Output valid JSON only."
+            system="You are an automated system recovery and diagnostics coordinator. Output valid JSON only."
         )
         self.estimate_tokens(raw_output, is_output=True)
 

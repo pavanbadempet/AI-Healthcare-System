@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class ClinicalCallingAgent(BaseAgent):
     """
-    State-of-the-Art (SOTA) Telephony & Alert Broadcast Routing Agent.
+    Telephony & Alert Broadcast Routing Agent.
     Routes telemetry emergency alarms to correct medical contacts and generates call scripts.
     """
 
@@ -30,7 +30,7 @@ class ClinicalCallingAgent(BaseAgent):
         if not staff_directory or not staff_directory.strip():
             staff_directory = "Dr. Sarah Jenkins (Cardiology, +1-555-0199), Nurse Emily (Ward A, +1-555-0188)"
 
-        self.log_step("Route Telemetry Emergency Call", "Calling SOTA Telephony Routing LLM...")
+        self.log_step("Route Telemetry Emergency Call", "Synthesizing telephony routing priority...")
         prompt = get_prompt("auto_calling_analysis").format(
             alert_details=alert_details,
             staff_directory=staff_directory
@@ -38,7 +38,7 @@ class ClinicalCallingAgent(BaseAgent):
         self.estimate_tokens(prompt)
         raw_output = await generate(
             prompt=prompt,
-            system="You are a SOTA clinical telephony and alert broadcast routing coordinator. Output valid JSON only."
+            system="You are a clinical telephony and alert broadcast routing coordinator. Output valid JSON only."
         )
         self.estimate_tokens(raw_output, is_output=True)
 

@@ -1,6 +1,6 @@
 """
-SOTA Qdrant Vector Store Backend Adapter
-========================================
+Qdrant Vector Store Backend Adapter
+====================================
 
 Implements the VectorStoreBackend interface connecting to a remote or local Qdrant
 instance with HNSW indexing, ACL payload filtering, and cosine distance metrics.

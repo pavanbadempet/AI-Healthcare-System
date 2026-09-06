@@ -32,7 +32,7 @@ def generate_clinical_covariance_features(n_samples: int, n_features: int) -> np
     return correlated
 
 def train_and_save_clean_models():
-    print(f"Training clean production-grade SOTA clinical models in: {BACKEND_DIR}")
+    print(f"Training clean production clinical models in: {BACKEND_DIR}")
     if not os.path.exists(BACKEND_DIR):
         os.makedirs(BACKEND_DIR)
 

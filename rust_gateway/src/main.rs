@@ -63,7 +63,7 @@ async fn main() {
     // Initialize System metric collector with a default system refresh all configuration
     let sys = System::new_all();
 
-    // Compile-time SOTA IPC configuration: Unix Domain Sockets on Unix, tuned TCP loopback on Windows
+    // Compile-time IPC configuration: Unix Domain Sockets on Unix, tuned TCP loopback on Windows
     #[cfg(unix)]
     let (http_client, python_backend_url) = {
         let client = Client::builder()

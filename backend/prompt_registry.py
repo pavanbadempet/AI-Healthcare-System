@@ -715,7 +715,7 @@ if _pkg_prompts is None:
                 "security_patch_analysis",
                 version="1.0",
                 template=(
-                    "You are a SOTA cyber security patching and configuration auditor for a healthcare system.\n\n"
+                    "You are a cybersecurity patching and configuration auditor for a healthcare system.\n\n"
                     "System Dependencies:\n{dependencies}\n\n"
                     "Environment Configuration:\n{env_config}\n\n"
                     "Analyze the system security posture and generate a structured Security Patch & Audit Report:\n"
@@ -738,7 +738,7 @@ if _pkg_prompts is None:
                 "auto_fixing_analysis",
                 version="1.0",
                 template=(
-                    "You are a SOTA system self-healing and recovery coordinator.\n\n"
+                    "You are a system self-healing and recovery coordinator.\n\n"
                     "Active Error Logs & Diagnostics:\n{error_logs}\n\n"
                     "System Health Signals:\n{health_signals}\n\n"
                     "Analyze the system faults and generate a structured Self-Healing & Recovery Report:\n"
@@ -760,7 +760,7 @@ if _pkg_prompts is None:
                 "auto_calling_analysis",
                 version="1.0",
                 template=(
-                    "You are a SOTA clinical telephony and alert broadcast routing coordinator.\n\n"
+                    "You are a clinical telephony and alert broadcast routing coordinator.\n\n"
                     "Active Telemetry Alarm / Alert Details:\n{alert_details}\n\n"
                     "On-Call Medical Staff Directory:\n{staff_directory}\n\n"
                     "Analyze the emergency signal and determine the optimal calling/notification routing:\n"
@@ -783,9 +783,9 @@ if _pkg_prompts is None:
                 "wellness_advisory_analysis",
                 version="1.0",
                 template=(
-                    "You are a SOTA patient wellness, lifestyle, and preventive care advisor.\n\n"
+                    "You are a patient wellness, lifestyle, and preventive care advisor.\n\n"
                     "Patient Lifestyle & Minor Symptoms:\n{patient_data}\n\n"
-                    "Generate a structured SOTA Preventive Wellness Plan:\n"
+                    "Generate a structured Preventive Wellness Plan:\n"
                     "1. Evaluate minor symptom indicators and suggest nutritional/exercise lifestyle modifications.\n"
                     "2. You MUST include a clear medical disclaimer explaining that this is not a diagnostic tool and the user should consult a clinician for diagnosis, treatment, or emergencies.\n\n"
                     "You MUST output your response in this exact JSON format:\n"

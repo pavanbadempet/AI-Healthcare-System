@@ -1,5 +1,5 @@
 """
-AI Healthcare System — Autonomous Agentic AI Clinical Multi-Agent Swarm.
+AI Healthcare System — Clinical Multi-Agent Coordination Service.
 
 Orchestrates multi-agent clinical decision support including triage assessment,
 drug-drug interaction verification, ReAct tool execution, and reflective memory synthesis.

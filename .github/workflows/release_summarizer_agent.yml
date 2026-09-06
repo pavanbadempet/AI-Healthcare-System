@@ -1,4 +1,4 @@
-name: SOTA Release Note AI Summarizer Agent
+name: Release Note Summarizer
 
 on:
   release:
@@ -10,7 +10,7 @@ permissions:
 
 jobs:
   summarize_release:
-    name: Run Release Note AI Summarizer Agent
+    name: Run Release Note Summarizer
     runs-on: ubuntu-latest
 
     steps:

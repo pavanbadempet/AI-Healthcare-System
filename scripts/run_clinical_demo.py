@@ -271,7 +271,7 @@ def main():
     # ------------------------------------------------------------------
     print_banner("6. DELTA LAKE MEDALLION INGESTION & SPARK DATA QUALITY")
     if not HAS_PYSPARK:
-        print(f"{YELLOW}Note: PySpark is not installed on this machine. Running in SOTA Simulation Mode.{RESET}")
+        print(f"{YELLOW}Note: PySpark is not installed on this machine. Running in Simulation Mode.{RESET}")
 
     print("Bootstrapping optimized Spark session...")
     spark = create_spark_session()

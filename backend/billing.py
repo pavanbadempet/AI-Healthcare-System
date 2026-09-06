@@ -492,7 +492,7 @@ async def audit_invoice_denial_risk(
     db: Session = Depends(database.get_db),
     current_user: models.User = Depends(auth.get_current_user),
 ):
-    """Audits an invoice's clinical documentation and CPT coding suitability using SOTA Clinical Billing Agent."""
+    """Audits an invoice clinical documentation and CPT coding suitability for claims consistency."""
     _require_billing_or_admin(current_user)
     invoice = db.query(models.Invoice).filter(models.Invoice.id == invoice_id).first()
     if not invoice:

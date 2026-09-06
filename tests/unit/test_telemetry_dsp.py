@@ -1,5 +1,5 @@
 """
-Unit tests for SOTA Telemetry DSP Engine, GraphRAG CoVe, and HU Calibration.
+Unit tests for Telemetry DSP Engine, GraphRAG CoVe, and HU Calibration.
 """
 
 import numpy as np

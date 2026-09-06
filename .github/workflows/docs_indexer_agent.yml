@@ -1,4 +1,4 @@
-name: SOTA Documentation & AIO Indexer Agent
+name: Documentation Indexer
 
 on:
   push:
@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   index_docs:
-    name: Run SOTA Documentation & AIO Indexer
+    name: Generate API Contract Index
     runs-on: ubuntu-latest
 
     steps:

@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class ClinicalNursingAgent(BaseAgent):
     """
-    State-of-the-Art (SOTA) Nursing Care Coordinator & Handoff Agent.
+    Nursing Care Coordinator & Handoff Agent.
     Evaluates telemetry status, vital trends, and alerts to compile handover summaries
     and prioritize shift-specific care coordination tasks.
     """
@@ -80,7 +80,7 @@ class ClinicalNursingAgent(BaseAgent):
         active_alerts = "\n".join(alerts_list) if alerts_list else "No active alerts or telemetry warnings."
 
         # 4. Generate Handoff Card
-        self.log_step("Synthesize Handoff Card", "Calling SOTA Nursing Coordinator LLM...")
+        self.log_step("Synthesize Handoff Card", "Compiling shift handoff summary...")
         prompt = get_prompt("clinical_nursing_handoff").format(
             patient_context=patient_context,
             vital_trends=vital_trends,

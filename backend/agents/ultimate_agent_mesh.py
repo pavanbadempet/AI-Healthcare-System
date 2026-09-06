@@ -1,12 +1,12 @@
 """
-AI Healthcare System — Ultimate State-of-the-Art Agentic AI Intelligence Mesh.
+AI Healthcare System — Clinical Workflow Coordination Mesh.
 
-Unifies all cutting-edge Multi-Agent Systems Paradigms:
+Coordinates multi-agent workflows across clinical departments:
 1. ReAct (Reasoning + Acting) + Reflexion Self-Correction Loop
-2. Multi-Agent Consensus Debate Protocol (Cross-Specialty Peer Discussion & Voting)
-3. Multi-Tiered Memory (Short-Term Scratchpad, Reflective Episodic, Semantic Vector)
-4. Hierarchical DAG (Directed Acyclic Graph) Plan-and-Execute Orchestrator
-5. FDA 21 CFR Part 11 Regulatory Governance & Data Lineage Tracking
+2. Multi-Agent Consensus Protocol (Cross-Specialty Peer Review & Deliberation)
+3. Multi-Tiered Clinical Context (Encounter Buffer, Longitudinal History, Semantic Search)
+4. Hierarchical Task Execution Orchestrator
+5. Clinical Audit Logging & Data Lineage Tracking
 """
 
 import uuid

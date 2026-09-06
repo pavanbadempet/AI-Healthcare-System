@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class ClinicalWellnessAgent(BaseAgent):
     """
-    State-of-the-Art (SOTA) Personal Wellness & Lifestyle Preventive Advisory Agent.
+    Personal Wellness & Lifestyle Preventive Advisory Agent.
     Generates personalized health recommendations and clinical disclaimers for patient care.
     """
 
@@ -28,14 +28,14 @@ class ClinicalWellnessAgent(BaseAgent):
         if not patient_data or not patient_data.strip():
             patient_data = "Symptom: Mild fatigue. Diet: High sodium. Activity: 1 hour sedentary work, no exercise."
 
-        self.log_step("Analyze Lifestyle Data", "Calling SOTA Wellness Advisory LLM...")
+        self.log_step("Analyze Lifestyle Data", "Synthesizing wellness advisory plan...")
         prompt = get_prompt("wellness_advisory_analysis").format(
             patient_data=patient_data
         )
         self.estimate_tokens(prompt)
         raw_output = await generate(
             prompt=prompt,
-            system="You are a SOTA patient wellness, lifestyle, and preventive care advisor. Output valid JSON only."
+            system="You are a patient wellness, lifestyle, and preventive care advisor. Output valid JSON only."
         )
         self.estimate_tokens(raw_output, is_output=True)
 

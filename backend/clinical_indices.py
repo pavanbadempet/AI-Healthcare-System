@@ -4,7 +4,7 @@ from .code_level_optimizations import fast_lru_cache
 
 
 class LongitudinalTemporalTransformerRiskEngine:
-    """SOTA Temporal Transformer for continuous multi-year EMR patient trajectory modeling."""
+    """Temporal Transformer for continuous multi-year EMR patient trajectory modeling."""
 
     def __init__(self, d_model: int = 64, n_heads: int = 4):
         self.d_model = d_model

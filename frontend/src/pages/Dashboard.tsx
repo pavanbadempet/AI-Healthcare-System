@@ -751,7 +751,7 @@ export default function DashboardPage() {
             <div className="w-6 h-6 rounded-full bg-[var(--accent-blue-muted)] border border-[var(--accent-blue-border)] flex items-center justify-center text-[var(--accent-blue)] font-mono text-xs shrink-0">3</div>
             <div>
               <h3 className="text-xs font-bold text-[var(--text-primary)]">Compile Reports</h3>
-              <p className="text-[10px] text-[var(--text-secondary)] mt-1">Generate SOTA handoffs or discharge slips.</p>
+              <p className="text-[10px] text-[var(--text-secondary)] mt-1">Generate handoffs or discharge slips.</p>
             </div>
           </div>
           <div className="p-3 rounded-lg bg-white/[0.01] border border-white/[0.02] flex items-start gap-3">

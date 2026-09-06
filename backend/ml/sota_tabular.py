@@ -1,8 +1,8 @@
 """
-SOTA Tabular ML Engine & Conformal Risk Calibration
-===================================================
+Tabular ML Engine & Conformal Risk Calibration
+==============================================
 
-Provides State-of-the-Art tabular prediction capabilities including:
+Provides tabular prediction capabilities including:
 - Gradient Boosted Decision Trees (XGBoost / LightGBM fallbacks)
 - Neural Feature Tokenizer & TabNet MLP architectures
 - Conformal Prediction Risk Calibration for guaranteed 95% confidence intervals
@@ -61,8 +61,8 @@ class ConformalRiskCalibrator:
         return (round(p_min, 4), round(p_max, 4))
 
 
-class SotaTabularEngine:
-    """State-of-the-Art Tabular Prediction Engine combining GBDTs, TabNet, and Conformal Bounds."""
+class TabularRiskEngine:
+    """Tabular Prediction Engine combining GBDTs, TabNet, and Conformal Bounds."""
 
     def __init__(self, model_type: str = "xgboost"):
         self.model_type = model_type
@@ -74,7 +74,7 @@ class SotaTabularEngine:
         base_probability: float
     ) -> Dict[str, Any]:
         """
-        Generates SOTA tabular predictions enhanced with 95% conformal prediction risk bounds.
+        Generates tabular predictions enhanced with 95% conformal prediction risk bounds.
 
         Args:
             features: 1D or 2D feature matrix.
@@ -89,7 +89,7 @@ class SotaTabularEngine:
         # Determine GBDT / TabNet enhanced probability estimate
         prob = float(base_probability)
 
-        # Apply SOTA non-linear scaling refinement based on feature density
+        # Apply non-linear scaling refinement based on feature density
         if features.ndim == 1:
             feat_norm = float(np.linalg.norm(features))
         else:
@@ -109,11 +109,13 @@ class SotaTabularEngine:
                 "confidence_level": 0.95,
                 "calibration_status": "conformal_split_calibrated"
             },
-            "engine": f"SOTA_{self.model_type.upper()}_TabNet_Ensemble",
+            "engine": f"{self.model_type}_tabnet_ensemble",
             "has_native_xgboost": HAS_XGBOOST,
             "has_native_lightgbm": HAS_LIGHTGBM
         }
 
 
-# Global singleton instance for high-performance reuse
-sota_tabular_engine = SotaTabularEngine()
+# Backward-compatible aliases
+SotaTabularEngine = TabularRiskEngine
+tabular_risk_engine = TabularRiskEngine()
+sota_tabular_engine = tabular_risk_engine

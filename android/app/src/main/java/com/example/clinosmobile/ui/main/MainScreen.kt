@@ -342,7 +342,7 @@ internal fun MainScreen(
       }
     }
 
-    // ─── SOTA AI Agents Controller ───
+    // ─── Clinical Assistant Controller ───
     Card(
       modifier = Modifier.fillMaxWidth(),
       colors = CardDefaults.cardColors(containerColor = Color(0xFF0F172A)),

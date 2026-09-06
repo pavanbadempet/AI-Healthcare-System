@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class BioSnapGraphNeuralDdiEngine:
-    """SOTA Graph Neural Network (GNN) Drug-Drug Interaction affinity calculator based on BioSNAP KG."""
+    """Graph Neural Network (GNN) Drug-Drug Interaction affinity calculator based on BioSNAP KG."""
 
     def __init__(self, embedding_dim: int = 64):
         self.embedding_dim = embedding_dim

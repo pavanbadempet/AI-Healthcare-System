@@ -121,7 +121,7 @@ else:
     if "neon.tech" not in SQLALCHEMY_DATABASE_URL:
         connect_args["options"] = "-c statement_timeout=30000"
 
-# Configure SOTA Enterprise Pooling for non-SQLite (e.g. Postgres / Neon / CockroachDB)
+# Configure connection pooling for non-SQLite (e.g. Postgres / Neon / CockroachDB)
 engine_args = {
     "connect_args": connect_args,
     "pool_pre_ping": True,
@@ -258,7 +258,7 @@ def get_db():
 
 def apply_postgres_rls_policy(db_session, table_name: str, tenant_col: str = "facility_id") -> bool:
     """
-    SOTA PostgreSQL Row-Level Security (RLS) Policy Generator.
+    PostgreSQL Row-Level Security (RLS) Policy Generator.
     Enforces active tenant/facility isolation at the database kernel level.
     """
     if "postgresql" not in SQLALCHEMY_DATABASE_URL:

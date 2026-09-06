@@ -1,4 +1,4 @@
-"""SOTA System Maintenance & Data Compliance Engine.
+"""System Maintenance & Data Compliance Engine.
 
 Performs database storage reclamation, index tuning, vector database optimization,
 and enforces HIPAA/GDPR data retention purging policies.

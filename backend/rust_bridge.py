@@ -543,4 +543,3 @@ class RustBridgeEngine:
 
 
 rust_bridge = RustBridgeEngine()
-sota_rust_engine_layer_engine = rust_bridge

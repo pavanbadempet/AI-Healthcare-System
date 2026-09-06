@@ -15,7 +15,7 @@ import numpy as np
 
 class DynamicClinicalScaler:
     """
-    SOTA Dynamic Feature Scaler that automatically adapts to varying feature dimensions
+    Dynamic Feature Scaler that automatically adapts to varying feature dimensions
     and incoming data distributions without hardcoded scaling constants.
     """
 

@@ -1,6 +1,6 @@
 """
-AI Healthcare System — SOTA Performance Design Patterns
-======================================================
+AI Healthcare System — Performance Design Patterns
+================================================
 Provides high-performance architectural patterns replacing slow sequential I/O,
 linear list scanning, and standard library serialization:
 1. Fast SIMD JSON Parsing (orjson / ujson fallback)

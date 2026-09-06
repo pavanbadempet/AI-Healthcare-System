@@ -986,7 +986,7 @@ def advanced_search_similar_records(
 
 def extract_graphrag_clinical_entities(query: str) -> dict[str, list[str]]:
     """
-    Extracts SOTA GraphRAG clinical entities (SNOMED CT, RxNorm, ICD-10 ontologies) from query text.
+    Extracts GraphRAG clinical entities (SNOMED CT, RxNorm, ICD-10 ontologies) from query text.
     """
     q_lower = query.lower()
     entities = {
@@ -1013,7 +1013,7 @@ def verify_chain_of_verification_grounding(
     retrieved_contexts: list[str]
 ) -> dict:
     """
-    SOTA Self-Reflective RAG (Chain-of-Verification / CoVe) that audits LLM generated responses
+    Self-Reflective RAG (Chain-of-Verification / CoVe) that audits LLM generated responses
     against retrieved context documents for hallucination detection.
     """
     if not answer_text or not retrieved_contexts:
@@ -1034,6 +1034,6 @@ def verify_chain_of_verification_grounding(
         "verification_score": score,
         "verified_terms_count": matched,
         "total_terms_audited": len(words),
-        "reason": "SOTA CoVe verification completed successfully." if score >= 0.6 else "Elevated risk of ungrounded LLM output."
+        "reason": "CoVe verification completed successfully." if score >= 0.6 else "Elevated risk of ungrounded LLM output."
     }
 

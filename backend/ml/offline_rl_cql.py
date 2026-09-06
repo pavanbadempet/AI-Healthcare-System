@@ -27,7 +27,7 @@ class CQLPolicyResult:
 
 
 class DecisionTransformerClinicalAgent:
-    """SOTA Sequence Modeling Decision Transformer for offline ICU treatment planning."""
+    """Sequence Modeling Decision Transformer for offline ICU treatment planning."""
 
     def __init__(self, state_dim: int = 8, action_dim: int = 4, max_length: int = 20):
         self.state_dim = state_dim

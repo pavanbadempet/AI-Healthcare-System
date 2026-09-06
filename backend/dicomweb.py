@@ -142,7 +142,7 @@ def wado_rs_retrieve_metadata(
 @router.post("/calibrate-hu")
 def calibrate_hounsfield_units(payload: dict[str, Any]) -> dict[str, Any]:
     """
-    SOTA Hounsfield Unit (HU) auto-calibration and multi-organ tissue segmentation mask generator.
+    Hounsfield Unit (HU) auto-calibration and multi-organ tissue segmentation mask generator.
     Formula: HU = PixelValue * RescaleSlope + RescaleIntercept
     """
     raw_pixels = payload.get("pixel_values", [0, 500, 1024, 2048, 3000])

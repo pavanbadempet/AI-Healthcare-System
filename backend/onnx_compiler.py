@@ -1,5 +1,5 @@
 """
-AI Healthcare System — SOTA ONNX Runtime Compiler & C++ Inference Manager
+AI Healthcare System — ONNX Runtime Compiler & C++ Inference Manager
 ========================================================================
 Provides automated scikit-learn model conversion to ONNX format and C++ runtime
 session execution for sub-millisecond organ risk prediction.

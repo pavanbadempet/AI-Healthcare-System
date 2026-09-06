@@ -584,7 +584,7 @@ export async function fetchFhirAuditEvents(): Promise<any> {
   return apiFetch<any>('/fhir/AuditEvent');
 }
 
-// ── SOTA Clinical AI Agent Suite Triggers ──────────────────────────
+// ── Clinical AI Agent Suite Triggers ──────────────────────────
 
 export async function triggerBillingAudit(soapNote: string): Promise<any> {
   return apiFetch<any>(`/admin/agents/billing-audit?soap_note=${encodeURIComponent(soapNote)}`, {

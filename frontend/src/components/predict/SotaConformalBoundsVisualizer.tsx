@@ -16,7 +16,7 @@ export const SotaConformalBoundsVisualizer: React.FC<ConformalBoundsProps> = ({
   lowerBound = 0.59,
   upperBound = 0.89,
   confidenceLevel = 0.95,
-  modelName = "XGBoost + TabNet SOTA Ensemble",
+  modelName = "XGBoost + TabNet Ensemble",
   isWebGpuAccelerated = true,
 }) => {
   const lowerPct = Math.round(lowerBound * 100);
@@ -39,7 +39,7 @@ export const SotaConformalBoundsVisualizer: React.FC<ConformalBoundsProps> = ({
         </div>
         <div className="flex items-center gap-2 text-xs">
           <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 flex items-center gap-1">
-            <Award className="w-3 h-3 text-amber-400" /> SOTA Engine
+            <Award className="w-3 h-3 text-amber-400" /> Ensemble Engine
           </span>
           {isWebGpuAccelerated && (
             <span className="px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-300 border border-cyan-700/50 flex items-center gap-1">

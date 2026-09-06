@@ -1,6 +1,6 @@
 """
-SOTA Unified Speed & Cost Optimization Engine
-=============================================
+AI Healthcare System — Speed & Cost Optimization Engine
+=======================================================
 
 Provides:
 - Cost-Aware Smart Model Tiering Router (routes query by complexity to cut API costs up to 70%)
@@ -26,8 +26,8 @@ class ModelRoutingDecision:
     estimated_cost_usd: float
 
 
-class SotaSpeedCostOptimizationEngine:
-    """SOTA Speed Acceleration & Token Cost Optimization Engine."""
+class SpeedCostOptimizationEngine:
+    """Speed Acceleration & Token Cost Optimization Engine."""
 
     def __init__(self, default_budget_usd_per_day: float = 50.0):
         self.daily_budget_usd = default_budget_usd_per_day
@@ -89,9 +89,12 @@ class SotaSpeedCostOptimizationEngine:
             "total_tokens_saved": self.total_tokens_saved,
             "prefix_kv_cache_entries": len(self.prefix_kv_cache),
             "average_ttft_ms": 68.5,
-            "optimization_engine": "SOTA_Smart_Tier_KV_Accelerator_v2"
+            "optimization_engine": "smart_tier_kv_cache"
         }
 
 
+# Backward-compatible alias
+SotaSpeedCostOptimizationEngine = SpeedCostOptimizationEngine
+
 # Global singleton instance
-speed_cost_optimizer = SotaSpeedCostOptimizationEngine()
+speed_cost_optimizer = SpeedCostOptimizationEngine()

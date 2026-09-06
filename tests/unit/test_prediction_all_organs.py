@@ -45,12 +45,12 @@ def client(db_session):
 def get_auth_headers(client, username="preduser"):
     client.post("/signup", json={
         "username": username,
-        "password": "SotaPassword123!",
+        "password": "TestPassword123!",
         "email": f"{username}@test.com",
         "full_name": "Pred Test User",
         "dob": "1990-01-01",
     })
-    r = client.post("/token", data={"username": username, "password": "SotaPassword123!"})
+    r = client.post("/token", data={"username": username, "password": "TestPassword123!"})
     if r.status_code != 200:
         return {}
     return {"Authorization": f"Bearer {r.json()['access_token']}"}

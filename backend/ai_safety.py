@@ -73,13 +73,13 @@ def get_safety_config() -> dict:
         "high_risk_confidence_threshold": HIGH_RISK_CONFIDENCE_THRESHOLD,
         "safety_disclaimer_active": True,
         "low_confidence_blocking_enabled": True,
-        "sota_guardrails_active": True,
+        "guardrails_active": True,
     }
 
 
 def inspect_clinical_guardrails(prompt_text: str, response_text: str) -> dict:
     """
-    SOTA Clinical Guardrail Evaluator (NeMo Guardrails & Llama-Guard Clinical pattern).
+    Clinical Guardrail Evaluator (NeMo Guardrails & Llama-Guard Clinical pattern).
     Audits prompt and candidate LLM output for toxic instruction injection, dangerous drug dosage bounds,
     and medical disclaimer compliance.
     """

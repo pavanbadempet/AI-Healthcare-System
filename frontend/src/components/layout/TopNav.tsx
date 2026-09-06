@@ -505,7 +505,7 @@ export default function TopNav({
           {/* Language Selector Dropdown */}
           <LanguageSelector language={language} setLanguage={setLanguage} />
 
-          {/* SOTA Interactive Zero-Learning-Curve Guide Toggle */}
+          {/* Interactive User Guide Toggle */}
           <Tooltip content="Zero-Learning-Curve Interactive Guide" position="bottom">
             <button
               onClick={() => setShowOnboardingModal(true)}
@@ -559,7 +559,7 @@ export default function TopNav({
         )}
       </AnimatePresence>
 
-      {/* ─── SOTA Interactive Guide Drawer ─── */}
+      {/* ─── Interactive Guide Drawer ─── */}
       <AnimatePresence>
         {guideOpen && (
           <>

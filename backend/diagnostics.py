@@ -457,7 +457,7 @@ def analyze_ecg_telemetry(
     req: dict[str, Any],
     current_user: models.User = Depends(auth.get_current_user),
 ) -> dict[str, Any]:
-    """Analyzes raw ECG signal waveform using SOTA Pan-Tompkins DSP algorithm."""
+    """Analyzes raw ECG signal waveform using the Pan-Tompkins QRS detection algorithm."""
     from dataclasses import asdict
 
     from .telemetry_dsp import analyze_ecg_signal

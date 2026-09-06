@@ -1,8 +1,8 @@
 """
-SOTA Telemetry Biosignal DSP Engine — Pan-Tompkins ECG Analysis & HRV Metrics
-=============================================================================
+AI Healthcare System — Telemetry Biosignal DSP Engine
+=====================================================
 
-Implements state-of-the-art Digital Signal Processing (DSP) algorithms for real-time
+Implements digital signal processing (DSP) algorithms for real-time
 electrocardiogram (ECG) analysis:
 1. Pan-Tompkins Algorithm for precise QRS complex & R-peak detection.
 2. Heart Rate Variability (HRV) time-domain metrics (SDNN, RMSSD, pNN50).
@@ -59,7 +59,7 @@ def calculate_hrv_metrics(r_peaks: List[int], sampling_rate: float = 250.0) -> T
 
 def analyze_ecg_signal(signal: List[float], sampling_rate: float = 250.0) -> EcgAnalysisResult:
     """
-    Full SOTA ECG Biosignal Pipeline Analysis.
+    Full ECG Biosignal Pipeline Analysis.
     """
     sig_arr = np.array(signal, dtype=float)
     duration = len(sig_arr) / sampling_rate if sampling_rate > 0 else 0.0

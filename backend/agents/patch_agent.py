@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class ClinicalPatchAgent(BaseAgent):
     """
-    State-of-the-Art (SOTA) Automated Vulnerability and Hotpatch Agent.
+    Automated Vulnerability and Hotpatch Agent.
     Audits codebase dependencies and environment settings, proposing virtual hotpatches.
     """
 
@@ -100,7 +100,7 @@ class ClinicalPatchAgent(BaseAgent):
         if not env_config or not env_config.strip():
             env_config = "SECRET_KEY: Set, DEBUG: False, CORS_ORIGIN: *"
 
-        self.log_step("Audit Security & Patch Configuration", "Invoking SOTA security LLM generator...")
+        self.log_step("Audit Security & Patch Configuration", "Evaluating security patch posture...")
         prompt = get_prompt("security_patch_analysis").format(
             dependencies=dependencies,
             env_config=env_config
@@ -108,7 +108,7 @@ class ClinicalPatchAgent(BaseAgent):
         self.estimate_tokens(prompt)
         raw_output = await generate(
             prompt=prompt,
-            system="You are a SOTA cyber security patching and configuration auditor for a healthcare system. Output valid JSON only."
+            system="You are a cybersecurity patching and configuration auditor for a healthcare system. Output valid JSON only."
         )
         self.estimate_tokens(raw_output, is_output=True)
 

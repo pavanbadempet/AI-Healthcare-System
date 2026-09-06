@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 
 class ClinicalDischargeAgent(BaseAgent):
     """
-    State-of-the-Art (SOTA) Patient Discharge Summary & Transition-of-Care Agent.
+    Patient Discharge Summary & Transition-of-Care Agent.
     Reviews recent vitals, predictions, and demographics to generate a transition plan,
     patient instructions, and professional discharge summary.
     """
@@ -92,7 +92,7 @@ class ClinicalDischargeAgent(BaseAgent):
         predictions_summary = "\n".join(preds_list) if preds_list else "No recent ML risk assessments."
 
         # 4. Generate Discharge Summary
-        self.log_step("Synthesize Discharge Plan", "Calling SOTA Discharge Coordinator LLM...")
+        self.log_step("Synthesize Discharge Plan", "Synthesizing discharge care plan...")
         prompt = get_prompt("clinical_discharge_summary").format(
             patient_context=patient_context,
             vitals_history=vitals_history,

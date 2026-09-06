@@ -1,6 +1,6 @@
 /**
  * AIAgentsPanel – AI Agents Control Suite panel for the System Administration page.
- * Provides a highly interactive dashboard to trigger and inspect SOTA Clinical AI Agents.
+ * Provides a highly interactive dashboard to trigger and inspect Clinical AI Agents.
  */
 import React, { useState } from "react";
 import { 
@@ -364,7 +364,7 @@ export default function AIAgentsPanel() {
                     </label>
                     <div className="grid grid-cols-3 gap-2">
                       {[
-                        { key: "sota", label: "SOTA Agent" },
+                        { key: "sota", label: "Standard Agent" },
                         { key: "maf", label: "Microsoft Agent (MAF)" },
                         { key: "maf_handoff", label: "Multi-Agent Handoff (MAF)" }
                       ].map((m) => (

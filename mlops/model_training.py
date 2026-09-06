@@ -32,7 +32,7 @@ PROCESSED_DIR = os.path.join(DATA_DIR, 'processed')
 # Robust Path: Resolves to project_root/backend regardless of where script is run
 MODEL_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'backend')
 
-# --- SOTA Hyperparameters (Targeting 80%+) ---
+# --- Model Hyperparameters ---
 xgb_params = {'n_estimators': 500, 'max_depth': 6, 'learning_rate': 0.03, 'eval_metric': 'logloss', 'random_state': 42, 'tree_method': 'hist'}
 rf_params = {'n_estimators': 500, 'max_depth': 12, 'random_state': 42, 'n_jobs': -1} # Parallel RF
 gb_params = {'n_estimators': 300, 'learning_rate': 0.05, 'max_depth': 5, 'random_state': 42}
@@ -81,7 +81,7 @@ def train_heart():
 
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-    # 3. SOTA Ensemble for Large Categorical Data
+    # 3. Soft-Voting Ensemble for Large Categorical Data
     # LightGBM is King here.
     eclf = VotingClassifier(estimators=[
         ('xgb', XGBClassifier(**xgb_params)),

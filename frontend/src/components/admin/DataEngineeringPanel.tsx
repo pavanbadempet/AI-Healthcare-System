@@ -76,7 +76,7 @@ export default function DataEngineeringPanel({ stats }: { stats: any }) {
         )}
       </div>
 
-      {/* SOTA Database Optimization & Retention Control */}
+      {/* Database Optimization & Retention Control */}
       <div className="panel p-6">
         <div className="flex flex-col lg:flex-row justify-between items-start gap-4 mb-6">
           <div>

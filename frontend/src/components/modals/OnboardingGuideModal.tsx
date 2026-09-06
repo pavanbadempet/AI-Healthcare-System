@@ -151,7 +151,7 @@ export const OnboardingGuideModal: React.FC<OnboardingGuideModalProps> = ({ isOp
                   <div className="flex items-center justify-between text-slate-900 dark:text-slate-100 font-semibold text-xs">
                     <div className="flex items-center gap-2">
                       <BrainCircuit className="w-4 h-4 text-purple-500" />
-                      Clinical Intelligence & SOTA Studio
+                      Clinical Intelligence & Decision Studio
                     </div>
                     <ArrowRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-500 transition-colors" />
                   </div>
@@ -246,7 +246,7 @@ export const OnboardingGuideModal: React.FC<OnboardingGuideModalProps> = ({ isOp
         <div className="p-4 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
           <span className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
-            Zero-Learning-Curve UI • Adaptive SOTA Enabled
+            Zero-Learning-Curve UI • Adaptive Engine Enabled
           </span>
           <button
             onClick={() => handleNavigate('/dashboard')}

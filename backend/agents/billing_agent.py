@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class ClinicalBillingAgent(BaseAgent):
     """
-    State-of-the-Art (SOTA) Medical Billing and Claims Denial Agent.
+    Medical Billing and Claims Documentation Review Agent.
     Audits clinical notes (SOAP notes), recommends optimal ICD-10 and CPT codes,
     and predicts claims denial risk with recommendations for corrections.
     """
@@ -31,7 +31,7 @@ class ClinicalBillingAgent(BaseAgent):
             self.finish("failed")
             return {"error": "SOAP note is empty."}
 
-        self.log_step("Audit Billing Claim", "Calling SOTA Billing Auditor LLM...")
+        self.log_step("Audit Billing Claim", "Evaluating clinical coding consistency...")
         prompt = get_prompt("clinical_billing_audit").format(
             soap_note=soap_note
         )

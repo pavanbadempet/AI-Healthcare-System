@@ -117,7 +117,7 @@ export default function AuthGuard({ children }: { children: React.ReactNode }) {
           </div>
         </main>
 
-        {/* SOTA EULA Consent Overlay Gate */}
+        {/* Terms & Consent Overlay Gate */}
         <AnimatePresence>
           {showEula && (
             <motion.div

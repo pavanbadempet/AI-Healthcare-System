@@ -1037,7 +1037,7 @@ async def generate_report(
         raise HTTPException(status_code=500, detail=GENERATE_REPORT_FAILURE_DETAIL)
 
 
-# --- SOTA Prometheus Monitoring Endpoint ---
+# --- Prometheus Monitoring Endpoint ---
 @app.get("/metrics")
 def get_prometheus_metrics():
     """Exposes structured Prometheus telemetry metrics."""

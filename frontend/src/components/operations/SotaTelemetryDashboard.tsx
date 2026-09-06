@@ -30,13 +30,13 @@ export const SotaTelemetryDashboard: React.FC<TelemetryDashboardProps> = ({
             <Gauge className="w-6 h-6" />
           </div>
           <div>
-            <h3 className="font-bold text-lg text-slate-100">SOTA Telemetry & Speed Dashboard</h3>
+            <h3 className="font-bold text-lg text-slate-100">System Telemetry & Performance Dashboard</h3>
             <p className="text-xs text-slate-400">Real-time performance acceleration and API token cost optimization</p>
           </div>
         </div>
         <span className="px-3 py-1 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-700/50 text-xs font-semibold flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          SOTA Speed Engines Active
+          Optimization Engines Active
         </span>
       </div>
 
