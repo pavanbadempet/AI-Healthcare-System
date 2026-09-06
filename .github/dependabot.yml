@@ -28,10 +28,16 @@ updates:
       include: "scope"
     allow:
       - dependency-type: "all"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       python-dependencies:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # bun — frontend dependencies
   - package-ecosystem: "bun"
@@ -52,10 +58,16 @@ updates:
       include: "scope"
     allow:
       - dependency-type: "all"
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
     groups:
       frontend-dependencies:
         patterns:
           - "*"
+        update-types:
+          - "minor"
+          - "patch"
 
   # GitHub Actions — keep actions up to date
   - package-ecosystem: "github-actions"
