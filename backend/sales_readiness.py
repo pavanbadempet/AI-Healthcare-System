@@ -151,10 +151,8 @@ SALES_READINESS: dict[str, Any] = {
     ],
     "source_documents": [
         "docs/TRUST_BASELINE.md",
-        "docs/SALES_READINESS_INDIA_FIRST.md",
         "docs/SECURITY_QUESTIONNAIRE.md",
         "docs/CLINIC_PILOT_PLAYBOOK.md",
-        "docs/PRICING_AND_PACKAGING.md",
         "docs/CONTRACT_PACKET_CHECKLIST.md",
     ],
 }

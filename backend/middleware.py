@@ -46,7 +46,7 @@ _API_PREFIXES = (
     "/snapshot",                                 # telemetry
     "/hospital", "/pharmacy", "/diagnostics",
     "/discharge", "/nursing", "/billing",
-    "/monitoring", "/interop", "/payments",
+    "/monitoring", "/interop",
     "/events", "/demo-readiness", "/explain",
     "/ai",                                       # ollama_routes
     "/appointments",                             # appointments
@@ -192,61 +192,6 @@ class LoggingMiddleware(BaseHTTPMiddleware):
         return response
 
 
-class LicenseValidationMiddleware(BaseHTTPMiddleware):
-    """Verifies that a valid cryptographic license key is provided in self-hosted deployments.
-
-    Caches validation result for 60 seconds to avoid cryptographic verification on every request.
-    """
-
-    _cache_result: tuple[bool, str] | None = None
-    _cache_key: str = ""
-    _cache_time: float = 0.0
-    _CACHE_TTL = 60.0  # seconds
-
-    async def dispatch(self, request: Request, call_next):
-        if os.getenv("TESTING") in ("1", "true"):
-            return await call_next(request)
-
-        path = request.url.path
-        # Exclude infrastructure, docs, authentication, and health checks
-        # So users can always access docs, sign in, or fetch tokens to activate.
-        if (
-            path in ["/", "/healthz", "/docs", "/openapi.json", "/redoc", "/v1/signup", "/v1/token", "/v1/forgot-password", "/v1/reset-password", "/v1/licensing/status", "/v1/licensing/activate"]
-            or path.startswith("/assets")
-            or path.startswith("/static")
-        ):
-            return await call_next(request)
-
-        raw_key = os.getenv("LICENSE_KEY")
-        license_key = "CLINIC-TRIAL-2026" if raw_key is None else raw_key.strip()
-        if not license_key:
-            return JSONResponse(
-                status_code=402,
-                content={"detail": "License Key is missing. Please set the LICENSE_KEY environment variable to activate the platform."}
-            )
-
-        # Use cached result if license key hasn't changed and cache is fresh
-        now = time.time()
-        if (
-            LicenseValidationMiddleware._cache_result is not None
-            and LicenseValidationMiddleware._cache_key == license_key
-            and (now - LicenseValidationMiddleware._cache_time) < LicenseValidationMiddleware._CACHE_TTL
-        ):
-            is_valid, reason = LicenseValidationMiddleware._cache_result
-        else:
-            from . import licensing
-            is_valid, reason = licensing.verify_license_key(license_key)
-            LicenseValidationMiddleware._cache_result = (is_valid, reason)
-            LicenseValidationMiddleware._cache_key = license_key
-            LicenseValidationMiddleware._cache_time = now
-
-        if not is_valid:
-            return JSONResponse(
-                status_code=402,
-                content={"detail": f"License Key is invalid or expired: {reason}"}
-            )
-
-        return await call_next(request)
 
 
 class PrometheusMetricsMiddleware(BaseHTTPMiddleware):
