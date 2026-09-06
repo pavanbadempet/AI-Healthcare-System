@@ -28,7 +28,7 @@ To maintain diagnostic safety and interpretability in clinical workflows, the pl
 
 ## ⚡ 3. High-Performance UI Optimizations
 
-The user interface implements SOTA client performance features to handle high-frequency hospital monitors:
+The user interface implements client performance features to handle high-frequency hospital monitors:
 * **Multi-Threaded Rendering**: Offloads SpO2 and ECG canvas wave calculations to background Web Workers using the `OffscreenCanvas` API.
 * **Render Cascades Isolation**: Implements React `useDeferredValue` for registry searches and wraps EMR subpanels in `React.memo` to isolate state update boundaries.
 * **Asset Code-Splitting**: Lazily loads heavy modules (like the 400KB `onnxruntime-web` package) only when client predictions are executed.

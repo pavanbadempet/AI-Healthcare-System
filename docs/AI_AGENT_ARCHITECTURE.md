@@ -191,9 +191,9 @@ The existing vector store is enhanced with Singularity Engine patterns:
 
 ---
 
-## Pillar 3: SOTA Clinical AI Agent Suite
+## Pillar 3: Clinical AI Agent Suite
 
-AI Healthcare System includes three dedicated SOTA AI agents specialized in auditing, care transitions, and shift handoffs. They leverage structured prompting and JSON output parsing for high reliability.
+AI Healthcare System includes three dedicated clinical AI agents specialized in auditing, care transitions, and shift handoffs. They leverage structured prompting and JSON output parsing for high reliability.
 
 ### 3.1 Clinical Billing Agent (`ClinicalBillingAgent`)
 *   **Module**: [billing_agent.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/agents/billing_agent.py)
@@ -224,7 +224,7 @@ AI Healthcare System includes three dedicated SOTA AI agents specialized in audi
 
 ---
 
-## Pillar 4: SOTA System Maintenance & Data Retention
+## Pillar 4: System Maintenance & Data Retention
 
 To maintain performance and adhere to strict compliance policies (GDPR/HIPAA/clinical data protection), the system runs automated optimizations and record pruning.
 

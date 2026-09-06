@@ -87,7 +87,7 @@ python scripts/demo_quickstart.py
 | **🧮 Digital Twin Engine**| Continuous 10-year coupled ODE multi-organ simulation (Cardiovascular, Renal eGFR, Metabolic, Hepatic) |
 | **💊 Pharmacogenomics** | CPIC gene-drug contraindication engine (CYP2C9, CYP2C19, CYP2D6, SLCO1B1, DPYD, VKORC1) |
 | **🧠 Generative AI** | Cloudflare Workers AI (Llama 3.1 8B FP8, Whisper, M2M-100), Groq LPU, Ollama, LangGraph Supervisor |
-| **📊 Diagnostics** | 5 SOTA Foundation & Calibrated Ensembles with 95% Conformal Confidence Sets & SHAP attribution |
+| **📊 Diagnostics** | 5 Calibrated Risk Ensembles with 95% Conformal Confidence Sets & SHAP attribution |
 | **📁 EHR & Lakehouse** | Databricks Medallion (Bronze/Silver/Gold), OHDSI OMOP CDM v5.4, Delta Lake Time-Travel, FHIR R4 |
 | **🖼️ PACS Imaging** | 3D Volumetric DICOM MPR (Axial, Sagittal, Coronal, 3D Mesh), DICOM Uploader |
 | **⚡ Edge & Gateway** | Rust Gateway PID 1 proxy, PyO3 FFI direct bindings, C-accelerated serialization (<1ms), Bun toolchain |
@@ -526,36 +526,36 @@ stateDiagram-v2
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
-## 🤖 SOTA Clinical AI Agents & System Telemetry
+## 🤖 Clinical AI Workflow Automation & System Telemetry
 
-AI Healthcare System features state-of-the-art domain agent pipelines and telemetry layers for clinical precision and operational governance.
+AI Healthcare System features domain assistant pipelines and telemetry layers for clinical precision and operational governance.
 
-### 1. SOTA Multi-Agent Clinical AI Suite
-The core clinical workflows are driven by three specialized SOTA AI agents registered in `backend/agents/`:
+### 1. Multi-Agent Clinical AI Suite
+The core clinical workflows are supported by specialized agents registered in `backend/agents/`:
 *   **Clinical Billing & Claims Denial Agent (`ClinicalBillingAgent`)**: Audits clinical SOAP notes for medical coding suitability, generates recommended CPT/ICD-10 codes, and estimates claims refusal risks (`LOW`, `MEDIUM`, `HIGH`). Integrated directly into `POST /v1/billing/invoices/{invoice_id}/audit`.
-*   **Clinical Discharge Coordinator Agent (`ClinicalDischargeAgent`)**: Automatically compiles structured care transition plans, patient-facing medication schedules, primary care follow-up rules, and red-flag symptom warnings. Integrated directly into `POST /v1/discharge/summaries/generate/{patient_id}`.
+*   **Clinical Discharge Coordinator Agent (`ClinicalDischargeAgent`)**: Compiles structured care transition plans, patient-facing medication schedules, primary care follow-up rules, and red-flag symptom warnings. Integrated directly into `POST /v1/discharge/summaries/generate/{patient_id}`.
 *   **Clinical Nursing Care Coordinator Agent (`ClinicalNursingAgent`)**: Analyzes live telemetry trends over the past 24 hours, aggregates system warnings, and compiles shift change handoff cards and prioritized task checklists. Integrated directly into `POST /v1/nursing/patients/{patient_id}/handoff`.
 
-### 2. SOTA System Maintenance & Compliance Data Purging
-We built an automated system maintenance pipeline executing database storage reclamation and HIPAA/GDPR data retention purging:
+### 2. System Maintenance & Compliance Data Purging
+Automated system maintenance pipeline executing database storage reclamation and HIPAA/GDPR data retention purging:
 *   **Storage Optimization**: Performs SQLite/PostgreSQL `VACUUM` & `ANALYZE` and SQLite Vector Store optimizations to maintain fast query response times.
 *   **Compliance Data Purging**: Evaluates configured HIPAA data retention thresholds (1 year for chat logs, 6 years for clinical records) and deletes or archives expired entries.
 *   **Automated Execution**: Exposed via a secure, admin-only endpoint (`POST /v1/admin/maintenance`) and a cron-ready CLI script (`scripts/run_maintenance.py`).
 
-### 3. SOTA Telemetry, Structured Logging & Distributed Tracing
+### 3. Telemetry, Structured Logging & Distributed Tracing
 *   **Correlation Tracking**: Implements thread-safe context-propagation to pass correlation IDs (`X-Correlation-ID`) across the Rust Gateway, FastAPI middlewares, and downstream task queues.
 *   **PII Exception Redaction**: Filters all console and file log outputs to automatically scrub sensitive patient email addresses, phone numbers, and PII.
 *   **Prometheus Exporters**: Exposes system metrics (CPU utilization, RAM memory, active PostgreSQL/SQLite connections) and HTTP route latency histograms directly on `/metrics` for scraper systems.
-### 4. Autonomous 24/7 GitHub Actions AI Fleet
-The repository features 5 dedicated autonomous AI agents running on GitHub Actions to maintain search engine optimization, pull request code reviews, community contributor triage, and AI search indexing:
+### 4. Continuous Repository Automation
+The repository includes dedicated automated workflows running on GitHub Actions to maintain repository metadata, pull request code reviews, community contributor triage, and search indexing:
 
-| Agent Name | Trigger Event | Primary Capabilities | Workflow Source |
+| Workflow | Trigger Event | Primary Capabilities | Workflow Source |
 | :--- | :--- | :--- | :--- |
-| **SOTA GitHub SEO Agent** | Every 3 days (`cron`) | Syncs 20 high-volume search topics & Google meta-description. | [.github/workflows/github_seo_agent.yml](.github/workflows/github_seo_agent.yml) |
-| **Community Triage Agent** | Issue comments / open | Auto-detects contributor requests ("can I work on this"), assigns issues & posts guides. | [.github/workflows/auto_community_agent.yml](.github/workflows/auto_community_agent.yml) |
-| **SOTA AI PR Reviewer Agent** | Pull Requests | Runs Cloudflare Workers AI (Llama-4 Scout) & Gemini AI code reviews on incoming diffs. | [.github/workflows/pr_review_agent.yml](.github/workflows/pr_review_agent.yml) |
-| **Release AI Summarizer Agent** | Release publish | Converts commit logs into rich AI release announcements for Google indexing. | [.github/workflows/release_summarizer_agent.yml](.github/workflows/release_summarizer_agent.yml) |
-| **Doc & AIO Indexer Agent** | Push to `main` | Generates search-engine index at `docs/API_CONTRACT_INDEX.md` for AI search engines. | [.github/workflows/docs_indexer_agent.yml](.github/workflows/docs_indexer_agent.yml) |
+| **GitHub SEO Automation** | Every 3 days (`cron`) | Syncs search topics & metadata description. | [.github/workflows/github_seo_agent.yml](.github/workflows/github_seo_agent.yml) |
+| **Community Triage Automation** | Issue comments / open | Auto-detects contributor requests ("can I work on this"), assigns issues & posts guides. | [.github/workflows/auto_community_agent.yml](.github/workflows/auto_community_agent.yml) |
+| **AI PR Reviewer** | Pull Requests | Runs automated code reviews on incoming pull request diffs. | [.github/workflows/pr_review_agent.yml](.github/workflows/pr_review_agent.yml) |
+| **Release Note Summarizer** | Release publish | Summarizes commit logs into structured release announcements. | [.github/workflows/release_summarizer_agent.yml](.github/workflows/release_summarizer_agent.yml) |
+| **Documentation Indexer** | Push to `main` | Generates search-friendly API index at `docs/API_CONTRACT_INDEX.md`. | [.github/workflows/docs_indexer_agent.yml](.github/workflows/docs_indexer_agent.yml) |
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 

@@ -126,3 +126,7 @@ pytest_failures.txt
 test_output.txt
 traceback.txt
 tests_diff.txt
+
+# Local Agent & Tooling Artifacts
+.agents/
+docs/superpowers/

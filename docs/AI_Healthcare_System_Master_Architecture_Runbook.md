@@ -97,7 +97,7 @@ class MonitoringSignal(Base):
 
 ## ⚡ 4. High-Performance Frontend Rendering
 
-The Vite SPA implements several SOTA frontend enhancements to support sub-second layouts:
+The Vite SPA implements several frontend performance enhancements to support sub-second layouts:
 
 ### A. Multi-Threaded OffscreenCanvas
 The dashboard monitors render high-frequency real-time waveforms (like ECG and SpO2) at 60 FPS without UI stutters by transferring canvas render loops to background Web Workers:

@@ -1,6 +1,6 @@
-# AI Healthcare System: State-of-the-Art (SOTA) Technical Whitepaper
+# AI Healthcare System: Architecture & Clinical Engineering Whitepaper
 
-**Version**: 2.5.0 (SOTA Release)  
+**Version**: 2.5.0  
 **Date**: July 2026  
 **Classification**: Technical Architecture & Performance Specifications  
 
@@ -8,13 +8,13 @@
 
 ## 1. Executive Summary
 
-The AI Healthcare System is a **Cognitive Healthcare & Clinical Decision Support Platform** combining State-of-the-Art (SOTA) machine learning ensembles, graph neural networks, confidential hardware attestation, browser-native WebGPU SLM execution, and microsecond-level vector caching.
+The AI Healthcare System is a **Cognitive Healthcare & Clinical Decision Support Platform** combining machine learning ensembles, graph neural networks, confidential hardware attestation, browser-native WebGPU SLM execution, and microsecond-level vector caching.
 
 Unlike static medical chatbots, the platform provides **guaranteed 95% split-conformal risk prediction intervals**, **BioSNAP knowledge graph drug-drug interaction auditing**, and **$0 server cost on-device browser triage**.
 
 ---
 
-## 2. Core SOTA AI & ML Architectural Innovations
+## 2. Core AI & ML Architectural Innovations
 
 ### 2.1 Tabular ML Ensembles & Split-Conformal Risk Calibration
 - **Architectures**: Hybrid ensembles combining **XGBoost**, **LightGBM**, and **TabNet** neural models.

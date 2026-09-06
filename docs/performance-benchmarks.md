@@ -6,7 +6,7 @@ This document details the measured performance benchmarks, speed acceleration me
 
 ## 📊 Summary of Latency, Throughput & Cost Targets
 
-| Operational Dimension | Developer / Staging (Measured) | SOTA Acceleration Engine | Cost Reduction Impact | Verification Method |
+| Operational Dimension | Developer / Staging (Measured) | Acceleration Engine | Cost Reduction Impact | Verification Method |
 |:---|:---:|:---:|:---:|:---|
 | **WebGPU On-Device Browser Chat** | `sub-40ms` | Client-side 4-bit SLM | **100% server cost elimination** ($0/query) | `webgpu_llm_engine.ts` |
 | **PagedAttention Token Throughput** | `5,140.6 tokens/sec` | 16-token memory block allocation | **0% memory fragmentation** | `vllm_paged_attention_engine.py` |
@@ -18,7 +18,7 @@ This document details the measured performance benchmarks, speed acceleration me
 
 ---
 
-## ⚡ SOTA Component-Level Benchmarks
+## ⚡ Component-Level Benchmarks
 
 ### 1. Machine Learning & Conformal Calibration Latency
 - **Tabular Risk Prediction (XGBoost/TabNet):** `~12ms`
