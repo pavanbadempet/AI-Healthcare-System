@@ -9,8 +9,6 @@ Architecture:
   2. Query patient profile, health records, predictions, chat history
   3. Assemble structured context sections within token budget
   4. Return (context_string, sources_list) for citation tracking
-
-Inspired by Universe Dex chat_context.py, adapted for healthcare domain.
 """
 
 import logging

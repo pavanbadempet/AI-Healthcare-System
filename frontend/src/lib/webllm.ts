@@ -1,6 +1,5 @@
 /**
  * WebLLM Engine — Browser-native AI via WebGPU
- * Ported from Universe Dex.
  * Runs LLM inference entirely in the browser with no server needed.
  * Uses @mlc-ai/web-llm with OpenAI-compatible streaming API.
  */

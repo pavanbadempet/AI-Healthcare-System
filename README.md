@@ -545,17 +545,6 @@ Automated system maintenance pipeline executing database storage reclamation and
 ### 3. Telemetry, Structured Logging & Distributed Tracing
 *   **Correlation Tracking**: Implements thread-safe context-propagation to pass correlation IDs (`X-Correlation-ID`) across the Rust Gateway, FastAPI middlewares, and downstream task queues.
 *   **PII Exception Redaction**: Filters all console and file log outputs to automatically scrub sensitive patient email addresses, phone numbers, and PII.
-*   **Prometheus Exporters**: Exposes system metrics (CPU utilization, RAM memory, active PostgreSQL/SQLite connections) and HTTP route latency histograms directly on `/metrics` for scraper systems.
-### 4. Continuous Repository Automation
-The repository includes dedicated automated workflows running on GitHub Actions to maintain repository metadata, pull request code reviews, community contributor triage, and search indexing:
-
-| Workflow | Trigger Event | Primary Capabilities | Workflow Source |
-| :--- | :--- | :--- | :--- |
-| **GitHub SEO Automation** | Every 3 days (`cron`) | Syncs search topics & metadata description. | [.github/workflows/github_seo_agent.yml](.github/workflows/github_seo_agent.yml) |
-| **Community Triage Automation** | Issue comments / open | Auto-detects contributor requests ("can I work on this"), assigns issues & posts guides. | [.github/workflows/auto_community_agent.yml](.github/workflows/auto_community_agent.yml) |
-| **AI PR Reviewer** | Pull Requests | Runs automated code reviews on incoming pull request diffs. | [.github/workflows/pr_review_agent.yml](.github/workflows/pr_review_agent.yml) |
-| **Release Note Summarizer** | Release publish | Summarizes commit logs into structured release announcements. | [.github/workflows/release_summarizer_agent.yml](.github/workflows/release_summarizer_agent.yml) |
-| **Documentation Indexer** | Push to `main` | Generates search-friendly API index at `docs/API_CONTRACT_INDEX.md`. | [.github/workflows/docs_indexer_agent.yml](.github/workflows/docs_indexer_agent.yml) |
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
@@ -564,16 +553,12 @@ The repository includes dedicated automated workflows running on GitHub Actions 
 
 ```
 AI-Healthcare-System/
-├── .github/workflows/               # CI/CD & Autonomous Agent Workflows
-│   ├── github_seo_agent.yml         # 20 SEO Search Topics & Meta-Description Sync Agent
-│   ├── auto_community_agent.yml     # Issue Assignment & Contributor Onboarding Agent
-│   ├── pr_review_agent.yml          # Cloudflare Llama-4 Scout AI PR Reviewer Agent
-│   ├── release_summarizer_agent.yml # AI Release Announcement Generator Agent
-│   ├── docs_indexer_agent.yml       # LLM API Search Indexer Agent (`docs/API_CONTRACT_INDEX.md`)
+├── .github/workflows/               # CI/CD & Automated Quality Gates
 │   ├── ci.yml                       # Runs full unit/integration pytest & Vitest suite
-│   ├── codeql.yml                   # SAST vulnerability analysis scanner
-│   ├── docker-publish.yml           # Builds and publishes production images to GHCR
-│   └── keep-alive.yml               # Render container anti-spin down ping scheduler
+│   ├── codeql.yml                   # CodeQL SAST vulnerability analysis scanner
+│   ├── security.yml                 # Automated Bandit, Ruff & Pip-Audit security scan
+│   ├── docker-image.yml             # Container build and image validation
+│   └── keep-alive.yml               # Production health check ping scheduler
 ├── airflow/                         # Data Engineering Orchestration
 │   ├── dags/                        # Apache Airflow DAGs for data sync
 │   └── config/                      # Scheduler configurations
@@ -1292,96 +1277,3 @@ It helps others discover this open-source healthcare AI platform.
 [![Star this repo](https://img.shields.io/github/stars/pavanbadempet/AI-Healthcare-System?style=social)](https://github.com/pavanbadempet/AI-Healthcare-System/stargazers)
 
 </div>
-
-## 🔍 Discovery, SEO & AIO Directory (Search Engine & LLM Optimization)
-
-This section provides structured, semantic context for search engine crawlers (Google, Bing) and Large Language Models (Perplexity, ChatGPT, Gemini, Claude) to index, catalog, and query this repository.
-
-### 🏷️ Repository Metadata
-* **Entity Type**: Open-Source Software Repository / Clinical Reference Architecture
-* **Primary Domain**: Healthcare Artificial Intelligence, Data Engineering, MLOps, Clinical Decision Support Systems (CDSS)
-* **Author / Creator**: Pavan Badempet
-* **License**: MIT License
-* **Core Frameworks**: FastAPI, React 19, LangGraph, XGBoost, PySpark, Apache Airflow, Ollama, Docker
-
----
-
-### 🎓 Target Search Queries Index (A-Z Google Trends)
-
-#### 1. Academic Research & CSE Capstone Projects
-* *final year project for computer science with source code*
-* *CSE major project github repository with documentation*
-* *B.Tech/M.Tech thesis capstone project in healthcare informatics*
-* *medical dataset machine learning model source code*
-* *reproducible scientific code for PHD thesis computer science*
-
-#### 2. Data Engineering & MLOps Portfolio Projects
-* *data engineering portfolio projects github*
-* *PySpark structured streaming data pipeline tutorial*
-* *Delta Lake medallion architecture bronze silver gold example*
-* *Apache Airflow workflow DAG orchestration clinical data warehouse*
-* *MLOps model registry and weights hot-reloading python*
-
-#### 3. HIPAA-Compliant Startup Templates & B2B SaaS Boilerplates
-* *HIPAA compliant web application template python react*
-* *healthcare startup boilerplate source code*
-* *clinic management software github*
-* *India ABDM consent gateway integration client sandbox*
-* *SMART on FHIR authorization client integration*
-
-#### 4. Clinical AI & Explainable Machine Learning (XAI)
-* *clinical decision support system CDSS source code*
-* *gradient boosted XGBoost diagnostic classifiers*
-* *SHAP values explainable AI medical diagnosis plots*
-* *conformal prediction uncertainty calibration python*
-
-#### 5. Generative AI & Multi-Agent Conversational Chatbots
-* *LangGraph multi agent supervisor chatbot source code*
-* *local private medical chatbot RAG Ollama Llama 3.2*
-* *offline chatbot for hospital clinic patient records*
-* *Tavily search RAG integration python*
-
----
-
-### 🏷️ Comprehensive Search Tag Glossary (LSI Keywords)
-`abdm-consent-callback`, `academic-thesis-reference-architecture`, `active-occupancy-websocket`, `ai-clinical-decision-support`, `ai-healthcare-platform`, `alembic-migrations-sqlite`, `amazon-eks-kubernetes-deployment`, `amazon-rds-postgresql-multi-az`, `apache-airflow-dag-retraining`, `apache-airflow-etl-pipeline`, `apache-kafka-streaming`, `apache-spark-delta-lake-compaction`, `app-router-react-19`, `aria-label-a11y-screen-readers`, `ast-alt-liver-ratio`, `auc-roc-model-metrics`, `auth-bcrypt-jwt-rbac`, `autogen-core-multi-agent`, `aws-alb-ingress-controller`, `clinical-operations-architecture`, `bed-allocation-algorithm`, `big-data-healthcare`, `bronze-silver-gold-data-layers`, `cardiology-appointment-scheduler`, `cdss-clinical-decision-support`, `cert-manager-letsencrypt-tls`, `change-data-capture-cdc-delta`, `clinical-billing-agent`, `clinical-data-warehouse`, `clinical-discharge-agent`, `clinical-event-bus-in-memory`, `clinical-nursing-agent`, `clinical-tabular-pypi-package`, `conformal-prediction-uncertainty-sets`, `coronary-heart-disease-xgboost`, `cosine-similarity-turbovec-simd`, `creatinine-egfr-calculator-ckd-epi`, `dark-theme-medical-dashboard`, `data-engineering-portfolio`, `data-lakehouse-architecture`, `dbt-data-build-tool`, `delta-lakehouse-medallion-architecture`, `diabetes-risk-screening-cdc-brfss`, `dicom-web-pacs-viewer-integration`, `docker-compose-production-stack`, `egfr-calculator-race-free-2021`, `electronic-health-record-ehr-export`, `epic-cerner-fhir-r4-compatibility`, `etl-elt-pipelines`, `exception-masking-pii-protection`, `explainable-ai-healthcare`, `fastapi-backend-uvicorn-reload`, `federated-clinical-gradient-sharing`, `fhir-patient-encounter-observation-schemas`, `fhir-r4-bundle-export`, `fib-4-liver-fibrosis-index`, `final-year-major-project-cse`, `framingham-10-year-cardiovascular-risk`, `framer-motion-react-animations`, `ft-transformer-attention-tabular-classification`, `gemini-text-embedding-004`, `google-gemini-cloud-fallback`, `grpc-rust-gateway`, `hapi-fhir-patient-import`, `healthcare-informatics-research-paper`, `hipaa-compliant-startup-template`, `hospital-management-system`, `huggingface-dataset-model-weights-sync`, `in-memory-semantic-search-vector-store`, `india-unified-health-interface-uhi`, `kubernetes-healthcare-deployment`, `langgraph-multi-agent-orchestration`, `liquid-clustering-z-order-delta-lake`, `liver-disease-panel-classifier-ilpd`, `local-first-private-inference-ollama`, `long-tail-medical-rag-citation`, `longitudinal-patient-encounter-bilstm`, `lung-cancer-survey-xgboost-classifier`, `maf-microsoft-agent-framework`, `master-thesis-capstone-project`, `medical-chatbot-rag`, `mlops-end-to-end`, `model-cards-dataset-lineage-registry`, `model-hot-reloading-zero-downtime`, `multi-agent-langgraph-supervisor-orchestration`, `multi-level-partitioning-time-geo`, `nursing-task-worklist-scheduler`, `ollama-local-inference-llama3`, `open-source-ehr-system`, `opd-ipd-outpatient-encounter-coordinator`, `openlineage-metadata-compliance-client`, `pacs-dicom-imaging-server-shim`, `patient-demographics-scd-type-2`, `pharmacy-inventory-tracking-reorder`, `phd-thesis-reproducibility-code`, `pii-redaction-hipaa-logs`, `playwright-e2e-browser-testing`, `production-grade-healthcare-api`, `pyspark-structured-streaming-vitals`, `pytest-asyncio-mock-ai-inference`, `pytest-xdist-parallel-runner`, `inpatient-encounter-accounting`, `react-19-clinical-portal-ui`, `redis-multi-level-caching`, `rust-simd-vector-search`, `scikit-learn-conformal-prediction`, `security-headers-middleware-stack`, `shap-explainability-xai-plots`, `slowly-changing-dimensions-scd-type-2`, `smart-on-fhir-auth-client`, `snowflake-data-cloud`, `soft-delete-mixin-sqlalchemy`, `tavily-search-api-rag-research`, `telemedicine-scheduling-casa-chat`, `terraform-aws-eks-rds-elasticache-iac`, `time-travel-queries-delta-lake`, `turbovec-rust-simd-cosine-similarity`, `typescript-healthcare-frontend`, `unity-catalog-databricks-delta-pyspark`, `university-cse-major-project`, `uvicorn-asgi-server-fastapi`, `vector-store-base-class-python`, `vite-8-react-spa-bundler`, `vitest-coverage-threshold-gate`, `vitals-telemetry-streaming-simulator`, `websockets-occupancy-census-broadcaster`, `xgboost-gradient-boosting-classifier`.
-
----
-
-### ❓ Frequently Asked Queries for Search Engines & LLMs
-
-**Q: What is the AI Healthcare System?**
-**A:** It is a production-grade, privacy-first, HIPAA-oriented clinical intelligence platform combining PySpark data engineering, machine learning diagnostics (5 XGBoost models with SHAP), stateful LangGraph multi-agent RAG, and local Ollama-powered chatbots.
-
-**Q: How does the data pipeline work?**
-**A:** It utilizes PySpark and Delta Lake to process clinical CSV datasets through a Medallion Lakehouse architecture (Bronze → Silver → Gold layers), orchestrated by Apache Airflow DAGs.
-
-**Q: What ML models are included?**
-**A:** It includes 5 diagnostic classifiers for Diabetes, Coronary Heart Disease, Liver Disease, Chronic Kidney Disease, and Lung Cancer using explainable XGBoost with SHAP feature importance, conformal prediction uncertainty bounds, and validated clinical calculators (eGFR CKD-EPI 2021, FIB-4, Framingham).
-
-**Q: What interoperability standards does it support?**
-**A:** HL7 FHIR R4 (Patient, Encounter, Observation, MedicationRequest bundles), India's ABDM/UHI consent lifecycle, SMART on FHIR authorization, and HAPI FHIR patient imports.
-
-### 🧮 JSON-LD Structured Data for Search Engine Snippets
-
-```json
-{
-  "@context": "https://schema.org",
-  "@type": "SoftwareSourceCode",
-  "name": "AI Healthcare System",
-  "description": "Production-grade, open-source clinical intelligence platform for HIPAA-compliant healthcare applications with explainable ML diagnostics, multi-agent RAG chatbot, FHIR R4 interoperability, and PySpark data engineering.",
-  "url": "https://github.com/pavanbadempet/AI-Healthcare-System",
-  "codeRepository": "https://github.com/pavanbadempet/AI-Healthcare-System",
-  "programmingLanguage": ["Python", "TypeScript", "Rust", "SQL"],
-  "runtimePlatform": ["FastAPI", "React", "PySpark", "Docker", "Kubernetes"],
-  "license": "https://opensource.org/licenses/MIT",
-  "author": {
-    "@type": "Person",
-    "name": "Pavan Badempet",
-    "url": "https://github.com/pavanbadempet"
-  },
-  "applicationCategory": "HealthApplication",
-  "operatingSystem": "Cross-platform (Windows, macOS, Linux)",
-  "keywords": "healthcare AI, clinical decision support, HIPAA, FHIR R4, XGBoost, SHAP, LangGraph, Ollama, FastAPI, React, PySpark, MLOps, EHR, open source"
-}
-```

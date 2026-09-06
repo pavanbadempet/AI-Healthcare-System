@@ -1,4 +1,4 @@
-name: "Autonomous AI Security Guardian"
+name: "Security Scan"
 
 on:
   push:

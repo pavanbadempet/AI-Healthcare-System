@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 
 /* ───────────────────────────────────────────────────
-   MenuItem interface – Universe Dex style
+   MenuItem interface
    ─────────────────────────────────────────────────── */
 export interface MenuItem {
   id: string;

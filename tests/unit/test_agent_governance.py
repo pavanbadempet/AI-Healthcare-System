@@ -29,6 +29,13 @@ def test_governed_agent_execution_and_auto_resolution():
 
 
 def test_agent_lineage_graph_tracking():
+    if len(agent_governance_engine.get_lineage_chain()) == 0:
+        agent_governance_engine.execute_governed_action(
+            agent_id="AGENT-GOV-TEST",
+            action_name="evaluate_sepsis_risk",
+            input_data={"patient_name": "John Doe", "respiratory_rate": 26},
+            agent_func=lambda data: {"patient_id": "P-GOV-10", "sepsis_risk_level": "SEPTIC_SHOCK_WARNING", "qsofa_score": 3},
+        )
     chain = agent_governance_engine.get_lineage_chain()
     assert len(chain) >= 1
     node = chain[0]

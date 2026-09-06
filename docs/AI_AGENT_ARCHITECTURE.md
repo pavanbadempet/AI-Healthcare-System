@@ -1,286 +1,239 @@
-# AI Agent Architecture - AI Healthcare System
+# Clinical AI Platform Architecture — AI Healthcare System
 
-> Maintainer-facing architecture doc for the DevX + Product AI stack.
-> Ported from [Universe Dex Singularity AI Engine](../docs/ai_architecture_export/).
-
----
-
-## Overview
-
-This codebase implements a two-pillar AI architecture:
-
-1. **DevX Agent Infrastructure** - Makes the repo "AI-maintainable" so that LLM coding assistants (Copilot, Cursor, Claude, Gemini) operate with deterministic, domain-aware context instead of hallucinating.
-2. **Product AI Integration** - Embeds multi-tier AI inference directly into the application for medical chat, risk assessment, and health record analysis.
+> Comprehensive architecture specification for clinical intelligence, multi-agent workflows, diagnostic foundation models, and patient safety governance.
 
 ---
 
-## Pillar 1: DevX Agent Infrastructure
+## 1. Architecture Overview
 
-### 1.1 Hierarchical Context Resolution (`AGENTS.md`)
-
-Instead of a single massive `.cursorrules` file, instructions are broken into a filesystem hierarchy:
-
-| Level | File | Purpose |
-|-------|------|---------|
-| Root | `AGENTS.md` | Global rules (host-bound local URLs use `127.0.0.1`, PII handling, etc.) |
-| Scoped | `backend/AGENTS.md` | Backend-specific rules (AI provider abstraction, DB sessions) |
-| Scoped | `frontend/AGENTS.md` | Frontend-specific rules (Next.js App Router, browser API URLs) |
-| Scoped | `frontend_legacy/AGENTS.md` | Legacy Streamlit frontend rules |
-| Scoped | `tests/AGENTS.md` | Backend pytest rules (mocking, isolation) |
-| Deep Ref | `backend/CONTEXT.md` | Verbose module-level documentation (read only when needed) |
-
-**Why it works**: When an agent edits a backend file, it reads Root `AGENTS.md` + `backend/AGENTS.md`. It's shielded from frontend Next.js rules, saving tokens and eliminating context confusion.
-
-### 1.2 Automated Adapter Synchronization
-
-Different AI tools expect instructions in proprietary formats. Canonical rules live in `AGENTS.md` files. The adapter manifest contains thin tool-specific summaries and references to those canonical files, then the sync engine distributes them:
+The AI Healthcare System architecture delivers privacy-preserving, auditable, and resilient clinical artificial intelligence across three foundational layers:
 
 ```
-AGENTS.md (canonical)
-    -> scripts/sync_agent_adapters.py
-    |-- .cursorrules
-    |-- .cursor/rules/00-root.mdc
-    |-- .cursor/rules/01-backend.mdc
-    |-- .cursor/rules/04-frontend-legacy.mdc
-    |-- .github/copilot-instructions.md
-    |-- .github/instructions/backend.instructions.md
-    |-- CLAUDE.md
-    |-- GEMINI.md
-    `-- .kiro/steering/*.md
+┌──────────────────────────────────────────────────────────────────────────────────┐
+│                             CLINICAL APPLICATION LAYER                           │
+│  React 19 Frontend  •  3D DICOM PACS  •  SMART on FHIR Launcher  •  ABDM Gateway │
+└────────────────────────────────────────┬─────────────────────────────────────────┘
+                                         │ HTTP / SSE / WebSockets
+┌────────────────────────────────────────▼─────────────────────────────────────────┐
+│                    HIGH-PERFORMANCE EDGE PROXY & ROUTING                         │
+│       Rust Axum Gateway (PID 1)  •  PyO3 Zero-Copy FFI  •  Correlation Tracing   │
+└────────────────────────────────────────┬─────────────────────────────────────────┘
+                                         │
+┌────────────────────────────────────────▼─────────────────────────────────────────┐
+│                     CLINICAL AI & ML INTELLIGENCE LAYER                          │
+│  ┌───────────────────────┐ ┌───────────────────────┐ ┌────────────────────────┐ │
+│  │  Multi-Tier Gateway   │ │ LangGraph Supervisor  │ │ TabICLv2 Foundation &  │ │
+│  │  (Ollama/Gemini/Cloud)│ │ Multi-Agent Workflow  │ │ Quad-Ensembles + SHAP  │ │
+│  └───────────────────────┘ └───────────────────────┘ └────────────────────────┘ │
+│  ┌───────────────────────┐ ┌───────────────────────┐ ┌────────────────────────┐ │
+│  │ Clinical Workflow     │ │ Medical RAG & Vector  │ │ Clinical Governance,   │ │
+│  │ Agents (SOAP/Care/RN) │ │ Context Retrieval     │ │ Prompts & Model Cards  │ │
+│  └───────────────────────┘ └───────────────────────┘ └────────────────────────┘ │
+└────────────────────────────────────────┬─────────────────────────────────────────┘
+                                         │
+┌────────────────────────────────────────▼─────────────────────────────────────────┐
+│                       STORAGE, LAKEHOUSE & AUDIT LAYER                           │
+│  PostgreSQL / SQLite WAL  •  Delta Lake Medallion  •  HIPAA Retention & Audit Logs│
+└──────────────────────────────────────────────────────────────────────────────────┘
 ```
-
-**Manifest**: `scripts/agent_adapter_manifest.json` defines the generated adapter mapping and short compatibility summaries.
-**Sync**: `python scripts/sync_agent_adapters.py` writes all adapter files.
-**Check**: `python scripts/sync_agent_adapters.py --check` verifies sync, obsolete-file removal, and unmanaged adapter files in CI.
-
-### 1.3 Dynamic Context Injection (`ai_context.py`)
-
-At session start, agents run `python scripts/ai_context.py` to get instant situational awareness:
-
-```json
-{
-  "project": "AI Healthcare System",
-  "database": {"type": "sqlite", "path": "healthcare.db", "exists": true, "size_mb": 0.1},
-  "git": {"branch": "main", "dirty_count": 3},
-  "services": [
-    {"name": "Backend (FastAPI)", "port": 8000, "running": true},
-    {"name": "Frontend (Next.js)", "port": 3000, "running": false}
-  ],
-  "ml_models": [
-    {"name": "Diabetes_Model.pkl", "exists": true, "size_mb": 0.5},
-    {"name": "Heart_Model.pkl", "exists": false}
-  ]
-}
-```
-
-The agent immediately knows what's running, what models are trained, and what context files exist.
 
 ---
 
-## Pillar 2: Product AI Integration
+## 2. Multi-Tier Clinical Inference Gateway (`backend/core_ai.py`)
 
-### 2.1 Multi-Tier Inference Engine (`backend/core_ai.py`)
-
-Provider-backed AI/LLM/embedding/vision inference routes through a single module with automatic fallback:
+All provider-backed generative AI and embedding calls route through a single, isolated gateway module with automatic tiered fallback:
 
 ```
-Tier A: Ollama (Local)     -> Zero cloud-provider cost when local; prompts stay on the configured Ollama host
-Tier B: Gemini (Cloud)     -> Google API free tier, reliable
-Tier C: OpenAI/Anthropic   -> Optional, via request headers or env vars
+Tier A: Local Ollama (Primary)     ──► Zero third-party network egress; prompts stay on-premise
+Tier B: Cloud AI Fallback (Gemini) ──► Automatic failover when local daemon is unreachable
+Tier C: Request-Level Cloud LLM   ──► Admin-authenticated fallback via secure headers
 ```
 
-**Public API** (the ONLY functions external modules should call):
-- `generate(prompt, system)` -> Single-shot text generation
-- `chat(messages, system)` -> Multi-turn chat
-- `chat_stream(messages, system)` -> SSE streaming chat
-- `embed_text(text, task_type)` -> Text embeddings for RAG
-- `generate_vision_content(prompt, image)` -> Vision analysis boundary
-- Ollama model helpers -> local model listing, pulling, and deletion
-- `is_available()` -> Check if any backend is online
+### Public Interface
+External modules interact exclusively with the high-level functional API:
+- `generate(prompt, system)`: Single-shot structured generation.
+- `chat(messages, system)`: Multi-turn conversational consultation.
+- `chat_stream(messages, system)`: Real-time Server-Sent Events (SSE) token streaming.
+- `embed_text(text, task_type)`: Dense semantic embeddings for clinical RAG indexing.
+- `generate_vision_content(prompt, image)`: Multimodal clinical imaging analysis.
+- `is_available()`: Health check probe verifying gateway availability.
 
-**Rule**: No module outside `core_ai.py` may import `google.generativeai`, `httpx` for AI calls, or any provider SDK directly.
+> [!IMPORTANT]
+> No backend route or service may import third-party provider SDKs directly. All generative and embedding calls are encapsulated in `backend.core_ai`.
 
-### 2.2 Version-Controlled Prompt Registry (`backend/prompt_registry.py`)
+---
 
-Every system prompt is registered, versioned, and auditable:
+## 3. LangGraph Multi-Agent Clinical Decision Support (`backend/chat.py` & `backend/agent.py`)
 
+Clinical consultation utilizes a stateful LangGraph multi-agent supervisor pattern to decompose complex patient inquiries:
+
+```
+                     ┌───────────────────────────┐
+                     │ Patient Query + EHR State │
+                     └─────────────┬─────────────┘
+                                   │
+                                   ▼
+                     ┌───────────────────────────┐
+                     │  Clinical Supervisor Node │
+                     └──────┬─────────────┬──────┘
+                            │             │
+              ┌─────────────┘             └─────────────┐
+              ▼                                         ▼
+   ┌───────────────────────┐                 ┌───────────────────────┐
+   │ Medical Research Node │                 │ Diagnostic Data Node  │
+   │ (RAG + Tavily Search) │                 │ (EHR Records & ML)    │
+   └──────────┬────────────┘                 └──────────┬────────────┘
+              │                                         │
+              └─────────────┐             ┌─────────────┘
+                            ▼             ▼
+                     ┌───────────────────────────┐
+                     │ Response Synthesizer Node │
+                     │ (Safety Filter & Citation)│
+                     └─────────────┬─────────────┘
+                                   │
+                                   ▼
+                     ┌───────────────────────────┐
+                     │ Stream SSE / REST Payload │
+                     └───────────────────────────┘
+```
+
+- **Supervisor Node**: Evaluates user intent, determines whether external medical literature (Tavily), local RAG memory, or diagnostic ML predictions are required.
+- **Medical Research Node**: Retrieves grounded evidence with full citation tracking and token-budget enforcement.
+- **Diagnostic Node**: Ingests patient vital histories, lab results, and active risk models.
+- **Synthesizer Node**: Applies clinical disclaimer guardrails, checks for emergency red flags, and constructs structured responses.
+
+---
+
+## 4. Diagnostic Foundation Models & ML Classifiers (`backend/prediction.py`)
+
+Diagnostic prediction combines tabular foundation models with calibrated tree ensembles:
+
+1. **TabICLv2 In-Context Tabular Foundation Model**:
+   - Ranked #1 open-source foundation model on TabArena benchmarks (`tabicl>=2.1.1`).
+   - Executes zero-shot in-context classification over clinical tabular datasets without cloud dependencies.
+2. **Calibrated Quad-Ensemble Classifiers**:
+   - Ensembles `XGBoost`, `LightGBM`, `CatBoost`, and `RandomForest` for five major chronic disease panels (Diabetes, Coronary Heart Disease, Liver Disease, Chronic Kidney Disease, Lung Cancer).
+   - Calibrated via Platt Scaling and Isotonic Regression to output reliable posterior probabilities.
+3. **95% Conformal Prediction Bounds**:
+   - Generates non-empty prediction sets at guaranteed coverage thresholds (\(1 - \alpha = 0.95\)), providing clinicians with rigorous mathematical uncertainty intervals.
+4. **C++ TreeSHAP Explainability**:
+   - Generates real-time patient-specific feature attribution plots detailing the exact clinical biomarkers driving each risk calculation.
+
+---
+
+## 5. Specialized Clinical Workflow Agents (`backend/agents/`)
+
+Domain-specific assistants handle operational tasks via deterministic structured prompting and Pydantic validation:
+
+### 5.1 Clinical Billing & Coding Agent (`ClinicalBillingAgent`)
+- **Module**: `backend/agents/billing_agent.py`
+- **Endpoint**: `POST /v1/billing/invoices/{invoice_id}/audit`
+- **Responsibilities**:
+  - Parses clinical SOAP narratives and physician documentation.
+  - Recommends appropriate ICD-10 diagnosis and CPT procedure codes.
+  - Predicts claims denial risk (`LOW`, `MEDIUM`, `HIGH`) based on medical necessity criteria.
+  - Detects missing clinical justifications before insurance submission.
+
+### 5.2 Clinical Discharge Planning Agent (`ClinicalDischargeAgent`)
+- **Module**: `backend/agents/discharge_agent.py`
+- **Endpoint**: `POST /v1/discharge/summaries/generate/{patient_id}`
+- **Responsibilities**:
+  - Synthesizes patient demographics, telemetry vital trends, and diagnostic risk scores.
+  - Formulates structured care transition plans, plain-language patient instructions, and follow-up schedules.
+  - Flags post-discharge "red-flag" emergency symptoms requiring immediate medical evaluation.
+
+### 5.3 Clinical Nursing Shift Handoff Agent (`ClinicalNursingAgent`)
+- **Module**: `backend/agents/nursing_agent.py`
+- **Endpoint**: `POST /v1/nursing/patients/{patient_id}/handoff`
+- **Responsibilities**:
+  - Ingests active patient conditions, 24-hour telemetry vital trends, and system alerts.
+  - Formulates SBAR (Situation, Background, Assessment, Recommendation) nursing handoff summaries.
+  - Prioritizes upcoming shift nursing interventions, medication administration schedules, and safety watch items.
+
+---
+
+## 6. Medical RAG & Context Retrieval (`backend/chat_context.py` & `backend/rag.py`)
+
+Clinical conversational interactions are grounded in patient records and medical reference material:
+
+```
+Patient Query ──► Intent & Condition Classifier
+                        │
+                        ├──► Patient Demographics & Baseline Vitals
+                        ├──► Condition-Specific Lab History (e.g. HbA1c, Creatinine)
+                        ├──► Recent ML Diagnostic Risk Assessments
+                        └──► Semantic Vector Chunks (SQLite Vector Store)
+                        │
+                        ▼
+                Token Budget Truncation & Instruction Hierarchy Scrubbing
+                        │
+                        ▼
+                Structured Clinical Prompt Context
+```
+
+- **Context Assembly**: `chat_context.py` builds deterministic context slices with token-budget enforcement to prevent context overflow.
+- **Instruction Hierarchy Defense**: Patient-provided inputs, lab reports, and search snippets are treated as untrusted data. Prompt templates instruct models to treat retrieved text solely as evidence and ignore any embedded prompt injection instructions.
+- **Tenant Isolation**: Vector search enforces explicit `user_id` and optional `facility_id` access control filters.
+
+---
+
+## 7. Safety, Governance & Regulatory Transparency
+
+### 7.1 Version-Controlled Prompt Registry (`backend/prompt_registry.py`)
+All system prompts are centralized, versioned, and immutable:
 ```python
 from backend.prompt_registry import get_prompt
 
-template = get_prompt("medical_qa")  # Returns the active version
-template = get_prompt("medical_qa", version="2.0")  # Specific version
+template = get_prompt("medical_qa", version="2.0")
 ```
+Inline prompts in route handlers are strictly prohibited.
 
-**Registered Prompts**:
-| Name | Purpose |
-|------|---------|
-| `chat_system` | Main chatbot system prompt with full context injection |
-| `medical_qa` | RAG-grounded medical Q&A with citations |
-| `symptom_analysis` | Structured symptom analysis |
-| `report_summary` | Health record summarization |
-| `risk_assessment` | Disease risk explanation |
-| `streaming_system` | Compact prompt for SSE streaming (token-efficient) |
+### 7.2 AI Function Governance Inventory (`backend/ai_function_registry.py`)
+Exposed at `GET /v1/admin/ai-functions`, this registry inventories all AI capabilities against WHO AI governance and EU AI Act principles:
+- Intended audience and clinical risk category.
+- Mandatory medical disclaimer requirements.
+- Human-in-the-loop review mandates.
+- Provider abstraction boundary enforcement.
 
-**Rule**: Never inline system prompts in route handlers. Register in the registry, retrieve via `get_prompt()`.
+### 7.3 Model & Dataset Cards (`backend/model_cards.py`)
+Exposed at `GET /v1/admin/model-cards`, providing transparency for all diagnostic ML models:
+- Training dataset source and provenance.
+- Performance characteristics, evaluation metrics, and known limitations.
+- Human review requirements and post-deployment monitoring criteria.
 
-Prompt templates include instruction-hierarchy guardrails for retrieved records, uploaded report content, RAG memory, web research context, and patient-provided fields. Those inputs are treated as untrusted data: prompts tell the model not to follow instructions embedded inside them and to use them only as clinical evidence for the current user.
-
-### 2.3 AI Function Governance Registry (`backend/ai_function_registry.py`)
-
-AI-facing backend functions are listed in a static governance inventory exposed to admins at `GET /admin/ai-functions`. Each entry declares:
-
-- intended audience and endpoint/module ownership
-- clinical risk category
-- whether medical disclaimers, human review, and basis transparency are required
-- whether the function calls an AI provider and, if so, that the provider boundary is `backend.core_ai`
-- prompt keys when a registered prompt is part of the workflow
-
-The registry is anchored to practical governance expectations from WHO AI governance, FDA clinical decision-support transparency, and EU AI Act human-oversight principles. It is not a certification artifact; it is a control inventory for review, testing, and deployment readiness.
-
-### 2.4 Model And Dataset Cards (`backend/model_cards.py`)
-
-Prediction models and their public training artifacts are described through admin-visible cards at `GET /admin/model-cards`. Cards include intended use, model family, endpoint, artifact presence, dataset source, known limitations, human-review requirement, medical-disclaimer requirement, and post-deployment monitoring requirement.
-
-The endpoint does not load models, read dataset rows, expose training samples, or return patient identifiers. It is an evidence surface for pilots and internal review, not a certification claim.
-
-Clinician/admin review of AI prediction outputs is auditable through `POST /predict/reviews`. The route records whether a prediction was accepted, overridden, or ignored, and writes a PHI-safe `REVIEW_AI_PREDICTION` audit event without storing raw review notes or prediction payloads in audit details.
-
-### 2.5 SSE Streaming Chat (`backend/streaming_chat.py`)
-
-Real-time token streaming with heartbeat keepalive:
-
-```
-POST /chat/stream      -> SSE stream with {sources, reply chunks, status}
-GET  /chat/context     -> Debug: view assembled RAG context
-GET  /chat/suggestions -> Dynamic starter questions
-```
-
-Architecture (adapted from Universe Dex `chat_routes.py`):
-1. Build RAG context via `chat_context.py`
-2. Send sources immediately to client
-3. Stream AI response via `core_ai.chat_stream()` with 15s heartbeat
-4. Handle errors gracefully with structured SSE error events
-
-### 2.6 Medical RAG Context Builder (`backend/chat_context.py`)
-
-Analyzes patient questions and queries the DB to build structured context:
-
-```
-Patient question -> Intent detection
-    |-- Patient Profile (name, age, vitals, lifestyle)
-    |-- Condition-specific records (if "diabetes" mentioned -> diabetes records)
-    |-- General health records (if no specific condition)
-    |-- Health trend stats (if "trend" / "summary" mentioned)
-    `-- Recent chat history (for continuity)
--> (context_string, sources_list)
-```
-
-Token budget management truncates context to fit within model limits.
-
-### 2.7 Enhanced RAG Pipeline (`backend/rag.py`)
-
-The existing vector store is enhanced with Singularity Engine patterns:
-- `RetrievedChunk` - Typed context chunks with similarity scores
-- `Citation` - Source tracking for grounded answers
-- `RAGResult` - Structured return type with citation metadata
-- `assemble_context()` - Token-budgeted context assembly
-- Embeddings are requested through `core_ai.embed_text()` so RAG never imports provider SDKs directly
-- Retrieval uses an explicit `user_id` ACL filter and optional `facility_id` filter; facility-scoped searches do not return legacy documents without matching facility metadata
+### 7.4 Clinician Review Audit Trail (`POST /v1/predict/reviews`)
+Clinicians can accept, override, or annotate AI predictions. Decisions are written to a HIPAA-compliant audit log recording clinician ID, decision code, and timestamp without storing raw PHI in audit metadata.
 
 ---
 
----
+## 8. System Maintenance & Compliance Data Retention (`backend/maintenance.py`)
 
-## Pillar 3: Clinical AI Agent Suite
+Automated maintenance ensures compliance with HIPAA/GDPR data retention mandates:
 
-AI Healthcare System includes three dedicated clinical AI agents specialized in auditing, care transitions, and shift handoffs. They leverage structured prompting and JSON output parsing for high reliability.
-
-### 3.1 Clinical Billing Agent (`ClinicalBillingAgent`)
-*   **Module**: [billing_agent.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/agents/billing_agent.py)
-*   **Workflow**:
-    *   Accepts a clinical SOAP note or provider narrative.
-    *   Generates recommended ICD-10 and CPT codes.
-    *   Estimates claims denial risk (LOW/MEDIUM/HIGH) based on documentation completeness.
-    *   Flags missing elements or formatting warnings.
-*   **REST Integration**: `POST /v1/billing/invoices/{invoice_id}/audit`
-
-### 3.2 Clinical Discharge Agent (`ClinicalDischargeAgent`)
-*   **Module**: [discharge_agent.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/agents/discharge_agent.py)
-*   **Workflow**:
-    *   Fetches patient demographic context.
-    *   Queries recent vital telemetry trends (last 5 records).
-    *   Retrieves recent ML disease risk predictions.
-    *   Outputs a structured care transition plan: discharge summary, patient instructions, follow-up schedule, and safety warning indicators.
-*   **REST Integration**: `POST /v1/discharge/summaries/generate/{patient_id}`
-
-### 3.3 Clinical Nursing Agent (`ClinicalNursingAgent`)
-*   **Module**: [nursing_agent.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/agents/nursing_agent.py)
-*   **Workflow**:
-    *   Gathers patient profile data and active clinical conditions.
-    *   Summarizes telemetry trends (vitals over the last 24 hours).
-    *   Ingests active clinical warnings/alerts.
-    *   Produces a structured nursing shift-handoff card detailing patient status, priority nursing tasks, monitoring frequency, and safety concerns.
-*   **REST Integration**: `POST /v1/nursing/patients/{patient_id}/handoff`
+- **Storage Optimization**: Runs SQLite/PostgreSQL `VACUUM` and `ANALYZE` and index optimization.
+- **Policy Retention Purging**: Enforces data retention schedules (1 year for chat history, 6 years for clinical audit logs) through `backend/data_retention.py`.
+- **Execution Interfaces**:
+  - Secure Admin Endpoint: `POST /v1/admin/maintenance`
+  - Automated CLI Script: `python scripts/run_maintenance.py`
 
 ---
 
-## Pillar 4: System Maintenance & Data Retention
-
-To maintain performance and adhere to strict compliance policies (GDPR/HIPAA/clinical data protection), the system runs automated optimizations and record pruning.
-
-### 4.1 Maintenance Coordinator (`backend/maintenance.py`)
-*   **Database Optimizations**:
-    *   Detects SQLite database and runs `VACUUM` and `ANALYZE`.
-    *   Detects PostgreSQL database and runs transaction-safe `ANALYZE` (bypassing transaction restrictions on `VACUUM`).
-    *   Runs SQLite Vector Store vacuuming/optimizations via the `turbovec_store` interface.
-*   **HIPAA/GDPR Data Pruning**:
-    *   Leverages `backend/data_retention.py` to evaluate retention policy parameters.
-    *   Queries and safely deletes expired Audit Logs, ChatLogs, and medical event histories.
-*   **REST Integration**: `POST /v1/admin/maintenance` (requires admin authorization).
-
-### 4.2 DevOps Automation (`scripts/run_maintenance.py`)
-*   A standalone, cron-ready CLI script that authenticates via administrative credentials and executes the full maintenance pipeline.
-*   **Usage**:
-    ```bash
-    python scripts/run_maintenance.py
-    ```
-
----
-
-## Module Dependency Graph
+## 9. Component Dependency Flow
 
 ```
-streaming_chat.py -> core_ai.py -> Ollama / Gemini / Cloud
-       |               ^
-       |-- chat_context.py
-       |-- prompt_registry.py
-       `-- auth.py / models.py / database.py
+streaming_chat.py ──► core_ai.py ──► Local Ollama / Cloud Fallback
+       │                  ▲
+       ├── chat_context.py│
+       └── prompt_registry.py
 
-admin.py -> ai_function_registry.py
-admin.py -> model_cards.py
-admin.py -> maintenance.py -> data_retention.py
+billing.py   ──► agents/billing_agent.py   ──► core_ai.py
+discharge.py ──► agents/discharge_agent.py ──► core_ai.py
+nursing.py   ──► agents/nursing_agent.py   ──► core_ai.py
 
-billing.py   -> agents/billing_agent.py   -> core_ai.py
-discharge.py -> agents/discharge_agent.py -> core_ai.py
-nursing.py   -> agents/nursing_agent.py   -> core_ai.py
+chat.py ──► agent.py (LangGraph) ──► core_ai.py
+              └── rag.py (Vector Store)
 
-agent.py -> core_ai.py (via CoreAIWrapper)
-   `-- prompt_registry.py
-
-chat.py -> agent.py -> core_ai.py
-   `-- rag.py (vector store)
+prediction.py ──► TabICL / Quad-Ensembles ──► SHAP Explainability
+admin.py      ──► ai_function_registry.py & model_cards.py
+admin.py      ──► maintenance.py ──► data_retention.py
 ```
-
----
-
-## Adding a New AI Feature
-
-1. Register the prompt in `prompt_registry.py`
-2. Build the context in `chat_context.py` (or a new context builder)
-3. Call the relevant `core_ai` function - never import provider SDKs
-4. Add the route in a new or existing router file
-5. Mount in `main.py`
-6. Add the function to `ai_function_registry.py` with clinical safety controls
-7. Add or update `model_cards.py` if the feature introduces or materially changes a prediction model or dataset
-8. Update this document
-

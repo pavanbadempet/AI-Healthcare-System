@@ -2,7 +2,6 @@
 AI Healthcare System — SSE Streaming Chat Endpoint
 
 Provides real-time streaming chat with RAG-powered medical context.
-Adapted from Universe Dex chat_routes.py SSE architecture.
 
 Endpoints:
   POST /chat/stream   — SSE streaming chat with heartbeat keepalive

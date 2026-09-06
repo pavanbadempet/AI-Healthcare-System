@@ -12,8 +12,6 @@ Run:
 
     python scripts/sync_agent_adapters.py
     python scripts/sync_agent_adapters.py --check
-
-Ported from Universe Dex DevX Agent Infrastructure.
 """
 
 from __future__ import annotations

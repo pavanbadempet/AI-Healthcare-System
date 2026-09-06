@@ -8,9 +8,7 @@ of the current project state:
     python scripts/ai_context.py --json
 
 Prints: database status, ML model files, recent git activity, running services,
-and pointers to the agent-guidance surface.
-
-Ported from Universe Dex DevX Agent Infrastructure, adapted for Healthcare domain.
+and pointers to the project guidance surface.
 """
 
 from __future__ import annotations
