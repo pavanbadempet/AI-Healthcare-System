@@ -19,6 +19,7 @@ The platform provides native **HL7 FHIR R4** and **OHDSI OMOP CDM v5.4** compati
 <br/>
 
 <p>
+  <a href="https://github.com/pavanbadempet/AI-Healthcare-System"><img src="https://img.shields.io/badge/GitHub-View_Source_Code-181717?style=flat-square&logo=github" alt="GitHub Repository" /></a>
   <a href="https://huggingface.co/spaces/pavanbadempet/aio-health-backend"><img src="https://img.shields.io/badge/🤗%20Hugging%20Face-Live%20Interactive%20Space-yellow?style=flat-square&logo=huggingface" alt="Hugging Face Live Space" /></a>
   <a href="https://huggingface.co/pavanbadempet/ai-healthcare-models"><img src="https://img.shields.io/badge/🤗%20Model%20Hub-16%20ONNX%20%2F%20PKL%20Weights-orange?style=flat-square&logo=huggingface" alt="Hugging Face Model Hub" /></a>
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml/badge.svg" alt="CI build status" /></a>
