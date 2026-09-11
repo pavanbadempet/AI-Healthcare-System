@@ -19,7 +19,7 @@ The platform provides native **HL7 FHIR R4** and **OHDSI OMOP CDM v5.4** compati
 <br/>
 
 <p>
-  <a href="https://huggingface.co/spaces/pavanbadempet/ai-healthcare-system"><img src="https://img.shields.io/badge/🤗%20Hugging%20Face-Live%20Interactive%20Space-yellow?style=flat-square&logo=huggingface" alt="Hugging Face Live Space" /></a>
+  <a href="https://huggingface.co/spaces/pavanbadempet/aio-health-backend"><img src="https://img.shields.io/badge/🤗%20Hugging%20Face-Live%20Interactive%20Space-yellow?style=flat-square&logo=huggingface" alt="Hugging Face Live Space" /></a>
   <a href="https://huggingface.co/pavanbadempet/ai-healthcare-models"><img src="https://img.shields.io/badge/🤗%20Model%20Hub-16%20ONNX%20%2F%20PKL%20Weights-orange?style=flat-square&logo=huggingface" alt="Hugging Face Model Hub" /></a>
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml/badge.svg" alt="CI build status" /></a>
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml/badge.svg" alt="CodeQL security analysis" /></a>
@@ -50,7 +50,7 @@ The platform provides native **HL7 FHIR R4** and **OHDSI OMOP CDM v5.4** compati
 
 <a href="https://codespaces.new/pavanbadempet/AI-Healthcare-System"><img src="https://github.com/codespaces/badge.svg" alt="Open in GitHub Codespaces" height="32"/></a>
 &nbsp;
-<a href="https://huggingface.co/spaces/pavanbadempet/ai-healthcare-system"><img src="https://img.shields.io/badge/🚀%20Live%20Demo-Hugging%20Face%20Space-yellow?style=for-the-badge&logo=huggingface" height="32" alt="Live Demo"/></a>
+<a href="https://huggingface.co/spaces/pavanbadempet/aio-health-backend"><img src="https://img.shields.io/badge/🚀%20Live%20Demo-Hugging%20Face%20Space-yellow?style=for-the-badge&logo=huggingface" height="32" alt="Live Demo"/></a>
 &nbsp;
 <a href="https://github.com/pavanbadempet/AI-Healthcare-System/stargazers"><img src="https://img.shields.io/badge/⭐%20Star%20on%20GitHub-Free%20&%20Open%20Source-blue?style=for-the-badge&logo=github" height="32" alt="Star on GitHub"/></a>
 
@@ -74,7 +74,7 @@ bun run demo
 python scripts/demo_quickstart.py
 ```
 
-> **Live Demo & Sandbox**: If you don't have a local environment, test it instantly on **[🤗 Hugging Face Spaces](https://huggingface.co/spaces/pavanbadempet/ai-healthcare-system)** or **[GitHub Codespaces](https://codespaces.new/pavanbadempet/AI-Healthcare-System)**.
+> **Live Demo & Sandbox**: If you don't have a local environment, test it instantly on **[🤗 Hugging Face Spaces](https://huggingface.co/spaces/pavanbadempet/aio-health-backend)** or **[GitHub Codespaces](https://codespaces.new/pavanbadempet/AI-Healthcare-System)**.
 
 ---
 
