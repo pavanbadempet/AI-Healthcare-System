@@ -69,14 +69,10 @@ deltalake>=0.15.0
 duckdb>=0.9.0
 qdrant-client>=1.7.0
 redis>=5.0.0
-pyspark>=4.0.0
 msgpack>=1.0.5
 great-expectations>=0.18.0
 faker>=24.0.0
 scipy>=1.11.0
-scikit-learn
-
-stripe>=10.1.0
 
 sqlalchemy-utils>=0.41.1
 cryptography>=41.0.0
@@ -85,8 +81,4 @@ slowapi>=0.1.9
 pyotp>=2.9.0
 qrcode>=7.4.2
 agent-framework>=1.11.0
-langgraph>=0.1.0
-langchain-core>=0.2.0
 
-
-sqlalchemy-cockroachdb
