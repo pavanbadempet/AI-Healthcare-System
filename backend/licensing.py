@@ -3,7 +3,7 @@
 In this sovereign open-source clinical operating system, all clinical AI modules,
 EHR interoperability bridges, and analytical features are fully unlocked.
 """
-from typing import Any, Callable, List, Tuple
+from typing import Callable, List, Tuple
 
 
 def verify_license_key(license_key: str = "") -> Tuple[bool, str]:
