@@ -1280,6 +1280,28 @@ This platform is structured as an extensible monorepo with standalone, reusable 
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
+
+<details>
+  <summary><b>🔍 System Architecture & Engineering FAQ (Search Index)</b></summary>
+  <br/>
+
+### Q1: How does the PySpark Medallion Lakehouse process FHIR clinical data?
+The architecture implements a classical three-tier Medallion design on Delta Lake:
+- **Bronze Tier**: Ingests raw HL7 FHIR R4 JSON clinical bundles and OHDSI OMOP CDM v5.4 records via Apache Airflow DAGs.
+- **Silver Tier**: Enforces clinical schema conformance, de-identifies Protected Health Information (PHI) under HIPAA Safe Harbor rules, and deduplicates patient identifiers.
+- **Gold Tier**: Aggregates longitudinal patient timelines into dimensional feature stores for tabular foundation models and clinical decision support.
+
+### Q2: What machine learning algorithms and conformal prediction sets are implemented?
+The platform combines **TabICLv2 Tabular Foundation Models** (ranked #1 on TabArena) with calibrated **CatBoost, XGBoost, and FT-Transformer ensembles**. It provides **95% Conformal Prediction sets** for rigorous clinical uncertainty estimation, complemented by C++ accelerated SHAP values for real-time model interpretability.
+
+### Q3: How is HIPAA compliance maintained with Generative AI and RAG?
+The system utilizes stateful **LangGraph multi-agent RAG** with **local, offline inference powered by Ollama (Llama 3.2)**. No Protected Health Information (PHI) ever leaves the on-premises or private VPC perimeter, ensuring zero third-party API exposure.
+
+### Q4: What datasets and clinical benchmarks are supported?
+Native support for MIMIC-IV, eICU Collaborative Research Database, synthetic FHIR bundles (Synthea), and OHDSI OMOP CDM schemas.
+</details>
+
+
 ## 📄 License
 
 GNU AGPL-3.0 License — Copyright © 2026 **Pavan Badempet**, Shiva Prasad Anagondi, Prashanth Cheerala. See [LICENSE](LICENSE) for details.
