@@ -24,6 +24,7 @@ The platform provides native **HL7 FHIR R4** and **OHDSI OMOP CDM v5.4** compati
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml/badge.svg" alt="CI build status" /></a>
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml/badge.svg" alt="CodeQL security analysis" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/pavanbadempet/AI-Healthcare-System?color=22c55e&style=flat-square" alt="License" /></a>
+  <a href="https://github.com/sponsors/pavanbadempet"><img src="https://img.shields.io/badge/Sponsor-%E2%9D%A4-ea4aaa.svg?logo=github&style=flat-square" alt="Sponsor" /></a>
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/stargazers"><img src="https://img.shields.io/github/stars/pavanbadempet/AI-Healthcare-System?style=flat-square&color=f59e0b" alt="Stars" /></a>
   <a href="https://star-history.com/#pavanbadempet/AI-Healthcare-System&Date"><img src="https://img.shields.io/badge/Star_History-📈-8b5cf6?style=flat-square" alt="Star History" /></a>
   <a href="CITATION.cff"><img src="https://img.shields.io/badge/Cite_This_Repo-APA_/_BibTeX-2563eb?style=flat-square" alt="Cite This Repo" /></a>
