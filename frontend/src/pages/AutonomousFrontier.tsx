@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import {
   Activity, ShieldCheck, Zap, Dna, Lock, Play, RefreshCw, CheckCircle2,
   AlertTriangle, ArrowUpRight, Award, Stethoscope, Sliders, Shield,
-  Users, FileCode, GitMerge, Flame
+  Users, FileCode, GitMerge, Flame, Radio, Box
 } from 'lucide-react';
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend
@@ -11,8 +11,10 @@ import { DelphiConsensusStudio } from '@/components/frontier/DelphiConsensusStud
 import { NeuroSymbolicPgxStudio } from '@/components/frontier/NeuroSymbolicPgxStudio';
 import { OfflineCrdtStudio } from '@/components/frontier/OfflineCrdtStudio';
 import { ResilienceChaosStudio } from '@/components/frontier/ResilienceChaosStudio';
+import { HighFrequencyWaveformMonitor } from '@/components/frontier/HighFrequencyWaveformMonitor';
+import { WebGpuVolumetricRenderer } from '@/components/frontier/WebGpuVolumetricRenderer';
 
-type ActiveTab = 'twin' | 'causal' | 'cybernetics' | 'docking' | 'zk' | 'delphi' | 'neurosymbolic' | 'crdt' | 'resilience';
+type ActiveTab = 'twin' | 'causal' | 'cybernetics' | 'docking' | 'zk' | 'delphi' | 'neurosymbolic' | 'crdt' | 'resilience' | 'waveforms' | 'webgpu';
 
 export default function AutonomousFrontier() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('twin');
@@ -164,6 +166,8 @@ export default function AutonomousFrontier() {
           { id: 'neurosymbolic', label: 'Neuro-Symbolic PGx', icon: FileCode },
           { id: 'crdt', label: 'Offline CRDT Sync', icon: GitMerge },
           { id: 'resilience', label: 'Chaos & Concurrency', icon: Flame },
+          { id: 'waveforms', label: '500 Hz Waveforms', icon: Radio },
+          { id: 'webgpu', label: 'WebGPU 3D Volume', icon: Box },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -589,6 +593,12 @@ export default function AutonomousFrontier() {
 
       {/* Tab 9: Chaos & Concurrency Resilience */}
       {activeTab === 'resilience' && <ResilienceChaosStudio />}
+
+      {/* Tab 10: 500 Hz High-Frequency Waveforms */}
+      {activeTab === 'waveforms' && <HighFrequencyWaveformMonitor />}
+
+      {/* Tab 11: WebGPU Volumetric Raymarcher */}
+      {activeTab === 'webgpu' && <WebGpuVolumetricRenderer />}
     </div>
   );
 }

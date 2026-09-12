@@ -151,4 +151,37 @@ describe('AutonomousFrontier Page', () => {
 
     expect(screen.getByText(/SUCCESS \(HTTP 200\)/i)).toBeDefined();
   });
+
+  it('switches to 500 Hz Waveforms tab and controls arrhythmia simulator', () => {
+    render(<AutonomousFrontier />);
+
+    const waveTabBtn = screen.getByText('500 Hz Waveforms');
+    fireEvent.click(waveTabBtn);
+
+    expect(screen.getByText('500 Hz High-Frequency Physiological Waveform Monitor')).toBeDefined();
+    expect(screen.getByText(/Lead II ECG/i)).toBeDefined();
+    expect(screen.getByText('Freeze Frame')).toBeDefined();
+
+    const vtacBtn = screen.getByText(/Ventricular Tachycardia/i);
+    fireEvent.click(vtacBtn);
+
+    expect(screen.getByText('165')).toBeDefined(); // V-Tach HR
+  });
+
+  it('switches to WebGPU 3D Volume tab and selects transfer function preset', () => {
+    render(<AutonomousFrontier />);
+
+    const gpuTabBtn = screen.getByText('WebGPU 3D Volume');
+    fireEvent.click(gpuTabBtn);
+
+    expect(screen.getByText('WebGPU 3D Volumetric Medical Raymarcher')).toBeDefined();
+    expect(screen.getByText(/Transfer Function Presets/i)).toBeDefined();
+    expect(screen.getByText(/Bone \/ Skeletal/i)).toBeDefined();
+    expect(screen.getByText(/Angiography/i)).toBeDefined();
+
+    const angioBtn = screen.getByText(/Angiography/i);
+    fireEvent.click(angioBtn);
+
+    expect(screen.getByText(/Iodine Contrast/i)).toBeDefined();
+  });
 });
