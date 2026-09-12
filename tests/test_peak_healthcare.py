@@ -77,8 +77,11 @@ def test_digital_twin_trajectory_simulation(sample_twin_request):
     assert resp.patient_id == "TWIN-PAT-101"
     assert resp.simulation_horizon_years == 10
     assert resp.overall_longevity_gain_years > 0.0
+    assert resp.ten_year_mace_risk_treated < resp.ten_year_mace_risk_untreated
+    assert resp.neurovascular is not None
+    assert resp.pulmonary is not None
 
-    for organ_name in ["cardiovascular", "renal", "metabolic", "hepatic"]:
+    for organ_name in ["cardiovascular", "renal", "metabolic", "hepatic", "neurovascular", "pulmonary"]:
         organ_traj = getattr(resp, organ_name)
         assert organ_traj.organ == organ_name
         assert len(organ_traj.projected_score_without_intervention) == 10
@@ -86,6 +89,61 @@ def test_digital_twin_trajectory_simulation(sample_twin_request):
         # Intervention trajectory must maintain higher score than non-intervention
         assert organ_traj.projected_score_with_intervention[-1] > organ_traj.projected_score_without_intervention[-1]
         assert organ_traj.relative_risk_reduction > 0.0
+
+        # Verify Monte Carlo confidence corridors
+        assert len(organ_traj.p10_confidence_bound) == 10
+        assert len(organ_traj.p90_confidence_bound) == 10
+        for yr in range(10):
+            assert organ_traj.p10_confidence_bound[yr] >= organ_traj.projected_score_with_intervention[yr]
+            assert organ_traj.projected_score_with_intervention[yr] >= organ_traj.p90_confidence_bound[yr]
+
+
+def test_biotwin_x_biomarkers_and_coupling():
+    """Verifies physical biomarker scaling, cross-organ feedback, and pharmacogenomic modulation."""
+    # Patient with severe hypertensive and diabetic cardiorenal strain
+    req_severe = DigitalTwinSimulationRequest(
+        patient_id="TWIN-SEVERE-999",
+        age=64.0,
+        systolic_bp=165.0,
+        diastolic_bp=100.0,
+        fasting_glucose=190.0,
+        hba1c=9.2,
+        egfr=44.0,
+        ldl_cholesterol=175.0,
+        smoking_status="current",
+        crp_mg_l=4.2,
+        urine_albumin_creatinine_ratio=180.0,
+        proposed_interventions=[
+            "SGLT2 inhibitor (Dapagliflozin 10mg)",
+            "GLP-1 RA (Tirzepatide 5mg)",
+            "High-Intensity Statin (Rosuvastatin 20mg)",
+            "ARNI (Sacubitril/Valsartan 49/51mg)"
+        ],
+        genomic_profile={"slco1b1_genotype": "Normal Function (*1a/*1a)"}
+    )
+
+    resp = digital_twin_engine.simulate_10_year_trajectory(req_severe)
+
+    # 1. Verify physical biomarkers exist and reflect therapeutic preservation
+    renal_biomarkers = resp.renal.projected_biomarkers
+    assert "projected_egfr_ml_min" in renal_biomarkers
+    assert len(renal_biomarkers["projected_egfr_ml_min"]) == 10
+    # Treated eGFR at year 10 should be preserved above failure threshold
+    assert renal_biomarkers["projected_egfr_ml_min"][-1] > 25.0
+
+    cv_biomarkers = resp.cardiovascular.projected_biomarkers
+    assert "projected_systolic_bp" in cv_biomarkers
+    assert cv_biomarkers["projected_systolic_bp"][-1] < req_severe.systolic_bp
+
+    met_biomarkers = resp.metabolic.projected_biomarkers
+    assert "projected_hba1c_pct" in met_biomarkers
+    assert met_biomarkers["projected_hba1c_pct"][-1] < req_severe.hba1c
+
+    # 2. Verify significant longevity gains
+    assert resp.overall_longevity_gain_years >= 1.0
+    assert resp.ten_year_mace_risk_untreated > 30.0
+    assert resp.ten_year_mace_risk_treated < resp.ten_year_mace_risk_untreated
+
 
 
 def test_precision_pharmacogenomics_cpic_evaluation(sample_pgx_request):
@@ -131,7 +189,16 @@ def test_peak_healthcare_fastapi_endpoints(sample_twin_request, sample_pgx_reque
     assert res_twin.status_code == 200
     data_twin = res_twin.json()
     assert "cardiovascular" in data_twin
+    assert "renal" in data_twin
+    assert "metabolic" in data_twin
+    assert "hepatic" in data_twin
+    assert "neurovascular" in data_twin
+    assert "pulmonary" in data_twin
     assert data_twin["overall_longevity_gain_years"] > 0
+    assert len(data_twin["cardiovascular"]["p10_confidence_bound"]) == 10
+    assert len(data_twin["cardiovascular"]["p90_confidence_bound"]) == 10
+    assert "projected_egfr_ml_min" in data_twin["renal"]["projected_biomarkers"]
+    assert data_twin["ten_year_mace_risk_treated"] < data_twin["ten_year_mace_risk_untreated"]
 
     # 2. Pharmacogenomics evaluation endpoint
     res_pgx = client.post("/v1/pharmacogenomics/evaluate", json=sample_pgx_request.model_dump())

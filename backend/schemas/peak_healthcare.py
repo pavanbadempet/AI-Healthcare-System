@@ -2,19 +2,22 @@
 Pydantic Schemas for Peak Clinical Digital Twin, Pharmacogenomics, and Multi-Agent Council.
 """
 
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
 
 
 class OrganSystemTrajectory(BaseModel):
     """Longitudinal 10-year trajectory simulation for a specific organ system."""
-    organ: str = Field(..., description="Target organ system: cardiovascular, renal, metabolic, hepatic, neuro")
+    organ: str = Field(..., description="Target organ system: cardiovascular, renal, metabolic, hepatic, neurovascular, pulmonary")
     baseline_health_score: float = Field(..., ge=0.0, le=100.0, description="Baseline organ function index (0-100)")
     projected_score_without_intervention: List[float] = Field(..., description="Annual projected health score without intervention (Years 1-10)")
     projected_score_with_intervention: List[float] = Field(..., description="Annual projected health score with targeted intervention (Years 1-10)")
     relative_risk_reduction: float = Field(..., description="Calculated percentage risk reduction at year 10")
     key_drivers: List[str] = Field(default_factory=list, description="Primary physiological and biomarker drivers")
+    p10_confidence_bound: List[float] = Field(default_factory=list, description="10th percentile (optimistic) trajectory")
+    p90_confidence_bound: List[float] = Field(default_factory=list, description="90th percentile (pessimistic) trajectory")
+    projected_biomarkers: Dict[str, List[float]] = Field(default_factory=dict, description="Projected physical biomarkers in standard clinical units")
 
 
 class DigitalTwinSimulationRequest(BaseModel):
@@ -24,13 +27,17 @@ class DigitalTwinSimulationRequest(BaseModel):
     gender: str = "unknown"
     bmi: float = 25.0
     systolic_bp: float = 120.0
+    diastolic_bp: float = 80.0
     fasting_glucose: float = 95.0
     egfr: float = 90.0
     ldl_cholesterol: float = 100.0
     hba1c: float = 5.6
     smoking_status: str = "never"
+    crp_mg_l: float = 1.0
+    urine_albumin_creatinine_ratio: float = 30.0
     active_diagnoses: List[str] = Field(default_factory=list)
     proposed_interventions: List[str] = Field(default_factory=list, description="List of proposed pharmacological or lifestyle interventions")
+    genomic_profile: Optional[Dict[str, Any]] = Field(default=None, description="Optional pharmacogenomic phenotype mapping")
 
 
 class DigitalTwinSimulationResponse(BaseModel):
@@ -41,9 +48,14 @@ class DigitalTwinSimulationResponse(BaseModel):
     renal: OrganSystemTrajectory
     metabolic: OrganSystemTrajectory
     hepatic: OrganSystemTrajectory
+    neurovascular: Optional[OrganSystemTrajectory] = None
+    pulmonary: Optional[OrganSystemTrajectory] = None
     overall_longevity_gain_years: float = Field(..., description="Estimated quality-adjusted life years (QALY) gained")
     top_recommended_pathway: str
-    simulation_confidence_interval: str = "95% CI (Monte Carlo N=10,000)"
+    simulation_confidence_interval: str = "95% CI (Monte Carlo N=1,000 continuous RK45 ODE)"
+    ten_year_mace_risk_untreated: float = Field(default=0.0, description="10-year major adverse cardiac event risk percentage without treatment")
+    ten_year_mace_risk_treated: float = Field(default=0.0, description="10-year major adverse cardiac event risk percentage with treatment")
+    biophysical_units: Dict[str, str] = Field(default_factory=dict, description="Units for projected biomarkers")
 
 
 class PharmacogenomicProfile(BaseModel):
