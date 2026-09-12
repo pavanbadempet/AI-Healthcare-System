@@ -265,6 +265,24 @@ export const intelligenceItems: MenuItem[] = [
     gradient: "bg-gradient-to-br from-amber-950/80 via-amber-900/20 to-black/60",
     highlights: ["CPU Core Load", "RAM Analytics", "Pool Connections"],
   },
+  {
+    id: "frontier",
+    title: "Autonomous Frontier",
+    href: "/frontier",
+    icon: BrainCircuit,
+    desc: "Digital Twin, Causal SCM, & ZK Passport",
+    longDesc:
+      "Interactive Level 5 Autonomous Clinical Intelligence. Run 10-year ODE digital twin trajectories, causal counterfactual deductions, live ICU Kalman titration, and Zero-Knowledge health proofs.",
+    color: "text-cyan-400",
+    bg: "bg-cyan-500/10",
+    borderHover: "hover:border-cyan-500/60",
+    glow: "drop-shadow-[0_0_15px_rgba(6,182,212,0.5)]",
+    gradient: "bg-gradient-to-br from-cyan-950/80 via-cyan-900/20 to-black/60",
+    highlights: ["10-Yr BioTwin-X", "Causal do-Calculus", "ZK Health Wallet"],
+    subActions: [
+      { title: "Open Frontier", href: "/frontier" },
+    ],
+  },
 ];
 
 export const healthcareSystemItems: MenuItem[] = [

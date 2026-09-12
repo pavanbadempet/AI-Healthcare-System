@@ -31,6 +31,7 @@ const CompanionPage = lazy(() => import('@/pages/Companion'));
 const DataEngineeringPage = lazy(() => import('@/pages/DataEngineering'));
 const TelemetryPage = lazy(() => import('@/pages/Telemetry'));
 const ABDMIntegrationPage = lazy(() => import('@/pages/ABDMIntegration'));
+const AutonomousFrontierPage = lazy(() => import('@/pages/AutonomousFrontier'));
 
 // Layout wrapper that applies authentication guards and TopNav template
 function ProtectedLayout() {
@@ -90,6 +91,7 @@ export default function App() {
                   <Route path="/data-engineering" element={<DataEngineeringPage />} />
                   <Route path="/telemetry" element={<TelemetryPage />} />
                   <Route path="/abdm" element={<ABDMIntegrationPage />} />
+                  <Route path="/frontier" element={<AutonomousFrontierPage />} />
                 </Route>
 
                 {/* Fallback redirects to Dashboard */}
