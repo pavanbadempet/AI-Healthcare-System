@@ -10,13 +10,25 @@ import logging
 from fastapi import APIRouter, HTTPException, status
 
 from backend.agents.clinical_consensus_council import clinical_council
+from backend.causal_engine import causal_engine
+from backend.clinical_cybernetics import cybernetics_engine
 from backend.clinical_digital_twin import digital_twin_engine
+from backend.clinical_guardrails import clinical_guardrails
+from backend.multimodal_fusion import multimodal_engine
 from backend.precision_pharmacogenomics import pharmacogenomics_engine
 from backend.schemas.peak_healthcare import (
+    CausalCounterfactualRequest,
+    CausalCounterfactualResponse,
     ClinicalCouncilConsensusResponse,
     ClinicalCouncilDeliberationRequest,
+    CyberneticAssimilationRequest,
+    CyberneticAssimilationResponse,
     DigitalTwinSimulationRequest,
     DigitalTwinSimulationResponse,
+    FormalSafetyVerificationRequest,
+    FormalSafetyVerificationResponse,
+    MultimodalEmbeddingResponse,
+    MultimodalPatientProfile,
     PharmacogenomicEvaluationRequest,
     PharmacogenomicEvaluationResponse,
 )
@@ -71,3 +83,68 @@ def deliberate_clinical_council(request: ClinicalCouncilDeliberationRequest) -> 
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Clinical council deliberation failed: {str(e)}"
         )
+
+
+@router.post("/cybernetics/assimilate", response_model=CyberneticAssimilationResponse, summary="Assimilate Streaming Telemetry into Digital Twin via UKF")
+def assimilate_cybernetic_telemetry(request: CyberneticAssimilationRequest) -> CyberneticAssimilationResponse:
+    """
+    Ingests real-time streaming telemetry (HR, MAP, SpO2, Glucose, eGFR proxy) and executes
+    an Unscented Kalman Filter assimilation step to estimate hidden multi-organ reserves and parameter drift.
+    """
+    try:
+        return cybernetics_engine.assimilate_telemetry(request)
+    except Exception as e:
+        logger.error("Cybernetic assimilation failed: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Cybernetic assimilation failed: {str(e)}"
+        )
+
+
+@router.post("/causal/counterfactual", response_model=CausalCounterfactualResponse, summary="Evaluate Causal Counterfactual Trajectory via do-Calculus")
+def evaluate_causal_counterfactual(request: CausalCounterfactualRequest) -> CausalCounterfactualResponse:
+    """
+    Evaluates Pearl Level-3 Structural Causal Models (SCMs) with do-calculus to infer
+    individual treatment effects (ITE) and counterfactual trajectories under targeted interventions.
+    """
+    try:
+        return causal_engine.evaluate_counterfactual(request)
+    except Exception as e:
+        logger.error("Causal counterfactual evaluation failed: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Causal counterfactual evaluation failed: {str(e)}"
+        )
+
+
+@router.post("/safety/verify-regimen", response_model=FormalSafetyVerificationResponse, summary="Formally Prove Medication Safety Invariants")
+def verify_safety_regimen(request: FormalSafetyVerificationRequest) -> FormalSafetyVerificationResponse:
+    """
+    Mathematically verifies physiological safety bounds, renal clearance floors, hyperkalemia gates,
+    and cumulative QTc prolongation to formally certify or reject a proposed pharmacotherapeutic regimen.
+    """
+    try:
+        return clinical_guardrails.verify_regimen(request)
+    except Exception as e:
+        logger.error("Formal safety verification failed: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Formal safety verification failed: {str(e)}"
+        )
+
+
+@router.post("/multimodal/embed-patient", response_model=MultimodalEmbeddingResponse, summary="Project Multimodal Patient State into Unified Latent Manifold")
+def embed_multimodal_patient(request: MultimodalPatientProfile) -> MultimodalEmbeddingResponse:
+    """
+    Projects heterogeneous vitals, diagnostic tokens, pharmacogenomic variants, and imaging features
+    into a unified 128-dimensional clinical latent space to discover matched phenotypic cohorts.
+    """
+    try:
+        return multimodal_engine.embed_patient(request)
+    except Exception as e:
+        logger.error("Multimodal embedding failed: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Multimodal embedding failed: {str(e)}"
+        )
+

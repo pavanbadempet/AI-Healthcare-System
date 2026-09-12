@@ -22,8 +22,8 @@ venv/
 
 # Logs & Temp
 *.log
-session.json
 .coverage
+.coverage*
 htmlcov/
 pytest_output.txt
 tmp/
