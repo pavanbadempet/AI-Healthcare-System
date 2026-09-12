@@ -85,4 +85,70 @@ describe('AutonomousFrontier Page', () => {
 
     expect(screen.getByText(/CERTIFIED VALID/i)).toBeDefined();
   });
+
+  it('switches to Delphi Consensus Swarm tab and executes deliberation', () => {
+    render(<AutonomousFrontier />);
+
+    const delphiTabBtn = screen.getByText('Delphi Consensus Swarm');
+    fireEvent.click(delphiTabBtn);
+
+    expect(screen.getByText('Delphi Swarm with Adversarial Falsification')).toBeDefined();
+    expect(screen.getByText('Internist')).toBeDefined();
+    expect(screen.getByText('Pharmacologist')).toBeDefined();
+    expect(screen.getByText('Intensivist')).toBeDefined();
+    expect(screen.getByText("Adversarial Skeptic")).toBeDefined();
+
+    const delibBtn = screen.getByText('Execute Delphi Rounds');
+    fireEvent.click(delibBtn);
+
+    expect(screen.getByText(/Delphi Consensus & Falsification Summary/i)).toBeDefined();
+  });
+
+  it('switches to Neuro-Symbolic PGx tab and runs axiomatic proof', () => {
+    render(<AutonomousFrontier />);
+
+    const neuroTabBtn = screen.getByText('Neuro-Symbolic PGx');
+    fireEvent.click(neuroTabBtn);
+
+    expect(screen.getByText('First-Order Logic (FOL) CPIC Pharmacogenomics Prover')).toBeDefined();
+    expect(screen.getByText('Patient Premises & Axioms')).toBeDefined();
+
+    const proveBtn = screen.getByText('Prove Regimen Safety (FOL)');
+    fireEvent.click(proveBtn);
+
+    expect(screen.getByText(/First-Order Logic Resolution Result/i)).toBeDefined();
+  });
+
+  it('switches to Offline CRDT Sync tab and triggers join-semilattice merge', () => {
+    render(<AutonomousFrontier />);
+
+    const crdtTabBtn = screen.getByText('Offline CRDT Sync');
+    fireEvent.click(crdtTabBtn);
+
+    expect(screen.getByText('Offline-First Clinical CRDT Synchronization')).toBeDefined();
+    expect(screen.getByText(/Ambulance Node A/i)).toBeDefined();
+    expect(screen.getByText(/Trauma Bay Node B/i)).toBeDefined();
+
+    const mergeBtn = screen.getByText(/Trigger Join-Semilattice Merge/i);
+    fireEvent.click(mergeBtn);
+
+    expect(screen.getByText(/Mathematically Converged Patient Chart State/i)).toBeDefined();
+  });
+
+  it('switches to Chaos & Concurrency tab and executes order idempotency check', () => {
+    render(<AutonomousFrontier />);
+
+    const chaosTabBtn = screen.getByText('Chaos & Concurrency');
+    fireEvent.click(chaosTabBtn);
+
+    expect(screen.getByText('Adaptive Concurrency, Idempotency & Chaos Mesh')).toBeDefined();
+    expect(screen.getByText('Adaptive Concurrency Limiter')).toBeDefined();
+    expect(screen.getByText('Cryptographic Idempotency Engine')).toBeDefined();
+    expect(screen.getByText('Chaos Mesh Circuit Breaker')).toBeDefined();
+
+    const orderBtn = screen.getByText('Submit High-Stakes Clinical Order');
+    fireEvent.click(orderBtn);
+
+    expect(screen.getByText(/SUCCESS \(HTTP 200\)/i)).toBeDefined();
+  });
 });

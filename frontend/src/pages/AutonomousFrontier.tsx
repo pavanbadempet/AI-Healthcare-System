@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
 import {
   Activity, ShieldCheck, Zap, Dna, Lock, Play, RefreshCw, CheckCircle2,
-  AlertTriangle, ArrowUpRight, Award, Stethoscope, Sliders, Shield
+  AlertTriangle, ArrowUpRight, Award, Stethoscope, Sliders, Shield,
+  Users, FileCode, GitMerge, Flame
 } from 'lucide-react';
 import {
   ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend
 } from 'recharts';
+import { DelphiConsensusStudio } from '@/components/frontier/DelphiConsensusStudio';
+import { NeuroSymbolicPgxStudio } from '@/components/frontier/NeuroSymbolicPgxStudio';
+import { OfflineCrdtStudio } from '@/components/frontier/OfflineCrdtStudio';
+import { ResilienceChaosStudio } from '@/components/frontier/ResilienceChaosStudio';
 
-type ActiveTab = 'twin' | 'causal' | 'cybernetics' | 'docking' | 'zk';
+type ActiveTab = 'twin' | 'causal' | 'cybernetics' | 'docking' | 'zk' | 'delphi' | 'neurosymbolic' | 'crdt' | 'resilience';
 
 export default function AutonomousFrontier() {
   const [activeTab, setActiveTab] = useState<ActiveTab>('twin');
@@ -155,6 +160,10 @@ export default function AutonomousFrontier() {
           { id: 'cybernetics', label: 'Live Cybernetics & ICU', icon: Zap },
           { id: 'docking', label: 'Generative Docking', icon: Dna },
           { id: 'zk', label: 'ZK Sovereign Passport', icon: Lock },
+          { id: 'delphi', label: 'Delphi Consensus Swarm', icon: Users },
+          { id: 'neurosymbolic', label: 'Neuro-Symbolic PGx', icon: FileCode },
+          { id: 'crdt', label: 'Offline CRDT Sync', icon: GitMerge },
+          { id: 'resilience', label: 'Chaos & Concurrency', icon: Flame },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
@@ -568,6 +577,18 @@ export default function AutonomousFrontier() {
           </div>
         </div>
       )}
+
+      {/* Tab 6: Delphi Consensus Swarm */}
+      {activeTab === 'delphi' && <DelphiConsensusStudio />}
+
+      {/* Tab 7: Neuro-Symbolic PGx Prover */}
+      {activeTab === 'neurosymbolic' && <NeuroSymbolicPgxStudio />}
+
+      {/* Tab 8: Offline CRDT Synchronization */}
+      {activeTab === 'crdt' && <OfflineCrdtStudio />}
+
+      {/* Tab 9: Chaos & Concurrency Resilience */}
+      {activeTab === 'resilience' && <ResilienceChaosStudio />}
     </div>
   );
 }
