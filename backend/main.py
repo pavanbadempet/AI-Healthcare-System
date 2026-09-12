@@ -896,6 +896,7 @@ from backend.routes.advanced_intelligence_routes import router as advanced_intel
 from backend.routes.data_engineering_routes import router as data_engineering_router
 from backend.routes.data_platform_routes import router as data_platform_router
 from backend.routes.four_eye_routes import router as four_eye_router
+from backend.routes.frontier_data_systems_routes import router as frontier_data_systems_router
 from backend.routes.mesh_routes import router as mesh_router
 from backend.routes.peak_data_engineering_routes import router as peak_data_engineering_router
 from backend.routes.peak_healthcare_routes import router as peak_healthcare_router
@@ -906,6 +907,7 @@ app.include_router(recommendation_router)
 app.include_router(peak_healthcare_router)
 app.include_router(advanced_intelligence_router)
 app.include_router(peak_data_engineering_router)
+app.include_router(frontier_data_systems_router)
 app.include_router(data_engineering_router)
 app.include_router(mesh_router)
 app.include_router(four_eye_router)
