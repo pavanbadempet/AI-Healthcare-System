@@ -28,8 +28,24 @@ try:
     from pyspark.sql.types import DateType, FloatType, StringType, StructField, StructType, TimestampType
     SPARK_AVAILABLE = True
 except Exception:
+    class _DummySparkBuilder:
+        @classmethod
+        def appName(cls, *args, **kwargs):
+            return cls
+
+        @classmethod
+        def config(cls, *args, **kwargs):
+            return cls
+
+        @classmethod
+        def getOrCreate(cls, *args, **kwargs):
+            return None
+
+    class _DummySparkSession:
+        builder = _DummySparkBuilder
+
     SparkDF = Any  # type: ignore
-    SparkSession = Any  # type: ignore
+    SparkSession = _DummySparkSession  # type: ignore
     SPARK_AVAILABLE = False
 
 logger = logging.getLogger(__name__)
@@ -1015,7 +1031,7 @@ class HealthcareDataPipeline:
         }
 
 # Helper to apply cloud-specific integrations (AWS, Azure, Databricks, Snowflake)
-def _apply_cloud_integration_configs(builder: SparkSession.builder) -> SparkSession.builder:
+def _apply_cloud_integration_configs(builder: Any) -> Any:
     import os
     provider = os.getenv("CLOUD_PROVIDER", "").strip().lower()
 
@@ -1071,8 +1087,11 @@ def _apply_cloud_integration_configs(builder: SparkSession.builder) -> SparkSess
     return builder
 
 # Initialize Spark session
-def create_spark_session() -> SparkSession:
+def create_spark_session() -> Optional[Any]:
     """Create optimized Spark session for healthcare data processing"""
+    if not SPARK_AVAILABLE:
+        logger.warning("PySpark is not installed. Returning None for spark session.")
+        return None
     import os
     builder = SparkSession.builder.appName("HealthcareDataPipeline")
 
