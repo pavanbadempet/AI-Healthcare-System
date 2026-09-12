@@ -907,6 +907,7 @@ from backend.routes.mesh_routes import router as mesh_router
 from backend.routes.peak_data_engineering_routes import router as peak_data_engineering_router
 from backend.routes.peak_healthcare_routes import router as peak_healthcare_router
 from backend.routes.recommendation_routes import router as recommendation_router
+from backend.routes.versioning_routes import router as versioning_router
 
 app.include_router(data_platform_router)
 app.include_router(recommendation_router)
@@ -920,6 +921,7 @@ app.include_router(frontier_backend_resilience_router)
 app.include_router(frontier_security_privacy_router)
 app.include_router(durability_router)
 app.include_router(history_router)
+app.include_router(versioning_router)
 app.include_router(data_engineering_router)
 app.include_router(mesh_router)
 app.include_router(four_eye_router)
