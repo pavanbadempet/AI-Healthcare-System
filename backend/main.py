@@ -900,6 +900,7 @@ from backend.routes.four_eye_routes import router as four_eye_router
 from backend.routes.frontier_backend_resilience_routes import router as frontier_backend_resilience_router
 from backend.routes.frontier_clinical_ai_routes import router as frontier_clinical_ai_router
 from backend.routes.frontier_data_systems_routes import router as frontier_data_systems_router
+from backend.routes.frontier_security_privacy_routes import router as frontier_security_privacy_router
 from backend.routes.mesh_routes import router as mesh_router
 from backend.routes.peak_data_engineering_routes import router as peak_data_engineering_router
 from backend.routes.peak_healthcare_routes import router as peak_healthcare_router
@@ -914,6 +915,7 @@ app.include_router(frontier_data_systems_router)
 app.include_router(confidential_data_systems_router)
 app.include_router(frontier_clinical_ai_router)
 app.include_router(frontier_backend_resilience_router)
+app.include_router(frontier_security_privacy_router)
 app.include_router(data_engineering_router)
 app.include_router(mesh_router)
 app.include_router(four_eye_router)
