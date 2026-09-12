@@ -893,6 +893,7 @@ app.include_router(fhir_compression.router, prefix=API_V1_PREFIX)
 app.include_router(abdm_sandbox.router, prefix=API_V1_PREFIX, tags=["ABDM Sandbox"])
 
 from backend.routes.advanced_intelligence_routes import router as advanced_intelligence_router
+from backend.routes.agentic_routes import router as agentic_router
 from backend.routes.confidential_data_systems_routes import router as confidential_data_systems_router
 from backend.routes.data_engineering_routes import router as data_engineering_router
 from backend.routes.data_platform_routes import router as data_platform_router
@@ -922,6 +923,7 @@ app.include_router(frontier_security_privacy_router)
 app.include_router(durability_router)
 app.include_router(history_router)
 app.include_router(versioning_router)
+app.include_router(agentic_router)
 app.include_router(data_engineering_router)
 app.include_router(mesh_router)
 app.include_router(four_eye_router)
