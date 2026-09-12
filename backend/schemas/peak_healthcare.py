@@ -239,3 +239,90 @@ class MultimodalEmbeddingResponse(BaseModel):
     nearest_phenotypic_cohort: str
     cohort_euclidean_distance: float
 
+
+# =====================================================================
+# Level 5 Autonomous Frontier Schemas
+# =====================================================================
+
+class MolecularAffinityRequest(BaseModel):
+    """Request for in silico generative molecular docking and affinity estimation."""
+    target_receptor: str = Field(..., description="Target receptor: SGLT2, GLP1R, ACE2, MR, HMGCR, PCSK9")
+    ligand_identifier: str = Field(..., description="Ligand identifier or candidate compound name")
+    chemical_smiles: Optional[str] = Field(default=None, description="Chemical SMILES string representation")
+    peptide_sequence: Optional[str] = Field(default=None, description="Amino acid peptide sequence for biologics")
+
+
+class MolecularAffinityResponse(BaseModel):
+    """Predicted biophysical binding thermodynamics and ADMET drug-likeness profile."""
+    target_receptor: str
+    ligand_identifier: str
+    predicted_delta_g_kcal_mol: float = Field(..., description="Binding free energy (kcal/mol); more negative indicates stronger binding")
+    predicted_kd_nanomolar: float = Field(..., description="Estimated equilibrium dissociation constant (Kd) in nM")
+    binding_affinity_tier: str = Field(..., description="Tier: PICOMOLAR_ULTRA, LOW_NANOMOLAR_POTENT, SUB_MICROMOLAR, WEAK_BINDING")
+    lipinski_rule_of_5_compliant: bool = Field(..., description="Oral bioavailability drug-likeness compliance")
+    admet_safety_profile: Dict[str, Any] = Field(..., description="Absorption, distribution, metabolism, excretion, and toxicity predictions")
+    scoring_function_provenance: str = "Empirical Physics-Based Desolvation & Electrostatic Force Field"
+
+
+class ClosedLoopTitrationRequest(BaseModel):
+    """Request for autonomous infusion titration with Lyapunov stability verification."""
+    patient_id: str
+    medication_channel: str = Field(..., description="Infusion channel: norepinephrine, dobutamine, insulin, nitroprusside")
+    current_state_measurement: float = Field(..., description="Current monitored vital (e.g. MAP in mmHg or Blood Glucose in mg/dL)")
+    target_setpoint: float = Field(..., description="Desired physiological target setpoint")
+    current_infusion_rate: float = Field(..., ge=0.0, description="Current infusion rate in standard units (mcg/min, units/hr)")
+    elapsed_time_sec: float = Field(default=60.0, ge=1.0, le=3600.0, description="Elapsed time interval in seconds")
+
+
+class ClosedLoopTitrationResponse(BaseModel):
+    """Autonomous closed-loop titration action with mathematical Lyapunov stability proof."""
+    patient_id: str
+    medication_channel: str
+    recommended_infusion_rate: float = Field(..., ge=0.0, description="Recommended updated infusion rate")
+    rate_delta: float = Field(..., description="Signed rate change (+/-)")
+    lyapunov_candidate_value: float = Field(..., ge=0.0, description="Lyapunov energy function V(x) value")
+    lyapunov_derivative_v_dot: float = Field(..., description="Time derivative dV/dt (must be strictly negative for asymptotic stability)")
+    is_lyapunov_stable: bool = Field(..., description="True if dV/dt < 0, mathematically proving error convergence")
+    safety_clamp_engaged: bool = Field(..., description="True if hard physiological safety limits forced rate clamping")
+    actuator_status: str = Field(..., description="Status: NORMAL_REGULATION, CONVERGED_AT_TARGET, EMERGENCY_CLAMP, DESTABILIZING_HOLD")
+
+
+class ZkHealthAssertionRequest(BaseModel):
+    """Request to generate a Zero-Knowledge proof of a private clinical biomarker."""
+    patient_id: str
+    biomarker_name: str = Field(..., description="Biomarker name (e.g. egfr, mace_10yr_risk, hba1c)")
+    secret_value: float = Field(..., description="Patient private raw numerical biomarker value")
+    public_threshold: float = Field(..., description="Public threshold being asserted")
+    assertion_operator: str = Field(..., description="Comparison operator: >=, <=, ==")
+    patient_salt: Optional[str] = Field(default=None, description="Optional cryptographic secret salt")
+
+
+class ZkHealthAssertionResponse(BaseModel):
+    """Non-interactive Zero-Knowledge proof certifying a health claim without revealing the raw value."""
+    assertion_id: str
+    biomarker_name: str
+    public_threshold: float
+    assertion_operator: str
+    public_commitment: str = Field(..., description="Cryptographic Pedersen-style commitment string")
+    proof_token: str = Field(..., description="Cryptographic Fiat-Shamir proof payload")
+    assertion_satisfied: bool
+    statement: str = Field(..., description="Human-readable verifiable assertion statement")
+
+
+class ZkProofVerificationRequest(BaseModel):
+    """Request by an independent verifier to verify a Zero-Knowledge health proof."""
+    public_commitment: str
+    proof_token: str
+    biomarker_name: str
+    public_threshold: float
+    assertion_operator: str
+
+
+class ZkProofVerificationResponse(BaseModel):
+    """Verification result confirming or rejecting the Zero-Knowledge assertion."""
+    is_valid_proof: bool
+    verification_status: str = Field(..., description="Status: VERIFIED_VALID, REJECTED_INVALID_PROOF, REJECTED_TAMPERED")
+    mathematical_soundness: str = "Fiat-Shamir Non-Interactive Zero-Knowledge Heuristic"
+    verified_assertion: str
+
+

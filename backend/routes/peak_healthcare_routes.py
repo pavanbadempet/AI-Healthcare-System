@@ -14,6 +14,8 @@ from backend.causal_engine import causal_engine
 from backend.clinical_cybernetics import cybernetics_engine
 from backend.clinical_digital_twin import digital_twin_engine
 from backend.clinical_guardrails import clinical_guardrails
+from backend.closed_loop_actuator import closed_loop_actuator
+from backend.generative_therapeutics import generative_therapeutics_engine
 from backend.multimodal_fusion import multimodal_engine
 from backend.precision_pharmacogenomics import pharmacogenomics_engine
 from backend.schemas.peak_healthcare import (
@@ -21,17 +23,26 @@ from backend.schemas.peak_healthcare import (
     CausalCounterfactualResponse,
     ClinicalCouncilConsensusResponse,
     ClinicalCouncilDeliberationRequest,
+    ClosedLoopTitrationRequest,
+    ClosedLoopTitrationResponse,
     CyberneticAssimilationRequest,
     CyberneticAssimilationResponse,
     DigitalTwinSimulationRequest,
     DigitalTwinSimulationResponse,
     FormalSafetyVerificationRequest,
     FormalSafetyVerificationResponse,
+    MolecularAffinityRequest,
+    MolecularAffinityResponse,
     MultimodalEmbeddingResponse,
     MultimodalPatientProfile,
     PharmacogenomicEvaluationRequest,
     PharmacogenomicEvaluationResponse,
+    ZkHealthAssertionRequest,
+    ZkHealthAssertionResponse,
+    ZkProofVerificationRequest,
+    ZkProofVerificationResponse,
 )
+from backend.zk_health_passport import zk_health_engine
 
 logger = logging.getLogger("backend.peak_healthcare_routes")
 
@@ -147,4 +158,69 @@ def embed_multimodal_patient(request: MultimodalPatientProfile) -> MultimodalEmb
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Multimodal embedding failed: {str(e)}"
         )
+
+
+@router.post("/therapeutics/dock", response_model=MolecularAffinityResponse, summary="In Silico Molecular Docking & Binding Free Energy Estimation")
+def dock_molecular_candidate(request: MolecularAffinityRequest) -> MolecularAffinityResponse:
+    """
+    Calculates predicted binding free energy (Delta G), Kd, Lipinski Rule-of-5 compliance,
+    and ADMET toxicity profile for candidate small molecules or peptides against target receptor pockets.
+    """
+    try:
+        return generative_therapeutics_engine.dock_candidate(request)
+    except Exception as e:
+        logger.error("Molecular docking failed: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Molecular docking failed: {str(e)}"
+        )
+
+
+@router.post("/actuator/titrate", response_model=ClosedLoopTitrationResponse, summary="Autonomous Infusion Titration with Lyapunov Stability Verification")
+def titrate_closed_loop_actuator(request: ClosedLoopTitrationRequest) -> ClosedLoopTitrationResponse:
+    """
+    Computes closed-loop drug infusion adjustments (norepinephrine, dobutamine, insulin, nitroprusside)
+    with strict Lyapunov asymptotic stability verification (dV/dt < 0) and emergency boundary clamps.
+    """
+    try:
+        return closed_loop_actuator.titrate(request)
+    except Exception as e:
+        logger.error("Closed-loop titration failed: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Closed-loop titration failed: {str(e)}"
+        )
+
+
+@router.post("/zk-passport/prove", response_model=ZkHealthAssertionResponse, summary="Generate Zero-Knowledge Cryptographic Health Assertion Proof")
+def generate_zk_health_proof(request: ZkHealthAssertionRequest) -> ZkHealthAssertionResponse:
+    """
+    Generates a non-interactive zero-knowledge proof certifying a health statement
+    (e.g. eGFR >= 60, MACE <= 7.5%) with mathematical certainty without revealing private biomarker values.
+    """
+    try:
+        return zk_health_engine.generate_assertion_proof(request)
+    except Exception as e:
+        logger.error("ZK proof generation failed: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"ZK proof generation failed: {str(e)}"
+        )
+
+
+@router.post("/zk-passport/verify", response_model=ZkProofVerificationResponse, summary="Verify Zero-Knowledge Health Assertion Proof")
+def verify_zk_health_proof(request: ZkProofVerificationRequest) -> ZkProofVerificationResponse:
+    """
+    Independently verifies a cryptographic zero-knowledge health assertion proof token
+    without accessing patient identity or private medical data.
+    """
+    try:
+        return zk_health_engine.verify_assertion_proof(request)
+    except Exception as e:
+        logger.error("ZK proof verification failed: %s", e)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"ZK proof verification failed: {str(e)}"
+        )
+
 
