@@ -5,7 +5,7 @@
  * can ever be committed to the repository.
  */
 
-import { existsSync, statSync, readFileSync, readdirSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 
 interface SecretPattern {
@@ -58,13 +58,6 @@ function getStagedFiles(): string[] {
 }
 
 function scanFile(filepath: string): Array<{ lineNo: number; name: string }> {
-  if (!existsSync(filepath)) return [];
-  try {
-    if (statSync(filepath).isDirectory()) return [];
-  } catch {
-    return [];
-  }
-
   const normPath = filepath.replace(/\\/g, "/");
   for (const exc of EXCLUDED_FILES) {
     if (normPath.includes(exc) || normPath === exc || normPath === `./${exc}`) {
@@ -72,10 +65,16 @@ function scanFile(filepath: string): Array<{ lineNo: number; name: string }> {
     }
   }
 
-  const violations: Array<{ lineNo: number; name: string }> = [];
+  let content: string;
   try {
-    const content = readFileSync(filepath, "utf8");
-    const lines = content.split(/\r?\n/);
+    content = readFileSync(filepath, "utf8");
+  } catch {
+    // If it's a directory, non-existent, binary, or unreadable, safely skip
+    return [];
+  }
+
+  const lines = content.split(/\r?\n/);
+  const violations: Array<{ lineNo: number; name: string }> = [];
 
     for (let idx = 0; idx < lines.length; idx++) {
       const line = lines[idx];
@@ -95,9 +94,6 @@ function scanFile(filepath: string): Array<{ lineNo: number; name: string }> {
         }
       }
     }
-  } catch {
-    // Ignore binary or unreadable files
-  }
 
   return violations;
 }

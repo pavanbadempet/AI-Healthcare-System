@@ -58,9 +58,12 @@ export function NeuroSymbolicPgxStudio() {
         clinicalAlternative: 'Hold ACEi/ARB; administer Patiromer 8.4g or Sodium Zirconium Cyclosilicate (Lokelma) until K+ < 5.0 mEq/L.',
       });
     } else {
+      const randSuffix = typeof crypto !== 'undefined' && crypto.randomUUID
+        ? crypto.randomUUID().slice(0, 8).toUpperCase()
+        : Date.now().toString(36).toUpperCase();
       setProofResult({
         status: 'PROVEN_SAFE',
-        certificateId: `PROOF-FOL-${Math.random().toString(36).substring(2, 9).toUpperCase()}`,
+        certificateId: `PROOF-FOL-${randSuffix}`,
         axiomsEvaluated: 24,
         guidelineCitation: 'CPIC Level A, KDIGO 2024, and FDA label axioms satisfied with zero unsatisfiable clauses.',
       });

@@ -583,11 +583,17 @@ export function generateSyntheticFhirBundle(options: SyntheticPatientOptions = {
 /**
  * High-speed generator for a batch of synthetic patient bundles.
  */
+function secureCryptoRandom(): number {
+  const buf = new Uint32Array(1);
+  crypto.getRandomValues(buf);
+  return buf[0] / 4294967296;
+}
+
 export function generateSyntheticBatch(
   count: number,
   options: { seed?: number; bundleType?: 'transaction' | 'collection'; timestamp?: string } = {}
 ) {
-  const prng = options.seed !== undefined ? createPrng(options.seed) : Math.random;
+  const prng = options.seed !== undefined ? createPrng(options.seed) : secureCryptoRandom;
   const fixedTimestamp = options.timestamp || (options.seed !== undefined ? '2026-09-13T00:00:00.000Z' : undefined);
   const bundles: any[] = [];
 
