@@ -3,6 +3,14 @@ import warnings
 warnings.filterwarnings("ignore", message=".*google.generativeai.*", category=FutureWarning)
 
 import os
+import sys
+from pathlib import Path
+
+# Ensure internal packages in packages/*/src are importable in test suites
+_ROOT = Path(__file__).resolve().parent.parent
+for _pkg_dir in (_ROOT / "packages").glob("*/src"):
+    if _pkg_dir.is_dir() and str(_pkg_dir) not in sys.path:
+        sys.path.insert(0, str(_pkg_dir))
 
 if hasattr(os, "add_dll_directory"):
     orig_add_dll_directory = os.add_dll_directory

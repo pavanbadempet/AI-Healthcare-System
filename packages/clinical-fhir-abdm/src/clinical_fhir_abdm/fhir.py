@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import date, datetime, timezone
 from decimal import Decimal
 from typing import Any, Iterable
+import uuid
 
 
 class FHIRValidationError(ValueError):
@@ -25,6 +26,9 @@ VITAL_COMPONENTS = (
 
 
 def _value(entity: object, field: str, default: Any = None) -> Any:
+    if isinstance(entity, dict):
+        val = entity.get(field)
+        return default if val is None else val
     return getattr(entity, field, default)
 
 
@@ -214,6 +218,149 @@ def care_event_resource(event: object, patient_id: int | str) -> dict[str, Any]:
         "severity": _value(event, "severity"),
         "recorded": fhir_datetime(_value(event, "created_at")),
     })
+
+
+def service_request_resource(service_request: object, patient_id: int | str) -> dict[str, Any]:
+    """Serialize a service request order or proposal into a FHIR R4 ServiceRequest resource."""
+    raw_id = _value(service_request, "id")
+    sr_id = _string_id(raw_id if raw_id is not None else f"sr-{uuid.uuid4().hex[:10]}")
+    category_raw = _value(service_request, "category") or "diagnostic"
+    code_raw = _value(service_request, "code") or "404684003"
+    desc = _value(service_request, "description") or category_raw
+    urgency_raw = _value(service_request, "urgency") or _value(service_request, "priority") or "routine"
+    status_raw = _value(service_request, "status") or "active"
+    intent_raw = _value(service_request, "intent") or "order"
+    created_at = _value(service_request, "created_at") or _value(service_request, "authored_on")
+
+    # Determine coding system
+    is_loinc = any(c.isdigit() for c in str(code_raw)) and "-" in str(code_raw)
+    system = LOINC_SYSTEM if is_loinc else "http://snomed.info/sct"
+
+    priority_map = {
+        "routine": "routine",
+        "urgent": "urgent",
+        "stat": "stat",
+        "asap": "asap",
+    }
+    priority = priority_map.get(str(urgency_raw).lower(), "routine")
+
+    resource: dict[str, Any] = {
+        "resourceType": "ServiceRequest",
+        "id": sr_id,
+        "status": status_raw,
+        "intent": intent_raw,
+        "priority": priority,
+        "category": [
+            {
+                "coding": [
+                    {
+                        "system": "http://snomed.info/sct",
+                        "code": "108252007",
+                        "display": str(category_raw).title(),
+                    }
+                ],
+                "text": str(category_raw),
+            }
+        ],
+        "code": {
+            "coding": [
+                {
+                    "system": system,
+                    "code": str(code_raw),
+                    "display": str(desc),
+                }
+            ],
+            "text": str(desc),
+        },
+        "subject": {"reference": f"Patient/{patient_id}"},
+        "authoredOn": fhir_datetime(created_at or datetime.now(timezone.utc)),
+    }
+
+    indication = _value(service_request, "indication") or _value(service_request, "reason")
+    if indication:
+        resource["reasonCode"] = [{"text": str(indication)}]
+
+    requester = _value(service_request, "requester")
+    if requester:
+        resource["requester"] = {"display": str(requester)}
+
+    supporting_info = _value(service_request, "supporting_info")
+    if supporting_info:
+        if isinstance(supporting_info, (list, tuple)):
+            resource["supportingInfo"] = [{"display": str(item)} for item in supporting_info]
+        else:
+            resource["supportingInfo"] = [{"display": str(supporting_info)}]
+
+    return _remove_none(resource)
+
+
+def flag_resource(flag: object, patient_id: int | str) -> dict[str, Any]:
+    """Serialize a safety alert, warning, or flag into a FHIR R4 Flag resource."""
+    raw_id = _value(flag, "id")
+    flag_id = _string_id(raw_id if raw_id is not None else f"flag-{uuid.uuid4().hex[:10]}")
+    status_raw = _value(flag, "status") or "active"
+    category_raw = _value(flag, "category") or "clinical_alert"
+    severity_raw = _value(flag, "severity") or "warning"
+    details_raw = _value(flag, "details") or _value(flag, "message") or ""
+    code_raw = _value(flag, "code") or "404684003"
+    author_raw = _value(flag, "author")
+    created_at = _value(flag, "created_at") or _value(flag, "start_time")
+
+    cat_code_map = {
+        "clinical_alert": "clinical",
+        "clinical": "clinical",
+        "safety_risk": "safety",
+        "safety": "safety",
+        "allergy": "safety",
+        "behavioral": "behavioral",
+        "advance_directive": "advance-directive",
+    }
+    fhir_cat_code = cat_code_map.get(str(category_raw).lower(), "clinical")
+
+    resource: dict[str, Any] = {
+        "resourceType": "Flag",
+        "id": flag_id,
+        "status": status_raw,
+        "category": [
+            {
+                "coding": [
+                    {
+                        "system": "http://terminology.hl7.org/CodeSystem/flag-category",
+                        "code": fhir_cat_code,
+                        "display": str(category_raw).replace("_", " ").title(),
+                    }
+                ],
+                "text": str(category_raw),
+            }
+        ],
+        "code": {
+            "coding": [
+                {
+                    "system": "http://snomed.info/sct",
+                    "code": str(code_raw),
+                    "display": str(details_raw)[:60] if details_raw else "Clinical finding",
+                }
+            ],
+            "text": str(details_raw or code_raw),
+        },
+        "subject": {"reference": f"Patient/{patient_id}"},
+        "period": {
+            "start": fhir_datetime(created_at or datetime.now(timezone.utc)),
+        },
+    }
+
+    if author_raw:
+        resource["author"] = {"display": str(author_raw)}
+
+    if severity_raw:
+        resource["extension"] = [
+            {
+                "url": "http://ai-healthcare-system.io/fhir/StructureDefinition/flag-severity",
+                "valueString": str(severity_raw).lower(),
+            }
+        ]
+
+    return _remove_none(resource)
 
 
 def _validate_resource(resource: dict[str, Any]) -> None:

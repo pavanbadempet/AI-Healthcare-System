@@ -21,6 +21,9 @@ class SpecialistRole(str, Enum):
     MEDICAL_GENETICIST = "MEDICAL_GENETICIST"
     RADIOLOGIST_PATHOLOGIST = "RADIOLOGIST_PATHOLOGIST"
     MEDICAL_ETHICIST = "MEDICAL_ETHICIST"
+    CRITICAL_CARE_SPECIALIST = "CRITICAL_CARE_SPECIALIST"
+    INPATIENT_NURSE = "INPATIENT_NURSE"
+    SURGICAL_SPECIALIST = "SURGICAL_SPECIALIST"
 
 
 class ClinicalArgument:
@@ -40,7 +43,7 @@ class ClinicalArgument:
         self.claim = claim
         self.rationale = rationale
         self.evidence = evidence or []
-        self.confidence = confidence
+        self.confidence = float(confidence)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -113,10 +116,13 @@ class DungArgumentationFramework:
         return {att.attacker_id for att in self.attacks if att.target_id == arg_id}
 
     def defends(self, subset: Set[str], arg_id: str) -> bool:
-        """Evaluate if subset defends arg_id against all attackers."""
+        """Evaluate if subset defends arg_id against all attackers.
+
+        arg_id is defended by subset iff for every attacker b of arg_id,
+        there is some argument c in subset that attacks b.
+        """
         attackers = self.get_attackers_of(arg_id)
         for attacker in attackers:
-            # Subset must contain at least one argument that attacks this attacker
             counter_attacked = any(
                 att.attacker_id in subset and att.target_id == attacker
                 for att in self.attacks
@@ -124,6 +130,22 @@ class DungArgumentationFramework:
             if not counter_attacked:
                 return False
         return True
+
+    def is_admissible(self, subset: Set[str]) -> bool:
+        """Evaluate if subset is conflict-free and defends all of its elements."""
+        if not self.is_conflict_free(subset):
+            return False
+        for arg_id in subset:
+            if not self.defends(subset, arg_id):
+                return False
+        return True
+
+    def is_complete_extension(self, subset: Set[str]) -> bool:
+        """Evaluate if subset is an admissible set containing all arguments it defends."""
+        if not self.is_admissible(subset):
+            return False
+        defended_by_subset = {a for a in self.arguments if self.defends(subset, a)}
+        return subset == defended_by_subset
 
     def compute_grounded_extension(self) -> Set[str]:
         """Compute the unique Dung Grounded Extension via iterative characteristic fixed-point fold."""
@@ -141,6 +163,68 @@ class DungArgumentationFramework:
             grounded = next_step
 
         return grounded
+
+    def compute_complete_extensions(self) -> List[Set[str]]:
+        """Compute all complete extensions of the argumentation framework."""
+        arg_list = sorted(list(self.arguments.keys()))
+        n = len(arg_list)
+        complete_extensions: List[Set[str]] = []
+
+        def search(idx: int, current: Set[str]) -> None:
+            if idx == n:
+                if self.is_complete_extension(current):
+                    complete_extensions.append(set(current))
+                return
+
+            # Branch 1: exclude arg_list[idx]
+            search(idx + 1, current)
+
+            # Branch 2: include arg_list[idx] if conflict-free
+            cand = arg_list[idx]
+            cand_set = current | {cand}
+            if self.is_conflict_free(cand_set):
+                search(idx + 1, cand_set)
+
+        search(0, set())
+        return complete_extensions
+
+    def compute_preferred_extensions(self) -> List[Set[str]]:
+        """Compute all preferred extensions (maximal admissible sets under set inclusion)."""
+        arg_list = sorted(list(self.arguments.keys()))
+        n = len(arg_list)
+        admissible_sets: List[Set[str]] = []
+
+        def search(idx: int, current: Set[str]) -> None:
+            if idx == n:
+                if self.is_admissible(current):
+                    admissible_sets.append(set(current))
+                return
+
+            # Branch 1: exclude candidate
+            search(idx + 1, current)
+
+            # Branch 2: include candidate if conflict-free
+            cand = arg_list[idx]
+            cand_set = current | {cand}
+            if self.is_conflict_free(cand_set):
+                search(idx + 1, cand_set)
+
+        search(0, set())
+
+        # Filter for maximal admissible sets under set inclusion
+        preferred: List[Set[str]] = []
+        for s in admissible_sets:
+            is_maximal = True
+            for other in admissible_sets:
+                if s < other:  # s is a strict subset of other
+                    is_maximal = False
+                    break
+            if is_maximal and s not in preferred:
+                preferred.append(s)
+
+        if not preferred:
+            preferred = [set()]
+        return preferred
 
 
 class DialecticalConsensusEngine:
@@ -249,6 +333,13 @@ class DialecticalConsensusEngine:
             if aid not in grounded_ids
         ]
 
+        # Compute Preferred Extensions for multi-extension options
+        preferred_ext_sets = af.compute_preferred_extensions()
+        preferred_extensions_serialized = [
+            [af.arguments[aid].to_dict() for aid in ext]
+            for ext in preferred_ext_sets
+        ]
+
         # Synthesize winning clinical recommendation
         if any(a["arg_id"] == "ARG_ETHICIST_01" for a in undefeated_arguments):
             consensus_action = "PIVOT_TO_PALLIATIVE_CARE"
@@ -270,9 +361,105 @@ class DialecticalConsensusEngine:
             "rationale_summary": rationale_summary,
             "grounded_consensus_arguments": undefeated_arguments,
             "defeated_arguments": defeated_arguments,
+            "preferred_extensions": preferred_extensions_serialized,
             "attacks_evaluated": [att.to_dict() for att in af.attacks],
             "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
         }
 
+        self._history.append(result)
+        return result
+
+    def deliberate_proposals(
+        self,
+        patient_id: str,
+        specialist_responses: List[Any],
+        clinical_case: Optional[Dict[str, Any]] = None,
+    ) -> Dict[str, Any]:
+        """Deliberate across autonomous swarm responses using Dung's argumentation."""
+        af = DungArgumentationFramework()
+        case_info = clinical_case or {}
+
+        # 1. Map each specialist response to ClinicalArguments
+        for i, resp in enumerate(specialist_responses):
+            agent_name = getattr(resp, "agent_name", None) or f"AGENT_{i+1}"
+            role = SpecialistRole.ATTENDING_PHYSICIAN
+            name_lower = agent_name.lower()
+            if "pharmac" in name_lower:
+                role = SpecialistRole.CLINICAL_PHARMACIST
+            elif "genet" in name_lower or "tumor" in name_lower or "oncolog" in name_lower:
+                role = SpecialistRole.MEDICAL_GENETICIST
+            elif "radio" in name_lower or "path" in name_lower:
+                role = SpecialistRole.RADIOLOGIST_PATHOLOGIST
+            elif "ethic" in name_lower:
+                role = SpecialistRole.MEDICAL_ETHICIST
+            elif "nurs" in name_lower:
+                role = SpecialistRole.INPATIENT_NURSE
+            elif "icu" in name_lower or "triage" in name_lower or "emergency" in name_lower:
+                role = SpecialistRole.CRITICAL_CARE_SPECIALIST
+
+            confidence = getattr(resp, "epistemic_confidence", 0.9)
+            recs = getattr(resp, "recommendations", [])
+            claim_text = "; ".join(str(r) for r in recs) if recs else f"Recommendations by {agent_name}"
+            rationale_text = getattr(resp, "reasoning", "") or f"Clinical reasoning by {agent_name}"
+
+            arg = ClinicalArgument(
+                arg_id=f"ARG_{agent_name.upper().replace(' ', '_')}_{i}",
+                agent_role=role,
+                claim=claim_text,
+                rationale=rationale_text,
+                confidence=confidence,
+            )
+            af.add_argument(arg)
+
+        # 2. Add attacks based on clinical conflicts
+        arg_ids = list(af.arguments.keys())
+        for i, a_id in enumerate(arg_ids):
+            a_arg = af.arguments[a_id]
+            for j, b_id in enumerate(arg_ids):
+                if i == j:
+                    continue
+                b_arg = af.arguments[b_id]
+                # Check for pharmacological or ethical refutation
+                claim_a = a_arg.claim.lower()
+                claim_b = b_arg.claim.lower()
+                if "hold" in claim_a or "contraindicated" in claim_a or "veto" in claim_a:
+                    for target_kw in ["prescribe", "initiate", "give", "administer", "proceed"]:
+                        if target_kw in claim_b:
+                            role_title = a_arg.agent_role.value.replace('_', ' ').title()
+                            af.add_attack(
+                                attacker_id=a_id,
+                                target_id=b_id,
+                                attack_type="SAFETY_VETO",
+                                justification=f"{role_title} vetoes proposed intervention in {b_id}",
+                            )
+                            break
+
+        # Compute extensions
+        grounded_ids = af.compute_grounded_extension()
+        preferred_sets = af.compute_preferred_extensions()
+
+        undefeated = [af.arguments[aid].to_dict() for aid in grounded_ids]
+        defeated = [af.arguments[aid].to_dict() for aid in af.arguments if aid not in grounded_ids]
+        preferred_serialized = [
+            [af.arguments[aid].to_dict() for aid in ext]
+            for ext in preferred_sets
+        ]
+
+        consensus_action = "PROCEED_WITH_CONSENSUS" if undefeated else "DISPUTE_REQUIRES_CLINICAL_REVIEW"
+        if any("hold" in a["claim"].lower() or "veto" in a["claim"].lower() for a in undefeated):
+            consensus_action = "SAFETY_HOLD_APPLIED"
+
+        result = {
+            "session_id": str(uuid.uuid4()),
+            "patient_id": patient_id,
+            "consensus_action": consensus_action,
+            "rationale_summary": f"Deliberated across {len(specialist_responses)} specialist swarm responses.",
+            "grounded_consensus_arguments": undefeated,
+            "defeated_arguments": defeated,
+            "preferred_extensions": preferred_serialized,
+            "attacks_evaluated": [att.to_dict() for att in af.attacks],
+            "clinical_case": case_info,
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        }
         self._history.append(result)
         return result
