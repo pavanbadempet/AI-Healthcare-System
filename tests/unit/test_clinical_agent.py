@@ -85,8 +85,13 @@ def test_base_agent_github_actions():
             assert os.path.exists(summary_file)
             with open(summary_file, "r", encoding="utf-8") as f:
                 content = f.read()
-                assert "# ✅ APEX Agent Execution Summary: GHA Agent" in content
-                assert "Est. Prompt Volume" in content
+                assert "# ✅ APEX Agent Execution: GHA Agent" in content
+                assert "Total Steps Executed" in content
+
+            # Verify detailed summary markdown structure
+            detailed_summary = agent.get_summary_markdown()
+            assert "# ✅ APEX Agent Execution Summary: GHA Agent" in detailed_summary
+            assert "Est. Prompt Volume" in detailed_summary
 
             # Verify outputs written
             assert os.path.exists(output_file)
