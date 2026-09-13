@@ -200,9 +200,9 @@ pub fn pan_tompkins_qrs_detector(samples: &[f64], sampling_rate_hz: f64) -> PanT
 /// Computes clinical Heart Rate Variability (HRV) metrics:
 /// Heart Rate (bpm), SDNN (ms), RMSSD (ms), and pNN50 (%) from detected R-peaks.
 pub fn compute_hrv_metrics(r_peaks: &[usize], sampling_rate_hz: f64) -> HrvMetrics {
-    if r_peaks.len() < 2 || sampling_rate_hz <= 0.0 {
+    if r_peaks.len() < 2 || sampling_rate_hz <= 0.0 || !sampling_rate_hz.is_finite() {
         return HrvMetrics {
-            heart_rate_bpm: if r_peaks.len() == 1 { 72.0 } else { 0.0 },
+            heart_rate_bpm: 0.0,
             sdnn_ms: 0.0,
             rmssd_ms: 0.0,
             pnn50_percent: 0.0,
@@ -227,7 +227,7 @@ pub fn compute_hrv_metrics(r_peaks: &[usize], sampling_rate_hz: f64) -> HrvMetri
 
     if rr_ms.is_empty() {
         return HrvMetrics {
-            heart_rate_bpm: 72.0,
+            heart_rate_bpm: 0.0,
             sdnn_ms: 0.0,
             rmssd_ms: 0.0,
             pnn50_percent: 0.0,
@@ -236,7 +236,7 @@ pub fn compute_hrv_metrics(r_peaks: &[usize], sampling_rate_hz: f64) -> HrvMetri
 
     let k = rr_ms.len() as f64;
     let mean_rr = rr_ms.iter().sum::<f64>() / k;
-    let heart_rate_bpm = if mean_rr > 0.0 { 60000.0 / mean_rr } else { 72.0 };
+    let heart_rate_bpm = if mean_rr > 0.0 { 60000.0 / mean_rr } else { 0.0 };
 
     let variance = if rr_ms.len() >= 2 {
         rr_ms.iter().map(|&x| (x - mean_rr).powi(2)).sum::<f64>() / (k - 1.0)

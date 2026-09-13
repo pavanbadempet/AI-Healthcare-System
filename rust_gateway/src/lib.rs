@@ -14,7 +14,7 @@ mod fhir;
 mod tee_enclave;
 mod clinical_calculator;
 mod phi_redactor;
-mod ecg_dsp;
+pub mod ecg_dsp;
 mod dicom_slicer;
 mod auth_crypto;
 mod billing_audit;

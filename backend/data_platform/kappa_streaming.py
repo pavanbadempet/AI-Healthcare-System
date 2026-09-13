@@ -17,7 +17,13 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 import numpy as np
-import pyarrow as pa
+
+try:
+    import pyarrow as pa
+    HAVE_PYARROW = True
+except ImportError:
+    pa = None  # type: ignore
+    HAVE_PYARROW = False
 
 logger = logging.getLogger("backend.data_platform.kappa")
 
@@ -65,14 +71,17 @@ class KappaStreamingEngine:
         self._wal: List[CdcWalEntry] = []
         self._current_lsn = 1000
         # In-memory Arrow telemetry buffer schema
-        self._arrow_schema = pa.schema([
-            ("patient_id", pa.string()),
-            ("timestamp_epoch_ms", pa.int64()),
-            ("metric_name", pa.string()),
-            ("metric_value", pa.float64()),
-            ("unit", pa.string()),
-            ("device_id", pa.string()),
-        ])
+        if HAVE_PYARROW:
+            self._arrow_schema = pa.schema([
+                ("patient_id", pa.string()),
+                ("timestamp_epoch_ms", pa.int64()),
+                ("metric_name", pa.string()),
+                ("metric_value", pa.float64()),
+                ("unit", pa.string()),
+                ("device_id", pa.string()),
+            ])
+        else:
+            self._arrow_schema = None
         # Ring buffers per patient and metric: patient_id -> metric_name -> list of records
         self._telemetry_buffer: Dict[str, Dict[str, List[Dict[str, Any]]]] = {}
 
@@ -80,10 +89,31 @@ class KappaStreamingEngine:
         self,
         records: List[Dict[str, Any]],
         table_name: str = "bedside_telemetry",
-    ) -> pa.RecordBatch:
+    ) -> Any:
         """
         Ingests telemetry data directly into a zero-copy PyArrow RecordBatch and commits to WAL.
         """
+        if not HAVE_PYARROW:
+            for rec in records:
+                self._current_lsn += 1
+                self._wal.append(
+                    CdcWalEntry(
+                        lsn=self._current_lsn,
+                        timestamp_iso=datetime.now(timezone.utc).isoformat(),
+                        operation="INSERT",
+                        table_name=table_name,
+                        payload=rec,
+                    )
+                )
+                pid = rec.get("patient_id", "unknown")
+                mname = rec.get("metric_name", "unknown")
+                if pid not in self._telemetry_buffer:
+                    self._telemetry_buffer[pid] = {}
+                if mname not in self._telemetry_buffer[pid]:
+                    self._telemetry_buffer[pid][mname] = []
+                self._telemetry_buffer[pid][mname].append(rec)
+            return records
+
         if not records:
             empty_table = pa.Table.from_pylist([], schema=self._arrow_schema)
             return empty_table.to_batches()[0] if empty_table.to_batches() else pa.RecordBatch.from_arrays([], schema=self._arrow_schema)

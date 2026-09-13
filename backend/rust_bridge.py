@@ -17,6 +17,16 @@ import math
 import time
 import zlib
 from typing import Any, Dict, List, Tuple
+import sys
+
+try:
+    import rust_gateway_ffi
+except ImportError:
+    try:
+        from backend import rust_gateway_ffi
+        sys.modules["rust_gateway_ffi"] = rust_gateway_ffi
+    except ImportError:
+        rust_gateway_ffi = None
 
 from pydantic import BaseModel
 
@@ -352,21 +362,21 @@ class RustBridgeEngine:
             import rust_gateway_ffi
             return rust_gateway_ffi.compute_hrv_metrics_py(r_peaks, sampling_rate)
         except Exception:
-            if len(r_peaks) < 2:
-                return 72.0, 0.0, 0.0, 0.0
+            if len(r_peaks) < 2 or sampling_rate <= 0.0:
+                return 0.0, 0.0, 0.0, 0.0
             import numpy as np
             rr = np.diff(r_peaks) * (1000.0 / sampling_rate)
-            valid = rr[(rr >= 300) & (rr <= 2000)]
-            if len(valid) < 2:
+            valid = rr[(rr >= 250) & (rr <= 2000)]
+            if len(valid) < 1:
                 valid = rr
             mean_rr = float(np.mean(valid))
-            hr = 60000.0 / mean_rr if mean_rr > 0 else 72.0
-            sdnn = float(np.std(valid))
+            hr = 60000.0 / mean_rr if mean_rr > 0 else 0.0
+            sdnn = float(np.std(valid, ddof=1)) if len(valid) >= 2 else 0.0
             diffs = np.diff(valid)
             rmssd = float(np.sqrt(np.mean(diffs ** 2))) if len(diffs) > 0 else 0.0
             nn50 = np.sum(np.abs(diffs) > 50.0) if len(diffs) > 0 else 0
             pnn50 = float((nn50 / len(diffs)) * 100.0) if len(diffs) > 0 else 0.0
-            return (round(hr, 1), round(sdnn, 2), round(rmssd, 2), round(pnn50, 2))
+            return (round(hr, 2), round(sdnn, 2), round(rmssd, 2), round(pnn50, 2))
 
     def analyze_ecg_pan_tompkins_rust(self, signal: List[float], sampling_rate: float = 250.0) -> Dict[str, Any]:
         """Runs full Pan-Tompkins QRS detection and HRV analysis in Rust or Python fallback."""
