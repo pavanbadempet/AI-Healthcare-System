@@ -103,8 +103,8 @@ class BaseAgent:
         """Checks if the agent is running in a GitHub Actions runner environment."""
         return os.getenv("GITHUB_ACTIONS") == "true"
 
-    def get_summary_markdown(self, redact_details: bool = False) -> str:
-        """Generates a summary of the agent run in Markdown format."""
+    def get_summary_markdown(self) -> str:
+        """Generates a detailed summary of the agent run in Markdown format."""
         emoji = "✅" if self.status == "completed" else "❌"
         md = []
         md.append(f"# {emoji} APEX Agent Execution Summary: {self.name}")
@@ -124,33 +124,38 @@ class BaseAgent:
         md.append("|---|---|---|---|")
         for step in self.steps:
             step_emoji = "🟢" if step["status"] == "success" else "🔴"
-            if redact_details:
-                clean_act = f"Step {step.get('index', 0)} Execution"
-                res = "Completed"
-            else:
-                # Format multi-line results for table
-                res = str(step["result"]).replace("\n", "<br>")[:120]
-                clean_act = str(step["action"])[:80]
+            # Format multi-line results for table
+            res = str(step["result"]).replace("\n", "<br>")[:120]
+            clean_act = str(step["action"])[:80]
             md.append(f"| {step['index']} | {clean_act} | {res} | {step_emoji} {step['status']} |")
         md.append("")
 
         if self.errors:
             md.append("## ⚠️ Errors Encountered")
             for err in self.errors:
-                err_msg = "Error recorded during step execution" if redact_details else str(err)[:120]
-                md.append(f"- {err_msg}")
+                md.append(f"- {str(err)[:120]}")
             md.append("")
 
         return "\n".join(md)
 
     def write_github_step_summary(self):
-        """Writes the Markdown summary report directly to the Job Summary page."""
+        """Writes high-level agent telemetry directly to the Job Summary page."""
         summary_path = os.getenv("GITHUB_STEP_SUMMARY")
         if summary_path and (os.path.exists(summary_path) or os.path.exists(os.path.dirname(os.path.abspath(summary_path)))):
             try:
-                summary_text = self.get_summary_markdown(redact_details=True)
+                emoji = "✅" if self.status == "completed" else "❌"
+                summary_lines = [
+                    f"# {emoji} APEX Agent Execution: {self.name}",
+                    "",
+                    "## 📊 Telemetry",
+                    f"- **Status**: {self.status.upper()}",
+                    f"- **Duration**: {self.duration} seconds",
+                    f"- **Total Steps Executed**: {len(self.steps)}",
+                    f"- **Est. Cost**: ${self.estimated_cost:.6f}",
+                    "",
+                ]
                 with open(summary_path, "a", encoding="utf-8") as f:
-                    f.write("\n" + summary_text + "\n")
+                    f.write("\n" + "\n".join(summary_lines) + "\n")
             except Exception:
                 pass
 
