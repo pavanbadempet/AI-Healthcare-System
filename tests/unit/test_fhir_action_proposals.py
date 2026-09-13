@@ -10,14 +10,21 @@ Tests:
 
 from __future__ import annotations
 
-import datetime
+import os
+import sys
+
 import pytest
+
+_pkg_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "packages", "clinical-fhir-abdm", "src")
+)
+if _pkg_path not in sys.path and os.path.isdir(_pkg_path):
+    sys.path.insert(0, _pkg_path)
 
 from clinical_fhir_abdm.fhir import (
     FHIRValidationError,
     build_bundle,
     flag_resource,
-    medication_request_resource,
     patient_resource,
     service_request_resource,
 )

@@ -11,17 +11,25 @@ Verifies deterministic safety barriers inspecting FHIR action proposals:
 
 from __future__ import annotations
 
+import os
+import sys
+
 import pytest
 
-from backend.agentic.invariant_execution_gate import (
-    InvariantType,
-    InvariantValidationResult,
-    PreActionInvariantGate,
-    ValidationStatus,
+_pkg_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "packages", "clinical-fhir-abdm", "src")
 )
+if _pkg_path not in sys.path and os.path.isdir(_pkg_path):
+    sys.path.insert(0, _pkg_path)
+
 from clinical_fhir_abdm.schemas import (
     FHIRMedicationRequestProposal,
     FHIRServiceRequestProposal,
+)
+
+from backend.agentic.invariant_execution_gate import (
+    PreActionInvariantGate,
+    ValidationStatus,
 )
 
 

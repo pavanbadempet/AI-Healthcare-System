@@ -112,8 +112,7 @@ data/checkpoints/
 # Catboost
 catboost_info/
 
-# Standalone Packages (tracked in separate private repos, git-purged from main repo)
-packages/
+# Standalone Packages
 rust_gateway/target/
 android_app/
 data/processed/

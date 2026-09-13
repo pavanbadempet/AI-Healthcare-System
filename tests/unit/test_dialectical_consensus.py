@@ -20,7 +20,8 @@ Verifies:
 
 from __future__ import annotations
 
-import pytest
+import os
+import sys
 
 from backend.agentic.dialectical_consensus import (
     ClinicalArgument,
@@ -32,7 +33,17 @@ from backend.agentic.metacognitive_calibrator import (
     MetacognitiveCalibrator,
     SwarmEpistemicAssessment,
 )
-from clinical_fhir_abdm.schemas import ClinicalAgentResponse
+
+_pkg_path = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "..", "..", "packages", "clinical-fhir-abdm", "src")
+)
+if _pkg_path not in sys.path and os.path.isdir(_pkg_path):
+    sys.path.insert(0, _pkg_path)
+
+try:
+    from clinical_fhir_abdm.schemas import ClinicalAgentResponse
+except ImportError:
+    from backend.agents.ed_triage_agent import ClinicalAgentResponse
 
 
 # =============================================================================
