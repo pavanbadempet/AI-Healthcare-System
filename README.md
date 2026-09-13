@@ -41,7 +41,8 @@ The platform provides native **HL7 FHIR R4** and **OHDSI OMOP CDM v5.4** compati
   <img src="https://img.shields.io/badge/OHDSI-OMOP%20CDM%20v5.4-blue?style=flat-square" alt="OMOP CDM v5.4" />
   <img src="https://img.shields.io/badge/CPIC-Precision%20Pharmacogenomics-brightgreen?style=flat-square" alt="CPIC Pharmacogenomics" />
   <img src="https://img.shields.io/badge/Digital%20Twin-10--Year%20ODE%20Simulator-purple?style=flat-square" alt="Digital Twin" />
-  <img src="https://img.shields.io/badge/Rust_Gateway-000000?style=flat-square&logo=rust&logoColor=white" alt="Rust Gateway" />
+  <img src="https://img.shields.io/badge/Bun_Edge_Gateway-000000?style=flat-square&logo=bun&logoColor=white" alt="Bun Edge Gateway" />
+  <img src="https://img.shields.io/badge/Rust_Systems_Core-000000?style=flat-square&logo=rust&logoColor=white" alt="Rust Systems Core" />
   <img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI" />
   <img src="https://img.shields.io/badge/React_19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 19" />
   <img src="https://img.shields.io/badge/Cloudflare_Workers_AI-F38020?style=flat-square&logo=cloudflare&logoColor=white" alt="Cloudflare Workers AI" />
@@ -408,38 +409,46 @@ The Axum/Tokio Rust PID 1 reverse proxy provides sub-millisecond request ingesti
 
 ```mermaid
 graph TB
-    subgraph Client["CLIENT SURFACE — React 19 · TypeScript · Tailwind CSS"]
-        FE["Vite 8 SPA · Doctor Portal & Telemedicine UI"]
+    subgraph Client["CLIENT SURFACE — React 19 · TypeScript · Tailwind CSS 4"]
+        FE["Vite SPA · Doctor Portal · Telemedicine & Live Vitals UI"]
     end
 
-    subgraph Gateway["API GATEWAY & SECURITY — FastAPI"]
-        MW["8-Layer Middleware Stack (Exception Masking · Rate-limiting · Tracing)"]
-        ROUTERS["REST API Routers (Auth · Chat · Predict · Ops · Interop)"]
+    subgraph Tier1["TIER 1: BUN EDGE GATEWAY & BFF — Port 8000 (PID 1)"]
+        EDGE_ROUTER["ElysiaJS Layer-7 Reverse Proxy & Path Partitioning"]
+        EDGE_AUTH["Sub-0.5ms JWT Cryptographic Guard & Token Bucket Limiter"]
+        EDGE_STREAM["Native WebSockets & SSE Telemetry Hub"]
+        EDGE_METRICS["Prometheus Sliding-Window Metrics Exporter"]
     end
 
-    subgraph Service["INTELLIGENCE & ORCHESTRATION"]
-        AGENT["LangGraph Supervisor Agent (Research · Analyze · Guardrail · Generate)"]
-        CORE["Core AI Provider Gateway (Ollama local fallback → Gemini cloud)"]
-        EVAL["Shared ML Evaluation Module (AUC-ROC · Sensitivity · Specificity)"]
+    subgraph Tier2["TIER 2: RUST SYSTEMS CORE — Port 8001 (Axum · Tokio · SQLx)"]
+        RUST_CRUD["High-Throughput EHR CRUD (Patients · Vitals · Encounters · Billing)"]
+        RUST_DSP["Pan-Tompkins ECG Biosignal DSP & HRV RMSSD Engine (<1ms)"]
+        RUST_SIMD["AVX2 SIMD Euclidean Distance & Batch Cosine Engine"]
+        RUST_SAFETY["Pre-Action Invariant Gate & Dung Argumentation Solver"]
+        RUST_CALC["Native Clinical Calculators (MELD, ASCVD, Framingham, FIB-4)"]
     end
 
-    subgraph DataEngine["DATA ENGINEERING & MLOPS LAKEHOUSE"]
-        AIRFLOW["Apache Airflow (DAG Orchestration & ETL)"]
-        SPARK["PySpark Streaming & Batch Processing"]
-        DELTA[("Delta Lake Medallion Storage (Bronze, Silver, Gold)")]
+    subgraph Tier3["TIER 3: PYTHON DELIBERATIVE BRAIN — Port 8002 (FastAPI)"]
+        AGENT["LangGraph Supervisor Swarm (Level 15 Medical Specialists)"]
+        CORE_AI["Core AI Gateway (Cloudflare Llama 3.1 8B · Ollama · Gemini)"]
+        TAB_ML["TabICLv2 Foundation Model & Calibrated Soft-Voting Ensembles"]
+        LAKEHOUSE["Databricks Unity Catalog Medallion Lakehouse & PySpark Engine"]
     end
 
-    subgraph Data["DATA & PERSISTENCE LAYER"]
-        DB[(SQL database — SQLite WAL / PostgreSQL)]
-        VS[(Vector Store — turbovec SIMD Index / Cosine Similarity)]
-        ML[(5 ML Classifiers + Scalers .pkl)]
+    subgraph Storage["DATA & PERSISTENCE LAYER"]
+        SQL_DB[("Dual SQL Engine — SQLite WAL / Multi-AZ PostgreSQL")]
+        DELTA_LAKE[("Delta Lake 3.x ACID Medallion Storage (Bronze · Silver · Gold)")]
+        MODEL_REG[("Model Registry — TabICLv2 & Quad-Ensemble Calibrated Weights")]
     end
 
-    Client --> Gateway
-    Gateway --> Service
-    Service --> Data
-    DataEngine --> Data
-    Service -.-> DataEngine
+    Client --> Tier1
+    Tier1 -->|"100% EHR CRUD, DSP, SIMD & Calculators"| Tier2
+    Tier1 -->|"Complex Multi-Specialist Deliberation & RAG"| Tier3
+    Tier3 -.->|"Zero-IPC PyO3 FFI Acceleration"| Tier2
+    Tier2 --> SQL_DB
+    Tier3 --> SQL_DB
+    Tier3 --> DELTA_LAKE
+    Tier3 --> MODEL_REG
 ```
 
 ### 🌐 EKS Cluster Production Topology
@@ -537,6 +546,39 @@ $$
 $$
 
 Where $X_i$ represents clinical risk factors (Age, Systolic BP, Total Cholesterol, HDL, Smoking Status, Diabetes status).
+
+*   **Model for End-Stage Liver Disease (MELD & MELD-Na):** Native Rust implementation computing 90-day liver mortality risks:
+
+$$
+\text{MELD} = 9.57 \ln(\text{Creatinine}) + 3.78 \ln(\text{Bilirubin}) + 11.20 \ln(\text{INR}) + 6.43
+$$
+
+With serum sodium adjustment ($\text{Na} \in [125, 140]\text{ mEq/L}$):
+
+$$
+\text{MELD-Na} = \text{MELD} - \text{Na} - [0.025 \times \text{MELD} \times (140 - \text{Na})] + 140
+$$
+
+*   **ASCVD Pooled Cohort 10-Year Cardiovascular Risk:** Estimates 10-year risk of primary atherosclerotic cardiovascular disease events across race- and sex-stratified proportional hazard models:
+
+$$
+\text{Risk}_{\text{ASCVD}} = 1 - S_{10}^{\exp\left(\sum \beta_k X_k - \bar{X}'\beta\right)}
+$$
+
+### 3. Pan-Tompkins Real-Time ECG Biosignal DSP Engine
+The Tier 2 Rust Gateway provides sub-millisecond real-time QRS detection and autonomic Heart Rate Variability (HRV) feature extraction across a 5-stage digital signal processing pipeline:
+1. **Bandpass Filtering (5–15 Hz):** Cascaded second-order IIR/FIR filters suppress baseline wander (T-wave amplification) and high-frequency EMG muscle noise.
+2. **Derivative Operator:** Suppresses low-frequency P/T waves while emphasizing the steep slope of the QRS complex:
+   $$ y[n] = \frac{1}{8} \left( 2x[n] + x[n-1] - x[n-3] - 2x[n-4] \right) $$
+3. **Non-Linear Squaring:** Amplifies dominant QRS peaks non-linearly: $y[n] = x^2[n]$.
+4. **Moving Window Integration (MWI):** Extracts waveform energy over a physiological window ($N = \lfloor 0.150 \times f_s \rfloor$ samples).
+5. **Autonomic HRV Extraction:** Computes Root Mean Square of Successive Differences (RMSSD) and standard deviation of NN intervals (SDNN) for immediate arrhythmia screening:
+   $$ \text{RMSSD} = \sqrt{\frac{1}{N - 1} \sum_{i=1}^{N-1} (RR_{i+1} - RR_i)^2} $$
+
+### 4. AVX2 SIMD Vector Acceleration & Invariant Gate
+* **AVX2 SIMD Vector Math:** Fused multiply-add and 256-bit wide registers compute Euclidean distance and batch cosine similarity across patient embedding vectors with sub-microsecond throughput.
+* **Pre-Action Invariant Execution Gate:** Zero-allocation bitset gate evaluates safety predicates (dosage upper bounds, contraindication bitmasks) before state mutations are committed to the transaction log.
+* **Dung Argumentation Framework:** Computes grounded and preferred dialectical extensions to reach explainable consensus when clinical specialist agents present contradictory treatment recommendations.
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
@@ -829,23 +871,41 @@ ollama pull llama3.2
 ollama pull nomic-embed-text
 ```
 
-#### 5️⃣ Start Dev Servers (Backend & Frontend)
-Launch the FastAPI server and the React dev compiler:
+#### 5️⃣ Start Dev Servers (Tri-Tier or Standalone)
 
-* **Backend API (Terminal 1)**:
-  ```bash
-  uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
-  ```
-* **React Web Portal (Terminal 2)**:
-  ```bash
-  bun --cwd frontend install
-  bun --cwd frontend run dev
-  ```
+You can launch either the full **Tri-Tier High-Performance Topology** (recommended for production fidelity) or the lightweight **Standalone Mode**:
 
-| Service Portal | Access Endpoint | Credentials (Seed Data) |
+##### Option A: Tri-Tier High-Performance Stack (Bun + Rust + Python)
+```bash
+# Terminal 1: Tier 1 Bun + ElysiaJS Edge Gateway (Port 8000, PID 1 Ingress)
+bun run edge:dev
+
+# Terminal 2: Tier 2 Native Rust Systems Core (Port 8001, Axum/Tokio CRUD & DSP)
+bun run rust:run
+
+# Terminal 3: Tier 3 Python Deliberative Brain (Port 8002, Foundation Models & Agents)
+uvicorn backend.main:app --reload --host 127.0.0.1 --port 8002
+
+# Terminal 4: React 19 Clinician Workstation (Port 3000)
+bun run dev
+```
+
+##### Option B: Standalone Developer Sandbox (Direct Python Gateway)
+```bash
+# Terminal 1: Direct Python API Server (Port 8000)
+uvicorn backend.main:app --reload --host 127.0.0.1 --port 8000
+
+# Terminal 2: React 19 Clinician Workstation (Port 3000)
+bun run dev
+```
+
+| Service Portal | Access Endpoint | Credentials & Notes |
 | :--- | :--- | :--- |
 | **Clinician Portal** | [http://127.0.0.1:3000](http://127.0.0.1:3000) | Doctor Login: `admin@clinos.com` / Password: `password123` |
-| **REST API Server** | [http://127.0.0.1:8000](http://127.0.0.1:8000) | OpenAPI JSON specs endpoint |
+| **Bun Edge Gateway (Tier 1)** | [http://127.0.0.1:8000](http://127.0.0.1:8000) | PID 1 Reverse proxy, rate limiting, and SSE hub |
+| **Rust Systems Core (Tier 2)**| [http://127.0.0.1:8001](http://127.0.0.1:8001) | Sub-millisecond EHR CRUD, MELD/ASCVD & Pan-Tompkins DSP |
+| **Python Brain (Tier 3)** | [http://127.0.0.1:8002](http://127.0.0.1:8002) | LangGraph agents, TabICLv2 & Medallion lakehouse |
+| **Prometheus Telemetry** | [http://127.0.0.1:8000/metrics/prometheus](http://127.0.0.1:8000/metrics/prometheus) | Real-time sliding-window p50/p90/p95/p99 latency quantiles |
 | **Swagger API Docs** | [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) | Interactive API sandbox testing |
 
 
@@ -992,23 +1052,39 @@ We run 8 structured GitHub Actions workflows for continuous integration and comp
 
 ## 🧪 Verification & Coverage Suite
 
-All tests must pass in CI before merging. We enforce a strict **50% code coverage gate** for pull request approvals.
+All tests must pass in CI before merging. We enforce a strict **50% code coverage gate** for pull request approvals across all language runtimes:
 
 ```bash
-# Run the automated code quality linter
-python scripts/code_quality_linter.py
-
-# Run the complete backend test suite with coverage (1,149+ tests)
+# 1. Run the Python backend test suite with parallel execution (1,642+ tests)
 python -m pytest tests/ -n auto -v
 
-# Run the frontend unit tests (90 Vitest tests)
+# 2. Run the React frontend unit & component tests (Vitest)
 bun --cwd frontend test
+
+# 3. Run the Bun Edge Gateway test suite (49 passing tests)
+bun run edge:test
+
+# 4. Run the native Rust systems core & DSP test matrix (115 passing tests)
+bun run rust:test
+
+# 5. Run the pre-commit zero-leak credential scanner across all files
+bun run security:scan
+
+# 6. Run the code quality and lint checks
+python -m ruff check backend/
+bun --cwd frontend lint
 ```
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 🗺 Roadmap & Milestones
 
+- [x] **Tri-Tier High-Performance Topology**: Bun + ElysiaJS Layer-7 Edge Gateway (Port 8000, PID 1) + Native Rust Systems Core (Port 8001) + Python Deliberative Brain (Port 8002).
+- [x] **Pan-Tompkins ECG Biosignal DSP**: Real-time QRS detection (<1ms) and autonomic HRV RMSSD calculation in native Rust.
+- [x] **AVX2 SIMD Vector Acceleration**: Hardware SIMD vectorized Euclidean distance and batch cosine similarity engine.
+- [x] **Native Rust Clinical Calculators**: Sub-microsecond calculation of MELD, MELD-Na, ASCVD, Framingham, and FIB-4 with zero Python overhead.
+- [x] **Sub-Second Bun Developer Tooling**: Sub-15ms SQLite maintenance, synthetic FHIR R4 generator (>66k bundles/s), AST context extractor, and pre-commit secret scanners.
+- [x] **Zero-IPC PyO3 CPython FFI Module**: High-performance C-extension bridging Rust subsystems into Python with pure-Python fallbacks.
 - [x] **Core ML Engine**: 5 XGBoost diagnostic classifiers + SHAP explanations.
 - [x] **Multi-Agent RAG**: LangGraph supervisor routing + Ollama fallback gate.
 - [x] **FHIR Interoperability & ABDM**: FHIR R4 bundle exports + ABDM ABHA consent lifecycle + SMART on FHIR app launcher.
