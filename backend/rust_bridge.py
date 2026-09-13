@@ -126,6 +126,70 @@ class RustBridgeEngine:
             score = (age * ast) / (platelets * math.sqrt(alt))
             return round(score, 2)
 
+    def calculate_meld_rust(self, bilirubin_mg_dl: float, inr: float, creatinine_mg_dl: float, on_dialysis: bool = False) -> float:
+        """Computes MELD Score for End-Stage Liver Disease via Rust FFI."""
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.calculate_meld_py(bilirubin_mg_dl, inr, creatinine_mg_dl, on_dialysis)
+        except Exception:
+            bili = max(bilirubin_mg_dl, 1.0)
+            inr_val = max(inr, 1.0)
+            creat = 4.0 if on_dialysis else min(max(creatinine_mg_dl, 1.0), 4.0)
+            meld = (9.57 * math.log(creat)) + (3.78 * math.log(bili)) + (11.20 * math.log(inr_val)) + 6.43
+            return float(min(max(round(meld), 6.0), 40.0))
+
+    def calculate_ascvd_rust(
+        self,
+        age: float,
+        total_chol: float,
+        hdl_chol: float,
+        sbp: float,
+        treated_bp: bool,
+        smoker: bool,
+        diabetic: bool,
+        is_female: bool,
+    ) -> float:
+        """Computes 10-Year ASCVD Risk Score via Rust FFI."""
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.calculate_ascvd_py(age, total_chol, hdl_chol, sbp, treated_bp, smoker, diabetic, is_female)
+        except Exception:
+            if age < 20.0 or age > 79.0:
+                return 0.0
+            points = (age - 40.0) * 0.4
+            ratio = total_chol / max(hdl_chol, 1.0)
+            if ratio > 5.0:
+                points += 3.0
+            elif ratio > 4.0:
+                points += 1.5
+            if sbp >= 160.0:
+                points += 4.0 if treated_bp else 3.0
+            elif sbp >= 140.0:
+                points += 2.5 if treated_bp else 1.5
+            elif sbp >= 130.0:
+                points += 1.0
+            if smoker:
+                points += 3.0
+            if diabetic:
+                points += 2.5
+            if not is_female:
+                points += 1.0
+            risk_pct = (1.0 / (1.0 + math.exp(-0.25 * (points - 10.0)))) * 100.0
+            return float(min(max(risk_pct, 0.1), 99.0))
+
+    def calculate_framingham_rust(self, age: float, total_chol: float, hdl_chol: float, sbp: float, smoker: bool) -> float:
+        """Computes Framingham 10-Year Cardiovascular Risk Score via Rust FFI."""
+        try:
+            import rust_gateway_ffi
+            return rust_gateway_ffi.calculate_framingham_py(age, total_chol, hdl_chol, sbp, smoker)
+        except Exception:
+            score = (age - 30.0) * 0.2
+            if total_chol > 200.0: score += 2.0
+            if hdl_chol < 40.0: score += 2.0
+            if sbp > 140.0: score += 3.0
+            if smoker: score += 4.0
+            return float(min(max(score, 0.0), 100.0))
+
     def compute_sepsis_qsofa_rust(self, resp_rate: float, sbp: float, gcs: float) -> Tuple[int, str]:
         """Calculates qSOFA Sepsis score."""
         try:

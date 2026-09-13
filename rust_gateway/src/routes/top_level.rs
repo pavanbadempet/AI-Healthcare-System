@@ -28,6 +28,8 @@ pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(root_handler))
         .route("/healthz", get(health_handler))
+        .route("/healthz/live", get(health_live_handler))
+        .route("/healthz/ready", get(health_ready_handler))
         .route("/healthz/env", get(health_env_handler))
         .route("/healthz/circuit_breaker", get(circuit_breaker_handler))
         .route("/healthz/time_predict", get(time_predict_handler))
@@ -54,6 +56,29 @@ pub async fn health_handler(
     let db_active = state.db_pool.size() >= 0;
     Json(json!({
         "status": "ok",
+        "gateway": "healthy",
+        "database": if db_active { "connected" } else { "disconnected" },
+        "active_connections": state.db_pool.size(),
+        "timestamp": Utc::now().to_rfc3339()
+    }))
+}
+
+/// GET /healthz/live
+pub async fn health_live_handler() -> Json<Value> {
+    Json(json!({
+        "status": "alive",
+        "gateway": "healthy",
+        "timestamp": Utc::now().to_rfc3339()
+    }))
+}
+
+/// GET /healthz/ready
+pub async fn health_ready_handler(
+    State(state): State<AppState>,
+) -> Json<Value> {
+    let db_active = state.db_pool.size() >= 0;
+    Json(json!({
+        "status": if db_active { "ready" } else { "degraded" },
         "gateway": "healthy",
         "database": if db_active { "connected" } else { "disconnected" },
         "active_connections": state.db_pool.size(),

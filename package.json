@@ -9,6 +9,8 @@
   ],
   "scripts": {
     "demo": "python scripts/demo_quickstart.py",
+    "context": "bun scripts/ai_context.ts",
+    "sync-adapters": "bun scripts/sync_agent_adapters.ts",
     "dev": "bun run --cwd frontend dev",
     "build": "bun run --cwd frontend build",
     "start": "bun run --cwd frontend start",

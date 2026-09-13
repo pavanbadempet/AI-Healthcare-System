@@ -102,3 +102,26 @@ def test_calculate_framingham_risk():
     # Both should have elevated risk (>15%) due to smoking, high cholesterol, and elevated SBP
     assert res_f["risk_percent"] > 15.0
     assert res_m["risk_percent"] > 15.0
+
+
+def test_rust_bridge_clinical_calculators():
+    from backend.rust_bridge import rust_bridge
+
+    # MELD score tests
+    meld_low = rust_bridge.calculate_meld_rust(0.8, 1.0, 0.9, False)
+    assert meld_low == 6.0
+
+    meld_dialysis = rust_bridge.calculate_meld_rust(3.5, 2.2, 2.5, True)
+    assert 25.0 <= meld_dialysis <= 40.0
+
+    # ASCVD risk tests
+    ascvd_low = rust_bridge.calculate_ascvd_rust(35.0, 170.0, 55.0, 115.0, False, False, False, True)
+    assert ascvd_low < 15.0
+
+    ascvd_high = rust_bridge.calculate_ascvd_rust(65.0, 260.0, 32.0, 165.0, True, True, True, False)
+    assert ascvd_high > 50.0
+
+    # Framingham risk tests
+    framingham = rust_bridge.calculate_framingham_rust(55.0, 210.0, 45.0, 135.0, False)
+    assert 0.0 <= framingham <= 100.0
+

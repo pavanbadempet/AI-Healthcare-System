@@ -36,6 +36,30 @@ pub extern "C" fn calculate_egfr_ffi(serum_creatinine: f64, age: f64, is_female:
 }
 
 #[unsafe(no_mangle)]
+pub extern "C" fn calculate_meld_ffi(bilirubin_mg_dl: f64, inr: f64, creatinine_mg_dl: f64, on_dialysis: bool) -> f64 {
+    clinical_calculator::calculate_meld_score(bilirubin_mg_dl, inr, creatinine_mg_dl, on_dialysis)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn calculate_ascvd_ffi(
+    age: f64,
+    total_chol: f64,
+    hdl_chol: f64,
+    sbp: f64,
+    treated_bp: bool,
+    smoker: bool,
+    diabetic: bool,
+    is_female: bool,
+) -> f64 {
+    clinical_calculator::calculate_ascvd_risk(age, total_chol, hdl_chol, sbp, treated_bp, smoker, diabetic, is_female)
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn calculate_framingham_ffi(age: f64, total_chol: f64, hdl_chol: f64, sbp: f64, smoker: bool) -> f64 {
+    clinical_calculator::calculate_framingham_risk_score(age, total_chol, hdl_chol, sbp, smoker)
+}
+
+#[unsafe(no_mangle)]
 pub extern "C" fn validate_fhir_patient_ffi(json_ptr: *const c_char) -> bool {
     if json_ptr.is_null() {
         return false;
@@ -110,6 +134,30 @@ fn calculate_fib4_py(ast: f64, alt: f64, platelets: f64, age: f64) -> PyResult<f
     }
     let score = (age * ast) / (platelets * alt.sqrt());
     Ok((score * 100.0).round() / 100.0)
+}
+
+#[pyfunction]
+fn calculate_meld_py(bilirubin_mg_dl: f64, inr: f64, creatinine_mg_dl: f64, on_dialysis: bool) -> PyResult<f64> {
+    Ok(clinical_calculator::calculate_meld_score(bilirubin_mg_dl, inr, creatinine_mg_dl, on_dialysis))
+}
+
+#[pyfunction]
+fn calculate_ascvd_py(
+    age: f64,
+    total_chol: f64,
+    hdl_chol: f64,
+    sbp: f64,
+    treated_bp: bool,
+    smoker: bool,
+    diabetic: bool,
+    is_female: bool,
+) -> PyResult<f64> {
+    Ok(clinical_calculator::calculate_ascvd_risk(age, total_chol, hdl_chol, sbp, treated_bp, smoker, diabetic, is_female))
+}
+
+#[pyfunction]
+fn calculate_framingham_py(age: f64, total_chol: f64, hdl_chol: f64, sbp: f64, smoker: bool) -> PyResult<f64> {
+    Ok(clinical_calculator::calculate_framingham_risk_score(age, total_chol, hdl_chol, sbp, smoker))
 }
 
 #[pyfunction]
@@ -285,6 +333,9 @@ fn rust_gateway_ffi(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(redact_phi_py, m)?)?;
     m.add_function(wrap_pyfunction!(calculate_egfr_py, m)?)?;
     m.add_function(wrap_pyfunction!(calculate_fib4_py, m)?)?;
+    m.add_function(wrap_pyfunction!(calculate_meld_py, m)?)?;
+    m.add_function(wrap_pyfunction!(calculate_ascvd_py, m)?)?;
+    m.add_function(wrap_pyfunction!(calculate_framingham_py, m)?)?;
     m.add_function(wrap_pyfunction!(validate_fhir_patient_py, m)?)?;
     m.add_function(wrap_pyfunction!(attest_enclave_py, m)?)?;
     m.add_function(wrap_pyfunction!(evaluate_sepsis_qsofa_py, m)?)?;
