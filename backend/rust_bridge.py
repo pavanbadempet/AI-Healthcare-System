@@ -14,10 +14,10 @@ Provides high-performance Rust integration primitives across the stack:
 import base64
 import json
 import math
+import sys
 import time
 import zlib
 from typing import Any, Dict, List, Tuple
-import sys
 
 try:
     import rust_gateway_ffi
