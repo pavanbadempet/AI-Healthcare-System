@@ -100,6 +100,39 @@ class RustBridgeEngine:
             is_rust_native=is_native
         )
 
+    def calculate_euclidean_distance_rust(self, vec_a: List[float], vec_b: List[float]) -> float:
+        """Computes Euclidean (L2) distance using Rust AVX2 SIMD or fallback."""
+        try:
+            import rust_gateway_ffi
+            return float(rust_gateway_ffi.calculate_euclidean_distance_py(vec_a, vec_b))
+        except Exception:
+            if len(vec_a) != len(vec_b) or not vec_a:
+                return 0.0
+            return float(math.sqrt(sum((a - b) ** 2 for a, b in zip(vec_a, vec_b))))
+
+    def compute_rust_euclidean_distance(self, vec_a: List[float], vec_b: List[float]) -> RustExecutionMetrics:
+        """Computes vector Euclidean distance executing Native Rust PyO3 SIMD logic."""
+        start = time.perf_counter()
+        try:
+            import rust_gateway_ffi
+            distance = float(rust_gateway_ffi.calculate_euclidean_distance_py(vec_a, vec_b))
+            is_native = True
+        except Exception:
+            if len(vec_a) != len(vec_b) or not vec_a:
+                distance = 0.0
+            else:
+                distance = float(math.sqrt(sum((a - b) ** 2 for a, b in zip(vec_a, vec_b))))
+            is_native = False
+
+        elapsed_us = round((time.perf_counter() - start) * 1e6, 2)
+        return RustExecutionMetrics(
+            task_name="RUST_PYO3_EUCLIDEAN_DISTANCE",
+            vector_dim=len(vec_a),
+            result=round(distance, 6),
+            execution_time_us=elapsed_us,
+            is_rust_native=is_native
+        )
+
     def compute_rust_egfr(self, serum_creatinine: float = 0.9, age: float = 45.0, is_female: bool = False, creatinine: float | None = None) -> float:
         """Computes eGFR using CKD-EPI formula in Rust or fallback Python."""
         cr = creatinine if creatinine is not None else serum_creatinine
@@ -334,6 +367,28 @@ class RustBridgeEngine:
             nn50 = np.sum(np.abs(diffs) > 50.0) if len(diffs) > 0 else 0
             pnn50 = float((nn50 / len(diffs)) * 100.0) if len(diffs) > 0 else 0.0
             return (round(hr, 1), round(sdnn, 2), round(rmssd, 2), round(pnn50, 2))
+
+    def analyze_ecg_pan_tompkins_rust(self, signal: List[float], sampling_rate: float = 250.0) -> Dict[str, Any]:
+        """Runs full Pan-Tompkins QRS detection and HRV analysis in Rust or Python fallback."""
+        try:
+            import rust_gateway_ffi
+            res_str = rust_gateway_ffi.analyze_ecg_pan_tompkins_py(signal, sampling_rate)
+            return json.loads(res_str)
+        except Exception:
+            peaks = self.detect_ecg_r_peaks_rust(signal, sampling_rate)
+            hr, sdnn, rmssd, pnn50 = self.compute_hrv_metrics_rust(peaks, sampling_rate)
+            mean_rr = round(60000.0 / hr, 2) if hr > 0 else 0.0
+            is_arrhythmia = hr > 100.0 or (0.0 < hr < 50.0) or rmssd > 120.0
+            return {
+                "heart_rate_bpm": hr,
+                "r_peaks_count": len(peaks),
+                "r_peak_indices": peaks,
+                "mean_rr_ms": mean_rr,
+                "sdnn_ms": sdnn,
+                "rmssd_ms": rmssd,
+                "pnn50_percent": pnn50,
+                "is_arrhythmia_detected": is_arrhythmia,
+            }
 
     # =========================================================================
     # 🩻 MEDICAL IMAGING (DICOM MATRIX NORMALIZATION & WINDOWING)
@@ -604,6 +659,27 @@ class RustBridgeEngine:
                     scores.append((i, 0.0))
             scores.sort(key=lambda item: item[1], reverse=True)
             return scores[:top_k]
+
+    def batch_cosine_similarity_rust(
+        self, query_vec: List[float], candidate_vectors: List[List[float]]
+    ) -> List[float]:
+        """Computes batch cosine similarity using Rust AVX2 SIMD or fallback."""
+        try:
+            import rust_gateway_ffi
+            return [float(x) for x in rust_gateway_ffi.batch_cosine_similarity_py(query_vec, candidate_vectors)]
+        except Exception:
+            norm_q = math.sqrt(sum(x * x for x in query_vec))
+            if norm_q == 0:
+                return [0.0] * len(candidate_vectors)
+            scores = []
+            for cand in candidate_vectors:
+                norm_c = math.sqrt(sum(y * y for y in cand))
+                if norm_c > 0:
+                    dot = sum(x * y for x, y in zip(query_vec, cand))
+                    scores.append(round(dot / (norm_q * norm_c), 6))
+                else:
+                    scores.append(0.0)
+            return scores
 
     # =========================================================================
     # 🛡️ HIGH-PERFORMANCE PRE-ACTION INVARIANT GATE

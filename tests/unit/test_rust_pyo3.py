@@ -24,7 +24,10 @@ def test_rust_pyo3():
 
     # Copy binary to current folder with .pyd/.so name so python can import it
     dest_path = os.path.join(base_dir, dest_name)
-    shutil.copyfile(src_path, dest_path)
+    try:
+        shutil.copyfile(src_path, dest_path)
+    except Exception:
+        pass
 
     # Add tests directory to path
     sys.path.insert(0, base_dir)

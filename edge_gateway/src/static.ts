@@ -77,6 +77,7 @@ export function isApiOrSpecialRoute(pathname: string): boolean {
     pathname === '/healthz' ||
     pathname.startsWith('/healthz/') ||
     pathname === '/metrics' ||
+    pathname.startsWith('/metrics/') ||
     pathname === '/docs' ||
     pathname.startsWith('/docs/') ||
     pathname === '/openapi.json' ||

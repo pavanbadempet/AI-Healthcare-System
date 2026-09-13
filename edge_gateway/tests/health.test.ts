@@ -75,4 +75,25 @@ describe('Health & Readiness Aggregator', () => {
     expect(data.edge.status).toBe('ok');
     expect(data.backend.status).toBe('unreachable');
   });
+
+  it('aggregates multiple upstream services on /healthz/aggregate', async () => {
+    const res = await app.handle(new Request('http://127.0.0.1:8000/healthz/aggregate'));
+    expect(res.status).toBe(200);
+    const data: any = await res.json();
+    expect(data.status).toBe('ok');
+    expect(data.edge.status).toBe('ok');
+    expect(data.services.rust_systems_core.status).toBe('ok');
+    expect(data.timestamp).toBeTruthy();
+  });
+
+  it('exports Prometheus formatted metrics on /metrics/prometheus', async () => {
+    const res = await app.handle(new Request('http://127.0.0.1:8000/metrics/prometheus'));
+    expect(res.status).toBe(200);
+    expect(res.headers.get('content-type')).toContain('text/plain');
+    const body = await res.text();
+    expect(body).toContain('# HELP http_requests_total');
+    expect(body).toContain('# HELP http_request_duration_seconds');
+    expect(body).toContain('edge_gateway_uptime_seconds');
+  });
 });
+

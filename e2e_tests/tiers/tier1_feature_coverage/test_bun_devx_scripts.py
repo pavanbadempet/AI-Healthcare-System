@@ -120,3 +120,59 @@ def test_devx_sub_100ms_execution_performance():
     assert res.returncode == 0
     # On Windows with process spawn overhead, total subprocess invocation is fast (<2500ms), inner logic is <100ms
     assert elapsed_ms < 2500.0, f"Execution took too long: {elapsed_ms:.2f}ms"
+
+
+def test_bun_manage_db_script():
+    """Verifies that 'bun scripts/manage_db.ts status' runs in sub-second and reports database status."""
+    res = subprocess.run(
+        ["bun", "scripts/manage_db.ts", "status"],
+        cwd=str(PROJECT_ROOT),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=15,
+    )
+    assert res.returncode == 0, f"manage_db.ts status failed: {res.stderr}"
+    assert "AI Healthcare System - Bun SQLite DB Manager" in res.stdout
+    assert "Integrity:  ok" in res.stdout or "Path:" in res.stdout
+
+
+def test_bun_generate_fhir_script():
+    """Verifies that 'bun scripts/generate_fhir_bundles.ts' creates synthetic patient bundles."""
+    test_out = PROJECT_ROOT / "temp_e2e_fhir"
+    res = subprocess.run(
+        ["bun", "scripts/generate_fhir_bundles.ts", "--count", "2", "--out", str(test_out)],
+        cwd=str(PROJECT_ROOT),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=15,
+    )
+    assert res.returncode == 0, f"generate_fhir_bundles.ts failed: {res.stderr}"
+    assert "Successfully synthesized 2 FHIR R4 bundles" in res.stdout
+    assert test_out.exists()
+    import shutil
+    shutil.rmtree(test_out, ignore_errors=True)
+
+
+def test_bun_benchmark_script():
+    """Verifies that 'bun scripts/benchmark_system.ts --iterations 10 --json --mock' outputs structured benchmark results."""
+    res = subprocess.run(
+        ["bun", "scripts/benchmark_system.ts", "--iterations", "10", "--json", "--mock"],
+        cwd=str(PROJECT_ROOT),
+        capture_output=True,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        timeout=15,
+    )
+
+    assert res.returncode == 0, f"benchmark_system.ts failed: {res.stderr}"
+    data = json.loads(res.stdout)
+    assert "results" in data
+    assert len(data["results"]) >= 1
+    assert "requestsPerSecond" in data["results"][0]
+    assert "p50" in data["results"][0]["latenciesMs"]
+

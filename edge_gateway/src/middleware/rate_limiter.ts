@@ -112,6 +112,7 @@ export function isRateLimitExempt(pathname: string): boolean {
     pathname.startsWith('/health') ||
     pathname.startsWith('/healthz') ||
     pathname === '/metrics' ||
+    pathname.startsWith('/metrics/') ||
     pathname === '/docs' ||
     pathname === '/openapi.json' ||
     pathname.startsWith('/assets/') ||

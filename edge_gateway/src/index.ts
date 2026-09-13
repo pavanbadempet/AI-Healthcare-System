@@ -32,7 +32,7 @@ export function createApp(options: AppOptions = {}) {
     // JWT verification
     .use(jwtMiddleware)
     // Health & readiness probes
-    .use(createHealthPlugin(cfg.rustBackendUrl))
+    .use(createHealthPlugin(cfg.rustBackendUrl, cfg.pythonBackendUrl))
     // Native Bun real-time SSE telemetry & token stream hub
     .use(createTelemetryStreamPlugin())
     // WebSocket streaming proxy

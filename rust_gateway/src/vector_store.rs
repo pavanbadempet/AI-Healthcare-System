@@ -129,7 +129,7 @@ async fn search_handler(
 }
 
 // Runtime feature detection for AVX2 explicit SIMD calculation
-fn cosine_similarity(a: &[f32], b: &[f32]) -> f32 {
+pub fn cosine_similarity(a: &[f32], b: &[f32]) -> f32 {
     #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
     {
         if is_x86_feature_detected!("avx2") {
@@ -201,7 +201,7 @@ unsafe fn cosine_similarity_avx2(a: &[f32], b: &[f32]) -> f32 {
     }
 }
 
-fn cosine_similarity_fallback(a: &[f32], b: &[f32]) -> f32 {
+pub fn cosine_similarity_fallback(a: &[f32], b: &[f32]) -> f32 {
     if a.len() != b.len() || a.is_empty() {
         return 0.0;
     }
@@ -228,6 +228,70 @@ fn cosine_similarity_fallback(a: &[f32], b: &[f32]) -> f32 {
     }
 }
 
+pub fn euclidean_distance(a: &[f32], b: &[f32]) -> f32 {
+    #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+    {
+        if is_x86_feature_detected!("avx2") {
+            return unsafe { euclidean_distance_avx2(a, b) };
+        }
+    }
+    euclidean_distance_fallback(a, b)
+}
+
+#[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
+#[target_feature(enable = "avx2")]
+pub unsafe fn euclidean_distance_avx2(a: &[f32], b: &[f32]) -> f32 {
+    use std::arch::x86_64::*;
+
+    let len = a.len();
+    if len != b.len() || len == 0 {
+        return 0.0;
+    }
+
+    let mut i = 0;
+    let mut sum_sq_vec = _mm256_setzero_ps();
+
+    while i + 8 <= len {
+        unsafe {
+            let va = _mm256_loadu_ps(a.as_ptr().add(i));
+            let vb = _mm256_loadu_ps(b.as_ptr().add(i));
+            let diff = _mm256_sub_ps(va, vb);
+            sum_sq_vec = _mm256_add_ps(sum_sq_vec, _mm256_mul_ps(diff, diff));
+        }
+        i += 8;
+    }
+
+    let mut temp = [0.0f32; 8];
+    unsafe {
+        _mm256_storeu_ps(temp.as_mut_ptr(), sum_sq_vec);
+    }
+    let mut sum_sq: f32 = temp.iter().sum();
+
+    while i < len {
+        let diff = a[i] - b[i];
+        sum_sq += diff * diff;
+        i += 1;
+    }
+
+    sum_sq.sqrt()
+}
+
+pub fn euclidean_distance_fallback(a: &[f32], b: &[f32]) -> f32 {
+    if a.len() != b.len() || a.is_empty() {
+        return 0.0;
+    }
+    let mut sum_sq = 0.0f32;
+    for i in 0..a.len() {
+        let diff = a[i] - b[i];
+        sum_sq += diff * diff;
+    }
+    sum_sq.sqrt()
+}
+
+pub fn batch_cosine_similarity(query: &[f32], matrix: &[Vec<f32>]) -> Vec<f32> {
+    matrix.par_iter().map(|vec| cosine_similarity(query, vec)).collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -241,4 +305,57 @@ mod tests {
         let c = vec![0.0, 1.0, 0.0];
         assert!(cosine_similarity(&a, &c).abs() < 1e-5);
     }
+
+    #[test]
+    fn test_euclidean_distance() {
+        let a = vec![0.0, 0.0, 0.0];
+        let b = vec![3.0, 4.0, 0.0];
+        assert!((euclidean_distance(&a, &b) - 5.0).abs() < 1e-5);
+    }
+
+    #[test]
+    fn test_euclidean_distance_embeddings_384_768_1536() {
+        for &dim in &[384, 768, 1536] {
+            let a: Vec<f32> = (0..dim).map(|i| (i as f32 * 0.01).sin()).collect();
+            let b: Vec<f32> = (0..dim).map(|i| (i as f32 * 0.02).cos()).collect();
+
+            let dist_avx2 = euclidean_distance(&a, &b);
+            let dist_fallback = euclidean_distance_fallback(&a, &b);
+
+            assert!((dist_avx2 - dist_fallback).abs() < 1e-4, "Mismatch at dim {}: avx2={}, fallback={}", dim, dist_avx2, dist_fallback);
+            assert!(dist_avx2 > 0.0);
+
+            // Distance to self is 0
+            assert!(euclidean_distance(&a, &a) < 1e-6);
+        }
+    }
+
+    #[test]
+    fn test_euclidean_distance_boundary_conditions() {
+        // Empty vectors
+        assert_eq!(euclidean_distance(&[], &[]), 0.0);
+        // Mismatched lengths
+        assert_eq!(euclidean_distance(&[1.0, 2.0], &[1.0]), 0.0);
+        // Non-multiple of 8
+        let a = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
+        let b = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 10.0];
+        assert!((euclidean_distance(&a, &b) - 1.0).abs() < 1e-5);
+    }
+
+    #[test]
+    fn test_batch_cosine_similarity() {
+        let query = vec![1.0, 0.0, 0.0];
+        let matrix = vec![
+            vec![1.0, 0.0, 0.0],
+            vec![0.0, 1.0, 0.0],
+            vec![0.7071, 0.7071, 0.0],
+        ];
+        let sims = batch_cosine_similarity(&query, &matrix);
+        assert_eq!(sims.len(), 3);
+        assert!((sims[0] - 1.0).abs() < 1e-4);
+        assert!(sims[1].abs() < 1e-4);
+        assert!((sims[2] - 0.7071).abs() < 1e-3);
+    }
 }
+
+

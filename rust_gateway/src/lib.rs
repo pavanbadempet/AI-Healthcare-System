@@ -21,6 +21,7 @@ mod billing_audit;
 mod federated_aggregator;
 pub mod invariant_gate;
 pub mod dialectical_consensus;
+pub mod vector_store;
 
 // Define stub AppState to satisfy fhir module router bindings when compiled as FFI lib
 #[derive(Clone)]
@@ -210,12 +211,68 @@ fn detect_fraud_score_py(amount: f64, cpt_code: &str, is_duplicate: bool) -> PyR
 
 #[pyfunction]
 fn calculate_cosine_similarity_py(vec_a: Vec<f64>, vec_b: Vec<f64>) -> PyResult<f64> {
-    let dot: f64 = vec_a.iter().zip(vec_b.iter()).map(|(a, b)| a * b).sum();
-    let norm_a: f64 = vec_a.iter().map(|a| a * a).sum::<f64>().sqrt();
-    let norm_b: f64 = vec_b.iter().map(|b| b * b).sum::<f64>().sqrt();
-    let sim = if norm_a > 0.0 && norm_b > 0.0 { dot / (norm_a * norm_b) } else { 0.0 };
-    Ok(sim)
+    let a_f32: Vec<f32> = vec_a.iter().map(|&x| x as f32).collect();
+    let b_f32: Vec<f32> = vec_b.iter().map(|&x| x as f32).collect();
+    Ok(vector_store::cosine_similarity(&a_f32, &b_f32) as f64)
 }
+
+#[pyfunction]
+fn calculate_euclidean_distance_py(vec_a: Vec<f64>, vec_b: Vec<f64>) -> PyResult<f64> {
+    let a_f32: Vec<f32> = vec_a.iter().map(|&x| x as f32).collect();
+    let b_f32: Vec<f32> = vec_b.iter().map(|&x| x as f32).collect();
+    Ok(vector_store::euclidean_distance(&a_f32, &b_f32) as f64)
+}
+
+#[pyfunction]
+fn calculate_l2_distance_py(vec_a: Vec<f64>, vec_b: Vec<f64>) -> PyResult<f64> {
+    let a_f32: Vec<f32> = vec_a.iter().map(|&x| x as f32).collect();
+    let b_f32: Vec<f32> = vec_b.iter().map(|&x| x as f32).collect();
+    Ok(vector_store::euclidean_distance(&a_f32, &b_f32) as f64)
+}
+
+#[pyfunction]
+fn batch_cosine_similarity_py(query: Vec<f64>, matrix: Vec<Vec<f64>>) -> PyResult<Vec<f64>> {
+    let q_f32: Vec<f32> = query.iter().map(|&x| x as f32).collect();
+    let m_f32: Vec<Vec<f32>> = matrix.iter().map(|row| row.iter().map(|&x| x as f32).collect()).collect();
+    let res = vector_store::batch_cosine_similarity(&q_f32, &m_f32);
+    Ok(res.into_iter().map(|x| x as f64).collect())
+}
+
+#[pyfunction]
+fn rank_candidates_two_tower_py(
+    query_vec: Vec<f64>,
+    candidate_vectors: Vec<Vec<f64>>,
+    top_k: usize,
+) -> PyResult<Vec<(usize, f64)>> {
+    let q_f32: Vec<f32> = query_vec.iter().map(|&x| x as f32).collect();
+    let m_f32: Vec<Vec<f32>> = candidate_vectors.iter().map(|row| row.iter().map(|&x| x as f32).collect()).collect();
+    let sims = vector_store::batch_cosine_similarity(&q_f32, &m_f32);
+    let mut indexed: Vec<(usize, f64)> = sims.into_iter().enumerate().map(|(i, s)| (i, s as f64)).collect();
+    indexed.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+    indexed.truncate(top_k);
+    Ok(indexed)
+}
+
+#[pyfunction]
+fn analyze_ecg_pan_tompkins_py(samples: Vec<f64>, sampling_rate_hz: f64) -> PyResult<String> {
+    let res = ecg_dsp::pan_tompkins_qrs_detector(&samples, sampling_rate_hz);
+    serde_json::to_string(&res)
+        .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("Serialization error: {}", e)))
+}
+
+#[pyfunction]
+fn detect_ecg_r_peaks_py(signal: Vec<f64>, sampling_rate: f64) -> PyResult<Vec<usize>> {
+    let res = ecg_dsp::pan_tompkins_qrs_detector(&signal, sampling_rate);
+    Ok(res.r_peak_indices)
+}
+
+#[pyfunction]
+fn compute_hrv_metrics_py(r_peaks: Vec<usize>, sampling_rate: f64) -> PyResult<(f64, f64, f64, f64)> {
+    let m = ecg_dsp::compute_hrv_metrics(&r_peaks, sampling_rate);
+    Ok((m.heart_rate_bpm, m.sdnn_ms, m.rmssd_ms, m.pnn50_percent))
+}
+
+
 
 #[pyfunction]
 fn score_diabetes_risk_py(glucose: f64, bmi: f64, age: f64, hba1c: f64) -> PyResult<(f64, String)> {
@@ -341,6 +398,13 @@ fn rust_gateway_ffi(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(evaluate_sepsis_qsofa_py, m)?)?;
     m.add_function(wrap_pyfunction!(detect_fraud_score_py, m)?)?;
     m.add_function(wrap_pyfunction!(calculate_cosine_similarity_py, m)?)?;
+    m.add_function(wrap_pyfunction!(calculate_euclidean_distance_py, m)?)?;
+    m.add_function(wrap_pyfunction!(calculate_l2_distance_py, m)?)?;
+    m.add_function(wrap_pyfunction!(batch_cosine_similarity_py, m)?)?;
+    m.add_function(wrap_pyfunction!(rank_candidates_two_tower_py, m)?)?;
+    m.add_function(wrap_pyfunction!(analyze_ecg_pan_tompkins_py, m)?)?;
+    m.add_function(wrap_pyfunction!(detect_ecg_r_peaks_py, m)?)?;
+    m.add_function(wrap_pyfunction!(compute_hrv_metrics_py, m)?)?;
     m.add_function(wrap_pyfunction!(score_diabetes_risk_py, m)?)?;
     m.add_function(wrap_pyfunction!(score_heart_risk_py, m)?)?;
     m.add_function(wrap_pyfunction!(classify_samd_risk_py, m)?)?;
