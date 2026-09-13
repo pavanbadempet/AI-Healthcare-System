@@ -17,6 +17,16 @@ async fn test_sqlite_wal_multi_threaded_concurrency_stress() {
         .expect("Failed to initialize SQLite WAL pool for concurrency stress");
 
     let pool_arc = Arc::new(pool);
+    let sqlite_init = pool_arc.as_sqlite().unwrap();
+    let (initial_user_count,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM users")
+        .fetch_one(sqlite_init)
+        .await
+        .unwrap();
+    let (initial_appt_count,): (i64,) = sqlx::query_as("SELECT COUNT(*) FROM appointments")
+        .fetch_one(sqlite_init)
+        .await
+        .unwrap();
+
     let num_tasks = 40;
     let mut handles = Vec::with_capacity(num_tasks);
 
@@ -89,14 +99,14 @@ async fn test_sqlite_wal_multi_threaded_concurrency_stress() {
         .await
         .expect("Final user count query failed");
 
-    // We spawned 20 writer tasks, so exactly 20 users must exist
-    assert_eq!(final_user_count.0, 20);
-
     let final_appt_count: (i64,) = sqlx::query_as("SELECT COUNT(*) FROM appointments")
         .fetch_one(sqlite)
         .await
         .expect("Final appointment count query failed");
-    assert_eq!(final_appt_count.0, 20);
+
+    // We spawned 20 writer tasks, so exactly initial + 20 users and appointments must exist
+    assert_eq!(final_user_count.0, initial_user_count + 20);
+    assert_eq!(final_appt_count.0, initial_appt_count + 20);
 
     // Close pool and clean up test database file
     pool_arc.close().await;

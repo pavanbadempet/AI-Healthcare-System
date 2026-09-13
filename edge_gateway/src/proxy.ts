@@ -119,21 +119,39 @@ export async function forwardHttpRequest(
   }
 }
 
+export interface ProxyOptions {
+  targetBaseUrl?: string;
+  rustBaseUrl?: string;
+  pythonBaseUrl?: string;
+}
+
 /**
- * Creates Elysia Reverse Proxy Plugin
+ * Creates Elysia Reverse Proxy Plugin with Intelligent Rust/Python Partitioning
  */
 export function createProxyPlugin(options: ProxyOptions = {}) {
-  const target = options.targetBaseUrl || config.rustBackendUrl;
+  const rustTarget = options.rustBaseUrl || options.targetBaseUrl || config.rustBackendUrl;
+  const pythonTarget = options.pythonBaseUrl || config.pythonBackendUrl;
+
+  const resolveTarget = (pathname: string): string => {
+    if (
+      pathname.startsWith('/v1/agentic') ||
+      pathname.startsWith('/v1/clinical-agents') ||
+      pathname.startsWith('/v1/ai')
+    ) {
+      return pythonTarget;
+    }
+    return rustTarget;
+  };
 
   return new Elysia({ name: 'plugin:reverse-proxy' })
-    .all('/v1', async ({ request }) => forwardHttpRequest(request, target))
-    .all('/v1/*', async ({ request }) => forwardHttpRequest(request, target))
-    .all('/api', async ({ request }) => forwardHttpRequest(request, target))
-    .all('/api/*', async ({ request }) => forwardHttpRequest(request, target))
-    .all('/docs', async ({ request }) => forwardHttpRequest(request, target))
-    .all('/docs/*', async ({ request }) => forwardHttpRequest(request, target))
-    .all('/openapi.json', async ({ request }) => forwardHttpRequest(request, target))
-    .all('/redoc', async ({ request }) => forwardHttpRequest(request, target))
-    .all('/metrics', async ({ request }) => forwardHttpRequest(request, target))
-    .post('/token', async ({ request }) => forwardHttpRequest(request, target));
+    .all('/v1', async ({ request }) => forwardHttpRequest(request, resolveTarget(new URL(request.url).pathname)))
+    .all('/v1/*', async ({ request }) => forwardHttpRequest(request, resolveTarget(new URL(request.url).pathname)))
+    .all('/api', async ({ request }) => forwardHttpRequest(request, rustTarget))
+    .all('/api/*', async ({ request }) => forwardHttpRequest(request, rustTarget))
+    .all('/docs', async ({ request }) => forwardHttpRequest(request, rustTarget))
+    .all('/docs/*', async ({ request }) => forwardHttpRequest(request, rustTarget))
+    .all('/openapi.json', async ({ request }) => forwardHttpRequest(request, rustTarget))
+    .all('/redoc', async ({ request }) => forwardHttpRequest(request, rustTarget))
+    .all('/metrics', async ({ request }) => forwardHttpRequest(request, rustTarget))
+    .post('/token', async ({ request }) => forwardHttpRequest(request, rustTarget));
 }

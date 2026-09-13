@@ -19,6 +19,8 @@ mod dicom_slicer;
 mod auth_crypto;
 mod billing_audit;
 mod federated_aggregator;
+pub mod invariant_gate;
+pub mod dialectical_consensus;
 
 // Define stub AppState to satisfy fhir module router bindings when compiled as FFI lib
 #[derive(Clone)]
@@ -243,6 +245,38 @@ fn generate_counterfactual_py(features: Vec<String>, values: Vec<f64>, risk_scor
     Ok((recs, target_risk))
 }
 
+#[pyfunction]
+fn validate_invariants_py(proposal_json: &str, patient_json: &str) -> PyResult<String> {
+    let proposal: invariant_gate::ActionProposal = serde_json::from_str(proposal_json)
+        .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("Invalid proposal JSON: {}", e)))?;
+    let patient: invariant_gate::PatientSafetyProfile = serde_json::from_str(patient_json)
+        .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("Invalid patient JSON: {}", e)))?;
+
+    let result = invariant_gate::InvariantExecutionGate::validate(&proposal, &patient);
+    serde_json::to_string(&result)
+        .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("Serialization error: {}", e)))
+}
+
+#[pyfunction]
+fn deliberate_dung_consensus_py(arguments_json: &str, attacks_json: &str) -> PyResult<String> {
+    let args: Vec<dialectical_consensus::ClinicalArgument> = serde_json::from_str(arguments_json)
+        .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("Invalid arguments JSON: {}", e)))?;
+    let attacks: Vec<dialectical_consensus::ClinicalAttack> = serde_json::from_str(attacks_json)
+        .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("Invalid attacks JSON: {}", e)))?;
+
+    let mut af = dialectical_consensus::DungArgumentationFramework::new();
+    for a in args {
+        af.add_argument(a);
+    }
+    for att in attacks {
+        af.add_attack(att);
+    }
+
+    let result = af.deliberate();
+    serde_json::to_string(&result)
+        .map_err(|e| pyo3::exceptions::PyValueError::new_err(format!("Serialization error: {}", e)))
+}
+
 #[pymodule]
 fn rust_gateway_ffi(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(aggregate_fedavg_py, m)?)?;
@@ -261,6 +295,8 @@ fn rust_gateway_ffi(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(classify_samd_risk_py, m)?)?;
     m.add_function(wrap_pyfunction!(generate_audit_hash_py, m)?)?;
     m.add_function(wrap_pyfunction!(generate_counterfactual_py, m)?)?;
+    m.add_function(wrap_pyfunction!(validate_invariants_py, m)?)?;
+    m.add_function(wrap_pyfunction!(deliberate_dung_consensus_py, m)?)?;
     Ok(())
 }
 

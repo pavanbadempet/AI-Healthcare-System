@@ -8,6 +8,7 @@ export interface EdgeConfig {
   host: string;
   rustBackendUrl: string;
   rustWsUrl: string;
+  pythonBackendUrl: string;
   jwtSecret: string;
   jwtAlgorithm: string;
   corsOrigins: string[];
@@ -34,6 +35,12 @@ export function loadConfig(): EdgeConfig {
     .replace(/^http:\/\//, 'ws://')
     .replace(/^https:\/\//, 'wss://');
   const rustWsUrl = (process.env.RUST_WS_URL || defaultWsUrl).replace(/\/+$/, '');
+
+  // Python backend URL (default: http://127.0.0.1:8002)
+  const pythonBackendUrl = (
+    process.env.PYTHON_BACKEND_URL ||
+    'http://127.0.0.1:8002'
+  ).replace(/\/+$/, '');
 
   // JWT configuration
   const jwtSecret = process.env.SECRET_KEY || 'generate_a_secure_random_string_here';

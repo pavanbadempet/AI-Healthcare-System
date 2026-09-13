@@ -541,5 +541,78 @@ class RustBridgeEngine:
             scores.sort(key=lambda item: item[1], reverse=True)
             return scores[:top_k]
 
+    # =========================================================================
+    # 🛡️ HIGH-PERFORMANCE PRE-ACTION INVARIANT GATE
+    # =========================================================================
+    def validate_invariant_proposal_rust(
+        self, proposal: Dict[str, Any], patient_profile: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Validates action proposal against patient invariants via Native Rust or Fallback."""
+        t0 = time.perf_counter()
+        try:
+            import rust_gateway_ffi
+            res_str = rust_gateway_ffi.validate_invariants_py(json.dumps(proposal), json.dumps(patient_profile))
+            data = json.loads(res_str)
+            data["is_rust_native"] = True
+            return data
+        except Exception:
+            from backend.agentic.invariant_execution_gate import PreActionInvariantGate
+            gate = PreActionInvariantGate()
+            val_res = gate.validate_proposal(proposal, patient_profile)
+            res_dict = val_res.to_dict()
+            res_dict["is_rust_native"] = False
+            res_dict["execution_latency_us"] = (time.perf_counter() - t0) * 1_000_000.0
+            return res_dict
+
+    # =========================================================================
+    # ⚖️ DUNG ABSTRACT ARGUMENTATION CONSENSUS ENGINE
+    # =========================================================================
+    def deliberate_dung_consensus_rust(
+        self, arguments: List[Dict[str, Any]], attacks: List[Dict[str, Any]]
+    ) -> Dict[str, Any]:
+        """Deliberates clinical disputes via Native Rust fixed-point iteration or Fallback."""
+        t0 = time.perf_counter()
+        try:
+            import rust_gateway_ffi
+            res_str = rust_gateway_ffi.deliberate_dung_consensus_py(json.dumps(arguments), json.dumps(attacks))
+            data = json.loads(res_str)
+            data["is_rust_native"] = True
+            return data
+        except Exception:
+            from backend.agentic.dialectical_consensus import ClinicalArgument, DungArgumentationFramework
+            af = DungArgumentationFramework()
+            for a in arguments:
+                af.add_argument(ClinicalArgument(
+                    arg_id=a["arg_id"],
+                    agent_role=a.get("agent_role", "ATTENDING_PHYSICIAN"),
+                    claim=a["claim"],
+                    rationale=a.get("rationale", ""),
+                    confidence=float(a.get("confidence", 90)) / 100.0 if a.get("confidence", 90) > 1 else float(a.get("confidence", 0.9)),
+                ))
+            for att in attacks:
+                af.add_attack(
+                    attacker_id=att["attacker_id"],
+                    target_id=att["target_id"],
+                    attack_type=att.get("attack_type", "SAFETY_VETO"),
+                    justification=att.get("justification", ""),
+                )
+            grounded = af.compute_grounded_extension()
+            undefeated = [af.arguments[aid].to_dict() for aid in grounded]
+            defeated = [af.arguments[aid].to_dict() for aid in af.arguments if aid not in grounded]
+            action = "PROCEED_WITH_CONSENSUS" if undefeated else "DISPUTE_REQUIRES_CLINICAL_REVIEW"
+            if any("hold" in a["claim"].lower() or "veto" in a["claim"].lower() for a in undefeated):
+                action = "SAFETY_HOLD_APPLIED"
+
+            return {
+                "session_id": "fallback-session",
+                "consensus_action": action,
+                "rationale_summary": f"Deliberated across {len(arguments)} arguments in fallback engine.",
+                "grounded_consensus_arguments": undefeated,
+                "defeated_arguments": defeated,
+                "preferred_extensions": [undefeated],
+                "execution_latency_us": (time.perf_counter() - t0) * 1_000_000.0,
+                "is_rust_native": False,
+            }
+
 
 rust_bridge = RustBridgeEngine()

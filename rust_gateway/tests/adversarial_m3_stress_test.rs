@@ -276,7 +276,7 @@ async fn test_adversarial_user_repository_sqlite_crud_and_lock() {
         .expect("Failed to initialize SQLite pool");
 
     if let DbPool::Sqlite(p) = &pool {
-        sqlx::query("INSERT INTO hospital_facilities (id, name) VALUES (1, 'Princeton Plainsboro')")
+        sqlx::query("INSERT OR IGNORE INTO hospital_facilities (id, name) VALUES (1, 'Princeton Plainsboro')")
             .execute(p)
             .await
             .expect("Failed to insert facility");
