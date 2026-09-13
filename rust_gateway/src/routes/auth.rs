@@ -218,8 +218,10 @@ fn compute_totp_step(secret: &str, step: u64) -> String {
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/token", post(login_for_access_token))
+        .route("/login", post(login_for_access_token))
         .route("/signup", post(signup_handler))
-        .route("/me", delete(delete_account_handler))
+        .route("/register", post(signup_handler))
+        .route("/me", get(get_profile_handler).delete(delete_account_handler))
         .route("/profile", get(get_profile_handler).put(update_profile_handler))
         .route("/users", get(get_all_users_handler))
         .route("/users/{user_id}/full", get(get_user_full_details_handler))
@@ -1040,3 +1042,16 @@ pub async fn reset_password_handler(
         "message": "Password has been reset successfully"
     })))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_auth_router_definition() {
+        let r = router();
+        // Verifies that auth router with /register, /login, /token, /signup, /me initializes correctly
+        let _ = r;
+    }
+}
+

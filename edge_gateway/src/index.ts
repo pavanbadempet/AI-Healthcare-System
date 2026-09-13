@@ -37,8 +37,12 @@ export function createApp(options: AppOptions = {}) {
     .use(createTelemetryStreamPlugin())
     // WebSocket streaming proxy
     .use(createWsProxyPlugin(cfg.rustWsUrl))
-    // HTTP API reverse proxy to Rust backend
-    .use(createProxyPlugin({ targetBaseUrl: cfg.rustBackendUrl }))
+    // HTTP API reverse proxy to Rust backend and Python brain
+    .use(createProxyPlugin({
+      targetBaseUrl: cfg.rustBackendUrl,
+      rustBaseUrl: cfg.rustBackendUrl,
+      pythonBaseUrl: cfg.pythonBackendUrl,
+    }))
     // Static asset server & SPA fallback for Vite React 19 frontend
     .use(createStaticSpaPlugin(cfg.staticDir));
 
@@ -57,6 +61,7 @@ if (import.meta.main) {
   console.log(`=======================================================`);
   console.log(`  🚀 Edge Gateway Listening: http://${host}:${port}`);
   console.log(`  🔗 Upstream Rust Backend:  ${config.rustBackendUrl}`);
+  console.log(`  🧠 Upstream Python Brain:  ${config.pythonBackendUrl}`);
   console.log(`  ⚡ Upstream WebSocket:     ${config.rustWsUrl}`);
   console.log(`  📁 Static SPA Assets Dir:  ${config.staticDir}`);
   console.log(`  🛡️ Rate Limiting:         ${config.rateLimitPerMinute} req/min`);

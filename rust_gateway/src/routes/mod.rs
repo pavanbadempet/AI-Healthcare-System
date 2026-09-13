@@ -64,6 +64,7 @@ pub fn build_app_router(state: AppState) -> Router {
         .nest("/v1/events", care_events::router())
         
         // AI, ML, Auth & Real-Time Intelligence Route Modules
+        .nest("/v1/auth", auth::router())
         .nest("/v1", auth::router())
         .merge(auth::router())
         .nest("/v1/predict", prediction::router())

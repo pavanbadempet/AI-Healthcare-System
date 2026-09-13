@@ -49,11 +49,22 @@ pub async fn root_handler() -> Json<Value> {
     }))
 }
 
+fn is_db_pool_active(state: &AppState) -> bool {
+    let is_closed = if let Some(p) = state.db_pool.as_sqlite() {
+        p.is_closed()
+    } else if let Some(p) = state.db_pool.as_postgres() {
+        p.is_closed()
+    } else {
+        true
+    };
+    !is_closed
+}
+
 /// GET /healthz
 pub async fn health_handler(
     State(state): State<AppState>,
 ) -> Json<Value> {
-    let db_active = state.db_pool.size() >= 0;
+    let db_active = is_db_pool_active(&state);
     Json(json!({
         "status": "ok",
         "gateway": "healthy",
@@ -64,10 +75,14 @@ pub async fn health_handler(
 }
 
 /// GET /healthz/live
-pub async fn health_live_handler() -> Json<Value> {
+pub async fn health_live_handler(
+    State(state): State<AppState>,
+) -> Json<Value> {
+    let db_active = is_db_pool_active(&state);
     Json(json!({
-        "status": "alive",
-        "gateway": "healthy",
+        "status": if db_active { "ok" } else { "degraded" },
+        "service": "rust_gateway",
+        "db_pool_active": db_active,
         "timestamp": Utc::now().to_rfc3339()
     }))
 }
@@ -76,12 +91,11 @@ pub async fn health_live_handler() -> Json<Value> {
 pub async fn health_ready_handler(
     State(state): State<AppState>,
 ) -> Json<Value> {
-    let db_active = state.db_pool.size() >= 0;
+    let db_active = is_db_pool_active(&state);
     Json(json!({
-        "status": if db_active { "ready" } else { "degraded" },
-        "gateway": "healthy",
-        "database": if db_active { "connected" } else { "disconnected" },
-        "active_connections": state.db_pool.size(),
+        "status": if db_active { "ok" } else { "degraded" },
+        "service": "rust_gateway",
+        "db_pool_active": db_active,
         "timestamp": Utc::now().to_rfc3339()
     }))
 }
@@ -251,3 +265,68 @@ pub async fn demo_readiness_handler() -> Json<Value> {
         "timestamp": Utc::now().to_rfc3339()
     }))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::{Arc, Mutex};
+    use sysinfo::System;
+
+    async fn create_test_state() -> AppState {
+        let pool = crate::db::DbPool::connect_lazy("sqlite::memory:").expect("lazy pool");
+        let inference_manager = Arc::new(
+            crate::ml::InferenceManager::new()
+                .or_else(|_| crate::ml::InferenceManager::from_dir("backend"))
+                .or_else(|_| crate::ml::InferenceManager::from_dir("../backend"))
+                .or_else(|_| crate::ml::InferenceManager::from_dir("."))
+                .unwrap_or_else(|_| {
+                    crate::ml::InferenceManager::from_dir("backend")
+                        .or_else(|_| crate::ml::InferenceManager::new())
+                        .expect("fallback inference manager")
+                }),
+        );
+        AppState {
+            http_client: reqwest::Client::new(),
+            python_backend_url: "http://127.0.0.1:8000".to_string(),
+            db_pool: pool,
+            secret_key: "test_secret_for_unit_tests".to_string(),
+            sysinfo: Arc::new(Mutex::new(System::new())),
+            vector_store: crate::vector_store::VectorStoreState::default(),
+            inference_manager,
+        }
+    }
+
+    #[tokio::test]
+    async fn test_health_live_handler() {
+        let state = create_test_state().await;
+        let Json(val) = health_live_handler(State(state)).await;
+        assert_eq!(val["status"], "ok");
+        assert_eq!(val["service"], "rust_gateway");
+        assert_eq!(val["db_pool_active"], true);
+    }
+
+    #[tokio::test]
+    async fn test_health_ready_handler() {
+        let state = create_test_state().await;
+        let Json(val) = health_ready_handler(State(state)).await;
+        assert_eq!(val["status"], "ok");
+        assert_eq!(val["service"], "rust_gateway");
+        assert_eq!(val["db_pool_active"], true);
+    }
+
+    #[tokio::test]
+    async fn test_health_handler() {
+        let state = create_test_state().await;
+        let Json(val) = health_handler(State(state)).await;
+        assert_eq!(val["status"], "ok");
+        assert_eq!(val["gateway"], "healthy");
+        assert_eq!(val["database"], "connected");
+    }
+
+    #[tokio::test]
+    async fn test_is_db_pool_active() {
+        let state = create_test_state().await;
+        assert!(is_db_pool_active(&state));
+    }
+}
+

@@ -946,6 +946,22 @@ def health():
         "diagnostics": startup_diagnostics
     }
 
+@app.get("/healthz/live")
+def healthz_live():
+    return {
+        "status": "alive",
+        "service": "backend",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+@app.get("/healthz/ready")
+def healthz_ready():
+    return {
+        "status": "ready",
+        "service": "backend",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
 @app.get("/healthz/env")
 async def healthz_env():
     import os

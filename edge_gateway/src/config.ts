@@ -70,6 +70,7 @@ export function loadConfig(): EdgeConfig {
     host,
     rustBackendUrl,
     rustWsUrl,
+    pythonBackendUrl,
     jwtSecret,
     jwtAlgorithm,
     corsOrigins,
