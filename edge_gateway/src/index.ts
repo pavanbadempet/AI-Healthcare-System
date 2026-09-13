@@ -10,6 +10,7 @@ import { createCorsMiddleware } from './middleware/cors';
 import { rateLimitMiddleware } from './middleware/rate_limiter';
 import { jwtMiddleware } from './middleware/jwt';
 import { createHealthPlugin } from './health';
+import { createTelemetryStreamPlugin } from './telemetry_stream';
 import { createProxyPlugin } from './proxy';
 import { createWsProxyPlugin } from './ws_proxy';
 import { createStaticSpaPlugin } from './static';
@@ -32,6 +33,8 @@ export function createApp(options: AppOptions = {}) {
     .use(jwtMiddleware)
     // Health & readiness probes
     .use(createHealthPlugin(cfg.rustBackendUrl))
+    // Native Bun real-time SSE telemetry & token stream hub
+    .use(createTelemetryStreamPlugin())
     // WebSocket streaming proxy
     .use(createWsProxyPlugin(cfg.rustWsUrl))
     // HTTP API reverse proxy to Rust backend

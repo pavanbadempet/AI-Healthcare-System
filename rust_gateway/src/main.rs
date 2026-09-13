@@ -32,6 +32,8 @@ pub mod db;
 pub mod models;
 pub mod ml;
 pub mod routes;
+pub mod invariant_gate;
+pub mod dialectical_consensus;
 
 #[derive(Clone)]
 pub struct AppState {

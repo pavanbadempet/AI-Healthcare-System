@@ -513,17 +513,42 @@ async fn check_prescription_safety(
     let med_lower = req.medication_name.to_lowercase();
     let mut alerts = Vec::new();
     let mut contraindications = Vec::new();
-    let mut safety_status = "APPROVED";
+
+    // 1. Evaluate proposal using the Native Rust Invariant Execution Gate (<5µs)
+    let proposal = crate::invariant_gate::ActionProposal {
+        proposal_id: format!("RX-CHECK-{}", req.patient_id),
+        patient_id: req.patient_id.to_string(),
+        action_type: "MEDICATION".to_string(),
+        target_item: req.medication_name.clone(),
+        dosage_mg: None,
+        is_high_risk: med_lower.contains("alteplase") || med_lower.contains("warfarin") || med_lower.contains("vancomycin"),
+        clinical_rationale: "Automated pharmacy safety check".to_string(),
+    };
+
+    let safety_profile = crate::invariant_gate::PatientSafetyProfile {
+        patient_id: req.patient_id.to_string(),
+        age_years: None,
+        is_pregnant: false,
+        egfr_ml_min: None,
+        active_diagnoses: vec![],
+        active_allergies: req.additional_allergies.clone().unwrap_or_default(),
+        active_medications: vec![],
+        attending_signatures: vec![],
+    };
+
+    let gate_result = crate::invariant_gate::InvariantExecutionGate::validate(&proposal, &safety_profile);
+
+    for violation in &gate_result.violations {
+        contraindications.push(format!("[{:?}] {}: {}", violation.invariant_type, violation.rule_id, violation.description));
+    }
 
     if let Some(allergies) = &req.additional_allergies {
         for a in allergies {
             let a_lower = a.to_lowercase();
             if (a_lower.contains("penicillin") || a_lower.contains("amoxicillin")) && (med_lower.contains("penicillin") || med_lower.contains("amoxicillin") || med_lower.contains("augmentin")) {
-                safety_status = "CRITICAL_CONTRAINDICATION";
                 contraindications.push(format!("Patient has recorded severe allergy to {}. High anaphylaxis risk.", a));
             }
             if a_lower.contains("sulfa") && med_lower.contains("sulfa") {
-                safety_status = "CRITICAL_CONTRAINDICATION";
                 contraindications.push(format!("Patient has recorded sulfa allergy conflicting with {}.", req.medication_name));
             }
         }
@@ -533,13 +558,19 @@ async fn check_prescription_safety(
         alerts.push("Anticoagulant therapy: monitor INR and watch for bleeding indicators.".to_string());
     }
 
+    let is_safe = contraindications.is_empty() && gate_result.is_executable;
+    let safety_status = if is_safe { "APPROVED" } else { "CRITICAL_CONTRAINDICATION" };
+
     Ok(Json(json!({
         "patient_id": req.patient_id,
         "medication_name": req.medication_name,
         "safety_status": safety_status,
         "alerts": alerts,
         "contraindications": contraindications,
-        "is_safe_to_prescribe": safety_status == "APPROVED",
+        "is_safe_to_prescribe": is_safe,
+        "audit_token": gate_result.audit_token,
+        "gate_latency_us": gate_result.execution_latency_us,
+        "is_rust_native": true,
         "clinical_safety_note": "Automated prescribing safety checks assist clinicians; attending physicians verify all pharmacology."
     })))
 }

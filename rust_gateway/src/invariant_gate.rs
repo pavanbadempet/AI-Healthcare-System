@@ -60,23 +60,33 @@ pub struct InvariantValidationResult {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct PatientSafetyProfile {
     pub patient_id: String,
+    #[serde(default)]
     pub age_years: Option<f64>,
+    #[serde(default)]
     pub is_pregnant: bool,
+    #[serde(default)]
     pub egfr_ml_min: Option<f64>,
+    #[serde(default)]
     pub active_diagnoses: Vec<String>,
+    #[serde(default)]
     pub active_allergies: Vec<String>,
+    #[serde(default)]
     pub active_medications: Vec<String>,
+    #[serde(default)]
     pub attending_signatures: Vec<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ActionProposal {
     pub proposal_id: String,
     pub patient_id: String,
     pub action_type: String, // "MEDICATION", "SERVICE", "FLAG"
     pub target_item: String, // e.g. "Alteplase", "Metformin"
+    #[serde(default)]
     pub dosage_mg: Option<f64>,
+    #[serde(default)]
     pub is_high_risk: bool,
+    #[serde(default)]
     pub clinical_rationale: String,
 }
 

@@ -12,20 +12,25 @@
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash, Default)]
 pub struct ClinicalArgument {
     pub arg_id: String,
+    #[serde(default)]
     pub agent_role: String,
     pub claim: String,
+    #[serde(default)]
     pub rationale: String,
+    #[serde(default)]
     pub confidence: i32, // Stored as integer percentage 0-100 for fast hash/eq
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ClinicalAttack {
     pub attacker_id: String,
     pub target_id: String,
+    #[serde(default)]
     pub attack_type: String,
+    #[serde(default)]
     pub justification: String,
 }
 
