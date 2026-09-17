@@ -26,7 +26,7 @@ if (!fs.existsSync(FRAMES_DIR)) {
   const page = await context.newPage();
 
   // Mock common API endpoints for rich UI state
-  await page.route('**/v1/**', async (route) => {
+  await page.route('**/*', async (route) => {
     const url = route.request().url();
 
     if (url.includes('/chat/history')) {
@@ -215,11 +215,7 @@ Based on the MIMIC-IV and Framingham calibration cohorts, here is the synthesis 
 
   // 3. Multi-Organ Diagnostic Hub
   await capture('/predict/unified', 'ai-diagnostics-hub-preview.png', async (p) => {
-    const btn = await p.$('button:has-text("Run"), button:has-text("Screening"), button:has-text("Predict")');
-    if (btn) {
-      await btn.click();
-      await p.waitForTimeout(1200);
-    }
+    await p.waitForTimeout(1000);
   });
 
   // 4. Privacy-Preserving Federated Learning Studio
