@@ -21,15 +21,12 @@ load_dotenv()
 
 # --- Configuration & Constants ---
 def _load_secret_key() -> str:
-    secret_key = os.getenv("SECRET_KEY")
+    secret_key = os.getenv("SECRET_KEY", "").strip()
     if secret_key:
         return secret_key
     if os.getenv("TESTING", "").strip().lower() in {"1", "true", "yes", "on"}:
         return "test_secret_key_for_local_tests_only"
-    if os.getenv("ENVIRONMENT") == "production" or os.getenv("APP_ENV") == "production":
-        raise RuntimeError("FATAL: SECRET_KEY environment variable is not set. Cannot start server in production.")
-    logger.warning("SECRET_KEY environment variable is not set. Using ephemeral development sandbox key.")
-    return "dev_insecure_sandbox_secret_key_change_in_production"
+    raise RuntimeError("FATAL: SECRET_KEY environment variable is not set. Cannot start server.")
 
 
 def _load_access_token_expire_minutes() -> int:
