@@ -70,70 +70,19 @@ The platform provides native **HL7 FHIR R4** and **OHDSI OMOP CDM v5.4** compati
 
 ---
 
-## 📸 Production Previews & Interactive Walkthrough
+## 🎬 Production Workstation & Interactive Walkthrough
 
-*Authentic screenshots and live recordings captured directly from the production React 19 workstation:*
-
-### 🎬 Interactive Simulation & Live Telemetry Tour (10-Year BioTwin-X Engine)
-Experience continuous Runge-Kutta 45 multi-organ ODE progression, dynamic drug titration (+2.45 QALYs gained), counterfactual causal inference, and real-time ICU waveforms:
+*Continuous 10-year multi-organ ODE progression, dynamic drug titration (+2.45 QALYs gained), counterfactual causal inference, and real-time bedside ICU telemetry:*
 
 <p align="center">
   <img src="docs/assets/digital-twin-walkthrough.gif" alt="Interactive BioTwin-X and Digital Twin Simulation Walkthrough" width="100%" style="border-radius: 12px; box-shadow: 0 16px 48px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15);"/>
 </p>
 
----
-
-### 🏥 1. Nexus Vitalis Clinical Workstation (Live Telemetry & ICU Monitoring)
-Real-time bedside patient monitoring, live telemetry alarms, facility bed occupancy, and one-click clinical care flows for attending physicians.
-
 <p align="center">
   <img src="docs/assets/clinical-workstation-preview.png" alt="Nexus Vitalis Clinical Workstation Preview" width="100%" style="border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);"/>
 </p>
 
----
-
-### 💬 2. AI Clinical Copilot & 🔬 Multimodal Diagnostic Hub
-Sub-5ms multi-agent reasoning grounded in PubMed literature alongside TabICLv2 foundation model multi-organ risk stratification.
-
-| 💬 Multi-Agent AI Copilot & Pharmacogenomics | 🔬 Multimodal Diagnostic Hub (TabICLv2 + SHAP) |
-| :---: | :---: |
-| <img src="docs/assets/ai-clinical-chat-preview.png" alt="AI Clinical Copilot & RAG Assistant Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> | <img src="docs/assets/ai-diagnostics-hub-preview.png" alt="Multimodal Diagnostics Hub Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> |
-
----
-
-### 🩺 3. Telehealth Consultation Console & 🤖 AI Patient Companion
-End-to-end virtual care delivery: WebRTC video consultations with CASA scheduling agents and 24/7 bedside companion symptom tracking.
-
-| 🩺 WebRTC Telehealth & Specialist Router | 🤖 Bedside AI Patient Companion & Voice Logger |
-| :---: | :---: |
-| <img src="docs/assets/telemedicine-preview.png" alt="Telemedicine Video Consultation Console Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> | <img src="docs/assets/companion-preview.png" alt="AI Patient Companion Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> |
-
----
-
-### 🌊 4. Distributed Lakehouse, 🏥 Bed Commander & 🛡️ Federated Learning
-Enterprise infrastructure harmonizing PySpark streaming, hospital admission logistics, and privacy-preserving cross-hospital model training.
-
-| 🌊 Databricks Medallion Streaming DAG | 🏥 Hospital Capacity & Bed Board | 🛡️ Differential-Privacy Federated Learning |
-| :---: | :---: | :---: |
-| <img src="docs/assets/data-platform-preview.png" alt="Databricks Lakehouse Medallion Pipeline Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> | <img src="docs/assets/capacity-command-preview.png" alt="Hospital Bed Board & Admission Capacity Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> | <img src="docs/assets/federated-learning-preview.png" alt="Privacy-Preserving Federated Learning Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> |
-
----
-
-### 🇮🇳 5. ABDM National Health Stack Sandbox & Client-Side Edge WASM AI
-Complete Ayushman Bharat Digital Mission (M1/M2/M3) sandbox gateway, instant ABHA health identity provisioning, offline SIMD WASM inference, and 3D volumetric DICOM MPR viewport.
-
-<p align="center">
-  <img src="docs/assets/abdm-integration-preview.png" alt="ABDM National Health Stack Sandbox and 3D DICOM Preview" width="100%" style="border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);"/>
-</p>
-
----
-
-### 🧬 6. 10-Year Multi-Organ Digital Twin & 🔍 Clinical Intelligence Command Center
-Continuous multi-organ Runge-Kutta 45 ODE trajectories (+2.45 QALYs gained) alongside 109 validated medical algorithms with C++ SHAP explainability.
-
-| 🧬 BioTwin-X 10-Year Continuous ODE Trajectory | 🔍 Clinical Decision Support Suite (109 Algorithms) |
-| :---: | :---: |
-| <img src="docs/assets/autonomous-frontier-preview.png" alt="10-Year Multi-Organ Digital Twin Trajectory Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> | <img src="docs/assets/digital-twin-preview.png" alt="Clinical Decision Support Suite Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> |
+> 💡 **Visual Tour Across Architecture**: Detailed production screenshots for the Databricks Lakehouse, AI Copilot, Multimodal Diagnostic Hub, Telehealth Console, ABDM Sandbox, and Federated Learning are distributed directly within their corresponding architectural and technical sections throughout this document.
 
 
 ---
@@ -285,6 +234,10 @@ flowchart TD
     Silver --> OMOP --> Gold
 ```
 
+<p align="center">
+  <img src="docs/assets/data-platform-preview.png" alt="Databricks Lakehouse Medallion Streaming Pipeline & Unity Catalog Console" width="100%" style="border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);"/>
+</p>
+
 ### Key Data Engineering Highlights:
 * **Spark Declarative Pipelines (SDP) & DLT Quality Contracts**: Injects declarative data quality predicates directly into the **Catalyst Optimizer** (`backend/data_platform/data_quality_gates.py`), avoiding Python serialization overhead and routing invalid records to a partitioned quarantine table.
 * **OHDSI OMOP CDM v5.4 Dimensional Transformation**: Translates clinical events and observations into standard **SNOMED-CT**, **RxNorm**, and **LOINC** vocabularies across relational fact and dimension tables.
@@ -397,6 +350,10 @@ Pytest + coverage, CodeQL SAST, Docker GHCR builds, HuggingFace sync, Dependabot
 </td>
 </tr>
 </table>
+
+| 🩺 WebRTC Telehealth & Specialist Routing | 🤖 Bedside AI Patient Companion | 🏥 Hospital Capacity & Bed Commander |
+| :---: | :---: | :---: |
+| <img src="docs/assets/telemedicine-preview.png" alt="Telemedicine Video Consultation Console" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> | <img src="docs/assets/companion-preview.png" alt="AI Bedside Patient Companion" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> | <img src="docs/assets/capacity-command-preview.png" alt="Hospital Bed Board & Admission Capacity Commander" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> |
 
 > **Built for enterprise, built for production.** This is a production-grade clinical intelligence platform demonstrating advanced ML engineering, LLM orchestration, RAG architecture, and DevOps maturity in a single cohesive codebase.
 
@@ -582,11 +539,19 @@ For comprehensive dataset sources, training hyperparameters, and limitations, se
 
 *Note: All models are 100% open-source with zero token locks, supporting 95% Conformal Prediction intervals and real-time C++ SHAP explanations.*
 
+<p align="center">
+  <img src="docs/assets/ai-diagnostics-hub-preview.png" alt="Multimodal Diagnostics Hub (TabICLv2 + Conformal Prediction + SHAP)" width="100%" style="border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);"/>
+</p>
+
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 🧮 Advanced Clinical & Mathematical Foundations
 
-To guarantee clinical safety and interpretability in production environments, the platform implements calibrated uncertainty estimation and validated clinical formulas.
+To guarantee clinical safety and interpretability in production environments, the platform implements calibrated uncertainty estimation, 10-year continuous ODE disease modeling, and validated clinical formulas.
+
+| 🧬 BioTwin-X 10-Year Continuous ODE Trajectory | 🔍 Clinical Decision Support Suite (109 Algorithms) |
+| :---: | :---: |
+| <img src="docs/assets/autonomous-frontier-preview.png" alt="10-Year Multi-Organ Digital Twin Trajectory Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> | <img src="docs/assets/digital-twin-preview.png" alt="Clinical Decision Support Suite Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> |
 
 ### 1. Conformal Prediction & Uncertainty Quantification
 Rather than outputting raw, uncalibrated probabilities, the diagnostic models utilize **inductive conformal prediction** to produce a prediction set $\hat{C}(X)$ containing the true label with a user-defined confidence level $1 - \alpha$ (e.g., 95% confidence):
@@ -702,6 +667,10 @@ stateDiagram-v2
     StreamTokenOutput --> Terminated : Done
     Terminated --> [*]
 ```
+
+<p align="center">
+  <img src="docs/assets/ai-clinical-chat-preview.png" alt="AI Clinical Copilot & Multi-Agent Assistant with Pharmacogenomic Safety Screen" width="100%" style="border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);"/>
+</p>
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
@@ -1041,6 +1010,10 @@ The FastAPI backend exposes the following REST endpoints:
 - `GET /v1/interop/dicomweb/readiness`: Verify DICOM PACS connection status.
 - `GET /v1/interop/smart/readiness`: Verify SMART on FHIR authorization client status.
 
+<p align="center">
+  <img src="docs/assets/abdm-integration-preview.png" alt="Ayushman Bharat Digital Mission (ABDM M1/M2/M3) Sandbox, ABHA Health IDs, Client-Side WASM SIMD AI, and 3D Volumetric DICOM MPR Viewport" width="100%" style="border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);"/>
+</p>
+
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
 ## 🗄 Database Layer Schema
@@ -1108,6 +1081,13 @@ AI Healthcare System integrates a 7-layer API middleware stack to ensure enterpr
 | 5 | `GZipMiddleware` | GZIP compression for all responses exceeding 1000 bytes |
 | 6 | `ExceptionMiddleware` | Scrubs SQL details & raw traces from errors to block PII leaks |
 | 7 | `LoggingMiddleware` | Logs request duration SLAs & server telemetry |
+
+### 🛡️ Differential-Privacy Federated Learning & Multi-Tenant Audit Security
+Cross-hospital collaborative model training with differential privacy ($\epsilon$-budget tracking, Laplace noise mechanism) and immutable cryptographic audit trails:
+
+<p align="center">
+  <img src="docs/assets/federated-learning-preview.png" alt="Privacy-Preserving Federated Learning & Differential Privacy Audit Console" width="100%" style="border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);"/>
+</p>
 
 <img src="docs/assets/divider.svg" alt="" width="100%"/>
 
