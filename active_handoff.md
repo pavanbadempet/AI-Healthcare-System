@@ -33,6 +33,11 @@ All core architectural tiers, foundation models, and speed layers have been impl
    - Pruned 5.1MB redundant repomix dump and obsolete debug scripts (`scripts/setup_tabpfn.py`, `scripts/debug_db.py`, `scripts/run_debug.py`).
    - Purged 575 ephemeral vector test databases from `models/` and added gitignore rules.
 
+6. **Production UI Previews & Zero-Config Demo Fallbacks**:
+   - Resolved raw LaTeX formatting artifacts `(\(\epsilon\))` with HTML entities `(&epsilon;)`.
+   - Added zero-configuration offline fallback datasets for `FederatedLearning.tsx`, `UnifiedHub.tsx`, and `Telemedicine.tsx` to eliminate red error banners, spinning locks, and empty ledgers when backend services are offline.
+   - Re-captured high-resolution previews across `docs/assets/` (`federated-learning-preview.png`, `ai-diagnostics-hub-preview.png`, `telemedicine-preview.png`, etc.) and recompiled the animated walkthrough GIF (`digital-twin-walkthrough.gif`).
+
 ---
 
 ## 2. Verification Results
