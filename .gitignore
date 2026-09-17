@@ -5,8 +5,15 @@ __pycache__/
 .pytest_cache/
 .hypothesis/
 
-# Environment
+# Environment & Secrets (Use Doppler - NEVER commit plaintext secrets)
 .env
+.env.*
+!.env.example
+*.env
+.doppler.env
+secrets/
+*.pem
+*.key
 .venv/
 venv/
 
