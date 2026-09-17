@@ -25,10 +25,112 @@ if (!fs.existsSync(FRAMES_DIR)) {
 
   const page = await context.newPage();
 
-  // Mock common API endpoints for rich UI state
+  // Universal mock route handler for zero-config preview capture
   await page.route('**/*', async (route) => {
     const url = route.request().url();
 
+    // Patient records
+    if (url.includes('/records')) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { id: 1, patient_name: "Sarah Jenkins", model_type: "General Health", risk_level: "Low", created_at: "2026-09-17T10:00:00Z" },
+          { id: 2, patient_name: "Marcus Thorne", model_type: "Cardiovascular", risk_level: "High", created_at: "2026-09-17T11:30:00Z" },
+          { id: 3, patient_name: "Linda Zhao", model_type: "Diabetes", risk_level: "Low", created_at: "2026-09-17T12:15:00Z" },
+          { id: 4, patient_name: "Robert Garcia", model_type: "Kidney CKD", risk_level: "Moderate", created_at: "2026-09-17T13:45:00Z" },
+          { id: 5, patient_name: "Emily Watson", model_type: "Pulmonary", risk_level: "Low", created_at: "2026-09-17T14:20:00Z" }
+        ])
+      });
+    }
+
+    // Doctor & Admin Patient Registries
+    if (url.includes('/doctor/patients') || url.includes('/admin/patients')) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          { patient_id: 2, username: "sarah_jenkins", full_name: "Sarah Jenkins", email: "sarah@patient.local", role: "patient", latest_encounter_type: "ICU-A", latest_status: "active", open_orders: 2, active_admissions: 1 },
+          { patient_id: 3, username: "marcus_thorne", full_name: "Marcus Thorne", email: "marcus@patient.local", role: "patient", latest_encounter_type: "Cardiac Care", latest_status: "active", open_orders: 4, active_admissions: 1 },
+          { patient_id: 4, username: "linda_zhao", full_name: "Linda Zhao", email: "linda@patient.local", role: "patient", latest_encounter_type: "Med-Surg 4B", latest_status: "active", open_orders: 1, active_admissions: 1 },
+          { patient_id: 5, username: "robert_g", full_name: "Robert Garcia", email: "robert@patient.local", role: "patient", latest_encounter_type: "Med-Surg 4B", latest_status: "active", open_orders: 3, active_admissions: 1 },
+          { patient_id: 6, username: "emily_watson", full_name: "Emily Watson", email: "emily@patient.local", role: "patient", latest_encounter_type: "Pediatric Ward", latest_status: "active", open_orders: 1, active_admissions: 1 },
+          { patient_id: 7, username: "oscar_meyer", full_name: "Oscar Meyer", email: "oscar@patient.local", role: "patient", latest_encounter_type: "ICU-A", latest_status: "active", open_orders: 2, active_admissions: 1 }
+        ])
+      });
+    }
+
+    // Triage Queue
+    if (url.includes('/triage/queue')) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          queue: [
+            { patient_id: 11, full_name: "Patricia Moore", esi_level: 2, triage_reason: "Acute Dyspnea / Asthma Exacerbation", arrival_time: "12m ago" },
+            { patient_id: 12, full_name: "Thomas Wright", esi_level: 3, triage_reason: "Hyperglycemia / Diabetic Ketosis Workup", arrival_time: "28m ago" },
+            { patient_id: 13, full_name: "Clara Oswald", esi_level: 4, triage_reason: "Left Flank Pain / Suspected Nephrolithiasis", arrival_time: "45m ago" },
+            { patient_id: 14, full_name: "George Bailey", esi_level: 5, triage_reason: "Minor Forearm Abrasion & Wound Dressing", arrival_time: "58m ago" }
+          ]
+        })
+      });
+    }
+
+    // Telemetry Summary
+    if (url.includes('/telemetry/summary')) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          system_latency_ms: 2.8,
+          active_census: 79,
+          total_capacity: 100,
+          ed_boarding: 18,
+          ed_avg_wait_min: 145,
+          pending_discharges: 12,
+          confirmed_discharges: 6,
+          surge_prediction_pct: 15,
+          bed_units: [
+            { unit: "ICU-A", total: 20, occupied: 16, cleaning: 1, available: 3 },
+            { unit: "MED-SURG 4B", total: 40, occupied: 32, cleaning: 2, available: 6 },
+            { unit: "CARDIAC", total: 16, occupied: 12, cleaning: 1, available: 3 },
+            { unit: "PEDS", total: 24, occupied: 19, cleaning: 2, available: 3 },
+          ]
+        })
+      });
+    }
+
+    // Clinical Alerts
+    if (url.includes('/alerts')) {
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([
+          {
+            id: 1,
+            patient_id: 3,
+            patient_name: "Marcus Thorne",
+            alert_type: "CARDIAC_TACHYCARDIA",
+            severity: "CRITICAL",
+            message: "Acute Sinus Tachycardia (118 bpm) with anterior lead ST elevation (V2-V4). Bedside echocardiogram and serial troponin ordered.",
+            acknowledged: 0,
+            created_at: new Date().toISOString()
+          },
+          {
+            id: 2,
+            patient_id: 2,
+            patient_name: "Sarah Jenkins",
+            alert_type: "RESPIRATORY_HYPOXEMIA",
+            severity: "WARNING",
+            message: "Transient SpO2 desaturation (93%) on room air post-ambulation. Nasal cannula 2L/min initiated.",
+            acknowledged: 1,
+            created_at: new Date().toISOString()
+          }
+        ])
+      });
+    }
+
+    // Chat History
     if (url.includes('/chat/history')) {
       return route.fulfill({
         status: 200,
@@ -75,7 +177,7 @@ Based on the MIMIC-IV and Framingham calibration cohorts, here is the synthesis 
       });
     }
 
-    if (url.includes('/telemedicine/appointments')) {
+    if (url.includes('/telemedicine/appointments') || url.includes('/appointments/')) {
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -102,7 +204,7 @@ Based on the MIMIC-IV and Framingham calibration cohorts, here is the synthesis 
       });
     }
 
-    if (url.includes('/telemedicine/doctors')) {
+    if (url.includes('/telemedicine/doctors') || url.includes('/appointments/doctors')) {
       return route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -162,7 +264,7 @@ Based on the MIMIC-IV and Framingham calibration cohorts, here is the synthesis 
     return route.continue();
   });
 
-  // Set auth state
+  // Set authenticated doctor session in localStorage
   await page.goto('http://127.0.0.1:3000/login');
   await page.evaluate(() => {
     localStorage.setItem('healthcare-auth', JSON.stringify({
@@ -170,10 +272,10 @@ Based on the MIMIC-IV and Framingham calibration cohorts, here is the synthesis 
         token: 'mock-valid-jwt-token-for-preview',
         user: {
           id: 1,
-          username: 'Dr. Sarah Lin',
+          username: 'dr_sarah_lin',
           email: 'clinician@hospital.org',
           role: 'doctor',
-          name: 'Dr. Sarah Lin, MD'
+          full_name: 'Dr. Sarah Lin, MD'
         }
       },
       version: 0
@@ -203,27 +305,52 @@ Based on the MIMIC-IV and Framingham calibration cohorts, here is the synthesis 
     console.log(`[CAPTURED] ${filename}`);
   };
 
-  // 1. Telemedicine Consultation Studio
-  await capture('/telemedicine', 'telemedicine-preview.png', async (p) => {
+  // 1. Clinical Workstation & Operations Cockpit (Hero Dashboard)
+  await capture('/dashboard', 'clinical-workstation-preview.png', async (p) => {
     await p.waitForTimeout(1000);
   });
 
-  // 2. AI Clinical Copilot & Multi-Agent Assistant
+  // 2. Patient Records Registry (Full EMR)
+  await capture('/patients', 'patient-records-preview.png', async (p) => {
+    await p.waitForTimeout(1000);
+  });
+
+  // 3. Admission Capacity & Hospital Bed Board
+  await capture('/capacity', 'capacity-command-preview.png', async (p) => {
+    await p.waitForTimeout(1000);
+  });
+
+  // 4. AI Clinical Copilot & Multi-Agent Assistant
   await capture('/chat', 'ai-clinical-chat-preview.png', async (p) => {
     await p.waitForTimeout(1000);
   });
 
-  // 3. Multi-Organ Diagnostic Hub
+  // 5. Clinical Intelligence & Decision Support Suite
+  await capture('/intelligence', 'digital-twin-preview.png', async (p) => {
+    await p.waitForTimeout(1000);
+  });
+
+  // 6. Autonomous Frontier & 10-Year Multi-Organ Digital Twin Trajectory
+  await capture('/frontier', 'autonomous-frontier-preview.png', async (p) => {
+    await p.waitForTimeout(1000);
+  });
+
+  // 7. Multi-Organ Diagnostic Hub (TabICLv2 + Conformal Prediction)
   await capture('/predict/unified', 'ai-diagnostics-hub-preview.png', async (p) => {
     await p.waitForTimeout(1000);
   });
 
-  // 4. Privacy-Preserving Federated Learning Studio
-  await capture('/federated', 'federated-learning-preview.png', async (p) => {
+  // 8. Telemedicine Consultation Studio
+  await capture('/telemedicine', 'telemedicine-preview.png', async (p) => {
     await p.waitForTimeout(1000);
   });
 
-  // 5. ABDM Sandbox & WASM Edge AI
+  // 9. Bedside Patient Companion Studio
+  await capture('/companion', 'companion-preview.png', async (p) => {
+    await p.waitForTimeout(1000);
+  });
+
+  // 10. ABDM Sandbox, ABHA Health IDs, & WASM Edge AI
   await capture('/abdm', 'abdm-integration-preview.png', async (p) => {
     const abhaBtn = await p.$('button:has-text("Generate ABHA"), button:has-text("Create ABHA")');
     if (abhaBtn) {
@@ -237,12 +364,17 @@ Based on the MIMIC-IV and Framingham calibration cohorts, here is the synthesis 
     }
   });
 
-  // 6. Patient Companion Studio
-  await capture('/companion', 'companion-preview.png', async (p) => {
+  // 11. Databricks Lakehouse & Medallion Data Engineering Platform
+  await capture('/data-engineering', 'data-platform-preview.png', async (p) => {
     await p.waitForTimeout(1000);
   });
 
-  // 7. Interactive BioTwin-X & Frontier Simulation Tour (Frames for Animated GIF)
+  // 12. Privacy-Preserving Federated Learning Studio
+  await capture('/federated', 'federated-learning-preview.png', async (p) => {
+    await p.waitForTimeout(1000);
+  });
+
+  // 13. Interactive BioTwin-X & Frontier Simulation Tour (Frames for Animated GIF)
   console.log('Capturing frames for Frontier / Digital Twin simulation walkthrough...');
   await page.goto('http://127.0.0.1:3000/frontier', { waitUntil: 'domcontentloaded' });
   await page.waitForTimeout(2000);
