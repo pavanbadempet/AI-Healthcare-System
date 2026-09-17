@@ -125,6 +125,8 @@ android_app/
 data/processed/
 data/raw/
 *.png
+!docs/assets/*.png
+!docs/images/*.png
 kaggle_run_logs.txt
 
 # Temporary test logs and outputs

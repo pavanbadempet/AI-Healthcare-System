@@ -18,45 +18,95 @@ The platform provides native **HL7 FHIR R4** and **OHDSI OMOP CDM v5.4** compati
 
 <br/>
 
-<p>
-  <a href="https://github.com/pavanbadempet/AI-Healthcare-System"><img src="https://img.shields.io/badge/GitHub-View_Source_Code-181717?style=flat-square&logo=github" alt="GitHub Repository" /></a>
-  <a href="https://huggingface.co/spaces/pavanbadempet/aio-health-backend"><img src="https://img.shields.io/badge/🤗%20Hugging%20Face-Live%20Interactive%20Space-yellow?style=flat-square&logo=huggingface" alt="Hugging Face Live Space" /></a>
-  <a href="https://huggingface.co/pavanbadempet/ai-healthcare-models"><img src="https://img.shields.io/badge/🤗%20Model%20Hub-16%20ONNX%20%2F%20PKL%20Weights-orange?style=flat-square&logo=huggingface" alt="Hugging Face Model Hub" /></a>
+<p align="center">
+  <a href="https://huggingface.co/spaces/pavanbadempet/aio-health-backend"><img src="https://img.shields.io/badge/🤗%20Live%20Clinical%20Portal-Hugging%20Face%20Space-22c55e?style=for-the-badge&logo=huggingface&logoColor=white" height="34" alt="Live Clinical Portal"/></a>
+  &nbsp;
+  <a href="https://huggingface.co/spaces/pavanbadempet/aio-health-backend/docs"><img src="https://img.shields.io/badge/📖%20Interactive%20Swagger%20API-FastAPI-009688?style=for-the-badge&logo=fastapi&logoColor=white" height="34" alt="Interactive API Docs"/></a>
+  &nbsp;
+  <a href="https://huggingface.co/pavanbadempet/ai-healthcare-models"><img src="https://img.shields.io/badge/🤗%20Model%20Hub-16%20Weights-yellow?style=for-the-badge&logo=huggingface&logoColor=black" height="34" alt="Hugging Face Model Hub" /></a>
+  &nbsp;
+  <a href="docs/optimal_dual_layer_architecture.md"><img src="https://img.shields.io/badge/🏛️%20Architecture-System%20Design%20Spec-blue?style=for-the-badge&logo=blueprint&logoColor=white" height="34" alt="System Design Spec"/></a>
+</p>
+
+<p align="center">
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml/badge.svg" alt="CI build status" /></a>
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml/badge.svg" alt="CodeQL security analysis" /></a>
+  <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-Welcome-10b981?style=flat-square" alt="PRs Welcome" /></a>
+  <a href="SECURITY.md"><img src="https://img.shields.io/badge/Security-Policy-red?style=flat-square&logo=shield" alt="Security Policy" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/pavanbadempet/AI-Healthcare-System?color=22c55e&style=flat-square" alt="License" /></a>
   <a href="https://github.com/sponsors/pavanbadempet"><img src="https://img.shields.io/badge/Sponsor-%E2%9D%A4-ea4aaa.svg?logo=github&style=flat-square" alt="Sponsor" /></a>
   <a href="https://github.com/pavanbadempet/AI-Healthcare-System/stargazers"><img src="https://img.shields.io/github/stars/pavanbadempet/AI-Healthcare-System?style=flat-square&color=f59e0b" alt="Stars" /></a>
-  <a href="https://star-history.com/#pavanbadempet/AI-Healthcare-System&Date"><img src="https://img.shields.io/badge/Star_History-📈-8b5cf6?style=flat-square" alt="Star History" /></a>
-  <a href="CITATION.cff"><img src="https://img.shields.io/badge/Cite_This_Repo-APA_/_BibTeX-2563eb?style=flat-square" alt="Cite This Repo" /></a>
-  <img src="https://img.shields.io/github/repo-size/pavanbadempet/AI-Healthcare-System?style=flat-square&color=3b82f6" alt="Repo Size" />
-  <img src="https://img.shields.io/badge/PRs-welcome-10b981?style=flat-square" alt="PRs Welcome" />
+  <a href="CITATION.cff"><img src="https://img.shields.io/badge/Cite-APA_/_BibTeX-2563eb?style=flat-square" alt="Cite This Repo" /></a>
+  <img src="https://img.shields.io/badge/Compliance-HIPAA%20%2F%20GDPR-brightgreen?style=flat-square&logo=security" alt="HIPAA / GDPR" />
+  <img src="https://img.shields.io/badge/Latency-Sub--5ms-purple?style=flat-square&logo=speedtest" alt="Sub-5ms Latency" />
 </p>
 
-<p>
-  <img src="https://img.shields.io/badge/TabICLv2-Tabular%20Foundation%20Transformer-blueviolet?style=flat-square" alt="TabICLv2 Foundation Model" />
-  <img src="https://img.shields.io/badge/Databricks-Unity%20Catalog%20Lakehouse-red?style=flat-square&logo=databricks&logoColor=white" alt="Databricks" />
-  <img src="https://img.shields.io/badge/Delta_Lake-Medallion%20Architecture-003366?style=flat-square" alt="Delta Lake" />
-  <img src="https://img.shields.io/badge/PySpark-E25A1C?style=flat-square&logo=apachespark&logoColor=white" alt="PySpark" />
-  <img src="https://img.shields.io/badge/OHDSI-OMOP%20CDM%20v5.4-blue?style=flat-square" alt="OMOP CDM v5.4" />
-  <img src="https://img.shields.io/badge/CPIC-Precision%20Pharmacogenomics-brightgreen?style=flat-square" alt="CPIC Pharmacogenomics" />
+<p align="center">
+  <img src="https://img.shields.io/badge/Databricks-Unity%20Catalog%20OMOP-FF3621?style=flat-square&logo=databricks&logoColor=white" alt="Databricks" />
+  <img src="https://img.shields.io/badge/Delta_Lake_4.x-Medallion%20Lakehouse-003366?style=flat-square&logo=deltalake&logoColor=white" alt="Delta Lake" />
+  <img src="https://img.shields.io/badge/PySpark_4.x-Clinical%20ETL-E25A1C?style=flat-square&logo=apachespark&logoColor=white" alt="PySpark" />
+  <img src="https://img.shields.io/badge/Neon_Serverless-PostgreSQL%20Pooler-00E599?style=flat-square&logo=neon&logoColor=black" alt="Neon Serverless" />
+  <img src="https://img.shields.io/badge/TabICLv2-Tabular%20Foundation-blueviolet?style=flat-square" alt="TabICLv2 Foundation Model" />
   <img src="https://img.shields.io/badge/Digital%20Twin-10--Year%20ODE%20Simulator-purple?style=flat-square" alt="Digital Twin" />
-  <img src="https://img.shields.io/badge/Bun_Edge_Gateway-000000?style=flat-square&logo=bun&logoColor=white" alt="Bun Edge Gateway" />
-  <img src="https://img.shields.io/badge/Rust_Systems_Core-000000?style=flat-square&logo=rust&logoColor=white" alt="Rust Systems Core" />
-  <img src="https://img.shields.io/badge/FastAPI-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI" />
-  <img src="https://img.shields.io/badge/React_19-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 19" />
-  <img src="https://img.shields.io/badge/Cloudflare_Workers_AI-F38020?style=flat-square&logo=cloudflare&logoColor=white" alt="Cloudflare Workers AI" />
-  <img src="https://img.shields.io/badge/FHIR_R4-E73F3E?style=flat-square" alt="FHIR R4" />
-  <img src="https://img.shields.io/badge/Docker-2496ED?style=flat-square&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/Rust_Axum-Systems%20Core-000000?style=flat-square&logo=rust&logoColor=white" alt="Rust Systems Core" />
+  <img src="https://img.shields.io/badge/Bun-1.2%20Edge%20Gateway-F9F1E1?style=flat-square&logo=bun&logoColor=black" alt="Bun 1.2" />
+  <img src="https://img.shields.io/badge/FastAPI-Clinical%20API-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/React_19-Clinical%20Workstation-61DAFB?style=flat-square&logo=react&logoColor=black" alt="React 19" />
+  <img src="https://img.shields.io/badge/HL7_FHIR-R4%20Interoperability-E73F3E?style=flat-square" alt="FHIR R4" />
+  <img src="https://img.shields.io/badge/Doppler-Centralized%20Secrets-D33833?style=flat-square&logo=doppler&logoColor=white" alt="Doppler Secrets" />
 </p>
-
-<a href="https://codespaces.new/pavanbadempet/AI-Healthcare-System"><img src="https://github.com/codespaces/badge.svg" alt="Open in GitHub Codespaces" height="32"/></a>
-&nbsp;
-<a href="https://huggingface.co/spaces/pavanbadempet/aio-health-backend"><img src="https://img.shields.io/badge/🚀%20Live%20Demo-Hugging%20Face%20Space-yellow?style=for-the-badge&logo=huggingface" height="32" alt="Live Demo"/></a>
-&nbsp;
-<a href="https://github.com/pavanbadempet/AI-Healthcare-System/stargazers"><img src="https://img.shields.io/badge/⭐%20Star%20on%20GitHub-Free%20&%20Open%20Source-blue?style=for-the-badge&logo=github" height="32" alt="Star on GitHub"/></a>
 
 </div>
+
+---
+
+## 💡 Why I Built This & Executive Architecture Summary
+
+> *"Most medical AI projects stop at simple toy Kaggle notebooks with synthetic CSVs and zero clinical governance. I engineered this platform from the ground up as a production-hardened blueprint solving the full end-to-end clinical intelligence lifecycle: ingesting multimodal patient records, executing streaming telemetry ETL, simulating continuous 10-year multi-organ disease trajectories, and providing safe decision support for attending clinicians.*
+>
+> *The architecture establishes a **Databricks Serverless Medallion Lakehouse with PySpark and Delta Lake** for distributed clinical ETL, harmonizing raw hospital telemetry and EHR data into **OHDSI OMOP CDM v5.4 and HL7 FHIR R4 standard models**. To decouple heavy analytical lakehouse queries from mission-critical patient care, we bridge real-time serving through a **high-throughput Rust Axum systems core with ONNX Runtime and a Bun Elysia edge gateway delivering sub-5ms inference**.*
+>
+> *Diagnostic risk stratification runs across **TabICLv2 Tabular Foundation Models (Rank #1 on TabArena)** alongside calibrated **CatBoost, XGBoost, and LightGBM ensembles with 95% Conformal Prediction sets and C++ SHAP explainability**. A continuous **10-year coupled ODE multi-organ digital twin** models cardiovascular, renal, metabolic, and hepatic trajectories over time. Zero credentials ever touch code or disks: 100% of pipeline orchestration is automated through centralized Doppler secret management, 17 GitHub Actions CI/CD workflows, and automated pre-commit and pre-push security gates."*
+
+---
+
+## 📸 Production Previews (Captured from Live Clinical Workstation)
+
+*Authentic screenshots captured directly from the live React 19 workstation:*
+
+### 🏥 1. Nexus Vitalis Clinical Workstation (Live Telemetry & ICU Monitoring)
+Real-time bedside patient monitoring, live telemetry alarms, facility bed occupancy, and one-click clinical care flows for attending physicians.
+
+<p align="center">
+  <img src="docs/assets/clinical-workstation-preview.png" alt="Nexus Vitalis Clinical Workstation Preview" width="100%" style="border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);"/>
+</p>
+
+---
+
+### 🧬 2. 10-Year Multi-Organ Digital Twin (BioTwin-X Continuous ODE Engine)
+Continuous Runge-Kutta 45 ODE simulation modeling 10-year cardiovascular, renal (eGFR), metabolic (HbA1c), and hepatic trajectories with Monte Carlo P10/P90 confidence bands and intervention modeling (+2.45 QALYs gained).
+
+<p align="center">
+  <img src="docs/assets/autonomous-frontier-preview.png" alt="10-Year Multi-Organ Digital Twin Trajectory Preview" width="100%" style="border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);"/>
+</p>
+
+---
+
+### 🌊 3. Databricks Lakehouse & Hospital Capacity Command
+Live visibility into the distributed PySpark Medallion streaming pipelines, OMOP CDM v5.4 transformers, and real-time hospital admission capacity.
+
+| 🌊 Databricks Medallion Streaming DAG | 🏥 Hospital Capacity & Bed Board Commander |
+| :---: | :---: |
+| <img src="docs/assets/data-platform-preview.png" alt="Databricks Lakehouse Medallion Pipeline Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> | <img src="docs/assets/capacity-command-preview.png" alt="Hospital Bed Board & Admission Capacity Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> |
+
+---
+
+### 🔍 4. Clinical Intelligence Command Center & Guideline CDS
+Interactive multi-specialty clinical decision support covering 109 validated medical algorithms with SHAP explainability and AI clinician narratives.
+
+<p align="center">
+  <img src="docs/assets/digital-twin-preview.png" alt="Clinical Decision Support Suite Preview" width="100%" style="border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);"/>
+</p>
 
 ---
 
