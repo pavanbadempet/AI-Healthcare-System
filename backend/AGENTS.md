@@ -21,6 +21,7 @@ For a deep reference of all 50+ backend modules, check [CONTEXT.md](file:///c:/U
 - **Error Handling**: Log errors with `logger.error()`, never expose stack traces to clients. Return structured `{"detail": "..."}` errors.
 - **HIPAA Awareness**: Health data (predictions, records, chat logs) must be scoped to `current_user.id`. Never return another user's data.
 - **ML Models**: Model files (`*.pkl`) currently live in `backend/` and `models/`. Loading is centralized in `prediction.initialize_models()`.
+- **Zero Hardcoded Secrets & Mandatory Doppler**: Never hardcode connection strings, database credentials, or API keys in backend code, route handlers, or scripts. Never create or edit `.env` files with credentials. Secrets must be injected via Doppler (`doppler run`) or safely fallback to local SQLite (`sqlite:///./healthcare.db`).
 
 ## Recommended Tests
 

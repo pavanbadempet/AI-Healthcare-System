@@ -33,6 +33,9 @@ jobs:
           requirements.txt
           tests/requirements-test.txt
 
+    - name: 🛡️ Zero-Leak Secret & .env Prohibition Gate
+      run: python scripts/pre_commit_secret_scanner.py
+
     - name: Set up Bun
       uses: oven-sh/setup-bun@v2
       with:
