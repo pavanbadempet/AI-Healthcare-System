@@ -70,9 +70,18 @@ The platform provides native **HL7 FHIR R4** and **OHDSI OMOP CDM v5.4** compati
 
 ---
 
-## 📸 Production Previews (Captured from Live Clinical Workstation)
+## 📸 Production Previews & Interactive Walkthrough
 
-*Authentic screenshots captured directly from the live React 19 workstation:*
+*Authentic screenshots and live recordings captured directly from the production React 19 workstation:*
+
+### 🎬 Interactive Simulation & Live Telemetry Tour (10-Year BioTwin-X Engine)
+Experience continuous Runge-Kutta 45 multi-organ ODE progression, dynamic drug titration (+2.45 QALYs gained), counterfactual causal inference, and real-time ICU waveforms:
+
+<p align="center">
+  <img src="docs/assets/digital-twin-walkthrough.gif" alt="Interactive BioTwin-X and Digital Twin Simulation Walkthrough" width="100%" style="border-radius: 12px; box-shadow: 0 16px 48px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.15);"/>
+</p>
+
+---
 
 ### 🏥 1. Nexus Vitalis Clinical Workstation (Live Telemetry & ICU Monitoring)
 Real-time bedside patient monitoring, live telemetry alarms, facility bed occupancy, and one-click clinical care flows for attending physicians.
@@ -83,30 +92,49 @@ Real-time bedside patient monitoring, live telemetry alarms, facility bed occupa
 
 ---
 
-### 🧬 2. 10-Year Multi-Organ Digital Twin (BioTwin-X Continuous ODE Engine)
-Continuous Runge-Kutta 45 ODE simulation modeling 10-year cardiovascular, renal (eGFR), metabolic (HbA1c), and hepatic trajectories with Monte Carlo P10/P90 confidence bands and intervention modeling (+2.45 QALYs gained).
+### 💬 2. AI Clinical Copilot & 🔬 Multimodal Diagnostic Hub
+Sub-5ms multi-agent reasoning grounded in PubMed literature alongside TabICLv2 foundation model multi-organ risk stratification.
 
-<p align="center">
-  <img src="docs/assets/autonomous-frontier-preview.png" alt="10-Year Multi-Organ Digital Twin Trajectory Preview" width="100%" style="border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);"/>
-</p>
-
----
-
-### 🌊 3. Databricks Lakehouse & Hospital Capacity Command
-Live visibility into the distributed PySpark Medallion streaming pipelines, OMOP CDM v5.4 transformers, and real-time hospital admission capacity.
-
-| 🌊 Databricks Medallion Streaming DAG | 🏥 Hospital Capacity & Bed Board Commander |
+| 💬 Multi-Agent AI Copilot & Pharmacogenomics | 🔬 Multimodal Diagnostic Hub (TabICLv2 + SHAP) |
 | :---: | :---: |
-| <img src="docs/assets/data-platform-preview.png" alt="Databricks Lakehouse Medallion Pipeline Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> | <img src="docs/assets/capacity-command-preview.png" alt="Hospital Bed Board & Admission Capacity Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> |
+| <img src="docs/assets/ai-clinical-chat-preview.png" alt="AI Clinical Copilot & RAG Assistant Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> | <img src="docs/assets/ai-diagnostics-hub-preview.png" alt="Multimodal Diagnostics Hub Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> |
 
 ---
 
-### 🔍 4. Clinical Intelligence Command Center & Guideline CDS
-Interactive multi-specialty clinical decision support covering 109 validated medical algorithms with SHAP explainability and AI clinician narratives.
+### 🩺 3. Telehealth Consultation Console & 🤖 AI Patient Companion
+End-to-end virtual care delivery: WebRTC video consultations with CASA scheduling agents and 24/7 bedside companion symptom tracking.
+
+| 🩺 WebRTC Telehealth & Specialist Router | 🤖 Bedside AI Patient Companion & Voice Logger |
+| :---: | :---: |
+| <img src="docs/assets/telemedicine-preview.png" alt="Telemedicine Video Consultation Console Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> | <img src="docs/assets/companion-preview.png" alt="AI Patient Companion Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> |
+
+---
+
+### 🌊 4. Distributed Lakehouse, 🏥 Bed Commander & 🛡️ Federated Learning
+Enterprise infrastructure harmonizing PySpark streaming, hospital admission logistics, and privacy-preserving cross-hospital model training.
+
+| 🌊 Databricks Medallion Streaming DAG | 🏥 Hospital Capacity & Bed Board | 🛡️ Differential-Privacy Federated Learning |
+| :---: | :---: | :---: |
+| <img src="docs/assets/data-platform-preview.png" alt="Databricks Lakehouse Medallion Pipeline Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> | <img src="docs/assets/capacity-command-preview.png" alt="Hospital Bed Board & Admission Capacity Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> | <img src="docs/assets/federated-learning-preview.png" alt="Privacy-Preserving Federated Learning Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> |
+
+---
+
+### 🇮🇳 5. ABDM National Health Stack Sandbox & Client-Side Edge WASM AI
+Complete Ayushman Bharat Digital Mission (M1/M2/M3) sandbox gateway, instant ABHA health identity provisioning, offline SIMD WASM inference, and 3D volumetric DICOM MPR viewport.
 
 <p align="center">
-  <img src="docs/assets/digital-twin-preview.png" alt="Clinical Decision Support Suite Preview" width="100%" style="border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);"/>
+  <img src="docs/assets/abdm-integration-preview.png" alt="ABDM National Health Stack Sandbox and 3D DICOM Preview" width="100%" style="border-radius: 12px; box-shadow: 0 12px 36px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);"/>
 </p>
+
+---
+
+### 🧬 6. 10-Year Multi-Organ Digital Twin & 🔍 Clinical Intelligence Command Center
+Continuous multi-organ Runge-Kutta 45 ODE trajectories (+2.45 QALYs gained) alongside 109 validated medical algorithms with C++ SHAP explainability.
+
+| 🧬 BioTwin-X 10-Year Continuous ODE Trajectory | 🔍 Clinical Decision Support Suite (109 Algorithms) |
+| :---: | :---: |
+| <img src="docs/assets/autonomous-frontier-preview.png" alt="10-Year Multi-Organ Digital Twin Trajectory Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> | <img src="docs/assets/digital-twin-preview.png" alt="Clinical Decision Support Suite Preview" width="100%" style="border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);"/> |
+
 
 ---
 

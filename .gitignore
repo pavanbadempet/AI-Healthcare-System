@@ -126,6 +126,7 @@ data/processed/
 data/raw/
 *.png
 !docs/assets/*.png
+!docs/assets/*.gif
 !docs/images/*.png
 kaggle_run_logs.txt
 
