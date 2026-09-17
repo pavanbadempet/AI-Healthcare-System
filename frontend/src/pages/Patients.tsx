@@ -87,14 +87,14 @@ const FALLBACK_REGISTRY_PATIENTS: RegistryPatient[] = [
 
 function registryDisplayForPatient(patient: RegistryPatient) {
   const mrn = `MRN-${(patient.id * 1024 + 100000).toString().substring(0,6)}`;
-  const risk = patient.clinical_risk_level || (patient.id === 3 ? "CRITICAL" : patient.id === 5 ? "HIGH" : "LOW");
-  const meta = PATIENT_DIAGNOSES[patient.id] || { diagnosis: "Inpatient Clinical Monitoring & Assessment", telemetryStatus: "Telemetry Synchronized" };
-  const diagnosis = meta.diagnosis;
-  const unit = patient.latest_encounter_type || "ICU-A";
-  const attending = patient.attending_name || "Dr. Sarah Lin, MD";
-  const dob = patient.dob || "1980-05-15";
-  const age = patient.dob ? calculateAge(patient.dob) : 45;
-  const telemetryStatus = meta.telemetryStatus;
+  const risk = patient.clinical_risk_level || "REVIEW";
+  const meta = PATIENT_DIAGNOSES[patient.id];
+  const diagnosis = meta?.diagnosis || "Primary diagnosis not recorded";
+  const unit = patient.latest_encounter_type || "Not assigned";
+  const attending = patient.attending_name || "Not recorded";
+  const dob = patient.dob || "Not recorded";
+  const age = patient.dob ? calculateAge(patient.dob) : null;
+  const telemetryStatus = meta?.telemetryStatus || "No verified telemetry";
 
   return {
     age,

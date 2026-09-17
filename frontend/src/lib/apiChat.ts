@@ -146,6 +146,9 @@ export interface HealthRecord {
   data: Record<string, unknown>;
   prediction: string;
   timestamp: string;
+  created_at?: string;
+  model_type?: string;
+  risk_level?: string;
 }
 
 export async function getRecords(): Promise<HealthRecord[]> {

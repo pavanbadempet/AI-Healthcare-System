@@ -9,6 +9,7 @@ import { apiFetch, API_BASE, authHeaders } from './apiCore';
 export interface ClinicalAlert {
   id: number;
   patient_id: number;
+  patient_name?: string;
   alert_type: string;
   severity: 'CRITICAL' | 'WARNING' | 'INFO';
   message: string;

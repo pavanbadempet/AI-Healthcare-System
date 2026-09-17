@@ -263,7 +263,8 @@ export default function DashboardPage() {
     getRecords()
       .then(setRecords)
       .catch((err) => {
-        console.warn("Using verified clinical fallback records:", err);
+        console.error(err);
+        setError("Backend connection unavailable. Demo data may be incomplete.");
         setRecords([
           { id: 1, patient_name: "Sarah Jenkins", model_type: "general", prediction: "Low Risk", risk_level: "Low", timestamp: "2026-09-17T10:00:00Z", created_at: "2026-09-17T10:00:00Z" },
           { id: 2, patient_name: "Marcus Thorne", model_type: "heart", prediction: "High Risk (STEMI Alert)", risk_level: "High", timestamp: "2026-09-17T11:30:00Z", created_at: "2026-09-17T11:30:00Z" },
@@ -641,7 +642,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {error && !error.includes("Demo data may be incomplete") && (
+      {error && (
         <div className="flex items-center gap-2 p-3 text-xs font-mono uppercase tracking-wide border border-[var(--warning-border)] bg-[var(--warning-muted)] text-[var(--warning)] rounded animate-pulse" role="alert">
           <AlertTriangle size={14} className="shrink-0" />
           <span>{error}</span>

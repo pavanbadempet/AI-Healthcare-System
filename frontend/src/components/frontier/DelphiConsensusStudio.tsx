@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Users, AlertTriangle, ShieldCheck, CheckCircle2, Play, RefreshCw, Activity, HeartPulse } from 'lucide-react';
 
 interface SpecialistOpinion {
@@ -15,6 +15,13 @@ export function DelphiConsensusStudio() {
   const [delphiRounds, setDelphiRounds] = useState<number>(2);
   const [kendallW, setKendallW] = useState<number>(0.84);
   const [hasDeliberated, setHasDeliberated] = useState<boolean>(true);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
 
   const scenarioData: Record<string, { title: string; patient: string; opinions: SpecialistOpinion[]; adversarialWarning: string }> = {
     chest_pain: {
@@ -93,7 +100,8 @@ export function DelphiConsensusStudio() {
 
   const handleRunDeliberation = () => {
     setIsDeliberating(true);
-    setTimeout(() => {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => {
       setIsDeliberating(false);
       setHasDeliberated(true);
       setDelphiRounds(2);

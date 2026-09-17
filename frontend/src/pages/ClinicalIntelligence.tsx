@@ -297,7 +297,10 @@ export default function ClinicalIntelligence() {
       alert_type: "CARDIAC_TACHYCARDIA",
       severity: "CRITICAL",
       message: "Acute Sinus Tachycardia (118 bpm) with anterior lead ST elevation (V2-V4). Bedside echocardiogram and serial troponin ordered.",
-      acknowledged: 0,
+      source_event_id: null,
+      is_acknowledged: false,
+      acknowledged_by: null,
+      acknowledged_at: null,
       created_at: new Date().toISOString()
     },
     {
@@ -307,7 +310,10 @@ export default function ClinicalIntelligence() {
       alert_type: "RESPIRATORY_HYPOXEMIA",
       severity: "WARNING",
       message: "Transient SpO2 desaturation (93%) on room air post-ambulation. Nasal cannula 2L/min initiated.",
-      acknowledged: 1,
+      source_event_id: null,
+      is_acknowledged: true,
+      acknowledged_by: 1,
+      acknowledged_at: new Date().toISOString(),
       created_at: new Date().toISOString()
     }
   ];
