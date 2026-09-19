@@ -1,0 +1,21 @@
+stages:
+  - test
+  - deploy
+
+include:
+  - template: Security/Secret-Detection.gitlab-ci.yml
+
+syntax-check:
+  stage: test
+  image: python:3.11-slim
+  script:
+    - python -m compileall .
+
+sync-huggingface:
+  stage: deploy
+  image: python:3.11-slim
+  rules:
+    - if: $HF_TOKEN && $CI_COMMIT_BRANCH == "main"
+  script:
+    - pip install huggingface_hub
+    - python scripts/sync_hf_space_and_hub.py
