@@ -7,13 +7,13 @@ include:
 
 syntax-check:
   stage: test
-  image: python:3.11-slim
+  image: python:3.12-slim
   script:
-    - python -m compileall .
+    - python -m compileall backend scripts tests
 
 sync-huggingface:
   stage: deploy
-  image: python:3.11-slim
+  image: python:3.12-slim
   rules:
     - if: $HF_TOKEN && $CI_COMMIT_BRANCH == "main"
   script:

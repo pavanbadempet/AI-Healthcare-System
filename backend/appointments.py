@@ -356,7 +356,8 @@ async def agent_stream_endpoint(
         try:
             # 1. Send warning immediately if exists
             if warning:
-                yield f"data: {json.dumps({'reply': warning + '\n\n', 'status': 'warning'})}\n\n"
+                warning_payload = json.dumps({"reply": warning + "\n\n", "status": "warning"})
+                yield f"data: {warning_payload}\n\n"
                 streamed_reply_parts.append(warning + "\n\n")
 
             # 2. Setup AI stream
