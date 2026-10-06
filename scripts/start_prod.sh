@@ -22,7 +22,20 @@ echo "  ⚡ Rust Backend Port : $RUST_PORT"
 echo "  🔗 Upstream Route    : $RUST_BACKEND_URL"
 echo "======================================================================"
 
-# 0. Ensure ONNX models are present (download from HF hub if missing)
+# 0. Sync secrets dynamically from Doppler if DOPPLER_TOKEN or DOPPLER is available
+TOKEN="${DOPPLER_TOKEN:-$DOPPLER}"
+if [ -n "$TOKEN" ]; then
+    echo "[BOOT] Synchronizing live secrets from Doppler API..."
+    DOPPLER_RAW=$(curl -s -f -m 8 -H "Authorization: Bearer $TOKEN" "https://api.doppler.com/v1/configs/config/secrets/download?format=env" || true)
+    if [ -n "$DOPPLER_RAW" ]; then
+        eval "$(echo "$DOPPLER_RAW" | grep -E '^(DATABASE_URL|SECRET_KEY|ALLOWED_HOSTS)=')"
+        export DATABASE_URL
+        export SECRET_KEY
+        echo "[BOOT] Successfully refreshed secrets from Doppler."
+    fi
+fi
+
+# 1. Ensure ONNX models are present (download from HF hub if missing)
 MODEL_DIR="./backend"
 mkdir -p "$MODEL_DIR"
 HF_BASE="https://huggingface.co/pavanbadempet/ai-healthcare-models/resolve/main"

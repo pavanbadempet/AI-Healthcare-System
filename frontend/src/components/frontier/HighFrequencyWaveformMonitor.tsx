@@ -141,12 +141,27 @@ export function HighFrequencyWaveformMonitor() {
       sweepX.current = nextX;
       t++;
 
-      animFrameId.current = requestAnimationFrame(renderLoop);
+      if (!document.hidden) {
+        animFrameId.current = requestAnimationFrame(renderLoop);
+      }
     };
 
+    const onVisibilityChange = () => {
+      if (!document.hidden && isPlaying) {
+        if (!animFrameId.current) {
+          animFrameId.current = requestAnimationFrame(renderLoop);
+        }
+      } else if (animFrameId.current) {
+        cancelAnimationFrame(animFrameId.current);
+        animFrameId.current = 0;
+      }
+    };
+
+    document.addEventListener("visibilitychange", onVisibilityChange);
     animFrameId.current = requestAnimationFrame(renderLoop);
 
     return () => {
+      document.removeEventListener("visibilitychange", onVisibilityChange);
       if (animFrameId.current) cancelAnimationFrame(animFrameId.current);
     };
   }, [isPlaying, rhythmMode, sweepSpeed]);

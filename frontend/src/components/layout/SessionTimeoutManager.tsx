@@ -79,10 +79,15 @@ export default function SessionTimeoutManager({ children }: { children: React.Re
     // Listen to user activity to reset inactivity timer
     const activityEvents = ["mousemove", "keydown", "click", "scroll"];
     
+    const lastActivityTimeRef = { current: Date.now() };
+
     const handleUserActivity = () => {
       // If we are showing the warning modal, do not reset automatically on minor jitter (e.g. mousemove).
       // They must explicitly click "Extend Session" to reset.
       if (!showWarning) {
+        const now = Date.now();
+        if (now - lastActivityTimeRef.current < 30_000) return;
+        lastActivityTimeRef.current = now;
         resetTimer();
       }
     };
@@ -91,7 +96,7 @@ export default function SessionTimeoutManager({ children }: { children: React.Re
     resetTimer();
 
     activityEvents.forEach((event) => {
-      window.addEventListener(event, handleUserActivity);
+      window.addEventListener(event, handleUserActivity, { passive: true });
     });
 
     return () => {

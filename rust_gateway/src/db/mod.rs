@@ -128,26 +128,55 @@ fn is_sqlite_url(url: &str) -> bool {
 }
 
 fn parse_sqlite_options(url: &str) -> Result<SqliteConnectOptions, Box<dyn std::error::Error + Send + Sync>> {
-    let clean = url
-        .trim_start_matches("sqlite:///")
-        .trim_start_matches("sqlite://")
-        .trim_start_matches("sqlite:");
+    let raw = url.trim();
+    if raw == ":memory:" || raw.is_empty() || raw == "sqlite::memory:" {
+        return Ok(SqliteConnectOptions::from_str("sqlite::memory:")?
+            .journal_mode(SqliteJournalMode::Wal)
+            .synchronous(SqliteSynchronous::Normal)
+            .busy_timeout(Duration::from_secs(5))
+            .foreign_keys(true));
+    }
 
-    let options = if clean == ":memory:" || clean.is_empty() {
-        SqliteConnectOptions::from_str("sqlite::memory:")?
-            .journal_mode(SqliteJournalMode::Wal)
-            .synchronous(SqliteSynchronous::Normal)
-            .busy_timeout(Duration::from_secs(5))
-            .foreign_keys(true)
+    let clean_path = if let Some(stripped) = raw.strip_prefix("sqlite:////") {
+        format!("/{}", stripped)
+    } else if let Some(stripped) = raw.strip_prefix("sqlite:///") {
+        if stripped.starts_with('/') {
+            stripped.to_string()
+        } else if stripped.starts_with("home/") || stripped.starts_with("tmp/") || stripped.starts_with("var/") || stripped.starts_with("usr/") || stripped.starts_with("app/") {
+            format!("/{}", stripped)
+        } else {
+            stripped.to_string()
+        }
+    } else if let Some(stripped) = raw.strip_prefix("sqlite://") {
+        stripped.to_string()
+    } else if let Some(stripped) = raw.strip_prefix("sqlite:") {
+        stripped.to_string()
     } else {
-        SqliteConnectOptions::new()
-            .filename(clean)
-            .create_if_missing(true)
+        raw.to_string()
+    };
+
+    if clean_path == ":memory:" {
+        return Ok(SqliteConnectOptions::from_str("sqlite::memory:")?
             .journal_mode(SqliteJournalMode::Wal)
             .synchronous(SqliteSynchronous::Normal)
             .busy_timeout(Duration::from_secs(5))
-            .foreign_keys(true)
-    };
+            .foreign_keys(true));
+    }
+
+    // Ensure parent directory exists so SQLite create_if_missing does not fail with CANTOPEN
+    if let Some(parent) = std::path::Path::new(&clean_path).parent() {
+        if !parent.as_os_str().is_empty() {
+            let _ = std::fs::create_dir_all(parent);
+        }
+    }
+
+    let options = SqliteConnectOptions::new()
+        .filename(&clean_path)
+        .create_if_missing(true)
+        .journal_mode(SqliteJournalMode::Wal)
+        .synchronous(SqliteSynchronous::Normal)
+        .busy_timeout(Duration::from_secs(5))
+        .foreign_keys(true);
 
     Ok(options)
 }

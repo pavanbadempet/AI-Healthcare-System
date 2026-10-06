@@ -53,14 +53,23 @@ async fn main() {
     
     println!("Starting Rust API Gateway...");
 
-    let db_url = env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite://healthcare.db".to_string());
+    let db_url = env::var("DATABASE_URL")
+        .or_else(|_| env::var("NEON_DATABASE_URL"))
+        .or_else(|_| env::var("POSTGRES_URL"))
+        .or_else(|_| env::var("POSTGRESQL_URL"))
+        .unwrap_or_else(|_| "sqlite://healthcare.db".to_string());
     let secret_key = env::var("SECRET_KEY").unwrap_or_else(|_| "test_secret_key_for_local_tests_only".to_string());
 
     // Connect to database (SQLite WAL mode or PostgreSQL) and auto-initialize schema
-    let pool = db::DbPool::new(&db_url).await.unwrap_or_else(|err| {
-        println!("Warning: Failed to connect to DB ({:?}). Falling back to lazy in-memory SQLite pool.", err);
-        db::DbPool::connect_lazy("sqlite::memory:").expect("Failed to create fallback pool")
-    });
+    let pool = match db::DbPool::new(&db_url).await {
+        Ok(p) => p,
+        Err(err) => {
+            eprintln!("Warning: Failed to connect to DB at {} ({:?}). Initializing in-memory fallback pool with schema.", db_url, err);
+            db::DbPool::new("sqlite::memory:")
+                .await
+                .expect("Failed to create in-memory SQLite fallback pool with schema")
+        }
+    };
 
     // Initialize System metric collector with a default system refresh all configuration
     let sys = System::new_all();

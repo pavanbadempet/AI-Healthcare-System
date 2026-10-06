@@ -222,21 +222,29 @@ export default function TopNav({
   useEffect(() => {
     if (!activeMenu) return;
 
+    let rafId = 0;
     const handleMouseMove = (e: MouseEvent) => {
-      if (!navContainerRef.current) return;
-      const rect = navContainerRef.current.getBoundingClientRect();
-      const buffer = 40; // 40px buffer around header nav & mega menu bounds
-      const isOutsideX = e.clientX < rect.left - buffer || e.clientX > rect.right + buffer;
-      const isOutsideY = e.clientY < rect.top - buffer || e.clientY > rect.top + 550; // covers nav + mega menu height
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        rafId = 0;
+        if (!navContainerRef.current) return;
+        const rect = navContainerRef.current.getBoundingClientRect();
+        const buffer = 40; // 40px buffer around header nav & mega menu bounds
+        const isOutsideX = e.clientX < rect.left - buffer || e.clientX > rect.right + buffer;
+        const isOutsideY = e.clientY < rect.top - buffer || e.clientY > rect.top + 550; // covers nav + mega menu height
 
-      if (isOutsideX || isOutsideY) {
-        if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-        closeAllMenus();
-      }
+        if (isOutsideX || isOutsideY) {
+          if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
+          closeAllMenus();
+        }
+      });
     };
 
-    window.addEventListener("mousemove", handleMouseMove);
-    return () => window.removeEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mousemove", handleMouseMove, { passive: true });
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      window.removeEventListener("mousemove", handleMouseMove);
+    };
   }, [activeMenu]);
 
   const handleMouseEnter = (menuKey: string) => {

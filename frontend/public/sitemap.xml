@@ -12,7 +12,7 @@
     <priority>1.00</priority>
   </url>
   <url>
-    <loc>https://github.com/pavanbadempet/AI-Healthcare-System</loc>
+    <loc>https://gitlab.com/pavan9b/AI-Healthcare-System</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.95</priority>
@@ -76,25 +76,25 @@
 
   <!-- Technical Documentation & Architecture Whitepapers -->
   <url>
-    <loc>https://github.com/pavanbadempet/AI-Healthcare-System/blob/main/docs/TECHNICAL_WHITEPAPER.md</loc>
+    <loc>https://gitlab.com/pavan9b/AI-Healthcare-System/blob/main/docs/TECHNICAL_WHITEPAPER.md</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
-    <loc>https://github.com/pavanbadempet/AI-Healthcare-System/blob/main/docs/AI_AGENT_ARCHITECTURE.md</loc>
+    <loc>https://gitlab.com/pavan9b/AI-Healthcare-System/blob/main/docs/AI_AGENT_ARCHITECTURE.md</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
-    <loc>https://github.com/pavanbadempet/AI-Healthcare-System/blob/main/docs/MODEL_AND_DATASET_CARDS.md</loc>
+    <loc>https://gitlab.com/pavan9b/AI-Healthcare-System/blob/main/docs/MODEL_AND_DATASET_CARDS.md</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.80</priority>
   </url>
   <url>
-    <loc>https://github.com/pavanbadempet/AI-Healthcare-System/blob/main/docs/architecture-decisions.md</loc>
+    <loc>https://gitlab.com/pavan9b/AI-Healthcare-System/blob/main/docs/architecture-decisions.md</loc>
     <lastmod>2026-08-14</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.75</priority>

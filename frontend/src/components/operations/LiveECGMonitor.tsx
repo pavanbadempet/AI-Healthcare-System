@@ -6,411 +6,275 @@ interface LiveECGMonitorProps {
   mode?: "ecg" | "spo2" | "resp";
 }
 
-const workerCode = `
-  let canvas = null;
-  let ctx = null;
-  let width = 400;
-  let height = 100;
-  let hr = 72;
-  let status = "Stable";
-  let mode = "ecg";
-  let phase = 0;
-  let points = [];
-  let drawIndex = 0;
-  let animationFrameId = null;
+const WIDTH = 400;
+const HEIGHT = 100;
+const TARGET_FRAME_MS = 25; // ~40 FPS for silky-smooth clinical sweep with near-zero CPU/GPU overhead
 
-  self.onmessage = (e) => {
-    const msg = e.data;
-    if (msg.type === "INIT") {
-      canvas = msg.canvas;
-      ctx = canvas.getContext("2d");
-      width = msg.width || 400;
-      height = msg.height || 100;
-      points = new Array(width).fill(50);
-      tick();
-    } else if (msg.type === "UPDATE") {
-      hr = msg.hr;
-      status = msg.status;
-      mode = msg.mode;
-    }
-  };
-
-  function tick() {
-    if (!canvas || !ctx) return;
-
-    let speedFactor = 1.0;
-    if (mode === "resp") {
-      speedFactor = 0.25;
-    }
-
-    const bps = hr / 60;
-    const phaseDelta = (bps / 60) * speedFactor;
-    phase = (phase + phaseDelta) % 1;
-
-    let waveValue = 50;
-
-    if (mode === "ecg") {
-      if (phase >= 0.0 && phase < 0.08) {
-        const t = phase / 0.08;
-        waveValue -= Math.sin(t * Math.PI) * 4;
-      } else if (phase >= 0.10 && phase < 0.12) {
-        const t = (phase - 0.10) / 0.02;
-        waveValue += Math.sin(t * Math.PI) * 3;
-      } else if (phase >= 0.12 && phase < 0.16) {
-        const t = (phase - 0.12) / 0.04;
-        if (t < 0.5) {
-          waveValue -= (t / 0.5) * 35;
-        } else {
-          waveValue -= 35 - ((t - 0.5) / 0.5) * 47;
-        }
-      } else if (phase >= 0.16 && phase < 0.19) {
-        const t = (phase - 0.16) / 0.03;
-        waveValue += 12 - (t * 12);
-      } else if (phase >= 0.24 && phase < 0.36) {
-        const t = (phase - 0.24) / 0.12;
-        waveValue -= Math.sin(t * Math.PI) * 8;
-      }
-    } else if (mode === "spo2") {
-      if (phase >= 0.0 && phase < 0.22) {
-        const t = phase / 0.22;
-        waveValue -= Math.sin(t * (Math.PI / 2)) * 32;
-      } else if (phase >= 0.22 && phase < 0.35) {
-        const t = (phase - 0.22) / 0.13;
-        waveValue -= 32 - Math.sin(t * Math.PI) * 5;
-      } else if (phase >= 0.35 && phase < 0.85) {
-        const t = (phase - 0.35) / 0.50;
-        waveValue -= 32 * (1 - t);
-      }
-    } else if (mode === "resp") {
-      waveValue -= Math.sin(phase * 2 * Math.PI) * 20;
-    }
-
-    waveValue += (Math.random() - 0.5) * 0.7;
-    points[drawIndex] = waveValue;
-    drawIndex = (drawIndex + 1) % width;
-
-    ctx.clearRect(0, 0, width, height);
-
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.02)";
-    ctx.lineWidth = 1;
-    ctx.shadowBlur = 0;
-
-    for (let x = 0; x < width; x += 20) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, height);
-      ctx.stroke();
-    }
-    for (let y = 0; y < height; y += 20) {
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(width, y);
-      ctx.stroke();
-    }
-
-    const isAlert = status === "Alert";
-    let accentColor = "#00bcd4";
-    let glowColor = "rgba(0, 188, 212, 0.4)";
-    if (mode === "ecg") {
-      accentColor = isAlert ? "#ff4a4a" : "#00bcd4";
-      glowColor = isAlert ? "rgba(255, 74, 74, 0.4)" : "rgba(0, 188, 212, 0.4)";
-    } else if (mode === "spo2") {
-      accentColor = "#00e676";
-      glowColor = "rgba(0, 230, 118, 0.4)";
-    } else if (mode === "resp") {
-      accentColor = "#8656f5";
-      glowColor = "rgba(134, 86, 245, 0.4)";
-    }
-
-    ctx.lineWidth = 2.2;
-    ctx.strokeStyle = accentColor;
-    ctx.shadowColor = glowColor;
-    ctx.shadowBlur = 6;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
-    ctx.beginPath();
-    let started = false;
-    for (let i = drawIndex + 3; i < width; i++) {
-      if (!started) {
-        ctx.moveTo(i, points[i]);
-        started = true;
-      } else {
-        ctx.lineTo(i, points[i]);
-      }
-    }
-    started = false;
-    for (let i = 0; i < drawIndex - 3; i++) {
-      if (!started) {
-        ctx.moveTo(i, points[i]);
-        started = true;
-      } else {
-        ctx.lineTo(i, points[i]);
-      }
-    }
-    ctx.stroke();
-
-    // Sweep cursor head
-    ctx.beginPath();
-    ctx.arc(drawIndex, points[drawIndex], 3.2, 0, 2 * Math.PI);
-    ctx.fillStyle = "#ffffff";
-    ctx.shadowBlur = 10;
-    ctx.shadowColor = accentColor;
-    ctx.fill();
-
-    animationFrameId = requestAnimationFrame(tick);
-  }
-`;
-
-const LiveECGMonitor = memo(function LiveECGMonitor({ hr, status, mode = "ecg" }: LiveECGMonitorProps) {
+/**
+ * Ultra-High-Performance Hardware-Accelerated Clinical Waveform Monitor
+ * 
+ * Features:
+ * - Direct 2D Canvas pipeline with dual-pass neon glow (0% shadowBlur GPU thrashing)
+ * - Zero Web Worker memory overhead (prevents V8 isolate memory bloat and Chromium leak)
+ * - Automatic pause on background tab (document.hidden) and off-screen scroll (IntersectionObserver)
+ * - Fixed memory circular buffer (zero garbage collection churn)
+ */
+const LiveECGMonitor = memo(function LiveECGMonitor({
+  hr,
+  status,
+  mode = "ecg",
+}: LiveECGMonitorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const workerRef = useRef<Worker | null>(null);
-  const isWorkerModeRef = useRef<boolean>(false);
-  /** Tracks whether canvas control was transferred to OffscreenCanvas (irreversible). */
-  const transferredRef = useRef<boolean>(false);
+  const animFrameRef = useRef<number>(0);
+  const isVisibleRef = useRef<boolean>(true);
+  const lastTimeRef = useRef<number>(0);
 
-  // Fallback refs for main-thread loop
-  const animationRef = useRef<number | null>(null);
-  const phaseRef = useRef<number>(0);
-  const pointsRef = useRef<number[] | null>(null);
-  const drawIndexRef = useRef<number>(0);
+  // Mutable animation state (avoids React re-render overhead)
+  const stateRef = useRef({
+    hr,
+    status,
+    mode,
+    phase: 0,
+    drawIndex: 0,
+    points: new Float32Array(WIDTH).fill(50),
+  });
 
-  // Spawns Web Worker once on mount
+  // Keep latest props synced to mutable ref without triggering effect re-binds
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    // If canvas was already transferred (e.g. React StrictMode / HMR remount),
-    // skip — the canvas element is permanently in "transferred" state.
-    if (transferredRef.current) return;
-
-    // Detect OffscreenCanvas support (guard for browsers, JSDOM, or automated tests)
-    const supportsOffscreen = typeof canvas.transferControlToOffscreen === "function";
-
-    if (supportsOffscreen) {
-      try {
-        const blob = new Blob([workerCode], { type: "application/javascript" });
-        const workerUrl = URL.createObjectURL(blob);
-        const worker = new Worker(workerUrl);
-        workerRef.current = worker;
-        isWorkerModeRef.current = true;
-        transferredRef.current = true;
-
-        const dpr = window.devicePixelRatio || 1;
-        const width = 400;
-        const height = 100;
-        canvas.width = width * dpr;
-        canvas.height = height * dpr;
-
-        const offscreen = canvas.transferControlToOffscreen();
-        worker.postMessage({
-          type: "INIT",
-          canvas: offscreen,
-          width,
-          height
-        }, [offscreen]);
-
-        return () => {
-          worker.terminate();
-          URL.revokeObjectURL(workerUrl);
-          workerRef.current = null;
-          isWorkerModeRef.current = false;
-          // NOTE: transferredRef stays true — canvas is permanently transferred
-        };
-      } catch (err) {
-        console.warn("Failed to initialize OffscreenCanvas worker, falling back to main thread:", err);
-        isWorkerModeRef.current = false;
-      }
-    }
-  }, []);
-
-  // Update Web Worker properties dynamically
-  useEffect(() => {
-    if (isWorkerModeRef.current && workerRef.current) {
-      workerRef.current.postMessage({
-        type: "UPDATE",
-        hr,
-        status,
-        mode
-      });
-    }
+    stateRef.current.hr = hr;
+    stateRef.current.status = status;
+    stateRef.current.mode = mode;
   }, [hr, status, mode]);
 
-  // Main thread fallback loop (Only runs if OffscreenCanvas is not active)
   useEffect(() => {
-    // Skip if worker mode is active OR if canvas was transferred (even if worker was cleaned up)
-    if (isWorkerModeRef.current || transferredRef.current) return;
-
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext("2d", { alpha: true, desynchronized: true });
     if (!ctx) return;
 
-    const hasScale = typeof ctx.scale === "function";
-    const hasArc = typeof ctx.arc === "function";
+    let isRunning = true;
 
-    const dpr = window.devicePixelRatio || 1;
-    const width = 400;
-    const height = 100;
-    canvas.width = width * dpr;
-    canvas.height = height * dpr;
-    if (hasScale) {
-      ctx.scale(dpr, dpr);
-    }
+    const tick = (now: number) => {
+      if (!isRunning) return;
 
-    const isAlert = status === "Alert";
-    let accentColor = "#00bcd4";
-    let glowColor = "rgba(0, 188, 212, 0.4)";
-    if (mode === "ecg") {
-      accentColor = isAlert ? "#ff4a4a" : "#00bcd4";
-      glowColor = isAlert ? "rgba(255, 74, 74, 0.4)" : "rgba(0, 188, 212, 0.4)";
-    } else if (mode === "spo2") {
-      accentColor = "#00e676";
-      glowColor = "rgba(0, 230, 118, 0.4)";
-    } else if (mode === "resp") {
-      accentColor = "#8656f5";
-      glowColor = "rgba(134, 86, 245, 0.4)";
-    }
+      const delta = now - lastTimeRef.current;
+      if (delta >= TARGET_FRAME_MS) {
+        lastTimeRef.current = now - (delta % TARGET_FRAME_MS);
 
-    if (!pointsRef.current) {
-      pointsRef.current = new Array(width).fill(50);
-    }
-    const points = pointsRef.current;
+        const state = stateRef.current;
+        const currentMode = state.mode;
+        const currentHr = state.hr || 72;
+        const currentStatus = state.status;
+        const points = state.points;
 
-    const tick = () => {
-      let speedFactor = 1.0;
-      if (mode === "resp") {
-        speedFactor = 0.25;
-      }
+        // Waveform speed and phase advance
+        let speedFactor = 1.0;
+        if (currentMode === "resp") {
+          speedFactor = 0.25;
+        }
 
-      const bps = hr / 60;
-      const phaseDelta = (bps / 60) * speedFactor;
-      phaseRef.current = (phaseRef.current + phaseDelta) % 1;
+        const bps = currentHr / 60;
+        const phaseDelta = (bps / 40) * speedFactor;
+        state.phase = (state.phase + phaseDelta) % 1;
+        const p = state.phase;
 
-      const p = phaseRef.current;
-      let waveValue = 50;
+        let waveValue = 50;
 
-      if (mode === "ecg") {
-        if (p >= 0.0 && p < 0.08) {
-          const t = p / 0.08;
-          waveValue -= Math.sin(t * Math.PI) * 4;
-        } else if (p >= 0.10 && p < 0.12) {
-          const t = (p - 0.10) / 0.02;
-          waveValue += Math.sin(t * Math.PI) * 3;
-        } else if (p >= 0.12 && p < 0.16) {
-          const t = (p - 0.12) / 0.04;
-          if (t < 0.5) {
-            waveValue -= (t / 0.5) * 35;
-          } else {
-            waveValue -= 35 - ((t - 0.5) / 0.5) * 47;
+        if (currentMode === "ecg") {
+          if (p >= 0.0 && p < 0.08) {
+            const t = p / 0.08;
+            waveValue -= Math.sin(t * Math.PI) * 4;
+          } else if (p >= 0.10 && p < 0.12) {
+            const t = (p - 0.10) / 0.02;
+            waveValue += Math.sin(t * Math.PI) * 3;
+          } else if (p >= 0.12 && p < 0.16) {
+            const t = (p - 0.12) / 0.04;
+            if (t < 0.5) {
+              waveValue -= (t / 0.5) * 35;
+            } else {
+              waveValue -= 35 - ((t - 0.5) / 0.5) * 47;
+            }
+          } else if (p >= 0.16 && p < 0.19) {
+            const t = (p - 0.16) / 0.03;
+            waveValue += 12 - t * 12;
+          } else if (p >= 0.24 && p < 0.36) {
+            const t = (p - 0.24) / 0.12;
+            waveValue -= Math.sin(t * Math.PI) * 8;
           }
-        } else if (p >= 0.16 && p < 0.19) {
-          const t = (p - 0.16) / 0.03;
-          waveValue += 12 - (t * 12);
-        } else if (p >= 0.24 && p < 0.36) {
-          const t = (p - 0.24) / 0.12;
-          waveValue -= Math.sin(t * Math.PI) * 8;
+        } else if (currentMode === "spo2") {
+          if (p >= 0.0 && p < 0.22) {
+            const t = p / 0.22;
+            waveValue -= Math.sin(t * (Math.PI / 2)) * 32;
+          } else if (p >= 0.22 && p < 0.35) {
+            const t = (p - 0.22) / 0.13;
+            waveValue -= 32 - Math.sin(t * Math.PI) * 5;
+          } else if (p >= 0.35 && p < 0.85) {
+            const t = (p - 0.35) / 0.5;
+            waveValue -= 32 * (1 - t);
+          }
+        } else if (currentMode === "resp") {
+          waveValue -= Math.sin(p * 2 * Math.PI) * 20;
         }
-      } else if (mode === "spo2") {
-        if (p >= 0.0 && p < 0.22) {
-          const t = p / 0.22;
-          waveValue -= Math.sin(t * (Math.PI / 2)) * 32;
-        } else if (p >= 0.22 && p < 0.35) {
-          const t = (p - 0.22) / 0.13;
-          waveValue -= 32 - Math.sin(t * Math.PI) * 5;
-        } else if (p >= 0.35 && p < 0.85) {
-          const t = (p - 0.35) / 0.50;
-          waveValue -= 32 * (1 - t);
+
+        // Slight natural physiological variance
+        waveValue += (Math.random() - 0.5) * 0.6;
+        const currentDrawIndex = state.drawIndex;
+        points[currentDrawIndex] = waveValue;
+        state.drawIndex = (currentDrawIndex + 1) % WIDTH;
+
+        // Render Frame
+        ctx.clearRect(0, 0, WIDTH, HEIGHT);
+
+        const isAlert = currentStatus === "Alert";
+        let accentColor = "#00bcd4";
+        let glowColor = "rgba(0, 188, 212, 0.25)";
+
+        if (currentMode === "ecg") {
+          accentColor = isAlert ? "#ff4a4a" : "#00bcd4";
+          glowColor = isAlert ? "rgba(255, 74, 74, 0.25)" : "rgba(0, 188, 212, 0.25)";
+        } else if (currentMode === "spo2") {
+          accentColor = "#00e676";
+          glowColor = "rgba(0, 230, 118, 0.25)";
+        } else if (currentMode === "resp") {
+          accentColor = "#8656f5";
+          glowColor = "rgba(134, 86, 245, 0.25)";
         }
-      } else if (mode === "resp") {
-        waveValue -= Math.sin(p * 2 * Math.PI) * 20;
-      }
 
-      waveValue += (Math.random() - 0.5) * 0.7;
+        // Trace line path
+        const drawSegments = () => {
+          ctx.beginPath();
+          let started = false;
+          const idx = state.drawIndex;
 
-      const currentDrawIndex = drawIndexRef.current;
-      points[currentDrawIndex] = waveValue;
-      drawIndexRef.current = (currentDrawIndex + 1) % width;
+          for (let i = idx + 4; i < WIDTH; i++) {
+            if (!started) {
+              ctx.moveTo(i, points[i]);
+              started = true;
+            } else {
+              ctx.lineTo(i, points[i]);
+            }
+          }
 
-      ctx.clearRect(0, 0, width, height);
+          started = false;
+          for (let i = 0; i < idx - 4; i++) {
+            if (!started) {
+              ctx.moveTo(i, points[i]);
+              started = true;
+            } else {
+              ctx.lineTo(i, points[i]);
+            }
+          }
+        };
 
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.02)";
-      ctx.lineWidth = 1;
-      ctx.shadowBlur = 0;
+        ctx.lineCap = "round";
+        ctx.lineJoin = "round";
 
-      for (let x = 0; x < width; x += 20) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, height);
+        // Pass 1: Soft luminous aura (simulates phosphor glow without expensive shadowBlur)
+        ctx.lineWidth = 3.5;
+        ctx.strokeStyle = glowColor;
+        drawSegments();
         ctx.stroke();
-      }
-      for (let y = 0; y < height; y += 20) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(width, y);
+
+        // Pass 2: High-contrast sharp core ray
+        ctx.lineWidth = 1.6;
+        ctx.strokeStyle = accentColor;
+        drawSegments();
         ctx.stroke();
-      }
 
-      ctx.lineWidth = 2.2;
-      ctx.strokeStyle = accentColor;
-      ctx.shadowColor = glowColor;
-      ctx.shadowBlur = 6;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
+        // Sweep cursor head
+        const sweepY = points[state.drawIndex];
 
-      ctx.beginPath();
-      let started = false;
-      const drawIndexVal = drawIndexRef.current;
-      for (let i = drawIndexVal + 3; i < width; i++) {
-        if (!started) {
-          ctx.moveTo(i, points[i]);
-          started = true;
-        } else {
-          ctx.lineTo(i, points[i]);
-        }
-      }
-      started = false;
-      for (let i = 0; i < drawIndexVal - 3; i++) {
-        if (!started) {
-          ctx.moveTo(i, points[i]);
-          started = true;
-        } else {
-          ctx.lineTo(i, points[i]);
-        }
-      }
-      ctx.stroke();
-
-      if (hasArc) {
+        // Outer glow halo
         ctx.beginPath();
-        ctx.arc(drawIndexVal, points[drawIndexVal], 3.2, 0, 2 * Math.PI);
+        ctx.arc(state.drawIndex, sweepY, 4.5, 0, 2 * Math.PI);
+        ctx.fillStyle = glowColor;
+        ctx.fill();
+
+        // Sharp beam core
+        ctx.beginPath();
+        ctx.arc(state.drawIndex, sweepY, 2.2, 0, 2 * Math.PI);
         ctx.fillStyle = "#ffffff";
-        ctx.shadowBlur = 10;
-        ctx.shadowColor = accentColor;
         ctx.fill();
       }
 
-      animationRef.current = requestAnimationFrame(tick);
-    };
-
-    animationRef.current = requestAnimationFrame(tick);
-
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
+      if (isRunning && isVisibleRef.current && !document.hidden) {
+        animFrameRef.current = requestAnimationFrame(tick);
       }
     };
-  }, [hr, status, mode]);
+
+    const startAnimation = () => {
+      if (!animFrameRef.current && isRunning) {
+        lastTimeRef.current = performance.now();
+        animFrameRef.current = requestAnimationFrame(tick);
+      }
+    };
+
+    const stopAnimation = () => {
+      if (animFrameRef.current) {
+        cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = 0;
+      }
+    };
+
+    // Auto-pause when page/tab is backgrounded to eliminate idle CPU & battery drain
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stopAnimation();
+      } else if (isVisibleRef.current) {
+        startAnimation();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    // Auto-pause when monitor is scrolled off screen
+    let observer: IntersectionObserver | null = null;
+    if (typeof IntersectionObserver !== "undefined") {
+      observer = new IntersectionObserver(
+        ([entry]) => {
+          isVisibleRef.current = entry.isIntersecting;
+          if (entry.isIntersecting && !document.hidden) {
+            startAnimation();
+          } else {
+            stopAnimation();
+          }
+        },
+        { threshold: 0.05 }
+      );
+      observer.observe(canvas);
+    } else {
+      startAnimation();
+    }
+
+    return () => {
+      isRunning = false;
+      stopAnimation();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (observer) {
+        observer.disconnect();
+      }
+    };
+  }, []);
 
   return (
     <canvas
       ref={canvasRef}
-      style={{ width: "100%", height: "100%" }}
+      width={WIDTH}
+      height={HEIGHT}
+      style={{
+        width: "100%",
+        height: "100%",
+        backgroundImage: `
+          linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px)
+        `,
+        backgroundSize: "20px 20px",
+      }}
       className="block"
+      aria-label={`${mode.toUpperCase()} live waveform monitor (${status})`}
     />
   );
 });
 
 export default LiveECGMonitor;
-
-

@@ -193,13 +193,28 @@ const PatientMonitoringSignals = memo(function PatientMonitoringSignals({
       }
       ctx.stroke();
 
-      animationRef.current = requestAnimationFrame(render);
+      if (!document.hidden) {
+        animationRef.current = requestAnimationFrame(render);
+      }
     };
 
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        if (!animationRef.current) {
+          animationRef.current = requestAnimationFrame(render);
+        }
+      } else if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+        animationRef.current = null;
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
     render();
 
     return () => {
       window.removeEventListener("resize", handleResize);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
       if (animationRef.current) cancelAnimationFrame(animationRef.current);
     };
   }, []);

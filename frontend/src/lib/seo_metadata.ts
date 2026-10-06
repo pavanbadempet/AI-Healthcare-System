@@ -46,7 +46,7 @@ export function generateMedicalJsonLd(config: MedicalSEOConfig): string {
     "publisher": {
       "@type": "Organization",
       "name": "AI Healthcare System",
-      "url": "https://github.com/pavanbadempet/AI-Healthcare-System"
+      "url": "https://gitlab.com/pavan9b/AI-Healthcare-System"
     }
   };
 

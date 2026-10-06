@@ -18,13 +18,13 @@
     "telemedicine"
   ],
   "author": "Pavan Badempet",
-  "homepage": "https://github.com/pavanbadempet/AI-Healthcare-System#readme",
+  "homepage": "https://gitlab.com/pavan9b/AI-Healthcare-System#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/pavanbadempet/AI-Healthcare-System.git"
+    "url": "git+https://gitlab.com/pavan9b/AI-Healthcare-System.git"
   },
   "bugs": {
-    "url": "https://github.com/pavanbadempet/AI-Healthcare-System/issues"
+    "url": "https://gitlab.com/pavan9b/AI-Healthcare-System/issues"
   },
   "private": true,
   "scripts": {

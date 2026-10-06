@@ -264,7 +264,7 @@ def _print_text(snapshot: dict[str, object]) -> None:
         warnings = plugins.get("heavy_enabled_warnings", [])
         if warnings:
             print()
-            print("  ⚠️  WARNING: Heavy plugins are active!")
+            print("  [!] WARNING: Heavy plugins are active!")
             print(f"      {', '.join(warnings)} are loaded and costing significant tokens per turn.")
             print("      Run: python scripts/toggle_plugins.py --disable <name>")
         print()

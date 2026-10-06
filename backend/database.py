@@ -56,7 +56,7 @@ def _load_database_url() -> str:
         return f"sqlite+libsql:///{_get_sqlite_db_path()}"
 
     # 3. Use DATABASE_URL environment variable if set and not requested to use local SQLite
-    database_url = os.getenv("DATABASE_URL")
+    database_url = os.getenv("DATABASE_URL") or os.getenv("NEON_DATABASE_URL") or os.getenv("POSTGRES_URL") or os.getenv("POSTGRESQL_URL")
     if database_url and not os.getenv("FORCE_LOCAL_SQLITE"):
         database_url = database_url.replace("&channel_binding=require", "").replace("?channel_binding=require", "")
         if database_url.startswith("postgres://"):

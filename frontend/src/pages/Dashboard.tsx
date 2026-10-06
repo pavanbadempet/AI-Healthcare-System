@@ -25,9 +25,8 @@ import { useTranslation } from "@/lib/i18n";
 import { useMaterialRipple } from "@/lib/ripple";
 import Tooltip from "@/components/layout/Tooltip";
 import { sendChat } from "@/lib/apiChat";
-import { API_BASE, authHeaders } from "@/lib/apiCore";
+import { API_BASE, authHeaders, getWebSocketUrl } from "@/lib/apiCore";
 import { toast } from "@/lib/toast";
-import { dispatchCareEvent } from "@/lib/api";
 import { TelemetryAlarmSnoozeModal } from "@/components/modals/TelemetryAlarmSnoozeModal";
 
 // Detailed Patient Profile Metadata
@@ -462,12 +461,18 @@ export default function DashboardPage() {
     if (!selectedPatientDbId) return;
 
     const token = useAuthStore.getState().token;
-    const wsUrl = `ws://127.0.0.1:8000/api/v1/telemetry/vitals/${selectedPatientDbId}?token=${token}`;
-    const ws = new WebSocket(wsUrl);
-
+    const wsUrl = getWebSocketUrl(`/v1/telemetry/vitals/${selectedPatientDbId}`) + (token ? `?token=${token}` : "");
+    let ws: WebSocket | null = null;
+    let throttleTimeout: ReturnType<typeof setTimeout> | null = null;
     let lastUpdate = 0;
     let pendingData: any = null;
-    let throttleTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    try {
+      ws = new WebSocket(wsUrl);
+    } catch (err) {
+      console.warn("Patient vitals WebSocket could not be initialized:", err);
+      return;
+    }
 
     const applyUpdates = () => {
       if (!pendingData) return;
@@ -531,7 +536,9 @@ export default function DashboardPage() {
     };
 
     return () => {
-      ws.close();
+      if (ws) {
+        try { ws.close(); } catch {}
+      }
       if (throttleTimeout) clearTimeout(throttleTimeout);
     };
   }, [selectedPatientDbId, selectedBed?.name]);
@@ -720,7 +727,7 @@ export default function DashboardPage() {
               onClick={async (e) => {
                 triggerRipple(e);
                 try {
-                  const response = await fetch(`${API_BASE}/v1/admin/maintenance`, {
+                  const response = await fetch(`${API_BASE}/admin/maintenance`, {
                     method: "POST",
                     headers: authHeaders()
                   });

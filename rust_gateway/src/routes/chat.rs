@@ -333,7 +333,7 @@ pub async fn get_records_handler(
         timestamp: Option<chrono::NaiveDateTime>,
     }
 
-    let records = match &state.db_pool {
+    let mut records = match &state.db_pool {
         DbPool::Sqlite(p) => {
             if let Some(ref r_type) = query.record_type {
                 sqlx::query_as::<_, RecordRow>(sql).bind(auth_user.id).bind(r_type).fetch_all(p).await
@@ -351,7 +351,43 @@ pub async fn get_records_handler(
     }
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"detail": e.to_string()}))))?;
 
-    let res: Vec<Value> = records.into_iter().map(|r| json!(r)).collect();
+    // If user is a clinician/doctor/admin and has no direct personal records, return recent facility records
+    if records.is_empty() && (auth_user.role == "admin" || auth_user.role == "doctor" || auth_user.role == "clinician") {
+        let all_sql = "SELECT * FROM health_records WHERE is_deleted = 0 ORDER BY timestamp DESC LIMIT 20";
+        records = match &state.db_pool {
+            DbPool::Sqlite(p) => sqlx::query_as::<_, RecordRow>(all_sql).fetch_all(p).await.unwrap_or_default(),
+            DbPool::Postgres(p) => sqlx::query_as::<_, RecordRow>(all_sql).fetch_all(p).await.unwrap_or_default(),
+        };
+    }
+
+    let res: Vec<Value> = records
+        .into_iter()
+        .map(|r| {
+            let risk = if let Some(ref p) = r.prediction {
+                if p.to_lowercase().contains("high") {
+                    "High"
+                } else if p.to_lowercase().contains("mod") {
+                    "Moderate"
+                } else {
+                    "Low"
+                }
+            } else {
+                "Low"
+            };
+            json!({
+                "id": r.id,
+                "user_id": r.user_id,
+                "record_type": r.record_type,
+                "model_type": r.record_type,
+                "patient_name": "Clinical Patient",
+                "data": r.data,
+                "prediction": r.prediction,
+                "risk_level": risk,
+                "timestamp": r.timestamp,
+                "created_at": r.timestamp,
+            })
+        })
+        .collect();
     Ok(Json(res))
 }
 

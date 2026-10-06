@@ -55,7 +55,7 @@ ENV HOME=/home/bun \
     RUST_BACKEND_URL=http://127.0.0.1:8001 \
     RUST_WS_URL=ws://127.0.0.1:8001 \
     STATIC_DIR=/home/bun/app/frontend/dist \
-    DATABASE_URL=sqlite:///home/bun/app/healthcare.db
+    DATABASE_URL=sqlite:///healthcare.db
 
 WORKDIR /home/bun/app
 

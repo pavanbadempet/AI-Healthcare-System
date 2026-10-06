@@ -106,6 +106,24 @@ function normalizeTelemetry(raw: any): TelemetryData {
   };
 }
 
+function hasTelemetryChanged(prev: TelemetryData | null, next: TelemetryData): boolean {
+  if (!prev) return true;
+  return (
+    prev.active_census !== next.active_census ||
+    prev.total_capacity !== next.total_capacity ||
+    prev.system_latency_ms !== next.system_latency_ms ||
+    prev.ai_nodes_active !== next.ai_nodes_active ||
+    prev.ed_boarding !== next.ed_boarding ||
+    prev.ed_avg_wait_min !== next.ed_avg_wait_min ||
+    prev.pending_discharges !== next.pending_discharges ||
+    prev.confirmed_discharges !== next.confirmed_discharges ||
+    prev.surge_prediction_pct !== next.surge_prediction_pct ||
+    prev.spark_batch_id !== next.spark_batch_id ||
+    prev.spark_records_processed !== next.spark_records_processed ||
+    prev.is_real_stream !== next.is_real_stream
+  );
+}
+
 function notifySubscribers() {
   subscribers.forEach((cb) => cb({ data: sharedData, status: sharedStatus }));
 }
@@ -134,15 +152,21 @@ async function fetchSnapshot() {
     const response = await fetch(`${apiBase}/v1/telemetry/snapshot`, { headers });
     if (response.ok) {
       const raw = await response.json();
-      sharedData = normalizeTelemetry(raw);
+      const normalized = normalizeTelemetry(raw);
+      const changed = hasTelemetryChanged(sharedData, normalized) || sharedStatus !== "connected";
+      sharedData = normalized;
       sharedStatus = "connected";
+      if (changed) notifySubscribers();
     } else {
+      const changed = sharedStatus !== "error";
       sharedStatus = "error";
+      if (changed) notifySubscribers();
     }
   } catch {
+    const changed = sharedStatus !== "error";
     sharedStatus = "error";
+    if (changed) notifySubscribers();
   }
-  notifySubscribers();
 }
 
 function startGlobalPolling() {
@@ -181,9 +205,13 @@ function connectGlobalWs() {
     ws.onmessage = (event) => {
       try {
         const raw = JSON.parse(event.data);
-        sharedData = normalizeTelemetry(raw);
+        const normalized = normalizeTelemetry(raw);
+        const changed = hasTelemetryChanged(sharedData, normalized) || sharedStatus !== "connected";
+        sharedData = normalized;
         sharedStatus = "connected";
-        notifySubscribers();
+        if (changed) {
+          notifySubscribers();
+        }
       } catch {
         console.error("[Telemetry] Failed to parse message");
       }

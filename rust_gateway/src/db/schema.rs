@@ -1571,5 +1571,48 @@ async fn seed_defaults(pool: &DbPool) -> Result<(), Error> {
         };
     }
 
+    // 4. Seed Default Health Records for Demo and Verification
+    let count_sql = "SELECT COUNT(*) FROM health_records";
+    let has_records = match pool {
+        DbPool::Sqlite(p) => sqlx::query_scalar::<_, i64>(count_sql).fetch_one(p).await.unwrap_or(0) > 0,
+        DbPool::Postgres(p) => sqlx::query_scalar::<_, i64>(count_sql).fetch_one(p).await.unwrap_or(0) > 0,
+    };
+
+    if !has_records {
+        let default_records = [
+            (1, "diabetes", r#"{"glucose": 95, "hba1c": 5.4}"#, "Low Risk"),
+            (1, "heart", r#"{"bp": "165/100", "hr": 118}"#, "High Risk (STEMI Alert)"),
+            (1, "kidney", r#"{"creatinine": 1.4, "egfr": 58}"#, "Moderate Risk"),
+            (1, "lungs", r#"{"fev1": 85, "spo2": 98}"#, "Low Risk"),
+            (1, "liver", r#"{"alt": 28, "ast": 24}"#, "Low Risk"),
+            (2, "diabetes", r#"{"glucose": 92, "hba1c": 5.2}"#, "Low Risk"),
+            (2, "heart", r#"{"bp": "165/100", "hr": 118}"#, "High Risk (STEMI Alert)"),
+            (2, "kidney", r#"{"creatinine": 1.4, "egfr": 58}"#, "Moderate Risk"),
+            (2, "lungs", r#"{"fev1": 85, "spo2": 98}"#, "Low Risk"),
+            (2, "liver", r#"{"alt": 28, "ast": 24}"#, "Low Risk"),
+            (7, "diabetes", r#"{"glucose": 95, "hba1c": 5.4}"#, "Low Risk"),
+            (7, "heart", r#"{"bp": "165/100", "hr": 118}"#, "High Risk (STEMI Alert)"),
+        ];
+
+        for (user_id, r_type, data, pred) in default_records {
+            let rec_sql = r#"
+                INSERT INTO health_records (user_id, record_type, data, prediction, is_deleted)
+                VALUES ($1, $2, $3, $4, 0)
+            "#;
+            match pool {
+                DbPool::Sqlite(p) => {
+                    let _ = sqlx::query(rec_sql)
+                        .bind(user_id).bind(r_type).bind(data).bind(pred)
+                        .execute(p).await;
+                },
+                DbPool::Postgres(p) => {
+                    let _ = sqlx::query(rec_sql)
+                        .bind(user_id).bind(r_type).bind(data).bind(pred)
+                        .execute(p).await;
+                },
+            };
+        }
+    }
+
     Ok(())
 }
