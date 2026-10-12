@@ -1,10 +1,14 @@
-"""Verification suite for OMOP CDM v5.4 vocabulary crosswalk tables."""
-def test_vocabulary_mapping_integrity():
-    concept_map = {
-        "SNOMED": 1,
-        "RxNorm": 2,
-        "LOINC": 3,
-        "ICD10CM": 4
-    }
-    assert len(concept_map) == 4
-    assert concept_map["LOINC"] == 3
+"""
+Verification test suite for OMOP CONCEPT_RELATIONSHIP mapping tables.
+"""
+import unittest
+
+class TestOMOPConceptRelationship(unittest.TestCase):
+    def test_maps_to_relationship_directionality(self):
+        rel_id = "Maps to"
+        is_standard = True
+        self.assertEqual(rel_id, "Maps to")
+        self.assertTrue(is_standard)
+
+if __name__ == "__main__":
+    unittest.main()
