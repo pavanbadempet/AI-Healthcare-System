@@ -31,7 +31,7 @@ SECRET_PATTERNS = [
     (r"\bAIza[a-zA-Z0-9_\-]{35}\b", "Google API / Cloud Token"),
     (r"\bdp\.(?:pt|ct|st)\.[a-zA-Z0-9]{20,}\b", "Doppler Token (dp.*)"),
     (r"\bAKIA[0-9A-Z]{16}\b", "AWS Access Key ID (AKIA*)"),
-    (r"-----BEGIN (?:RSA|EC|OPENSSH|PRIVATE) KEY-----", "Private Cryptographic Key"),
+    (r"-----BEGIN (?:[A-Z0-9_-]+ )?PRIVATE KEY-----", "Private Cryptographic Key"),
     (r"mongodb(?:\+srv)?:\/\/[a-zA-Z0-9_]+:[^@]+@", "MongoDB Connection String with Password"),
     (r"mysql:\/\/[a-zA-Z0-9_]+:[^@]+@", "MySQL Connection String with Password"),
 ]
