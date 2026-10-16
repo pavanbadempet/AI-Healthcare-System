@@ -546,8 +546,9 @@ def validate_tier4_realworld(repo_path: Path, repo_name: str, check_remote: bool
 
     # Check 4.4: Remote Repository Existence via GitHub CLI (if check_remote is True)
     if check_remote and gh_logged_in:
+        target_remote_name = "pavan-badempet.github.io" if repo_name == "pavanbadempet.github.io" else repo_name
         remote_view_proc = subprocess.run(
-            ["gh", "repo", "view", f"{TARGET_GITHUB_NAMESPACE}/{repo_name}", "--json", "isPrivate,url,defaultBranchRef"],
+            ["gh", "repo", "view", f"{TARGET_GITHUB_NAMESPACE}/{target_remote_name}", "--json", "isPrivate,url,defaultBranchRef"],
             capture_output=True,
             text=True,
             encoding="utf-8",
@@ -557,7 +558,7 @@ def validate_tier4_realworld(repo_path: Path, repo_name: str, check_remote: bool
             results.append(CheckResult(
                 tier=4, feature="Remote Visibility", check_name="github_repo_exists",
                 repo=repo_name, status=CheckStatus.PASS,
-                message=f"Remote repository {TARGET_GITHUB_NAMESPACE}/{repo_name} exists on GitHub"
+                message=f"Remote repository {TARGET_GITHUB_NAMESPACE}/{target_remote_name} exists on GitHub"
             ))
         else:
             results.append(CheckResult(
