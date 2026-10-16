@@ -50,7 +50,7 @@ def run_kaggle_pipeline():
     # 1. Clone repository to get all feature mappings and training files
     print("\n--- Step 1: Cloning Repository ---")
     if not os.path.exists("AI-Healthcare-System"):
-        run_command("git clone https://github.com/pavanbadempet/AI-Healthcare-System.git")
+        run_command("git clone https://gitlab.com/pavan9b/AI-Healthcare-System.git")
     else:
         print("Repository folder already exists, skipping clone.")
 

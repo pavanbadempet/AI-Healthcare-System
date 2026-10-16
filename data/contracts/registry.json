@@ -20,8 +20,8 @@
       "compatibility_mode": "BACKWARD",
       "sla_freshness_minutes": 1440,
       "quality_threshold": 0.95,
-      "created_at": "2026-07-29T19:49:13.382913+00:00",
-      "updated_at": "2026-07-29T19:49:13.382936+00:00"
+      "created_at": "2026-10-05T16:42:34.431548+00:00",
+      "updated_at": "2026-10-05T16:42:34.431565+00:00"
     },
     "etl_lab_results": {
       "contract_id": "etl_lab_results",
@@ -43,8 +43,8 @@
       "compatibility_mode": "BACKWARD",
       "sla_freshness_minutes": 1440,
       "quality_threshold": 0.95,
-      "created_at": "2026-07-29T19:49:13.382951+00:00",
-      "updated_at": "2026-07-29T19:49:13.382955+00:00"
+      "created_at": "2026-10-05T16:42:34.431579+00:00",
+      "updated_at": "2026-10-05T16:42:34.431582+00:00"
     },
     "prediction_input": {
       "contract_id": "prediction_input",
@@ -65,48 +65,9 @@
       "compatibility_mode": "BACKWARD",
       "sla_freshness_minutes": 1440,
       "quality_threshold": 0.95,
-      "created_at": "2026-07-29T19:49:13.382965+00:00",
-      "updated_at": "2026-07-29T19:49:13.382968+00:00"
-    },
-    "test_contract": {
-      "contract_id": "test_contract",
-      "name": "Test Contract",
-      "version": 1,
-      "producer": "test_prod",
-      "consumer": "test_cons",
-      "schema_definition": {
-        "id": "int",
-        "name": "string",
-        "active": "bool",
-        "score": "float"
-      },
-      "required_fields": [
-        "id",
-        "name"
-      ],
-      "compatibility_mode": "BACKWARD",
-      "sla_freshness_minutes": 1440,
-      "quality_threshold": 0.95,
-      "created_at": "2026-08-04T04:58:33.589223+00:00",
-      "updated_at": "2026-08-04T04:58:33.589341+00:00"
+      "created_at": "2026-10-05T16:42:34.431591+00:00",
+      "updated_at": "2026-10-05T16:42:34.431594+00:00"
     }
   },
-  "violations": {
-    "test_contract": [
-      {
-        "timestamp": "2026-08-04T04:58:33.595581+00:00",
-        "errors": [
-          "Record 0: Missing required field 'id'"
-        ],
-        "record_count": 1
-      },
-      {
-        "timestamp": "2026-08-04T04:58:33.599234+00:00",
-        "errors": [
-          "Record 0: Field 'id' expects 'int', found 'str'"
-        ],
-        "record_count": 1
-      }
-    ]
-  }
+  "violations": {}
 }

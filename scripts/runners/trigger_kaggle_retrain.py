@@ -93,7 +93,7 @@ def build_kaggle_kernel(username):
           "outputs": [],
           "source": [
             "# Clone the repository and install packages\n",
-            "!git clone https://github.com/pavanbadempet/AI-Healthcare-System.git\n",
+            "!git clone https://gitlab.com/pavan9b/AI-Healthcare-System.git\n",
             "%cd AI-Healthcare-System\n",
             "!pip install pyspark delta-spark xgboost scikit-learn pandas sqlalchemy psycopg2-binary requests huggingface_hub"
           ]

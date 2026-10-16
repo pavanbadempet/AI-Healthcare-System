@@ -39,8 +39,8 @@ all = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/pavanbadempet/AI-Healthcare-System"
-Documentation = "https://github.com/pavanbadempet/AI-Healthcare-System/tree/main/packages/clinical-tabular"
+Homepage = "https://gitlab.com/pavan9b/AI-Healthcare-System"
+Documentation = "https://gitlab.com/pavan9b/AI-Healthcare-System/tree/main/packages/clinical-tabular"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/clinical_tabular"]

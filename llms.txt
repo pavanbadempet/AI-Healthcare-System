@@ -5,7 +5,7 @@
 ## Core Capabilities & Endpoints
 
 - **Live Web Demo & Space**: https://huggingface.co/spaces/pavanbadempet/ai-healthcare-system
-- **GitHub Repository**: https://github.com/pavanbadempet/AI-Healthcare-System
+- **GitHub Repository**: https://gitlab.com/pavan9b/AI-Healthcare-System
 - **Model Hub Weights**: https://huggingface.co/pavanbadempet/ai-healthcare-models
 
 ## Clinical Engines & Features

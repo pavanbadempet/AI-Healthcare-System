@@ -143,7 +143,7 @@ To build the wheel and source distribution locally for packaging and publishing:
 
 ### 1. Set Up Development Environment
 ```bash
-git clone https://github.com/pavanbadempet/AI-Healthcare-System.git
+git clone https://gitlab.com/pavan9b/AI-Healthcare-System.git
 cd AI-Healthcare-System/packages/clinical-tabular
 pip install -e ".[all]"
 ```

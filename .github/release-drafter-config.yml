@@ -7,7 +7,7 @@ template: |
 
   $CHANGES
 
-  **Full Changelog**: https://github.com/pavanbadempet/AI-Healthcare-System/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
+  **Full Changelog**: https://gitlab.com/pavan9b/AI-Healthcare-System/compare/$PREVIOUS_TAG...v$RESOLVED_VERSION
 
 categories:
   - title: '🚀 Features'

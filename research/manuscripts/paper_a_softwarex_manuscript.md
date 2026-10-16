@@ -20,12 +20,12 @@ Modern clinical software systems are fractured across disconnected silos: electr
 
 | Current Code Version | v2.1.0 |
 | :--- | :--- |
-| **Permanent Link to Repository** | https://github.com/pavanbadempet/AI-Healthcare-System |
+| **Permanent Link to Repository** | https://gitlab.com/pavan9b/AI-Healthcare-System |
 | **Legal Code License** | Apache License 2.0 |
 | **Computing Platform / OS** | Linux (x86_64, aarch64), Windows 10/11, macOS |
 | **Installation Requirements** | Python $\ge 3.11$, Node.js/Bun, Rust (optional for edge proxy), Docker |
 | **User Manual & Documentation** | `docs/` in repository root |
-| **Support / Issue Tracker** | https://github.com/pavanbadempet/AI-Healthcare-System/issues |
+| **Support / Issue Tracker** | https://gitlab.com/pavan9b/AI-Healthcare-System/issues |
 
 ---
 

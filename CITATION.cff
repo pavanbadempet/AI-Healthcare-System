@@ -7,8 +7,8 @@ authors:
 title: "AI Healthcare System: Open-Source Privacy-First Clinical Intelligence & EHR Interoperability Platform"
 version: 1.0.0
 date-released: 2026-07-22
-url: "https://github.com/pavanbadempet/AI-Healthcare-System"
-repository-code: "https://github.com/pavanbadempet/AI-Healthcare-System"
+url: "https://gitlab.com/pavan9b/AI-Healthcare-System"
+repository-code: "https://gitlab.com/pavan9b/AI-Healthcare-System"
 keywords:
   - clinical decision support
   - healthcare AI

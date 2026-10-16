@@ -2,7 +2,7 @@
 ## *Planetary-Scale AI Healthcare Lakehouse & Real-Time Clinical Intelligence Platform*
 
 > **Document Classification**: Enterprise Architecture & Technical Specification  
-> **Repository**: [`pavanbadempet/AI-Healthcare-System`](https://github.com/pavanbadempet/AI-Healthcare-System)
+> **Repository**: [`pavanbadempet/AI-Healthcare-System`](https://gitlab.com/pavan9b/AI-Healthcare-System)
 
 ---
 

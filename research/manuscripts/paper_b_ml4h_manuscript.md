@@ -115,4 +115,4 @@ We demonstrated that combining continuous differential equation digital twins wi
 ---
 
 ## Ethical Statement & Reproducibility
-This study utilized de-identified clinical records from the MIMIC-IV database under PhysioNet Credentialed Data Use Agreement. All code, synthetic testing scripts, and experiment runners are open-sourced at https://github.com/pavanbadempet/AI-Healthcare-System/tree/main/research.
+This study utilized de-identified clinical records from the MIMIC-IV database under PhysioNet Credentialed Data Use Agreement. All code, synthetic testing scripts, and experiment runners are open-sourced at https://gitlab.com/pavan9b/AI-Healthcare-System/tree/main/research.

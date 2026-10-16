@@ -22,13 +22,13 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/ci.yml/badge.svg" alt="CI/CD Build Status" /></a>
-  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml"><img src="https://github.com/pavanbadempet/AI-Healthcare-System/actions/workflows/codeql.yml/badge.svg" alt="CodeQL Security Analysis" /></a>
+  <a href="https://gitlab.com/pavan9b/AI-Healthcare-System/actions/workflows/ci.yml"><img src="https://gitlab.com/pavan9b/AI-Healthcare-System/actions/workflows/ci.yml/badge.svg" alt="CI/CD Build Status" /></a>
+  <a href="https://gitlab.com/pavan9b/AI-Healthcare-System/actions/workflows/codeql.yml"><img src="https://gitlab.com/pavan9b/AI-Healthcare-System/actions/workflows/codeql.yml/badge.svg" alt="CodeQL Security Analysis" /></a>
   <a href="CONTRIBUTING.md"><img src="https://img.shields.io/badge/PRs-Welcome-10b981?style=flat-square" alt="PRs Welcome" /></a>
   <a href="SECURITY.md"><img src="https://img.shields.io/badge/Security-Policy-red?style=flat-square&logo=shield" alt="Security Policy" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL_v3-blue.svg?style=flat-square" alt="AGPL v3 License" /></a>
   <a href="https://github.com/sponsors/pavanbadempet"><img src="https://img.shields.io/badge/Sponsor-%E2%9D%A4-ea4aaa.svg?logo=github&style=flat-square" alt="Sponsor" /></a>
-  <a href="https://github.com/pavanbadempet/AI-Healthcare-System/stargazers"><img src="https://img.shields.io/github/stars/pavanbadempet/AI-Healthcare-System?style=flat-square&color=f59e0b" alt="Stars" /></a>
+  <a href="https://gitlab.com/pavan9b/AI-Healthcare-System/stargazers"><img src="https://img.shields.io/github/stars/pavanbadempet/AI-Healthcare-System?style=flat-square&color=f59e0b" alt="Stars" /></a>
   <a href="CITATION.cff"><img src="https://img.shields.io/badge/Cite-APA_/_BibTeX-2563eb?style=flat-square" alt="Cite This Repo" /></a>
   <img src="https://img.shields.io/badge/Compliance-HIPAA%20%2F%20GDPR-brightgreen?style=flat-square&logo=security" alt="HIPAA / GDPR" />
   <img src="https://img.shields.io/badge/Latency-Sub--1ms-purple?style=flat-square&logo=speedtest" alt="Sub-1ms Latency" />
@@ -275,7 +275,7 @@ Auto-provisions mock EHR database, pre-loads TabICLv2 & Quad-Ensemble weights, a
 
 ```bash
 # Clone the repository
-git clone https://github.com/pavanbadempet/AI-Healthcare-System.git
+git clone https://gitlab.com/pavan9b/AI-Healthcare-System.git
 cd AI-Healthcare-System
 
 # Run with Bun (Instant 1-Click Interactive Demo)
@@ -315,7 +315,7 @@ docker compose up -d
 
 #### 1️⃣ Clone and Install Python Dependencies
 ```bash
-git clone https://github.com/pavanbadempet/AI-Healthcare-System.git
+git clone https://gitlab.com/pavan9b/AI-Healthcare-System.git
 cd AI-Healthcare-System
 python -m pip install -r requirements-full.txt
 ```
@@ -1058,11 +1058,11 @@ The platform provides a native compliance client (`packages/clinical-fhir-abdm`)
   "@graph": [
     {
       "@type": "SoftwareApplication",
-      "@id": "https://github.com/pavanbadempet/AI-Healthcare-System#software",
+      "@id": "https://gitlab.com/pavan9b/AI-Healthcare-System#software",
       "name": "AI Healthcare System",
       "applicationCategory": "HealthApplication",
       "operatingSystem": "Web, Windows, macOS, Linux, Docker, Kubernetes",
-      "downloadUrl": "https://github.com/pavanbadempet/AI-Healthcare-System",
+      "downloadUrl": "https://gitlab.com/pavan9b/AI-Healthcare-System",
       "softwareVersion": "3.0.0",
       "offers": {
         "@type": "Offer",
@@ -1072,7 +1072,7 @@ The platform provides a native compliance client (`packages/clinical-fhir-abdm`)
       "author": {
         "@type": "Person",
         "name": "Pavan Badempet",
-        "url": "https://github.com/pavanbadempet"
+        "url": "https://gitlab.com/pavan9b"
       },
       "description": "Open-source HIPAA-compliant EHR, Databricks Medallion Lakehouse (OMOP CDM v5.4), TabICLv2 foundation models, 10-year multi-organ health simulator, and LangGraph clinical copilot.",
       "featureList": [
@@ -1130,6 +1130,6 @@ GNU AGPL-3.0 License — Copyright © 2026 **Pavan Badempet**, Shiva Prasad Anag
 
 It helps researchers and healthcare engineers discover this open-source clinical intelligence platform.
 
-[![Star this repo](https://img.shields.io/github/stars/pavanbadempet/AI-Healthcare-System?style=social)](https://github.com/pavanbadempet/AI-Healthcare-System/stargazers)
+[![Star this repo](https://img.shields.io/github/stars/pavanbadempet/AI-Healthcare-System?style=social)](https://gitlab.com/pavan9b/AI-Healthcare-System/stargazers)
 
 </div>

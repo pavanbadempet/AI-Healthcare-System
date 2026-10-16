@@ -28,7 +28,7 @@ dependencies = [
 dev = ["pytest>=8.0", "pytest-cov"]
 
 [project.urls]
-Homepage = "https://github.com/pavanbadempet/AI-Healthcare-System"
+Homepage = "https://gitlab.com/pavan9b/AI-Healthcare-System"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/clinical_fhir_abdm"]

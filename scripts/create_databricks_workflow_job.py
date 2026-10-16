@@ -19,7 +19,7 @@ def create_medallion_job(user_email):
     url = f"{DATABRICKS_INSTANCE}/api/2.1/jobs/create"
 
     # We define a 3-task pipeline executing on a shared Serverless Job cluster for cost efficiency
-    GIT_URL = "https://github.com/pavanbadempet/AI-Healthcare-System"
+    GIT_URL = "https://gitlab.com/pavan9b/AI-Healthcare-System"
 
     payload = {
         "name": "⭐ AI Healthcare Medallion Pipeline (Bronze -> Silver -> Gold)",

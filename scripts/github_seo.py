@@ -153,7 +153,7 @@ def main():
     set_description(token)
     print("\n✅ Done! Changes take effect immediately on GitHub.")
     print("\n📝 MANUAL STEPS STILL NEEDED:")
-    print("   1. Go to: https://github.com/pavanbadempet/AI-Healthcare-System/settings")
+    print("   1. Go to: https://gitlab.com/pavan9b/AI-Healthcare-System/settings")
     print("   2. Scroll to 'Social preview' section")
     print("   3. Upload docs/assets/social-preview.svg (or convert to PNG first)")
     print("      → This image shows on Twitter/LinkedIn/Discord when your repo is shared")

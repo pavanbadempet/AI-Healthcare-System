@@ -28,7 +28,7 @@ You can run the entire pipeline interactively in your browser using Google's fre
 
 ```python
 # 1. Clone the repository
-!git clone https://github.com/pavanbadempet/AI-Healthcare-System.git
+!git clone https://gitlab.com/pavan9b/AI-Healthcare-System.git
 
 # 2. Install required dependencies in the Colab container
 !pip install pyspark delta-spark xgboost scikit-learn pandas sqlalchemy psycopg2-binary requests
