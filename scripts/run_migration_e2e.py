@@ -728,13 +728,15 @@ def main() -> int:
     parser.add_argument("--live-gate", action="store_true", help="Enforce strict 100%% pass across live repositories (M5 gate)")
     parser.add_argument("--tier", type=int, choices=[1, 2, 3, 4], help="Filter checks by tier")
     parser.add_argument("--repo", type=str, help="Filter checks by repository name")
+    parser.add_argument("--all", action="store_true", help="Run checks across all tiers and repositories")
     parser.add_argument("--check-remote", action="store_true", help="Perform remote GitHub API checks via gh CLI")
+    parser.add_argument("--json", action="store_true", help="Print JSON report to stdout")
     parser.add_argument("--json-report", type=str, help="Export JSON report to given file path")
 
     args = parser.parse_args()
 
     # Default action if no flags provided: run self-verification to prove test health
-    if args.verify or (not args.audit and not args.live_gate):
+    if args.verify or (not args.audit and not args.live_gate and not args.json):
         print("\n>>> Running Tier 1-4 Test Suite Self-Verification Harness...")
         report = run_self_verification()
         print_report_table(report, title="E2E Test Harness Self-Verification")
@@ -743,20 +745,26 @@ def main() -> int:
             return 1
         print("[SUCCESS] All 4 tiers of test assertions, scanners, and edge-cases validated successfully.")
 
-    if args.audit or args.live_gate:
-        print("\n>>> Auditing Live Flagship Repositories in GitHub Directory...")
+    if args.audit or args.live_gate or args.json:
+        if not args.json:
+            print("\n>>> Auditing Live Flagship Repositories in GitHub Directory...")
         live_report = run_live_audit(check_remote=args.check_remote, tier_filter=args.tier)
-        print_report_table(live_report, title="Live Repositories Migration Audit")
+        if not args.json:
+            print_report_table(live_report, title="Live Repositories Migration Audit")
+
+        report_data = {
+            "total": live_report.total_checks,
+            "passed": live_report.passed,
+            "failed": live_report.failed,
+            "warned": live_report.warned,
+            "skipped": live_report.skipped,
+            "results": [asdict(r) for r in live_report.results],
+        }
+
+        if args.json:
+            print(json.dumps(report_data, indent=2))
 
         if args.json_report:
-            report_data = {
-                "total": live_report.total_checks,
-                "passed": live_report.passed,
-                "failed": live_report.failed,
-                "warned": live_report.warned,
-                "skipped": live_report.skipped,
-                "results": [asdict(r) for r in live_report.results],
-            }
             Path(args.json_report).write_text(json.dumps(report_data, indent=2), encoding="utf-8")
             print(f"Exported JSON report to {args.json_report}")
 
