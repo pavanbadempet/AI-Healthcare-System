@@ -40,9 +40,9 @@ TARGET_REPOSITORIES: List[str] = [
 ]
 
 EXPECTED_AUTHOR_NAME: str = "Pavan Badempet"
-EXPECTED_AUTHOR_EMAIL: str = "badempetp@gmail.com"
+EXPECTED_AUTHOR_EMAIL: str = "pavan9b@gmail.com"
 EXPECTED_COMMITTER_NAME: str = "Pavan Badempet"
-EXPECTED_COMMITTER_EMAIL: str = "badempetp@gmail.com"
+EXPECTED_COMMITTER_EMAIL: str = "pavan9b@gmail.com"
 
 FORBIDDEN_HISTORICAL_EMAILS: List[str] = [
     "pavan9b@gmail.com",
@@ -422,13 +422,13 @@ def validate_tier3_security(repo_path: Path, repo_name: str) -> List[CheckResult
             message=f"Leaked credentials in .git/config: {', '.join(config_tokens_found)}"
         ))
 
-    # Check 3.2: Remote URL Rebinding to pavan-badempet
+    # Check 3.2: Remote URL Rebinding to pavanbadempet
     remote_proc = run_git(["remote", "-v"], repo_path)
     remotes_text = remote_proc.stdout.strip()
     remote_lines = [l.strip() for l in remotes_text.splitlines() if l.strip()]
 
     origin_urls = [l.split()[1] for l in remote_lines if l.startswith("origin\t") or l.startswith("origin ")]
-    legacy_remotes = [l for l in remote_lines if "pavanbadempet/" in l and not "pavan-badempet/" in l]
+    legacy_remotes = [l for l in remote_lines if "pavanbadempet/" in l and not "pavanbadempet/" in l]
 
     if origin_urls:
         origin_clean = all(EXPECTED_REMOTE_PREFIX in u for u in origin_urls)
@@ -546,7 +546,7 @@ def validate_tier4_realworld(repo_path: Path, repo_name: str, check_remote: bool
 
     # Check 4.4: Remote Repository Existence via GitHub CLI (if check_remote is True)
     if check_remote and gh_logged_in:
-        target_remote_name = "pavan-badempet.github.io" if repo_name == "pavanbadempet.github.io" else repo_name
+        target_remote_name = "pavanbadempet.github.io" if repo_name == "pavanbadempet.github.io" else repo_name
         remote_view_proc = subprocess.run(
             ["gh", "repo", "view", f"{TARGET_GITHUB_NAMESPACE}/{target_remote_name}", "--json", "isPrivate,url,defaultBranchRef"],
             capture_output=True,
@@ -623,7 +623,7 @@ def create_synthetic_fixture_repo(compliant: bool = True) -> Tuple[tempfile.Temp
     subprocess.run(["git", "tag", "-a", "v1.0.0", "-m", "Release 1.0.0"], cwd=str(repo_path), check=True, capture_output=True, env=env)
 
     # Configure remotes
-    remote_url = f"https://github.com/pavan-badempet/test-repo.git" if compliant else "https://github.com/pavanbadempet/test-repo.git"
+    remote_url = f"https://github.com/pavanbadempet/test-repo.git" if compliant else "https://github.com/pavanbadempet/test-repo.git"
     subprocess.run(["git", "remote", "add", "origin", remote_url], cwd=str(repo_path), check=True, capture_output=True)
 
     if not compliant:

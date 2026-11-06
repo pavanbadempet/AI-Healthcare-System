@@ -65,7 +65,7 @@ def compliant_git_repo() -> Generator[Path, None, None]:
         # Release tag
         subprocess.run(["git", "tag", "-a", "v1.0.0", "-m", "Production release 1.0.0"], cwd=str(repo_path), check=True, capture_output=True, env=env)
 
-        # Clean remote origin pointing to pavan-badempet
+        # Clean remote origin pointing to pavanbadempet
         remote_url = f"https://github.com/{TARGET_GITHUB_NAMESPACE}/compliant-sample.git"
         subprocess.run(["git", "remote", "add", "origin", remote_url], cwd=str(repo_path), check=True, capture_output=True)
 
@@ -243,7 +243,7 @@ def test_tier3_git_config_token_free_fails_when_hf_or_pat_token_present(non_comp
 
 
 def test_tier3_origin_url_rebound_passes_when_matching_target_namespace(compliant_git_repo: Path) -> None:
-    """Verifies that remote origin pointing to pavan-badempet passes rebinding check."""
+    """Verifies that remote origin pointing to pavanbadempet passes rebinding check."""
     results = validate_tier3_security(compliant_git_repo, "test_repo")
     origin_check = next(r for r in results if r.check_name == "origin_url_rebound")
     assert origin_check.status == CheckStatus.PASS

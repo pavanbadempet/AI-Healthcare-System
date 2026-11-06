@@ -20,9 +20,9 @@ The comprehensive, opaque-box E2E test suite and standalone test runner for the 
 - **Total Audited Checks Across Live Repositories**: **105 Checks** (21 checks per repository).
 - **Authoritative Identity Target**:
   - Author Name: `Pavan Badempet`
-  - Author Email: `badempetp@gmail.com`
+  - Author Email: `pavan9b@gmail.com`
   - Committer Name: `Pavan Badempet`
-  - Committer Email: `badempetp@gmail.com`
+  - Committer Email: `pavan9b@gmail.com`
 - **Zero-Tolerance Forbidden Historical Identities**:
   - `pavan9b@gmail.com`
   - `19wj1a0531@gniindia.org`
@@ -101,14 +101,14 @@ MIGRATION_LIVE=1 python -m pytest tests/test_migration_e2e.py -k test_live_migra
 ### Tier 1: Feature Coverage (>=5 Tests per Feature)
 
 1. **Feature 1.1: 100% Commit Author Attribution**:
-   - `test_tier1_author_attribution_passes_when_all_commits_match`: Verifies that when all commits in history are authored by `Pavan Badempet <badempetp@gmail.com>`, the check passes with 100% attribution score.
+   - `test_tier1_author_attribution_passes_when_all_commits_match`: Verifies that when all commits in history are authored by `Pavan Badempet <pavan9b@gmail.com>`, the check passes with 100% attribution score.
    - `test_tier1_author_attribution_fails_when_legacy_author_present`: Adversarial test verifying that if a single commit has a non-matching author name or email, the test immediately flags the offending commit hash and author identity.
    - `test_tier1_author_attribution_all_branches`: Scans all local branches (`--all`) to verify attribution coverage is universal, not restricted to `HEAD`.
    - `test_tier1_author_attribution_reachable_from_tags`: Validates commit history reachable from all tags.
-   - `test_tier1_author_attribution_case_insensitivity`: Verifies case-insensitive email matching (`badempetp@gmail.com`).
+   - `test_tier1_author_attribution_case_insensitivity`: Verifies case-insensitive email matching (`pavan9b@gmail.com`).
 
 2. **Feature 1.2: 100% Committer Attribution**:
-   - `test_tier1_committer_attribution_passes_when_all_committers_match`: Verifies that 100% of committers match `Pavan Badempet <badempetp@gmail.com>`.
+   - `test_tier1_committer_attribution_passes_when_all_committers_match`: Verifies that 100% of committers match `Pavan Badempet <pavan9b@gmail.com>`.
    - `test_tier1_committer_attribution_fails_when_legacy_committer_present`: Verifies detection of legacy committers or un-rewritten web committers (`noreply@github.com`).
    - `test_tier1_committer_name_and_email_pair_integrity`: Ensures committer name and email are updated in unison.
    - `test_tier1_committer_attribution_across_merges`: Verifies committer identity on merge commits.
@@ -199,7 +199,7 @@ MIGRATION_LIVE=1 python -m pytest tests/test_migration_e2e.py -k test_live_migra
 2. **Feature 4.2: GitHub CLI Authentication & Remote Profile Visibility**:
    - `test_tier4_github_cli_auth_detects_login_state`: Validates that `gh auth status` confirms active login as `pavanbadempet`.
    - `test_tier4_remote_visibility_skipped_when_offline_or_local_only`: Validates zero-configuration offline fallback without crashing.
-   - `test_tier4_attribution_email_match_verifies_target_profile`: Confirms that `badempetp@gmail.com` is linked to `pavanbadempet` GitHub profile for activity graph contribution credit.
+   - `test_tier4_attribution_email_match_verifies_target_profile`: Confirms that `pavan9b@gmail.com` is linked to `pavanbadempet` GitHub profile for activity graph contribution credit.
    - `test_tier4_remote_repo_existence_api_check`: Formats and validates `gh repo view pavanbadempet/<repo>` queries.
    - `test_tier4_default_branch_remote_alignment`: Asserts remote default branch matches local default branch (`main` or `master`).
 
@@ -228,7 +228,7 @@ When implementing milestones M1 through M4, downstream agents must use this test
    - All 5 repositories must exist and show clean working trees (0 unstaged files).
 2. **Milestone 2 Gate (Git Author & History Rewriting)**:
    - Run `python scripts/run_migration_e2e.py --audit --tier 1`
-   - `author_attribution_100pct` must be **PASS** (100% `Pavan Badempet <badempetp@gmail.com>`).
+   - `author_attribution_100pct` must be **PASS** (100% `Pavan Badempet <pavan9b@gmail.com>`).
    - `committer_attribution_100pct` must be **PASS**.
    - `zero_historical_emails` must be **PASS** (0 legacy emails across all branches).
    - Run `python scripts/run_migration_e2e.py --audit --tier 2` -> all historical timestamps preserved.

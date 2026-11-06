@@ -26,7 +26,7 @@ REPO_NAMES = [
 ]
 
 EXPECTED_NAME = "Pavan Badempet"
-EXPECTED_EMAIL = "badempetp@gmail.com"
+EXPECTED_EMAIL = "pavan9b@gmail.com"
 
 # Forbidden personal/legacy email patterns
 FORBIDDEN_HISTORICAL_EMAILS = [
@@ -167,7 +167,7 @@ def test_timestamps_and_trees(repo_path):
 def main():
     print("=" * 80)
     print(" EMPIRICAL CHALLENGER VERIFICATION SUITE — MILESTONE 2")
-    print(" Target Identity: Pavan Badempet <badempetp@gmail.com>")
+    print(" Target Identity: Pavan Badempet <pavan9b@gmail.com>")
     print("=" * 80)
     
     all_fsck_passed = True
