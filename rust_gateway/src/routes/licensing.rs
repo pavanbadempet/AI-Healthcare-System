@@ -7,6 +7,9 @@ use jsonwebtoken::{decode, DecodingKey, Validation};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::env;
+use std::sync::RwLock;
+
+static DYNAMIC_LICENSE_KEY: RwLock<Option<String>> = RwLock::new(None);
 
 use crate::AppState;
 
@@ -85,7 +88,10 @@ pub fn verify_license(key: &str) -> (bool, String, String, Vec<String>, bool) {
 
 /// GET /v1/licensing/status
 pub async fn get_licensing_status() -> Json<Value> {
-    let raw_key = env::var("LICENSE_KEY").unwrap_or_else(|_| TRIAL_KEY.to_string());
+    let dynamic_key = DYNAMIC_LICENSE_KEY.read().ok().and_then(|guard| guard.clone());
+    let raw_key = dynamic_key
+        .or_else(|| env::var("LICENSE_KEY").ok())
+        .unwrap_or_else(|| TRIAL_KEY.to_string());
     let key = if raw_key.trim().is_empty() { TRIAL_KEY } else { raw_key.trim() };
 
     let (is_valid, details, tier, modules, perpetual) = verify_license(key);
@@ -119,8 +125,8 @@ pub async fn activate_license(
         ));
     }
 
-    unsafe {
-        env::set_var("LICENSE_KEY", clean_key);
+    if let Ok(mut lock) = DYNAMIC_LICENSE_KEY.write() {
+        *lock = Some(clean_key.to_string());
     }
 
     Ok(Json(json!({

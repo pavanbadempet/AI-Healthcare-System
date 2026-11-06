@@ -25,6 +25,7 @@ from .model_service import (  # noqa: F401 — re-exported for backward compat &
     get_age_bucket,
     model_service,
 )
+from .prompt_registry import get_prompt
 from .tee_enclave import ConfidentialEnclave
 
 # --- Logging Configuration ---
@@ -600,7 +601,7 @@ async def _generate_patient_explanation(
         )
         explanation = await generate(
             prompt=prompt,
-            system="You are an empathetic, patient-friendly medical AI assistant. Output only the layperson explanation.",
+            system=get_prompt("prediction_patient_friendly"),
             bypass_cache=True
         )
         return explanation.strip()
@@ -892,7 +893,7 @@ async def _generate_clinical_narrative(
         )
         narrative = await generate(
             prompt=prompt,
-            system="You are an expert clinical artificial intelligence assistant. Output only the requested clinical summary.",
+            system=get_prompt("prediction_clinical_expert"),
             bypass_cache=True
         )
         return narrative.strip()
@@ -2135,7 +2136,7 @@ async def predict_multi_organ(
             )
             narrative = await generate(
                 prompt=prompt,
-                system="You are an expert Chief Medical Officer AI assistant. Output only the clinical narrative summary.",
+                system=get_prompt("prediction_chief_medical_officer"),
                 bypass_cache=True
             )
             narrative = narrative.strip()
@@ -2661,7 +2662,7 @@ Write a highly concise clinical summary (exactly 2 sentences) explaining key sys
 """
         ai_synthesis = await core_ai.generate(
             prompt=prompt,
-            system="You are an expert clinical consultant. Keep summaries under 30 words, clinical, and objective."
+            system=get_prompt("prediction_clinical_consultant")
         )
     except Exception as e:
         logger.warning(f"AI synthesis failed: {e}")
@@ -3123,7 +3124,7 @@ async def match_clinical_trials(
     from backend.core_ai import generate
     raw_output = await generate(
         prompt=prompt,
-        system="You are a clinical trials matching coordinator."
+        system=get_prompt("clinical_trials_coordinator")
     )
 
     try:
@@ -3484,7 +3485,7 @@ async def get_clinical_consensus(
     from backend.core_ai import generate
     raw_output = await generate(
         prompt=prompt,
-        system="You are a clinical diagnostics consensus auditor."
+        system=get_prompt("clinical_diagnostics_consensus")
     )
 
     try:

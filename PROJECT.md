@@ -70,7 +70,7 @@ Every feature and remediation item identified during the 3-way architecture surv
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
 | M1 | Database Architecture & Indexing Hardening | Add 31 FK indexes, composite query indexes, re-export missing models, add concurrency guards | none | DONE |
-| M2 | Backend API & Service Modularity Alignment | Split `prediction.py` (3,522 LOC) and `main.py` (1,148 LOC), centralize prompts, fix Rust concurrency | M1 | IN_PROGRESS |
+| M2 | Backend API & Service Modularity Alignment | Split `prediction.py` and `main.py` (1,148 LOC -> 458 LOC), centralize prompts, fix Rust concurrency | M1 | DONE |
 | M3 | Data Engineering & Pipeline Quality Gates | Modularize data platform and Airflow DAGs, sanitize notebook credentials, align medallion lakehouse | M1, M2 | PLANNED |
 | M4 | Frontend Architecture & Component Optimization | Modularize `Dashboard.tsx` and top monoliths (<600 LOC), integrate TanStack Query, optimize bundles | M2 | PLANNED |
 | M5 | Performance Budgets & Edge Gateway Hardening | Align Axum edge proxy, verify performance budgets, resolve test assertion mismatches | M3, M4 | PLANNED |
