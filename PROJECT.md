@@ -1,44 +1,44 @@
-# Project: Flagship Repositories Migration, Author History Rewriting & GitHub Synchronization
+﻿# Project: Flagship Repositories Migration, Author History Rewriting & GitHub Synchronization
 
 ## Architecture
 
-This project performs an automated, end-to-end migration, historical commit rewriting, security sanitization, and remote synchronization across 5 flagship repositories from legacy namespaces to LO's active GitHub account (`pavan-badempet`).
+This project performs an automated, end-to-end migration, historical commit rewriting, security sanitization, and remote synchronization across 5 flagship repositories from legacy namespaces to LO's active GitHub account (`pavanbadempet`).
 
 ```
 Target Repositories Directory: C:/Users/pavan/OneDrive/Documents/GitHub/
-├── sparklineage
-├── AI-Healthcare-System
-├── Movie-Recommendation-System
-├── omni-recommendation-companion
-└── pavanbadempet.github.io  (to remote: pavan-badempet/pavan-badempet.github.io)
+â”œâ”€â”€ sparklineage
+â”œâ”€â”€ AI-Healthcare-System
+â”œâ”€â”€ Movie-Recommendation-System
+â”œâ”€â”€ omni-recommendation-companion
+â””â”€â”€ pavanbadempet.github.io  (to remote: pavanbadempet/pavanbadempet.github.io)
 ```
 
 Target Attribution Identity:
-- **GitHub Username**: `pavan-badempet`
+- **GitHub Username**: `pavanbadempet`
 - **Author & Committer Name**: `Pavan Badempet`
 - **Author & Committer Email**: `badempetp@gmail.com`
-- **Remote Origin Format**: `https://github.com/pavan-badempet/<repo>.git`
+- **Remote Origin Format**: `https://github.com/pavanbadempet/<repo>.git`
 
 ```
 [ Local Repositories (5 targets) ]
-               │
-               ▼ Step 1: Health & Backup (M1)
+               â”‚
+               â–¼ Step 1: Health & Backup (M1)
 [ Mirror Backups + Snapshot Commits of Dirty Trees ]
-               │
-               ▼ Step 2: Git Author Rewriting (M2)
+               â”‚
+               â–¼ Step 2: Git Author Rewriting (M2)
 [ python -m git_filter_repo --name-callback / --email-callback ]
   * Rewrites 100% commits to Pavan Badempet <badempetp@gmail.com>
   * Preserves 100% original commit dates, author timestamps, commit trees
-               │
-               ▼ Step 3: Secret Sanitization (M3)
+               â”‚
+               â–¼ Step 3: Secret Sanitization (M3)
 [ Pre-Push Secret Scanner & Token Scrub ]
   * Scrub leaked HF tokens from Movie-Recommendation-System .git/config
   * Verify 0 API keys, tokens, or private keys across all repos
-               │
-               ▼ Step 4: Remote Rebinding & Push (M4)
+               â”‚
+               â–¼ Step 4: Remote Rebinding & Push (M4)
 [ gh repo create + git remote set-url + git push --all / --tags ]
-               │
-               ▼ Step 5: Dual-Track E2E Test Suite & Audit (M5)
+               â”‚
+               â–¼ Step 5: Dual-Track E2E Test Suite & Audit (M5)
 [ 100% Verified Attribution, Remote Sync, & Audit Clean ]
 ```
 
@@ -54,8 +54,8 @@ Every feature from user requirements and survey handoffs:
 | 4 | Timestamp & Tree Preservation | Preserve 100% original author dates, committer dates, and commit tree hashes across all branches & tags | M2 | Survey R2 |
 | 5 | Token Scrub in .git/config | Remove plaintext Hugging Face token (`hf_tDkhAX...`) from `Movie-Recommendation-System/.git/config` remotes and LFS | M3 | Survey R3 |
 | 6 | Automated Pre-Push Secret Scan | Execute multi-pattern secret scanner across all 5 codebases and commit logs (0 secrets tolerance) | M3 | Survey R3 |
-| 7 | Remote Creation (`gh repo create`) | Create public remote repositories under `pavan-badempet` namespace via authenticated GitHub CLI | M4 | Survey R4 |
-| 8 | Remote Rebinding & Synchronized Push | Configure `origin` to `https://github.com/pavan-badempet/<repo>.git`, push all branches (`--all`) and tags (`--tags`) | M4 | Survey R4 |
+| 7 | Remote Creation (`gh repo create`) | Create public remote repositories under `pavanbadempet` namespace via authenticated GitHub CLI | M4 | Survey R4 |
+| 8 | Remote Rebinding & Synchronized Push | Configure `origin` to `https://github.com/pavanbadempet/<repo>.git`, push all branches (`--all`) and tags (`--tags`) | M4 | Survey R4 |
 | 9 | E2E Migration Verification Suite | Automated test harness validating 100% commit author attribution, timestamp integrity, clean remotes, and push state | E2E Track | Original Request |
 | 10 | Forensic Integrity Audit | Independent verification that no commits are missed, timestamps are preserved, and no secrets exist | Final Audit | Orchestration |
 
@@ -73,11 +73,11 @@ Every feature from user requirements and survey handoffs:
 ## Interface Contracts
 
 ### Repository Naming & Namespace Mapping
-- `sparklineage` -> `https://github.com/pavan-badempet/sparklineage.git`
-- `AI-Healthcare-System` -> `https://github.com/pavan-badempet/AI-Healthcare-System.git`
-- `Movie-Recommendation-System` -> `https://github.com/pavan-badempet/Movie-Recommendation-System.git`
-- `omni-recommendation-companion` -> `https://github.com/pavan-badempet/omni-recommendation-companion.git`
-- `pavanbadempet.github.io` -> `https://github.com/pavan-badempet/pavan-badempet.github.io.git`
+- `sparklineage` -> `https://github.com/pavanbadempet/sparklineage.git`
+- `AI-Healthcare-System` -> `https://github.com/pavanbadempet/AI-Healthcare-System.git`
+- `Movie-Recommendation-System` -> `https://github.com/pavanbadempet/Movie-Recommendation-System.git`
+- `omni-recommendation-companion` -> `https://github.com/pavanbadempet/omni-recommendation-companion.git`
+- `pavanbadempet.github.io` -> `https://github.com/pavanbadempet/pavanbadempet.github.io.git`
 
 ### Rewriting Specification
 - Tool: `python -m git_filter_repo`
@@ -90,10 +90,11 @@ Every feature from user requirements and survey handoffs:
 ## Code Layout
 ```
 C:/Users/pavan/OneDrive/Documents/GitHub/
-├── sparklineage/
-├── AI-Healthcare-System/
-├── Movie-Recommendation-System/
-├── omni-recommendation-companion/
-├── pavanbadempet.github.io/
-└── .backups_migration/               # Mirror backups before rewrite
+â”œâ”€â”€ sparklineage/
+â”œâ”€â”€ AI-Healthcare-System/
+â”œâ”€â”€ Movie-Recommendation-System/
+â”œâ”€â”€ omni-recommendation-companion/
+â”œâ”€â”€ pavanbadempet.github.io/
+â””â”€â”€ .backups_migration/               # Mirror backups before rewrite
 ```
+

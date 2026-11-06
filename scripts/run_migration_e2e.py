@@ -1,4 +1,4 @@
-"""
+﻿"""
 Standalone E2E Migration Test Suite & Audit Runner for AI Healthcare System & Flagship Repos.
 Validates git author rewriting, historical timestamps, security scanning, and remote synchronization.
 
@@ -51,7 +51,7 @@ FORBIDDEN_HISTORICAL_EMAILS: List[str] = [
     "pavanbadempet@users.noreply.huggingface.co",
 ]
 
-TARGET_GITHUB_NAMESPACE: str = "pavan-badempet"
+TARGET_GITHUB_NAMESPACE: str = "pavanbadempet"
 EXPECTED_REMOTE_PREFIX: str = f"https://github.com/{TARGET_GITHUB_NAMESPACE}/"
 
 SECRET_PATTERNS: List[Tuple[str, str]] = [
@@ -777,3 +777,4 @@ def main() -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
