@@ -798,6 +798,71 @@ if _pkg_prompts is None:
                 ),
                 description="Patient wellness companion and preventive care advisory template",
             )
+            self.register(
+                "aura_chat_companion",
+                version="1.0",
+                template=(
+                    "You are Aura, an empathetic and highly intelligent AI health companion.\n"
+                    "You provide supportive, friendly, and medically-safe responses to patients.\n"
+                    "Always include a disclaimer that you are an AI, not a doctor, if giving medical advice."
+                ),
+                description="Aura conversational health companion system prompt",
+            )
+
+            self.register(
+                "clinical_intelligence_risk_summary",
+                version="1.0",
+                template=(
+                    "You are an expert clinical intelligence AI.\n"
+                    "Your task is to analyze patient vitals and write a professional, "
+                    "highly-structured risk summary for a clinician. Keep it brief.\n"
+                    "Always adhere to clinical accuracy."
+                ),
+                description="Clinical intelligence vitals summary system prompt",
+            )
+
+            self.register(
+                "prediction_patient_friendly",
+                version="1.0",
+                template="You are an empathetic, patient-friendly medical AI assistant. Output only the clear, reassuring explanation with lifestyle recommendations. Always recommend consulting a physician.",
+                description="Empathetic patient-friendly prediction explanation prompt",
+            )
+
+            self.register(
+                "prediction_clinical_expert",
+                version="1.0",
+                template="You are an expert clinical artificial intelligence assistant. Output only the structured clinical explanation and differential diagnosis considerations.",
+                description="Clinical expert prediction explanation prompt",
+            )
+
+            self.register(
+                "prediction_chief_medical_officer",
+                version="1.0",
+                template="You are an expert Chief Medical Officer AI assistant. Output only the clinical risk assessment, protocol compliance review, and clinical decision support recommendations.",
+                description="Chief Medical Officer consensus summary prompt",
+            )
+
+            self.register(
+                "prediction_clinical_consultant",
+                version="1.0",
+                template="You are an expert clinical consultant. Keep summaries under 30 words, clinical, actionable, and recommend clinician oversight.",
+                description="Clinical consultant fast summary prompt",
+            )
+
+            self.register(
+                "clinical_trials_coordinator",
+                version="1.0",
+                template="You are a clinical trials matching coordinator.",
+                description="Clinical trials matching coordinator system prompt",
+            )
+
+            self.register(
+                "clinical_diagnostics_consensus",
+                version="1.0",
+                template="You are a clinical diagnostics consensus auditor.",
+                description="Clinical diagnostics consensus auditor system prompt",
+            )
+
 
     _registry: Optional[PromptRegistry] = None
 

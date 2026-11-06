@@ -10,6 +10,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from . import agent, audit, auth, core_ai, database, licensing, models, pdf_generator, rag, schemas
+from .prompt_registry import get_prompt
 from .security_decorators import no_log_zone
 
 logger = logging.getLogger(__name__)
@@ -259,10 +260,8 @@ async def aura_fallback_chat(
     """Fallback endpoint for Aura AI when WebLLM is unavailable on the client."""
     sanitized_message = _sanitize_chat_input(request.message)
 
-    # Simple prompt for Aura
-    system_prompt = """You are Aura, an empathetic and highly intelligent AI health companion.
-    You provide supportive, friendly, and medically-safe responses to patients.
-    Always include a disclaimer that you are an AI, not a doctor, if giving medical advice."""
+    # Centralized prompt for Aura from prompt_registry
+    system_prompt = get_prompt("aura_chat_companion")
 
     messages = [{"role": "system", "content": system_prompt}]
     for msg in request.history[-5:]: # Keep last 5 for context

@@ -11,6 +11,7 @@ from sqlalchemy.orm import Session
 from . import auth, database, models, schemas
 from .core_ai import generate
 from .event_bus import event_bus
+from .prompt_registry import get_prompt
 
 router = APIRouter(prefix="/intelligence", tags=["Clinical Intelligence"])
 
@@ -216,12 +217,7 @@ async def generate_patient_insights(
         "potential concerns, suggested monitoring protocols, and lifestyle recommendations."
     )
 
-    system_prompt = (
-        "You are an expert clinical intelligence AI. "
-        "Your task is to analyze patient vitals and write a professional, "
-        "highly-structured risk summary for a clinician. Keep it brief. "
-        "Always adhere to clinical accuracy."
-    )
+    system_prompt = get_prompt("clinical_intelligence_risk_summary")
 
     # Call core_ai.generate to get LLM response
     ai_response = await generate(prompt=prompt, system=system_prompt)
