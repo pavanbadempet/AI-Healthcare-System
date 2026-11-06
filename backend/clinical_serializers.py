@@ -1,6 +1,8 @@
 """Pydantic v2 model serializers for clinical inference endpoints."""
-from pydantic import BaseModel, Field
 from typing import List, Optional
+
+from pydantic import BaseModel, Field
+
 
 class VitalSignReading(BaseModel):
     loinc_code: str

@@ -3,6 +3,7 @@ Streaming HL7 v2.x ORU^R01 vital signs telemetry parser.
 """
 from typing import Dict, Optional
 
+
 class VitalSignsTelemetryParser:
     """Parses numeric telemetry observations (heart rate, SpO2, systolic BP) from HL7 segments."""
 
