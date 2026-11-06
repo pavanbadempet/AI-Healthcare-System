@@ -1,7 +1,7 @@
 """Clinical Intelligence domain models: alerts and AI-driven patient insights."""
 from datetime import datetime, timezone
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from ..database import Base
@@ -12,6 +12,10 @@ class ClinicalAlert(Base):
 
     __tablename__ = "clinical_alerts"
 
+    __table_args__ = (
+        Index("idx_clinical_alerts_patient_ack_sev", "patient_id", "is_acknowledged", "severity"),
+    )
+
     id = Column(Integer, primary_key=True, index=True)
     patient_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     alert_type = Column(String, nullable=False, index=True)
@@ -19,7 +23,7 @@ class ClinicalAlert(Base):
     message = Column(Text, nullable=False)
     source_event_id = Column(String, nullable=True)
     is_acknowledged = Column(Boolean, default=False)
-    acknowledged_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    acknowledged_by = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     acknowledged_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 

@@ -49,7 +49,7 @@ from .federated import FederatedSyncAudit, ModelFeedback
 from .hospital import Admission, Bed, Department, DicomStudy, Encounter, HospitalFacility
 
 # Clinical Intelligence domain
-from .intelligence import ClinicalAlert, PatientInsight
+from .intelligence import ClinicalAICorrection, ClinicalAlert, PatientInsight
 
 # Interoperability domain
 from .interoperability import (
@@ -132,5 +132,6 @@ __all__ = [
     # Clinical Intelligence
     "ClinicalAlert",
     "PatientInsight",
+    "ClinicalAICorrection",
 ]
 
