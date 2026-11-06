@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 try:
     from pyspark.sql import DataFrame as SparkDataFrame
     from pyspark.sql import SparkSession
+
     HAS_PYSPARK = True
 except ImportError:
     HAS_PYSPARK = False
@@ -37,6 +38,7 @@ class PipelineStepStatus(str, Enum):
 
 class PipelineStep(BaseModel):
     """A single step in an ETL pipeline."""
+
     step_id: str = Field(default_factory=lambda: f"STEP-{uuid.uuid4().hex[:6]}")
     name: str
     step_type: str  # "SOURCE", "TRANSFORM", "SPARK_TRANSFORM", "SINK"
@@ -49,6 +51,7 @@ class PipelineStep(BaseModel):
 
 class PipelineRun(BaseModel):
     """A single execution run of a pipeline."""
+
     run_id: str = Field(default_factory=lambda: f"RUN-{uuid.uuid4().hex[:8]}")
     pipeline_name: str
     steps: List[PipelineStep]

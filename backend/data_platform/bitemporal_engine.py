@@ -131,7 +131,7 @@ class BiTemporalEventEngine:
         if superseded is None:
             # If no active record exists, treat as new insert
             rec = self.insert_clinical_event(
-                record_id=f"REC-{len(records)+1}",
+                record_id=f"REC-{len(records) + 1}",
                 entity_id=entity_id,
                 attribute_name=attribute_name,
                 attribute_value=new_attribute_value,

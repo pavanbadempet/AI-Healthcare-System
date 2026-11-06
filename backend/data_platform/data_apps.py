@@ -26,6 +26,7 @@ class AppStatus(str, Enum):
 
 class AppDefinition(BaseModel):
     """Definition of a deployable data/AI app."""
+
     app_id: str = Field(default_factory=lambda: f"APP-{uuid.uuid4().hex[:8]}")
     name: str
     description: str = ""
@@ -40,6 +41,7 @@ class AppDefinition(BaseModel):
 
 class AppExecutionResult(BaseModel):
     """Result of invoking an app."""
+
     app_id: str
     app_name: str
     output: Any = None
@@ -100,15 +102,19 @@ class DataAIAppsRuntime:
         app = self._apps.get(app_id)
         if app is None:
             return AppExecutionResult(
-                app_id=app_id, app_name="unknown",
-                status="FAILED", error=f"App '{app_id}' not found.",
+                app_id=app_id,
+                app_name="unknown",
+                status="FAILED",
+                error=f"App '{app_id}' not found.",
             )
 
         handler = self._handlers.get(app_id)
         if handler is None:
             return AppExecutionResult(
-                app_id=app_id, app_name=app.name,
-                status="FAILED", error="No handler registered.",
+                app_id=app_id,
+                app_name=app.name,
+                status="FAILED",
+                error="No handler registered.",
             )
 
         start = time.time()
@@ -116,16 +122,20 @@ class DataAIAppsRuntime:
             output = handler(**kwargs)
             elapsed = (time.time() - start) * 1000
             return AppExecutionResult(
-                app_id=app_id, app_name=app.name,
-                output=output, execution_time_ms=round(elapsed, 3),
+                app_id=app_id,
+                app_name=app.name,
+                output=output,
+                execution_time_ms=round(elapsed, 3),
                 status="SUCCESS",
             )
         except Exception as exc:
             elapsed = (time.time() - start) * 1000
             return AppExecutionResult(
-                app_id=app_id, app_name=app.name,
+                app_id=app_id,
+                app_name=app.name,
                 execution_time_ms=round(elapsed, 3),
-                status="FAILED", error=str(exc),
+                status="FAILED",
+                error=str(exc),
             )
 
     def list_apps(self, status: Optional[AppStatus] = None) -> List[AppDefinition]:

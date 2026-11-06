@@ -52,7 +52,7 @@ class HyperLogLog:
         else:
             alpha = 0.7213 / (1.0 + 1.079 / self.m)
 
-        raw_estimate = alpha * (self.m ** 2) / sum(2.0 ** (-val) for val in self.registers)
+        raw_estimate = alpha * (self.m**2) / sum(2.0 ** (-val) for val in self.registers)
 
         # Small range correction (Linear Counting)
         if raw_estimate <= 2.5 * self.m:

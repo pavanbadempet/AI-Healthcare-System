@@ -49,13 +49,18 @@ def generate_batch(batch_id):
     print(f"Attempting to fetch live telemetry from {backend_url}...")
 
     token = None
-    try:
-        # Authenticate with the HF Spaces backend
-        auth_res = requests.post(f"{backend_url}/v1/token", data={"username": "admin", "password": "adminpass"}, timeout=15)
-        if auth_res.status_code == 200:
-            token = auth_res.json().get("access_token")
-    except Exception as e:
-        print(f"Auth fetch failed, falling back to local fallback data: {e}")
+    admin_user = os.getenv("BACKEND_ADMIN_USERNAME") or os.getenv("ADMIN_USERNAME", "admin")
+    admin_pass = os.getenv("BACKEND_ADMIN_PASSWORD") or os.getenv("ADMIN_PASSWORD")
+    if admin_pass:
+        try:
+            # Authenticate with the HF Spaces backend
+            auth_res = requests.post(f"{backend_url}/v1/token", data={"username": admin_user, "password": admin_pass}, timeout=15)
+            if auth_res.status_code == 200:
+                token = auth_res.json().get("access_token")
+        except Exception as e:
+            print(f"Auth fetch failed, falling back to local fallback data: {e}")
+    else:
+        print("No ADMIN_PASSWORD configured in environment, falling back to local fallback data.")
 
     data = []
     base_time = datetime.utcnow()
@@ -165,8 +170,13 @@ def generate_batch(batch_id):
         print(f"Pulling {table_name} from {backend_url}...")
 
         token = None
+        admin_user = os.getenv("BACKEND_ADMIN_USERNAME") or os.getenv("ADMIN_USERNAME", "admin")
+        admin_pass = os.getenv("BACKEND_ADMIN_PASSWORD") or os.getenv("ADMIN_PASSWORD")
+        if not admin_pass:
+            print("No ADMIN_PASSWORD configured in environment, skipping SQL pull")
+            return
         try:
-            auth_res = requests.post(f"{backend_url}/v1/token", data={"username": "admin", "password": "adminpass"}, timeout=15)
+            auth_res = requests.post(f"{backend_url}/v1/token", data={"username": admin_user, "password": admin_pass}, timeout=15)
             if auth_res.status_code == 200:
                 token = auth_res.json().get("access_token")
         except Exception as e:

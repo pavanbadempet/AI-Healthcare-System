@@ -77,15 +77,17 @@ class DifferentialPrivacyEngine:
         self._base_stds = np.array([12.0, 18.0, 11.0, 0.65, 22.0, 1.4, 45.0])
 
         # Correlation structure (e.g. high negative correlation between creatinine and eGFR)
-        self._corr_matrix = np.array([
-            [1.00,  0.35,  0.18,  0.25, -0.45,  0.22,  0.20],  # age
-            [0.35,  1.00,  0.72,  0.20, -0.30,  0.28,  0.25],  # sbp
-            [0.18,  0.72,  1.00,  0.15, -0.22,  0.20,  0.18],  # dbp
-            [0.25,  0.20,  0.15,  1.00, -0.84,  0.32,  0.30],  # creatinine
-            [-0.45, -0.30, -0.22, -0.84,  1.00, -0.35, -0.30],  # egfr
-            [0.22,  0.28,  0.20,  0.32, -0.35,  1.00,  0.82],  # hba1c
-            [0.20,  0.25,  0.18,  0.30, -0.30,  0.82,  1.00],  # glucose
-        ])
+        self._corr_matrix = np.array(
+            [
+                [1.00, 0.35, 0.18, 0.25, -0.45, 0.22, 0.20],  # age
+                [0.35, 1.00, 0.72, 0.20, -0.30, 0.28, 0.25],  # sbp
+                [0.18, 0.72, 1.00, 0.15, -0.22, 0.20, 0.18],  # dbp
+                [0.25, 0.20, 0.15, 1.00, -0.84, 0.32, 0.30],  # creatinine
+                [-0.45, -0.30, -0.22, -0.84, 1.00, -0.35, -0.30],  # egfr
+                [0.22, 0.28, 0.20, 0.32, -0.35, 1.00, 0.82],  # hba1c
+                [0.20, 0.25, 0.18, 0.30, -0.30, 0.82, 1.00],  # glucose
+            ]
+        )
 
         # Compute valid covariance matrix Sigma = D * R * D
         D = np.diag(self._base_stds)
@@ -155,7 +157,9 @@ class DifferentialPrivacyEngine:
             glu = float(np.clip(sample[6], 60.0, 450.0))
 
             # Realistic synthetic MACE risk proxy
-            mace_risk = min(85.0, max(1.5, (age * 0.4) + ((sbp - 120.0) * 0.25) + ((hba1c - 5.5) * 4.0) - (egfr * 0.15)))
+            mace_risk = min(
+                85.0, max(1.5, (age * 0.4) + ((sbp - 120.0) * 0.25) + ((hba1c - 5.5) * 4.0) - (egfr * 0.15))
+            )
 
             chosen_icd = icd_codes[int(self._rng.choice(len(icd_codes)))]
             chosen_gender = genders[int(self._rng.choice(len(genders)))]

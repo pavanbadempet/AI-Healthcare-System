@@ -36,6 +36,7 @@ class IcebergSchemaField(BaseModel):
 
 class OpenTableMetadataManifest(BaseModel):
     """Unified metadata manifest for Delta Lake & Apache Iceberg specs."""
+
     format_version: int = 2
     table_uuid: str = Field(default_factory=lambda: str(uuid.uuid4()))
     table_spec: OpenTableSpec
@@ -92,10 +93,14 @@ class MultiFormatExporter:
             "metaData": {
                 "id": str(uuid.uuid4()),
                 "format": {"provider": "parquet"},
-                "schemaString": json.dumps({"type": "struct", "fields": [
-                    {"name": k, "type": v, "nullable": True, "metadata": {}}
-                    for k, v in columns.items()
-                ]}),
+                "schemaString": json.dumps(
+                    {
+                        "type": "struct",
+                        "fields": [
+                            {"name": k, "type": v, "nullable": True, "metadata": {}} for k, v in columns.items()
+                        ],
+                    }
+                ),
                 "partitionColumns": [],
                 "createdTime": int(time.time() * 1000),
             },

@@ -139,12 +139,14 @@ class FeatureDriftMonitor:
 
         bucket_info = []
         for b in range(num_buckets):
-            bucket_info.append({
-                "bucket_index": b,
-                "expected_percentage": round(float(base_pcts[b]) * 100.0, 2),
-                "actual_percentage": round(float(curr_pcts[b]) * 100.0, 2),
-                "psi_contribution": round(float(psi_contributions[b]), 5),
-            })
+            bucket_info.append(
+                {
+                    "bucket_index": b,
+                    "expected_percentage": round(float(base_pcts[b]) * 100.0, 2),
+                    "actual_percentage": round(float(curr_pcts[b]) * 100.0, 2),
+                    "psi_contribution": round(float(psi_contributions[b]), 5),
+                }
+            )
 
         return total_psi, bucket_info
 

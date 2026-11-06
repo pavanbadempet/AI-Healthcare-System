@@ -49,29 +49,31 @@ class RealClinicalDatasetLoader:
             high_chol = 1 if (i % 4 == 0 or bmi > 28) else 0
             has_diabetes = 1 if (high_bp and high_chol and bmi > 27) or (i % 7 == 0) else 0
             smoker = 1 if (i % 5 == 0) else 0
-            rows.append({
-                "BMI": round(bmi, 1),
-                "HighBP": high_bp,
-                "HighChol": high_chol,
-                "diabetes": has_diabetes,
-                "Smoker": smoker,
-                "Stroke": 1 if (i % 19 == 0) else 0,
-                "HeartDiseaseorAttack": 1 if (high_bp and high_chol and i % 6 == 0) else 0,
-                "PhysActivity": 0 if (bmi > 32 or i % 3 == 0) else 1,
-                "Fruits": 1 if (i % 2 == 0) else 0,
-                "Veggies": 1 if (i % 3 != 0) else 0,
-                "HvyAlcoholConsump": 1 if (i % 25 == 0) else 0,
-                "AnyHealthcare": 1,
-                "NoDocbcCost": 0,
-                "GenHlth": 4 if has_diabetes else 2,
-                "MentHlth": (i % 5),
-                "PhysHlth": (i % 8) if has_diabetes else 0,
-                "DiffWalk": 1 if (bmi > 35 or i % 15 == 0) else 0,
-                "Sex": 1 if (i % 2 == 0) else 0,
-                "Age": 8 + (i % 6),
-                "Education": 5,
-                "Income": 6
-            })
+            rows.append(
+                {
+                    "BMI": round(bmi, 1),
+                    "HighBP": high_bp,
+                    "HighChol": high_chol,
+                    "diabetes": has_diabetes,
+                    "Smoker": smoker,
+                    "Stroke": 1 if (i % 19 == 0) else 0,
+                    "HeartDiseaseorAttack": 1 if (high_bp and high_chol and i % 6 == 0) else 0,
+                    "PhysActivity": 0 if (bmi > 32 or i % 3 == 0) else 1,
+                    "Fruits": 1 if (i % 2 == 0) else 0,
+                    "Veggies": 1 if (i % 3 != 0) else 0,
+                    "HvyAlcoholConsump": 1 if (i % 25 == 0) else 0,
+                    "AnyHealthcare": 1,
+                    "NoDocbcCost": 0,
+                    "GenHlth": 4 if has_diabetes else 2,
+                    "MentHlth": (i % 5),
+                    "PhysHlth": (i % 8) if has_diabetes else 0,
+                    "DiffWalk": 1 if (bmi > 35 or i % 15 == 0) else 0,
+                    "Sex": 1 if (i % 2 == 0) else 0,
+                    "Age": 8 + (i % 6),
+                    "Education": 5,
+                    "Income": 6,
+                }
+            )
         return pd.DataFrame(rows)
 
     @classmethod
@@ -83,32 +85,34 @@ class RealClinicalDatasetLoader:
             high_bp = 1 if (i % 3 == 0) else 0
             high_chol = 1 if (i % 4 == 0) else 0
             heart_disease = 1 if (high_bp and high_chol and i % 5 == 0) else 0
-            rows.append({
-                "HeartDiseaseorAttack": heart_disease,
-                "HighBP": high_bp,
-                "HighChol": high_chol,
-                "CholCheck": 1,
-                "BMI": round(bmi, 1),
-                "Smoker": 1 if (i % 4 == 0) else 0,
-                "Stroke": 1 if (i % 23 == 0) else 0,
-                "Diabetes": 1 if (i % 7 == 0) else 0,
-                "PhysActivity": 1 if (i % 2 == 0) else 0,
-                "Fruits": 1 if (i % 3 == 0) else 0,
-                "Veggies": 1,
-                "HvyAlcoholConsump": 0,
-                "AnyHealthcare": 1,
-                "NoDocbcCost": 0,
-                "GenHlth": 3 if heart_disease else 2,
-                "MentHlth": 0,
-                "PhysHlth": 4 if heart_disease else 0,
-                "DiffWalk": 1 if heart_disease else 0,
-                "Sex": 1 if (i % 2 == 0) else 0,
-                "Age": 9 + (i % 5),
-                "Education": 5,
-                "Income": 7,
-                "target": heart_disease,
-                "high_bp": high_bp
-            })
+            rows.append(
+                {
+                    "HeartDiseaseorAttack": heart_disease,
+                    "HighBP": high_bp,
+                    "HighChol": high_chol,
+                    "CholCheck": 1,
+                    "BMI": round(bmi, 1),
+                    "Smoker": 1 if (i % 4 == 0) else 0,
+                    "Stroke": 1 if (i % 23 == 0) else 0,
+                    "Diabetes": 1 if (i % 7 == 0) else 0,
+                    "PhysActivity": 1 if (i % 2 == 0) else 0,
+                    "Fruits": 1 if (i % 3 == 0) else 0,
+                    "Veggies": 1,
+                    "HvyAlcoholConsump": 0,
+                    "AnyHealthcare": 1,
+                    "NoDocbcCost": 0,
+                    "GenHlth": 3 if heart_disease else 2,
+                    "MentHlth": 0,
+                    "PhysHlth": 4 if heart_disease else 0,
+                    "DiffWalk": 1 if heart_disease else 0,
+                    "Sex": 1 if (i % 2 == 0) else 0,
+                    "Age": 9 + (i % 5),
+                    "Education": 5,
+                    "Income": 7,
+                    "target": heart_disease,
+                    "high_bp": high_bp,
+                }
+            )
         return pd.DataFrame(rows)
 
     @classmethod
@@ -121,19 +125,21 @@ class RealClinicalDatasetLoader:
             is_liver_patient = 1 if (i % 4 != 0) else 2
             total_bilirubin = round(2.5 + (i % 10) * 0.8, 1) if is_liver_patient == 1 else 0.8
             direct_bilirubin = round(total_bilirubin * 0.45, 1)
-            rows.append({
-                "Age": age,
-                "Gender": gender,
-                "Total_Bilirubin": total_bilirubin,
-                "Direct_Bilirubin": direct_bilirubin,
-                "Alkaline_Phosphotase": 280 + (i % 200) if is_liver_patient == 1 else 170,
-                "Alamine_Aminotransferase": 65 + (i % 90) if is_liver_patient == 1 else 25,
-                "Aspartate_Aminotransferase": 75 + (i % 110) if is_liver_patient == 1 else 30,
-                "Total_Protiens": 6.8,
-                "Albumin": 3.1,
-                "Albumin_and_Globulin_Ratio": 0.85,
-                "Dataset": is_liver_patient
-            })
+            rows.append(
+                {
+                    "Age": age,
+                    "Gender": gender,
+                    "Total_Bilirubin": total_bilirubin,
+                    "Direct_Bilirubin": direct_bilirubin,
+                    "Alkaline_Phosphotase": 280 + (i % 200) if is_liver_patient == 1 else 170,
+                    "Alamine_Aminotransferase": 65 + (i % 90) if is_liver_patient == 1 else 25,
+                    "Aspartate_Aminotransferase": 75 + (i % 110) if is_liver_patient == 1 else 30,
+                    "Total_Protiens": 6.8,
+                    "Albumin": 3.1,
+                    "Albumin_and_Globulin_Ratio": 0.85,
+                    "Dataset": is_liver_patient,
+                }
+            )
         return pd.DataFrame(rows)
 
     @classmethod
@@ -235,7 +241,7 @@ class RealClinicalDatasetLoader:
                 "egfr": round(max(30.0, 95.0 - (idx % 40) * 0.8), 1),
                 "conditions": conditions,
                 "medications": medications,
-                "timestamp": "2026-08-14T00:00:00Z"
+                "timestamp": "2026-08-14T00:00:00Z",
             }
             cohort.append(patient_record)
 

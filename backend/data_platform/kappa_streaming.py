@@ -20,6 +20,7 @@ import numpy as np
 
 try:
     import pyarrow as pa
+
     HAVE_PYARROW = True
 except ImportError:
     pa = None  # type: ignore
@@ -72,14 +73,16 @@ class KappaStreamingEngine:
         self._current_lsn = 1000
         # In-memory Arrow telemetry buffer schema
         if HAVE_PYARROW:
-            self._arrow_schema = pa.schema([
-                ("patient_id", pa.string()),
-                ("timestamp_epoch_ms", pa.int64()),
-                ("metric_name", pa.string()),
-                ("metric_value", pa.float64()),
-                ("unit", pa.string()),
-                ("device_id", pa.string()),
-            ])
+            self._arrow_schema = pa.schema(
+                [
+                    ("patient_id", pa.string()),
+                    ("timestamp_epoch_ms", pa.int64()),
+                    ("metric_name", pa.string()),
+                    ("metric_value", pa.float64()),
+                    ("unit", pa.string()),
+                    ("device_id", pa.string()),
+                ]
+            )
         else:
             self._arrow_schema = None
         # Ring buffers per patient and metric: patient_id -> metric_name -> list of records
@@ -116,7 +119,11 @@ class KappaStreamingEngine:
 
         if not records:
             empty_table = pa.Table.from_pylist([], schema=self._arrow_schema)
-            return empty_table.to_batches()[0] if empty_table.to_batches() else pa.RecordBatch.from_arrays([], schema=self._arrow_schema)
+            return (
+                empty_table.to_batches()[0]
+                if empty_table.to_batches()
+                else pa.RecordBatch.from_arrays([], schema=self._arrow_schema)
+            )
 
         # Build PyArrow Table from Python dictionaries
         arrow_table = pa.Table.from_pylist(records, schema=self._arrow_schema)
