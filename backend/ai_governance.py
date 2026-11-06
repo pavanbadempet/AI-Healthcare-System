@@ -11,7 +11,7 @@ from typing import Any, Dict, List, Optional
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from backend.models.intelligence import ClinicalAICorrection
+from backend.models import ClinicalAICorrection
 
 logger = logging.getLogger(__name__)
 

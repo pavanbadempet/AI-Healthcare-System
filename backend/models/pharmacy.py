@@ -1,7 +1,7 @@
 """Pharmacy domain models: medication inventory, prescriptions, and dispensing."""
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, DateTime, Float, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import CheckConstraint, Column, DateTime, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from ..database import Base, SoftDeleteMixin
@@ -9,6 +9,10 @@ from ..database import Base, SoftDeleteMixin
 
 class MedicationInventory(Base):
     __tablename__ = "medication_inventory"
+
+    __table_args__ = (
+        CheckConstraint("quantity_on_hand >= 0", name="check_inventory_quantity_non_negative"),
+    )
 
     id = Column(Integer, primary_key=True, index=True)
     facility_id = Column(Integer, ForeignKey("hospital_facilities.id"), nullable=True, index=True)
@@ -54,7 +58,7 @@ class PrescriptionItem(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     prescription_id = Column(Integer, ForeignKey("prescriptions.id"), index=True)
-    inventory_id = Column(Integer, ForeignKey("medication_inventory.id"), nullable=True)
+    inventory_id = Column(Integer, ForeignKey("medication_inventory.id"), nullable=True, index=True)
     medication_name = Column(String)
     dosage = Column(String)
     frequency = Column(String)
@@ -76,9 +80,9 @@ class DispenseRecord(Base):
     facility_id = Column(Integer, ForeignKey("hospital_facilities.id"), nullable=True, index=True)
     prescription_id = Column(Integer, ForeignKey("prescriptions.id"), index=True)
     prescription_item_id = Column(Integer, ForeignKey("prescription_items.id"), nullable=True, index=True)
-    inventory_id = Column(Integer, ForeignKey("medication_inventory.id"), nullable=True)
+    inventory_id = Column(Integer, ForeignKey("medication_inventory.id"), nullable=True, index=True)
     patient_id = Column(Integer, ForeignKey("users.id"), index=True)
-    dispensed_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    dispensed_by_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     quantity_dispensed = Column(Float, default=0)
     status = Column(String, default="dispensed")  # dispensed, returned, partial
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

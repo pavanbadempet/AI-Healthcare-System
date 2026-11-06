@@ -39,7 +39,7 @@ class Bed(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     facility_id = Column(Integer, ForeignKey("hospital_facilities.id"), nullable=True, index=True)
-    department_id = Column(Integer, ForeignKey("departments.id"))
+    department_id = Column(Integer, ForeignKey("departments.id"), index=True)
     bed_number = Column(String, index=True)
     ward = Column(String, nullable=True)
     status = Column(String, default="available", index=True)  # available, occupied, maintenance
@@ -56,6 +56,7 @@ class Encounter(Base, SoftDeleteMixin):
 
     __table_args__ = (
         Index("idx_encounters_patient_started", "patient_id", "started_at"),
+        Index("idx_encounters_patient_doctor", "patient_id", "doctor_id"),
         CheckConstraint("status IN ('open', 'closed', 'cancelled')", name="check_encounter_status"),
     )
 
@@ -63,7 +64,7 @@ class Encounter(Base, SoftDeleteMixin):
     facility_id = Column(Integer, ForeignKey("hospital_facilities.id"), nullable=True, index=True)
     patient_id = Column(Integer, ForeignKey("users.id"), index=True)
     doctor_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
-    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True, index=True)
     encounter_type = Column(String)  # OPD, IPD, Emergency
     reason = Column(Text, nullable=True)
     priority = Column(String, default="routine")  # routine, urgent, emergency
@@ -89,9 +90,9 @@ class Admission(Base, SoftDeleteMixin):
     facility_id = Column(Integer, ForeignKey("hospital_facilities.id"), nullable=True, index=True)
     encounter_id = Column(Integer, ForeignKey("encounters.id"), index=True)
     patient_id = Column(Integer, ForeignKey("users.id"), index=True)
-    doctor_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
-    bed_id = Column(Integer, ForeignKey("beds.id"), nullable=True)
+    doctor_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True, index=True)
+    bed_id = Column(Integer, ForeignKey("beds.id"), nullable=True, index=True)
     admitted_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     discharged_at = Column(DateTime, nullable=True)
     reason = Column(Text, nullable=True)

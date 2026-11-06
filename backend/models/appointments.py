@@ -12,6 +12,7 @@ class Appointment(Base, SoftDeleteMixin):
 
     __table_args__ = (
         Index("idx_appointments_user_datetime", "user_id", "date_time"),
+        Index("idx_appointments_doctor_datetime", "doctor_id", "date_time"),
         CheckConstraint(
             "status IN ('Scheduled', 'Rescheduled', 'Completed', 'Cancelled')",
             name="check_appt_status",

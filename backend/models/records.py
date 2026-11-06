@@ -30,6 +30,10 @@ class HealthRecord(Base, SoftDeleteMixin):
 class ChatLog(Base, SoftDeleteMixin):
     __tablename__ = "chat_logs"
 
+    __table_args__ = (
+        Index("idx_chat_logs_user_timestamp", "user_id", "timestamp"),
+    )
+
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), index=True)
     role = Column(String)  # 'user' or 'assistant'

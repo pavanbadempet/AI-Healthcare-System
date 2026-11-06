@@ -1,4 +1,6 @@
-from backend import auth, models
+import pytest
+
+from backend import auth, models, pharmacy
 
 
 def _create_user(
@@ -617,3 +619,222 @@ def test_pharmacy_metrics_are_facility_scoped_for_pharmacist(client, db_session)
     assert payload["total_prescriptions"] == 1
     assert payload["dispensed_prescriptions"] == 1
     assert payload["total_dispense_records"] == 1
+
+
+def test_medication_inventory_check_constraint_rejects_negative_stock(db_session):
+    """Verify that CheckConstraint('quantity_on_hand >= 0') prevents negative inventory at DB level."""
+    from sqlalchemy.exc import IntegrityError
+
+    inventory = models.MedicationInventory(
+        medication_name="Amoxicillin 500mg",
+        batch_number="BATCH-TEST-NEG",
+        quantity_on_hand=10.0,
+        reorder_level=2.0,
+        status="active",
+    )
+    db_session.add(inventory)
+    db_session.commit()
+
+    # Direct database update violating constraint
+    inventory.quantity_on_hand = -1.0
+    with pytest.raises(IntegrityError):
+        db_session.commit()
+
+    db_session.rollback()
+    refreshed = db_session.get(models.MedicationInventory, inventory.id)
+    assert refreshed.quantity_on_hand == 10.0
+
+
+def test_dispense_uses_with_for_update_row_locking(client, db_session, monkeypatch):
+    """Verify that inventory lookup during dispense applies with_for_update()."""
+    admin = _create_user(db_session, "lock_admin", "admin")
+    pharmacist = _create_user(db_session, "lock_pharmacist", "pharmacist")
+    doctor = _create_user(db_session, "lock_doctor", "doctor")
+    patient = _create_user(db_session, "lock_patient", "patient")
+    admin_username = admin.username
+    pharmacist_username = pharmacist.username
+    doctor_username = doctor.username
+    patient_id = patient.id
+    doctor_id = doctor.id
+
+    encounter = _create_encounter(db_session, patient_id, doctor_id)
+    encounter_id = encounter.id
+    inventory = _create_inventory(client, admin_username, name="Lock Test Drug", quantity_on_hand=50)
+    prescription = _create_prescription(client, doctor_username, patient_id, doctor_id, encounter_id, inventory["id"])
+
+    original_get_inventory = pharmacy._get_inventory
+    called_with_for_update = []
+
+    def spy_get_inventory(db, inventory_id, for_update=False):
+        called_with_for_update.append(for_update)
+        return original_get_inventory(db, inventory_id, for_update=for_update)
+
+    monkeypatch.setattr(pharmacy, "_get_inventory", spy_get_inventory)
+
+    response = client.post(
+        f"/pharmacy/prescriptions/{prescription['id']}/dispense",
+        headers=_auth_headers(pharmacist_username),
+        json={"items": [{"prescription_item_id": prescription["items"][0]["id"], "quantity_dispensed": 5}]},
+    )
+
+    assert response.status_code == 200
+    assert any(called_with_for_update), "Expected _get_inventory to be invoked with for_update=True during dispense"
+
+
+def test_concurrent_dispense_race_condition_prevented(client, db_session):
+    """Verify concurrent decrement protection preventing inventory overdraft."""
+    admin = _create_user(db_session, "race_admin", "admin")
+    pharmacist = _create_user(db_session, "race_pharmacist", "pharmacist")
+    doctor = _create_user(db_session, "race_doctor", "doctor")
+    patient_a = _create_user(db_session, "race_patient_a", "patient")
+    patient_b = _create_user(db_session, "race_patient_b", "patient")
+    admin_username = admin.username
+    pharmacist_username = pharmacist.username
+    doctor_username = doctor.username
+    doctor_id = doctor.id
+    patient_a_id = patient_a.id
+    patient_b_id = patient_b.id
+
+    encounter_a = _create_encounter(db_session, patient_a_id, doctor_id)
+    encounter_b = _create_encounter(db_session, patient_b_id, doctor_id)
+    encounter_a_id = encounter_a.id
+    encounter_b_id = encounter_b.id
+
+    # Initial stock is exactly 5 units
+    inventory = _create_inventory(client, admin_username, name="Scarce Medicine", quantity_on_hand=5)
+    inv_id = inventory["id"]
+
+    # Two prescriptions, each requesting 4 units (total = 8 units, exceeding 5)
+    rx_a = _create_prescription(client, doctor_username, patient_a_id, doctor_id, encounter_a_id, inv_id)
+    rx_b = _create_prescription(client, doctor_username, patient_b_id, doctor_id, encounter_b_id, inv_id)
+
+    dispense_headers = _auth_headers(pharmacist_username)
+
+    # First dispense consumes 4 of 5 units (succeeds with 200)
+    res_a = client.post(
+        f"/pharmacy/prescriptions/{rx_a['id']}/dispense",
+        headers=dispense_headers,
+        json={"items": [{"prescription_item_id": rx_a["items"][0]["id"], "quantity_dispensed": 4}]},
+    )
+    # Second dispense attempts to consume 4 units from remaining 1 unit (fails with 409)
+    res_b = client.post(
+        f"/pharmacy/prescriptions/{rx_b['id']}/dispense",
+        headers=dispense_headers,
+        json={"items": [{"prescription_item_id": rx_b["items"][0]["id"], "quantity_dispensed": 4}]},
+    )
+
+    assert res_a.status_code == 200
+    assert res_b.status_code == 409
+    assert "insufficient" in res_b.json()["detail"].lower()
+
+    db_session.rollback()
+    refreshed = db_session.get(models.MedicationInventory, inv_id)
+    assert refreshed.quantity_on_hand == 1.0, f"Expected 1.0 remaining, got {refreshed.quantity_on_hand}"
+    assert refreshed.quantity_on_hand >= 0
+
+
+def test_dispense_catches_integrity_error_and_returns_409(client, db_session, monkeypatch):
+    """Verify that IntegrityError during dispense commit is translated to HTTP 409."""
+    from sqlalchemy.exc import IntegrityError
+
+    admin = _create_user(db_session, "ie_admin", "admin")
+    pharmacist = _create_user(db_session, "ie_pharmacist", "pharmacist")
+    doctor = _create_user(db_session, "ie_doctor", "doctor")
+    patient = _create_user(db_session, "ie_patient", "patient")
+    admin_username = admin.username
+    pharmacist_username = pharmacist.username
+    doctor_username = doctor.username
+    doctor_id = doctor.id
+    patient_id = patient.id
+
+    encounter = _create_encounter(db_session, patient_id, doctor_id)
+    encounter_id = encounter.id
+    inventory = _create_inventory(client, admin_username, name="Integrity Test Drug", quantity_on_hand=50)
+    prescription = _create_prescription(client, doctor_username, patient_id, doctor_id, encounter_id, inventory["id"])
+
+    def mock_commit(self):
+        raise IntegrityError("mock statement", {}, Exception("CHECK constraint failed"))
+
+    monkeypatch.setattr("sqlalchemy.orm.Session.commit", mock_commit)
+
+    response = client.post(
+        f"/pharmacy/prescriptions/{prescription['id']}/dispense",
+        headers=_auth_headers(pharmacist_username),
+        json={"items": [{"prescription_item_id": prescription["items"][0]["id"], "quantity_dispensed": 2}]},
+    )
+
+    assert response.status_code == 409
+    assert "conflict" in response.json()["detail"].lower() or "insufficient" in response.json()["detail"].lower()
+
+
+def test_multi_item_dispense_sorted_lock_ordering(client, db_session, monkeypatch):
+    """Verify that multi-item dispense sorts items by inventory_id to eliminate deadlock risk."""
+    admin = _create_user(db_session, "multi_admin", "admin")
+    pharmacist = _create_user(db_session, "multi_pharmacist", "pharmacist")
+    doctor = _create_user(db_session, "multi_doctor", "doctor")
+    patient = _create_user(db_session, "multi_patient", "patient")
+    admin_username = admin.username
+    pharmacist_username = pharmacist.username
+    doctor_username = doctor.username
+    doctor_id = doctor.id
+    patient_id = patient.id
+
+    encounter = _create_encounter(db_session, patient_id, doctor_id)
+    encounter_id = encounter.id
+    inv_1 = _create_inventory(client, admin_username, name="Drug Z", quantity_on_hand=50)
+    inv_2 = _create_inventory(client, admin_username, name="Drug A", quantity_on_hand=50)
+
+    low_id = min(inv_1["id"], inv_2["id"])
+    high_id = max(inv_1["id"], inv_2["id"])
+
+    # Create prescription with high ID first, then low ID
+    rx_payload = {
+        "patient_id": patient_id,
+        "doctor_id": doctor_id,
+        "encounter_id": encounter_id,
+        "diagnosis_context": "Multi-item check",
+        "items": [
+            {"inventory_id": high_id, "medication_name": "Drug High", "dosage": "10mg", "frequency": "Daily", "duration": "3d", "quantity_prescribed": 2},
+            {"inventory_id": low_id, "medication_name": "Drug Low", "dosage": "5mg", "frequency": "Daily", "duration": "3d", "quantity_prescribed": 2},
+        ],
+    }
+    resp = client.post("/pharmacy/prescriptions", headers=_auth_headers(doctor_username), json=rx_payload)
+    assert resp.status_code == 200
+    rx_data = resp.json()
+
+    locked_order = []
+    original_get_inventory = pharmacy._get_inventory
+
+    def spy_get_inventory(db, inventory_id, for_update=False):
+        if for_update:
+            locked_order.append(inventory_id)
+        return original_get_inventory(db, inventory_id, for_update=for_update)
+
+    monkeypatch.setattr(pharmacy, "_get_inventory", spy_get_inventory)
+
+    disp_payload = {
+        "items": [
+            {"prescription_item_id": rx_data["items"][0]["id"], "quantity_dispensed": 2},
+            {"prescription_item_id": rx_data["items"][1]["id"], "quantity_dispensed": 2},
+        ]
+    }
+    disp_resp = client.post(f"/pharmacy/prescriptions/{rx_data['id']}/dispense", headers=_auth_headers(pharmacist_username), json=disp_payload)
+    assert disp_resp.status_code == 200
+    assert locked_order == [low_id, high_id], f"Expected locks in ascending order [{low_id}, {high_id}], got {locked_order}"
+
+
+def test_create_inventory_negative_quantity_rejected(client, db_session):
+    """Verify that creating inventory with negative quantity is rejected with 400."""
+    pharmacist = _create_user(db_session, "neg_pharmacist", "pharmacist")
+    payload = {
+        "medication_name": "Negative Drug",
+        "strength": "10mg",
+        "form": "capsule",
+        "batch_number": "BATCH-NEG",
+        "quantity_on_hand": -10.0,
+        "reorder_level": 5.0,
+    }
+    resp = client.post("/pharmacy/inventory", headers=_auth_headers(pharmacist.username), json=payload)
+    assert resp.status_code == 400
+    assert "cannot be negative" in resp.json()["detail"].lower()
+

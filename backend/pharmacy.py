@@ -12,6 +12,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import or_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from . import audit, auth, database, models, schemas
@@ -119,8 +120,11 @@ def _validate_encounter(
     return encounter
 
 
-def _get_inventory(db: Session, inventory_id: int) -> models.MedicationInventory:
-    inventory = db.query(models.MedicationInventory).filter(models.MedicationInventory.id == inventory_id).first()
+def _get_inventory(db: Session, inventory_id: int, for_update: bool = False) -> models.MedicationInventory:
+    query = db.query(models.MedicationInventory).filter(models.MedicationInventory.id == inventory_id)
+    if for_update:
+        query = query.with_for_update()
+    inventory = query.first()
     if not inventory:
         raise HTTPException(status_code=404, detail="Medication inventory not found")
     return inventory
@@ -378,9 +382,17 @@ def dispense_prescription(
         if requested.quantity_dispensed > remaining:
             raise HTTPException(status_code=400, detail="Dispensed quantity exceeds prescribed quantity")
 
+    # Deterministic lock ordering by inventory_id (ascending) to prevent deadlocks
+    sorted_dispense_items = sorted(
+        dispense.items,
+        key=lambda req: (item_by_id[req.prescription_item_id].inventory_id or 0),
+    )
+
+    for requested in sorted_dispense_items:
+        item = item_by_id[requested.prescription_item_id]
         inventory = None
         if item.inventory_id is not None:
-            inventory = _get_inventory(db, item.inventory_id)
+            inventory = _get_inventory(db, item.inventory_id, for_update=True)
             _resolve_pharmacy_facility_id(current_user, prescription, inventory)
             if inventory.quantity_on_hand < requested.quantity_dispensed:
                 raise HTTPException(status_code=409, detail="Insufficient medication inventory")
@@ -415,7 +427,15 @@ def dispense_prescription(
         title="Prescription dispensed",
         summary="Pharmacy dispensed medication against a clinician prescription.",
     )
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        logger.warning("Inventory integrity constraint violated during dispense: %s", exc)
+        raise HTTPException(
+            status_code=409,
+            detail="Insufficient medication inventory or concurrent inventory update conflict",
+        ) from exc
     db.refresh(prescription)
     audit.record_audit_event(
         db,

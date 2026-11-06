@@ -10,12 +10,16 @@ from ..database import Base, SoftDeleteMixin
 class ClinicalOrder(Base):
     __tablename__ = "clinical_orders"
 
+    __table_args__ = (
+        Index("idx_clinical_orders_patient_status", "patient_id", "status"),
+    )
+
     id = Column(Integer, primary_key=True, index=True)
     facility_id = Column(Integer, ForeignKey("hospital_facilities.id"), nullable=True, index=True)
     encounter_id = Column(Integer, ForeignKey("encounters.id"), nullable=True, index=True)
     patient_id = Column(Integer, ForeignKey("users.id"), index=True)
     doctor_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
-    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True, index=True)
     order_type = Column(String)  # lab, radiology, pharmacy, procedure, nursing
     title = Column(String)
     priority = Column(String, default="routine")  # routine, urgent, stat
@@ -37,9 +41,9 @@ class CareEvent(Base):
     id = Column(Integer, primary_key=True, index=True)
     facility_id = Column(Integer, ForeignKey("hospital_facilities.id"), nullable=True, index=True)
     patient_id = Column(Integer, ForeignKey("users.id"), index=True)
-    actor_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    actor_user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     encounter_id = Column(Integer, ForeignKey("encounters.id"), nullable=True, index=True)
-    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True, index=True)
     event_type = Column(String)
     title = Column(String)
     summary = Column(Text, nullable=True)
@@ -64,9 +68,9 @@ class VitalObservation(Base, SoftDeleteMixin):
     id = Column(Integer, primary_key=True, index=True)
     facility_id = Column(Integer, ForeignKey("hospital_facilities.id"), nullable=True, index=True)
     patient_id = Column(Integer, ForeignKey("users.id"), index=True)
-    recorded_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    recorded_by_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     encounter_id = Column(Integer, ForeignKey("encounters.id"), nullable=True, index=True)
-    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True, index=True)
     source = Column(String, default="manual")  # manual, device, patient_reported
     heart_rate = Column(Float, nullable=True)
     systolic_bp = Column(Float, nullable=True)
@@ -101,7 +105,7 @@ class MonitoringSignal(Base):
     patient_id = Column(Integer, ForeignKey("users.id"), index=True)
     vital_observation_id = Column(Integer, ForeignKey("vital_observations.id"), nullable=True, index=True)
     encounter_id = Column(Integer, ForeignKey("encounters.id"), nullable=True, index=True)
-    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True, index=True)
     signal_type = Column(String)
     severity = Column(String, default="info")  # info, warning, critical
     title = Column(String)
@@ -129,7 +133,7 @@ class DiagnosticResult(Base, SoftDeleteMixin):
     encounter_id = Column(Integer, ForeignKey("encounters.id"), nullable=True, index=True)
     patient_id = Column(Integer, ForeignKey("users.id"), index=True)
     doctor_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
-    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True)
+    department_id = Column(Integer, ForeignKey("departments.id"), nullable=True, index=True)
     result_type = Column(String)  # lab, radiology, diagnostic
     title = Column(String)
     summary = Column(Text)
@@ -137,7 +141,7 @@ class DiagnosticResult(Base, SoftDeleteMixin):
     status = Column(String, default="final")  # preliminary, final, corrected
     review_status = Column(String, default="pending_review")  # pending_review, reviewed, needs_follow_up, withheld
     review_note = Column(Text, nullable=True)
-    reviewed_by_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    reviewed_by_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     reviewed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
