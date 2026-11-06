@@ -28,6 +28,7 @@ class PsiParticipant:
     """
     Simulates a secure cryptographic participant holding a private secret key.
     """
+
     institution_id: str
     private_key: int = field(default_factory=lambda: secrets.randbelow(PRIME_256 - 3) + 2)
 

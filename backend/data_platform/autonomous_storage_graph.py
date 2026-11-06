@@ -145,7 +145,7 @@ class AutonomousStorageGraph:
         for bit_idx in range(self.morton_bit_depth):
             for dim_idx, coord in enumerate(coords):
                 bit = (coord >> bit_idx) & 1
-                morton |= (bit << (bit_idx * num_dims + dim_idx))
+                morton |= bit << (bit_idx * num_dims + dim_idx)
         return morton
 
     def compute_dataset_z_order(
@@ -213,8 +213,8 @@ class AutonomousStorageGraph:
 
         # Theoretical hypercube volume of query: (selectivity)^k
         # With Z-ordering, blocks touching the hypercube scale as O((selectivity)^k * total_blocks + surface_blocks)
-        volume = selectivity_per_dim ** num_dims
-        surface_factor = 1.0 / (2.0 ** num_dims)
+        volume = selectivity_per_dim**num_dims
+        surface_factor = 1.0 / (2.0**num_dims)
         effective_scanned_ratio = min(1.0, volume + (1.0 - volume) * surface_factor * 0.2)
         simulated_blocks_scanned = max(1, int(math.ceil(total_blocks * effective_scanned_ratio)))
 

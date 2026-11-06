@@ -20,6 +20,7 @@ from backend.data_platform.open_table_format import open_table_engine
 
 class QueryProfile(BaseModel):
     """Execution profile for a SQL query."""
+
     query_id: str
     sql: str
     rows_scanned: int = 0
@@ -30,6 +31,7 @@ class QueryProfile(BaseModel):
 
 class SQLResultSet(BaseModel):
     """Result of a SQL query execution."""
+
     columns: List[str]
     rows: List[Dict[str, Any]]
     total_count: int
@@ -83,15 +85,19 @@ class LakehouseSQLEngine:
         if "COUNT(*)" in sql_upper:
             elapsed = (time.time() - start) * 1000
             profile = QueryProfile(
-                query_id=f"Q-{int(time.time()*1000)}",
-                sql=sql, rows_scanned=rows_scanned,
-                rows_returned=1, execution_time_ms=round(elapsed, 3),
+                query_id=f"Q-{int(time.time() * 1000)}",
+                sql=sql,
+                rows_scanned=rows_scanned,
+                rows_returned=1,
+                execution_time_ms=round(elapsed, 3),
                 warehouse_id=self.warehouse_id,
             )
             self._query_history.append(profile)
             return SQLResultSet(
-                columns=["count"], rows=[{"count": len(data)}],
-                total_count=1, profile=profile,
+                columns=["count"],
+                rows=[{"count": len(data)}],
+                total_count=1,
+                profile=profile,
             )
 
         # ORDER BY
@@ -104,15 +110,17 @@ class LakehouseSQLEngine:
         # LIMIT
         limit_match = re.search(r"LIMIT\s+(\d+)", sql, re.IGNORECASE)
         if limit_match:
-            data = data[:int(limit_match.group(1))]
+            data = data[: int(limit_match.group(1))]
 
         columns = list(data[0].keys()) if data else []
         elapsed = (time.time() - start) * 1000
 
         profile = QueryProfile(
-            query_id=f"Q-{int(time.time()*1000)}",
-            sql=sql, rows_scanned=rows_scanned,
-            rows_returned=len(data), execution_time_ms=round(elapsed, 3),
+            query_id=f"Q-{int(time.time() * 1000)}",
+            sql=sql,
+            rows_scanned=rows_scanned,
+            rows_returned=len(data),
+            execution_time_ms=round(elapsed, 3),
             warehouse_id=self.warehouse_id,
         )
         self._query_history.append(profile)
@@ -123,8 +131,10 @@ class LakehouseSQLEngine:
         """Return empty result set."""
         elapsed = (time.time() - start) * 1000
         profile = QueryProfile(
-            query_id=f"Q-{int(time.time()*1000)}",
-            sql=sql, rows_scanned=0, rows_returned=0,
+            query_id=f"Q-{int(time.time() * 1000)}",
+            sql=sql,
+            rows_scanned=0,
+            rows_returned=0,
             execution_time_ms=round(elapsed, 3),
             warehouse_id=self.warehouse_id,
         )

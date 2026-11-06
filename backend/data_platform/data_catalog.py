@@ -37,6 +37,7 @@ class AssetType(str, Enum):
 
 class ColumnMetadata(BaseModel):
     """Metadata for a single column."""
+
     name: str
     data_type: str
     description: str = ""
@@ -47,6 +48,7 @@ class ColumnMetadata(BaseModel):
 
 class CatalogAsset(BaseModel):
     """A registered data asset in the catalog."""
+
     asset_id: str = Field(default_factory=lambda: f"ASSET-{uuid.uuid4().hex[:8]}")
     catalog: str
     schema_name: str
@@ -68,6 +70,7 @@ class CatalogAsset(BaseModel):
 
 class AccessPolicy(BaseModel):
     """Row/column-level access policy."""
+
     policy_id: str = Field(default_factory=lambda: f"POL-{uuid.uuid4().hex[:6]}")
     asset_fqn: str
     principal: str  # user or role

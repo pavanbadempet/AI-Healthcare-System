@@ -27,6 +27,7 @@ class Segment:
     A single linear segment predicting positions for keys in [key_min, key_max].
     y = slope * (x - key_min) + intercept
     """
+
     key_min: float
     key_max: float
     slope: float
@@ -41,6 +42,7 @@ class Segment:
 @dataclass
 class PgmLevel:
     """A single hierarchical level in the multi-level PGM-index."""
+
     level_id: int
     segments: List[Segment]
     segment_keys: List[float]  # sorted key_min of each segment for navigation

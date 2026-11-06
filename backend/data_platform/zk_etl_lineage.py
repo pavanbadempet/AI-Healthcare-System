@@ -141,10 +141,16 @@ class ZkEtlLineageEngine:
             return False, "Output Merkle root mismatch: Claimed output dataset has been modified or forged."
 
         if len(claimed_input_records) != receipt.num_input_records:
-            return False, f"Input count mismatch: Expected {receipt.num_input_records}, got {len(claimed_input_records)}."
+            return (
+                False,
+                f"Input count mismatch: Expected {receipt.num_input_records}, got {len(claimed_input_records)}.",
+            )
 
         if len(claimed_output_records) != receipt.num_output_records:
-            return False, f"Output count mismatch: Expected {receipt.num_output_records}, got {len(claimed_output_records)}."
+            return (
+                False,
+                f"Output count mismatch: Expected {receipt.num_output_records}, got {len(claimed_output_records)}.",
+            )
 
         return True, "Cryptographic proof verified: Output dataset authentic and untampered."
 

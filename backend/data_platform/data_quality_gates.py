@@ -17,6 +17,7 @@ logger = logging.getLogger("backend.data_quality_gates")
 
 class SDPExpectationRule(BaseModel):
     """Declarative expectation rule for Spark Declarative Pipelines."""
+
     rule_id: str
     target_column: str
     spark_sql_predicate: str
@@ -35,7 +36,7 @@ class SDPExpectationSuite:
             spark_sql_predicate="patient_id IS NOT NULL AND TRIM(patient_id) != ''",
             action="QUARANTINE",
             error_code="SCHEMA_NULL_PK",
-            description="Primary key patient_id must not be null or empty"
+            description="Primary key patient_id must not be null or empty",
         ),
         SDPExpectationRule(
             rule_id="SDP-REQ-002",
@@ -43,7 +44,7 @@ class SDPExpectationSuite:
             spark_sql_predicate="timestamp IS NOT NULL AND TRIM(timestamp) != ''",
             action="QUARANTINE",
             error_code="SCHEMA_NULL_TIMESTAMP",
-            description="Temporal index timestamp must not be null"
+            description="Temporal index timestamp must not be null",
         ),
         SDPExpectationRule(
             rule_id="SDP-PHYSIO-001",
@@ -51,7 +52,7 @@ class SDPExpectationSuite:
             spark_sql_predicate="heart_rate >= 30.0 AND heart_rate <= 220.0",
             action="QUARANTINE",
             error_code="PHYSIO_HR_OOB",
-            description="Heart rate must be within physiological bounds [30-220 bpm]"
+            description="Heart rate must be within physiological bounds [30-220 bpm]",
         ),
         SDPExpectationRule(
             rule_id="SDP-PHYSIO-002",
@@ -59,7 +60,7 @@ class SDPExpectationSuite:
             spark_sql_predicate="systolic_bp >= 60.0 AND systolic_bp <= 250.0",
             action="QUARANTINE",
             error_code="PHYSIO_SBP_OOB",
-            description="Systolic BP must be within physiological bounds [60-250 mmHg]"
+            description="Systolic BP must be within physiological bounds [60-250 mmHg]",
         ),
         SDPExpectationRule(
             rule_id="SDP-PHYSIO-003",
@@ -67,7 +68,7 @@ class SDPExpectationSuite:
             spark_sql_predicate="diastolic_bp >= 35.0 AND diastolic_bp <= 150.0",
             action="QUARANTINE",
             error_code="PHYSIO_DBP_OOB",
-            description="Diastolic BP must be within physiological bounds [35-150 mmHg]"
+            description="Diastolic BP must be within physiological bounds [35-150 mmHg]",
         ),
         SDPExpectationRule(
             rule_id="SDP-PHYSIO-004",
@@ -75,7 +76,7 @@ class SDPExpectationSuite:
             spark_sql_predicate="spo2 >= 50.0 AND spo2 <= 100.0",
             action="QUARANTINE",
             error_code="PHYSIO_SPO2_OOB",
-            description="Blood oxygen saturation (SpO2) must be within [50-100%]"
+            description="Blood oxygen saturation (SpO2) must be within [50-100%]",
         ),
         SDPExpectationRule(
             rule_id="SDP-PHYSIO-005",
@@ -83,8 +84,8 @@ class SDPExpectationSuite:
             spark_sql_predicate="fasting_glucose >= 20.0 AND fasting_glucose <= 800.0",
             action="QUARANTINE",
             error_code="PHYSIO_GLUCOSE_OOB",
-            description="Fasting blood glucose must be within [20-800 mg/dL]"
-        )
+            description="Fasting blood glucose must be within [20-800 mg/dL]",
+        ),
     ]
 
     @classmethod
@@ -103,8 +104,7 @@ class LakehouseDataQualityGate:
         self.total_quarantined = 0
 
     def validate_and_partition_batch(
-        self,
-        records: List[Dict[str, Any]]
+        self, records: List[Dict[str, Any]]
     ) -> Tuple[List[Dict[str, Any]], List[Dict[str, Any]], Dict[str, Any]]:
         """
         Executes SDP declarative rule evaluation over batch telemetry records.
@@ -204,7 +204,7 @@ class LakehouseDataQualityGate:
             "pass_rate_pct": pass_rate,
             "violation_breakdown": violation_counts,
             "dlt_quarantine_table": "workspace.healthcare_bronze.quarantined_records",
-            "silver_clean_table": "workspace.healthcare_silver.telemetry"
+            "silver_clean_table": "workspace.healthcare_silver.telemetry",
         }
 
         return clean_batch, quarantine_batch, summary

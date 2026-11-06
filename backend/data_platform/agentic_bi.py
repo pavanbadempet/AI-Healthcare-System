@@ -18,6 +18,7 @@ from backend.data_platform.lakehouse_sql import lakehouse_sql_engine
 
 class BIQuery(BaseModel):
     """A natural-language BI query."""
+
     question: str
     generated_sql: str = ""
     answer: str = ""
@@ -27,6 +28,7 @@ class BIQuery(BaseModel):
 
 class DashboardWidget(BaseModel):
     """A single widget on an agentic BI dashboard."""
+
     widget_id: str
     title: str
     metric_value: Any = None
@@ -88,6 +90,7 @@ class AgenticBIEngine:
 
         # Sanitize table identifier against SQL injection
         import re
+
         safe_table = re.sub(r"[^a-zA-Z0-9_]", "", table)
         if not safe_table:
             return widgets
@@ -95,18 +98,26 @@ class AgenticBIEngine:
         # Total records KPI
         count_result = lakehouse_sql_engine.execute(f"SELECT COUNT(*) FROM {safe_table}")
         count = count_result.rows[0].get("count", 0) if count_result.rows else 0
-        widgets.append(DashboardWidget(
-            widget_id="W-TOTAL", title=f"Total Records — {safe_table}",
-            metric_value=count, chart_type="KPI",
-        ))
+        widgets.append(
+            DashboardWidget(
+                widget_id="W-TOTAL",
+                title=f"Total Records — {safe_table}",
+                metric_value=count,
+                chart_type="KPI",
+            )
+        )
 
         # Sample data table
         sample = lakehouse_sql_engine.execute(f"SELECT * FROM {safe_table} LIMIT 10")
-        widgets.append(DashboardWidget(
-            widget_id="W-SAMPLE", title=f"Recent Records — {safe_table}",
-            metric_value=sample.total_count, chart_type="TABLE",
-            data=sample.rows,
-        ))
+        widgets.append(
+            DashboardWidget(
+                widget_id="W-SAMPLE",
+                title=f"Recent Records — {safe_table}",
+                metric_value=sample.total_count,
+                chart_type="TABLE",
+                data=sample.rows,
+            )
+        )
 
         return widgets
 

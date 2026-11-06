@@ -19,6 +19,7 @@ from pydantic import BaseModel, Field
 
 class TableSchema(BaseModel):
     """Schema definition for a lakehouse table."""
+
     columns: Dict[str, str]  # column_name -> type_string
     partition_keys: List[str] = Field(default_factory=list)
     primary_key: Optional[str] = None
@@ -26,6 +27,7 @@ class TableSchema(BaseModel):
 
 class TransactionLogEntry(BaseModel):
     """A single entry in the table's write-ahead transaction log."""
+
     txn_id: str = Field(default_factory=lambda: f"TXN-{uuid.uuid4().hex[:8]}")
     version: int
     operation: str  # "INSERT", "MERGE", "DELETE", "SCHEMA_CHANGE"

@@ -17,6 +17,7 @@ import numpy as np
 try:
     import pyarrow as pa
     import pyarrow.compute as pc
+
     HAVE_PYARROW = True
 except ImportError:
     pa = None  # type: ignore
@@ -175,11 +176,7 @@ class SimdVectorExecutionEngine:
                 continue
             col = table[col_name]
             # Convert to numpy for fast vectorized percentile calculation if numeric
-            is_num = (
-                pa.types.is_integer(col.type)
-                or pa.types.is_floating(col.type)
-                or pa.types.is_decimal(col.type)
-            )
+            is_num = pa.types.is_integer(col.type) or pa.types.is_floating(col.type) or pa.types.is_decimal(col.type)
             if is_num:
                 np_arr = col.to_numpy(zero_copy_only=False)
                 # Filter out NaNs if any
@@ -203,8 +200,7 @@ class SimdVectorExecutionEngine:
                 # Categorical or string column
                 counts = pc.value_counts(col)
                 top_values = [
-                    {"value": str(row["values"]), "count": int(row["counts"])}
-                    for row in counts.to_pylist()[:5]
+                    {"value": str(row["values"]), "count": int(row["counts"])} for row in counts.to_pylist()[:5]
                 ]
                 aggregates[col_name] = {
                     "count": len(col),

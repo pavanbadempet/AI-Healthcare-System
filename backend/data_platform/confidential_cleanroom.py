@@ -28,12 +28,13 @@ class EnclaveQuote:
     """
     Standard hardware attestation quote structure signed by the Platform Security Processor (PSP).
     """
+
     quote_id: str
     architecture: str  # "AMD_SEV_SNP", "INTEL_TDX", "AWS_NITRO"
-    mrenclave: str     # SHA-256 hash of enclave code and initial memory pages
-    mrsigner: str      # SHA-256 hash of enclave author key
+    mrenclave: str  # SHA-256 hash of enclave code and initial memory pages
+    mrsigner: str  # SHA-256 hash of enclave author key
     pcr_registers: Dict[str, str]  # PCR0 through PCR8
-    report_data: str   # 64-byte hex digest binding client public key or challenge
+    report_data: str  # 64-byte hex digest binding client public key or challenge
     platform_version: str
     signature: str
     timestamp_iso: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
@@ -126,12 +127,12 @@ class ConfidentialCleanRoomEngine:
 
         # Cryptographic key binding verification
         expected_report_data = hashlib.sha256(expected_client_pubkey.encode("utf-8")).hexdigest()
-        key_binding_ok = (quote.report_data == expected_report_data)
+        key_binding_ok = quote.report_data == expected_report_data
 
         # Hardware signature verification
         quote_payload = f"{quote.architecture}:{quote.mrenclave}:{quote.mrsigner}:{quote.report_data}:{quote.pcr_registers.get('PCR0', '')}"
         recomputed_sig = hashlib.sha256(f"{HARDWARE_ROOT_CA_FINGERPRINT}:{quote_payload}".encode("utf-8")).hexdigest()
-        hardware_pki_ok = (quote.signature == recomputed_sig)
+        hardware_pki_ok = quote.signature == recomputed_sig
 
         is_valid = mrenclave_ok and pcr_ok and key_binding_ok and hardware_pki_ok
         session_id = f"SESSION-TEE-{secrets.token_hex(8).upper()}" if is_valid else "INVALID_SESSION"

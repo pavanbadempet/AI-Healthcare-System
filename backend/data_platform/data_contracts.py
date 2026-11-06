@@ -98,9 +98,15 @@ class DataContractEngine:
             fields={
                 "patient_id": FieldContract("patient_id", "string", required=True),
                 "timestamp": FieldContract("timestamp", "string", required=True),
-                "systolic_bp": FieldContract("systolic_bp", "float", required=True, unit="mmHg", min_value=30.0, max_value=300.0),
-                "diastolic_bp": FieldContract("diastolic_bp", "float", required=True, unit="mmHg", min_value=10.0, max_value=200.0),
-                "heart_rate": FieldContract("heart_rate", "float", required=True, unit="bpm", min_value=20.0, max_value=280.0),
+                "systolic_bp": FieldContract(
+                    "systolic_bp", "float", required=True, unit="mmHg", min_value=30.0, max_value=300.0
+                ),
+                "diastolic_bp": FieldContract(
+                    "diastolic_bp", "float", required=True, unit="mmHg", min_value=10.0, max_value=200.0
+                ),
+                "heart_rate": FieldContract(
+                    "heart_rate", "float", required=True, unit="bpm", min_value=20.0, max_value=280.0
+                ),
                 "spo2": FieldContract("spo2", "float", required=False, unit="percent", min_value=40.0, max_value=100.0),
             },
             allow_extra_fields=True,
@@ -115,10 +121,18 @@ class DataContractEngine:
             fields={
                 "patient_id": FieldContract("patient_id", "string", required=True),
                 "sample_id": FieldContract("sample_id", "string", required=True),
-                "serum_creatinine": FieldContract("serum_creatinine", "float", required=True, unit="mg/dL", min_value=0.1, max_value=25.0),
-                "potassium": FieldContract("potassium", "float", required=True, unit="mEq/L", min_value=1.5, max_value=10.0),
-                "sodium": FieldContract("sodium", "float", required=True, unit="mEq/L", min_value=100.0, max_value=180.0),
-                "blood_glucose": FieldContract("blood_glucose", "float", required=True, unit="mg/dL", min_value=10.0, max_value=1500.0),
+                "serum_creatinine": FieldContract(
+                    "serum_creatinine", "float", required=True, unit="mg/dL", min_value=0.1, max_value=25.0
+                ),
+                "potassium": FieldContract(
+                    "potassium", "float", required=True, unit="mEq/L", min_value=1.5, max_value=10.0
+                ),
+                "sodium": FieldContract(
+                    "sodium", "float", required=True, unit="mEq/L", min_value=100.0, max_value=180.0
+                ),
+                "blood_glucose": FieldContract(
+                    "blood_glucose", "float", required=True, unit="mg/dL", min_value=10.0, max_value=1500.0
+                ),
             },
             allow_extra_fields=True,
         )

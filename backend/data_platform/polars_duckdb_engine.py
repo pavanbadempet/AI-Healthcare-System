@@ -15,6 +15,7 @@ from pydantic import BaseModel
 # Conditional Polars & DuckDB imports for Zero-Config fallback
 try:
     import polars as pl
+
     HAS_POLARS = True
 except ImportError:
     HAS_POLARS = False
@@ -22,6 +23,7 @@ except ImportError:
 
 try:
     import duckdb
+
     HAS_DUCKDB = True
 except ImportError:
     HAS_DUCKDB = False
@@ -30,6 +32,7 @@ except ImportError:
 
 class PolarsQueryResult(BaseModel):
     """Result of a Polars / DuckDB query execution."""
+
     engine_used: str  # "POLARS_RUST" or "DUCKDB_VECTORIZED" or "PYTHON_FALLBACK"
     columns: List[str]
     rows: List[Dict[str, Any]]
