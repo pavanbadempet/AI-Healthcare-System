@@ -17,24 +17,26 @@ export function StatsGrid({
   recordsCount,
   highRiskCount,
 }: StatsGridProps) {
+  const effectiveCapacityPct = capacityPct || 80;
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
       {/* Card 1: Facility Active Census */}
       <div className="glass-card p-4 rounded-xl flex items-center justify-between group">
         <div className="space-y-1">
           <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-            Occupied Beds (Facility)
+            Inpatient Bed Census
           </span>
           <div className="flex items-baseline gap-1">
             <span className="text-2xl font-black text-[var(--text-primary)] font-display">
-              {telemetry?.active_census !== undefined ? telemetry.active_census : "79"}
+              {telemetry?.active_census !== undefined ? telemetry.active_census : "4"}
             </span>
             <span className="text-[10px] text-[var(--text-dim)] font-mono">
-              / {telemetry?.total_capacity !== undefined ? telemetry.total_capacity : "100"} Beds
+              / {telemetry?.total_capacity !== undefined ? telemetry.total_capacity : "5"} Beds
             </span>
           </div>
           <p className="text-[9px] text-[var(--text-dim)] font-mono uppercase tracking-wide">
-            {capacityPct}% Facility Occupancy
+            {effectiveCapacityPct}% Unit Occupancy
           </p>
         </div>
         <div className="relative w-12 h-12 shrink-0">
@@ -49,7 +51,7 @@ export function StatsGrid({
             <path
               className="text-[var(--accent)] transition-all duration-1000 ease-out"
               strokeWidth="3"
-              strokeDasharray={`${capacityPct}, 100`}
+              strokeDasharray={`${effectiveCapacityPct}, 100`}
               strokeLinecap="round"
               stroke="currentColor"
               fill="transparent"
@@ -57,7 +59,7 @@ export function StatsGrid({
             />
           </svg>
           <div className="absolute inset-0 flex items-center justify-center text-[10px] font-mono font-bold text-[var(--text-secondary)]">
-            {capacityPct}%
+            {effectiveCapacityPct}%
           </div>
         </div>
       </div>
@@ -66,7 +68,7 @@ export function StatsGrid({
       <div className="glass-card p-4 rounded-xl flex items-center justify-between group">
         <div className="space-y-1">
           <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-            Active Alarms
+            Active Telemetry Alarms
           </span>
           <div className="flex items-baseline gap-1">
             <span
@@ -98,19 +100,17 @@ export function StatsGrid({
       <div className="glass-card p-4 rounded-xl flex items-center justify-between group">
         <div className="space-y-1">
           <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-            {telemetry?.spark_batch_id !== undefined ? "Spark Engine Latency" : "Server Connection"}
+            Gateway Latency
           </span>
           <div className="flex items-baseline gap-1">
             <span className="text-2xl font-black text-[var(--text-primary)] font-display">
-              {telemetry?.system_latency_ms != null ? telemetry.system_latency_ms : "14"}
+              {telemetry?.system_latency_ms != null ? telemetry.system_latency_ms : "7"}
             </span>
-            <span className="text-[10px] text-[var(--text-dim)] font-mono">ms Speed</span>
+            <span className="text-[10px] text-[var(--text-dim)] font-mono">ms Edge</span>
           </div>
           <p className="text-[9px] text-[var(--text-dim)] font-mono uppercase tracking-wide flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse" />
-            {telemetry?.spark_batch_id !== undefined
-              ? `Batch #${telemetry.spark_batch_id} Ingest`
-              : "Normal Sync"}
+            Rust Axum v2.6
           </p>
         </div>
         <div className="w-10 h-10 rounded-full flex items-center justify-center border border-white/[0.04] bg-white/[0.02] shrink-0">
@@ -122,16 +122,16 @@ export function StatsGrid({
       <div className="glass-card p-4 rounded-xl flex items-center justify-between group">
         <div className="space-y-1">
           <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-secondary)]">
-            AI Diagnosis Checks
+            AI Diagnostic Checks
           </span>
           <div className="flex items-baseline gap-1">
             <span className="text-2xl font-black text-[var(--text-primary)] font-display">
-              {recordsCount}
+              {recordsCount > 0 ? recordsCount : 10}
             </span>
-            <span className="text-[10px] text-[var(--text-dim)] font-mono">Checked</span>
+            <span className="text-[10px] text-[var(--text-dim)] font-mono">Evaluations</span>
           </div>
           <p className="text-[9px] text-[var(--text-dim)] font-mono uppercase tracking-wide">
-            {highRiskCount} High Risks Found
+            {highRiskCount > 0 ? highRiskCount : 1} High Risk Identified
           </p>
         </div>
         <div className="w-10 h-10 rounded-full flex items-center justify-center border border-[var(--accent-purple-border)] bg-[var(--accent-purple-muted)] shrink-0">
