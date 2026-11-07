@@ -56,3 +56,4 @@ feedparser>=6.0.10
 # --- Data Pipeline (Orchestration) ---
 apache-airflow>=3.2.2
 pyspark>=4.3.0
+delta-spark>=4.0.0
