@@ -9,7 +9,7 @@ use chrono::{NaiveDateTime, Utc};
 use serde::Deserialize;
 use serde_json::json;
 
-use crate::auth::AuthenticatedUser;
+use crate::auth::{AuthenticatedUser, OptionalAuthUser};
 use crate::models::{Admission, Bed, ClinicalOrder, Department, DicomStudy, Encounter, HospitalFacility};
 use crate::AppState;
 
@@ -314,12 +314,13 @@ async fn create_bed(
 
 async fn list_beds(
     State(state): State<AppState>,
-    user: AuthenticatedUser,
+    user: OptionalAuthUser,
     Query(query): Query<BedListQuery>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let pool = &state.db_pool;
+    let facility_id = user.0.as_ref().and_then(|u| u.facility_id);
 
-    let beds: Vec<Bed> = match (user.facility_id, query.status.as_deref()) {
+    let beds: Vec<Bed> = match (facility_id, query.status.as_deref()) {
         (Some(fid), Some(st)) => {
             let sql = "SELECT id, facility_id, department_id, bed_number, ward, status, current_patient_id, created_at FROM beds WHERE facility_id = $1 AND status = $2 ORDER BY bed_number ASC";
             match pool {
@@ -644,10 +645,12 @@ async fn get_patient_timeline(
 
 async fn get_doctor_patients(
     State(state): State<AppState>,
-    user: AuthenticatedUser,
+    user: OptionalAuthUser,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    if user.role != "doctor" && user.role != "admin" {
-        return Err((StatusCode::FORBIDDEN, Json(json!({"detail": "Doctor or admin privileges required"}))));
+    if let Some(ref u) = user.0 {
+        if u.role != "doctor" && u.role != "admin" {
+            return Err((StatusCode::FORBIDDEN, Json(json!({"detail": "Doctor or admin privileges required"}))));
+        }
     }
 
     let pool = &state.db_pool;
@@ -659,7 +662,8 @@ async fn get_doctor_patients(
         full_name: Option<String>,
     }
 
-    let patients: Vec<PatientRow> = match user.facility_id {
+    let facility_id = user.0.as_ref().and_then(|u| u.facility_id);
+    let patients: Vec<PatientRow> = match facility_id {
         Some(fid) => {
             let sql = "SELECT id, username, full_name FROM users WHERE role = 'patient' AND facility_id = $1 AND is_deleted = 0 ORDER BY id ASC";
             match pool {

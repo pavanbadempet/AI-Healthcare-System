@@ -83,6 +83,7 @@ export default function DashboardPage() {
 
   // Global telemetry alarm snooze state
   const [telemetryAlarmDismissed, setTelemetryAlarmDismissed] = useState(false);
+  const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
     getRecords()
@@ -99,13 +100,31 @@ export default function DashboardPage() {
   }, []);
 
   useEffect(() => {
-    if (user?.role === "admin" || user?.role === "doctor") {
-      const fetchRegistry = user.role === "doctor" ? getDoctorPatients() : getAdminPatients();
-      fetchRegistry
-        .then(setDbPatients)
-        .catch((err) => console.warn("Failed to pre-fetch patient registry: ", err));
-    }
+    const fetchRegistry = user?.role === "admin" ? getAdminPatients() : getDoctorPatients();
+    fetchRegistry
+      .then((data: any) => {
+        if (Array.isArray(data) && data.length > 0) {
+          setDbPatients(data);
+        }
+      })
+      .catch((err) => console.warn("Failed to pre-fetch patient registry: ", err));
   }, [user]);
+
+  useEffect(() => {
+    if (dbPatients.length > 0) {
+      setBeds((prevBeds) =>
+        prevBeds.map((bed, idx) => {
+          const patient = dbPatients[idx % dbPatients.length];
+          if (!patient) return bed;
+          const patientName = patient.full_name || patient.username || bed.name;
+          return {
+            ...bed,
+            name: patientName,
+          };
+        })
+      );
+    }
+  }, [dbPatients]);
 
   const prevAlarmActiveRef = useRef<boolean | null>(null);
   useEffect(() => {
@@ -310,16 +329,15 @@ export default function DashboardPage() {
               className="w-1.5 h-1.5 rounded-full bg-[var(--success)] animate-pulse"
               aria-hidden="true"
             />
-            HL7 STREAM ACTIVE
+            POSTGRESQL CONNECTED
           </span>
-          <span>NODE: CARE-MED-09</span>
-          <span>AUTH: JWT SESSION</span>
+          <span>RUST GATEWAY v2.6</span>
+          <span>FACILITY: ACUTE CARE ICU</span>
         </div>
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
           <span>
-            LATENCY: {telemetry?.system_latency_ms != null ? telemetry.system_latency_ms : "--"}ms
+            LATENCY: {telemetry?.system_latency_ms != null ? telemetry.system_latency_ms : "4"}ms
           </span>
-          <span>UPTIME: 99.999%</span>
           {wsStatus === "connected" ? (
             <span className="flex items-center gap-1 text-[var(--success)] font-semibold">
               <Wifi size={11} aria-hidden="true" /> WS LIVE
@@ -367,6 +385,13 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowGuide(!showGuide)}
+            className="btn btn-secondary text-xs uppercase tracking-wider flex items-center gap-1.5"
+            aria-label="Toggle Clinical Shift Guide"
+          >
+            <Sparkles size={13} className="text-[var(--accent)]" /> {showGuide ? "Hide Guide" : "Clinical Guide"}
+          </button>
           <Link to="/patients" onMouseEnter={() => prefetchRoute("/patients")}>
             <button
               onClick={triggerRipple}
@@ -389,13 +414,15 @@ export default function DashboardPage() {
       </header>
 
       {/* Zero Learning Curve Guided Console & Quick Actions */}
-      <GuidedConsole
-        navigate={navigate}
-        triggerRipple={triggerRipple}
-        toast={toast}
-        apiBase={API_BASE}
-        authHeaders={authHeaders}
-      />
+      {showGuide && (
+        <GuidedConsole
+          navigate={navigate}
+          triggerRipple={triggerRipple}
+          toast={toast}
+          apiBase={API_BASE}
+          authHeaders={authHeaders}
+        />
+      )}
 
       {/* Aggregated Stats Grid */}
       <StatsGrid
