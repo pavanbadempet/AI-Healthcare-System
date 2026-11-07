@@ -50,6 +50,7 @@ ADMIN_FACILITY_ACCESS_DETAIL = "Admin resource is outside the user's facility"
 # Password Hashing
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+oauth2_scheme_optional = OAuth2PasswordBearer(tokenUrl="token", auto_error=False)
 
 router = APIRouter()
 
@@ -117,7 +118,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
         raise credentials_exception
     return user
 
-def get_current_user_optional(token: Optional[str] = Depends(oauth2_scheme), db: Session = Depends(database.get_db)) -> Optional[models.User]:
+def get_current_user_optional(token: Optional[str] = Depends(oauth2_scheme_optional), db: Session = Depends(database.get_db)) -> Optional[models.User]:
     """Dependency to optionally get the current user, returning None if unauthenticated."""
     if not token:
         return None

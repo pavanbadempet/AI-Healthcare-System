@@ -4,7 +4,6 @@
 # Dual-tier high-performance architecture:
 # Tier 1 (PID 1): Bun + ElysiaJS Edge Gateway & API Orchestration Layer
 # Tier 2 (Compute): Rust Axum/Tokio Backend Server + ONNX Runtime (Zero Python)
-# Accelerated by cargo-chef Docker layer caching (sub-minute deploys).
 # Fully compatible with Hugging Face Spaces (Port 7860, UID 1000).
 # ==============================================================================
 
@@ -21,31 +20,20 @@ COPY frontend/ ./
 RUN bun run build
 
 # ------------------------------------------------------------------------------
-# Stage 2A: Cargo Chef Planner
+# Stage 2: Build Rust Gateway & ONNX Inference Server (Debian Trixie / GCC 14)
 # ------------------------------------------------------------------------------
-FROM lukemathwalker/cargo-chef:latest-rust-1 AS chef
+FROM rust:latest AS rust-builder
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    protobuf-compiler \
+    libssl-dev \
+    pkg-config \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
+WORKDIR /build
+
+COPY rust_gateway/ ./rust_gateway/
 WORKDIR /build/rust_gateway
-RUN apt-get update && apt-get install -y protobuf-compiler libssl-dev pkg-config && rm -rf /var/lib/apt/lists/*
-
-FROM chef AS planner
-COPY rust_gateway/ .
-RUN cargo chef prepare --recipe-path recipe.json
-
-# ------------------------------------------------------------------------------
-# Stage 2B: Cargo Chef Builder (Caches 350+ compiled crate dependencies!)
-# ------------------------------------------------------------------------------
-FROM chef AS rust-builder
-WORKDIR /build/rust_gateway
-COPY --from=planner /build/rust_gateway/recipe.json recipe.json
-COPY rust_gateway/proto ./proto
-COPY rust_gateway/build.rs ./build.rs
-
-# Build dependencies - this layer is cached by Docker across all subsequent pushes!
-RUN cargo chef cook --release --recipe-path recipe.json
-
-# Build actual application
-COPY rust_gateway/ .
-RUN cargo build --release
+RUN cargo build --release --bin rust_gateway
 
 # ------------------------------------------------------------------------------
 # Stage 3: Unified Production Runtime (Bun + Rust, Zero Python)
@@ -76,16 +64,18 @@ ENV HOME=/home/bun \
 
 WORKDIR /home/bun/app
 
-# Copy built Rust Gateway binary from Stage 2B
+# Copy built Rust Gateway binary from Stage 2
 COPY --from=rust-builder --chown=1000:1000 /build/rust_gateway/target/release/rust_gateway /home/bun/app/rust_gateway/target/release/rust_gateway
 
 # Copy built frontend assets from Stage 1
 COPY --from=frontend-builder --chown=1000:1000 /build/dist /home/bun/app/frontend/dist
 
 # Copy Edge Gateway source and install production dependencies
-COPY --chown=1000:1000 edge_gateway/ /home/bun/app/edge_gateway/
+COPY --chown=1000:1000 edge_gateway/package.json edge_gateway/bun.lock* /home/bun/app/edge_gateway/
 WORKDIR /home/bun/app/edge_gateway
-RUN bun install --production
+RUN bun install --production || bun install
+
+COPY --chown=1000:1000 edge_gateway/ /home/bun/app/edge_gateway/
 
 WORKDIR /home/bun/app
 

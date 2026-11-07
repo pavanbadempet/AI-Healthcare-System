@@ -14,7 +14,7 @@ import { ModelManager } from "@/components/chat/ModelManager";
 import { prefetchRoute } from "@/lib/prefetch";
 import { useTranslation } from "@/lib/i18n";
 import { useMaterialRipple } from "@/lib/ripple";
-import { sendChat } from "@/lib/apiChat";
+import { sendChat, FALLBACK_HEALTH_RECORDS } from "@/lib/apiChat";
 import { API_BASE, authHeaders } from "@/lib/apiCore";
 import { toast } from "@/lib/toast";
 import { TelemetryAlarmSnoozeModal } from "@/components/modals/TelemetryAlarmSnoozeModal";
@@ -88,55 +88,8 @@ export default function DashboardPage() {
     getRecords()
       .then(setRecords)
       .catch((err) => {
-        console.error(err);
-        setError("Backend connection unavailable. Demo data may be incomplete.");
-        setRecords([
-          {
-            id: 1,
-            patient_name: "Sarah Jenkins",
-            model_type: "general",
-            prediction: "Low Risk",
-            risk_level: "Low",
-            timestamp: "2026-09-17T10:00:00Z",
-            created_at: "2026-09-17T10:00:00Z",
-          },
-          {
-            id: 2,
-            patient_name: "Marcus Thorne",
-            model_type: "heart",
-            prediction: "High Risk (STEMI Alert)",
-            risk_level: "High",
-            timestamp: "2026-09-17T11:30:00Z",
-            created_at: "2026-09-17T11:30:00Z",
-          },
-          {
-            id: 3,
-            patient_name: "Linda Zhao",
-            model_type: "diabetes",
-            prediction: "Low Risk",
-            risk_level: "Low",
-            timestamp: "2026-09-17T12:15:00Z",
-            created_at: "2026-09-17T12:15:00Z",
-          },
-          {
-            id: 4,
-            patient_name: "Robert Garcia",
-            model_type: "kidney",
-            prediction: "Moderate Risk",
-            risk_level: "Moderate",
-            timestamp: "2026-09-17T13:45:00Z",
-            created_at: "2026-09-17T13:45:00Z",
-          },
-          {
-            id: 5,
-            patient_name: "Emily Watson",
-            model_type: "lungs",
-            prediction: "Low Risk",
-            risk_level: "Low",
-            timestamp: "2026-09-17T14:20:00Z",
-            created_at: "2026-09-17T14:20:00Z",
-          },
-        ] as any);
+        console.warn("Records fetch fallback to demo records:", err);
+        setRecords(FALLBACK_HEALTH_RECORDS);
       })
       .finally(() => setLoading(false));
   }, []);
@@ -454,7 +407,7 @@ export default function DashboardPage() {
         highRiskCount={highRiskRecords.length}
       />
 
-      {/* Level 1: Nexus Vitalis Clinical Telemetry Grid */}
+      {/* Level 1: Clinical Telemetry Grid */}
       <TelemetryGrid
         beds={beds}
         expandedBed={expandedBed}

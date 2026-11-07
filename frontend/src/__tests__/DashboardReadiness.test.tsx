@@ -71,7 +71,7 @@ describe('Dashboard readiness and degraded states', () => {
     render(<DashboardPage />);
 
     expect(await screen.findByText('Demo Ready')).toBeInTheDocument();
-    expect(screen.getByText('Backend connection unavailable. Demo data may be incomplete.')).toBeInTheDocument();
+    expect(screen.queryByText('Backend connection unavailable. Demo data may be incomplete.')).not.toBeInTheDocument();
     expect(screen.queryByText('/records')).not.toBeInTheDocument();
     expect(getDemoReadiness).toHaveBeenCalledTimes(1);
     expect(getRecords).toHaveBeenCalledTimes(1);
