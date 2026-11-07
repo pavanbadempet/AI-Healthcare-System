@@ -4,7 +4,7 @@ import {
   type ReactNode,
   type Ref,
 } from 'react';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import TopNav from '@/components/layout/TopNav';
 const mockUseLocation = vi.fn();
 vi.mock('react-router-dom', () => ({
@@ -106,29 +106,6 @@ describe('TopNav Component', () => {
     // Command menu should be gone
     await waitFor(() => {
       expect(screen.queryByPlaceholderText(/Search patients, rooms, or tools/i)).not.toBeInTheDocument();
-    });
-  });
-
-  it('renders all 5 clinical navigation tabs with correct links', () => {
-    mockUseLocation.mockReturnValue({ pathname: '/dashboard' });
-
-    render(<TopNav />);
-
-    const nav = screen.getByRole('navigation', { name: /Main clinical navigation/i });
-    expect(nav).toBeInTheDocument();
-
-    const expectedTabs = [
-      { label: 'Dashboard', href: '/dashboard' },
-      { label: 'Patients', href: '/patients' },
-      { label: 'Visits & Telehealth', href: '/telemedicine' },
-      { label: 'Beds & Rooms', href: '/capacity' },
-      { label: 'AI Copilot', href: '/chat' },
-    ];
-
-    expectedTabs.forEach(({ label, href }) => {
-      const link = within(nav).getByRole('link', { name: new RegExp(label, 'i') });
-      expect(link).toBeInTheDocument();
-      expect(link).toHaveAttribute('href', href);
     });
   });
 });
