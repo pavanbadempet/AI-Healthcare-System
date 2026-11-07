@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { GitMerge, WifiOff, CheckCircle2, ShieldCheck, HeartPulse, RefreshCw, Layers } from 'lucide-react';
 
 export function OfflineCrdtStudio() {
@@ -12,10 +12,20 @@ export function OfflineCrdtStudio() {
 
   const [isMerged, setIsMerged] = useState<boolean>(true);
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const syncTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (syncTimeoutRef.current) {
+        clearTimeout(syncTimeoutRef.current);
+      }
+    };
+  }, []);
 
   const handleMergeSync = () => {
     setIsSyncing(true);
-    setTimeout(() => {
+    if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+    syncTimeoutRef.current = setTimeout(() => {
       setIsSyncing(false);
       setIsMerged(true);
     }, 300);
