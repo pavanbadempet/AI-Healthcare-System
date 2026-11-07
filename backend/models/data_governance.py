@@ -1,7 +1,7 @@
 """Data governance domain models: schema contracts, violations, data catalog, and dataset lineage."""
 from datetime import datetime, timezone
 
-from sqlalchemy import JSON, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Column, DateTime, Float, ForeignKey, Integer, String, Text
 
 from ..database import Base
 
@@ -19,7 +19,7 @@ class DbSchemaContract(Base):
     required_fields = Column(JSON, nullable=False)    # List of required fields
     compatibility_mode = Column(String, default="BACKWARD", nullable=False)
     sla_freshness_minutes = Column(Integer, default=1440, nullable=False)
-    quality_threshold = Column(Integer, default=0.95, nullable=False)
+    quality_threshold = Column(Float, default=0.95, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -46,7 +46,7 @@ class DbDatasetEntry(Base):
     tags = Column(JSON, nullable=False)                # List of tags
     sla_hours = Column(Integer, default=24, nullable=False)
     freshness_field = Column(String, default="timestamp", nullable=False)
-    quality_score = Column(Integer, default=1.0, nullable=False)
+    quality_score = Column(Float, default=1.0, nullable=False)
     row_count = Column(Integer, default=0, nullable=False)
     size_bytes = Column(Integer, default=0, nullable=False)
     location = Column(String, nullable=True)

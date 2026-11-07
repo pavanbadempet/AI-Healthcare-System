@@ -1,31 +1,55 @@
 # ============================================================
-# AI Healthcare System — Enterprise Backend Dockerfile
+# AI Healthcare System — Enterprise Production Gateway (Pure Rust)
+# Multi-stage Docker build: Compiles rust_gateway binary and runs
+# in a minimal Debian slim runtime with zero Python runtime dependency.
 # ============================================================
 
-FROM python:3.12-slim
+# Stage 1: Rust Builder
+FROM rust:1.80-slim-bookworm AS builder
+
+WORKDIR /build
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    pkg-config \
+    libssl-dev \
+    build-essential \
+    protobuf-compiler \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy Rust Gateway crate (including build.rs, proto/, and source files)
+COPY rust_gateway/ ./rust_gateway/
+
+# Compile rust_gateway in release mode with optimizations
+RUN cargo build --release --manifest-path rust_gateway/Cargo.toml --bin rust_gateway
+
+# Stage 2: Minimal Production Runtime (Zero Python)
+FROM debian:bookworm-slim AS runtime
 
 WORKDIR /app
 
-# Install system dependencies
+# Install minimal runtime certificates and curl for healthchecks
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    curl \
     ca-certificates \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
-COPY backend/requirements.txt ./backend/requirements.txt
-COPY requirements.txt ./
+# Copy compiled Rust gateway binary from builder
+COPY --from=builder /build/rust_gateway/target/release/rust_gateway /app/rust_gateway
 
-# Install python dependencies
-RUN pip install --no-cache-dir --upgrade pip && \
-    pip install --no-cache-dir -r backend/requirements.txt
+# Copy ONNX model artifacts for ORT inference (both models/ and backend/ search paths)
+COPY models/ /app/models/
+COPY backend/*.onnx /app/backend/
 
-# Copy application source code
-COPY . .
+# Production environment configuration
+ENV ENV=production \
+    ENVIRONMENT=production \
+    PORT=8000 \
+    RUST_LOG=info
 
 # Expose port 8000
 EXPOSE 8000
 
-# Default CMD (can be overridden by compose)
-CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run native pure Rust Gateway (Axum 0.8 / Tokio)
+CMD ["/app/rust_gateway"]

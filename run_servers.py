@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 import sys
 import threading
@@ -20,9 +21,27 @@ def run():
     print("=" * 60)
     print("[INFO] Starting all services concurrently...")
 
+    is_prod = (
+        os.getenv("ENV", "").strip().lower() in {"production", "prod"}
+        or os.getenv("ENVIRONMENT", "").strip().lower() in {"production", "prod"}
+        or "--prod" in sys.argv
+        or "-p" in sys.argv
+    )
+
     # Start Backend
-    print("[INFO] Starting Backend (FastAPI) on http://127.0.0.1:8000 ...")
-    backend_cmd = [sys.executable, "-m", "uvicorn", "backend.main:app", "--reload", "--host", "127.0.0.1", "--port", "8000"]
+    if is_prod:
+        print("[INFO] Production Mode Detected: Starting Pure Rust Gateway on http://127.0.0.1:8000 ...")
+        rust_binary = os.path.join(
+            "rust_gateway", "target", "release", "rust_gateway.exe" if os.name == "nt" else "rust_gateway"
+        )
+        if os.path.exists(rust_binary):
+            backend_cmd = [rust_binary]
+        else:
+            backend_cmd = ["cargo", "run", "--release", "--manifest-path", "rust_gateway/Cargo.toml", "--bin", "rust_gateway"]
+    else:
+        print("[INFO] Development Mode: Starting Backend (FastAPI / Dev Spec) on http://127.0.0.1:8000 ...")
+        backend_cmd = [sys.executable, "-m", "uvicorn", "backend.main:app", "--reload", "--host", "127.0.0.1", "--port", "8000"]
+
     backend_proc = subprocess.Popen(
         backend_cmd,
         stdout=subprocess.PIPE,
@@ -33,10 +52,15 @@ def run():
     )
 
     # Start Frontend
-    print("[INFO] Starting Frontend (Vite) on http://127.0.0.1:3000 ...")
-    npm_cmd = ["npm.cmd" if os.name == "nt" else "npm", "run", "dev"]
+    print("[INFO] Starting Frontend (Bun + Vite) on http://127.0.0.1:3000 ...")
+    if shutil.which("bun"):
+        frontend_runner = "bun.cmd" if os.name == "nt" else "bun"
+    else:
+        frontend_runner = "npm.cmd" if os.name == "nt" else "npm"
+
+    frontend_cmd = [frontend_runner, "run", "dev"]
     frontend_proc = subprocess.Popen(
-        npm_cmd,
+        frontend_cmd,
         cwd=os.path.join(os.getcwd(), "frontend"),
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,

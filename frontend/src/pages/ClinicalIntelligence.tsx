@@ -9,6 +9,7 @@ import {
   type ClinicalAlert, type PatientInsight, type ExplainabilityData, type AdvisoryBoardDebate
 } from '@/lib/apiIntelligence';
 import { toast } from '@/lib/toast';
+import { useClinicalAlertsQuery, useAcknowledgeAlertMutation } from '@/hooks/useClinicalIntelligence';
 import { SotaClinicalStudio } from '@/components/SotaClinicalStudio';
 
 // Modular Subcomponents
@@ -53,12 +54,16 @@ const FALLBACK_CLINICAL_ALERTS: ClinicalAlert[] = [
 
 export default function ClinicalIntelligence() {
   const [patientId, setPatientId] = useState<number>(3);
-  const [alerts, setAlerts] = useState<ClinicalAlert[]>([]);
+  const [alertsFilter, setAlertsFilter] = useState<string>('ALL');
+  const { data: rawAlerts, isLoading: loadingAlertsQuery } = useClinicalAlertsQuery(alertsFilter);
+  const ackAlertMutation = useAcknowledgeAlertMutation();
+
+  const alerts = rawAlerts && rawAlerts.length > 0 ? rawAlerts : FALLBACK_CLINICAL_ALERTS;
+  const loadingAlerts = Boolean(loadingAlertsQuery && (!rawAlerts || (rawAlerts as ClinicalAlert[]).length === 0));
+
   const [selectedAlert, setSelectedAlert] = useState<ClinicalAlert | null>(null);
   const [explainability, setExplainability] = useState<ExplainabilityData | null>(null);
   const [insight, setInsight] = useState<PatientInsight | null>(null);
-  const [alertsFilter, setAlertsFilter] = useState<string>('ALL');
-  const [loadingAlerts, setLoadingAlerts] = useState(true);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ackLoading, setAckLoading] = useState<number | null>(null);
@@ -215,44 +220,6 @@ export default function ClinicalIntelligence() {
     }
   }, [simDiabetes, simHeart, selectedModel, activeTab]);
 
-  const loadAlertsOnly = async () => {
-    try {
-      const data = await fetchAlerts(alertsFilter === 'ALL' ? undefined : alertsFilter);
-      setAlerts(data);
-    } catch (err: any) {
-      console.error('Failed to reload alerts:', err);
-    }
-  };
-
-  const loadAllData = async (targetPatient: number) => {
-    try {
-      setLoadingAlerts(true);
-      setError(null);
-
-      let alertsData: ClinicalAlert[] = [];
-      try {
-        alertsData = await fetchAlerts(alertsFilter === 'ALL' ? undefined : alertsFilter);
-      } catch (fetchErr) {
-        console.warn('Using offline fallback clinical alerts:', fetchErr);
-      }
-
-      if (!alertsData || alertsData.length === 0) {
-        alertsData = FALLBACK_CLINICAL_ALERTS;
-      }
-      setAlerts(alertsData);
-
-      const patientAlerts = alertsData.filter(a => a.patient_id === targetPatient);
-      if (patientAlerts.length > 0) {
-        setSelectedAlert(patientAlerts[0]);
-      } else {
-        setSelectedAlert(alertsData[0] || null);
-      }
-    } catch (err: any) {
-      setError(err.message || 'Failed to load intelligence command center data');
-    } finally {
-      setLoadingAlerts(false);
-    }
-  };
 
   const loadPatientDetails = async (pId: number) => {
     try {
@@ -295,29 +262,32 @@ export default function ClinicalIntelligence() {
   };
 
   useEffect(() => {
-    loadAllData(patientId);
     loadPatientDetails(patientId);
+  }, [patientId]);
 
-    refreshInterval.current = setInterval(loadAlertsOnly, 10000);
-    return () => {
-      if (refreshInterval.current) clearInterval(refreshInterval.current);
-    };
-  }, [alertsFilter]);
+  useEffect(() => {
+    if (alerts && alerts.length > 0) {
+      if (!selectedAlert || !alerts.some(a => a.id === selectedAlert.id)) {
+        const patientAlerts = alerts.filter(a => a.patient_id === patientId);
+        setSelectedAlert(patientAlerts[0] || alerts[0] || null);
+      }
+    }
+  }, [alerts, patientId, selectedAlert]);
 
   const handlePatientChange = (newId: number) => {
     setPatientId(newId);
     setAdvisoryDebate(null);
     setAdvisoryError(null);
     setConsensus(null);
-    loadAllData(newId);
+    const patientAlerts = alerts.filter(a => a.patient_id === newId);
+    setSelectedAlert(patientAlerts[0] || alerts[0] || null);
     loadPatientDetails(newId);
   };
 
   const handleAcknowledge = async (alertId: number) => {
     setAckLoading(alertId);
     try {
-      await acknowledgeAlert(alertId);
-      await loadAlertsOnly();
+      await ackAlertMutation.mutateAsync(alertId);
       if (selectedAlert?.id === alertId) {
         setSelectedAlert(prev => prev ? { ...prev, is_acknowledged: true } : null);
       }

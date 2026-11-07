@@ -19,6 +19,17 @@ if os.getenv("TESTING", "").strip().lower() in {"1", "true", "yes", "on"}:
 else:
     os.environ["TESTING"] = ""
 
+# Production Runtime Lockout: Python execution is strictly disabled in live production mode.
+# All live production requests must be handled natively by the pure Rust Gateway.
+if (
+    os.getenv("ENV", "").strip().lower() in {"production", "prod"}
+    or os.getenv("ENVIRONMENT", "").strip().lower() in {"production", "prod"}
+    or os.getenv("PRODUCTION", "").strip().lower() in {"1", "true", "yes"}
+):
+    raise RuntimeError(
+        "Python execution is disabled in live production mode. All requests must be handled natively by the Rust Gateway."
+    )
+
 # Configure Structured JSON Logging with PII Redaction
 from backend.logging_config import setup_structured_logging
 

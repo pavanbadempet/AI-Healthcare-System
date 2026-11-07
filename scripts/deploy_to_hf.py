@@ -69,9 +69,11 @@ pinned: false
     subprocess.run("git add .", shell=True, cwd=temp_dir, check=True)
     subprocess.run('git commit -m "deploy: update dual-stack gateway with Neon DB and Doppler secrets"', shell=True, cwd=temp_dir, check=True)
 
+    hf_token = os.environ.get('HF_TOKEN') or os.environ.get('HUGGINGFACE_TOKEN', '')
+    remote_url = f"https://pavanbadempet:{hf_token}@huggingface.co/spaces/pavanbadempet/aio-health-backend.git" if hf_token else "https://huggingface.co/spaces/pavanbadempet/aio-health-backend.git"
     print("Pushing to Hugging Face remote...")
     res = subprocess.run(
-        "git push --force https://huggingface.co/spaces/pavanbadempet/aio-health-backend.git main:main",
+        f"git push --force {remote_url} main:main",
         shell=True,
         cwd=temp_dir,
         capture_output=True,

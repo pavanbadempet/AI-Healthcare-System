@@ -1,6 +1,6 @@
 """Clinical Intelligence domain schemas: alerts, insights, explainability."""
 from datetime import datetime
-from typing import Dict, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -43,9 +43,15 @@ class PatientInsightResponse(BaseModel):
 
 
 class ExplainabilityResponse(BaseModel):
-    """SHAP-style feature-importance explanation for a prediction."""
+    """SHAP-style feature-importance explanation for a prediction, aligned with Rust Serde DTO."""
 
     prediction_id: int
     model_name: str
-    feature_importances: Dict[str, float]
-    explanation_text: str
+    base_value: Optional[float] = None
+    predicted_value: Optional[float] = None
+    feature_contributions: Optional[List[Dict[str, Any]]] = None
+    conformal_prediction: Optional[Dict[str, Any]] = None
+    feature_importances: Optional[Dict[str, float]] = None
+    explanation_text: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True, extra="allow")

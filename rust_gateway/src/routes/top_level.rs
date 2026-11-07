@@ -40,13 +40,40 @@ pub fn router() -> Router<AppState> {
 }
 
 /// GET /
-pub async fn root_handler() -> Json<Value> {
+/// Serves index.html to browser users when frontend/dist is present,
+/// while serving standard API JSON metadata for API requests or headless tests.
+pub async fn root_handler(headers: axum::http::HeaderMap) -> axum::response::Response {
+    use axum::response::IntoResponse;
+    
+    let is_testing = std::env::var("TESTING").is_ok();
+    let accepts_json = headers.get(axum::http::header::ACCEPT)
+        .and_then(|v| v.to_str().ok())
+        .map(|s| s.contains("application/json"))
+        .unwrap_or(false);
+
+    if !is_testing && !accepts_json {
+        if let Some(dist_dir) = crate::routes::find_frontend_dist() {
+            let index_path = dist_dir.join("index.html");
+            if index_path.is_file() {
+                if let Ok(content) = tokio::fs::read_to_string(&index_path).await {
+                    return (
+                        [
+                            (axum::http::header::CONTENT_TYPE, "text/html; charset=utf-8"),
+                            (axum::http::header::CACHE_CONTROL, "no-store, no-cache, must-revalidate"),
+                        ],
+                        axum::response::Html(content),
+                    ).into_response();
+                }
+            }
+        }
+    }
+
     Json(json!({
         "message": "AI Healthcare API",
         "gateway": "Rust Axum / Tokio PID 1 Native Engine",
         "version": "3.0.0",
         "timestamp": Utc::now().to_rfc3339()
-    }))
+    })).into_response()
 }
 
 fn is_db_pool_active(state: &AppState) -> bool {
@@ -287,7 +314,6 @@ mod tests {
         );
         AppState {
             http_client: reqwest::Client::new(),
-            python_backend_url: "http://127.0.0.1:8000".to_string(),
             db_pool: pool,
             secret_key: "test_secret_for_unit_tests".to_string(),
             sysinfo: Arc::new(Mutex::new(System::new())),

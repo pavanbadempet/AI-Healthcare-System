@@ -8,7 +8,7 @@ import {
   type HealthRecord,
 } from "@/lib/api";
 import { useTelemetry } from "@/lib/useTelemetry";
-import { AlertTriangle, BrainCircuit, FileText, Sparkles, Wifi } from "lucide-react";
+import { AlertTriangle, BrainCircuit, FileText, Sparkles, Wifi, X } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { ModelManager } from "@/components/chat/ModelManager";
 import { prefetchRoute } from "@/lib/prefetch";
@@ -385,11 +385,20 @@ export default function DashboardPage() {
 
       {error && (
         <div
-          className="flex items-center gap-2 p-3 text-xs font-mono uppercase tracking-wide border border-[var(--warning-border)] bg-[var(--warning-muted)] text-[var(--warning)] rounded animate-pulse"
+          className="flex items-center justify-between gap-2 p-3 text-xs font-mono uppercase tracking-wide border border-[var(--warning-border)] bg-[var(--warning-muted)] text-[var(--warning)] rounded"
           role="alert"
         >
-          <AlertTriangle size={14} className="shrink-0" />
-          <span>{error}</span>
+          <div className="flex items-center gap-2">
+            <AlertTriangle size={14} className="shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button
+            onClick={() => setError(null)}
+            className="p-1 hover:bg-black/20 rounded transition-colors text-[var(--text-secondary)] hover:text-white"
+            aria-label="Dismiss warning"
+          >
+            <X size={14} />
+          </button>
         </div>
       )}
 
@@ -397,7 +406,7 @@ export default function DashboardPage() {
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--border)] pb-4">
         <div>
           <h1 className="text-xl font-bold text-[var(--text-primary)] uppercase tracking-wider font-display">
-            Nexus Vitalis
+            Clinical Overview
           </h1>
           <p className="text-xs text-[var(--text-secondary)] font-mono uppercase tracking-wide flex items-center gap-1.5 mt-1">
             <BrainCircuit size={12} className="text-[var(--accent)]" />

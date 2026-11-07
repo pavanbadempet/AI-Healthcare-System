@@ -1,7 +1,8 @@
-import { useState, useEffect, useDeferredValue } from "react";
+import { useState, useEffect, useDeferredValue, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { getAdminPatients, getDoctorPatients, type DoctorPatientSummary, type UserProfile } from "@/lib/api";
 import { useAuthStore } from "@/lib/auth";
+import { usePatientsRegistryQuery } from "@/hooks/usePatients";
 import { motion } from "framer-motion";
 import { Users, Search, Filter, ShieldAlert, Activity, AlertTriangle, ChevronRight, Stethoscope } from "lucide-react";
 import { prefetchRoute } from "@/lib/prefetch";
@@ -134,83 +135,52 @@ function patientMatchesSearch(
 
 export default function PatientsPage() {
   const { user } = useAuthStore();
-  const [patients, setPatients] = useState<RegistryPatientWithDisplay[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: rawPatients, isLoading: queryLoading, dataUpdatedAt } = usePatientsRegistryQuery(user?.role);
   const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const deferredSearchQuery = useDeferredValue(searchQuery);
-  const [lastSyncTime, setLastSyncTime] = useState("");
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [riskFilter, setRiskFilter] = useState<RiskFilter>("ALL");
   const [admissionPanelOpen, setAdmissionPanelOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 15;
 
+  const patients = useMemo<RegistryPatientWithDisplay[]>(() => {
+    const sourceList = rawPatients && rawPatients.length > 0 ? rawPatients : FALLBACK_REGISTRY_PATIENTS;
+    return sourceList.map((p) => {
+      const display = registryDisplayForPatient(p);
+      const searchIndex = [
+        p.full_name,
+        p.username,
+        p.email,
+        display.mrn,
+        display.diagnosis,
+        display.risk,
+        display.attending,
+        display.unit,
+        p.latest_status,
+      ].filter(Boolean).map(s => String(s).toLowerCase()).join(" ");
+
+      return {
+        ...p,
+        display,
+        searchIndex,
+      };
+    });
+  }, [rawPatients]);
+
+  const loading = Boolean(queryLoading && (!rawPatients || (rawPatients as RegistryPatient[]).length === 0));
+  const [lastSyncTime, setLastSyncTime] = useState("");
+
+  useEffect(() => {
+    if (dataUpdatedAt) {
+      setLastSyncTime(new Date(dataUpdatedAt).toLocaleTimeString());
+    }
+  }, [dataUpdatedAt]);
+
   useEffect(() => {
     setCurrentPage(1);
   }, [deferredSearchQuery, riskFilter]);
-
-  useEffect(() => {
-    setLoading(true);
-    setError("");
-
-    const registryRequest = (user?.role === "doctor" || !user?.role)
-      ? getDoctorPatients().then((items) => items.map(doctorSummaryToRegistryPatient))
-      : getAdminPatients().then((items) => items.map(adminUserToRegistryPatient));
-
-    registryRequest
-      .then((patientList) => {
-        const sourceList = patientList.length > 0 ? patientList : FALLBACK_REGISTRY_PATIENTS;
-        const enriched: RegistryPatientWithDisplay[] = sourceList.map((p) => {
-          const display = registryDisplayForPatient(p);
-          const searchIndex = [
-            p.full_name,
-            p.username,
-            p.email,
-            display.mrn,
-            display.diagnosis,
-            display.risk,
-            display.attending,
-            display.unit,
-            p.latest_status,
-          ].filter(Boolean).map(s => String(s).toLowerCase()).join(" ");
-
-          return {
-            ...p,
-            display,
-            searchIndex,
-          };
-        });
-        setPatients(enriched);
-        setLastSyncTime(new Date().toLocaleTimeString());
-      })
-      .catch((err) => {
-        console.warn("Using offline fallback registry records:", err);
-        const enriched: RegistryPatientWithDisplay[] = FALLBACK_REGISTRY_PATIENTS.map((p) => {
-          const display = registryDisplayForPatient(p);
-          const searchIndex = [
-            p.full_name,
-            p.username,
-            p.email,
-            display.mrn,
-            display.diagnosis,
-            display.risk,
-            display.attending,
-            display.unit,
-            p.latest_status,
-          ].filter(Boolean).map(s => String(s).toLowerCase()).join(" ");
-
-          return {
-            ...p,
-            display,
-            searchIndex,
-          };
-        });
-        setPatients(enriched);
-        setLastSyncTime(new Date().toLocaleTimeString());
-      })
-      .finally(() => setLoading(false));
-  }, [user]);
 
   if (error) {
     return (
