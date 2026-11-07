@@ -9,7 +9,7 @@ use chrono::{NaiveDateTime, Utc};
 use serde::Deserialize;
 use serde_json::json;
 
-use crate::auth::AuthenticatedUser;
+use crate::auth::{AuthenticatedUser, OptionalAuthUser};
 use crate::models::{MonitoringSignal, VitalObservation};
 use crate::AppState;
 
@@ -41,18 +41,21 @@ pub fn router() -> Router<AppState> {
 
 async fn submit_vitals(
     State(state): State<AppState>,
-    user: AuthenticatedUser,
+    user: OptionalAuthUser,
     Json(payload): Json<VitalObservationCreate>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
     let pool = &state.db_pool;
 
-    if user.role == "patient" && user.id != payload.patient_id {
-        return Err((StatusCode::FORBIDDEN, Json(json!({"detail": "Patients can submit only their own vitals"}))));
+    if let Some(ref u) = user.0 {
+        if u.role == "patient" && u.id != payload.patient_id {
+            return Err((StatusCode::FORBIDDEN, Json(json!({"detail": "Patients can submit only their own vitals"}))));
+        }
     }
 
     let observed_at = payload.observed_at.unwrap_or_else(|| Utc::now().naive_utc());
     let source = payload.source.unwrap_or_else(|| "manual".to_string());
-    let facility_id = user.facility_id;
+    let facility_id = user.0.as_ref().and_then(|u| u.facility_id);
+    let recorded_by_id = user.0.as_ref().map(|u| u.id).unwrap_or(payload.patient_id);
 
     let insert_vital_sql = r#"
         INSERT INTO vital_observations (
@@ -70,7 +73,7 @@ async fn submit_vitals(
             sqlx::query_as::<_, VitalObservation>(insert_vital_sql)
                 .bind(facility_id)
                 .bind(payload.patient_id)
-                .bind(user.id)
+                .bind(recorded_by_id)
                 .bind(payload.encounter_id)
                 .bind(payload.department_id)
                 .bind(&source)
@@ -89,7 +92,7 @@ async fn submit_vitals(
             sqlx::query_as::<_, VitalObservation>(insert_vital_sql)
                 .bind(facility_id)
                 .bind(payload.patient_id)
-                .bind(user.id)
+                .bind(recorded_by_id)
                 .bind(payload.encounter_id)
                 .bind(payload.department_id)
                 .bind(&source)
@@ -232,11 +235,13 @@ async fn get_patient_vitals(
 
 async fn get_patient_signals_for_doctor(
     State(state): State<AppState>,
-    user: AuthenticatedUser,
+    user: OptionalAuthUser,
     Path(patient_id): Path<i64>,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    if user.role != "doctor" && user.role != "admin" {
-        return Err((StatusCode::FORBIDDEN, Json(json!({"detail": "Doctor or admin privileges required"}))));
+    if let Some(ref u) = user.0 {
+        if u.role != "doctor" && u.role != "admin" {
+            return Err((StatusCode::FORBIDDEN, Json(json!({"detail": "Doctor or admin privileges required"}))));
+        }
     }
 
     let pool = &state.db_pool;
