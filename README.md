@@ -29,7 +29,8 @@
 <p align="center">
   <img src="https://img.shields.io/badge/Databricks-Unity%20Catalog%20OMOP-FF3621?style=flat-square&logo=databricks&logoColor=white" alt="Databricks" />
   <img src="https://img.shields.io/badge/Delta_Lake_4.x-Medallion%20Lakehouse-003366?style=flat-square&logo=deltalake&logoColor=white" alt="Delta Lake 4.x" />
-  <img src="https://img.shields.io/badge/PySpark_4.x-Distributed%20ETL-E25A1C?style=flat-square&logo=apachespark&logoColor=white" alt="PySpark 4.x" />
+  <img src="https://img.shields.io/badge/PySpark_4.3-Apache%20Spark%204.3.0-E25A1C?style=flat-square&logo=apachespark&logoColor=white" alt="PySpark 4.3" />
+  <img src="https://img.shields.io/badge/Parquet_2.0-Format%20v2%20Bloom%20Filters-00599C?style=flat-square&logo=apacheparquet&logoColor=white" alt="Parquet 2.0" />
   <img src="https://img.shields.io/badge/Apache_Airflow-Orchestration-017CEE?style=flat-square&logo=apacheairflow&logoColor=white" alt="Apache Airflow" />
   <img src="https://img.shields.io/badge/Neon_Serverless-PostgreSQL%20pgvector-00E599?style=flat-square&logo=neon&logoColor=black" alt="Neon pgvector" />
   <img src="https://img.shields.io/badge/FastAPI-Serving%20Layer-009688?style=flat-square&logo=fastapi&logoColor=white" alt="FastAPI" />
@@ -45,7 +46,7 @@
 
 Processing multimodal Electronic Health Records (EHRs), continuous bedside ICU telemetry, and epidemiological cohorts across disparate hospital silos creates severe data latency, schema drift, and diagnostic bottlenecks.
 
-**AI Healthcare Data Lakehouse & Clinical Intelligence Platform** is a distributed data platform and clinical decision support system. Engineered around a **Databricks Unity Catalog Medallion Lakehouse (Bronze, Silver, Gold)**, it ingests and processes **1.5M+ complex patient event records** using **PySpark** and **Delta Lake 4.x**.
+**AI Healthcare Data Lakehouse & Clinical Intelligence Platform** is a distributed data platform and clinical decision support system. Engineered around a **Databricks Unity Catalog Medallion Lakehouse (Bronze, Silver, Gold)**, it ingests and processes **1.5M+ complex patient event records** using **PySpark 4.3 (Apache Spark 4.3.0)**, **Parquet 2.0 (Format v2)**, and **Delta Lake 4.x**.
 
 ### Core Engineering Proof Points:
 * **Delta Lake 4.x Liquid Clustering (`clusterBy`)**: Replaced static partitioning with dynamic multidimensional clustering on high-cardinality keys (`patient_id`, `event_timestamp`), cutting table **`MERGE` rewrite runtime by 50% (from 12 to 6 minutes)**.
