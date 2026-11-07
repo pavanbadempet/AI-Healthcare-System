@@ -45,7 +45,7 @@
 
 Processing multimodal Electronic Health Records (EHRs), continuous bedside ICU telemetry, and epidemiological cohorts across disparate hospital silos creates severe data latency, schema drift, and diagnostic bottlenecks.
 
-**AI Healthcare Data Lakehouse & Clinical Intelligence Platform** is an authentic, production-grade distributed data platform and clinical decision support system. Engineered around a **Databricks Unity Catalog Medallion Lakehouse (Bronze, Silver, Gold)**, it ingests and processes **1.5M+ complex patient event records** using **PySpark** and **Delta Lake 4.x**.
+**AI Healthcare Data Lakehouse & Clinical Intelligence Platform** is a distributed data platform and clinical decision support system. Engineered around a **Databricks Unity Catalog Medallion Lakehouse (Bronze, Silver, Gold)**, it ingests and processes **1.5M+ complex patient event records** using **PySpark** and **Delta Lake 4.x**.
 
 ### Core Engineering Proof Points:
 * **Delta Lake 4.x Liquid Clustering (`clusterBy`)**: Replaced static partitioning with dynamic multidimensional clustering on high-cardinality keys (`patient_id`, `event_timestamp`), cutting table **`MERGE` rewrite runtime by 50% (from 12 to 6 minutes)**.
@@ -261,45 +261,37 @@ All specialized domain architecture guides, clinical manuals, and ADRs are organ
 
 ---
 
-## 🔍 Discovery & Search Index
+## ⚖️ Architectural Trade-Offs & Production Decisions
 
-```
-[Databricks Lakehouse] [Delta Lake 4.x] [PySpark ETL] [Liquid Clustering] [SCD Type 2]
-[Medallion Architecture] [Apache Airflow] [OpenLineage] [pgvector HNSW] [RAG Vector Search]
-[Distributed Data Engineering] [Data Contracts] [Catalyst Optimizer] [Change Data Feed]
-[Open-Source EHR] [Clinical Decision Support System (CDSS)] [Databricks Healthcare Lakehouse]
-[OHDSI OMOP CDM v5.4] [HL7 FHIR R4 API] [Tabular Foundation Model] [Digital Twin Healthcare]
-[Conformal Prediction Sets] [SHAP Explainability] [LangGraph Clinical AI] [Ollama Local LLM]
-[Rust Axum Medical Core] [Bun Edge Gateway] [Pan-Tompkins ECG DSP] [ABDM Health Data Exchange]
-[3D Volumetric DICOM PACS Viewer] [Differential Privacy] [HIPAA Compliant Architecture] [AWS EKS]
-```
+| Architectural Component | Production Implementation | Alternative Evaluated | Engineering Rationale & Trade-Off |
+| :--- | :--- | :--- | :--- |
+| **Lakehouse Clustering** | **Delta Lake 4.x Liquid Clustering** | Static Hive Date Partitioning | Eliminates partition skew and small-file proliferation across high-cardinality keys (`patient_id`, `event_timestamp`), reducing MERGE rewrite times by 50% without requiring scheduled `OPTIMIZE Z-ORDER` repartitioning passes. |
+| **Historical Lineage** | **SCD Type 2 with Hash-Diff** | Snapshot Overwrites | Preserves immutable audit trails and historical point-in-time state (`is_current`, `valid_from`, `valid_to`), fulfilling clinical governance and HIPAA audit requirements with zero data leakage. |
+| **Semantic Cache** | **Neon Serverless PostgreSQL (`pgvector` HNSW)** | External Managed Vector DB | Avoids cross-cloud network hops and operational sprawl by collocating relational patient metadata and vector indexes in a unified ACID store, maintaining sub-100ms P99 latency. |
+| **Serving Runtime** | **Decoupled FastAPI + Rust Axum Gateway** | Pure Python Monolith | Isolates CPU-bound telemetry ingestion, DSP Pan-Tompkins ECG processing, and token streaming in Rust, freeing the Python ASGI layer for clinical business logic and LLM orchestration. |
 
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@graph": [
-    {
-      "@type": "SoftwareApplication",
-      "name": "AI Healthcare Data Lakehouse & Clinical Intelligence Platform",
-      "applicationCategory": "DeveloperApplication, HealthApplication",
-      "operatingSystem": "Linux, macOS, Windows",
-      "description": "Production-grade Databricks Medallion Lakehouse, PySpark distributed ETL, Delta Lake 4.x Liquid Clustering, SCD Type 2, and Clinical RAG Platform processing 1.5M+ records.",
-      "license": "https://www.gnu.org/licenses/agpl-3.0.html",
-      "author": {
-        "@type": "Person",
-        "name": "Pavan Badempet",
-        "url": "https://github.com/pavanbadempet"
-      }
-    }
-  ]
+---
+
+## 📖 Citation
+
+If you utilize this architecture, benchmarks, or clinical lakehouse implementation in your research or engineering designs, please cite:
+
+```bibtex
+@software{badempet2026healthcarelakehouse,
+  author = {Badempet, Pavan},
+  title = {AI Healthcare Data Lakehouse & Clinical Intelligence Platform},
+  year = {2026},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/pavanbadempet/AI-Healthcare-System}}
 }
-</script>
+```
 
 ---
 
 ## 📄 License & Community
 
-Distributed under the **GNU Affero General Public License v3.0 (AGPLv3)**.  
-Built with pride by **[Pavan Badempet](https://github.com/pavanbadempet)**.
+Distributed under the **GNU Affero General Public License v3.0 (AGPLv3)**. See [`LICENSE`](LICENSE) for details.  
+Maintained by **[Pavan Badempet](https://github.com/pavanbadempet)**.
 
-⭐ **If you find this project useful for data engineering or clinical intelligence, please star this repository!**
+⭐ **If you find this lakehouse architecture or clinical platform valuable, consider starring the repository!**
