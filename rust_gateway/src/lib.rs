@@ -1,8 +1,5 @@
 use std::ffi::CStr;
 use std::os::raw::c_char;
-use pyo3::prelude::*;
-use pyo3::wrap_pyfunction;
-use sha2::{Digest, Sha256};
 
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
@@ -22,10 +19,23 @@ mod federated_aggregator;
 pub mod invariant_gate;
 pub mod dialectical_consensus;
 pub mod vector_store;
+mod auth;
+mod appointments;
+mod telehealth;
+mod claims;
+mod telemetry;
+mod codec;
+pub mod routes;
 
-// Define stub AppState to satisfy fhir module router bindings when compiled as FFI lib
 #[derive(Clone)]
-pub struct AppState {}
+pub struct AppState {
+    pub http_client: reqwest::Client,
+    pub db_pool: db::DbPool,
+    pub secret_key: String,
+    pub sysinfo: std::sync::Arc<std::sync::Mutex<sysinfo::System>>,
+    pub vector_store: vector_store::VectorStoreState,
+    pub inference_manager: std::sync::Arc<ml::InferenceManager>,
+}
 
 // =====================================================================
 // 1. C-FFI / ctypes Direct Loader Exports
@@ -103,8 +113,18 @@ pub extern "C" fn attest_enclave_ffi(
 // 2. PyO3 Native CPython Extension Module Exports
 // =====================================================================
 
-#[pyfunction]
-fn aggregate_fedavg_py(gradients: Vec<Vec<f64>>, weights: Vec<f64>) -> PyResult<Vec<f64>> {
+#[cfg(feature = "python-ffi")]
+pub use python_ffi_exports::*;
+
+#[cfg(feature = "python-ffi")]
+mod python_ffi_exports {
+    use super::*;
+    use pyo3::prelude::*;
+    use pyo3::wrap_pyfunction;
+    use sha2::{Digest, Sha256};
+
+    #[pyfunction]
+    pub fn aggregate_fedavg_py(gradients: Vec<Vec<f64>>, weights: Vec<f64>) -> PyResult<Vec<f64>> {
     Ok(federated_aggregator::aggregate_fedavg_gradients(&gradients, &weights))
 }
 
@@ -414,4 +434,6 @@ fn rust_gateway_ffi(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(deliberate_dung_consensus_py, m)?)?;
     Ok(())
 }
+}
+
 

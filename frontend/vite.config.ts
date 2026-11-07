@@ -22,6 +22,17 @@ export default defineConfig(({ command }) => ({
   server: {
     host: '127.0.0.1',
     port: 3000,
+    proxy: {
+      '/v1': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        ws: true,
+      },
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+      },
+    },
     warmup: {
       clientFiles: ['./src/App.tsx', './src/main.tsx', './src/pages/Dashboard.tsx', './src/pages/Login.tsx', './src/pages/Patients.tsx'],
     },

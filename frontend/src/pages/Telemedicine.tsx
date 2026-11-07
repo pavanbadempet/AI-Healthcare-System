@@ -10,6 +10,8 @@ import {
 } from "@/lib/api";
 import { fetchRecommendedSpecialists, bookSpecialCareAppointment } from "@/lib/apiIntelligence";
 import { useAuthStore } from "@/lib/auth";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAppointmentsQuery, useDoctorsQuery, useBookAppointmentMutation } from "@/hooks/useAppointments";
 import { motion, AnimatePresence } from "framer-motion";
 import Tooltip from "@/components/layout/Tooltip";
 import { 
@@ -39,9 +41,11 @@ import { toast } from "@/lib/toast";
 
 export default function TelemedicinePage() {
   const { user } = useAuthStore();
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [doctors, setDoctors] = useState<{ id: number; name: string; specialization: string }[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: rawAppointments, isLoading: loadingAppointments } = useAppointmentsQuery();
+  const { data: rawDoctors, isLoading: loadingDoctors } = useDoctorsQuery();
+  const bookAppointmentMutation = useBookAppointmentMutation();
+
   const [booking, setBooking] = useState(false);
 
   const FALLBACK_APPS: Appointment[] = [
@@ -74,6 +78,14 @@ export default function TelemedicinePage() {
     { id: 2, name: "Dr. Elena Rostova, MD", specialization: "Nephrology & Renal Transplant" },
     { id: 3, name: "Dr. Priya Patel, MD", specialization: "Pulmonary & Critical Care" },
   ];
+
+  const appointments = (rawAppointments && rawAppointments.length > 0)
+    ? rawAppointments
+    : (loadingAppointments ? [] : FALLBACK_APPS);
+  const doctors = (rawDoctors && rawDoctors.length > 0)
+    ? rawDoctors
+    : (loadingDoctors ? [] : FALLBACK_DOCS);
+  const loading = loadingAppointments && loadingDoctors;
 
   // Manual form states
   const [selectedDoctor, setSelectedDoctor] = useState("1");
@@ -135,17 +147,6 @@ export default function TelemedicinePage() {
   };
 
   useEffect(() => {
-    Promise.all([getAppointments(), getDoctors()])
-      .then(([apps, docs]) => {
-        setAppointments(apps && apps.length > 0 ? apps : FALLBACK_APPS);
-        setDoctors(docs && docs.length > 0 ? docs : FALLBACK_DOCS);
-      })
-      .catch(() => {
-        setAppointments(FALLBACK_APPS);
-        setDoctors(FALLBACK_DOCS);
-      })
-      .finally(() => setLoading(false));
-
     if (user?.id) {
       void loadRecommendations();
     }
@@ -209,12 +210,7 @@ export default function TelemedicinePage() {
   }, [isAudioMode]);
 
   const refreshAppointments = async () => {
-    try {
-      const apps = await getAppointments();
-      setAppointments(apps);
-    } catch (err) {
-      console.error("Failed to refresh appointments:", err);
-    }
+    await queryClient.invalidateQueries({ queryKey: ['appointments'] });
   };
 
   const handleBook = async (e: React.FormEvent) => {
@@ -234,14 +230,16 @@ export default function TelemedicinePage() {
           request_female_clinician: requestFemale,
           home_visit_van: homeVisitVan
         });
+        await refreshAppointments();
       } else {
-        await bookAppointment({
+        const doctor = doctors.find(d => d.id === parseInt(selectedDoctor));
+        await bookAppointmentMutation.mutateAsync({
           doctor_id: parseInt(selectedDoctor),
           appointment_date: `${dateStr}T${timeStr}:00`,
-          notes
+          notes,
+          specialist: doctor ? doctor.specialization : "General Physician",
         });
       }
-      await refreshAppointments();
       setSelectedDoctor("");
       setDateStr("");
       setTimeStr("");

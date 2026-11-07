@@ -16,6 +16,7 @@ import {
 } from "@/lib/api";
 import { fetchClinicalTrials, fetchExternalRecords, fetchHealthPassport, orderLabKit, fetchLabKits } from "@/lib/apiIntelligence";
 import { notifyPatientCareEventsUpdated } from "@/lib/patientCareEvents";
+import { usePatientVitalsQuery, usePatientOrganHealthQuery, useCreateClinicalOrderMutation } from "@/hooks/usePatientDetail";
 import { toast } from '@/lib/toast';
 import { ChevronLeft, FileDigit, BrainCircuit, Loader2, ShieldAlert, RefreshCw, HeartPulse, Info, Check, Plus, Sparkles, QrCode, Globe, Activity, ShieldCheck } from "lucide-react";
 const LazyRadarChart = lazy(() => import("@/components/operations/LazyRadarChart"));
@@ -126,6 +127,23 @@ export default function PatientEMRView({
 
   const [organHealth, setOrganHealth] = useState<OrganHealthResult | null>(null);
   const [organHealthLoading, setOrganHealthLoading] = useState(false);
+
+  const { data: vitalsData } = usePatientVitalsQuery(patientId, mounted);
+  const { data: organHealthData, refetch: refetchOrganHealth } = usePatientOrganHealthQuery(patientId, mounted);
+  const createOrderMutation = useCreateClinicalOrderMutation(patientId);
+
+  useEffect(() => {
+    if (vitalsData) {
+      setTelemetryState(vitalsData);
+    }
+  }, [vitalsData]);
+
+  useEffect(() => {
+    if (organHealthData) {
+      setOrganHealth(organHealthData);
+    }
+  }, [organHealthData]);
+
   const [showGuide, setShowGuide] = useState(false);
   const [submittingOrders, setSubmittingOrders] = useState<Record<string, boolean>>({});
   const [submittedOrders, setSubmittedOrders] = useState<Record<string, boolean>>({});
@@ -231,14 +249,13 @@ export default function PatientEMRView({
     setSubmittingOrders(prev => ({ ...prev, [key]: true }));
     setOrderError(null);
     try {
-      await createClinicalOrder({
+      await createOrderMutation.mutateAsync({
         patient_id: patientId,
         order_type: order.order_type,
         title: order.title,
         notes: order.reason,
       });
       setSubmittedOrders(prev => ({ ...prev, [key]: true }));
-      notifyPatientCareEventsUpdated(patientId);
     } catch (err) {
       setOrderError(err instanceof Error ? err.message : "Failed to submit order");
     } finally {
@@ -247,61 +264,12 @@ export default function PatientEMRView({
   };
 
   useEffect(() => {
-    if (!mounted || !Number.isFinite(patientId) || patientId <= 0) return;
-    getDoctorPatientMonitoringSignals(patientId)
-      .then((data) => {
-        if (data && data.latest_vitals && data.latest_vitals.length > 0) {
-          const v = data.latest_vitals[0];
-          setTelemetryState({
-            hr: v.heart_rate ?? 74,
-            bp: (v.systolic_bp && v.diastolic_bp) ? `${Math.round(v.systolic_bp)}/${Math.round(v.diastolic_bp)}` : "120/80",
-            spo2: v.spo2 ?? 98,
-            temp: v.temperature_c ?? 36.8,
-          });
-        }
-      })
-      .catch((err) => console.warn("Failed to load authentic patient vitals:", err));
-  }, [patientId, mounted]);
-
-  useEffect(() => {
-    if (!mounted || !patientId) return;
-    const timer = setInterval(() => {
-      getDoctorPatientMonitoringSignals(patientId)
-        .then((res) => {
-          const v = res?.latest_vitals?.[0];
-          if (v) {
-            setTelemetryState({
-              hr: v.heart_rate ?? 74,
-              bp: (v.systolic_bp && v.diastolic_bp) ? `${Math.round(v.systolic_bp)}/${Math.round(v.diastolic_bp)}` : "120/80",
-              spo2: v.spo2 ?? 98,
-              temp: v.temperature_c ?? 36.8,
-            });
-          }
-        })
-        .catch(() => {});
-    }, 5000);
-    return () => clearInterval(timer);
-  }, [patientId, mounted]);
-
-  useEffect(() => {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (!mounted || !Number.isFinite(patientId) || patientId <= 0) return;
-    setOrganHealthLoading(true);
-    getPatientOrganHealth(patientId)
-      .then(setOrganHealth)
-      .catch((err) => console.error("Failed to fetch organ health:", err))
-      .finally(() => setOrganHealthLoading(false));
-  }, [patientId, mounted]);
-
   const handleRecalculateOrganHealth = () => {
     setOrganHealthLoading(true);
-    getPatientOrganHealth(patientId)
-      .then(setOrganHealth)
-      .catch(console.error)
-      .finally(() => setOrganHealthLoading(false));
+    refetchOrganHealth().finally(() => setOrganHealthLoading(false));
   };
 
   useEffect(() => {

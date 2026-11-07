@@ -77,6 +77,36 @@ vi.mock('@/lib/i18n', () => ({
   LanguageProvider: ({ children }: any) => children,
 }));
 
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+vi.mock('@testing-library/react', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@testing-library/react')>();
+  return {
+    ...actual,
+    render: (ui: any, options: any) => {
+      const client = new QueryClient({
+        defaultOptions: {
+          queries: {
+            retry: false,
+            staleTime: 0,
+            gcTime: 0,
+            networkMode: 'always',
+          },
+          mutations: {
+            retry: false,
+            networkMode: 'always',
+          },
+        },
+      });
+      const Wrapper = ({ children }: any) => {
+        const inner = options?.wrapper ? React.createElement(options.wrapper, null, children) : children;
+        return React.createElement(QueryClientProvider, { client }, inner);
+      };
+      return actual.render(ui, { ...options, wrapper: Wrapper });
+    },
+  };
+});
+
 process.env.VITE_PUBLIC_API_URL = 'http://127.0.0.1:8000';
 
 const CanvasElement = (globalThis as any).HTMLCanvasElement || (globalThis as any).window?.HTMLCanvasElement;

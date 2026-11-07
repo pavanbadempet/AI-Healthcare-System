@@ -15,6 +15,15 @@ import {
 } from "@/lib/api";
 import { toast } from "@/lib/toast";
 import { fetchTriageQueue } from "@/lib/apiIntelligence";
+import { 
+  useHospitalBedsQuery, 
+  useDepartmentsQuery, 
+  useTriageQueueQuery, 
+  useAssignBedMutation,
+  FALLBACK_BEDS,
+  FALLBACK_DEPARTMENTS,
+  FALLBACK_TRIAGE
+} from "@/hooks/useHospitalCapacity";
 import Tooltip from "@/components/layout/Tooltip";
 import { OnboardingGuideModal } from "@/components/modals/OnboardingGuideModal";
 
@@ -107,8 +116,14 @@ export default function CapacityPage() {
   const [modalError, setModalError] = useState<string | null>(null);
   const [modalSuccess, setModalSuccess] = useState<string | null>(null);
 
-  const [triageQueue, setTriageQueue] = useState<any[]>([]);
-  const [loadingTriage, setLoadingTriage] = useState(false);
+  const { data: bedsData } = useHospitalBedsQuery("available");
+  const { data: deptsData } = useDepartmentsQuery();
+  const { data: triageQueueData, isLoading: loadingTriage, refetch: refetchTriageQueue } = useTriageQueueQuery();
+  const assignBedMutation = useAssignBedMutation();
+
+  const triageQueue = triageQueueData && triageQueueData.length > 0 ? triageQueueData : FALLBACK_TRIAGE;
+  const loadTriageQueue = () => { void refetchTriageQueue(); };
+
   const [inspectBed, setInspectBed] = useState<{ unit: string; bedCode: string; status: "occupied" | "cleaning" | "open"; bedIdx?: number } | null>(null);
   const [transferringBed, setTransferringBed] = useState<{ unit: string; bedCode: string } | null>(null);
   const [targetBedCode, setTargetBedCode] = useState("ICU-A-02");
@@ -124,45 +139,14 @@ export default function CapacityPage() {
     toast.success(`Inspecting next available bed ${bedCode} in ${freeUnit.unit}`);
   };
 
-  const loadTriageQueue = async () => {
-    setLoadingTriage(true);
-    try {
-      const data = await fetchTriageQueue();
-      if (data.queue && data.queue.length > 0) {
-        setTriageQueue(data.queue);
-      } else {
-        setTriageQueue([
-          { patient_id: 11, full_name: "Patricia Moore", esi_level: 2, triage_reason: "Acute Dyspnea / Asthma Exacerbation", arrival_time: "12m ago" },
-          { patient_id: 12, full_name: "Thomas Wright", esi_level: 3, triage_reason: "Hyperglycemia / Diabetic Ketosis Workup", arrival_time: "28m ago" },
-          { patient_id: 13, full_name: "Clara Oswald", esi_level: 4, triage_reason: "Left Flank Pain / Suspected Nephrolithiasis", arrival_time: "45m ago" },
-          { patient_id: 14, full_name: "George Bailey", esi_level: 5, triage_reason: "Minor Forearm Abrasion & Wound Dressing", arrival_time: "58m ago" },
-        ]);
-      }
-    } catch (err) {
-      console.warn("Using offline triage queue fallback:", err);
-      setTriageQueue([
-        { patient_id: 11, full_name: "Patricia Moore", esi_level: 2, triage_reason: "Acute Dyspnea / Asthma Exacerbation", arrival_time: "12m ago" },
-        { patient_id: 12, full_name: "Thomas Wright", esi_level: 3, triage_reason: "Hyperglycemia / Diabetic Ketosis Workup", arrival_time: "28m ago" },
-        { patient_id: 13, full_name: "Clara Oswald", esi_level: 4, triage_reason: "Left Flank Pain / Suspected Nephrolithiasis", arrival_time: "45m ago" },
-        { patient_id: 14, full_name: "George Bailey", esi_level: 5, triage_reason: "Minor Forearm Abrasion & Wound Dressing", arrival_time: "58m ago" },
-      ]);
-    } finally {
-      setLoadingTriage(false);
-    }
-  };
-
   useEffect(() => {
     setMounted(true);
-    loadTriageQueue();
     // Pre-fetch doctor patients so bed inspection details are immediately authentic
     getDoctorPatients()
       .then(p => {
         if (p && p.length > 0) setPatients(p);
       })
       .catch(() => {});
-    // Refresh triage queue every 15 seconds
-    const interval = setInterval(loadTriageQueue, 15000);
-    return () => clearInterval(interval);
   }, []);
 
   const openAssignmentModal = async (preset?: {
@@ -285,20 +269,7 @@ export default function CapacityPage() {
       const patient = patients.find(p => p.patient_id === Number(selectedPatientId));
       let encounterId = patient?.latest_encounter_id;
 
-      if (!encounterId) {
-        try {
-          const newEncounter = await createEncounter({
-            patient_id: Number(selectedPatientId),
-            department_id: Number(selectedDepartmentId),
-            encounter_type: "IPD",
-          });
-          encounterId = newEncounter?.id;
-        } catch (encErr) {
-          console.warn("Client encounter creation deferred to backend admission handler:", encErr);
-        }
-      }
-
-      await createAdmission({
+      await assignBedMutation.mutateAsync({
         encounter_id: encounterId ?? undefined,
         patient_id: Number(selectedPatientId),
         department_id: Number(selectedDepartmentId),

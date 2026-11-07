@@ -1,39 +1,34 @@
-
 import { useState, useRef, useEffect, lazy, Suspense } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/lib/auth";
 import { prefetchRoute } from "@/lib/prefetch";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, ChevronDown, BrainCircuit, ShieldCheck, HelpCircle, BookOpen, Key, AlertTriangle, Cpu, X, Bell, BellRing, CreditCard } from "lucide-react";
+import {
+  Sparkles,
+  LayoutDashboard,
+  Users,
+  Calendar,
+  BedDouble,
+  MessageSquare,
+  AlertTriangle,
+  Menu,
+} from "lucide-react";
 import Tooltip from "./Tooltip";
 import { useTranslation } from "@/lib/i18n";
-import { toast } from "@/lib/toast";
-import {
-  type MenuItem, type MenuGroup,
-  operationsItems, diagnosticsItems, intelligenceItems, healthcareSystemItems,
-  MENU_GROUPS, getIconStyles, colorKeyFromMenuItem,
-  COMMAND_ITEMS,
-} from "./nav-config";
-import MegaMenuPanel from "./MegaMenuPanel";
 import CommandSearch from "./CommandSearch";
-import TelemetryDropdown from "./TelemetryDropdown";
 import LanguageSelector from "./LanguageSelector";
 import ProfileDropdown from "./ProfileDropdown";
 import { useNetworkStatus } from "@/lib/offlineSync";
 
 const MobileDrawer = lazy(() => import("@/components/layout/MobileDrawer"));
-const ShiftHandoffModal = lazy(() => import("@/components/modals/ShiftHandoffModal").then(m => ({ default: m.ShiftHandoffModal })));
-const SoapDenialAuditModal = lazy(() => import("@/components/modals/SoapDenialAuditModal").then(m => ({ default: m.SoapDenialAuditModal })));
-const DischargeSummaryModal = lazy(() => import("@/components/modals/DischargeSummaryModal").then(m => ({ default: m.DischargeSummaryModal })));
-const TelephonyRoutingModal = lazy(() => import("@/components/modals/TelephonyRoutingModal").then(m => ({ default: m.TelephonyRoutingModal })));
-const SecurityLockoutModal = lazy(() => import("@/components/modals/SecurityLockoutModal").then(m => ({ default: m.SecurityLockoutModal })));
-const SelfHealingMaintenanceModal = lazy(() => import("@/components/modals/SelfHealingMaintenanceModal").then(m => ({ default: m.SelfHealingMaintenanceModal })));
-const BillingClaimsModal = lazy(() => import("@/components/modals/BillingClaimsModal").then(m => ({ default: m.BillingClaimsModal })));
-const OnboardingGuideModal = lazy(() => import("@/components/modals/OnboardingGuideModal").then(m => ({ default: m.OnboardingGuideModal })));
 
-/* ═══════════════════════════════════════════════════
-   TopNav Component
-   ═══════════════════════════════════════════════════ */
+interface NavLinkItem {
+  id: string;
+  label: string;
+  href: string;
+  icon: React.ElementType;
+}
+
 export default function TopNav({
   mobileOpen,
   setMobileOpen,
@@ -43,30 +38,15 @@ export default function TopNav({
 }) {
   const location = useLocation();
   const pathname = location.pathname;
-  const navigate = useNavigate();
   const { user, logout } = useAuthStore();
   const { language, setLanguage, t } = useTranslation();
-
   const { isOnline, queueCount } = useNetworkStatus();
-
-  // Menu & UI state
-  const [activeMenu, setActiveMenu] = useState<string | null>(null);
-  const [hoveredTab, setHoveredTab] = useState<string | null>(null);
-  const [guideOpen, setGuideOpen] = useState(false);
-  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
-  const [showHandoffModal, setShowHandoffModal] = useState(false);
-  const [showSoapAuditModal, setShowSoapAuditModal] = useState(false);
-  const [showDischargeModal, setShowDischargeModal] = useState(false);
-  const [showTelephonyModal, setShowTelephonyModal] = useState(false);
-  const [showSecurityModal, setShowSecurityModal] = useState(false);
-  const [showHealingModal, setShowHealingModal] = useState(false);
-
-  const [showBillingModal, setShowBillingModal] = useState(false);
 
   const [alarm, setAlarm] = useState<{ active: boolean; bed?: string; name?: string; hr?: number } | null>(null);
   const [showNotifications, setShowNotifications] = useState(false);
-
+  const notificationsRef = useRef<HTMLDivElement>(null);
   const alarmRef = useRef(alarm);
+
   useEffect(() => {
     alarmRef.current = alarm;
   }, [alarm]);
@@ -75,12 +55,9 @@ export default function TopNav({
     const handleAlarm = (e: Event) => {
       const customEvent = e as CustomEvent;
       const newAlarm = customEvent.detail;
-      
-      // Only auto-open on the transition from inactive to active
       if (newAlarm?.active && !alarmRef.current?.active) {
         setShowNotifications(true);
       }
-      
       setAlarm(newAlarm);
     };
     window.addEventListener("clinical-alarm", handleAlarm);
@@ -92,13 +69,6 @@ export default function TopNav({
     setShowNotifications(false);
   };
 
-  // Refs
-  const navContainerRef = useRef<HTMLDivElement>(null);
-  const notificationsRef = useRef<HTMLDivElement>(null);
-  const hoverTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-
-  // Click outside notifications dropdown to close it
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
       if (
@@ -113,373 +83,142 @@ export default function TopNav({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showNotifications]);
 
-  // Close notifications dropdown when activeMenu (mega menu) is opened
-  useEffect(() => {
-    if (activeMenu) {
-      setShowNotifications(false);
-    }
-  }, [activeMenu]);
-
-  // Dynamic menu items and groups computation
-  const dynamicOperationsItems = operationsItems.map(item => {
-    if (item.id === "dashboard") return { ...item, title: t.commandCenter };
-    if (item.id === "patients") return { ...item, title: t.patientRegistry };
-    if (item.id === "capacity") return { ...item, title: t.infrastructure };
-    if (item.id === "telemedicine") return { ...item, title: t.telemedicine };
-    return item;
-  });
-
-  const dynamicIntelligenceItems = intelligenceItems.map(item => {
-    if (item.id === "copilot") return { ...item, title: t.engageCopilot };
-    if (item.id === "architecture") return { ...item, title: t.adminConsole };
-    return item;
-  });
-
-  const dynamicHealthcareSystemItems = healthcareSystemItems.map(item => {
-    return item;
-  });
-
-  const dynamicMenuGroups = [
-    {
-      key: "operations",
-      label: language === "es" ? "Operaciones" : language === "hi" ? "संचालन" : "Operations",
-      emoji: "🛰️",
-      accentColor: "text-indigo-400 data-[state=open]:text-indigo-400",
-      items: dynamicOperationsItems,
-      cols: 2,
-      routes: ["/dashboard", "/patients", "/capacity", "/telemedicine", "/infrastructure"],
-    },
-    {
-      key: "diagnostics",
-      label: language === "es" ? "Diagnósticos AI" : language === "hi" ? "निदान एआई" : "Diagnostics AI",
-      emoji: "🧬",
-      accentColor: "text-rose-400 data-[state=open]:text-rose-400",
-      items: diagnosticsItems,
-      cols: 2,
-      routes: ["/predict/heart", "/predict/lungs", "/predict/liver", "/predict/kidney", "/predict/diabetes"],
-    },
-    {
-      key: "intelligence",
-      label: language === "es" ? "Inteligencia" : language === "hi" ? "बुद्धिमत्ता" : "Intelligence",
-      emoji: "⚡",
-      accentColor: "text-purple-400 data-[state=open]:text-purple-400",
-      items: dynamicIntelligenceItems,
-      cols: 1,
-      routes: ["/chat", "/about"],
-    },
-    {
-      key: "AI Healthcare System",
-      label: language === "es" ? "Sistema AI" : language === "hi" ? "एआई सिस्टम" : "AI System",
-      emoji: "🚀",
-      accentColor: "text-sky-400 data-[state=open]:text-sky-400",
-      items: dynamicHealthcareSystemItems,
-      cols: 2,
-      routes: ["/apps", "/federated", "/intelligence", "/companion"],
-    },
+  // Clean, human clinical navigation links
+  const navLinks: NavLinkItem[] = [
+    { id: "dashboard", label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { id: "patients", label: "Patients", href: "/patients", icon: Users },
+    { id: "telemedicine", label: "Visits & Telehealth", href: "/telemedicine", icon: Calendar },
+    { id: "capacity", label: "Beds & Rooms", href: "/capacity", icon: BedDouble },
+    { id: "copilot", label: "AI Copilot", href: "/chat", icon: MessageSquare },
   ];
-
-  const closeAllMenus = () => {
-    setActiveMenu(null);
-    setHoveredTab(null);
-  };
-
-  // Reset menu on route change
-  useEffect(() => {
-    closeAllMenus();
-  }, [pathname]);
-
-  // Click / touch outside handler for menu
-  useEffect(() => {
-    const handleClickOutside = (event: Event) => {
-      const target = event.target as Node;
-      if (activeMenu && navContainerRef.current && !navContainerRef.current.contains(target)) {
-        closeAllMenus();
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    document.addEventListener("touchstart", handleClickOutside);
-    document.addEventListener("pointerdown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-      document.removeEventListener("touchstart", handleClickOutside);
-      document.removeEventListener("pointerdown", handleClickOutside);
-    };
-  }, [activeMenu]);
-
-  // Escape key handler to close menu
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        closeAllMenus();
-        setShowNotifications(false);
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  // Mousemove distance tracking: auto-close menu when cursor moves away from nav & menu bounds
-  useEffect(() => {
-    if (!activeMenu) return;
-
-    let rafId = 0;
-    const handleMouseMove = (e: MouseEvent) => {
-      if (rafId) return;
-      rafId = requestAnimationFrame(() => {
-        rafId = 0;
-        if (!navContainerRef.current) return;
-        const rect = navContainerRef.current.getBoundingClientRect();
-        const buffer = 40; // 40px buffer around header nav & mega menu bounds
-        const isOutsideX = e.clientX < rect.left - buffer || e.clientX > rect.right + buffer;
-        const isOutsideY = e.clientY < rect.top - buffer || e.clientY > rect.top + 550; // covers nav + mega menu height
-
-        if (isOutsideX || isOutsideY) {
-          if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-          closeAllMenus();
-        }
-      });
-    };
-
-    window.addEventListener("mousemove", handleMouseMove, { passive: true });
-    return () => {
-      if (rafId) cancelAnimationFrame(rafId);
-      window.removeEventListener("mousemove", handleMouseMove);
-    };
-  }, [activeMenu]);
-
-  const handleMouseEnter = (menuKey: string) => {
-    if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-    setActiveMenu(menuKey);
-  };
-
-  useEffect(() => {
-    const toggleTheme = () => {
-      const root = document.documentElement;
-      const currentTheme = root.getAttribute("data-theme");
-
-      if (currentTheme === "light") {
-        root.setAttribute("data-theme", "dark");
-      } else {
-        root.setAttribute("data-theme", "light");
-      }
-    };
-    const handleKeyDown = (event: KeyboardEvent) => {
-      const isCtrlK = event.ctrlKey && event.key.toLowerCase() === ("k");
-      const isCmdShiftD = event.metaKey && event.shiftKey && event.key.toLowerCase() === ("d");
-      if (isCtrlK || isCmdShiftD) {
-        event.preventDefault();
-        toggleTheme();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, []);
-
-  const handleMouseLeave = () => {
-    hoverTimeoutRef.current = setTimeout(() => {
-      setActiveMenu(null);
-    }, 150);
-  };
 
   return (
     <>
-      <header
-        className="fixed top-2.5 left-1/2 -translate-x-1/2 w-[calc(100%-1.5rem)] md:w-[calc(100%-3rem)] max-w-[1550px] h-14 z-50 flex items-center px-4 md:px-6 justify-between border border-[var(--border)] bg-[var(--bg-card)] backdrop-blur-2xl rounded-2xl shadow-[var(--shadow-soft)] transition-all duration-300 hover:border-[var(--border-focus)] hover:shadow-[0_4px_30px_rgba(95,95,247,0.08)]"
-        role="banner"
-      >
-        {/* Top glow */}
-        <div
-          className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)] to-transparent opacity-60"
-          aria-hidden="true"
-        />
-
+      <header className="sticky top-0 z-40 w-full h-14 bg-zinc-950/80 backdrop-blur-xl border-b border-white/[0.06] px-4 md:px-6 flex items-center justify-between transition-colors">
         {/* ─── Left: Brand Logo ─── */}
         <Link
           to="/dashboard"
-          onMouseEnter={() => prefetchRoute('/dashboard')}
-          className="flex items-center gap-2 shrink-0 group"
+          onMouseEnter={() => prefetchRoute("/dashboard")}
+          className="flex items-center gap-2.5 shrink-0 group focus:outline-none"
           aria-label="AI Healthcare System Dashboard"
         >
-          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[var(--accent)] to-[var(--accent-purple)] flex items-center justify-center text-white shadow-[0_0_12px_rgba(99,102,241,0.25)] group-hover:scale-105 transition-transform duration-200">
-            <Sparkles size={15} aria-hidden="true" />
+          <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-sm shadow-indigo-500/20 group-hover:scale-105 transition-transform duration-200">
+            <Sparkles size={16} aria-hidden="true" />
           </div>
-          <div className="hidden xl:block">
-            <h1 className="text-xs font-bold text-[var(--text-primary)] tracking-wide uppercase">
-              AI Healthcare{" "}
-              <span className="text-[var(--text-secondary)] font-normal">System</span>
+          <div className="flex flex-col">
+            <h1 className="text-xs font-bold text-zinc-100 tracking-tight flex items-center gap-1.5 leading-none">
+              AI Healthcare <span className="text-indigo-400 font-semibold">System</span>
             </h1>
+            <span className="text-[10px] text-zinc-400 font-medium tracking-normal mt-0.5 leading-none">
+              Clinical Workspace
+            </span>
           </div>
         </Link>
 
-
-        {/* ─── Center: Navigation with Mega Menus ─── */}
+        {/* ─── Center: Essential Direct Navigation ─── */}
         <nav
-          ref={navContainerRef}
-          className="hidden lg:flex items-center gap-0.5 xl:gap-1.5 h-full relative"
-          onMouseLeave={() => {
-            handleMouseLeave();
-            setHoveredTab(null);
-          }}
-          aria-label="Main navigation"
+          className="hidden md:flex items-center gap-1 h-full"
+          aria-label="Main clinical navigation"
         >
-          {dynamicMenuGroups.map((group) => {
-            const isCurrentRoute = group.routes.some((r) => pathname?.startsWith(r));
+          {navLinks.map((link) => {
+            const isActive =
+              link.href === "/dashboard"
+                ? pathname === "/dashboard" || pathname === "/"
+                : pathname?.startsWith(link.href);
+
+            const Icon = link.icon;
 
             return (
-              <div
-                key={group.key}
-                className="h-full flex items-center relative"
-                onMouseEnter={() => {
-                  if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-                  setActiveMenu(group.key);
-                  setHoveredTab(group.key);
-                }}
+              <Link
+                key={link.id}
+                to={link.href}
+                onMouseEnter={() => prefetchRoute(link.href)}
+                className={`relative px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-2 transition-colors duration-150 ${
+                  isActive
+                    ? "text-white font-semibold"
+                    : "text-zinc-400 hover:text-zinc-200 hover:bg-white/[0.03]"
+                }`}
               >
-                <button
-                  onClick={() => {
-                    if (activeMenu === group.key) {
-                      setActiveMenu(null);
-                      setHoveredTab(null);
-                    } else {
-                      setActiveMenu(group.key);
-                      setHoveredTab(group.key);
-                    }
-                  }}
-                  className={`relative z-10 px-1.5 xl:px-3 py-1.5 rounded-lg text-[10px] font-black tracking-wider uppercase transition-all duration-200 flex items-center gap-1.5 cursor-pointer ${
-                    activeMenu === group.key || isCurrentRoute
-                      ? "text-[var(--text-primary)]"
-                      : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                <Icon
+                  size={14}
+                  className={`transition-colors duration-150 ${
+                    isActive ? "text-indigo-400" : "text-zinc-400"
                   }`}
-                  aria-expanded={activeMenu === group.key}
-                  aria-haspopup="true"
-                >
-                  <span className="text-sm">{group.emoji}</span>
-                  {group.label}
-                  <ChevronDown
-                    size={11}
-                    className={`transition-transform duration-200 ${
-                      activeMenu === group.key
-                        ? "rotate-180 text-[var(--accent)]"
-                        : "text-[var(--text-dim)]"
-                    }`}
-                    aria-hidden="true"
-                  />
-                </button>
+                />
+                <span>{link.label}</span>
 
-                {/* Hover pill */}
-                {hoveredTab === group.key && (
+                {/* Tactile active indicator pill */}
+                {isActive && (
                   <motion.div
-                    layoutId="nav-hover-pill"
-                    className="absolute inset-0 bg-white/[0.04] border border-white/[0.02] rounded-lg -z-10"
-                    transition={{ type: "spring", stiffness: 350, damping: 28 }}
+                    layoutId="top-nav-active-pill"
+                    className="absolute inset-0 bg-white/[0.06] border border-white/[0.08] rounded-lg -z-10 shadow-sm"
+                    transition={{ type: "spring", stiffness: 450, damping: 35 }}
                   />
                 )}
-
-                {/* Active underline */}
-                {isCurrentRoute && activeMenu !== group.key && (
-                  <motion.div
-                    layoutId="nav-active-pill"
-                    className="absolute bottom-1 inset-x-3.5 h-0.5 bg-[var(--accent)] rounded-full"
-                    transition={{ type: "spring", stiffness: 380, damping: 30 }}
-                  />
-                )}
-              </div>
+              </Link>
             );
           })}
-
-          {/* ─── Mega Menu Panel ─── */}
-          <AnimatePresence mode="wait">
-            {activeMenu && (
-              <motion.div
-                key={activeMenu}
-                initial={{ opacity: 0, y: 12, scale: 0.97 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 12, scale: 0.97 }}
-                transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                onMouseEnter={() => {
-                  if (hoverTimeoutRef.current) clearTimeout(hoverTimeoutRef.current);
-                }}
-                onMouseLeave={() => {
-                  handleMouseLeave();
-                  setHoveredTab(null);
-                }}
-                className="absolute top-[44px] left-1/2 -translate-x-1/2 pt-2 z-50 gpu-accelerated"
-              >
-                {(() => {
-                  const group = dynamicMenuGroups.find((g) => g.key === activeMenu);
-                  if (!group) return null;
-                  return (
-                    <MegaMenuPanel
-                      items={group.items}
-                      cols={group.cols}
-                      onNavigate={closeAllMenus}
-                    />
-                  );
-                })()}
-              </motion.div>
-            )}
-          </AnimatePresence>
         </nav>
 
-        {/* ─── Right: Actions ─── */}
-        <div className="flex items-center gap-2 md:gap-3 shrink-0">
-          {/* Offline Queue Indicator (only visible when offline) */}
+        {/* ─── Right: Actions & Profile ─── */}
+        <div className="flex items-center gap-2.5 shrink-0">
+          {/* Offline Queue Indicator */}
           {!isOnline && (
-            <div className="flex items-center gap-1.5 px-2.5 py-1 border border-amber-500/20 bg-amber-500/10 rounded-lg text-[10px] font-extrabold tracking-wider uppercase text-amber-500">
-              <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-ping" />
+            <div className="flex items-center gap-1.5 px-2.5 py-1 border border-amber-500/30 bg-amber-500/10 rounded-lg text-[10px] font-semibold text-amber-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping" />
               <span>Offline ({queueCount})</span>
             </div>
           )}
 
-          {/* Command Search */}
+          {/* Quick Command Search (⌘K) */}
           <CommandSearch user={user} />
 
-          {/* Notification Bell Dropdown */}
+          {/* Vitals Emergency Alarm Bell */}
           <div ref={notificationsRef} className="relative flex items-center">
             <Tooltip content={alarm?.active ? "Active Vitals Alarm!" : "Notifications"} position="bottom">
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
                 className={`relative p-2 rounded-lg border transition-all duration-200 cursor-pointer ${
                   alarm?.active
-                    ? "bg-red-500/10 border-red-500/30 text-red-500 animate-pulse hover:bg-red-500/20"
-                    : "text-[var(--text-secondary)] hover:text-[var(--accent)] border-transparent hover:border-[var(--border)] hover:bg-white/[0.02]"
+                    ? "bg-red-500/15 border-red-500/40 text-red-400 animate-pulse hover:bg-red-500/25"
+                    : "text-zinc-400 hover:text-zinc-200 border-transparent hover:border-white/[0.06] hover:bg-white/[0.03]"
                 }`}
                 aria-label="View notifications"
               >
-                {alarm?.active ? <BellRing size={15} className="animate-bounce" /> : <Bell size={15} />}
+                <AlertTriangle size={15} />
                 {alarm?.active && (
-                  <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-red-500 border-2 border-[var(--bg-card)]" />
+                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 ring-2 ring-zinc-950 animate-ping" />
                 )}
               </button>
             </Tooltip>
 
-            {/* Notifications Popover */}
+            {/* Notification Dropdown */}
             <AnimatePresence>
               {showNotifications && (
                 <motion.div
-                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  initial={{ opacity: 0, y: 8, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  exit={{ opacity: 0, y: 8, scale: 0.98 }}
                   transition={{ duration: 0.15 }}
-                  className="absolute right-0 top-11 w-80 p-4 rounded-xl border border-[var(--border)] bg-[var(--bg-card)] backdrop-blur-2xl shadow-[var(--shadow-hard)] z-50 space-y-3"
+                  className="absolute right-0 top-full mt-2 w-80 bg-zinc-900 border border-white/[0.08] shadow-2xl rounded-xl p-4 z-50 text-xs"
                 >
-                  <div className="flex items-center justify-between pb-2 border-b border-white/[0.04]">
-                    <span className="text-[11px] font-black tracking-wider uppercase text-[var(--text-primary)]">Notifications</span>
+                  <div className="flex items-center justify-between border-b border-white/[0.06] pb-2 mb-3">
+                    <span className="font-semibold text-zinc-200">Clinical Alerts</span>
                     {alarm?.active && (
-                      <span className="px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 text-[8px] font-black tracking-widest uppercase">Critical</span>
+                      <span className="px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 text-[10px] font-semibold uppercase">
+                        Critical
+                      </span>
                     )}
                   </div>
 
                   {alarm?.active ? (
                     <div className="space-y-3">
                       <div className="flex items-start gap-2.5">
-                        <AlertTriangle className="text-red-500 shrink-0 mt-0.5" size={15} />
+                        <AlertTriangle className="text-red-400 shrink-0 mt-0.5" size={16} />
                         <div>
-                          <p className="font-extrabold text-[10px] text-red-500 uppercase tracking-wide">Emergency Vitals Alarm</p>
-                          <p className="text-[11px] text-[var(--text-secondary)] mt-1 font-mono leading-relaxed text-left">
-                            {alarm.bed}: {alarm.name} exhibits abnormal heart rate (HR: {alarm.hr} BPM).
+                          <p className="font-semibold text-red-400">Emergency Vital Alarm</p>
+                          <p className="text-zinc-300 mt-1 leading-relaxed">
+                            {alarm.bed}: {alarm.name} exhibits abnormal heart rate ({alarm.hr} BPM).
                           </p>
                         </div>
                       </div>
@@ -487,21 +226,21 @@ export default function TopNav({
                       <div className="flex flex-col gap-1.5 pt-2">
                         <button
                           onClick={() => resolveAlarm("code-blue")}
-                          className="w-full py-1.5 rounded-lg bg-red-500 hover:bg-red-600 text-white text-[9px] font-extrabold tracking-wider uppercase transition-colors cursor-pointer"
+                          className="w-full py-1.5 rounded-lg bg-red-600 hover:bg-red-500 text-white font-semibold text-xs transition-colors cursor-pointer"
                         >
-                          🚨 Send Emergency Team (Code Blue)
+                          Send Emergency Team (Code Blue)
                         </button>
                         <button
                           onClick={() => resolveAlarm("dismiss")}
-                          className="w-full py-1.5 rounded-lg border border-[var(--border)] hover:bg-white/[0.02] text-[var(--text-secondary)] hover:text-[var(--text-primary)] text-[9px] font-extrabold tracking-wider uppercase transition-colors cursor-pointer"
+                          className="w-full py-1.5 rounded-lg border border-white/[0.08] hover:bg-white/[0.04] text-zinc-300 hover:text-white font-medium text-xs transition-colors cursor-pointer"
                         >
-                          ❌ Dismiss Alarm
+                          Dismiss Alarm
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <div className="py-4 text-center text-[10px] text-[var(--text-dim)] uppercase tracking-wider">
-                      No active alerts
+                    <div className="py-4 text-center text-zinc-500">
+                      No active critical alerts
                     </div>
                   )}
                 </motion.div>
@@ -509,21 +248,8 @@ export default function TopNav({
             </AnimatePresence>
           </div>
 
-
-          {/* Language Selector Dropdown */}
+          {/* Language Selector */}
           <LanguageSelector language={language} setLanguage={setLanguage} />
-
-          {/* Interactive User Guide Toggle */}
-          <Tooltip content="Zero-Learning-Curve Interactive Guide" position="bottom">
-            <button
-              onClick={() => setShowOnboardingModal(true)}
-              className="p-2 text-blue-500 hover:text-blue-400 border border-blue-500/20 hover:border-blue-500/40 bg-blue-500/10 rounded-lg transition-colors cursor-pointer flex items-center justify-center"
-              aria-label="Open Interactive Onboarding Guide"
-            >
-              <Sparkles size={15} className="animate-pulse text-yellow-400" aria-hidden="true" />
-            </button>
-          </Tooltip>
-
 
           {/* User Profile Dropdown */}
           {user && (
@@ -531,19 +257,16 @@ export default function TopNav({
           )}
 
           {/* Mobile Menu trigger */}
-          <Tooltip content="Open Navigation Menu" position="bottom">
-            <button
-              onClick={() => {
-                if (setMobileOpen) setMobileOpen(true);
-              }}
-              className="lg:hidden p-2 text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border)] hover:border-[var(--border-focus)] bg-white/[0.02] hover:bg-white/[0.05] rounded-lg transition-all cursor-pointer"
-              aria-label="Open mobile menu"
-            >
-              <BrainCircuit size={16} aria-hidden="true" />
-            </button>
-          </Tooltip>
+          <button
+            onClick={() => {
+              if (setMobileOpen) setMobileOpen(true);
+            }}
+            className="md:hidden p-2 text-zinc-400 hover:text-zinc-200 border border-white/[0.06] hover:bg-white/[0.04] rounded-lg transition-all cursor-pointer"
+            aria-label="Open mobile menu"
+          >
+            <Menu size={16} aria-hidden="true" />
+          </button>
         </div>
-
       </header>
 
       {/* ─── Mobile Drawer ─── */}
@@ -555,238 +278,31 @@ export default function TopNav({
               onClose={() => {
                 if (setMobileOpen) setMobileOpen(false);
               }}
-              setCommandMenuOpen={(val) => {
-                // Integrate with CommandSearch if needed
-              }}
-              dynamicMenuGroups={dynamicMenuGroups}
-              telemetryStats={{ cpu: 12, latency: 22 }}
+              setCommandMenuOpen={() => {}}
+              dynamicMenuGroups={[
+                {
+                  key: "clinical",
+                  label: "Clinical Workspace",
+                  emoji: "🏥",
+                  accentColor: "text-indigo-400",
+                  cols: 1,
+                  routes: ["/dashboard", "/patients", "/telemedicine", "/capacity", "/chat"],
+                  items: [
+                    { id: "dashboard", title: "Dashboard", href: "/dashboard", icon: LayoutDashboard, desc: "Overview & Vitals", longDesc: "", color: "text-indigo-400", bg: "bg-indigo-500/10", borderHover: "", glow: "", gradient: "" },
+                    { id: "patients", title: "Patients", href: "/patients", icon: Users, desc: "Medical Records", longDesc: "", color: "text-emerald-400", bg: "bg-emerald-500/10", borderHover: "", glow: "", gradient: "" },
+                    { id: "telemedicine", title: "Visits & Telehealth", href: "/telemedicine", icon: Calendar, desc: "Appointments", longDesc: "", color: "text-cyan-400", bg: "bg-cyan-500/10", borderHover: "", glow: "", gradient: "" },
+                    { id: "capacity", title: "Beds & Rooms", href: "/capacity", icon: BedDouble, desc: "Ward Allocation", longDesc: "", color: "text-rose-400", bg: "bg-rose-500/10", borderHover: "", glow: "", gradient: "" },
+                    { id: "copilot", title: "AI Copilot", href: "/chat", icon: MessageSquare, desc: "Clinical Assistant", longDesc: "", color: "text-purple-400", bg: "bg-purple-500/10", borderHover: "", glow: "", gradient: "" },
+                  ],
+                },
+              ]}
+              telemetryStats={{ cpu: 5, latency: 1 }}
               user={user}
               logout={logout}
             />
           </Suspense>
         )}
       </AnimatePresence>
-
-      {/* ─── Interactive Guide Drawer ─── */}
-      <AnimatePresence>
-        {guideOpen && (
-          <>
-            {/* Backdrop */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 0.5 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setGuideOpen(false)}
-              className="fixed inset-0 z-55 bg-black/60 backdrop-blur-sm gpu-accelerated"
-            />
-            
-            {/* Drawer Container */}
-            <motion.div
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 25, stiffness: 220 }}
-              className="fixed right-0 top-0 bottom-0 w-[420px] max-w-[95vw] z-55 bg-[var(--bg-secondary)] border-l border-[var(--border)] flex flex-col p-6 overflow-y-auto gpu-accelerated"
-              role="dialog"
-              aria-label="AI Healthcare System Interactive Help Guide"
-            >
-              <div className="flex justify-between items-center border-b border-[var(--border)] pb-4 mb-6">
-                <div className="flex items-center gap-2">
-                  <BookOpen className="text-[var(--accent)]" size={18} />
-                  <h2 className="text-sm font-bold uppercase tracking-wider text-white">
-                    AI Healthcare System Interactive Guide
-                  </h2>
-                </div>
-                <button
-                  onClick={() => setGuideOpen(false)}
-                  className="p-1 text-[var(--text-secondary)] hover:text-white hover:bg-white/[0.04] border border-[var(--border)] rounded cursor-pointer"
-                  aria-label="Close guide"
-                >
-                  <X size={15} />
-                </button>
-              </div>
-
-              <div className="space-y-6 flex-1 text-xs leading-relaxed text-[var(--text-secondary)] text-left">
-                {/* Section 1: AI Clinical Assistants */}
-                <div className="space-y-3">
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--accent)] block">
-                    1. Autonomous Clinical AI Agents
-                  </span>
-                  <div className="space-y-2.5">
-                    <div
-                      onClick={() => {
-                        setGuideOpen(false);
-                        setShowSoapAuditModal(true);
-                      }}
-                      className="bg-white/[0.01] hover:bg-white/[0.04] border border-white/[0.02] hover:border-[var(--accent)] p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01] duration-200"
-                    >
-                      <h4 className="font-bold text-white uppercase tracking-wider mb-1 flex items-center justify-between">
-                        <span>Billing claim Auditor</span>
-                        <span className="text-[8px] bg-[var(--accent-muted)] text-[var(--accent)] px-1 rounded">Launch ↗</span>
-                      </h4>
-                      <p>Audits SOAP notes and estimates claim denial risk prior to submission. Access under **Invoices &gt; Audit**.</p>
-                    </div>
-                    <div
-                      onClick={() => {
-                        setGuideOpen(false);
-                        setShowHandoffModal(true);
-                      }}
-                      className="bg-white/[0.01] hover:bg-white/[0.04] border border-white/[0.02] hover:border-[var(--accent)] p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01] duration-200"
-                    >
-                      <h4 className="font-bold text-white uppercase tracking-wider mb-1 flex items-center justify-between">
-                        <span>Shift handoff Coordinator</span>
-                        <span className="text-[8px] bg-[var(--accent-muted)] text-[var(--accent)] px-1 rounded">Launch ↗</span>
-                      </h4>
-                      <p>Aggregates 24h vital observations into shift handoff cards. Access under **Patients &gt; Handoff**.</p>
-                    </div>
-                    <div
-                      onClick={() => {
-                        setGuideOpen(false);
-                        setShowDischargeModal(true);
-                      }}
-                      className="bg-white/[0.01] hover:bg-white/[0.04] border border-white/[0.02] hover:border-[var(--accent)] p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01] duration-200"
-                    >
-                      <h4 className="font-bold text-white uppercase tracking-wider mb-1 flex items-center justify-between">
-                        <span>Discharge Planner</span>
-                        <span className="text-[8px] bg-[var(--accent-muted)] text-[var(--accent)] px-1 rounded">Launch ↗</span>
-                      </h4>
-                      <p>Synthesizes telemetry and care plans into transition summaries. Access under **Patients &gt; Discharge**.</p>
-                    </div>
-                    <div
-                      onClick={() => {
-                        setGuideOpen(false);
-                        setShowTelephonyModal(true);
-                      }}
-                      className="bg-white/[0.01] hover:bg-white/[0.04] border border-white/[0.02] hover:border-[var(--accent)] p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01] duration-200"
-                    >
-                      <h4 className="font-bold text-white uppercase tracking-wider mb-1 flex items-center justify-between">
-                        <span>Telephony Alert Routing</span>
-                        <span className="text-[8px] bg-[var(--accent-muted)] text-[var(--accent)] px-1 rounded">Launch ↗</span>
-                      </h4>
-                      <p>Routes urgent telemetry alarms directly to on-call cardiologists via automated voice call scripts.</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Section 2: Security & Lockout */}
-                <div className="space-y-2.5">
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--accent-purple)] block">
-                    2. Credential Security & Lockouts
-                  </span>
-                  <div
-                    onClick={() => {
-                      setGuideOpen(false);
-                      setShowSecurityModal(true);
-                    }}
-                    className="flex items-start gap-2 bg-white/[0.01] hover:bg-white/[0.04] border border-white/[0.02] hover:border-[var(--accent-purple)] p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01] duration-200"
-                  >
-                    <Key className="text-[var(--accent-purple)] shrink-0 mt-0.5" size={14} />
-                    <div>
-                      <h4 className="font-bold text-white uppercase tracking-wider mb-1 flex items-center justify-between">
-                        <span>2FA & Profile Lockout</span>
-                        <span className="text-[8px] bg-[var(--accent-purple-muted)] text-[var(--accent-purple)] px-1 rounded">Configure ↗</span>
-                      </h4>
-                      <p>For HIPAA compliance, accounts are locked for 15 minutes after 5 consecutive incorrect passwords. Enforce 2FA in your **Profile Settings**.</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Section 3: Telemetry & Self-Healing */}
-                <div className="space-y-2.5">
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--success)] block">
-                    3. Self-Healing & Diagnostics
-                  </span>
-                  <div
-                    onClick={() => {
-                      setGuideOpen(false);
-                      setShowHealingModal(true);
-                    }}
-                    className="flex items-start gap-2 bg-white/[0.01] hover:bg-white/[0.04] border border-white/[0.02] hover:border-[var(--success)] p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01] duration-200"
-                  >
-                    <Cpu className="text-[var(--success)] shrink-0 mt-0.5" size={14} />
-                    <div>
-                      <h4 className="font-bold text-white uppercase tracking-wider mb-1 flex items-center justify-between">
-                        <span>Self-Healing Agent</span>
-                        <span className="text-[8px] bg-[var(--success-muted)] text-[var(--success)] px-1 rounded">Launch ↗</span>
-                      </h4>
-                      <p>The **Self-Healing Agent** checks error buffers and auto-executes database index rebuilding and pruning. Run maintenance instantly from the **Data Engineering Console**.</p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Section 4: Billing & 837P Claims */}
-                <div className="space-y-2.5">
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-400 block">
-                    4. Patient Billing & Claims
-                  </span>
-                  <div
-                    onClick={() => {
-                      setGuideOpen(false);
-                      setShowBillingModal(true);
-                    }}
-                    className="flex items-start gap-2 bg-white/[0.01] hover:bg-white/[0.04] border border-white/[0.02] hover:border-emerald-500 p-3 rounded-lg cursor-pointer transition-all hover:scale-[1.01] duration-200"
-                  >
-                    <CreditCard className="text-emerald-400 shrink-0 mt-0.5" size={14} />
-                    <div>
-                      <h4 className="font-bold text-white uppercase tracking-wider mb-1 flex items-center justify-between">
-                        <span>Patient Billing Portal</span>
-                        <span className="text-[8px] bg-emerald-500/20 text-emerald-400 px-1 rounded">Open ↗</span>
-                      </h4>
-                      <p>View itemized encounter invoices, submit electronic ANSI 837P insurance claims, and process HSA/FSA patient co-pay payments online.</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-2.5">
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-cyan-400 block">
-                    4. Navigation Hotkeys
-                  </span>
-                  <div className="bg-zinc-950/60 border border-[var(--border)] p-3 rounded-lg font-mono text-[10px] space-y-1.5 uppercase">
-                    <div className="flex justify-between">
-                      <span>Quick Search Panel</span>
-                      <kbd className="border border-white/[0.08] px-1 rounded bg-white/[0.02]">⌘K</kbd>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Interactive Help Guide</span>
-                      <span>Click Help Circle</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
-
-      {/* ── Clinical Action Modals ── */}
-      <Suspense fallback={null}>
-        <AnimatePresence>
-          {showHandoffModal && (
-            <ShiftHandoffModal onClose={() => setShowHandoffModal(false)} />
-          )}
-          {showSoapAuditModal && (
-            <SoapDenialAuditModal onClose={() => setShowSoapAuditModal(false)} />
-          )}
-          {showDischargeModal && (
-            <DischargeSummaryModal onClose={() => setShowDischargeModal(false)} />
-          )}
-          {showTelephonyModal && (
-            <TelephonyRoutingModal onClose={() => setShowTelephonyModal(false)} />
-          )}
-          {showSecurityModal && (
-            <SecurityLockoutModal onClose={() => setShowSecurityModal(false)} />
-          )}
-          {showHealingModal && (
-            <SelfHealingMaintenanceModal onClose={() => setShowHealingModal(false)} />
-          )}
-          {showBillingModal && (
-            <BillingClaimsModal onClose={() => setShowBillingModal(false)} />
-          )}
-          {showOnboardingModal && (
-            <OnboardingGuideModal isOpen={showOnboardingModal} onClose={() => setShowOnboardingModal(false)} />
-          )}
-        </AnimatePresence>
-      </Suspense>
     </>
-
   );
 }

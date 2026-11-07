@@ -1,67 +1,64 @@
-# Project: AI Healthcare System — Production Hardening & Architecture Alignment
+# Project: AI Healthcare System — Universe Dex Production Optimization
 
 ## Architecture
 
-This project hardens and aligns the AI Healthcare System codebase against the 5 core architecture playbooks in `docs/architecture/` and imported skills in `.agents/skills/`:
-1. `docs/architecture/AI_AGENT_DATABASE_ENGINEERING_PLAYBOOK.md`
-2. `docs/architecture/AI_AGENT_BACKEND_ENGINEERING_PLAYBOOK.md`
-3. `docs/architecture/AI_AGENT_DATA_ENGINEERING_PLAYBOOK.md`
-4. `docs/architecture/AI_AGENT_FRONTEND_ENGINEERING_PLAYBOOK.md`
-5. `docs/architecture/MASTER_PERFORMANCE_ARCHITECTURE_PLAN.md`
+This project fully optimizes the AI Healthcare System for production based on the Universe Dex stack:
+1. **Pure Rust Live Production Execution Stack**: Axum 0.8, Tokio, mimalloc, SQLx, and ORT ONNX with zero-allocation hot paths for all live execution, completely decoupled from Python runtime processes.
+2. **Bun + React Frontend Architecture**: Bun runtime, Vite 8, local-first TanStack Query architecture with IndexedDB persistence, multi-tab sync, and optimistic UI updates connecting directly to the Rust backend services.
+3. **Python Specification & Contract Synchronization**: Python code serves strictly for readability, maintainability, and contract/schema synchronization, never invoked during live production execution.
 
 ```
-[ Frontend: React / Vite SPA ]
-   │  * Modular sub-components (<600 LOC)
-   │  * TanStack Query caching & state management
-   │  * Optimized bundle chunks (eliminated ineffective dynamic imports)
+[ Frontend: Bun + React 19 / Vite 8 ]
+   │  * Local-First TanStack Query & IndexedDB Cache
+   │  * Optimistic UI Mutations (Appointments, Patients, Orders, Vitals)
+   │  * Direct connection to Rust Backend on port 8000
    ▼
-[ Rust Edge Gateway (rust_gateway/) - Axum 0.8 + Tokio ]
-   │  * Reverse proxy fallback to Python backend
-   │  * AVX2 SIMD vector search & ONNX acceleration
-   │  * Thread-safe AppState licensing (zero unsafe env::set_var)
+[ Pure Rust Live Production Backend: Axum 0.8 + Tokio ]
+   │  * Global mimalloc high-throughput memory allocator
+   │  * 24 native route modules (including /v1/lakehouse)
+   │  * Complete severance of Python fallback proxy
+   │  * AVX2 SIMD vector store & Pan-Tompkins ECG DSP (<7µs latency)
+   │  * Native ORT ONNX multi-model inference & scalers
+   │  * Typed SQLx connection pools (46 tables & models)
+   │  * Static SPA serving for frontend/dist
    ▼
-[ Backend: FastAPI (backend/) ]
-   │  * Clean service & route modularity (<600 LOC per file)
-   │  * prediction.py decomposed into engine, calculators, and routes
-   │  * main.py lifespan diagnostics extracted to lifecycle.py
-   │  * Centralized prompts via prompt_registry.py
-   │  * Strict Pydantic V2 response models & Depends(database.get_db)
+[ Database & Storage Layer ]
+   │  * SQLite WAL (MMAP, 64MB memory cache) & PostgreSQL parity
+   │  * Authenticated AES-256-GCM PII encryption
+   │  * 46 relational models with complete index coverage
    ▼
-[ Database & Data Layer ]
-   │  * 31 Foreign Key indexes added (Rule DB-FK-002)
-   │  * High-frequency composite indexes (chat_logs, appointments, orders)
-   │  * ClinicalAICorrection re-exported in models/__init__.py
-   │  * Zero-config SQLite WAL offline sandbox & PostgreSQL parity
-   │  * Medallion lakehouse pipelines (<600 LOC) & sanitized credentials
+[ Python Specification & Living Contract Layer ]
+   │  * backend/ models, schemas, and routes strictly for readability & sync
+   │  * 100% schema parity with Rust Serde DTOs
+   │  * Production runtime lockout: raises RuntimeError if ENV=production
+   │  * Automated CI verification ensuring zero live production invocations
 ```
 
 ---
 
 ## Feature Inventory
 
-Every feature and remediation item identified during the 3-way architecture survey:
+Every feature identified across Requirements R1, R2, and R3 during the 3-way survey:
 
 | # | Feature / Remediation Item | Description | Milestone | Source |
 |---|-----------------------------|-------------|-----------|--------|
-| 1 | 31 Foreign Key Indexes | Add indexes to 31 unindexed foreign key columns across 15 models (Rule `DB-FK-002`) | M1 | DB Playbook / Data Survey |
-| 2 | High-Frequency Composite Indexes | Add composite indexes (`chat_logs(user_id, timestamp)`, `appointments(doctor_id, date_time)`, etc.) | M1 | DB Playbook / Performance Plan |
-| 3 | Model Re-export Discovery | Export `ClinicalAICorrection` in `backend/models/__init__.py` for Alembic metadata tracking | M1 | DB Playbook / Data Survey |
-| 4 | Pharmacy Concurrency Guard | Add row locking (`with_for_update()`) and `CHECK (quantity_on_hand >= 0)` constraint | M1 | DB Playbook / Data Survey |
-| 5 | Decompose `backend/prediction.py` | Split 3,522 LOC monolith into modular calculators, attribution, engine, and routes (<600 LOC) | M2 | Backend Playbook / AGENTS.md |
-| 6 | Decompose `backend/main.py` | Extract 800+ lines of startup diagnostics and migrations into `backend/lifecycle.py` (<600 LOC) | M2 | Backend Playbook / AGENTS.md |
-| 7 | System Prompt Centralization | Move 34+ inlined prompt strings into `backend/prompt_registry.py` | M2 | Backend Playbook / AGENTS.md |
-| 8 | Rust Gateway Concurrency Safety | Replace `unsafe { env::set_var }` in `licensing.rs` with thread-safe `AppState` / atomic state | M2 | Backend Playbook / Performance Plan |
-| 9 | Direct `SessionLocal()` Elimination | Replace synchronous `SessionLocal()` in `core_ai.py` and `prediction.py` with async logging | M2 | Backend Playbook / AGENTS.md |
-| 10 | Data Pipeline Modularity | Decompose `backend/data_engineering_platform.py` (1,225 LOC) and Airflow DAGs (<600 LOC) | M3 | Data Playbook / AGENTS.md |
-| 11 | Notebook Credential Sanitization | Remove plaintext `"adminpass"` fallback in `databricks_notebooks/01_bronze_ingest.py:54` | M3 | Data Playbook / Security Audit |
-| 12 | Frontend Monolith Decomposition | Modularize `Dashboard.tsx` (2,020 LOC), `ClinicalIntelligence.tsx` (1,646 LOC), etc. into subcomponents (<600 LOC) | M4 | Frontend Playbook / AGENTS.md |
-| 13 | TanStack Query Integration | Implement `useQuery` / `useMutation` hooks for clinical data fetching and cache management | M4 | Frontend Playbook / Performance Plan |
-| 14 | Dynamic Import & Bundle Optimization | Eliminate barrel import bottlenecks in `src/lib/api.ts` to restore clean code splitting | M4 | Frontend Playbook / Performance Plan |
-| 15 | Accessibility & Test Flake Fixes | Add `aria-label` to buttons, fix duplicate key in `ComplianceCopy.test.tsx`, mock test sockets | M4 | Frontend Playbook / Quality Gate |
-| 16 | Performance Budgets & Edge Profiling | Align edge proxy timeouts, memory zeroing, and sub-100ms response targets | M5 | Performance Plan |
-| 17 | Backend Test Regression Fixes | Resolve isolated test assertions in scheduling agent and backup readiness staleness | M5 | Backend Audit / Quality Gate |
-| 18 | Dual-Track Full Regression Verification | Run full backend (`pytest tests/ -n auto`) and frontend (`bun test`) suites with 0 failures | M6 | E2E Track / Orchestration |
-| 19 | Forensic Integrity Audit | Independent verification of genuine implementations, zero facades, zero mocks in production | M6 | Orchestration / Auditor Gate |
+| 1 | Global mimalloc in `main.rs` | Set `#[global_allocator] static GLOBAL: mimalloc::MiMalloc` in `rust_gateway/src/main.rs` | M1 | R1 / Rust Survey |
+| 2 | PyO3 Optional Feature-Gating | Feature-gate `pyo3` as optional `python-ffi` in `rust_gateway/Cargo.toml` so pure Rust builds cleanly | M1 | R1 / Rust Survey |
+| 3 | Sever Fallback Proxy to Python | Replace `proxy_handler_fallback` in `routes/mod.rs` & `main.rs` with native Axum 404 handler | M1 | R1 / Rust Survey |
+| 4 | Native `/v1/lakehouse` Router | Implement `rust_gateway/src/routes/lakehouse.rs` for OMOP, quality audit, and Delta commit log history | M1 | R1 / Rust Survey |
+| 5 | Port 8000 & SPA Static Serving | Bind default port to 8000 in `src/main.rs` and mount static file serving for `frontend/dist` | M1 | R1 / Rust Survey |
+| 6 | Native Rust Build & Test Verification | Verify `cargo check` and `cargo test --lib --bins --tests` pass 100% with zero Python dependency | M1 | R1 / Rust Survey |
+| 7 | Schema & DTO Reconciliation | Align 10 DTO divergences across `HeartInput`, `DiabetesInput`, `KidneyInput`, `PredictionReviewCreate`, etc. | M2 | R3 / Python Survey |
+| 8 | Python Production Lockout | Enforce runtime check in `backend/main.py` raising `RuntimeError` if `ENV=production` | M2 | R3 / Python Survey |
+| 9 | Decouple Deployment Manifests | Update `Dockerfile.enterprise`, `render.yaml`, `run_servers.py`, `run_prod.bat` to run pure Rust binary | M2 | R3 / Python Survey |
+| 10 | Automated Decoupling Verification | Add automated test/script (`tests/unit/test_production_decoupling.py`) verifying Python exclusion in prod | M2 | R3 / Python Survey |
+| 11 | Frontend Port & Proxy Alignment | Configure `frontend/vite.config.ts` dev server proxy and `apiCore.ts` to target Rust on port 8000 | M3 | R2 / Frontend Survey |
+| 12 | Local-First IndexedDB Persistence | Configure `QueryClient` with IndexedDB persistence, `networkMode: 'offlineFirst'`, and multi-tab sync | M3 | R2 / Frontend Survey |
+| 13 | Modular TanStack Query Hooks | Implement `useAppointments`, `usePatients`, `usePatientDetail`, `useHospitalCapacity`, `useClinicalIntelligence` | M3 | R2 / Frontend Survey |
+| 14 | Optimistic UI Mutations | Implement 3-phase optimistic UI (`onMutate` -> `onError` -> `onSettled`) in core clinical views | M3 | R2 / Frontend Survey |
+| 15 | Frontend Build & Vitest Verification | Verify `bun run build` and `bun run test` (104/104 tests) pass with QueryClient providers | M3 | R2 / Frontend Survey |
+| 16 | Dual-Track Full Regression Verification | Execute complete Rust, Frontend (Bun), and Python test suites with zero regressions | M4 | E2E Track / AC |
+| 17 | Forensic Integrity Audit | Independent verification of authentic implementation, zero dummy facades, and clean audit verdict | M4 | Forensic Audit / AC |
 
 ---
 
@@ -69,42 +66,46 @@ Every feature and remediation item identified during the 3-way architecture surv
 
 | # | Name | Scope | Dependencies | Status |
 |---|------|-------|-------------|--------|
-| M1 | Database Architecture & Indexing Hardening | Add 31 FK indexes, composite query indexes, re-export missing models, add concurrency guards | none | DONE |
-| M2 | Backend API & Service Modularity Alignment | Split `prediction.py` and `main.py` (1,148 LOC -> 458 LOC), centralize prompts, fix Rust concurrency | M1 | DONE |
-| M3 | Data Engineering & Pipeline Quality Gates | Modularize data platform and Airflow DAGs, sanitize notebook credentials, align medallion lakehouse | M1, M2 | DONE |
-| M4 | Frontend Architecture & Component Optimization | Modularize `Dashboard.tsx` (554 LOC) and `ClinicalIntelligence.tsx` (466 LOC), zero type errors | M2 | DONE |
-| M5 | Performance Budgets & Edge Gateway Hardening | Align Axum edge proxy (cargo check clean), verify performance budgets | M3, M4 | DONE |
-| M6 | Full Regression Verification & Forensic Audit | Run 100% backend and frontend test suites, pass Reviewer, Challenger, and Auditor gates | M1-M5 | IN PROGRESS |
+| M1 | Pure Rust Live Production Execution Stack | Add mimalloc in main.rs, feature-gate PyO3, sever proxy fallback, add /v1/lakehouse router, bind port 8000, verify cargo tests | none | DONE |
+| M2 | Python Specification & Contract Synchronization | Reconcile 10 DTO discrepancies, add production runtime lockout in backend/main.py, decouple deployment manifests, add decoupling test | none | DONE |
+| M3 | Bun + React Local-First TanStack Query Architecture | Configure Vite proxy to port 8000, set up QueryClient with IndexedDB persister, build modular query hooks, implement optimistic UI | M1 | DONE |
+| M4 | Full Regression Verification & Forensic Integrity Audit | Run full Rust test suite, Bun frontend test suite, Python contract test suite, decoupling verification, and Forensic Audit | M1, M2, M3 | DONE |
 
 ---
 
 ## Interface Contracts
 
-### 1. Database Model Interfaces (`backend/models/`)
-- All foreign key columns must specify `index=True` or be declared inside an explicit `Index('ix_table_col', col)` constraint.
-- All high-frequency filtered/sorted queries must have supporting composite indexes.
-- All models must be re-exported in `backend/models/__init__.py`.
+### 1. Pure Rust Gateway API (`rust_gateway/`)
+- Default listening port: `8000` (configurable via `PORT` or `RUST_PORT`).
+- Unmatched endpoints return structured JSON 404: `{"error": "Not Found", "message": "Endpoint not recognized"}`. No request is forwarded to Python.
+- `/v1/lakehouse` route contracts:
+  - `POST /v1/lakehouse/omop/transform`: accepts table transformation payload, returns standard OMOP conversion status.
+  - `POST /v1/lakehouse/quality/audit`: accepts audit parameters, returns Great Expectations quality metrics summary.
+  - `GET /v1/lakehouse/delta/history`: returns Delta Lake versioned commit logs.
 
-### 2. Prediction Engine & Calculator Interfaces
-- `backend/prediction.py` retains public API route surface and imports from submodules:
-  - `backend/services/calculators/`: Deterministic risk equations (FIB-4, MELD, ASCVD, CHA2DS2-VASc, SaMD).
-  - `backend/services/ml/`: Model registry, sklearn artifact loading, and SHAP feature attribution.
-  - `backend/routes/prediction.py`: FastAPI route handlers with strict Pydantic schemas.
-- Route signatures and endpoints (`/predict/{disease}`, `/explain/{disease}`, `/calculators/*`) must remain 100% backward compatible.
+### 2. Python Contract Mirror (`backend/`)
+- `backend/schemas/prediction.py`:
+  - `HeartInput`: exactly mirrors `rust_gateway/src/ml/predictors.rs:HeartInput` with 13 required float fields (`age`, `sex`, `cp`, `trestbps`, `chol`, `fbs`, `restecg`, `thalach`, `exang`, `oldpeak`, `slope`, `ca`, `thal`) and optional clinical indicators with defaults.
+  - `DiabetesInput`: exactly mirrors `rust_gateway/src/ml/predictors.rs:DiabetesInput`.
+  - `KidneyInput`: `is_female: Optional[bool]` aligned with Rust.
+  - `PredictionReviewCreate`: `clinician_agree: bool`, `model_prediction: str`, `revised_diagnosis: Optional[str]`, `notes: Optional[str]`.
+- `backend/main.py`:
+  - Startup hook evaluates `os.getenv("ENV") == "production" or os.getenv("ENVIRONMENT") == "production"`.
+  - If true, raises `RuntimeError("Python execution is disabled in live production mode. All requests must be handled by the native Rust Gateway.")`.
 
-### 3. Prompt Registry Interfaces (`backend/prompt_registry.py`)
-- Inlined prompts must be registered with typed prompt identifiers (e.g. `CLINICAL_SUMMARY_PROMPT`, `PREDICTION_EXPLANATION_PROMPT`).
-- All AI calls obtain prompts via `prompt_registry.get_prompt(name, version=None)`.
-
-### 4. Rust Edge Gateway Licensing State
-- `rust_gateway/src/routes/licensing.rs` must manage active license key via thread-safe `Arc<RwLock<LicenseState>>` in `AppState` instead of calling `unsafe { env::set_var }`.
-
-### 5. Frontend Component Modularization
-- `Dashboard.tsx` decomposes into:
-  - `DashboardMetricsGrid.tsx` (<600 LOC)
-  - `DashboardActivityStream.tsx` (<600 LOC)
-  - `DashboardQuickActions.tsx` (<600 LOC)
-- Pages use TanStack Query hooks (`useDashboardData()`, `usePatients()`) wrapping standard API calls.
+### 3. Frontend TanStack Query Architecture (`frontend/`)
+- API Base URL: `http://127.0.0.1:8000/v1` (or Vite proxy `/v1`).
+- Query keys follow hierarchical array convention:
+  - `['appointments', 'list', filters]`
+  - `['patients', 'list', page, search]`
+  - `['patient', patientId, 'detail']`
+  - `['patient', patientId, 'vitals']`
+  - `['hospital', 'capacity']`
+  - `['clinical-intelligence', 'alerts']`
+- Optimistic mutations implement:
+  - `onMutate`: cancel outgoing refetches, snapshot previous cache, optimistically set new data with temporary ID.
+  - `onError`: rollback cache to previous snapshot, show toast error.
+  - `onSettled`: invalidate query key to trigger background reconciliation.
 
 ---
 
@@ -112,25 +113,30 @@ Every feature and remediation item identified during the 3-way architecture surv
 
 ```
 AI-Healthcare-System/
-├── backend/
-│   ├── main.py                          # <600 LOC: Application entry point & route registration
-│   ├── lifecycle.py                     # Extracted lifespan startup/shutdown diagnostics & migrations
-│   ├── core_ai.py                       # Unified AI provider router & semantic cache
-│   ├── prompt_registry.py               # Centralized repository for all system prompts
-│   ├── database.py                      # DB engine, session factory & SQLite/Postgres dual-mode
-│   ├── models/                          # Modular SQLAlchemy ORM models & index declarations
-│   ├── schemas/                         # Pydantic V2 request & response schemas
-│   ├── routes/                          # Domain route handlers (<600 LOC per file)
-│   └── services/                        # Business logic, ML loaders, and clinical calculators
-├── frontend/
+├── rust_gateway/                        # Pure Rust Live Production Backend (Axum 0.8, Tokio, mimalloc)
+│   ├── Cargo.toml                       # Dependencies (Axum, Tokio, SQLx, ORT, mimalloc, optional pyo3)
 │   ├── src/
-│   │   ├── pages/                       # Page components (<600 LOC per file)
-│   │   ├── components/                  # Focused, reusable UI sub-components (<600 LOC)
-│   │   ├── hooks/                       # TanStack Query custom data hooks
-│   │   └── lib/                         # API clients, utilities, and configuration
-├── rust_gateway/
-│   └── src/                             # Axum 0.8 edge proxy, SIMD vector store, and routes
-├── databricks_notebooks/                # Medallion ETL notebooks (sanitized credentials)
-├── airflow/                             # Data engineering DAGs (<600 LOC)
-└── tests/                               # Comprehensive pytest automated test suite
+│   │   ├── main.rs                      # Binary entrypoint (mimalloc, port 8000, static SPA serving)
+│   │   ├── lib.rs                       # Library & shared utilities
+│   │   ├── auth.rs                      # Native JWT authentication & bcrypt
+│   │   ├── routes/                      # 24 native domain routers (including lakehouse.rs)
+│   │   ├── db/                          # SQLx schemas, migrations, and typed repositories
+│   │   ├── ml/                          # ORT ONNX inference engine, scalers, and predictors
+│   │   └── vector_store.rs              # AVX2 SIMD zero-allocation vector search (<7µs)
+├── frontend/                            # Bun + React 19 / Vite 8 Frontend SPA
+│   ├── package.json                     # Bun scripts & dependencies (@tanstack/react-query, idb-keyval)
+│   ├── vite.config.ts                   # Vite 8 config with proxy to http://127.0.0.1:8000
+│   └── src/
+│       ├── main.tsx                     # QueryClient setup with IndexedDB persister
+│       ├── hooks/                       # Modular TanStack Query & optimistic mutation hooks
+│       ├── pages/                       # Modular page views with local-first responsive caching
+│       └── lib/apiCore.ts               # Direct connection to Rust backend (port 8000)
+├── backend/                             # Python Living Specification & Contract Layer
+│   ├── main.py                          # Production lockout guard & OpenAPI specification exporter
+│   ├── models/                          # SQLAlchemy database models mirroring Rust SQLx models
+│   ├── schemas/                         # Pydantic V2 schemas mirroring Rust Serde DTOs
+│   └── routes/                          # Specification routes for developer readability
+└── tests/                               # Comprehensive Automated Test Suites
+    ├── unit/test_production_decoupling.py # Automated verification that live prod decouples Python
+    └── ...                              # Pytest test suite ensuring specification parity
 ```

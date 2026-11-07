@@ -76,16 +76,18 @@ services:
     environment:
       - COLLECTOR_OTLP_ENABLED=true
 
-  # Backend with Enterprise Features
+  # Pure Rust Enterprise Backend Gateway
   backend:
     build: 
       context: .
       dockerfile: Dockerfile.enterprise
     container_name: healthcare_backend_enterprise
-    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000
+    command: /app/rust_gateway
     ports:
       - "8000:8000"
     environment:
+      - ENV=production
+      - ENVIRONMENT=production
       - DATABASE_URL=postgresql://healthcare_admin:${POSTGRES_PASSWORD}@pgbouncer:6432/healthcare_prod
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - JAEGER_ENDPOINT=http://jaeger:14268/api/traces
@@ -101,10 +103,7 @@ services:
         condition: service_started
     volumes:
       - ./.env:/app/.env
-      - ./vector_store.pkl:/app/vector_store.pkl
-      - ./mlruns:/app/mlruns
-      - ./Datasets:/app/Datasets
-      - ./backend:/app/backend
+      - ./models:/app/models
     restart: always
     healthcheck:
       test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/healthz"]

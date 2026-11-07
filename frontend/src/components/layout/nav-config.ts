@@ -348,24 +348,18 @@ export const healthcareSystemItems: MenuItem[] = [
    COMMAND PALETTE items
    ─────────────────────────────────────────────────── */
 export const COMMAND_ITEMS = [
-  { label: "Hospital Dashboard", href: "/dashboard", category: "Operations", desc: "View live ICU patient room monitors and alert systems", icon: LayoutDashboard },
-  { label: "Patients List & Records", href: "/patients", category: "Operations", desc: "Search patient names and check medical records", icon: User },
-  { label: "Hospital Beds & Wards", href: "/capacity", category: "Operations", desc: "Track empty rooms, occupied beds, and ward maps", icon: BedDouble },
-  { label: "Video Consultations Call", href: "/telemedicine", category: "Operations", desc: "Talk face-to-face with remote patients online", icon: Video },
-  { label: "Server Status & Health", href: "/infrastructure", category: "Operations", desc: "Check network connection feeds and database syncs", icon: Server },
-  { label: "Heart Disease Risk Test", href: "/predict/heart", category: "Diagnostics AI", desc: "Enter details to check heart condition using AI", icon: Heart },
-  { label: "Lung Disease Risk Test", href: "/predict/lungs", category: "Diagnostics AI", desc: "Enter breathing details to check asthma or COPD", icon: Wind },
-  { label: "Liver Failure Risk Test", href: "/predict/liver", category: "Diagnostics AI", desc: "Check blood values for potential liver issues", icon: FlaskConical },
-  { label: "Kidney Disease Risk Test", href: "/predict/kidney", category: "Diagnostics AI", desc: "Staging and dialysis probability assessment", icon: Stethoscope },
-  { label: "Diabetes Risk Test", href: "/predict/diabetes", category: "Diagnostics AI", desc: "Sugar level insulin resistance screening", icon: Activity },
-  { label: "Ask AI Doctor / Chat Assistant", href: "/chat", category: "Intelligence", desc: "Type medical questions to the smart AI helper", icon: MessageSquare },
-  { label: "Platform Documents & Info", href: "/about", category: "Intelligence", desc: "Read platform manuals and server setup blueprints", icon: Info },
-  { label: "User Profile Settings", href: "/profile", category: "Account", desc: "View your user name, email, and preferences", icon: Settings },
-  { label: "Administrative Tools Panel", href: "/admin", category: "Admin", desc: "Doctor credentials, audit logs, and security levels", icon: ShieldCheck },
-  { label: "SMART App Registry", href: "/apps", category: "AI Healthcare System", desc: "Register and launch third-party SMART apps", icon: Plug },
-  { label: "Federated Privacy Mesh", href: "/federated", category: "AI Healthcare System", desc: "Privacy-preserving distributed model sync bridge", icon: ShieldCheck },
-  { label: "Clinical Intelligence Command Center", href: "/intelligence", category: "AI Healthcare System", desc: "Real-time vitals alerts and explainable AI SHAP report", icon: BrainCircuit },
-  { label: "Aura Health Companion", href: "/companion", category: "AI Healthcare System", desc: "Warm symptom tracker, flare diary, and empathetic AI companion", icon: Smile },
+  { label: "Dashboard Overview", href: "/dashboard", category: "Clinical", desc: "View hospital rooms, alerts, and active patient census", icon: LayoutDashboard },
+  { label: "Patients and Medical Records", href: "/patients", category: "Clinical", desc: "Search patient directory, history, and medical charts", icon: User },
+  { label: "Hospital Beds and Rooms", href: "/capacity", category: "Clinical", desc: "Track room occupancy and inpatient bed allocation", icon: BedDouble },
+  { label: "Appointments and Virtual Visits", href: "/telemedicine", category: "Clinical", desc: "Manage patient appointments and start video consults", icon: Video },
+  { label: "AI Clinical Copilot", href: "/chat", category: "Clinical", desc: "Ask clinical questions, review labs, and summarize charts", icon: MessageSquare },
+  { label: "Heart Disease Risk Check", href: "/predict/heart", category: "Diagnostics", desc: "Evaluate cardiovascular risk factors and predictions", icon: Heart },
+  { label: "Respiratory and Lung Check", href: "/predict/lungs", category: "Diagnostics", desc: "Analyze respiratory markers for asthma and COPD risks", icon: Wind },
+  { label: "Liver Function Check", href: "/predict/liver", category: "Diagnostics", desc: "Assess liver enzymes and hepatic fibrosis scores", icon: FlaskConical },
+  { label: "Kidney Disease Staging", href: "/predict/kidney", category: "Diagnostics", desc: "Calculate eGFR and chronic kidney disease staging", icon: Stethoscope },
+  { label: "Diabetes and Glucose Check", href: "/predict/diabetes", category: "Diagnostics", desc: "Screen HbA1c values and glycemic risk forecasts", icon: Activity },
+  { label: "User Profile and Preferences", href: "/profile", category: "Account", desc: "Manage personal credentials and interface preferences", icon: Settings },
+  { label: "Hospital Administration", href: "/admin", category: "Account", desc: "Staff credentials, department settings, and audit logs", icon: ShieldCheck },
 ];
 
 /* ───────────────────────────────────────────────────
