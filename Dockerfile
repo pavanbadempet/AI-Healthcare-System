@@ -1,10 +1,10 @@
 # ==============================================================================
-# AI HEALTHCARE SYSTEM — UNIFIED PRODUCTION DOCKERFILE (RUST + BUN)
+# AI HEALTHCARE SYSTEM — HUGGING FACE SPACES PRODUCTION DOCKERFILE (RUST + BUN)
 # ==============================================================================
 # Dual-tier high-performance architecture:
 # Tier 1 (PID 1): Bun + ElysiaJS Edge Gateway & API Orchestration Layer
 # Tier 2 (Compute): Rust Axum/Tokio Backend Server + ONNX Runtime (Zero Python)
-# Compatible with Hugging Face Spaces (Port 7860, UID 1000), AWS EKS, and Docker Compose.
+# Fully compatible with Hugging Face Spaces (Port 7860, UID 1000).
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
@@ -20,22 +20,27 @@ COPY frontend/ ./
 RUN bun run build
 
 # ------------------------------------------------------------------------------
-# Stage 2: Build Rust Gateway & ONNX Inference Server
+# Stage 2: Build Rust Gateway & ONNX Inference Server (Debian Trixie / GCC 14)
 # ------------------------------------------------------------------------------
 FROM rust:latest AS rust-builder
-RUN apt-get update && apt-get install -y protobuf-compiler libssl-dev pkg-config && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    protobuf-compiler \
+    libssl-dev \
+    pkg-config \
+    build-essential \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /build
 
 COPY rust_gateway/ ./rust_gateway/
 WORKDIR /build/rust_gateway
-RUN cargo build --release
+RUN cargo build --release --bin rust_gateway
 
 # ------------------------------------------------------------------------------
 # Stage 3: Unified Production Runtime (Bun + Rust, Zero Python)
 # ------------------------------------------------------------------------------
 FROM oven/bun:debian AS runtime
 
-# Install system runtime libraries (SSL, curl for healthchecks)
+# Install system runtime libraries (SSL, curl for healthchecks and model fetching)
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     curl \
@@ -66,9 +71,11 @@ COPY --from=rust-builder --chown=1000:1000 /build/rust_gateway/target/release/ru
 COPY --from=frontend-builder --chown=1000:1000 /build/dist /home/bun/app/frontend/dist
 
 # Copy Edge Gateway source and install production dependencies
-COPY --chown=1000:1000 edge_gateway/ /home/bun/app/edge_gateway/
+COPY --chown=1000:1000 edge_gateway/package.json edge_gateway/bun.lock* /home/bun/app/edge_gateway/
 WORKDIR /home/bun/app/edge_gateway
-RUN bun install --production
+RUN bun install --production || bun install
+
+COPY --chown=1000:1000 edge_gateway/ /home/bun/app/edge_gateway/
 
 WORKDIR /home/bun/app
 
@@ -79,7 +86,7 @@ COPY --chown=1000:1000 . /home/bun/app/
 RUN chmod +x /home/bun/app/scripts/start_prod.sh && \
     chmod +x /home/bun/app/rust_gateway/target/release/rust_gateway
 
-# Expose ports (7860 for Hugging Face Spaces / default, 8000 for standard HTTP)
+# Expose Hugging Face Spaces standard port 7860
 EXPOSE 7860 8000 8001
 
 # Health check against edge gateway health endpoint

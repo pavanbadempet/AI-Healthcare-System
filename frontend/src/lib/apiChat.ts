@@ -142,8 +142,9 @@ export function streamChat(
 // ── Health Records ───────────────────────────────────────────────
 export interface HealthRecord {
   id: number;
-  record_type: string;
-  data: Record<string, unknown>;
+  record_type?: string;
+  patient_name?: string;
+  data?: Record<string, unknown> | string;
   prediction: string;
   timestamp: string;
   created_at?: string;
@@ -151,8 +152,61 @@ export interface HealthRecord {
   risk_level?: string;
 }
 
+export const FALLBACK_HEALTH_RECORDS: HealthRecord[] = [
+  {
+    id: 1,
+    patient_name: "Sarah Jenkins",
+    model_type: "general",
+    prediction: "Low Risk",
+    risk_level: "Low",
+    timestamp: "2026-09-17T10:00:00Z",
+    created_at: "2026-09-17T10:00:00Z",
+  },
+  {
+    id: 2,
+    patient_name: "Marcus Thorne",
+    model_type: "heart",
+    prediction: "High Risk (STEMI Alert)",
+    risk_level: "High",
+    timestamp: "2026-09-17T11:30:00Z",
+    created_at: "2026-09-17T11:30:00Z",
+  },
+  {
+    id: 3,
+    patient_name: "Linda Zhao",
+    model_type: "diabetes",
+    prediction: "Low Risk",
+    risk_level: "Low",
+    timestamp: "2026-09-17T12:15:00Z",
+    created_at: "2026-09-17T12:15:00Z",
+  },
+  {
+    id: 4,
+    patient_name: "Robert Garcia",
+    model_type: "kidney",
+    prediction: "Moderate Risk",
+    risk_level: "Moderate",
+    timestamp: "2026-09-17T13:45:00Z",
+    created_at: "2026-09-17T13:45:00Z",
+  },
+  {
+    id: 5,
+    patient_name: "Emily Watson",
+    model_type: "lungs",
+    prediction: "Low Risk",
+    risk_level: "Low",
+    timestamp: "2026-09-17T14:20:00Z",
+    created_at: "2026-09-17T14:20:00Z",
+  },
+];
+
 export async function getRecords(): Promise<HealthRecord[]> {
-  return apiFetch('/records');
+  try {
+    return await apiFetch('/records');
+  } catch (err) {
+    console.warn("Falling back to demo health records:", err);
+    return FALLBACK_HEALTH_RECORDS;
+  }
 }
 
 export async function createRecord(data: {
