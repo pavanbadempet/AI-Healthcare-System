@@ -69,27 +69,46 @@ function calculateAge(dob: string, today = new Date()) {
 }
 
 const PATIENT_DIAGNOSES: Record<number, { diagnosis: string; telemetryStatus: string }> = {
+  1: { diagnosis: "Acute Anterior STEMI / Post-PCI Stent", telemetryStatus: "HR 112 • SpO2 92% (Critical Alert)" },
   2: { diagnosis: "Post-Op Respiratory Monitoring / Appendectomy", telemetryStatus: "HR 72 • SpO2 98% (Stable)" },
   3: { diagnosis: "Acute Anterior STEMI / Cardiogenic Shock Risk", telemetryStatus: "HR 118 • SpO2 94% (STAT Alert)" },
-  4: { diagnosis: "Mild Intermittent Asthma / Bronchospasm", telemetryStatus: "HR 64 • SpO2 99% (Stable)" },
+  4: { diagnosis: "Diabetic Ketoacidosis / Insulin Protocol", telemetryStatus: "HR 82 • SpO2 98% (Guarded)" },
   5: { diagnosis: "Sepsis Resuscitation / Fluid Optimization", telemetryStatus: "HR 85 • SpO2 97% (Guarded)" },
   6: { diagnosis: "Pediatric Observation / Viral Syndrome", telemetryStatus: "HR 68 • SpO2 98% (Stable)" },
-  7: { diagnosis: "ICU Neuro Telemetry / Post-Subarachnoid", telemetryStatus: "HR 76 • SpO2 96% (Stable)" },
+  7: { diagnosis: "Acute Respiratory Distress Syndrome (ARDS)", telemetryStatus: "HR 68 • SpO2 99% (Stable)" },
+  15: { diagnosis: "Post-Coronary Artery Bypass Graft (CABG)", telemetryStatus: "HR 78 • SpO2 97% (Stable)" },
+  780: { diagnosis: "Submassive Pulmonary Embolism", telemetryStatus: "HR 88 • SpO2 95% (Guarded)" },
+  781: { diagnosis: "Decompensated Congestive Heart Failure", telemetryStatus: "HR 76 • SpO2 96% (Stable)" },
 };
 
 const FALLBACK_REGISTRY_PATIENTS: RegistryPatient[] = [
-  { id: 2, username: "sarah_jenkins", email: "sarah@patient.local", full_name: "Sarah Jenkins", role: "patient", gender: "Female", dob: "1980-04-12", blood_type: "A+", latest_encounter_type: "ICU-A", latest_status: "active", open_orders: 2, active_admissions: 1, clinical_risk_level: "LOW", attending_name: "Dr. Sarah Lin, MD" },
-  { id: 3, username: "marcus_thorne", email: "marcus@patient.local", full_name: "Marcus Thorne", role: "patient", gender: "Male", dob: "1956-08-23", blood_type: "O-", latest_encounter_type: "Cardiac Care", latest_status: "active", open_orders: 4, active_admissions: 1, clinical_risk_level: "CRITICAL", attending_name: "Dr. Sarah Lin, MD" },
-  { id: 4, username: "linda_zhao", email: "linda@patient.local", full_name: "Linda Zhao", role: "patient", gender: "Female", dob: "1992-11-05", blood_type: "B+", latest_encounter_type: "Med-Surg 4B", latest_status: "active", open_orders: 1, active_admissions: 1, clinical_risk_level: "LOW", attending_name: "Dr. Elena Rostova, MD" },
-  { id: 5, username: "robert_g", email: "robert@patient.local", full_name: "Robert Garcia", role: "patient", gender: "Male", dob: "1965-02-17", blood_type: "O+", latest_encounter_type: "Med-Surg 4B", latest_status: "active", open_orders: 3, active_admissions: 1, clinical_risk_level: "HIGH", attending_name: "Dr. Sarah Lin, MD" },
-  { id: 6, username: "emily_watson", email: "emily@patient.local", full_name: "Emily Watson", role: "patient", gender: "Female", dob: "2005-09-30", blood_type: "AB+", latest_encounter_type: "Pediatric Ward", latest_status: "active", open_orders: 1, active_admissions: 1, clinical_risk_level: "LOW", attending_name: "Dr. Priya Patel, MD" },
-  { id: 7, username: "oscar_meyer", email: "oscar@patient.local", full_name: "Oscar Meyer", role: "patient", gender: "Male", dob: "1957-01-14", blood_type: "A-", latest_encounter_type: "ICU-A", latest_status: "active", open_orders: 2, active_admissions: 1, clinical_risk_level: "MODERATE", attending_name: "Dr. Marcus Vance, MD" },
+  { id: 1, username: "m_thorne", email: "marcus@patient.local", full_name: "Marcus Thorne", role: "patient", gender: "Male", dob: "1968-04-12", blood_type: "A+", latest_encounter_type: "ICU-A-01", latest_status: "open", open_orders: 4, active_admissions: 1, clinical_risk_level: "CRITICAL", attending_name: "Dr. Sarah Lin, MD" },
+  { id: 4, username: "s_jenkins", email: "sarah@patient.local", full_name: "Sarah Jenkins", role: "patient", gender: "Female", dob: "1984-09-22", blood_type: "O+", latest_encounter_type: "ICU-A-02", latest_status: "open", open_orders: 2, active_admissions: 1, clinical_risk_level: "HIGH", attending_name: "Dr. Sarah Lin, MD" },
+  { id: 7, username: "l_zhao", email: "linda@patient.local", full_name: "Linda Zhao", role: "patient", gender: "Female", dob: "1960-11-05", blood_type: "B+", latest_encounter_type: "ICU-A-03", latest_status: "open", open_orders: 1, active_admissions: 1, clinical_risk_level: "LOW", attending_name: "Dr. Elena Rostova, MD" },
+  { id: 15, username: "r_garcia", email: "robert@patient.local", full_name: "Robert Garcia", role: "patient", gender: "Male", dob: "1975-02-18", blood_type: "O-", latest_encounter_type: "ICU-A-04", latest_status: "open", open_orders: 3, active_admissions: 1, clinical_risk_level: "MODERATE", attending_name: "Dr. Sarah Lin, MD" },
+  { id: 780, username: "e_watson", email: "emily@patient.local", full_name: "Emily Watson", role: "patient", gender: "Female", dob: "1990-07-14", blood_type: "A-", latest_encounter_type: "ICU-A-05", latest_status: "registered", open_orders: 0, active_admissions: 0, clinical_risk_level: "LOW", attending_name: "Dr. Priya Patel, MD" },
+  { id: 781, username: "o_meyer", email: "oscar@patient.local", full_name: "Oscar Meyer", role: "patient", gender: "Male", dob: "1954-03-30", blood_type: "B-", latest_encounter_type: "Step-Down", latest_status: "registered", open_orders: 0, active_admissions: 0, clinical_risk_level: "MODERATE", attending_name: "Dr. Marcus Vance, MD" },
 ];
 
 function registryDisplayForPatient(patient: RegistryPatient) {
   const mrn = `MRN-${(patient.id * 1024 + 100000).toString().substring(0,6)}`;
   const risk = patient.clinical_risk_level || "REVIEW";
-  const meta = PATIENT_DIAGNOSES[patient.id];
+  const nameLower = (patient.full_name || "").toLowerCase();
+  const meta = PATIENT_DIAGNOSES[patient.id] || (
+    nameLower.includes("thorne")
+      ? PATIENT_DIAGNOSES[1]
+      : nameLower.includes("jenkins")
+      ? PATIENT_DIAGNOSES[4]
+      : nameLower.includes("zhao")
+      ? PATIENT_DIAGNOSES[7]
+      : nameLower.includes("garcia")
+      ? PATIENT_DIAGNOSES[15]
+      : nameLower.includes("watson")
+      ? PATIENT_DIAGNOSES[780]
+      : nameLower.includes("meyer")
+      ? PATIENT_DIAGNOSES[781]
+      : null
+  );
   const diagnosis = meta?.diagnosis || "Primary diagnosis not recorded";
   const unit = patient.latest_encounter_type || "Not assigned";
   const attending = patient.attending_name || "Not recorded";

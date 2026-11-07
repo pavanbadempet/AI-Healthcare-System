@@ -286,6 +286,16 @@ export default function PatientEMRView({
         }
 
         if (!user) {
+          try {
+            const summaries = await getDoctorPatients();
+            const summary = summaries.find((item) => item.patient_id === patientId);
+            if (active && summary) {
+              setPatientIdentity(doctorSummaryToIdentity(summary));
+              return;
+            }
+          } catch {
+            // fallback
+          }
           if (active) setRecordAccessError(RECORD_UNAVAILABLE_MESSAGE);
           return;
         }
