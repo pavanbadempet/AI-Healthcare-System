@@ -205,7 +205,7 @@ Schedules clinical workflows under `airflow/dags/`:
 ## 🐳 9. Infrastructure & Scaling
 
 The enterprise version of the platform runs as a decoupled microservices architecture:
-*   **Docker Compose**: Pre-configured configurations (`docker-compose.microservices.yml`) spin up isolated containers for the API services, load balancer gateway, and database servers.
+*   **Docker Compose**: Pre-configured configurations (`docker/docker-compose.microservices.yml`) spin up isolated containers for the API services, load balancer gateway, and database servers.
 *   **Kubernetes (`k8s/`)**: Implements Horizontal Pod Autoscalers (HPA) to scale up `telemetry-service` pods when active vital connections peak.
 *   **Terraform (`terraform/`)**: Configures cloud resources (AWS ECS, RDS, IAM).
 *   **Rust Ingress Gateway**: Uses the custom Axum-based `rust_gateway` to load-balance incoming HTTP/WebSocket traffic, terminate SSL, and validate tokens.
