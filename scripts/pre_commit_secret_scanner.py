@@ -34,6 +34,7 @@ SECRET_PATTERNS = [
     (r"-----BEGIN (?:[A-Z0-9_-]+ )?PRIVATE KEY-----", "Private Cryptographic Key"),
     (r"mongodb(?:\+srv)?:\/\/[a-zA-Z0-9_]+:[^@]+@", "MongoDB Connection String with Password"),
     (r"mysql:\/\/[a-zA-Z0-9_]+:[^@]+@", "MySQL Connection String with Password"),
+    (r"\bKGAT_[a-zA-Z0-9]{32,}\b", "Kaggle API Access Token (KGAT_*)"),
 ]
 
 # Excluded files that legitimately reference the scanner rules or mocks

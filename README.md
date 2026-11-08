@@ -240,7 +240,7 @@ npm test
 cargo test --manifest-path rust_gateway/Cargo.toml
 
 # 4. Execute pre-commit zero-leak credential scanner across all files
-python scripts/security/scan_credentials.py
+python scripts/pre_commit_secret_scanner.py
 ```
 
 * **Test Pass Rate:** 100% Green across all 2,364+ unit, integration, and property-based test suites.

@@ -13,22 +13,29 @@ import json
 import os
 import subprocess
 
-print("Configuring Kaggle API Token...")
+print("Configuring Kaggle API Token from environment / Doppler...")
 os.makedirs(os.path.expanduser("~/.kaggle"), exist_ok=True)
 
-# Write kaggle.json for traditional CLI compatibility
-kaggle_creds = {
-    "username": "flameemperor",
-    "key": "KGAT_0869e262f9e04241ca9a0d223ecc753d"
-}
-token_path = os.path.expanduser("~/.kaggle/kaggle.json")
-with open(token_path, "w") as f:
-    json.dump(kaggle_creds, f)
-os.chmod(token_path, 0o600)
+kaggle_user = os.environ.get("KAGGLE_USERNAME", "")
+kaggle_key = os.environ.get("KAGGLE_KEY") or os.environ.get("KAGGLE_API_TOKEN", "")
 
-os.environ["KAGGLE_USERNAME"] = "flameemperor"
-os.environ["KAGGLE_KEY"] = "KGAT_0869e262f9e04241ca9a0d223ecc753d"
-os.environ["KAGGLE_API_TOKEN"] = "KGAT_0869e262f9e04241ca9a0d223ecc753d"
+if kaggle_user and kaggle_key:
+    # Write kaggle.json for traditional CLI compatibility
+    kaggle_creds = {
+        "username": kaggle_user,
+        "key": kaggle_key
+    }
+    token_path = os.path.expanduser("~/.kaggle/kaggle.json")
+    with open(token_path, "w") as f:
+        json.dump(kaggle_creds, f)
+    os.chmod(token_path, 0o600)
+
+    os.environ["KAGGLE_USERNAME"] = kaggle_user
+    os.environ["KAGGLE_KEY"] = kaggle_key
+    os.environ["KAGGLE_API_TOKEN"] = kaggle_key
+    print(f"Kaggle credentials configured for user: {kaggle_user}")
+else:
+    print("[INFO] KAGGLE_USERNAME or KAGGLE_KEY not found in environment; running in sandbox mode.")
 
 
 # COMMAND ----------

@@ -34,6 +34,7 @@ const SECRET_PATTERNS: SecretPattern[] = [
   { regex: /-----BEGIN (?:RSA|EC|OPENSSH|PRIVATE) KEY-----/, name: "Private Cryptographic Key" },
   { regex: /mongodb(?:\+srv)?:\/\/[a-zA-Z0-9_]+:[^@]+@/, name: "MongoDB Connection String with Password" },
   { regex: /mysql:\/\/[a-zA-Z0-9_]+:[^@]+@/, name: "MySQL Connection String with Password" },
+  { regex: /\bKGAT_[a-zA-Z0-9]{32,}\b/, name: "Kaggle API Access Token (KGAT_*)" },
 ];
 
 const EXCLUDED_FILES = [
