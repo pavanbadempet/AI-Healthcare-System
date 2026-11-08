@@ -165,7 +165,7 @@ Lung cancer risk screening from symptom and lifestyle survey data. Flags individ
 
 ### Why XGBoost for All 5 Models?
 
-See [ADR-015: XGBoost for Tabular Clinical Prediction](architecture-decisions.md#adr-015-xgboost-for-tabular-clinical-prediction) for the full trade-off analysis. Summary:
+See [ADR-015: XGBoost for Tabular Clinical Prediction](../architecture/architecture-decisions.md#adr-015-xgboost-for-tabular-clinical-prediction) for the full trade-off analysis. Summary:
 
 - Tabular clinical data with <30 features and <250K samples is the sweet spot for gradient-boosted trees
 - XGBoost consistently outperforms neural networks on tabular data in this regime (Grinsztajn et al., 2022)

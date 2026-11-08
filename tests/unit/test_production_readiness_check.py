@@ -240,19 +240,21 @@ def test_required_docs_blocks_missing_gate_file(tmp_path: Path):
     result = check_required_docs(repo_root=tmp_path)
 
     assert result.passed is False
-    assert "docs/PRODUCTION_READINESS_GATE.md" in result.detail
+    assert "docs/reports/PRODUCTION_READINESS_GATE.md" in result.detail
 
 
 def test_required_docs_blocks_missing_required_sections(tmp_path: Path):
     docs_dir = tmp_path / "docs"
     docs_dir.mkdir()
     for required_doc in REQUIRED_DOCS:
-        if required_doc == "docs/PRODUCTION_READINESS_GATE.md":
+        if required_doc == "docs/reports/PRODUCTION_READINESS_GATE.md":
             continue
         required_path = tmp_path / required_doc
         required_path.parent.mkdir(parents=True, exist_ok=True)
         required_path.write_text("# Placeholder\n", encoding="utf-8")
-    (docs_dir / "PRODUCTION_READINESS_GATE.md").write_text(
+    gate_file = tmp_path / "docs/reports/PRODUCTION_READINESS_GATE.md"
+    gate_file.parent.mkdir(parents=True, exist_ok=True)
+    gate_file.write_text(
         "# Production Readiness Gate\n\n## Backend Code Gate\n",
         encoding="utf-8",
     )
@@ -267,7 +269,9 @@ def test_required_docs_blocks_missing_required_sections(tmp_path: Path):
 def test_required_docs_blocks_missing_operational_readiness_docs(tmp_path: Path):
     docs_dir = tmp_path / "docs"
     docs_dir.mkdir()
-    (docs_dir / "PRODUCTION_READINESS_GATE.md").write_text(
+    gate_file = tmp_path / "docs/reports/PRODUCTION_READINESS_GATE.md"
+    gate_file.parent.mkdir(parents=True, exist_ok=True)
+    gate_file.write_text(
         "\n".join([
             "# Production Readiness Gate",
             "## Backend Code Gate",
@@ -284,8 +288,8 @@ def test_required_docs_blocks_missing_operational_readiness_docs(tmp_path: Path)
     result = check_required_docs(repo_root=tmp_path)
 
     assert result.passed is False
-    assert "docs/BACKUP_AND_RESTORE_READINESS.md" in result.detail
-    assert "docs/SECURITY_ASSURANCE_READINESS.md" in result.detail
+    assert "docs/compliance/BACKUP_AND_RESTORE_READINESS.md" in result.detail
+    assert "docs/compliance/SECURITY_ASSURANCE_READINESS.md" in result.detail
 
 
 def test_run_checks_returns_all_gate_results(monkeypatch):

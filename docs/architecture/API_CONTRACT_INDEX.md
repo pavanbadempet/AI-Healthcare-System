@@ -3,8 +3,8 @@
 > Comprehensive API route index and schema contract reference for the clinical platform.
 
 ## 🔗 Quick Downloads & Interactive API Specs
-- 📥 **OpenAPI 3.0 Spec JSON**: [`docs/openapi_spec.json`](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/openapi_spec.json)
-- 📮 **Postman Collection v2.1**: [`docs/postman_collection.json`](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/docs/postman_collection.json)
+- 📥 **OpenAPI 3.0 Spec JSON**: [`docs/openapi_spec.json`](../openapi_spec.json)
+- 📮 **Postman Collection v2.1**: [`docs/postman_collection.json`](../postman_collection.json)
 
 
 ## 🏥 Core API Domain Endpoints

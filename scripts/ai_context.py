@@ -36,7 +36,7 @@ CONTEXT_FILES = [
     ".github/copilot-instructions.md",
     ".cursor/rules/00-root.mdc",
     ".kiro/steering/structure.md",
-    "docs/AI_AGENT_ARCHITECTURE.md",
+    "docs/architecture/AI_AGENT_ARCHITECTURE.md",
     "scripts/agent_adapter_manifest.json",
     "scripts/sync_agent_adapters.py",
 ]

@@ -150,10 +150,10 @@ SALES_READINESS: dict[str, Any] = {
         "run a production deployment checklist before any real clinic data",
     ],
     "source_documents": [
-        "docs/TRUST_BASELINE.md",
-        "docs/SECURITY_QUESTIONNAIRE.md",
-        "docs/CLINIC_PILOT_PLAYBOOK.md",
-        "docs/CONTRACT_PACKET_CHECKLIST.md",
+        "docs/compliance/TRUST_BASELINE.md",
+        "docs/compliance/SECURITY_QUESTIONNAIRE.md",
+        "docs/clinical/CLINIC_PILOT_PLAYBOOK.md",
+        "docs/compliance/CONTRACT_PACKET_CHECKLIST.md",
     ],
 }
 

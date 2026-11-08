@@ -14,7 +14,7 @@
   &nbsp;
   <a href="https://huggingface.co/pavanbadempet/ai-healthcare-models"><img src="https://img.shields.io/badge/🤗%20Model%20Hub-16%20Weights-yellow?style=for-the-badge&logo=huggingface&logoColor=black" height="34" alt="Hugging Face Model Hub" /></a>
   &nbsp;
-  <a href="docs/DATA_ENGINEERING_MASTER_GUIDE.md"><img src="https://img.shields.io/badge/🏛️%20Architecture-Data%20Engineering%20Guide-blue?style=for-the-badge&logo=blueprint&logoColor=white" height="34" alt="Data Engineering Master Guide"/></a>
+  <a href="docs/guides/DATA_ENGINEERING_MASTER_GUIDE.md"><img src="https://img.shields.io/badge/🏛️%20Architecture-Data%20Engineering%20Guide-blue?style=for-the-badge&logo=blueprint&logoColor=white" height="34" alt="Data Engineering Master Guide"/></a>
 </p>
 
 <p align="center">
@@ -98,7 +98,7 @@ flowchart TD
 
 ## 🌊 Enterprise Data Engineering & Lakehouse Deep Dive
 
-> *For the full architectural specification, schema diagrams, and PySpark benchmarks, see the **[📖 Data Engineering Master Architecture Guide](docs/DATA_ENGINEERING_MASTER_GUIDE.md)**.*
+> *For the full architectural specification, schema diagrams, and PySpark benchmarks, see the **[📖 Data Engineering Master Architecture Guide](docs/guides/DATA_ENGINEERING_MASTER_GUIDE.md)**.*
 
 ### 1. PySpark Structured Streaming & Medallion Pipeline
 * **Bronze Layer (Raw Ingestion):** Captures high-velocity streaming vitals and bulk clinical extracts directly into append-only Delta tables with full audit lineage and zero transformation overhead.
@@ -248,17 +248,18 @@ python scripts/security/scan_credentials.py
 
 ---
 
-## 📚 Technical Documentation Index (58 Guides)
+## 📚 Technical Documentation Index
 
-All specialized domain architecture guides, clinical manuals, and ADRs are organized inside the [`docs/`](docs/) directory:
+All specialized domain architecture guides, clinical manuals, compliance specs, and ADRs are organized inside thematic subdirectories within [`docs/`](docs/):
 
 | Guide | Description |
 | :--- | :--- |
-| **[`DATA_ENGINEERING_MASTER_GUIDE.md`](docs/DATA_ENGINEERING_MASTER_GUIDE.md)** | Exhaustive PySpark, Delta Lake 4.x, and Lakeflow architecture specification. |
-| **[`AI_AGENT_ARCHITECTURE.md`](docs/AI_AGENT_ARCHITECTURE.md)** | Multi-Agent LangGraph clinical supervisor state machine and routing contracts. |
-| **[`optimal_dual_layer_architecture.md`](docs/optimal_dual_layer_architecture.md)** | Dual-layer decoupling: Analytical Lakehouse vs. Sub-millisecond Serving Core. |
-| **[`MODEL_AND_DATASET_CARDS.md`](docs/MODEL_AND_DATASET_CARDS.md)** | TabICLv2 model cards, BRFSS/MIMIC dataset provenance, and conformal calibrations. |
-| **[`architecture-decisions.md`](docs/architecture-decisions.md)** | Complete Architecture Decision Records (ADRs 001–024). |
+| **[`DATA_ENGINEERING_MASTER_GUIDE.md`](docs/guides/DATA_ENGINEERING_MASTER_GUIDE.md)** | Exhaustive PySpark, Delta Lake 4.x, and Lakeflow architecture specification. |
+| **[`AI_AGENT_ARCHITECTURE.md`](docs/architecture/AI_AGENT_ARCHITECTURE.md)** | Multi-Agent LangGraph clinical supervisor state machine and routing contracts. |
+| **[`ENTERPRISE_LAKEHOUSE_PRODUCT_ARCHITECTURE.md`](docs/architecture/ENTERPRISE_LAKEHOUSE_PRODUCT_ARCHITECTURE.md)** | Dual-layer decoupling: Analytical Lakehouse vs. Sub-millisecond Serving Core. |
+| **[`MODEL_AND_DATASET_CARDS.md`](docs/reports/MODEL_AND_DATASET_CARDS.md)** | TabICLv2 model cards, BRFSS/MIMIC dataset provenance, and conformal calibrations. |
+| **[`architecture-decisions.md`](docs/architecture/architecture-decisions.md)** | Complete Architecture Decision Records (ADRs 001–024). |
+| **[`README.md`](docs/README.md)** | Canonical documentation catalog across architecture, clinical, compliance, guides, and reports. |
 
 ---
 

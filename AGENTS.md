@@ -52,7 +52,7 @@
 - Add backend runtime dependencies to `backend/requirements.txt`. Keep root `requirements.txt` as the thin include file, and update `requirements-full.txt` only when the dependency is needed for full local/ML/data-pipeline development.
 - Tests must not depend on external API keys; mock all AI/embedding calls.
 - Always run pytest using `pytest-xdist` parallelization (i.e. `-n auto` flag) to optimize test run times.
-- Follow strict Conventional Commit standards as documented in `docs/COMMIT_CONVENTIONS.md`. Never include theatrical buzzwords (e.g. SOTA), internal session wave numbers, or past-tense verbs in commit messages.
+- Follow strict Conventional Commit standards as documented in `docs/guides/COMMIT_CONVENTIONS.md`. Never include theatrical buzzwords (e.g. SOTA), internal session wave numbers, or past-tense verbs in commit messages.
 - Before claiming completion, run the narrowest relevant tests or checks and report any that were skipped.
 
 ## Scoped Instructions
@@ -99,7 +99,7 @@ To guarantee a **zero learning curve** for new developers and maintain **high co
    - Implement strict type hints (`typing` module in Python, interfaces and types in TypeScript/React).
    - Every public function, API route, and data-access class must have explicit Docstrings (detailing parameter definitions, return schemas, and potential exceptions) to support self-documenting code.
 4. **No Absolute Paths**:
-   - Absolute file system URLs (e.g., `file:///c:/...`) are strictly prohibited in documentation, source code, and configuration files. Always use portable, relative paths (e.g. `docs/architecture-decisions.md`).
+   - Absolute file system URLs (e.g., `file:///c:/...`) are strictly prohibited in documentation, source code, and configuration files. Always use portable, relative paths (e.g. `docs/architecture/architecture-decisions.md`).
 5. **No AI Slop Patterns**:
    - Avoid manual loop thread execution queues or hardcoded prediction override handlers.
    - Never stage or commit commented-out debug statements, placeholder `pass` blocks, or dead files. Use unit tests (`pytest`, `vitest`) to verify all new features.

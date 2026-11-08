@@ -451,10 +451,10 @@ pub async fn get_sales_readiness() -> Json<Value> {
         "hipaa_soc2_attested": true,
         "b2b_licensing_enforced": true,
         "source_documents": [
-            "docs/TRUST_BASELINE.md",
-            "docs/SALES_READINESS_INDIA_FIRST.md",
-            "docs/SECURITY_QUESTIONNAIRE.md",
-            "docs/CLINIC_PILOT_PLAYBOOK.md"
+            "docs/compliance/TRUST_BASELINE.md",
+            "docs/compliance/LEGAL_AND_LIABILITY.md",
+            "docs/compliance/SECURITY_QUESTIONNAIRE.md",
+            "docs/clinical/CLINIC_PILOT_PLAYBOOK.md"
         ]
     }))
 }

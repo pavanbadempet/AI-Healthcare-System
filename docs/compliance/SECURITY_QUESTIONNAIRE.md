@@ -83,7 +83,7 @@ The AI provider layer supports local Ollama fallback where configured. Productio
 
 **Is there a production checklist?**
 
-Yes. Use `docs/TRUST_BASELINE.md` and `docs/CONTRACT_PACKET_CHECKLIST.md` before any real clinic data.
+Yes. Use `docs/compliance/TRUST_BASELINE.md` and `docs/compliance/CONTRACT_PACKET_CHECKLIST.md` before any real clinic data.
 
 ## India Readiness
 

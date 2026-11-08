@@ -3,7 +3,7 @@
 API Documentation Indexer
 =========================
 Parses FastAPI routes, Pydantic schemas, and SQLAlchemy models across the codebase
-to generate an up-to-date API contract index at `docs/API_CONTRACT_INDEX.md`.
+to generate an up-to-date API contract index at `docs/architecture/API_CONTRACT_INDEX.md`.
 """
 
 import os
@@ -19,7 +19,7 @@ def generate_api_contract_index():
 
     print("Scanning codebase routes & schemas...")
 
-    out_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../docs/API_CONTRACT_INDEX.md"))
+    out_file = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../docs/architecture/API_CONTRACT_INDEX.md"))
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
 
     content_lines = [

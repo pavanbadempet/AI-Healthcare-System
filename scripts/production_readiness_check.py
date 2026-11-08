@@ -28,13 +28,13 @@ def summarize_results(results: list[CheckResult]) -> ReadinessSummary:
 
 REQUIRED_ENV_VARS = ("DATABASE_URL", "SECRET_KEY")
 REQUIRED_DOCS = (
-    "docs/PRODUCTION_READINESS_GATE.md",
-    "docs/OPERATIONAL_HEALTH.md",
-    "docs/PRIVACY_OPERATIONS.md",
-    "docs/BACKUP_AND_RESTORE_READINESS.md",
-    "docs/INCIDENT_RESPONSE_READINESS.md",
-    "docs/RETENTION_POLICY_READINESS.md",
-    "docs/SECURITY_ASSURANCE_READINESS.md",
+    "docs/reports/PRODUCTION_READINESS_GATE.md",
+    "docs/reports/OPERATIONAL_HEALTH.md",
+    "docs/compliance/PRIVACY_OPERATIONS.md",
+    "docs/compliance/BACKUP_AND_RESTORE_READINESS.md",
+    "docs/compliance/INCIDENT_RESPONSE_READINESS.md",
+    "docs/compliance/RETENTION_POLICY_READINESS.md",
+    "docs/compliance/SECURITY_ASSURANCE_READINESS.md",
 )
 REQUIRED_READINESS_SECTIONS = (
     "Backend Code Gate",
@@ -351,7 +351,7 @@ def check_required_docs(repo_root: Path | None = None) -> CheckResult:
             detail=", ".join(missing_paths),
         )
 
-    gate_text = (root / "docs/PRODUCTION_READINESS_GATE.md").read_text(encoding="utf-8")
+    gate_text = (root / "docs/reports/PRODUCTION_READINESS_GATE.md").read_text(encoding="utf-8")
     missing_sections = [
         section for section in REQUIRED_READINESS_SECTIONS if f"## {section}" not in gate_text
     ]
