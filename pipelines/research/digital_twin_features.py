@@ -14,8 +14,8 @@ These features encode mechanistic physiological knowledge that standard
 ML models cannot learn from cross-sectional EHR data alone.
 
 Usage:
-    python research/digital_twin_features.py --input research/data/mimic_cohort.parquet
-    python research/digital_twin_features.py --input research/data/mimic_cohort.parquet --output research/data/mimic_cohort_with_dt.parquet
+    python pipelines/research/digital_twin_features.py --input pipelines/research/data/mimic_cohort.parquet
+    python pipelines/research/digital_twin_features.py --input pipelines/research/data/mimic_cohort.parquet --output pipelines/research/data/mimic_cohort_with_dt.parquet
 """
 
 import argparse
@@ -26,7 +26,7 @@ import sys
 import numpy as np
 import pandas as pd
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 
 from backend.clinical_digital_twin import ClinicalDigitalTwinEngine
 from backend.schemas.peak_healthcare import DigitalTwinSimulationRequest

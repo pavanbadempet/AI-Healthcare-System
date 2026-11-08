@@ -10,8 +10,8 @@ figures from experiment results JSON:
   5. Figure 3 (PNG/PDF): Digital Twin Trajectory Feature Attribution
 
 Usage:
-    python research/generate_paper_figures.py
-    python research/generate_paper_figures.py --results research/results/experiment_results.json --output research/figures/
+    python pipelines/research/generate_paper_figures.py
+    python pipelines/research/generate_paper_figures.py --results pipelines/research/results/experiment_results.json --output pipelines/research/figures/
 """
 
 import argparse

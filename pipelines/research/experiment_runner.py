@@ -20,8 +20,8 @@ Evaluation Framework:
   - Statistical Significance: Paired two-tailed t-test & DeLong test p-values
 
 Usage:
-    python research/experiment_runner.py --synthetic --folds 2 --bootstrap 100
-    python research/experiment_runner.py --data research/data/mimic_cohort_with_dt.parquet --folds 5 --bootstrap 1000
+    python pipelines/research/experiment_runner.py --synthetic --folds 2 --bootstrap 100
+    python pipelines/research/experiment_runner.py --data pipelines/research/data/mimic_cohort_with_dt.parquet --folds 5 --bootstrap 1000
 """
 
 import argparse
@@ -31,7 +31,7 @@ import os
 import sys
 import time
 
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..")))
 from typing import Any, Dict, List, Tuple
 
 import numpy as np

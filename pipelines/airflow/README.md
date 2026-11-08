@@ -12,7 +12,7 @@ The data platform manages high-throughput ETL pipelines, patient health record c
 
 ## 🏗️ Core Pipelines (DAGs)
 
-The platform is organized into 3 production workflows located in [airflow/dags/](dags/):
+The platform is organized into 3 production workflows located in [pipelines/airflow/dags/](dags/):
 
 ### 1. Unified Healthcare Data Pipeline (`healthcare_data_pipeline`)
 * **Purpose**: Primary ETL scheduler driving patient record updates, cleaning, and model retraining triggers.

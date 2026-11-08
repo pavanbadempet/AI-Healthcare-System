@@ -388,8 +388,8 @@ def main():
     # Output
     output_path = args.output
     if not output_path:
-        os.makedirs(os.path.join(os.path.dirname(__file__), "..", "research", "results"), exist_ok=True)
-        output_path = os.path.join(os.path.dirname(__file__), "..", "research", "results", "benchmark_report.json")
+        os.makedirs(os.path.join(os.path.dirname(__file__), "..", "pipelines", "research", "results"), exist_ok=True)
+        output_path = os.path.join(os.path.dirname(__file__), "..", "pipelines", "research", "results", "benchmark_report.json")
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, "w") as f:

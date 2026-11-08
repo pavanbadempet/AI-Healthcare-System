@@ -12,8 +12,8 @@ Standard inclusion/exclusion criteria:
     subsequent admission within 30 days of prior discharge
 
 Usage:
-    python research/mimic_iv_etl.py --mimic-dir research/data/mimic-iv
-    python research/mimic_iv_etl.py --synthetic  # generate synthetic cohort for testing
+    python pipelines/research/mimic_iv_etl.py --mimic-dir pipelines/research/data/mimic-iv
+    python pipelines/research/mimic_iv_etl.py --synthetic  # generate synthetic cohort for testing
 """
 
 import argparse

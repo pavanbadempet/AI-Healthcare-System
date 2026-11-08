@@ -127,4 +127,4 @@ The **AI Healthcare System** establishes a reference architecture for open-sourc
 The authors declare no competing financial interests.
 
 ## References
-*(Compiled from `research/references.bib`)*
+*(Compiled from `pipelines/research/references.bib`)*

@@ -13,7 +13,7 @@ This directory contains reproducible experiment code for two research papers:
 1. Create account at https://physionet.org
 2. Complete CITI "Data or Specimens Only Research" training
 3. Sign the MIMIC-IV Data Use Agreement
-4. Download MIMIC-IV v2.2+ and place CSVs in `research/data/mimic-iv/`
+4. Download MIMIC-IV v2.2+ and place CSVs in `pipelines/research/data/mimic-iv/`
 
 ### Python Environment
 ```bash
@@ -24,19 +24,19 @@ pip install pandas numpy scikit-learn xgboost matplotlib tabpfn scipy
 
 ```bash
 # Step 1: Build cohort from MIMIC-IV (requires data access)
-python research/mimic_iv_etl.py --mimic-dir research/data/mimic-iv --output research/data/mimic_cohort.parquet
+python pipelines/research/mimic_iv_etl.py --mimic-dir pipelines/research/data/mimic-iv --output pipelines/research/data/mimic_cohort.parquet
 
 # Step 2: Generate digital twin trajectory features
-python research/digital_twin_features.py --input research/data/mimic_cohort.parquet --output research/data/mimic_cohort_with_dt.parquet
+python pipelines/research/digital_twin_features.py --input pipelines/research/data/mimic_cohort.parquet --output pipelines/research/data/mimic_cohort_with_dt.parquet
 
 # Step 3: Run full experiment (5-fold CV + 1000 bootstrap iterations)
-python research/experiment_runner.py --data research/data/mimic_cohort_with_dt.parquet --folds 5 --bootstrap 1000
+python pipelines/research/experiment_runner.py --data pipelines/research/data/mimic_cohort_with_dt.parquet --folds 5 --bootstrap 1000
 
 # Step 4: Generate LaTeX tables and figures
-python research/generate_paper_figures.py --results research/results/experiment_results.json --output research/figures/
+python pipelines/research/generate_paper_figures.py --results pipelines/research/results/experiment_results.json --output pipelines/research/figures/
 
 # Dry-run with synthetic data (no MIMIC-IV access needed)
-python research/experiment_runner.py --synthetic --folds 2 --bootstrap 100
+python pipelines/research/experiment_runner.py --synthetic --folds 2 --bootstrap 100
 ```
 
 ## Ethics Statement
