@@ -656,85 +656,110 @@ async fn get_doctor_patients(
     let pool = &state.db_pool;
 
     #[derive(sqlx::FromRow)]
-    struct PatientRow {
-        id: i64,
+    struct DoctorPatientRow {
+        patient_id: i64,
         username: String,
         full_name: Option<String>,
+        latest_encounter_id: Option<i64>,
+        latest_encounter_type: Option<String>,
+        latest_status: Option<String>,
+        open_orders: Option<i64>,
+        active_admissions: Option<i64>,
     }
 
     let facility_id = user.0.as_ref().and_then(|u| u.facility_id);
-    let patients: Vec<PatientRow> = match facility_id {
-        Some(fid) => {
-            let sql = "SELECT id, username, full_name FROM users WHERE role = 'patient' AND facility_id = $1 AND is_deleted = 0 ORDER BY id ASC";
-            match pool {
-                crate::db::DbPool::Sqlite(p) => sqlx::query_as::<_, PatientRow>(sql).bind(fid).fetch_all(p).await.unwrap_or_default(),
-                crate::db::DbPool::Postgres(p) => sqlx::query_as::<_, PatientRow>(sql).bind(fid).fetch_all(p).await.unwrap_or_default(),
-            }
-        }
-        None => {
-            let sql = "SELECT id, username, full_name FROM users WHERE role = 'patient' AND is_deleted = 0 ORDER BY id ASC";
-            match pool {
-                crate::db::DbPool::Sqlite(p) => sqlx::query_as::<_, PatientRow>(sql).fetch_all(p).await.unwrap_or_default(),
-                crate::db::DbPool::Postgres(p) => sqlx::query_as::<_, PatientRow>(sql).fetch_all(p).await.unwrap_or_default(),
-            }
-        }
+    let sql = match facility_id {
+        Some(_) => r#"
+            SELECT 
+                u.id AS patient_id,
+                u.username,
+                u.full_name,
+                e.id AS latest_encounter_id,
+                COALESCE(e.encounter_type, 'OPD') AS latest_encounter_type,
+                COALESCE(e.status, 'registered') AS latest_status,
+                COALESCE(o.cnt, 0) AS open_orders,
+                COALESCE(a.cnt, 0) AS active_admissions
+            FROM users u
+            LEFT JOIN (
+                SELECT id, patient_id, encounter_type, status
+                FROM (
+                    SELECT id, patient_id, encounter_type, status,
+                           ROW_NUMBER() OVER (PARTITION BY patient_id ORDER BY started_at DESC) as rn
+                    FROM encounters
+                ) ranked
+                WHERE rn = 1
+            ) e ON e.patient_id = u.id
+            LEFT JOIN (
+                SELECT patient_id, COUNT(*) AS cnt
+                FROM clinical_orders
+                WHERE status IN ('ordered', 'in_progress')
+                GROUP BY patient_id
+            ) o ON o.patient_id = u.id
+            LEFT JOIN (
+                SELECT patient_id, COUNT(*) AS cnt
+                FROM admissions
+                WHERE status = 'active'
+                GROUP BY patient_id
+            ) a ON a.patient_id = u.id
+            WHERE u.role = 'patient' AND u.facility_id = $1 AND u.is_deleted = 0
+            ORDER BY u.id ASC
+        "#,
+        None => r#"
+            SELECT 
+                u.id AS patient_id,
+                u.username,
+                u.full_name,
+                e.id AS latest_encounter_id,
+                COALESCE(e.encounter_type, 'OPD') AS latest_encounter_type,
+                COALESCE(e.status, 'registered') AS latest_status,
+                COALESCE(o.cnt, 0) AS open_orders,
+                COALESCE(a.cnt, 0) AS active_admissions
+            FROM users u
+            LEFT JOIN (
+                SELECT id, patient_id, encounter_type, status
+                FROM (
+                    SELECT id, patient_id, encounter_type, status,
+                           ROW_NUMBER() OVER (PARTITION BY patient_id ORDER BY started_at DESC) as rn
+                    FROM encounters
+                ) ranked
+                WHERE rn = 1
+            ) e ON e.patient_id = u.id
+            LEFT JOIN (
+                SELECT patient_id, COUNT(*) AS cnt
+                FROM clinical_orders
+                WHERE status IN ('ordered', 'in_progress')
+                GROUP BY patient_id
+            ) o ON o.patient_id = u.id
+            LEFT JOIN (
+                SELECT patient_id, COUNT(*) AS cnt
+                FROM admissions
+                WHERE status = 'active'
+                GROUP BY patient_id
+            ) a ON a.patient_id = u.id
+            WHERE u.role = 'patient' AND u.is_deleted = 0
+            ORDER BY u.id ASC
+        "#,
     };
 
-    if patients.is_empty() {
-        return Ok(Json(json!([])));
-    }
-
-    #[derive(sqlx::FromRow)]
-    struct EncounterBatchRow { id: i64, patient_id: i64, encounter_type: String, status: String }
-    let enc_sql = "SELECT id, patient_id, encounter_type, status FROM encounters ORDER BY started_at DESC";
-    let encounters: Vec<EncounterBatchRow> = match pool {
-        crate::db::DbPool::Sqlite(pool) => sqlx::query_as(enc_sql).fetch_all(pool).await.unwrap_or_default(),
-        crate::db::DbPool::Postgres(pool) => sqlx::query_as(enc_sql).fetch_all(pool).await.unwrap_or_default(),
+    let rows: Vec<DoctorPatientRow> = match (facility_id, pool) {
+        (Some(fid), crate::db::DbPool::Sqlite(p)) => sqlx::query_as(sql).bind(fid).fetch_all(p).await.unwrap_or_default(),
+        (Some(fid), crate::db::DbPool::Postgres(p)) => sqlx::query_as(sql).bind(fid).fetch_all(p).await.unwrap_or_default(),
+        (None, crate::db::DbPool::Sqlite(p)) => sqlx::query_as(sql).fetch_all(p).await.unwrap_or_default(),
+        (None, crate::db::DbPool::Postgres(p)) => sqlx::query_as(sql).fetch_all(p).await.unwrap_or_default(),
     };
-    let mut latest_encs: std::collections::HashMap<i64, EncounterBatchRow> = std::collections::HashMap::new();
-    for enc in encounters {
-        latest_encs.entry(enc.patient_id).or_insert(enc);
-    }
 
-    #[derive(sqlx::FromRow)]
-    struct PatientCountBatchRow { patient_id: i64, count: i64 }
-    let ord_cnt_sql = "SELECT patient_id, COUNT(*) as count FROM clinical_orders WHERE status IN ('ordered', 'in_progress') GROUP BY patient_id";
-    let order_counts: Vec<PatientCountBatchRow> = match pool {
-        crate::db::DbPool::Sqlite(pool) => sqlx::query_as(ord_cnt_sql).fetch_all(pool).await.unwrap_or_default(),
-        crate::db::DbPool::Postgres(pool) => sqlx::query_as(ord_cnt_sql).fetch_all(pool).await.unwrap_or_default(),
-    };
-    let mut order_map: std::collections::HashMap<i64, i64> = std::collections::HashMap::new();
-    for o in order_counts {
-        order_map.insert(o.patient_id, o.count);
-    }
-
-    let adm_cnt_sql = "SELECT patient_id, COUNT(*) as count FROM admissions WHERE status = 'active' GROUP BY patient_id";
-    let admission_counts: Vec<PatientCountBatchRow> = match pool {
-        crate::db::DbPool::Sqlite(pool) => sqlx::query_as(adm_cnt_sql).fetch_all(pool).await.unwrap_or_default(),
-        crate::db::DbPool::Postgres(pool) => sqlx::query_as(adm_cnt_sql).fetch_all(pool).await.unwrap_or_default(),
-    };
-    let mut adm_map: std::collections::HashMap<i64, i64> = std::collections::HashMap::new();
-    for a in admission_counts {
-        adm_map.insert(a.patient_id, a.count);
-    }
-
-    let mut panel = Vec::with_capacity(patients.len());
-    for p in patients {
-        let enc = latest_encs.get(&p.id);
-        let ord_cnt = order_map.get(&p.id).copied().unwrap_or(0);
-        let adm_cnt = adm_map.get(&p.id).copied().unwrap_or(0);
-
-        panel.push(json!({
-            "patient_id": p.id,
-            "username": p.username,
-            "full_name": p.full_name,
-            "latest_encounter_id": enc.as_ref().map(|e| e.id),
-            "latest_encounter_type": enc.as_ref().map(|e| e.encounter_type.clone()).unwrap_or_else(|| "OPD".to_string()),
-            "latest_status": enc.as_ref().map(|e| e.status.clone()).unwrap_or_else(|| "registered".to_string()),
-            "open_orders": ord_cnt,
-            "active_admissions": adm_cnt
-        }));
-    }
+    let panel: Vec<serde_json::Value> = rows.into_iter().map(|r| {
+        json!({
+            "patient_id": r.patient_id,
+            "username": r.username,
+            "full_name": r.full_name,
+            "latest_encounter_id": r.latest_encounter_id,
+            "latest_encounter_type": r.latest_encounter_type.unwrap_or_else(|| "OPD".to_string()),
+            "latest_status": r.latest_status.unwrap_or_else(|| "registered".to_string()),
+            "open_orders": r.open_orders.unwrap_or(0),
+            "active_admissions": r.active_admissions.unwrap_or(0)
+        })
+    }).collect();
 
     Ok(Json(json!(panel)))
 }
@@ -854,11 +879,47 @@ async fn get_triage_queue(
     let pool = &state.db_pool;
 
     #[derive(sqlx::FromRow)]
-    struct PatientRow { id: i64, username: String, full_name: Option<String> }
-    let sql_patients = "SELECT id, username, full_name FROM users WHERE role = 'patient' AND is_deleted = 0";
-    let patients: Vec<PatientRow> = match pool {
-        crate::db::DbPool::Sqlite(p) => sqlx::query_as(sql_patients).fetch_all(p).await.unwrap_or_default(),
-        crate::db::DbPool::Postgres(p) => sqlx::query_as(sql_patients).fetch_all(p).await.unwrap_or_default(),
+    struct TriageRow {
+        patient_id: i64,
+        username: String,
+        full_name: Option<String>,
+        heart_rate: Option<f64>,
+        systolic_bp: Option<f64>,
+        diastolic_bp: Option<f64>,
+        spo2: Option<f64>,
+        temperature_c: Option<f64>,
+        observed_at: Option<chrono::NaiveDateTime>,
+    }
+
+    let triage_sql = r#"
+        SELECT 
+            u.id AS patient_id,
+            u.username,
+            u.full_name,
+            v.heart_rate,
+            v.systolic_bp,
+            v.diastolic_bp,
+            v.spo2,
+            v.temperature_c,
+            v.observed_at
+        FROM users u
+        LEFT JOIN (
+            SELECT patient_id, heart_rate, systolic_bp, diastolic_bp, spo2, temperature_c, observed_at
+            FROM (
+                SELECT patient_id, heart_rate, systolic_bp, diastolic_bp, spo2, temperature_c, observed_at,
+                       ROW_NUMBER() OVER (PARTITION BY patient_id ORDER BY observed_at DESC) as rn
+                FROM vital_observations
+                WHERE is_deleted = 0
+            ) ranked
+            WHERE rn = 1
+        ) v ON v.patient_id = u.id
+        WHERE u.role = 'patient' AND u.is_deleted = 0
+        ORDER BY u.id ASC
+    "#;
+
+    let patients: Vec<TriageRow> = match pool {
+        crate::db::DbPool::Sqlite(p) => sqlx::query_as(triage_sql).fetch_all(p).await.unwrap_or_default(),
+        crate::db::DbPool::Postgres(p) => sqlx::query_as(triage_sql).fetch_all(p).await.unwrap_or_default(),
     };
 
     if patients.is_empty() {
@@ -870,43 +931,19 @@ async fn get_triage_queue(
         })));
     }
 
-    #[derive(sqlx::FromRow)]
-    struct TriageVitalBatchRow {
-        patient_id: i64,
-        heart_rate: Option<f64>,
-        systolic_bp: Option<f64>,
-        diastolic_bp: Option<f64>,
-        spo2: Option<f64>,
-        temperature_c: Option<f64>,
-        observed_at: Option<chrono::NaiveDateTime>,
-    }
-
-    let vitals_sql = "SELECT patient_id, heart_rate, systolic_bp, diastolic_bp, spo2, temperature_c, observed_at FROM vital_observations WHERE is_deleted = 0 ORDER BY observed_at DESC";
-    let vitals: Vec<TriageVitalBatchRow> = match pool {
-        crate::db::DbPool::Sqlite(pool) => sqlx::query_as(vitals_sql).fetch_all(pool).await.unwrap_or_default(),
-        crate::db::DbPool::Postgres(pool) => sqlx::query_as(vitals_sql).fetch_all(pool).await.unwrap_or_default(),
-    };
-
-    let mut latest_vitals: std::collections::HashMap<i64, TriageVitalBatchRow> = std::collections::HashMap::new();
-    for v in vitals {
-        latest_vitals.entry(v.patient_id).or_insert(v);
-    }
-
     let mut queue = Vec::with_capacity(patients.len());
     let mut critical_count = 0;
 
     for p in patients {
-        let tv = latest_vitals.get(&p.id);
-
         let mut esi = 5;
         let mut reason = "Normal vital signs.".to_string();
 
-        if let Some(ref v) = tv {
-            let hr = v.heart_rate.unwrap_or(72.0);
-            let sbp = v.systolic_bp.unwrap_or(120.0);
-            let spo2 = v.spo2.unwrap_or(98.0);
-            let temp = v.temperature_c.unwrap_or(37.0);
+        let hr = p.heart_rate.unwrap_or(72.0);
+        let sbp = p.systolic_bp.unwrap_or(120.0);
+        let spo2 = p.spo2.unwrap_or(98.0);
+        let temp = p.temperature_c.unwrap_or(37.0);
 
+        if p.heart_rate.is_some() || p.systolic_bp.is_some() || p.spo2.is_some() {
             if spo2 < 85.0 || hr < 40.0 || hr > 160.0 {
                 esi = 1;
                 reason = format!("Immediate resuscitation needed: critical SpO2 ({:.0}%) or HR ({:.0} bpm).", spo2, hr);
@@ -926,24 +963,25 @@ async fn get_triage_queue(
             critical_count += 1;
         }
 
-        let vit_summary = match tv {
-            Some(ref v) => format!("HR: {:.0} bpm, BP: {:.0}/{:.0} mmHg, SpO2: {:.0}%, Temp: {:.1}°C",
-                v.heart_rate.unwrap_or(72.0),
-                v.systolic_bp.unwrap_or(120.0),
-                v.diastolic_bp.unwrap_or(80.0),
-                v.spo2.unwrap_or(98.0),
-                v.temperature_c.unwrap_or(37.0),
-            ),
-            None => "No telemetry recorded".to_string(),
+        let vit_summary = if p.heart_rate.is_some() || p.systolic_bp.is_some() || p.spo2.is_some() {
+            format!("HR: {:.0} bpm, BP: {:.0}/{:.0} mmHg, SpO2: {:.0}%, Temp: {:.1}°C",
+                hr,
+                sbp,
+                p.diastolic_bp.unwrap_or(80.0),
+                spo2,
+                temp,
+            )
+        } else {
+            "No telemetry recorded".to_string()
         };
 
         queue.push(json!({
-            "patient_id": p.id,
+            "patient_id": p.patient_id,
             "full_name": p.full_name.unwrap_or(p.username),
             "esi_level": esi,
             "vital_summary": vit_summary,
             "triage_reason": reason,
-            "observed_at": tv.and_then(|v| v.observed_at)
+            "observed_at": p.observed_at
         }));
     }
 
