@@ -680,30 +680,49 @@ async fn get_doctor_patients(
         }
     };
 
-    let mut panel = Vec::new();
+    if patients.is_empty() {
+        return Ok(Json(json!([])));
+    }
+
+    #[derive(sqlx::FromRow)]
+    struct EncounterBatchRow { id: i64, patient_id: i64, encounter_type: String, status: String }
+    let enc_sql = "SELECT id, patient_id, encounter_type, status FROM encounters ORDER BY started_at DESC";
+    let encounters: Vec<EncounterBatchRow> = match pool {
+        crate::db::DbPool::Sqlite(pool) => sqlx::query_as(enc_sql).fetch_all(pool).await.unwrap_or_default(),
+        crate::db::DbPool::Postgres(pool) => sqlx::query_as(enc_sql).fetch_all(pool).await.unwrap_or_default(),
+    };
+    let mut latest_encs: std::collections::HashMap<i64, EncounterBatchRow> = std::collections::HashMap::new();
+    for enc in encounters {
+        latest_encs.entry(enc.patient_id).or_insert(enc);
+    }
+
+    #[derive(sqlx::FromRow)]
+    struct PatientCountBatchRow { patient_id: i64, count: i64 }
+    let ord_cnt_sql = "SELECT patient_id, COUNT(*) as count FROM clinical_orders WHERE status IN ('ordered', 'in_progress') GROUP BY patient_id";
+    let order_counts: Vec<PatientCountBatchRow> = match pool {
+        crate::db::DbPool::Sqlite(pool) => sqlx::query_as(ord_cnt_sql).fetch_all(pool).await.unwrap_or_default(),
+        crate::db::DbPool::Postgres(pool) => sqlx::query_as(ord_cnt_sql).fetch_all(pool).await.unwrap_or_default(),
+    };
+    let mut order_map: std::collections::HashMap<i64, i64> = std::collections::HashMap::new();
+    for o in order_counts {
+        order_map.insert(o.patient_id, o.count);
+    }
+
+    let adm_cnt_sql = "SELECT patient_id, COUNT(*) as count FROM admissions WHERE status = 'active' GROUP BY patient_id";
+    let admission_counts: Vec<PatientCountBatchRow> = match pool {
+        crate::db::DbPool::Sqlite(pool) => sqlx::query_as(adm_cnt_sql).fetch_all(pool).await.unwrap_or_default(),
+        crate::db::DbPool::Postgres(pool) => sqlx::query_as(adm_cnt_sql).fetch_all(pool).await.unwrap_or_default(),
+    };
+    let mut adm_map: std::collections::HashMap<i64, i64> = std::collections::HashMap::new();
+    for a in admission_counts {
+        adm_map.insert(a.patient_id, a.count);
+    }
+
+    let mut panel = Vec::with_capacity(patients.len());
     for p in patients {
-        let enc_sql = "SELECT id, encounter_type, status FROM encounters WHERE patient_id = $1 ORDER BY started_at DESC LIMIT 1";
-        #[derive(sqlx::FromRow)]
-        struct LatestEnc { id: i64, encounter_type: String, status: String }
-
-        let enc: Option<LatestEnc> = match pool {
-            crate::db::DbPool::Sqlite(pool) => sqlx::query_as(enc_sql).bind(p.id).fetch_optional(pool).await.unwrap_or(None),
-            crate::db::DbPool::Postgres(pool) => sqlx::query_as(enc_sql).bind(p.id).fetch_optional(pool).await.unwrap_or(None),
-        };
-
-        let ord_cnt_sql = "SELECT COUNT(*) FROM clinical_orders WHERE patient_id = $1 AND status IN ('ordered', 'in_progress')";
-        let adm_cnt_sql = "SELECT COUNT(*) FROM admissions WHERE patient_id = $1 AND status = 'active'";
-
-        let (ord_cnt, adm_cnt): ((i64,), (i64,)) = match pool {
-            crate::db::DbPool::Sqlite(pool) => (
-                sqlx::query_as(ord_cnt_sql).bind(p.id).fetch_one(pool).await.unwrap_or((0,)),
-                sqlx::query_as(adm_cnt_sql).bind(p.id).fetch_one(pool).await.unwrap_or((0,)),
-            ),
-            crate::db::DbPool::Postgres(pool) => (
-                sqlx::query_as(ord_cnt_sql).bind(p.id).fetch_one(pool).await.unwrap_or((0,)),
-                sqlx::query_as(adm_cnt_sql).bind(p.id).fetch_one(pool).await.unwrap_or((0,)),
-            ),
-        };
+        let enc = latest_encs.get(&p.id);
+        let ord_cnt = order_map.get(&p.id).copied().unwrap_or(0);
+        let adm_cnt = adm_map.get(&p.id).copied().unwrap_or(0);
 
         panel.push(json!({
             "patient_id": p.id,
@@ -712,12 +731,12 @@ async fn get_doctor_patients(
             "latest_encounter_id": enc.as_ref().map(|e| e.id),
             "latest_encounter_type": enc.as_ref().map(|e| e.encounter_type.clone()).unwrap_or_else(|| "OPD".to_string()),
             "latest_status": enc.as_ref().map(|e| e.status.clone()).unwrap_or_else(|| "registered".to_string()),
-            "open_orders": ord_cnt.0,
-            "active_admissions": adm_cnt.0
+            "open_orders": ord_cnt,
+            "active_admissions": adm_cnt
         }));
     }
 
-    Ok(Json(panel))
+    Ok(Json(json!(panel)))
 }
 
 async fn get_doctor_insights(
@@ -842,25 +861,42 @@ async fn get_triage_queue(
         crate::db::DbPool::Postgres(p) => sqlx::query_as(sql_patients).fetch_all(p).await.unwrap_or_default(),
     };
 
-    let mut queue = Vec::new();
+    if patients.is_empty() {
+        return Ok(Json(json!({
+            "queue": [],
+            "total_waiting": 0,
+            "critical_count": 0,
+            "clinical_safety_note": "ESI triage scores are automated clinical decision-support aids; clinicians perform final physical triage evaluations."
+        })));
+    }
+
+    #[derive(sqlx::FromRow)]
+    struct TriageVitalBatchRow {
+        patient_id: i64,
+        heart_rate: Option<f64>,
+        systolic_bp: Option<f64>,
+        diastolic_bp: Option<f64>,
+        spo2: Option<f64>,
+        temperature_c: Option<f64>,
+        observed_at: Option<chrono::NaiveDateTime>,
+    }
+
+    let vitals_sql = "SELECT patient_id, heart_rate, systolic_bp, diastolic_bp, spo2, temperature_c, observed_at FROM vital_observations WHERE is_deleted = 0 ORDER BY observed_at DESC";
+    let vitals: Vec<TriageVitalBatchRow> = match pool {
+        crate::db::DbPool::Sqlite(pool) => sqlx::query_as(vitals_sql).fetch_all(pool).await.unwrap_or_default(),
+        crate::db::DbPool::Postgres(pool) => sqlx::query_as(vitals_sql).fetch_all(pool).await.unwrap_or_default(),
+    };
+
+    let mut latest_vitals: std::collections::HashMap<i64, TriageVitalBatchRow> = std::collections::HashMap::new();
+    for v in vitals {
+        latest_vitals.entry(v.patient_id).or_insert(v);
+    }
+
+    let mut queue = Vec::with_capacity(patients.len());
     let mut critical_count = 0;
 
     for p in patients {
-        let vitals_sql = "SELECT heart_rate, systolic_bp, diastolic_bp, spo2, temperature_c, observed_at FROM vital_observations WHERE patient_id = $1 AND is_deleted = 0 ORDER BY observed_at DESC LIMIT 1";
-        #[derive(sqlx::FromRow)]
-        struct TriageVital {
-            heart_rate: Option<f64>,
-            systolic_bp: Option<f64>,
-            diastolic_bp: Option<f64>,
-            spo2: Option<f64>,
-            temperature_c: Option<f64>,
-            observed_at: Option<chrono::NaiveDateTime>,
-        }
-
-        let tv: Option<TriageVital> = match pool {
-            crate::db::DbPool::Sqlite(pool) => sqlx::query_as(vitals_sql).bind(p.id).fetch_optional(pool).await.unwrap_or(None),
-            crate::db::DbPool::Postgres(pool) => sqlx::query_as(vitals_sql).bind(p.id).fetch_optional(pool).await.unwrap_or(None),
-        };
+        let tv = latest_vitals.get(&p.id);
 
         let mut esi = 5;
         let mut reason = "Normal vital signs.".to_string();
