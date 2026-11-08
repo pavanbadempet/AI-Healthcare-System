@@ -33,4 +33,4 @@ body:
     attributes:
       label: Location
       description: Which file or section is affected?
-      placeholder: "docs/AI_AGENT_ARCHITECTURE.md, section 3..."
+      placeholder: "docs/architecture/AI_AGENT_ARCHITECTURE.md, section 3..."

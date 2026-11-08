@@ -4,7 +4,7 @@ Shared evaluation module for AI Healthcare clinical prediction models.
 Computes AUC-ROC, precision/recall/F1, confusion matrix, and feature
 importance for any sklearn-compatible classifier.  Writes results to a
 JSON artifact that the ``/admin/model-cards`` endpoint and
-``docs/MODEL_CARDS.md`` can reference.
+``docs/reports/MODEL_AND_DATASET_CARDS.md`` can reference.
 
 Usage from a training script::
 

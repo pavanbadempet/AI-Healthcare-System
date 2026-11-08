@@ -615,7 +615,7 @@ Use **XGBoost gradient-boosted trees** for all 5 clinical prediction models (dia
 The AI chat system requires a multi-step reasoning pipeline: (1) classify user intent, (2) retrieve relevant patient context via RAG, (3) route to specialized sub-agents (researcher, analyst, guardrail checker), (4) generate a response with citations and medical disclaimers, and (5) enforce safety guardrails on the output. This is a directed acyclic graph of LLM calls with conditional branching and state management.
 
 ### Decision
-Use **LangGraph** (from the LangChain ecosystem) as the multi-agent orchestration framework. The medical agent is implemented as a `StateGraph` with supervisor routing in [`backend/services/agent.py`](../backend/services/agent.py).
+Use **LangGraph** (from the LangChain ecosystem) as the multi-agent orchestration framework. The medical agent is implemented as a `StateGraph` with supervisor routing in [`backend/agent.py`](../../backend/agent.py).
 
 ### Trade-offs Analysis
 

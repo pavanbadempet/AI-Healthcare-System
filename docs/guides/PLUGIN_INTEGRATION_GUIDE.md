@@ -6,7 +6,7 @@ This guide details how to package, distribute, and sell the **AI Healthcare Syst
 
 ## 1. Integration Architecture (SMART on FHIR)
 
-The system is built on **SMART on FHIR** standards (defined in [smart_fhir.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/smart_fhir.py)), allowing it to run natively within an EHR portal iframe.
+The system is built on **SMART on FHIR** standards (defined in [smart_fhir.py](../../backend/smart_fhir.py)), allowing it to run natively within an EHR portal iframe.
 
 ```
 +------------------------------------------------------------+
@@ -30,7 +30,7 @@ The system is built on **SMART on FHIR** standards (defined in [smart_fhir.py](f
 
 ## 2. Ingesting EHR Records to RAG
 
-Once launched, the agent uses [fhir.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/fhir.py) to extract clinical records and automatically populate the **Clinical Analyzer Node's** context:
+Once launched, the agent uses [fhir.py](../../backend/fhir.py) to extract clinical records and automatically populate the **Clinical Analyzer Node's** context:
 
 ```typescript
 // Fetching context via backend proxy using FHIR standards
@@ -87,6 +87,6 @@ When distributing as a SaaS plugin, the backend database reads custom configurat
 ## 5. Security & HIPAA Gatekeepers
 
 When selling to hospitals, the product passes security gates out-of-the-box:
-* **PII/PHI Log Scrubbing**: Standard security decorators ([security_decorators.py](file:///c:/Users/pavan/OneDrive/Documents/GitHub/AI-Healthcare-System/backend/security_decorators.py)) automatically catch and scrub patient identifiers from log files.
+* **PII/PHI Log Scrubbing**: Standard security decorators ([security_decorators.py](../../backend/security_decorators.py)) automatically catch and scrub patient identifiers from log files.
 * **Consent Gate**: All queries automatically cross-reference data access permissions before retrieving patient context.
 * **On-Premises Option**: Can run fully on-premises with local models (WebLLM client-side or local Ollama endpoints) for clinics refusing cloud LLM dependencies.

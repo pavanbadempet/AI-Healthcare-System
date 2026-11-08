@@ -23,7 +23,7 @@ Model cards following the [Model Cards for Model Reporting](https://arxiv.org/ab
 
 ## 1. Diabetes Risk Screening
 
-**File:** [`backend/train_diabetes.py`](../backend/train_diabetes.py) | **Artifact:** [`backend/diabetes_model.pkl`](../backend/diabetes_model.pkl)
+**File:** [`scripts/training/train_diabetes.py`](../../scripts/training/train_diabetes.py) | **Artifact:** [`backend/diabetes_model.pkl`](../../backend/diabetes_model.pkl)
 
 ### Intended Use
 Population-level diabetes risk screening. Flags individuals who may benefit from further clinical evaluation (HbA1c test, fasting glucose). Not intended for diagnosis of Type 1, Type 2, or gestational diabetes.
@@ -45,7 +45,7 @@ Population-level diabetes risk screening. Flags individuals who may benefit from
 - 80/20 stratified train/test split (random_state=42)
 - Metrics: Accuracy, AUC-ROC, sensitivity, specificity, confusion matrix
 - Feature importance via `feature_importances_` (gain-based)
-- SHAP explanations available via [`backend/ml/explainability.py`](../backend/ml/explainability.py)
+- SHAP explanations available via [`backend/explainability.py`](../../backend/explainability.py)
 
 ### Known Limitations
 - BRFSS is self-reported survey data — BMI, smoking, physical activity are subject to recall bias
@@ -63,7 +63,7 @@ Population-level diabetes risk screening. Flags individuals who may benefit from
 
 ## 2. Heart Disease Screening
 
-**File:** [`backend/train_heart.py`](../backend/train_heart.py) | **Artifact:** [`backend/heart_disease_model.pkl`](../backend/heart_disease_model.pkl)
+**File:** [`scripts/training/train_heart.py`](../../scripts/training/train_heart.py) | **Artifact:** [`backend/heart_disease_model.pkl`](../../backend/heart_disease_model.pkl)
 
 ### Intended Use
 Heart disease risk screening using either Cleveland clinical features or BRFSS survey features (with column mapping). Flags individuals for further cardiac evaluation.
@@ -90,7 +90,7 @@ Heart disease risk screening using either Cleveland clinical features or BRFSS s
 
 ## 3. Liver Disease Screening
 
-**File:** [`backend/train_liver.py`](../backend/train_liver.py) | **Artifact:** [`backend/liver_disease_model.pkl`](../backend/liver_disease_model.pkl)
+**File:** [`scripts/training/train_liver.py`](../../scripts/training/train_liver.py) | **Artifact:** [`backend/liver_disease_model.pkl`](../../backend/liver_disease_model.pkl)
 
 ### Intended Use
 Liver disease screening from routine blood panel results. Identifies patients who may benefit from hepatology referral.
@@ -115,7 +115,7 @@ Liver disease screening from routine blood panel results. Identifies patients wh
 
 ## 4. Kidney Disease Screening
 
-**File:** [`backend/train_kidney.py`](../backend/train_kidney.py) | **Artifact:** [`backend/kidney_model.pkl`](../backend/kidney_model.pkl)
+**File:** [`scripts/training/train_kidney.py`](../../scripts/training/train_kidney.py) | **Artifact:** [`backend/kidney_model.pkl`](../../backend/kidney_model.pkl)
 
 ### Intended Use
 Chronic kidney disease (CKD) screening from laboratory and clinical indicators. Flags patients for nephrology evaluation and eGFR monitoring.
@@ -139,7 +139,7 @@ Chronic kidney disease (CKD) screening from laboratory and clinical indicators. 
 
 ## 5. Lung Health Screening
 
-**File:** [`backend/train_lungs.py`](../backend/train_lungs.py) | **Artifact:** [`backend/lungs_model.pkl`](../backend/lungs_model.pkl)
+**File:** [`scripts/training/train_lungs.py`](../../scripts/training/train_lungs.py) | **Artifact:** [`backend/lungs_model.pkl`](../../backend/lungs_model.pkl)
 
 ### Intended Use
 Lung cancer risk screening from symptom and lifestyle survey data. Flags individuals for chest imaging or pulmonary function testing.
@@ -175,11 +175,11 @@ See [ADR-015: XGBoost for Tabular Clinical Prediction](../architecture/architect
 
 ### Explainability
 
-All 5 models support SHAP (SHapley Additive exPlanations) feature attribution via [`backend/ml/explainability.py`](../backend/ml/explainability.py). SHAP values explain which features drove each individual prediction, critical for clinical trust.
+All 5 models support SHAP (SHapley Additive exPlanations) feature attribution via [`backend/explainability.py`](../../backend/explainability.py). SHAP values explain which features drove each individual prediction, critical for clinical trust.
 
 ### Evaluation Artifact Generation
 
-Each training script calls `evaluate_and_save()` from [`backend/ml/evaluation.py`](../backend/ml/evaluation.py), which writes a JSON artifact (`backend/ml/eval_<model>.json`) containing:
+Each training script calls `evaluate_and_save()` from [`backend/ml/evaluation.py`](../../backend/ml/evaluation.py), which writes a JSON artifact (`backend/ml/eval_<model>.json`) containing:
 - AUC-ROC score
 - Sensitivity and specificity (at default threshold)
 - Full classification report (precision, recall, F1 per class)
@@ -188,11 +188,11 @@ Each training script calls `evaluate_and_save()` from [`backend/ml/evaluation.py
 
 To regenerate all evaluation artifacts:
 ```bash
-python -m backend.train_diabetes
-python -m backend.train_heart
-python -m backend.train_kidney
-python -m backend.train_liver
-python -m backend.train_lungs
+python -m scripts.training.train_diabetes
+python -m scripts.training.train_heart
+python -m scripts.training.train_kidney
+python -m scripts.training.train_liver
+python -m scripts.training.train_lungs
 ```
 
 ---

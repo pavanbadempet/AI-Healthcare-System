@@ -25,6 +25,9 @@ def generate_api_contract_index():
     content_lines = [
         "# 📡 AI Healthcare System — Complete API Contract & Search Index\n",
         "> Comprehensive API route index and schema contract reference for the clinical platform.\n",
+        "## 🔗 Quick Downloads & Interactive API Specs\n",
+        "- 📥 **OpenAPI 3.0 Spec JSON**: [`docs/openapi_spec.json`](../openapi_spec.json)\n",
+        "- 📮 **Postman Collection v2.1**: [`docs/postman_collection.json`](../postman_collection.json)\n",
         "## 🏥 Core API Domain Endpoints\n",
         "| Domain Router | HTTP Method | Endpoint Route | Description & Schema Contract |",
         "| :--- | :---: | :--- | :--- |",
