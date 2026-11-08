@@ -37,7 +37,7 @@ def create_medallion_job(user_email):
             {
                 "task_key": "step_00_unity_catalog_governance_setup",
                 "notebook_task": {
-                    "notebook_path": "databricks_notebooks/00_unity_catalog_governance_setup",
+                    "notebook_path": "pipelines/databricks/00_unity_catalog_governance_setup",
                     "source": "GIT"
                 }
             },
@@ -45,7 +45,7 @@ def create_medallion_job(user_email):
                 "task_key": "step_01_bronze_ingest",
                 "depends_on": [{"task_key": "step_00_unity_catalog_governance_setup"}],
                 "notebook_task": {
-                    "notebook_path": "databricks_notebooks/01_bronze_ingest",
+                    "notebook_path": "pipelines/databricks/01_bronze_ingest",
                     "source": "GIT",
                     "base_parameters": {"pipeline_mode": "batch"}
                 }
@@ -54,7 +54,7 @@ def create_medallion_job(user_email):
                 "task_key": "step_02_silver_cleaning",
                 "depends_on": [{"task_key": "step_01_bronze_ingest"}],
                 "notebook_task": {
-                    "notebook_path": "databricks_notebooks/02_silver_cleaning",
+                    "notebook_path": "pipelines/databricks/02_silver_cleaning",
                     "source": "GIT",
                     "base_parameters": {"pipeline_mode": "batch"}
                 }
@@ -63,7 +63,7 @@ def create_medallion_job(user_email):
                 "task_key": "step_03_gold_aggregations",
                 "depends_on": [{"task_key": "step_02_silver_cleaning"}],
                 "notebook_task": {
-                    "notebook_path": "databricks_notebooks/03_gold_aggregations",
+                    "notebook_path": "pipelines/databricks/03_gold_aggregations",
                     "source": "GIT",
                     "base_parameters": {"pipeline_mode": "batch"}
                 }
@@ -72,7 +72,7 @@ def create_medallion_job(user_email):
                 "task_key": "step_04_gpu_risk_scoring",
                 "depends_on": [{"task_key": "step_03_gold_aggregations"}],
                 "notebook_task": {
-                    "notebook_path": "databricks_notebooks/04_gpu_risk_scoring",
+                    "notebook_path": "pipelines/databricks/04_gpu_risk_scoring",
                     "source": "GIT"
                 }
             },
@@ -80,7 +80,7 @@ def create_medallion_job(user_email):
                 "task_key": "step_05_export_to_neon",
                 "depends_on": [{"task_key": "step_04_gpu_risk_scoring"}],
                 "notebook_task": {
-                    "notebook_path": "databricks_notebooks/05_export_to_neon",
+                    "notebook_path": "pipelines/databricks/05_export_to_neon",
                     "source": "GIT"
                 }
             }

@@ -10,9 +10,10 @@
 # Frontend — React/Vite UI
 /frontend/ @pavanbadempet
 
-# Infrastructure — CI/CD, Docker, Terraform
+# Infrastructure & Pipelines — CI/CD, Docker, Terraform, Kubernetes, Pipelines
 /.github/ @pavanbadempet
-/terraform/ @pavanbadempet
+/infra/ @pavanbadempet
+/pipelines/ @pavanbadempet
 /Dockerfile* @pavanbadempet
 /docker-compose* @pavanbadempet
 

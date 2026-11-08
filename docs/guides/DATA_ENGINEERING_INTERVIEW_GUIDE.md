@@ -72,7 +72,7 @@ flowchart TD
 Auto Loader provides incremental, high-throughput file ingestion without manual offset tracking.
 
 ```python
-# Production Auto Loader Pattern (databricks_notebooks/01b_streaming_events.py)
+# Production Auto Loader Pattern (pipelines/databricks/01b_streaming_events.py)
 streaming_df = (
     spark.readStream.format("cloudFiles")
     .option("cloudFiles.format", "json")

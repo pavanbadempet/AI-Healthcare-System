@@ -28,13 +28,11 @@
 - `tests/` -> Pytest test suite
 - `docs/` -> Architecture docs, whitepapers, analysis
 - `data/` -> Training datasets for ML models
-- `databricks_notebooks/` -> Medallion pipeline notebooks (Bronze/Silver/Gold)
-- `airflow/`, `mlops/`, `monitoring/` -> Infrastructure & pipeline configs
-- `k8s/` -> Kubernetes deployment manifests
-- `terraform/` -> IaC provisioning (AWS/GCP)
+- `infra/` -> Cloud infrastructure, orchestration & observability (`infra/k8s/`, `infra/terraform/`, `infra/monitoring/`)
+- `pipelines/` -> Medallion pipeline notebooks & GPU kernels (`pipelines/databricks/`, `pipelines/kaggle/`)
+- `airflow/`, `mlops/` -> Infrastructure & pipeline configs
 - `microservices/` -> ABDM FHIR, Cloudflare AI, RAG, prediction workers
 - `packages/` -> Shared Python packages (FHIR, RAG cache, tabular, license gate)
-- `kaggle_gpu_kernel/` -> Kaggle GPU risk scoring kernel
 - `models/` -> Production model artifacts & vector store
 
 ## Always True

@@ -11,7 +11,7 @@
       "task_key": "Governance_Setup",
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Shared/AI-Healthcare/databricks_notebooks/00_unity_catalog_governance_setup",
+        "notebook_path": "/Workspace/Shared/AI-Healthcare/pipelines/databricks/00_unity_catalog_governance_setup",
         "source": "WORKSPACE"
       },
       "job_cluster_key": "Shared_Job_Cluster",
@@ -26,7 +26,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Shared/AI-Healthcare/databricks_notebooks/01_bronze_ingest",
+        "notebook_path": "/Workspace/Shared/AI-Healthcare/pipelines/databricks/01_bronze_ingest",
         "base_parameters": {
           "pipeline_mode": "batch"
         },
@@ -44,7 +44,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Shared/AI-Healthcare/databricks_notebooks/08_pyspark_data_quality_gates",
+        "notebook_path": "/Workspace/Shared/AI-Healthcare/pipelines/databricks/08_pyspark_data_quality_gates",
         "source": "WORKSPACE"
       },
       "job_cluster_key": "Shared_Job_Cluster",
@@ -59,7 +59,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Shared/AI-Healthcare/databricks_notebooks/02_silver_cleaning",
+        "notebook_path": "/Workspace/Shared/AI-Healthcare/pipelines/databricks/02_silver_cleaning",
         "base_parameters": {
           "pipeline_mode": "batch"
         },
@@ -77,7 +77,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Shared/AI-Healthcare/databricks_notebooks/03_gold_aggregations",
+        "notebook_path": "/Workspace/Shared/AI-Healthcare/pipelines/databricks/03_gold_aggregations",
         "base_parameters": {
           "pipeline_mode": "batch"
         },
@@ -95,7 +95,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Shared/AI-Healthcare/databricks_notebooks/07_omop_cdm_transformation",
+        "notebook_path": "/Workspace/Shared/AI-Healthcare/pipelines/databricks/07_omop_cdm_transformation",
         "source": "WORKSPACE"
       },
       "job_cluster_key": "Shared_Job_Cluster",
@@ -110,7 +110,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Shared/AI-Healthcare/databricks_notebooks/09_recommendation_digital_twin_pyspark",
+        "notebook_path": "/Workspace/Shared/AI-Healthcare/pipelines/databricks/09_recommendation_digital_twin_pyspark",
         "source": "WORKSPACE"
       },
       "job_cluster_key": "Shared_Job_Cluster",
@@ -125,7 +125,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Shared/AI-Healthcare/databricks_notebooks/04_gpu_risk_scoring",
+        "notebook_path": "/Workspace/Shared/AI-Healthcare/pipelines/databricks/04_gpu_risk_scoring",
         "source": "WORKSPACE"
       },
       "job_cluster_key": "Shared_Job_Cluster",
@@ -140,7 +140,7 @@
       ],
       "run_if": "ALL_SUCCESS",
       "notebook_task": {
-        "notebook_path": "/Workspace/Shared/AI-Healthcare/databricks_notebooks/05_export_to_neon",
+        "notebook_path": "/Workspace/Shared/AI-Healthcare/pipelines/databricks/05_export_to_neon",
         "source": "WORKSPACE"
       },
       "job_cluster_key": "Shared_Job_Cluster",

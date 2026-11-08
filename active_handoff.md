@@ -13,7 +13,7 @@ All core architectural tiers, foundation models, and speed layers have been impl
    - Backed by calibrated Quad-Ensembles (`XGBoost` + `LightGBM` + `CatBoost` + `RandomForest`) + C++ SHAP attribution.
 
 2. **Databricks Delta Lakehouse & Medallion Pipeline**:
-   - `databricks_notebooks/`: 12 production notebooks covering Unity Catalog Governance, Bronze Ingestion, Silver Cleaning, Gold Aggregations, PySpark ML Pipelines, OMOP CDM Transformation, and DLT Telemetry.
+   - `pipelines/databricks/`: 12 production notebooks covering Unity Catalog Governance, Bronze Ingestion, Silver Cleaning, Gold Aggregations, PySpark ML Pipelines, OMOP CDM Transformation, and DLT Telemetry.
    - Synchronized Delta Lake transaction logs in `data/lakehouse/bronze`, `data/lakehouse/silver`, `data/lakehouse/gold`.
 
 3. **Rust PID 1 Edge Gateway (`rust_gateway/`)**:
@@ -28,8 +28,8 @@ All core architectural tiers, foundation models, and speed layers have been impl
    - Complete Vitest suite executes 95 tests across 32 files in **5.70 seconds** via Bun.
 
 5. **Codebase Cleanup & Directory Pruning**:
-   - Removed duplicate `infrastructure/` directory (consolidated into root `k8s/` and `terraform/`).
-   - Removed duplicate `databricks/` directory (consolidated into `databricks_notebooks/`).
+   - Consolidated shallow `k8s/`, `terraform/`, and `monitoring/` into `infra/` (`infra/k8s/`, `infra/terraform/`, `infra/monitoring/`).
+   - Consolidated `databricks_notebooks/` and `kaggle_gpu_kernel/` into `pipelines/` (`pipelines/databricks/`, `pipelines/kaggle/`).
    - Pruned 5.1MB redundant repomix dump and obsolete debug scripts (`scripts/setup_tabpfn.py`, `scripts/debug_db.py`, `scripts/run_debug.py`).
    - Purged 575 ephemeral vector test databases from `models/` and added gitignore rules.
 

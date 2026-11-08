@@ -1,5 +1,5 @@
 # Apache Airflow Production Helm Values Manifest for Kubernetes / AWS EKS
-# Deploy via: helm repo add airflow-helm https://airflow-helm.github.io/charts && helm install airflow airflow-helm/airflow -f k8s/airflow_helm_values.yaml
+# Deploy via: helm repo add airflow-helm https://airflow-helm.github.io/charts && helm install airflow airflow-helm/airflow -f infra/k8s/airflow_helm_values.yaml
 
 airflow:
   executor: "CeleryExecutor"

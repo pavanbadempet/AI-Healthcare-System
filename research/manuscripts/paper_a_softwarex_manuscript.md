@@ -69,7 +69,7 @@ The platform implements a multi-tier, event-driven architecture structured aroun
    - Implements continuous differential state-space modeling simulating cardiovascular, renal, metabolic, and hepatic organ functions under untreated versus pharmacologically treated regimens (e.g., SGLT2 inhibitors, GLP-1 receptor agonists, statins).
    - Computes Quality-Adjusted Life Year (QALY) gains and 10-year relative risk reductions.
 
-3. **Lakehouse Data Engineering & Unity Catalog Governance (`databricks_notebooks/`)**:
+3. **Lakehouse Data Engineering & Unity Catalog Governance (`pipelines/databricks/`)**:
    - Implements the Medallion architecture: raw streaming ingest (Bronze), Great Expectations data quality validation (Silver), and analytical cohort feature marts (Gold).
    - Enforces dynamic column-level PHI redaction (`mask_patient_name`, `mask_mrn`, `mask_dob`) and Row-Level Security (RLS) policies.
 

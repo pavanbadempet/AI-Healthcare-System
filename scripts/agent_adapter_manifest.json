@@ -147,9 +147,10 @@
       "tests/ - Pytest test suite.",
       "docs/ - Architecture documentation, whitepapers.",
       "data/ - Training datasets for ML models.",
+      "infra/ - Cloud infrastructure, Kubernetes manifests, Terraform IaC, and Prometheus/Grafana configs.",
+      "pipelines/ - Databricks Medallion ETL notebooks and Kaggle GPU kernels.",
       "airflow/ - Data pipeline DAGs.",
-      "mlops/ - ML operations configs.",
-      "monitoring/ - Observability configs."
+      "mlops/ - ML operations configs."
     ]
   },
   "obsolete_files": []

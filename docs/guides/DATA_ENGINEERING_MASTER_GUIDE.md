@@ -98,7 +98,7 @@ Standardizes disparate hospital and clinical data into standard OHDSI concepts:
 ---
 
 ### 5. Multi-Cloud Mesh Orchestration & Zero-Config Sandbox
-* **Databricks Unity Catalog DAG (`databricks_notebooks/telemetry_workflow_job.json`)**: 9-stage multi-task automated workflow running Bronze Ingestion -> Quality Gates -> OMOP CDM Transformation -> Digital Twin Scoring.
+* **Databricks Unity Catalog DAG (`pipelines/databricks/telemetry_workflow_job.json`)**: 9-stage multi-task automated workflow running Bronze Ingestion -> Quality Gates -> OMOP CDM Transformation -> Digital Twin Scoring.
 * **Zero-Configuration Fallback**: Every component provides in-memory / local Delta table execution pathways so any developer or hiring manager can run the entire pipeline with standard `pytest` without cloud credentials.
 
 ---

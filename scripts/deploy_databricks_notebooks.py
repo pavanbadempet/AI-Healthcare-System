@@ -9,7 +9,7 @@ HEADERS = {
     "Authorization": f"Bearer {DATABRICKS_TOKEN}",
 }
 
-NOTEBOOK_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "databricks_notebooks")
+NOTEBOOK_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "pipelines", "databricks")
 
 def get_user_email():
     me_url = f"{DATABRICKS_INSTANCE}/api/2.0/preview/scim/v2/Me"

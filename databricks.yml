@@ -5,7 +5,7 @@ bundle:
   name: ai-healthcare-lakehouse
 
 include:
-  - databricks_notebooks/telemetry_workflow_job.json
+  - pipelines/databricks/telemetry_workflow_job.json
 
 variables:
   catalog:
@@ -48,14 +48,14 @@ resources:
         - task_key: "00_Unity_Catalog_Governance"
           job_cluster_key: "Shared_Job_Cluster"
           notebook_task:
-            notebook_path: "databricks_notebooks/00_unity_catalog_governance_setup.py"
+            notebook_path: "pipelines/databricks/00_unity_catalog_governance_setup.py"
             source: WORKSPACE
         - task_key: "01_Bronze_Ingest"
           depends_on:
             - task_key: "00_Unity_Catalog_Governance"
           job_cluster_key: "Shared_Job_Cluster"
           notebook_task:
-            notebook_path: "databricks_notebooks/01_bronze_ingest.py"
+            notebook_path: "pipelines/databricks/01_bronze_ingest.py"
             base_parameters:
               pipeline_mode: "batch"
             source: WORKSPACE
@@ -64,14 +64,14 @@ resources:
             - task_key: "01_Bronze_Ingest"
           job_cluster_key: "Shared_Job_Cluster"
           notebook_task:
-            notebook_path: "databricks_notebooks/08_pyspark_data_quality_gates.py"
+            notebook_path: "pipelines/databricks/08_pyspark_data_quality_gates.py"
             source: WORKSPACE
         - task_key: "02_Silver_Cleaning"
           depends_on:
             - task_key: "08_Data_Quality_Gates"
           job_cluster_key: "Shared_Job_Cluster"
           notebook_task:
-            notebook_path: "databricks_notebooks/02_silver_cleaning.py"
+            notebook_path: "pipelines/databricks/02_silver_cleaning.py"
             base_parameters:
               pipeline_mode: "batch"
             source: WORKSPACE
@@ -80,7 +80,7 @@ resources:
             - task_key: "02_Silver_Cleaning"
           job_cluster_key: "Shared_Job_Cluster"
           notebook_task:
-            notebook_path: "databricks_notebooks/03_gold_aggregations.py"
+            notebook_path: "pipelines/databricks/03_gold_aggregations.py"
             base_parameters:
               pipeline_mode: "batch"
             source: WORKSPACE
@@ -89,35 +89,35 @@ resources:
             - task_key: "03_Gold_Aggregations"
           job_cluster_key: "Shared_Job_Cluster"
           notebook_task:
-            notebook_path: "databricks_notebooks/07_omop_cdm_transformation.py"
+            notebook_path: "pipelines/databricks/07_omop_cdm_transformation.py"
             source: WORKSPACE
         - task_key: "04_GPU_Risk_Scoring"
           depends_on:
             - task_key: "07_OMOP_CDM_Transformation"
           job_cluster_key: "Shared_Job_Cluster"
           notebook_task:
-            notebook_path: "databricks_notebooks/04_gpu_risk_scoring.py"
+            notebook_path: "pipelines/databricks/04_gpu_risk_scoring.py"
             source: WORKSPACE
         - task_key: "09_Digital_Twin_Recommendation"
           depends_on:
             - task_key: "04_GPU_Risk_Scoring"
           job_cluster_key: "Shared_Job_Cluster"
           notebook_task:
-            notebook_path: "databricks_notebooks/09_recommendation_digital_twin_pyspark.py"
+            notebook_path: "pipelines/databricks/09_recommendation_digital_twin_pyspark.py"
             source: WORKSPACE
         - task_key: "05_Export_To_Neon"
           depends_on:
             - task_key: "09_Digital_Twin_Recommendation"
           job_cluster_key: "Shared_Job_Cluster"
           notebook_task:
-            notebook_path: "databricks_notebooks/05_export_to_neon.py"
+            notebook_path: "pipelines/databricks/05_export_to_neon.py"
             source: WORKSPACE
         - task_key: "06_MLflow_Training"
           depends_on:
             - task_key: "05_Export_To_Neon"
           job_cluster_key: "Shared_Job_Cluster"
           notebook_task:
-            notebook_path: "databricks_notebooks/06_mlflow_training.py"
+            notebook_path: "pipelines/databricks/06_mlflow_training.py"
             source: WORKSPACE
 
   pipelines:
@@ -129,7 +129,7 @@ resources:
       photon: true
       libraries:
         - notebook:
-            path: "databricks_notebooks/dlt_telemetry_pipeline.py"
+            path: "pipelines/databricks/dlt_telemetry_pipeline.py"
 
 targets:
   development:
