@@ -22,6 +22,8 @@ venv/
 *.db-shm
 *.db-wal
 *.sqlite3
+rust_gateway/test_*.db*
+temp_test_db_*
 
 # Models (completely ignored in git - loaded via download_models.py)
 *.pkl
@@ -139,3 +141,6 @@ tests_diff.txt
 # Local Agent & Tooling Artifacts
 .agents/
 docs/superpowers/
+
+# Local backups
+backups/
