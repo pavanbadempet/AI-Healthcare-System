@@ -84,7 +84,7 @@
         "Routes are client-side via React Router DOM; page components live in frontend/src/pages/.",
         "Use VITE_PUBLIC_API_URL or fallback to http://127.0.0.1:8000 for backend URLs.",
         "Include medical disclaimers in prediction, chat, report-analysis, and other patient-facing medical AI views.",
-        "Bun unit tests live in frontend/src/__tests__; Playwright E2E tests live in frontend/tests."
+        "Bun unit tests live in frontend/src/__tests__; Playwright E2E tests live in tests/e2e."
       ],
       "cursor_rule_file": "02-frontend.mdc",
       "cursor_description": "Vite React SPA frontend rules",
@@ -95,7 +95,7 @@
         "Routes are client-side via React Router DOM; page components live in frontend/src/pages/.",
         "Use VITE_PUBLIC_API_URL or fallback to http://127.0.0.1:8000 for backend URLs.",
         "Include medical disclaimers in prediction, chat, report-analysis, and other patient-facing medical AI views.",
-        "Bun unit tests live in frontend/src/__tests__; Playwright E2E tests live in frontend/tests."
+        "Bun unit tests live in frontend/src/__tests__; Playwright E2E tests live in tests/e2e."
       ],
       "cursor_refs": ["frontend/AGENTS.md"]
     },
@@ -105,17 +105,17 @@
       "copilot_apply_to": "tests/**",
       "copilot_lines": [
         "Read tests/AGENTS.md for test-specific rules.",
-        "These are backend pytest tests; frontend Bun and Playwright tests live under frontend/.",
+        "These are backend pytest tests; frontend Bun unit tests live in frontend/, and unified E2E tests (including Playwright) live in tests/e2e/.",
         "Mock all AI calls - never hit real APIs in tests.",
         "Use fresh test database per session.",
         "Don't assert exact ML prediction values."
       ],
       "cursor_rule_file": "03-tests.mdc",
       "cursor_description": "Test infrastructure rules",
-      "cursor_globs": ["tests/**/*.py"],
+      "cursor_globs": ["tests/**/*.{py,ts}"],
       "cursor_lines": [
         "Read tests/AGENTS.md for test-specific rules.",
-        "These are backend pytest tests; frontend Bun and Playwright tests live under frontend/.",
+        "These are backend pytest tests; frontend Bun unit tests live in frontend/, and unified E2E tests (including Playwright) live in tests/e2e/.",
         "Mock all AI calls - never hit real APIs.",
         "Use fresh test database per session."
       ],
@@ -142,15 +142,13 @@
     ],
     "structure": [
       "backend/ - FastAPI app, API routes, AI modules, ML services, database models.",
-      "frontend/ - Vite React SPA with src/pages, src/components, src/lib, Vitest unit tests, and Playwright E2E tests.",
+      "frontend/ - Vite React SPA with src/pages, src/components, src/lib, and Vitest unit tests.",
       "scripts/ - DevX utilities (ai_context.py, sync_agent_adapters.py), DB management.",
-      "tests/ - Pytest test suite.",
+      "tests/ - Pytest test suite and unified E2E tests (API tiers and Playwright specs in tests/e2e/).",
       "docs/ - Architecture documentation, whitepapers.",
       "data/ - Training datasets for ML models.",
-      "infra/ - Cloud infrastructure, Kubernetes manifests, Terraform IaC, and Prometheus/Grafana configs.",
-      "pipelines/ - Databricks Medallion ETL notebooks and Kaggle GPU kernels.",
-      "airflow/ - Data pipeline DAGs.",
-      "mlops/ - ML operations configs."
+      "infra/ - Cloud infrastructure, Docker compose manifests, Kubernetes manifests, Terraform IaC, and Prometheus/Grafana configs.",
+      "pipelines/ - Databricks Medallion ETL notebooks, Kaggle GPU kernels, Airflow DAGs, research, and MLOps configs."
     ]
   },
   "obsolete_files": []

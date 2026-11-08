@@ -8,7 +8,7 @@
 
 The AI Healthcare System rewrite migrates from a Python/FastAPI backend to a high-performance Rust (Axum/Tokio) + Bun (ElysiaJS) dual-tier architecture. To ensure strict behavioral parity, zero breaking changes for the React 19 frontend, and total reliability:
 
-1. **Opaque-Box Testing**: All test suites in `e2e_tests/` interact strictly over HTTP/1.1, HTTP/2, WebSockets, and Server-Sent Events (SSE) interfaces. Tests are decoupled from the internal backend programming language (whether Python baseline, Rust Axum, or Bun ElysiaJS).
+1. **Opaque-Box Testing**: All test suites in `tests/e2e/` interact strictly over HTTP/1.1, HTTP/2, WebSockets, and Server-Sent Events (SSE) interfaces. Tests are decoupled from the internal backend programming language (whether Python baseline, Rust Axum, or Bun ElysiaJS).
 2. **Deterministic Contract Adherence**: Every endpoint is validated against the exact REST API contracts (URL path, HTTP method, query parameters, request body schemas, response status codes, and JSON payload shapes) documented in `PROJECT.md` and the route survey.
 3. **Environment Agnostic (`E2E_API_URL`)**: The test harness automatically switches between live HTTP execution (e.g. `http://127.0.0.1:8000` or `http://127.0.0.1:8001`) and direct in-process FastAPI `TestClient` depending on the `E2E_API_URL` environment variable.
 4. **4-Tier Stratification**:
@@ -22,7 +22,7 @@ The AI Healthcare System rewrite migrates from a Python/FastAPI backend to a hig
 ## 2. Directory Layout
 
 ```
-e2e_tests/
+tests/e2e/
 ├── harness/                           # Reusable test harness and client utilities
 │   ├── __init__.py
 │   ├── client.py                      # Opaque-box HTTP/WS client with automatic URL resolution
@@ -104,11 +104,11 @@ The test harness provides an opaque HTTP client (`E2EClient`) that abstracts the
 ```python
 # Live server mode (e.g. Rust Axum on 8001 or Bun on 8000):
 export E2E_API_URL="http://127.0.0.1:8000"
-python e2e_tests/run_e2e.py
+python tests/e2e/run_e2e.py
 
 # In-process FastAPI TestClient mode (development baseline):
 unset E2E_API_URL
-python e2e_tests/run_e2e.py
+python tests/e2e/run_e2e.py
 ```
 
 ### Role Simulation
@@ -173,29 +173,29 @@ The test client handles authentication and credential generation for multiple st
 ### Using Standalone E2E Runner (Recommended)
 ```bash
 # Run all tiers against default in-process or configured URL
-python e2e_tests/run_e2e.py
+python tests/e2e/run_e2e.py
 
 # Run specific tier
-python e2e_tests/run_e2e.py --tier 1
-python e2e_tests/run_e2e.py --tier 2
-python e2e_tests/run_e2e.py --tier 3
-python e2e_tests/run_e2e.py --tier 4
+python tests/e2e/run_e2e.py --tier 1
+python tests/e2e/run_e2e.py --tier 2
+python tests/e2e/run_e2e.py --tier 3
+python tests/e2e/run_e2e.py --tier 4
 
 # Run against live Rust/Bun backend
-python e2e_tests/run_e2e.py --url http://127.0.0.1:8000
+python tests/e2e/run_e2e.py --url http://127.0.0.1:8000
 
 # Export JSON test report
-python e2e_tests/run_e2e.py --json-report e2e_results.json
+python tests/e2e/run_e2e.py --json-report e2e_results.json
 ```
 
 ### Using Pytest Directly
 ```bash
 # Run with parallel workers
-pytest e2e_tests/ -n auto -v
+pytest tests/e2e/ -n auto -v
 
 # Run specific tier
-pytest e2e_tests/tiers/tier1_feature_coverage/ -n auto -v
-pytest e2e_tests/tiers/tier2_boundary_corner_cases/ -n auto -v
-pytest e2e_tests/tiers/tier3_cross_feature_combinations/ -n auto -v
-pytest e2e_tests/tiers/tier4_real_world_scenarios/ -n auto -v
+pytest tests/e2e/tiers/tier1_feature_coverage/ -n auto -v
+pytest tests/e2e/tiers/tier2_boundary_corner_cases/ -n auto -v
+pytest tests/e2e/tiers/tier3_cross_feature_combinations/ -n auto -v
+pytest tests/e2e/tiers/tier4_real_world_scenarios/ -n auto -v
 ```

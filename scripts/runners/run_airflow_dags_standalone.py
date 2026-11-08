@@ -52,10 +52,10 @@ sys.meta_path.insert(0, AirflowImportHook())
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logger = logging.getLogger("StandaloneAirflowRunner")
 
-DAGS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "airflow", "dags")
+DAGS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "pipelines", "airflow", "dags")
 
 def list_available_dags():
-    """Lists all Python DAG files under airflow/dags."""
+    """Lists all Python DAG files under pipelines/airflow/dags."""
     if not os.path.exists(DAGS_DIR):
         logger.error("Airflow DAGs directory not found at: %s", DAGS_DIR)
         return []

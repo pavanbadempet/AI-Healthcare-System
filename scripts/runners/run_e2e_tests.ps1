@@ -79,7 +79,7 @@ if (-not $appReady) {
 # --- Run Tests ---
 try {
     Write-Host "`nRunning E2E Tests..." -ForegroundColor Cyan
-    python -m pytest tests/e2e/test_full_flow.py
+    python tests/e2e/run_e2e.py
 
     if ($LASTEXITCODE -eq 0) {
         Write-Host "E2E Tests Passed!" -ForegroundColor Green

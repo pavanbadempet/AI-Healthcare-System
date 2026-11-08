@@ -81,7 +81,7 @@ setup_airflow_mocks()
 
 def test_airflow_dags_compilation():
     """Verify that all Airflow DAGs import and compile without python syntax or logical errors"""
-    dags_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "airflow", "dags")
+    dags_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), "pipelines", "airflow", "dags")
     dag_files = [f for f in os.listdir(dags_dir) if f.endswith(".py") and f != "__init__.py"]
 
     # Add dags directory to python path for compilation imports

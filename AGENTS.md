@@ -28,9 +28,8 @@
 - `tests/` -> Pytest test suite
 - `docs/` -> Architecture docs, whitepapers, analysis
 - `data/` -> Training datasets for ML models
-- `infra/` -> Cloud infrastructure, orchestration & observability (`infra/k8s/`, `infra/terraform/`, `infra/monitoring/`)
-- `pipelines/` -> Medallion pipeline notebooks & GPU kernels (`pipelines/databricks/`, `pipelines/kaggle/`)
-- `airflow/`, `mlops/` -> Infrastructure & pipeline configs
+- `infra/` -> Cloud infrastructure, Docker compose, orchestration & observability (`infra/docker/`, `infra/k8s/`, `infra/terraform/`, `infra/monitoring/`)
+- `pipelines/` -> Data & ML pipelines (`pipelines/databricks/`, `pipelines/kaggle/`, `pipelines/airflow/`, `pipelines/research/`, `pipelines/mlops/`)
 - `microservices/` -> ABDM FHIR, Cloudflare AI, RAG, prediction workers
 - `packages/` -> Shared Python packages (FHIR, RAG cache, tabular, license gate)
 - `models/` -> Production model artifacts & vector store

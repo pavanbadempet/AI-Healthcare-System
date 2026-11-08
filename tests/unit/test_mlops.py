@@ -1,6 +1,6 @@
 import logging
 
-from mlops.train import train_model
+from pipelines.mlops.train import train_model
 
 
 def test_train_model_placeholder():
@@ -25,6 +25,6 @@ def test_train_model_returns_none_on_exception():
 
 def test_mlops_module_importable():
     """Verify all mlops submodules can be imported."""
-    import mlops.train
+    import pipelines.mlops.train
     # Add more as the module grows
-    assert hasattr(mlops.train, 'train_model')
+    assert hasattr(pipelines.mlops.train, 'train_model')

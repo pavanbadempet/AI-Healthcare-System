@@ -20,9 +20,8 @@ The repository is organized as a decoupled, multi-language codebase:
     *   `frontend/src/lib/apiCore.ts`: In-memory request caches and fetch clients.
 *   **`android/`**: Kotlin Jetpack Compose mobile EMR application.
 *   **`rust_gateway/`**: High-performance reverse proxy and gRPC/WebSocket routing gateway.
-*   **`airflow/`**: Ingestion scheduler, model drift validation, and maintenance DAGs.
-*   **`infra/`**: Cloud infrastructure, orchestration & observability (`infra/k8s/`, `infra/terraform/`, `infra/monitoring/`).
-*   **`pipelines/`**: Medallion pipeline notebooks & GPU kernels (`pipelines/databricks/`, `pipelines/kaggle/`).
+*   **`infra/`**: Cloud infrastructure, Docker compose, orchestration & observability (`infra/docker/`, `infra/k8s/`, `infra/terraform/`, `infra/monitoring/`).
+*   **`pipelines/`**: Data pipelines, Databricks Medallion ETL, Kaggle GPU kernels, Airflow DAGs (`pipelines/airflow/`), research (`pipelines/research/`), and MLOps configs (`pipelines/mlops/`).
 
 ---
 
@@ -194,7 +193,7 @@ Clinical data pipelines are managed using PySpark, Polars, and Apache Airflow:
 To speed up local development and testing, the pipeline automatically falls back to a lightweight **Polars** engine if PySpark is not available.
 
 ### C. Airflow Orchestration DAGs
-Schedules clinical workflows under `airflow/dags/`:
+Schedules clinical workflows under `pipelines/airflow/dags/`:
 *   `healthcare_data_pipeline`: Ingestion ETL scheduler.
 *   `model_retraining_dag`: Weekly ML model evaluations and retraining.
 *   `delta_lake_operations`: Maintenance operations (`OPTIMIZE`/`VACUUM`) for Delta tables.
@@ -205,7 +204,7 @@ Schedules clinical workflows under `airflow/dags/`:
 ## 🐳 9. Infrastructure & Scaling
 
 The enterprise version of the platform runs as a decoupled microservices architecture:
-*   **Docker Compose**: Pre-configured configurations (`docker/docker-compose.microservices.yml`) spin up isolated containers for the API services, load balancer gateway, and database servers.
+*   **Docker Compose**: Pre-configured configurations (`infra/docker/docker-compose.microservices.yml`) spin up isolated containers for the API services, load balancer gateway, and database servers.
 *   **Kubernetes (`infra/k8s/`)**: Implements Horizontal Pod Autoscalers (HPA) to scale up `telemetry-service` pods when active vital connections peak.
 *   **Terraform (`infra/terraform/`)**: Configures cloud resources (AWS ECS, RDS, IAM).
 *   **Rust Ingress Gateway**: Uses the custom Axum-based `rust_gateway` to load-balance incoming HTTP/WebSocket traffic, terminate SSL, and validate tokens.

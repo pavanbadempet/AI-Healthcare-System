@@ -16,7 +16,7 @@ This frontend is a client-side React SPA powered by Vite 6, Tailwind CSS v4, and
 - Frontend libraries, state managers (Zustand), and hooks live in `frontend/src/lib/`.
 - Public static assets live in `frontend/public/`.
 - Vitest unit tests live in `frontend/src/__tests__/`.
-- Playwright E2E tests live in `frontend/tests/`.
+- Playwright E2E tests live in `tests/e2e/`.
 
 ## Rules
 

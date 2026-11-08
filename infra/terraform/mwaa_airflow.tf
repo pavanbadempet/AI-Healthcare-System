@@ -7,7 +7,7 @@ resource "aws_mwaa_environment" "healthcare_mwaa" {
   execution_role_arn = aws_iam_role.mwaa_execution_role.arn
 
   source_bucket_arn = aws_s3_bucket.airflow_dags_bucket.arn
-  dag_s3_path       = "airflow/dags"
+  dag_s3_path       = "pipelines/airflow/dags"
 
   network_configuration {
     security_group_ids = [aws_security_group.mwaa_sg.id]

@@ -14,7 +14,7 @@ Metrics captured:
 
 Usage:
     python scripts/benchmark_system.py
-    python scripts/benchmark_system.py --iterations 500 --output research/results/benchmark.json
+    python scripts/benchmark_system.py --iterations 500 --output pipelines/research/results/benchmark.json
 """
 
 import argparse
