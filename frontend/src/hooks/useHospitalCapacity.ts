@@ -20,9 +20,11 @@ export interface AssignBedInput {
 }
 
 export const FALLBACK_BEDS: Bed[] = [
-  { id: 1, bed_number: "ICU-01", ward: "ICU-A", status: "available", department_id: 1, created_at: "2026-01-01T00:00:00Z" },
-  { id: 2, bed_number: "MED-01", ward: "Med-Surg 4B", status: "available", department_id: 2, created_at: "2026-01-01T00:00:00Z" },
-  { id: 3, bed_number: "CAR-01", ward: "Cardiac Care Unit", status: "available", department_id: 3, created_at: "2026-01-01T00:00:00Z" },
+  { id: 16, bed_number: "ICU-A-01", ward: "Cardiology ICU", status: "occupied", current_patient_id: 1, department_id: 1, created_at: "2026-01-01T00:00:00Z" },
+  { id: 17, bed_number: "ICU-A-02", ward: "Cardiology ICU", status: "occupied", current_patient_id: 4, department_id: 1, created_at: "2026-01-01T00:00:00Z" },
+  { id: 18, bed_number: "ICU-A-03", ward: "Cardiology ICU", status: "occupied", current_patient_id: 7, department_id: 1, created_at: "2026-01-01T00:00:00Z" },
+  { id: 19, bed_number: "ICU-A-04", ward: "Cardiology ICU", status: "occupied", current_patient_id: 15, department_id: 1, created_at: "2026-01-01T00:00:00Z" },
+  { id: 20, bed_number: "ICU-A-05", ward: "Cardiology ICU", status: "available", current_patient_id: null, department_id: 1, created_at: "2026-01-01T00:00:00Z" },
 ];
 
 export const FALLBACK_DEPARTMENTS: Department[] = [

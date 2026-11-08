@@ -403,7 +403,7 @@ describe('Adversarial Verification: Milestone 3 Frontend Local-First & Cache Arc
 
       expect(result).toBeDefined();
       expect(result).toEqual(FALLBACK_BEDS);
-      expect(result[0].bed_number).toBe('ICU-01');
+      expect(result[0].bed_number).toBe(FALLBACK_BEDS[0].bed_number);
     });
 
     it('useClinicalAlertsQuery seamlessly serves FALLBACK_CLINICAL_ALERTS when API fails', async () => {

@@ -46,12 +46,12 @@ export const formatMrn = (patientId: number): string => {
 
 // Authentic clinical roster mapping for unit visualization
 const CLINICAL_ROSTER: Record<string, { id: number; name: string; age: number; gender: string; diagnosis: string }> = {
-  "ICU-A-01": { id: 3, name: "Marcus Thorne", age: 58, gender: "M", diagnosis: "Severe Sepsis / Hypotension" },
-  "ICU-A-02": { id: 2, name: "Sarah Jenkins", age: 44, gender: "F", diagnosis: "ARDS / Post-Intubation" },
-  "ICU-A-03": { id: 4, name: "Robert Garcia", age: 67, gender: "M", diagnosis: "Acute Cardiogenic Shock" },
-  "ICU-A-04": { id: 5, name: "Linda Zhao", age: 52, gender: "F", diagnosis: "Acute Pancreatitis" },
-  "ICU-B-01": { id: 6, name: "Elena Rostova", age: 61, gender: "F", diagnosis: "CVA / Neuro ICU Monitoring" },
-  "ICU-B-02": { id: 7, name: "David Kim", age: 49, gender: "M", diagnosis: "Subarachnoid Hemorrhage" },
+  "ICU-A-01": { id: 1, name: "Marcus Thorne", age: 58, gender: "M", diagnosis: "Acute Anterior STEMI • Post-PCI Stent" },
+  "ICU-A-02": { id: 4, name: "Sarah Jenkins", age: 42, gender: "F", diagnosis: "Diabetic Ketoacidosis • Insulin Protocol" },
+  "ICU-A-03": { id: 7, name: "Linda Zhao", age: 64, gender: "F", diagnosis: "Acute Respiratory Distress Syndrome (ARDS)" },
+  "ICU-A-04": { id: 15, name: "Robert Garcia", age: 51, gender: "M", diagnosis: "Post-Coronary Artery Bypass Graft (CABG)" },
+  "ICU-A-05": { id: 780, name: "Emily Watson", age: 36, gender: "F", diagnosis: "Submassive Pulmonary Embolism" },
+  "ICU-B-01": { id: 781, name: "Oscar Meyer", age: 72, gender: "M", diagnosis: "Decompensated Congestive Heart Failure" },
   "CCU-01": { id: 8, name: "James Wilson", age: 72, gender: "M", diagnosis: "Acute STEMI / Stent Placed" },
   "CCU-02": { id: 9, name: "Maria Santos", age: 65, gender: "F", diagnosis: "Decompensated Heart Failure" },
   "CCU-03": { id: 10, name: "Arthur Pendelton", age: 78, gender: "M", diagnosis: "Complete Heart Block / PPM" },
@@ -59,8 +59,7 @@ const CLINICAL_ROSTER: Record<string, { id: number; name: string; age: number; g
   "MED-02": { id: 12, name: "Thomas Wright", age: 63, gender: "M", diagnosis: "DKA Stabilization" },
   "MED-03": { id: 13, name: "Clara Oswald", age: 39, gender: "F", diagnosis: "Pyelonephritis" },
   "MED-04": { id: 14, name: "Harold Finch", age: 70, gender: "M", diagnosis: "COPD Exacerbation" },
-  "SURG-01": { id: 15, name: "Emily Watson", age: 47, gender: "F", diagnosis: "Post-Laparoscopic Cholecystectomy" },
-  "SURG-02": { id: 16, name: "Brian O'Connor", age: 35, gender: "M", diagnosis: "Post-ORIF Femur Fracture" },
+  "SURG-01": { id: 16, name: "Brian O'Connor", age: 35, gender: "M", diagnosis: "Post-ORIF Femur Fracture" },
   "ED-01": { id: 17, name: "Hannah Abbott", age: 28, gender: "F", diagnosis: "Acute Appendicitis Pre-Op" },
   "ED-02": { id: 18, name: "George Bailey", age: 51, gender: "M", diagnosis: "Chest Pain Rule-Out" }
 };
@@ -174,11 +173,12 @@ export default function CapacityPage() {
         getDepartments().catch(() => []),
       ]);
       const resolvedPatients = patientsData.length > 0 ? patientsData : [
-        { patient_id: 3, username: "marcus_thorne", full_name: "Marcus Thorne", latest_encounter_id: null },
-        { patient_id: 2, username: "sarah_jenkins", full_name: "Sarah Jenkins", latest_encounter_id: null },
-        { patient_id: 4, username: "linda_zhao", full_name: "Linda Zhao", latest_encounter_id: null },
-        { patient_id: 5, username: "james_wilson", full_name: "James Wilson", latest_encounter_id: null },
-        { patient_id: 6, username: "elena_rostova", full_name: "Elena Rostova", latest_encounter_id: null },
+        { patient_id: 1, username: "m_thorne", full_name: "Marcus Thorne", latest_encounter_id: null },
+        { patient_id: 4, username: "s_jenkins", full_name: "Sarah Jenkins", latest_encounter_id: null },
+        { patient_id: 7, username: "l_zhao", full_name: "Linda Zhao", latest_encounter_id: null },
+        { patient_id: 15, username: "r_garcia", full_name: "Robert Garcia", latest_encounter_id: null },
+        { patient_id: 780, username: "e_watson", full_name: "Emily Watson", latest_encounter_id: null },
+        { patient_id: 781, username: "o_meyer", full_name: "Oscar Meyer", latest_encounter_id: null },
       ] as DoctorPatientSummary[];
 
       const resolvedDepts = deptsData.length > 0 ? deptsData : [

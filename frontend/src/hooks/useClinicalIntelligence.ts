@@ -13,11 +13,11 @@ import { broadcastQueryInvalidation } from '@/lib/queryClient';
 export const FALLBACK_CLINICAL_ALERTS: ClinicalAlert[] = [
   {
     id: 1,
-    patient_id: 3,
+    patient_id: 1,
     patient_name: "Marcus Thorne",
     alert_type: "CARDIAC_TACHYCARDIA",
     severity: "CRITICAL",
-    message: "Acute Sinus Tachycardia (118 bpm) with anterior lead ST elevation (V2-V4). Bedside echocardiogram and serial troponin ordered.",
+    message: "Acute Sinus Tachycardia (112 bpm) with anterior lead ST elevation (V2-V4). Bedside echocardiogram and serial troponin ordered.",
     source_event_id: null,
     is_acknowledged: false,
     acknowledged_by: null,
@@ -26,7 +26,7 @@ export const FALLBACK_CLINICAL_ALERTS: ClinicalAlert[] = [
   },
   {
     id: 2,
-    patient_id: 2,
+    patient_id: 4,
     patient_name: "Sarah Jenkins",
     alert_type: "RESPIRATORY_HYPOXEMIA",
     severity: "WARNING",
