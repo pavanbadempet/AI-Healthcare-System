@@ -13,7 +13,7 @@ Usage:
     # Register a new version
     register_prompt("medical_qa", version="2.0", template="You are a medical expert...")
 
-Ported from Universe Dex Singularity AI Engine, adapted for healthcare domain.
+Ported from AI Healthcare System Singularity AI Engine, adapted for healthcare domain.
 """
 import logging
 from dataclasses import dataclass, field

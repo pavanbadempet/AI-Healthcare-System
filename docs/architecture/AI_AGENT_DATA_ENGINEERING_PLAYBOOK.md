@@ -1,14 +1,14 @@
 # AI Agent Data Engineering Playbook
 
 > **Audience:** Autonomous AI Agents (Antigravity, Devin, Codex, GitHub Copilot, Kiro, Google AI Studio) & Autonomous Subagents.
-> **Scope:** Ground-truth data access, schema introspection, biophysical verification, and storage compaction for Universe Dex.
+> **Scope:** Ground-truth data access, schema introspection, biophysical verification, and storage compaction for AI Healthcare System.
 
 ---
 
 ## 1. Core Operating Directive
 
 **DO NOT read or parse raw Parquet files, CSV strings, or internal SQLite files directly.** 
-All ground-truth data in Universe Dex is managed inside the local Delta Lakehouse (`data/lakehouse/main/universe_dex/`). 
+All ground-truth data in AI Healthcare System is managed inside the local Delta Lakehouse (`data/lakehouse/main/healthcare_lakehouse/`). 
 
 Always interact with the lakehouse using the canonical Bun + DuckDB CLI commands below. They execute in under 50ms, return token-efficient structured outputs, and automatically filter out tombstoned historical Delta log files.
 
@@ -92,4 +92,4 @@ When writing code or generating characters, adhere strictly to these physical la
 4. **Relational Integrity:** All `mother_id` and `father_id` references must resolve to valid characters or remain `NULL`.
 
 ---
-*Playbook maintained by ENI & LO for the Universe Dex AI Studio Fleet.*
+*Playbook maintained for the AI Healthcare System Production Fleet.*

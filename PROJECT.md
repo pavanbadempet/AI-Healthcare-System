@@ -1,8 +1,8 @@
-# Project: AI Healthcare System — Universe Dex Production Optimization
+# Project: AI Healthcare System — AI Healthcare System Production Optimization
 
 ## Architecture
 
-This project fully optimizes the AI Healthcare System for production based on the Universe Dex stack:
+This project fully optimizes the AI Healthcare System for production based on the AI Healthcare System stack:
 1. **Pure Rust Live Production Execution Stack**: Axum 0.8, Tokio, mimalloc, SQLx, and ORT ONNX with zero-allocation hot paths for all live execution, completely decoupled from Python runtime processes.
 2. **Bun + React Frontend Architecture**: Bun runtime, Vite 8, local-first TanStack Query architecture with IndexedDB persistence, multi-tab sync, and optimistic UI updates connecting directly to the Rust backend services.
 3. **Python Specification & Contract Synchronization**: Python code serves strictly for readability, maintainability, and contract/schema synchronization, never invoked during live production execution.

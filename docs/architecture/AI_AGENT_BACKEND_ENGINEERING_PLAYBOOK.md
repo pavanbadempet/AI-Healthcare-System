@@ -1,14 +1,14 @@
 # AI Agent Backend Engineering Playbook
 
 > **Audience:** Autonomous AI Agents (Antigravity, Devin, Codex, GitHub Copilot, Kiro, Google AI Studio) & Autonomous Subagents.
-> **Scope:** Axum 0.7 API route discovery, schema introspection, in-memory sandbox testing, self-healing contract validation, and unified verification for Universe Dex.
+> **Scope:** Axum 0.7 API route discovery, schema introspection, in-memory sandbox testing, self-healing contract validation, and unified verification for AI Healthcare System.
 
 ---
 
 ## 1. Core Operating Directive
 
 **DO NOT guess Axum routes, hallucinate JSON payloads, or parse thousands of lines of Rust manually.**
-All backend APIs in Universe Dex are unified in the 100% pure Rust Axum engine (`crates/server/src/api/`).
+All backend APIs in AI Healthcare System are unified in the 100% pure Rust Axum engine (`crates/server/src/api/`).
 
 Always interact with the backend tooling via the canonical Bun CLI commands below. They execute in under 100ms, output token-minimized JSON for LLM context windows, and guarantee zero route hallucinations.
 
@@ -44,13 +44,13 @@ bun run backend:schema --route /api/biophysics/validate --format compact
 bun run backend:schema --format json
 ```
 
-### C. Zero-Credential In-Memory Test Sandbox (`HEALTHCARE_ENVtest`)
+### C. Zero-Credential In-Memory Test Sandbox (`HEALTHCARE_ENV=test`)
 When launching or testing the backend in an autonomous agent environment, **do not require external Postgres or Doppler production secrets**:
 
 ```bash
 # Set environment flag to boot the in-memory SQLite sandbox with deterministic test fixtures
-export HEALTHCARE_ENVtest
-cargo run --bin universe-dex
+export HEALTHCARE_ENV=test
+cargo run --bin rust_gateway
 ```
 *Features:*
 - Boots in <500ms using in-memory SQLite (`:memory:`).
@@ -94,4 +94,4 @@ When writing or modifying Rust backend code:
 4. **Deterministic Seeding:** Any new required table fixture must be added to `Database::open_in_memory_seeded()` in `crates/server/src/db/mod.rs`.
 
 ---
-*Playbook maintained by ENI & LO for the Universe Dex AI Studio Fleet.*
+*Playbook maintained for the AI Healthcare System Production Fleet.*

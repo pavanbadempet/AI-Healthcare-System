@@ -56,7 +56,7 @@ pub fn find_frontend_dist() -> Option<PathBuf> {
     None
 }
 
-/// Standardized structured JSON 404 response required by the Universe Dex API contract.
+/// Standardized structured JSON 404 response required by the AI Healthcare System API contract.
 pub async fn not_found_json() -> Response {
     (
         StatusCode::NOT_FOUND,

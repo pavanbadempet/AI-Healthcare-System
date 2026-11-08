@@ -2,15 +2,15 @@
 
 > **Autonomous Workforce Specification**
 > Target Audience: Autonomous AI Agents (Antigravity, Devin, Codex, GitHub Copilot, Kiro)
-> Mission: Zero-human-dependency database engineering, schema introspection, ACID invariant validation, self-healing remediation, and migration drift detection for Universe Dex.
+> Mission: Zero-human-dependency database engineering, schema introspection, ACID invariant validation, self-healing remediation, and migration drift detection for AI Healthcare System.
 
 ---
 
 ## 1. Executive Architecture
 
-Universe Dex uses a high-performance relational database architecture powered by SQLite with WAL mode, round-robin `ReaderPool`, Moka caching in Rust (`crates/server/src/db/mod.rs`), and synchronized columnar lakehouse tables.
+AI Healthcare System uses a high-performance relational database architecture powered by SQLite with WAL mode, round-robin `ReaderPool`, Moka caching in Rust (`crates/server/src/db/mod.rs`), and synchronized columnar lakehouse tables.
 
-Because there are **zero human developers**, every AI agent interacting with Universe Dex databases must operate through deterministic, token-minimized, and self-healing interfaces. Any schema discrepancy, broken foreign key, or missing index must be detected and cured autonomously in sub-second time.
+Because there are **zero human developers**, every AI agent interacting with AI Healthcare System databases must operate through deterministic, token-minimized, and self-healing interfaces. Any schema discrepancy, broken foreign key, or missing index must be detected and cured autonomously in sub-second time.
 
 ```
 ┌─────────────────────────────────────────────────────────────┐

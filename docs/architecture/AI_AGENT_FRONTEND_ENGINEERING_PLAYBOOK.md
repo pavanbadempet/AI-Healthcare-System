@@ -8,7 +8,7 @@
 ## 1. Core Operating Directive
 
 **DO NOT write inline Tailwind "div soup" cards, guess route paths, or invent custom page shells.**
-All user interfaces in Universe Dex are governed by canonical templates (`HubPageTemplate`, `RegistryPageLayout`, `UniversalRegistryPage`, `EntityDetailLayout`) and approved primitives (`BentoCard`, `SurfaceCard`, `FeatureCard`, `StatTile`, `TelemetryValue`).
+All user interfaces in AI Healthcare System are governed by canonical templates (`HubPageTemplate`, `RegistryPageLayout`, `UniversalRegistryPage`, `EntityDetailLayout`) and approved primitives (`BentoCard`, `SurfaceCard`, `FeatureCard`, `StatTile`, `TelemetryValue`).
 
 Always interact with the frontend tooling via the canonical Bun CLI commands below. They execute in under 100ms, output token-minimized JSON for LLM context windows, and eliminate UI hallucinations.
 
@@ -88,4 +88,4 @@ When authoring or editing React components:
 4. **Accessibility (FE-A11Y-001):** All `<img>` tags require descriptive `alt="..."` attributes, and icon-only buttons require `aria-label="..."`.
 
 ---
-*Playbook maintained by ENI & LO for the Universe Dex AI Studio Fleet.*
+*Playbook maintained for the AI Healthcare System Production Fleet.*

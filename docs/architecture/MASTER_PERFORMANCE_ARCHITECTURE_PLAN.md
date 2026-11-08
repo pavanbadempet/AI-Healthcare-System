@@ -1,5 +1,5 @@
 # 🌌 The Universal Elastic Architecture & Auto-Scaling Plan
-## Universe Dex — Dynamic Hardware-Sensing, Zero-Bottleneck Infrastructure
+## AI Healthcare System — Dynamic Hardware-Sensing, Zero-Bottleneck Infrastructure
 
 > **Design Principle**: **Adaptive Polymorphism**. The exact same binary runs with extreme resource efficiency on a 2-vCPU free container (Hugging Face Spaces), and dynamically self-calibrates to saturate a 64-core bare-metal server, distributed Cloud Run containers, or a multi-region Kubernetes cluster with zero code modifications.
 
@@ -7,7 +7,7 @@
 
 ## 1. Dynamic Hardware Sensing & Self-Calibrating Runtime
 
-Fixed constants (hardcoding 64 MB cache or 4 worker threads) are an anti-pattern when scaling across heterogeneous hosts. Universe Dex implements a **Self-Calibrating Boot Engine** that inspects container cgroups and host topology on startup:
+Fixed constants (hardcoding 64 MB cache or 4 worker threads) are an anti-pattern when scaling across heterogeneous hosts. AI Healthcare System implements a **Self-Calibrating Boot Engine** that inspects container cgroups and host topology on startup:
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
@@ -78,7 +78,7 @@ impl RuntimeProfile {
 
 ## 2. Pluggable Dual-Mode Storage Architecture
 
-To deploy seamlessly anywhere in the future—from a single $0 container to a global distributed fleet—Universe Dex uses a **hybrid persistence boundary**:
+To deploy seamlessly anywhere in the future—from a single $0 container to a global distributed fleet—AI Healthcare System uses a **hybrid persistence boundary**:
 
 ```mermaid
 graph TD
@@ -104,7 +104,7 @@ graph TD
 
 When traffic spikes 100x (viral launch, bot crawl, heavy simulation benchmark):
 * Fixed-capacity servers crash with `Out of Memory` (OOM) or cascade failure.
-* Universe Dex implements **Little's Law Adaptive Concurrency Limits** (`tower::limit::concurrency::ConcurrencyLimitLayer`):
+* AI Healthcare System implements **Little's Law Adaptive Concurrency Limits** (`tower::limit::concurrency::ConcurrencyLimitLayer`):
   * Monitors rolling latency: if response times rise above 500ms, the server automatically sheds low-priority background analytics requests while protecting core read/write transactions.
   * Emits `HTTP 429 Too Many Requests` with a `Retry-After: 2` header instead of crashing.
   * System stabilizes instantly without manual intervention.
@@ -200,7 +200,7 @@ graph TD
 
 ## 7. The Universal Deployment Targets
 
-With this architecture in place, Universe Dex is deployment-agnostic:
+With this architecture in place, AI Healthcare System is deployment-agnostic:
 
 | Host / Platform | Scaling Profile | Hardware Strategy |
 |---|---|---|
