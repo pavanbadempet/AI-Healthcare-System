@@ -111,6 +111,11 @@ def scan_file(filepath: str) -> List[Tuple[int, str, str]]:
 
 
 def main():
+    try:
+        from scripts.auto_housekeeping import run_housekeeping
+        run_housekeeping()
+    except Exception:
+        pass
     staged = get_staged_files()
     mode = "STAGED"
     if not staged:
