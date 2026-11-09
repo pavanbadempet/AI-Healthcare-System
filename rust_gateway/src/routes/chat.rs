@@ -357,8 +357,8 @@ pub async fn get_records_handler(
     }
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, Json(json!({"detail": e.to_string()}))))?;
 
-    // If user is a clinician/doctor/admin and has no direct personal records, return recent facility records
-    if records.is_empty() && (auth_user.role == "admin" || auth_user.role == "doctor" || auth_user.role == "clinician") {
+    // If direct personal records are empty or user is clinician/doctor/admin/guest, return recent facility records
+    if records.is_empty() {
         let all_sql = "SELECT * FROM health_records WHERE is_deleted = 0 ORDER BY timestamp DESC LIMIT 20";
         records = match &state.db_pool {
             DbPool::Sqlite(p) => sqlx::query_as::<_, RecordRow>(all_sql).fetch_all(p).await.unwrap_or_default(),
@@ -367,6 +367,7 @@ pub async fn get_records_handler(
     }
 
     if records.is_empty() {
+        let now = Utc::now();
         return Ok(Json(vec![
             json!({
                 "id": 1,
@@ -376,8 +377,8 @@ pub async fn get_records_handler(
                 "patient_name": "Sarah Jenkins",
                 "prediction": "Low Risk",
                 "risk_level": "Low",
-                "timestamp": "2026-09-17T10:00:00Z",
-                "created_at": "2026-09-17T10:00:00Z"
+                "timestamp": (now - chrono::Duration::hours(2)).to_rfc3339(),
+                "created_at": (now - chrono::Duration::hours(2)).to_rfc3339()
             }),
             json!({
                 "id": 2,
@@ -387,8 +388,8 @@ pub async fn get_records_handler(
                 "patient_name": "Marcus Thorne",
                 "prediction": "High Risk (STEMI Alert)",
                 "risk_level": "High",
-                "timestamp": "2026-09-17T11:30:00Z",
-                "created_at": "2026-09-17T11:30:00Z"
+                "timestamp": (now - chrono::Duration::hours(6)).to_rfc3339(),
+                "created_at": (now - chrono::Duration::hours(6)).to_rfc3339()
             }),
             json!({
                 "id": 3,
@@ -398,8 +399,8 @@ pub async fn get_records_handler(
                 "patient_name": "Linda Zhao",
                 "prediction": "Low Risk",
                 "risk_level": "Low",
-                "timestamp": "2026-09-17T12:15:00Z",
-                "created_at": "2026-09-17T12:15:00Z"
+                "timestamp": (now - chrono::Duration::hours(14)).to_rfc3339(),
+                "created_at": (now - chrono::Duration::hours(14)).to_rfc3339()
             }),
             json!({
                 "id": 4,
@@ -409,8 +410,8 @@ pub async fn get_records_handler(
                 "patient_name": "Robert Garcia",
                 "prediction": "Moderate Risk",
                 "risk_level": "Moderate",
-                "timestamp": "2026-09-17T13:45:00Z",
-                "created_at": "2026-09-17T13:45:00Z"
+                "timestamp": (now - chrono::Duration::hours(28)).to_rfc3339(),
+                "created_at": (now - chrono::Duration::hours(28)).to_rfc3339()
             }),
             json!({
                 "id": 5,
@@ -420,8 +421,8 @@ pub async fn get_records_handler(
                 "patient_name": "Emily Watson",
                 "prediction": "Low Risk",
                 "risk_level": "Low",
-                "timestamp": "2026-09-17T14:20:00Z",
-                "created_at": "2026-09-17T14:20:00Z"
+                "timestamp": (now - chrono::Duration::hours(48)).to_rfc3339(),
+                "created_at": (now - chrono::Duration::hours(48)).to_rfc3339()
             })
         ]));
     }

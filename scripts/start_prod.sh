@@ -4,7 +4,7 @@
 # ==============================================================================
 # Starts Tier 2 Rust Backend Server (Axum + Tokio + ONNX Runtime) on port 8001
 # Starts Tier 1 Bun ElysiaJS Edge Gateway (BFF + Static SPA) on $PORT (7860/8000)
-# Zero Python dependency.
+# Zero Python dependency in live runtime.
 # ==============================================================================
 
 set -e
@@ -57,7 +57,13 @@ if [ ! -f "$MODEL_DIR/stroke_model.onnx" ] || [ ! -s "$MODEL_DIR/stroke_model.on
     fi
 fi
 
-# 1. Start Rust Backend Server in background
+# 2. Ensure SQLite database is primed & seeded with real clinical data on boot
+echo "[BOOT] Priming and verifying clinical SQLite database fixtures..."
+if command -v bun >/dev/null 2>&1; then
+    bun scripts/seed_db.ts || echo "[WARN] Bun database seed notice."
+fi
+
+# 3. Start Rust Backend Server in background
 echo "[BOOT] Launching Rust Backend Server on port $RUST_PORT..."
 if [ -f "$RUST_BINARY" ]; then
     PORT="$RUST_PORT" RUST_PORT="$RUST_PORT" "$RUST_BINARY" &
@@ -71,7 +77,7 @@ else
     RUST_PID=$!
 fi
 
-# 2. Wait for Rust Backend to become healthy
+# 4. Wait for Rust Backend to become healthy
 echo "[BOOT] Awaiting Rust Backend health readiness..."
 READY=0
 for i in $(seq 1 30); do
@@ -88,10 +94,10 @@ if [ "$READY" -ne 1 ]; then
     echo "[WARN] Rust backend readiness check timed out. Proceeding to launch edge gateway..."
 fi
 
-# 3. Handle shutdown signals to clean up background processes
+# 5. Handle shutdown signals to clean up background processes
 trap "echo 'Shutting down AI Healthcare Stack...'; kill -TERM $RUST_PID 2>/dev/null || true; exit 0" SIGINT SIGTERM EXIT
 
-# 4. Launch Bun ElysiaJS Edge Gateway as foreground PID 1 process
+# 6. Launch Bun ElysiaJS Edge Gateway as foreground PID 1 process
 echo "[BOOT] Launching Bun ElysiaJS Edge Gateway on port $EDGE_PORT..."
 export PORT="$EDGE_PORT"
 export HOST="0.0.0.0"

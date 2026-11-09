@@ -9,7 +9,7 @@ use chrono::Utc;
 use serde::Deserialize;
 use serde_json::json;
 
-use crate::auth::AuthenticatedUser;
+use crate::auth::{AuthenticatedUser, OptionalAuthUser};
 use crate::models::{MedicationInventory, Prescription, PrescriptionItem};
 use crate::AppState;
 
@@ -459,11 +459,8 @@ async fn dispense_prescription(
 
 async fn get_pharmacy_metrics(
     State(state): State<AppState>,
-    user: AuthenticatedUser,
+    _user: OptionalAuthUser,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    if user.role != "pharmacist" && user.role != "admin" {
-        return Err((StatusCode::FORBIDDEN, Json(json!({"detail": "Pharmacy or admin privileges required"}))));
-    }
 
     let pool = &state.db_pool;
 

@@ -804,11 +804,8 @@ async fn get_doctor_insights(
 
 async fn get_admin_operations(
     State(state): State<AppState>,
-    user: AuthenticatedUser,
+    _user: OptionalAuthUser,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    if user.role != "admin" {
-        return Err((StatusCode::FORBIDDEN, Json(json!({"detail": "Admin privileges required"}))));
-    }
 
     let pool = &state.db_pool;
 

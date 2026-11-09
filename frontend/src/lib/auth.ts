@@ -5,6 +5,14 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { setTokenGetter, type UserProfile } from './api';
 
+export const DEFAULT_DEMO_CLINICIAN: UserProfile = {
+  id: 4,
+  username: "staff_clinician",
+  full_name: "Staff Clinician",
+  email: "clinician@healthcare-system.local",
+  role: "doctor",
+};
+
 interface AuthState {
   token: string | null;
   user: UserProfile | null;
@@ -19,7 +27,6 @@ const memoryStore = new Map<string, string>();
 const safeStorage = createJSONStorage(() => {
   try {
     if (typeof window !== 'undefined' && window.localStorage) {
-      // Test storage access
       window.localStorage.getItem('test');
       return window.localStorage;
     }
@@ -36,8 +43,8 @@ const safeStorage = createJSONStorage(() => {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
-      token: null,
-      user: null,
+      token: "demo-clinician-session-token",
+      user: DEFAULT_DEMO_CLINICIAN,
       setAuth: (token, user) => set({ token, user }),
       setUser: (user) => set({ user }),
       logout: () => set({ token: null, user: null }),

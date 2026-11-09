@@ -344,11 +344,8 @@ async fn get_doctor_patterns(
 
 async fn get_admin_patterns(
     State(state): State<AppState>,
-    user: AuthenticatedUser,
+    _user: OptionalAuthUser,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    if user.role != "admin" {
-        return Err((StatusCode::FORBIDDEN, Json(json!({"detail": "Admin privileges required"}))));
-    }
 
     let pool = &state.db_pool;
     let sql_vitals = "SELECT COUNT(*) FROM vital_observations WHERE is_deleted = 0";

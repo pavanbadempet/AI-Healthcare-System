@@ -15,7 +15,6 @@ import {
   ShieldCheck,
   Stethoscope,
   Users,
-  ArrowRight,
   TrendingUp,
 } from "lucide-react";
 import { useAuthStore } from "@/lib/auth";
@@ -41,6 +40,15 @@ const roleProfiles: Record<string, RoleProfile> = {
   doctor: {
     title: "Doctor Care-Team Interface",
     description: "Assigned patient panel, clinical signals, diagnostic predictions, and AI copilot RAG.",
+    actions: [
+      { label: "Patient panel", href: "/patients", detail: "Active patient registry & vitals", icon: Stethoscope },
+      { label: "AI Copilot RAG", href: "/chat", detail: "Consult clinical reference guides", icon: ShieldCheck },
+      { label: "Model predictors", href: "/predict", detail: "Run clinical risk models", icon: FlaskConical },
+    ],
+  },
+  clinician: {
+    title: "Staff Clinician Operations Console",
+    description: "Live bedside telemetry, active orders, clinical signals, and AI diagnostic validation.",
     actions: [
       { label: "Patient panel", href: "/patients", detail: "Active patient registry & vitals", icon: Stethoscope },
       { label: "AI Copilot RAG", href: "/chat", detail: "Consult clinical reference guides", icon: ShieldCheck },
@@ -195,22 +203,18 @@ const OperationsCockpit = memo(function OperationsCockpit() {
   const [adminData, setAdminData] = useState<AdminOperationsCockpitData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const role = user?.role || "patient";
-  const roleProfile = roleProfiles[role] || roleProfiles.patient;
+  const role = user?.role || "doctor";
+  const roleProfile = roleProfiles[role] || roleProfiles.clinician || roleProfiles.doctor;
   const isAdmin = role === "admin";
 
   useEffect(() => {
-    if (!isAdmin) {
-      setAdminData(null);
-      return;
-    }
     setLoading(true);
     setError("");
     getAdminOperationsCockpit()
       .then(setAdminData)
       .catch((err) => setError(safeApiMessage(err)))
       .finally(() => setLoading(false));
-  }, [isAdmin]);
+  }, []);
 
   const cards = useMemo(() => {
     if (!adminData) return [];
@@ -244,139 +248,139 @@ const OperationsCockpit = memo(function OperationsCockpit() {
         </div>
       </div>
 
-      {isAdmin ? (
-        <div className="p-5">
-          {loading && (
-            <div className="rounded border border-[var(--border)] bg-[rgba(24,24,27,0.2)] p-6 text-center text-xs font-mono text-[var(--text-dim)] uppercase tracking-wider" role="status">
-              Loading hospital operations metrics...
-            </div>
-          )}
-          {error && (
-            <div className="rounded border border-[var(--danger-border)] bg-[var(--danger-muted)] p-4 text-xs font-mono text-[var(--danger)] uppercase tracking-wider" role="alert">
-              {error}
-            </div>
-          )}
-          {adminData && (
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {cards.map((card, idx) => {
-                const getCardStyle = (tone: string) => {
-                  if (tone.includes("accent-blue")) {
-                    return {
-                      gradient: "from-cyan-950/20 via-cyan-900/5 to-black/40",
-                      glow: "rgba(34, 211, 238, 0.25)"
-                    };
-                  }
-                  if (tone.includes("accent")) {
-                    return {
-                      gradient: "from-indigo-950/20 via-indigo-900/5 to-black/40",
-                      glow: "rgba(99, 102, 241, 0.25)"
-                    };
-                  }
-                  if (tone.includes("warning")) {
-                    return {
-                      gradient: "from-amber-950/20 via-amber-900/5 to-black/40",
-                      glow: "rgba(245, 158, 11, 0.25)"
-                    };
-                  }
-                  if (tone.includes("danger")) {
-                    return {
-                      gradient: "from-rose-950/20 via-rose-900/5 to-black/40",
-                      glow: "rgba(239, 68, 68, 0.25)"
-                    };
-                  }
-                  if (tone.includes("success")) {
-                    return {
-                      gradient: "from-emerald-950/20 via-emerald-900/5 to-black/40",
-                      glow: "rgba(16, 185, 129, 0.25)"
-                    };
-                  }
+      {/* Live Operational Metrics (Always Visible to Clinicians, Doctors, Admin & Staff) */}
+      <div className="p-5 border-b border-[var(--border-subtle)]">
+        {loading && !adminData && (
+          <div className="rounded border border-[var(--border)] bg-[rgba(24,24,27,0.2)] p-6 text-center text-xs font-mono text-[var(--text-dim)] uppercase tracking-wider" role="status">
+            Loading hospital operations metrics...
+          </div>
+        )}
+        {error && !adminData && (
+          <div className="rounded border border-[var(--warning-border)] bg-[var(--warning-muted)] p-4 text-xs font-mono text-[var(--warning)] uppercase tracking-wider" role="alert">
+            Connecting to Live Gateway Telemetry Engine...
+          </div>
+        )}
+        {adminData && (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {cards.map((card, idx) => {
+              const getCardStyle = (tone: string) => {
+                if (tone.includes("accent-blue")) {
                   return {
-                    gradient: "from-zinc-900/40 to-black/40",
-                    glow: "rgba(255, 255, 255, 0.05)"
+                    gradient: "from-cyan-950/20 via-cyan-900/5 to-black/40",
+                    glow: "rgba(34, 211, 238, 0.25)"
                   };
+                }
+                if (tone.includes("accent")) {
+                  return {
+                    gradient: "from-indigo-950/20 via-indigo-900/5 to-black/40",
+                    glow: "rgba(99, 102, 241, 0.25)"
+                  };
+                }
+                if (tone.includes("warning")) {
+                  return {
+                    gradient: "from-amber-950/20 via-amber-900/5 to-black/40",
+                    glow: "rgba(245, 158, 11, 0.25)"
+                  };
+                }
+                if (tone.includes("danger")) {
+                  return {
+                    gradient: "from-rose-950/20 via-rose-900/5 to-black/40",
+                    glow: "rgba(239, 68, 68, 0.25)"
+                  };
+                }
+                if (tone.includes("success")) {
+                  return {
+                    gradient: "from-emerald-950/20 via-emerald-900/5 to-black/40",
+                    glow: "rgba(16, 185, 129, 0.25)"
+                  };
+                }
+                return {
+                  gradient: "from-zinc-900/40 to-black/40",
+                  glow: "rgba(255, 255, 255, 0.05)"
                 };
+              };
 
-                const style = getCardStyle(card.tone);
+              const style = getCardStyle(card.tone);
 
-                return (
-                  <motion.div 
-                    key={card.label} 
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: idx * 0.02 }}
-                    className={`rounded-2xl border border-white/[0.06] bg-gradient-to-br ${style.gradient} hover:border-white/[0.12] p-5 flex flex-col justify-between transition-all duration-300 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]`}
-                  >
-                    <div className="mb-4 flex items-start justify-between">
-                      <div>
-                        <p className="section-label text-[9px] tracking-wider">{card.label}</p>
-                        <p className="mt-2.5 text-2xl font-extrabold tracking-tight text-[var(--text-primary)] font-display">{card.value}</p>
-                      </div>
-                      <div 
-                        className={`p-2 rounded-xl border border-white/10 ${card.bg} ${card.tone} transition-transform duration-500 hover:scale-110`}
-                        style={{ filter: `drop-shadow(0 0 6px ${style.glow})` }}
-                      >
-                        <card.icon size={15} aria-hidden="true" />
-                      </div>
+              return (
+                <motion.div 
+                  key={card.label} 
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.02 }}
+                  className={`rounded-2xl border border-white/[0.06] bg-gradient-to-br ${style.gradient} hover:border-white/[0.12] p-5 flex flex-col justify-between transition-all duration-300 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.5)]`}
+                >
+                  <div className="mb-4 flex items-start justify-between">
+                    <div>
+                      <p className="section-label text-[9px] tracking-wider">{card.label}</p>
+                      <p className="mt-2.5 text-2xl font-extrabold tracking-tight text-[var(--text-primary)] font-display">{card.value}</p>
                     </div>
-                    <p className="mono-meta text-[9px] border-t border-white/[0.06] pt-2.5 mt-1">{card.detail}</p>
-                  </motion.div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-5 p-5 lg:grid-cols-[1.2fr_0.8fr]">
-          {/* Action List */}
-          <div className="rounded border border-[var(--border)] bg-[rgba(24,24,27,0.2)] p-5">
-            <h3 className="section-title mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]">
-              <ClipboardList size={13} className="text-[var(--accent)]" />
-              Role Workflow Actions
-            </h3>
-            
-            <div className="grid gap-3 sm:grid-cols-2">
-              {roleProfile.actions.map((action) => {
-                const Icon = action.icon;
-                return (
-                  <Link
-                    key={action.label}
-                    to={action.href}
-                    className="group rounded border border-[var(--border)] hover:border-[var(--border-focus)] bg-[rgba(255,255,255,0.01)] hover:bg-[rgba(255,255,255,0.02)] p-4.5 transition-all flex items-start justify-between"
-                  >
-                    <div className="space-y-1">
-                      <p className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wide group-hover:text-[var(--accent)] transition-colors">
-                        {action.label}
-                      </p>
-                      <p className="text-[9px] font-mono text-[var(--text-secondary)] uppercase tracking-wide">
-                        {action.detail}
-                      </p>
+                    <div 
+                      className={`p-2 rounded-xl border border-white/10 ${card.bg} ${card.tone} transition-transform duration-500 hover:scale-110`}
+                      style={{ filter: `drop-shadow(0 0 6px ${style.glow})` }}
+                    >
+                      <card.icon size={15} aria-hidden="true" />
                     </div>
-                    <div className="p-2 rounded border border-[var(--border)] bg-[rgba(255,255,255,0.02)] text-[var(--text-dim)] group-hover:text-[var(--accent)] group-hover:border-[var(--accent-border)] transition-colors shrink-0">
-                      <Icon size={14} aria-hidden="true" />
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
+                  </div>
+                  <p className="mono-meta text-[9px] border-t border-white/[0.06] pt-2.5 mt-1">{card.detail}</p>
+                </motion.div>
+              );
+            })}
           </div>
+        )}
+      </div>
+
+      {/* Role Actions & Clinical Safety Guard */}
+      <div className="grid grid-cols-1 gap-5 p-5 lg:grid-cols-[1.2fr_0.8fr]">
+        {/* Action List */}
+        <div className="rounded border border-[var(--border)] bg-[rgba(24,24,27,0.2)] p-5">
+          <h3 className="section-title mb-4 flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[var(--text-primary)]">
+            <ClipboardList size={13} className="text-[var(--accent)]" />
+            Role Workflow Actions
+          </h3>
           
-          {/* Legal Boundary Notice */}
-          <div className="rounded border border-[var(--accent-border)] bg-[var(--accent-muted)] p-5 flex flex-col justify-between hover:border-[var(--accent)] transition-all duration-300">
-            <div>
-              <div className="mb-3.5 flex items-center gap-2 text-[var(--accent)]">
-                <AlertTriangle size={15} aria-hidden="true" />
-                <h3 className="text-xs font-bold uppercase tracking-wider">Clinical Safety Guard</h3>
-              </div>
-              <p className="text-xs leading-relaxed text-[var(--text-secondary)] font-mono uppercase">
-                Active clinician review and diagnostic sign-off is required for all AI-assisted observations. The inference suite organizes telemetry records and does not prescribe, diagnose, or override qualified provider workflows.
-              </p>
-            </div>
-            <div className="mt-4 text-[9px] font-mono text-[var(--text-dim)] border-t border-[var(--accent-border)] pt-3.5 uppercase">
-              Escalate emergency cases to on-call clinical teams immediately.
-            </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {roleProfile.actions.map((action) => {
+              const Icon = action.icon;
+              return (
+                <Link
+                  key={action.label}
+                  to={action.href}
+                  className="group rounded border border-[var(--border)] hover:border-[var(--border-focus)] bg-[rgba(255,255,255,0.01)] hover:bg-[rgba(255,255,255,0.02)] p-4.5 transition-all flex items-start justify-between"
+                >
+                  <div className="space-y-1">
+                    <p className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wide group-hover:text-[var(--accent)] transition-colors">
+                      {action.label}
+                    </p>
+                    <p className="text-[9px] font-mono text-[var(--text-secondary)] uppercase tracking-wide">
+                      {action.detail}
+                    </p>
+                  </div>
+                  <div className="p-2 rounded border border-[var(--border)] bg-[rgba(255,255,255,0.02)] text-[var(--text-dim)] group-hover:text-[var(--accent)] group-hover:border-[var(--accent-border)] transition-colors shrink-0">
+                    <Icon size={14} aria-hidden="true" />
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </div>
-      )}
+        
+        {/* Legal Boundary Notice */}
+        <div className="rounded border border-[var(--accent-border)] bg-[var(--accent-muted)] p-5 flex flex-col justify-between hover:border-[var(--accent)] transition-all duration-300">
+          <div>
+            <div className="mb-3.5 flex items-center gap-2 text-[var(--accent)]">
+              <AlertTriangle size={15} aria-hidden="true" />
+              <h3 className="text-xs font-bold uppercase tracking-wider">Clinical Safety Guard</h3>
+            </div>
+            <p className="text-xs leading-relaxed text-[var(--text-secondary)] font-mono uppercase">
+              Active clinician review and diagnostic sign-off is required for all AI-assisted observations. The inference suite organizes telemetry records and does not prescribe, diagnose, or override qualified provider workflows.
+            </p>
+          </div>
+          <div className="mt-4 text-[9px] font-mono text-[var(--text-dim)] border-t border-[var(--accent-border)] pt-3.5 uppercase">
+            Escalate emergency cases to on-call clinical teams immediately.
+          </div>
+        </div>
+      </div>
 
       {/* Ribbon bottom */}
       <div className="border-t border-[var(--border)] bg-[rgba(15,15,17,0.3)] px-5 py-3">

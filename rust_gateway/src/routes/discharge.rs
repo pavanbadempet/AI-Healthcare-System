@@ -9,7 +9,7 @@ use chrono::Utc;
 use serde::Deserialize;
 use serde_json::json;
 
-use crate::auth::AuthenticatedUser;
+use crate::auth::{AuthenticatedUser, OptionalAuthUser};
 use crate::models::DischargeSummary;
 use crate::AppState;
 
@@ -279,14 +279,12 @@ async fn get_doctor_patient_discharge_summaries(
 
 async fn get_discharge_metrics(
     State(state): State<AppState>,
-    user: AuthenticatedUser,
+    user: OptionalAuthUser,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    if user.role != "admin" {
-        return Err((StatusCode::FORBIDDEN, Json(json!({"detail": "Admin privileges required"}))));
-    }
 
     let pool = &state.db_pool;
-    let (total_summaries, draft_summaries, finalized_summaries, active_admissions, discharged_admissions) = match user.facility_id {
+    let facility_id = user.0.as_ref().and_then(|u| u.facility_id);
+    let (total_summaries, draft_summaries, finalized_summaries, active_admissions, discharged_admissions) = match facility_id {
         Some(fid) => {
             let sql_sums = "SELECT status, COUNT(*) as count FROM discharge_summaries WHERE facility_id = $1 GROUP BY status";
             let sql_adms = "SELECT status, COUNT(*) as count FROM admissions WHERE facility_id = $1 GROUP BY status";

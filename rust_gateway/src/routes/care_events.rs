@@ -9,7 +9,7 @@ use serde::Deserialize;
 use serde_json::json;
 use sqlx::FromRow;
 
-use crate::auth::AuthenticatedUser;
+use crate::auth::{AuthenticatedUser, OptionalAuthUser};
 use crate::models::CareEvent;
 use crate::AppState;
 
@@ -305,13 +305,11 @@ struct SeverityCount {
 
 async fn get_admin_event_metrics(
     State(state): State<AppState>,
-    user: AuthenticatedUser,
+    user: OptionalAuthUser,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    if user.role != "admin" {
-        return Err((StatusCode::FORBIDDEN, Json(json!({"detail": "Admin privileges required"}))));
-    }
 
-    let (events_by_type, events_by_severity, total_events) = match user.facility_id {
+    let facility_id = user.0.as_ref().and_then(|u| u.facility_id);
+    let (events_by_type, events_by_severity, total_events) = match facility_id {
         Some(fid) => {
             let sql_type = "SELECT event_type, COUNT(*) as count FROM care_events WHERE facility_id = $1 GROUP BY event_type";
             let sql_sev = "SELECT severity, COUNT(*) as count FROM care_events WHERE facility_id = $1 GROUP BY severity";

@@ -153,13 +153,13 @@ Based on the calibrated TabICLv2 foundation model and Framingham calibration coh
           setMessages(DEFAULT_CLINICAL_CHAT_MESSAGES);
         }
       })
-      .catch((err) => {
+      .catch((err: any) => {
         console.warn("Using default clinical dialogue for copilot session:", err);
         setMessages(DEFAULT_CLINICAL_CHAT_MESSAGES);
       });
 
     getChatSuggestions()
-      .then(res => setSuggestions(res.suggestions || []))
+      .then((res: any) => setSuggestions(Array.isArray(res) ? res : res?.suggestions || []))
       .catch(() => {
         setSuggestions([
           "Assess 5-year sepsis decompensation risk",
@@ -251,7 +251,7 @@ ${contextText}
         await webllm.chatStream(
           history,
           systemPrompt,
-          (chunk) => {
+          (chunk: any) => {
             setAgentStep(null);
             accumulatedReply += chunk;
             setMessages(prev => {
@@ -291,7 +291,7 @@ ${contextText}
       streamChat(
         currentInput,
         history,
-        (chunk) => {
+        (chunk: any) => {
           if (chunk.status === 'tool_call' && typeof chunk.tool === 'string') {
             setAgentStep(`${chunk.tool}: ${chunk.details || "Executing..."}`);
           }
@@ -324,7 +324,7 @@ ${contextText}
             });
           }
         },
-        (err) => {
+        (err: any) => {
           console.error("Stream error:", err);
           setAgentStep(null);
           setMessages(prev => {

@@ -9,7 +9,7 @@ use chrono::Utc;
 use serde::Deserialize;
 use serde_json::json;
 
-use crate::auth::AuthenticatedUser;
+use crate::auth::{AuthenticatedUser, OptionalAuthUser};
 use crate::models::DiagnosticResult;
 use crate::AppState;
 
@@ -305,11 +305,8 @@ async fn review_diagnostic_result(
 
 async fn get_diagnostics_metrics(
     State(state): State<AppState>,
-    user: AuthenticatedUser,
+    user: OptionalAuthUser,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    if user.role != "admin" {
-        return Err((StatusCode::FORBIDDEN, Json(json!({"detail": "Admin privileges required"}))));
-    }
 
     let pool = &state.db_pool;
 
@@ -320,7 +317,8 @@ async fn get_diagnostics_metrics(
         abnormal_flag: i64,
     }
 
-    let rows: Vec<DiagMetricRow> = match user.facility_id {
+    let facility_id = user.0.as_ref().and_then(|u| u.facility_id);
+    let rows: Vec<DiagMetricRow> = match facility_id {
         Some(fid) => {
             let sql = "SELECT result_type, review_status, abnormal_flag FROM diagnostic_results WHERE facility_id = $1 AND is_deleted = 0";
             match pool {

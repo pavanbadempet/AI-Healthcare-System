@@ -247,29 +247,42 @@ export default function DashboardPage() {
     const chartData = records
       .slice(0, 10)
       .reverse()
-      .map((r) => {
+      .map((r, idx, arr) => {
         const pred = (r.prediction || "").toLowerCase();
         const ts = r.timestamp || r.created_at || new Date().toISOString();
+        const d = new Date(ts);
+        const dayLabel = d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+        const sameDayCount = arr.filter(
+          (other) =>
+            new Date(other.timestamp || other.created_at || "").toLocaleDateString(undefined, {
+              month: "short",
+              day: "numeric",
+            }) === dayLabel
+        ).length;
+        const name =
+          sameDayCount > 1
+            ? `${dayLabel} ${d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`
+            : dayLabel;
         return {
-          name: new Date(ts).toLocaleDateString(undefined, { month: "short", day: "numeric" }),
+          name,
           riskScore:
-            pred.includes("high") || pred.includes("positive")
-              ? 80
-              : pred.includes("medium")
+            pred.includes("high") || pred.includes("positive") || pred.includes("stemi") || pred.includes("warning")
+              ? 85
+              : pred.includes("medium") || pred.includes("moderate")
                 ? 50
                 : 20,
         };
       });
-    return chartData.length > 0
-      ? chartData
-      : [
-          { name: "Jan 1", riskScore: 10 },
-          { name: "Jan 5", riskScore: 15 },
-          { name: "Jan 12", riskScore: 12 },
-          { name: "Jan 18", riskScore: 25 },
-          { name: "Jan 25", riskScore: 20 },
-          { name: "Today", riskScore: 15 },
-        ];
+    if (chartData.length > 0) return chartData;
+    const now = Date.now();
+    return [
+      { name: new Date(now - 5 * 24 * 3600 * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" }), riskScore: 18 },
+      { name: new Date(now - 4 * 24 * 3600 * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" }), riskScore: 24 },
+      { name: new Date(now - 3 * 24 * 3600 * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" }), riskScore: 48 },
+      { name: new Date(now - 2 * 24 * 3600 * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" }), riskScore: 32 },
+      { name: new Date(now - 1 * 24 * 3600 * 1000).toLocaleDateString(undefined, { month: "short", day: "numeric" }), riskScore: 78 },
+      { name: "Today", riskScore: 85 },
+    ];
   }, [records]);
 
   const patientDbIdMap = useMemo(() => {
@@ -507,7 +520,7 @@ export default function DashboardPage() {
         handleVitalsSubmit={handleVitalsSubmit}
         signalsLoading={signalsLoading}
         activeSignals={activeSignals}
-        sendChat={sendChat}
+        sendChat={async (msg: string, _model?: string) => sendChat(msg)}
       />
 
       {showModelManager && (

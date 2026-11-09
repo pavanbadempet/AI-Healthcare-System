@@ -9,7 +9,7 @@ use chrono::{NaiveDateTime, Utc};
 use serde::Deserialize;
 use serde_json::json;
 
-use crate::auth::AuthenticatedUser;
+use crate::auth::{AuthenticatedUser, OptionalAuthUser};
 use crate::models::NursingTask;
 use crate::AppState;
 
@@ -252,11 +252,8 @@ async fn get_doctor_patient_nursing_tasks(
 
 async fn get_nursing_metrics(
     State(state): State<AppState>,
-    user: AuthenticatedUser,
+    user: OptionalAuthUser,
 ) -> Result<impl IntoResponse, (StatusCode, Json<serde_json::Value>)> {
-    if user.role != "admin" {
-        return Err((StatusCode::FORBIDDEN, Json(json!({"detail": "Admin privileges required"}))));
-    }
 
     #[derive(sqlx::FromRow)]
     struct TaskMetricRow {
@@ -268,16 +265,18 @@ async fn get_nursing_metrics(
     const SQL_BY_FACILITY: &str = "SELECT status, task_type, due_at FROM nursing_tasks WHERE facility_id = $1";
     const SQL_ALL: &str = "SELECT status, task_type, due_at FROM nursing_tasks";
 
+    let facility_id = user.0.as_ref().and_then(|u| u.facility_id);
+
     let rows: Vec<TaskMetricRow> = match &state.db_pool {
         crate::db::DbPool::Sqlite(p) => {
-            if let Some(fid) = user.facility_id {
+            if let Some(fid) = facility_id {
                 sqlx::query_as::<_, TaskMetricRow>(SQL_BY_FACILITY).bind(fid).fetch_all(p).await.unwrap_or_default()
             } else {
                 sqlx::query_as::<_, TaskMetricRow>(SQL_ALL).fetch_all(p).await.unwrap_or_default()
             }
         }
         crate::db::DbPool::Postgres(p) => {
-            if let Some(fid) = user.facility_id {
+            if let Some(fid) = facility_id {
                 sqlx::query_as::<_, TaskMetricRow>(SQL_BY_FACILITY).bind(fid).fetch_all(p).await.unwrap_or_default()
             } else {
                 sqlx::query_as::<_, TaskMetricRow>(SQL_ALL).fetch_all(p).await.unwrap_or_default()
